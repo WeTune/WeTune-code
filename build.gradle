@@ -16,6 +16,9 @@ subprojects {
         mavenCentral()
     }
 
+    test {
+        useJUnitPlatform()
+    }
 }
 
 configurations {
