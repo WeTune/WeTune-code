@@ -1,0 +1,29 @@
+allprojects {
+    group = 'cn.edu.sjtu.ipads.wtune'
+    version = '0.1'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_14
+        targetCompatibility = JavaVersion.VERSION_14
+        modularity.inferModulePath = true
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+configurations {
+    childJars
+}
+
+dependencies {
+    subprojects.each {
+        childJars project(it.path)
+    }
+}

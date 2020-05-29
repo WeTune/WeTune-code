@@ -1,0 +1,19 @@
+dependencies {
+    implementation project(':parser')
+}
+
+jar {
+    archiveFileName = 'wtune.jar'
+
+    manifest {
+        attributes 'Main-Class': 'cn.edu.sjtu.ipads.wtune.Main'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it).matching {
+                exclude 'module-info.class'
+            }
+        }
+    }
+}
