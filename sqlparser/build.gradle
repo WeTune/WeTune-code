@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':common')
+    implementation('org.antlr:antlr4-runtime:4.8-1')
+    implementation('org.apache.commons:commons-lang3:3.10')
+}
+

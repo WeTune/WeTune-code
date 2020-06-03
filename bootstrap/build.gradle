@@ -1,0 +1,19 @@
+dependencies {
+    implementation project(':sqlparser')
+}
+
+jar {
+    archiveFileName = 'wtune.jar'
+
+    manifest {
+        attributes 'Main-Class': 'sjtu.ipads.wtune.bootstrap.Main'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it).matching {
+                exclude 'module-info.class'
+            }
+        }
+    }
+}
