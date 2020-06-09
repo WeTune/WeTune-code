@@ -1,5 +1,12 @@
 image: gradle:6.5.0-jdk14
 
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+cache:
+  paths:
+    - .gradle/caches
+
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   DOCKER_DRIVER: overlay2
@@ -7,6 +14,10 @@ variables:
 stages:
   - test
 
+test-common:
+  script:
+    - gradle clean :common:test --info
 test-sqlparser:
   script:
-    - gradle clean testClasses
+    - gradle clean :sqlparser:test --info
+
