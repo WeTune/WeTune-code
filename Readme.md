@@ -5,21 +5,23 @@ optimizes inefficient database access in Web-application.
 
 ## File Structure
 ```
-/assemble: aggregation root of modules
+/bootstrap: entry of executable
 /common: common utils used in other modules.
-/parser: sql statement parser
+/sqlparser: AST parser
+/stmt: statement resolver
 ```
 
 ## Build
 ### Requirement
 ```
-jdk version 14
+jdk: version 14
+gradle: 6.5.0
 ```
 ### Command
 ```shell script
 gradle assemble
 ```
-Artifact will be found in assemble/build/libs/wtune.jar
+Artifact will be found in bootstrap/build/libs/wtune.jar
 
 ## Run
 ```shell script
