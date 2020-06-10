@@ -16,7 +16,7 @@ task antlr(type: Exec) {
                 '-Dlanguage=Java', '-no-listener', '-visitor', '-o', '.',
                 '-package', 'sjtu.ipads.wtune.sqlparser.mysql', 'MySQLLexer.g4', 'MySQLParser.g4'
     else
-        commandLine 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+        commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
                 '-Dlanguage=Java', '-no-listener', '-visitor', '-o', '.',
                 '-package', 'sjtu.ipads.wtune.sqlparser.mysql', 'MySQLLexer.g4', 'MySQLParser.g4'
 }
