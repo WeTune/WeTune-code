@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Pair;
@@ -15,6 +16,10 @@ abstract class MySQLBaseLexer extends Lexer implements MySQLRecognizerCommon {
   public boolean inVersionComment = false;
   private final Set<String> charsets = new HashSet<>();
   private final Queue<Token> _pendingTokens = new LinkedList<>();
+
+  public MySQLBaseLexer(CharStream input) {
+    super(input);
+  }
 
   @Override
   public void reset() {

@@ -9,10 +9,8 @@ import java.util.function.Function;
 
 public interface MySQLASTParser {
   static <T extends ParserRuleContext> T parse0(String str, Function<MySQLParser, T> rule) {
-    final var charStream = CharStreams.fromString(str);
-    final var lexer = new MySQLLexer();
-    lexer.setInputStream(charStream);
-    return rule.apply(new MySQLParser(new CommonTokenStream(lexer)));
+    return rule.apply(
+        new MySQLParser(new CommonTokenStream(new MySQLLexer(CharStreams.fromString(str)))));
   }
 
   static SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {

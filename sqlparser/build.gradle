@@ -1,6 +1,46 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
 dependencies {
     implementation project(':common')
     implementation('org.antlr:antlr4-runtime:4.8-1')
     implementation('org.apache.commons:commons-lang3:3.10')
 }
 
+def mysqlDir = 'src/main/java/sjtu/ipads/wtune/sqlparser/mysql'
+def resourceDir = 'src/main/resources'
+
+task antlr(type: Exec) {
+    workingDir resourceDir
+    if (Os.isFamily(Os.FAMILY_WINDOWS))
+        commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+                '-Dlanguage=Java', '-no-listener', '-visitor', '-o', '.',
+                '-package', 'sjtu.ipads.wtune.sqlparser.mysql', 'MySQLLexer.g4', 'MySQLParser.g4'
+    else
+        commandLine 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+                '-Dlanguage=Java', '-no-listener', '-visitor', '-o', '.',
+                '-package', 'sjtu.ipads.wtune.sqlparser.mysql', 'MySQLLexer.g4', 'MySQLParser.g4'
+}
+
+task copyMysql(type: Copy) {
+    dependsOn antlr
+    from(resourceDir) {
+        include '*.java'
+    }
+    into(mysqlDir)
+}
+
+task removeMysql(type: Delete) {
+    delete fileTree(resourceDir) {
+        exclude '*.g4'
+        exclude 'predefined.tokens'
+    }
+    delete fileTree(mysqlDir) {
+        include "MySQLLexer.java"
+        include "MySQLParser.java"
+        include "MySQLParserBaseVisitor.java"
+        include "MySQLParserVisitor.java"
+    }
+}
+
+cleanAll.dependsOn removeMysql
+compileJava.dependsOn copyMysql

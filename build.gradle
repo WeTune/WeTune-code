@@ -25,11 +25,15 @@ subprojects {
         useJUnitPlatform()
     }
 
-   dependencies {
+    dependencies {
         testImplementation('org.junit.jupiter:junit-jupiter-api:5.6.2')
         testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.6.2')
         testRuntimeOnly('org.junit.platform:junit-platform-launcher:1.6.2')
         testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.6.2')
+    }
+
+    task("cleanAll") {
+        dependsOn clean
     }
 }
 
@@ -40,5 +44,11 @@ configurations {
 dependencies {
     subprojects.each {
         childJars project(it.path)
+    }
+}
+
+task cleanAll {
+    subprojects.each {
+        dependsOn("${it.name}:cleanAll")
     }
 }

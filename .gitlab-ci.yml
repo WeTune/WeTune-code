@@ -17,6 +17,7 @@ stages:
 test-common:
   script:
     - gradle clean :common:test --info
+
 test-sqlparser:
   script:
     - gradle clean :sqlparser:test --info
