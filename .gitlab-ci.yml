@@ -22,3 +22,7 @@ test-sqlparser:
   script:
     - gradle clean :sqlparser:test --info
 
+test-stmt:
+  script:
+    - gradle clean :sqlparser:stmt --info
+

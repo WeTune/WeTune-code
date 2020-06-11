@@ -1,0 +1,4 @@
+*.java
+*.interp
+MySQLLexer.tokens
+MySQLParser.tokens

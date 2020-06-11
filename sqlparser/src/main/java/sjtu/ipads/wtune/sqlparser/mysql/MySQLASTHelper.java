@@ -1,22 +1,26 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLDataCategory;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
 
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.DESC;
-import static java.util.Collections.emptyList;
 
 public interface MySQLASTHelper {
+  static SQLNode newNode(Type type) {
+    return new SQLNode(MYSQL, type);
+  }
+
   static String stringifyText(MySQLParser.TextStringLiteralContext text) {
     if (text.SINGLE_QUOTED_TEXT() != null) return unquoted(text.value.getText(), '\'');
     else if (text.DOUBLE_QUOTED_TEXT() != null) return unquoted(text.value.getText(), '"');
@@ -123,18 +127,18 @@ public interface MySQLASTHelper {
 
   static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs out) {
     if (attrs.NOT_SYMBOL() != null && attrs.nullLiteral() != null)
-      out.flag(COLUMN_DEF_CONS, Constraint.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, Constraint.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, Constraint.PRIMARY);
-    if (attrs.checkConstraint() != null) out.flag(COLUMN_DEF_CONS, Constraint.CHECK);
+      out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+    if (attrs.checkConstraint() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.CHECK);
     if (attrs.DEFAULT_SYMBOL() != null) out.flag(COLUMN_DEF_DEFAULT);
     if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(COLUMN_DEF_AUTOINCREMENT);
   }
 
   static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs out) {
-    if (attrs.notRule() != null) out.flag(COLUMN_DEF_CONS, Constraint.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, Constraint.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, Constraint.PRIMARY);
+    if (attrs.notRule() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
   }
 
   Set<String> TIME_TYPE = Set.of(YEAR, DATE, TIME, TIMESTAMP, DATETIME);

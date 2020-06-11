@@ -23,10 +23,10 @@ import static java.util.Collections.emptyList;
  * <h3>Enums</h3>
  *
  * <ul>
- *   <li>{@link sjtu.ipads.wtune.sqlparser.SQLNode.Type}
- *   <li>{@link sjtu.ipads.wtune.sqlparser.SQLNode.Constraint}
- *   <li>{@link sjtu.ipads.wtune.sqlparser.SQLNode.IndexType}
- *   <li>{@link sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection}
+ *   <li>{@link Type}
+ *   <li>{@link ConstraintType}
+ *   <li>{@link IndexType}
+ *   <li>{@link KeyDirection}
  * </ul>
  *
  * <h3>AST Nodes</h3>
@@ -55,7 +55,8 @@ import static java.util.Collections.emptyList;
  * <pre>{@code
  * COLUMN_DEF
  * | NAME: SQLNode<COLUMN_NAME>
- * | DATATYPE: String
+ * | DATATYPE_RAW: String
+ * | DATATYPE: SQLDataType
  * | CONS: EnumSet of Constraint
  * | REF: SQLNode<REFERENCES>
  * | GENERATED: boolean
@@ -86,31 +87,45 @@ import static java.util.Collections.emptyList;
  * }</pre>
  */
 public class SQLNode implements Attrs, Cloneable {
+  private String dbType;
+  private Type type;
+  private SQLNode parent;
+  private List<SQLNode> children;
+
   public SQLNode() {}
 
   public SQLNode(Type type) {
-    put(TYPE, type);
+    this.type = type;
+  }
+
+  public SQLNode(String dbType, Type type) {
+    this.dbType = dbType;
+    this.type = type;
+  }
+
+  public String dbType() {
+    return dbType;
   }
 
   public Type type() {
-    return get(TYPE);
+    return type;
   }
 
   public SQLNode parent() {
-    return get(PARENT);
+    return parent;
   }
 
   public List<SQLNode> children() {
-    return getOr(CHILDREN, emptyList());
+    return children == null ? emptyList() : children;
   }
 
   public void setParent(SQLNode parent) {
-    put(PARENT, parent);
+    this.parent = parent;
   }
 
   public void setChildren(List<SQLNode> children) {
-    put(CHILDREN, children);
-    children.forEach(it -> it.setParent(this));
+    this.children = children;
+    if (children != null) children.forEach(it -> it.setParent(this));
   }
 
   public SQLNode relink() {
@@ -149,7 +164,7 @@ public class SQLNode implements Attrs, Cloneable {
   }
 
   public String toString() {
-    return toString(false);
+    return toString(true);
   }
 
   public String toString(boolean singleLine) {
@@ -157,6 +172,9 @@ public class SQLNode implements Attrs, Cloneable {
     accept(formatter);
     return formatter.toString();
   }
+
+  public static final String MYSQL = "mysql";
+  public static final String POSTGRESQL = "postgresql";
 
   public enum Type {
     INVALID,
@@ -169,7 +187,7 @@ public class SQLNode implements Attrs, Cloneable {
     KEY_PART
   }
 
-  public enum Constraint {
+  public enum ConstraintType {
     UNIQUE,
     PRIMARY,
     NOT_NULL,
@@ -189,10 +207,6 @@ public class SQLNode implements Attrs, Cloneable {
     ASC,
     DESC
   }
-
-  public static final Key<Type> TYPE = Attrs.key("sql.node.type", Type.class);
-  public static final Key<SQLNode> PARENT = Attrs.key("sql.node.parent", SQLNode.class);
-  public static final Key<List<SQLNode>> CHILDREN = Attrs.key2("sql.node.children", List.class);
 
   private static final String ATTR_PREFIX = "sql.attr";
 
@@ -223,9 +237,11 @@ public class SQLNode implements Attrs, Cloneable {
   //// ColumnDef
   public static final Key<SQLNode> COLUMN_DEF_NAME =
       Attrs.key(ATTR_PREFIX + ".columnDef.name", SQLNode.class);
-  public static final Key<String> COLUMN_DEF_DATATYPE =
-      Attrs.key(ATTR_PREFIX + ".columnDef.dataType", String.class);
-  public static final Key<EnumSet<Constraint>> COLUMN_DEF_CONS =
+  public static final Key<String> COLUMN_DEF_DATATYPE_RAW =
+      Attrs.key(ATTR_PREFIX + ".columnDef.dataTypeRaw", String.class);
+  public static final Key<SQLDataType> COLUMN_DEF_DATATYPE =
+      Attrs.key(ATTR_PREFIX + ".columnDef.dataType", SQLDataType.class);
+  public static final Key<EnumSet<ConstraintType>> COLUMN_DEF_CONS =
       Attrs.key2(ATTR_PREFIX + ".columnDef.constraint", EnumSet.class);
   public static final Key<SQLNode> COLUMN_DEF_REF =
       Attrs.key(ATTR_PREFIX + ".columnDef.references", SQLNode.class);
@@ -247,8 +263,8 @@ public class SQLNode implements Attrs, Cloneable {
       Attrs.key(ATTR_PREFIX + ".index.name", String.class);
   public static final Key<IndexType> INDEX_DEF_TYPE =
       Attrs.key(ATTR_PREFIX + ".index.type", IndexType.class);
-  public static final Key<Constraint> INDEX_DEF_CONS =
-      Attrs.key(ATTR_PREFIX + ".index.constraint", Constraint.class);
+  public static final Key<ConstraintType> INDEX_DEF_CONS =
+      Attrs.key(ATTR_PREFIX + ".index.constraint", ConstraintType.class);
   public static final Key<List<SQLNode>> INDEX_DEF_KEYS =
       Attrs.key2(ATTR_PREFIX + ".index.keys", List.class);
   public static final Key<SQLNode> INDEX_DEF_REFS =

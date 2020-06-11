@@ -2,12 +2,10 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.CREATE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.REFERENCES;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser.parse;
 
 public class MySQLASTBuilderTest {
@@ -50,7 +48,7 @@ public class MySQLASTBuilderTest {
       }
 
       {
-        assertEquals("int(10)", col0.get(COLUMN_DEF_DATATYPE));
+        assertEquals("int(10)", col0.get(COLUMN_DEF_DATATYPE_RAW));
         assertFalse(col0.isFlagged(COLUMN_DEF_AUTOINCREMENT));
         assertFalse(col0.isFlagged(COLUMN_DEF_DEFAULT));
         assertFalse(col0.isFlagged(COLUMN_DEF_GENERATED));
@@ -58,11 +56,11 @@ public class MySQLASTBuilderTest {
 
       {
         final var col0Cons = col0.get(COLUMN_DEF_CONS);
-        assertTrue(col0Cons.contains(Constraint.PRIMARY));
-        assertFalse(col0Cons.contains(Constraint.UNIQUE));
-        assertFalse(col0Cons.contains(Constraint.CHECK));
-        assertFalse(col0Cons.contains(Constraint.NOT_NULL));
-        assertFalse(col0Cons.contains(Constraint.FOREIGN));
+        assertTrue(col0Cons.contains(ConstraintType.PRIMARY));
+        assertFalse(col0Cons.contains(ConstraintType.UNIQUE));
+        assertFalse(col0Cons.contains(ConstraintType.CHECK));
+        assertFalse(col0Cons.contains(ConstraintType.NOT_NULL));
+        assertFalse(col0Cons.contains(ConstraintType.FOREIGN));
 
         final var col0Refs = col0.get(COLUMN_DEF_REF);
         final var col0RefTable = col0Refs.get(REFERENCES_TABLE);
@@ -97,7 +95,7 @@ public class MySQLASTBuilderTest {
         final var cons1 = constraints.get(1);
         assertNull(cons1.get(INDEX_DEF_NAME));
         assertNull(cons1.get(INDEX_DEF_REFS));
-        assertEquals(Constraint.UNIQUE, cons1.get(INDEX_DEF_CONS));
+        assertEquals(ConstraintType.UNIQUE, cons1.get(INDEX_DEF_CONS));
         assertEquals(IndexType.RTREE, cons1.get(INDEX_DEF_TYPE));
         final var keys = cons1.get(INDEX_DEF_KEYS);
         assertEquals(1, keys.size());
@@ -111,7 +109,7 @@ public class MySQLASTBuilderTest {
       {
         final var cons2 = constraints.get(2);
         assertEquals("fk", cons2.get(INDEX_DEF_NAME));
-        assertEquals(Constraint.FOREIGN, cons2.get(INDEX_DEF_CONS));
+        assertEquals(ConstraintType.FOREIGN, cons2.get(INDEX_DEF_CONS));
         assertNull(cons2.get(INDEX_DEF_TYPE));
         final var keys = cons2.get(INDEX_DEF_KEYS);
         assertEquals(1, keys.size());
@@ -139,6 +137,6 @@ public class MySQLASTBuilderTest {
             + "  UNIQUE KEY (`j` DESC) USING RTREE ,\n"
             + "  FOREIGN KEY `fk`(`k`) REFERENCES `b`(`y`)\n"
             + ") ENGINE = 'innodb'";
-    assertEquals(expected, root.toString());
+    assertEquals(expected, root.toString(false));
   }
 }

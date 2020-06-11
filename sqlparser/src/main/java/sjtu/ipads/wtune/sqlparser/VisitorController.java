@@ -4,8 +4,8 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.INVALID;
 import static java.util.Collections.emptyList;
 
-abstract class VisitorController {
-  private static final SQLNode INVALID_NODE = new SQLNode(INVALID);
+interface VisitorController {
+  SQLNode INVALID_NODE = new SQLNode(INVALID);
 
   static boolean enter(SQLNode n, SQLVisitor v) {
     switch (n.type()) {

@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
+import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Constraint.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.*;
-import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.orElse;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.FULLTEXT;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.SPATIAL;
+import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
@@ -25,7 +26,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitColumnName(MySQLParser.ColumnNameContext ctx) {
-    final var node = new SQLNode(SQLNode.Type.COLUMN_NAME);
+    final var node = newNode(SQLNode.Type.COLUMN_NAME);
     final String schema, table, column;
 
     if (ctx.identifier() != null) {
@@ -53,7 +54,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitCreateTable(MySQLParser.CreateTableContext ctx) {
-    final var node = new SQLNode(SQLNode.Type.CREATE_TABLE);
+    final var node = newNode(SQLNode.Type.CREATE_TABLE);
     node.put(CREATE_TABLE_NAME, visitTableName(ctx.tableName()));
 
     if (ctx.tableElementList() != null) {
@@ -89,11 +90,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitColumnDefinition(MySQLParser.ColumnDefinitionContext ctx) {
-    final var node = new SQLNode(Type.COLUMN_DEF);
+    final var node = newNode(Type.COLUMN_DEF);
     node.put(COLUMN_DEF_NAME, visitColumnName(ctx.columnName()));
 
     final var fieldDef = ctx.fieldDefinition();
-    node.put(COLUMN_DEF_DATATYPE, fieldDef.dataType().getText());
+    node.put(COLUMN_DEF_DATATYPE_RAW, fieldDef.dataType().getText());
+    node.put(COLUMN_DEF_DATATYPE, parseDataType(fieldDef.dataType()));
 
     collectColumnAttrs(fieldDef.columnAttribute(), node);
     collectGColumnAttrs(fieldDef.gcolAttribute(), node);
@@ -111,7 +113,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitReferences(MySQLParser.ReferencesContext ctx) {
-    final var node = new SQLNode(Type.REFERENCES);
+    final var node = newNode(Type.REFERENCES);
 
     node.put(REFERENCES_TABLE, visitTableRef(ctx.tableRef()));
 
@@ -121,7 +123,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       final List<SQLNode> columns = new ArrayList<>(ids.size());
 
       for (var id : ids) {
-        final var columnRef = new SQLNode(Type.COLUMN_NAME);
+        final var columnRef = newNode(Type.COLUMN_NAME);
         columnRef.put(COLUMN_NAME_COLUMN, stringifyIdentifier(id));
         columns.add(columnRef);
       }
@@ -133,7 +135,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitTableConstraintDef(MySQLParser.TableConstraintDefContext ctx) {
-    final var node = new SQLNode(Type.INDEX_DEF);
+    final var node = newNode(Type.INDEX_DEF);
     final var type = ctx.type;
     if (type == null) return null;
 
@@ -141,7 +143,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final var indexName = ctx.indexName();
     final var indexOptions = ctx.indexOption();
 
-    final Constraint c;
+    final ConstraintType c;
     final IndexType t;
     final String name;
     switch (type.getText().toLowerCase()) {
@@ -216,7 +218,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitKeyPart(MySQLParser.KeyPartContext ctx) {
-    final var node = new SQLNode(Type.KEY_PART);
+    final var node = newNode(Type.KEY_PART);
     node.put(KEY_PART_COLUMN, stringifyIdentifier(ctx.identifier()));
     node.put(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
     if (ctx.fieldLength() != null) node.put(KEY_PART_LEN, fieldLength2Int(ctx.fieldLength()));

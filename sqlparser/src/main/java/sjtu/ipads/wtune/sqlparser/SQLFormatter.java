@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Constraint.*;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
 
 public class SQLFormatter extends SQLVisitorAdapter {
   public static boolean DEFAULT_ONE_LINE = true;
@@ -80,7 +80,7 @@ public class SQLFormatter extends SQLVisitorAdapter {
   public boolean enterColumnDef(SQLNode colDef) {
     final var colName = colDef.get(COLUMN_DEF_NAME);
     colName.accept(this);
-    builder.append(' ').append(colDef.get(COLUMN_DEF_DATATYPE));
+    builder.append(' ').append(colDef.get(COLUMN_DEF_DATATYPE_RAW));
 
     if (colDef.isFlagged(COLUMN_DEF_CONS, UNIQUE)) builder.append(" UNIQUE");
     if (colDef.isFlagged(COLUMN_DEF_CONS, PRIMARY)) builder.append(" PRIMARY KEY");
