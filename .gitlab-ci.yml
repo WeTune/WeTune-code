@@ -14,15 +14,6 @@ variables:
 stages:
   - test
 
-test-common:
+unit-test:
   script:
-    - gradle clean :common:test --info
-
-test-sqlparser:
-  script:
-    - gradle clean :sqlparser:test --info
-
-test-stmt:
-  script:
-    - gradle clean :stmt:test --info
-
+    - gradle clean test --info
