@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.orElse;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.FULLTEXT;
@@ -14,6 +14,11 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.SPATIAL;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
+  @Override
+  protected SQLNode aggregateResult(SQLNode aggregate, SQLNode nextResult) {
+    return coalesce(aggregate, nextResult);
+  }
+
   @Override
   public SQLNode visitTableName(MySQLParser.TableNameContext tableName) {
     return tableName(tableName.qualifiedIdentifier(), tableName.dotIdentifier());
@@ -149,7 +154,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     switch (type.getText().toLowerCase()) {
       case "index":
         c = null;
-        t = orElse(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
@@ -167,13 +172,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
       case "primary":
         c = PRIMARY;
-        t = orElse(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
       case "unique":
         c = UNIQUE;
-        t = orElse(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 

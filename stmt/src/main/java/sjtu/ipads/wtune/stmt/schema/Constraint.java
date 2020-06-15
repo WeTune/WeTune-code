@@ -34,15 +34,21 @@ public class Constraint {
   private ConstraintType type;
   private IndexType indexType;
 
-  private SQLNode refTable;
+  private SQLNode refTableName;
   private List<SQLNode> refColNames;
+
+  private Table refTable;
   private List<Column> refColumns;
 
   public List<Column> columns() {
     return columns;
   }
 
-  public List<Column> references() {
+  public Table refTable() {
+    return refTable;
+  }
+
+  public List<Column> refColumns() {
     return refColumns;
   }
 
@@ -54,8 +60,16 @@ public class Constraint {
     return type;
   }
 
-  public void setRefTable(SQLNode refTable) {
-    this.refTable = refTable;
+  public SQLNode refTableName() {
+    return refTableName;
+  }
+
+  public List<SQLNode> refColNames() {
+    return refColNames;
+  }
+
+  public void setRefTableName(SQLNode refTableName) {
+    this.refTableName = refTableName;
   }
 
   public void setRefColNames(List<SQLNode> refColNames) {
@@ -68,6 +82,10 @@ public class Constraint {
 
   public void setColumns(List<Column> columns) {
     this.columns = columns;
+  }
+
+  public void setRefTable(Table refTable) {
+    this.refTable = refTable;
   }
 
   public void setRefColumns(List<Column> refColumns) {

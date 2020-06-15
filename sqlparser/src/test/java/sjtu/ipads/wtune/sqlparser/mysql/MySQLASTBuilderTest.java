@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.CREATE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser.parse;
 
 public class MySQLASTBuilderTest {
   @Test
@@ -22,7 +21,8 @@ public class MySQLASTBuilderTest {
             + "unique (j DESC) using rtree,"
             + "constraint fk_cons foreign key fk (k) references b(y)"
             + ") ENGINE = 'innodb';";
-    final var root = parse(createTable, MySQLParser::createStatement);
+    final MySQLASTParser parser = new MySQLASTParser();
+    final var root = parser.parse(createTable, MySQLParser::createStatement);
     assertEquals(CREATE_TABLE, root.type());
 
     final var tableName = root.get(CREATE_TABLE_NAME);

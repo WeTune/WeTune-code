@@ -4,6 +4,9 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.*;
 
+import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.COLUMN_NAME;
+
 /**
  * Table.
  *
@@ -78,5 +81,10 @@ public class Table {
   @Override
   public int hashCode() {
     return Objects.hash(tableName);
+  }
+
+  Column getColumn(SQLNode columnName) {
+    assert columnName.type() == COLUMN_NAME;
+    return columns.get(columnName.get(COLUMN_NAME_COLUMN));
   }
 }

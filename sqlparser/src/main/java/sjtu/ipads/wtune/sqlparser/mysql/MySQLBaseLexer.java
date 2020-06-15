@@ -21,6 +21,14 @@ abstract class MySQLBaseLexer extends Lexer implements MySQLRecognizerCommon {
     super(input);
   }
 
+  public void setServerVersion(long serverVersion) {
+    this.serverVersion = serverVersion;
+  }
+
+  public void setSqlMode(int sqlMode) {
+    this.sqlMode = sqlMode;
+  }
+
   @Override
   public void reset() {
     inVersionComment = false;

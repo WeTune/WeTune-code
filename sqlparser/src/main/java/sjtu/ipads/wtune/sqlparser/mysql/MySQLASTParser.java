@@ -6,29 +6,49 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 
+import java.util.Properties;
 import java.util.function.Function;
 
+import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.NoMode;
+
 public class MySQLASTParser implements SQLParser {
-  static <T extends ParserRuleContext> T parse0(String str, Function<MySQLParser, T> rule) {
-    return rule.apply(
-        new MySQLParser(new CommonTokenStream(new MySQLLexer(CharStreams.fromString(str)))));
+  private long serverVersion = 0;
+  private int sqlMode = NoMode;
+
+  public void setServerVersion(long serverVersion) {
+    this.serverVersion = serverVersion;
   }
 
-  static SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
+  public void setSqlMode(int sqlMode) {
+    this.sqlMode = sqlMode;
+  }
+
+  public <T extends ParserRuleContext> T parse0(String str, Function<MySQLParser, T> rule) {
+    final MySQLLexer lexer = new MySQLLexer(CharStreams.fromString(str));
+    lexer.setServerVersion(serverVersion);
+    lexer.setSqlMode(sqlMode);
+
+    final MySQLParser parser = new MySQLParser(new CommonTokenStream(lexer));
+    parser.setServerVersion(serverVersion);
+    parser.setSqlMode(sqlMode);
+
+    return rule.apply(parser);
+  }
+
+  public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
     return parse0(str, rule).accept(new MySQLASTBuilder());
   }
 
   @Override
   public SQLNode parse(String str) {
-    final MySQLParser.QueryContext queryRoot = parse0(str, MySQLParser::query);
-    final MySQLParser.SimpleStatementContext simpleStmt = queryRoot.simpleStatement();
-    if (simpleStmt == null) return null;
+    return parse(str, MySQLParser::query);
+  }
 
-    final MySQLParser.CreateStatementContext createStmt = simpleStmt.createStatement();
-    if (createStmt != null) {
-      final MySQLParser.CreateTableContext createTable = createStmt.createTable();
-      if (createTable != null) return createTable.accept(new MySQLASTBuilder());
-    }
-    return null;
+  @Override
+  public SQLNode parse(String string, Properties props) {
+    setServerVersion((int) props.getOrDefault("serverVersion", this.serverVersion));
+    setSqlMode((int) props.getOrDefault("sqlMode", this.sqlMode));
+
+    return parse(string);
   }
 }

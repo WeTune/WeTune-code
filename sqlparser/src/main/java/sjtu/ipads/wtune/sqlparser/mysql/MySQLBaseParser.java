@@ -3,12 +3,20 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 
-abstract class MySQLBaseRecognizer extends Parser implements MySQLRecognizerCommon {
+abstract class MySQLBaseParser extends Parser implements MySQLRecognizerCommon {
   private long serverVersion = 0;
   private int sqlMode = NoMode;
 
-  public MySQLBaseRecognizer(TokenStream input) {
+  public MySQLBaseParser(TokenStream input) {
     super(input);
+  }
+
+  public void setServerVersion(long serverVersion) {
+    this.serverVersion = serverVersion;
+  }
+
+  public void setSqlMode(int sqlMode) {
+    this.sqlMode = sqlMode;
   }
 
   @Override

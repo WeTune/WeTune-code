@@ -45,7 +45,7 @@ parser grammar MySQLParser;
 // $antlr-format useTab off, allowShortRulesOnASingleLine off, allowShortBlocksOnASingleLine on, alignSemicolons ownLine
 
 options {
-    superClass = MySQLBaseRecognizer;
+    superClass = MySQLBaseParser;
     tokenVocab = MySQLLexer;
 }
 

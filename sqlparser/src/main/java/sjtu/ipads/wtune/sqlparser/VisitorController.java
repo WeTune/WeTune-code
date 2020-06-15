@@ -24,14 +24,14 @@ interface VisitorController {
       case COLUMN_DEF:
         return v.enterColumnDef(n);
 
+      case REFERENCES:
+        return v.enterReferences(n);
+
       case INDEX_DEF:
         return v.enterIndexDef(n);
 
       case KEY_PART:
         return v.enterKeyPart(n);
-
-      case REFERENCES:
-        return v.enterReferences(n);
     }
 
     return false;

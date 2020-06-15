@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.schema;
 
+import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.ArrayList;
@@ -10,13 +11,12 @@ import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.orElse;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.StandardAttrs.RESOLVED_COLUMN;
 import static sjtu.ipads.wtune.stmt.StandardAttrs.RESOLVED_TABLE;
 
 class TableBuilder {
-  private static System.Logger LOG = System.getLogger(TableBuilder.class.getSimpleName());
+  private static final System.Logger LOG = System.getLogger(TableBuilder.class.getSimpleName());
 
   private final Table table;
 
@@ -35,7 +35,7 @@ class TableBuilder {
     if (POSTGRESQL.equals(createTable.dbType())) {
       table.setEngine(POSTGRESQL);
     } else {
-      table.setEngine(orElse(createTable.get(CREATE_TABLE_ENGINE), "innodb"));
+      table.setEngine(FuncUtils.coalesce(createTable.get(CREATE_TABLE_ENGINE), "innodb"));
     }
 
     setName(createTable.get(CREATE_TABLE_NAME));
@@ -59,6 +59,7 @@ class TableBuilder {
   private void setConstraintFromColumnDef(SQLNode colDef) {
     final Column column = colDef.get(RESOLVED_COLUMN);
     final EnumSet<ConstraintType> constraints = colDef.get(COLUMN_DEF_CONS);
+    if (constraints == null) return;
 
     for (ConstraintType cType : constraints) {
       final Constraint c = new Constraint();
@@ -74,7 +75,7 @@ class TableBuilder {
       final Constraint c = new Constraint();
       c.setType(ConstraintType.FOREIGN);
       c.setColumns(singletonList(column));
-      c.setRefTable(references.get(REFERENCES_TABLE));
+      c.setRefTableName(references.get(REFERENCES_TABLE));
       c.setRefColNames(references.get(REFERENCES_COLUMNS));
 
       table.addConstraint(c);
@@ -104,12 +105,12 @@ class TableBuilder {
       }
 
       columns.add(column);
-      directions.add(orElse(key.get(KEY_PART_DIRECTION), KeyDirection.ASC));
+      directions.add(FuncUtils.coalesce(key.get(KEY_PART_DIRECTION), KeyDirection.ASC));
     }
 
     final SQLNode refs = constraintDef.get(INDEX_DEF_REFS);
     if (refs != null) {
-      c.setRefTable(refs.get(REFERENCES_TABLE));
+      c.setRefTableName(refs.get(REFERENCES_TABLE));
       c.setRefColNames(refs.get(REFERENCES_COLUMNS));
     }
 

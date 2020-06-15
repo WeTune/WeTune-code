@@ -3,6 +3,18 @@ package sjtu.ipads.wtune.sqlparser;
 import java.util.List;
 
 public class SQLDataType {
+  public enum Category {
+    INTEGRAL,
+    FRACTION,
+    BOOLEAN,
+    ENUM,
+    STRING,
+    TIME,
+    BLOB,
+    JSON,
+    GEO
+  }
+
   // integral
   public static final String TINYINT = "tinyint";
   public static final String INT = "int";
@@ -64,7 +76,7 @@ public class SQLDataType {
   public static final String POLYGON = "polygon";
   public static final String MULTIPOLYGON = "multipolygon";
 
-  private final SQLDataCategory category;
+  private final Category category;
   private final String name;
   private final int width;
   private final int precision;
@@ -72,7 +84,7 @@ public class SQLDataType {
   private final List<String> valuesList;
 
   public SQLDataType(
-      SQLDataCategory category,
+      Category category,
       String name,
       int width,
       int precision,
@@ -86,7 +98,7 @@ public class SQLDataType {
     this.valuesList = valuesList;
   }
 
-  public SQLDataCategory category() {
+  public Category category() {
     return category;
   }
 

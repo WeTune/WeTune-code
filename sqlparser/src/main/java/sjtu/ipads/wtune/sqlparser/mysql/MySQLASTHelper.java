@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
-import sjtu.ipads.wtune.sqlparser.SQLDataCategory;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
@@ -210,48 +209,48 @@ public interface MySQLASTHelper {
   static SQLDataType parseDataType(MySQLParser.DataTypeContext ctx) {
     final var typeString = ctx.type.getText().toLowerCase();
 
-    final SQLDataCategory category;
+    final SQLDataType.Category category;
     final String name;
     if (typeString.endsWith(INT) || typeString.equals(BIT) || typeString.equals(SERIAL)) {
-      category = SQLDataCategory.INTEGRAL;
+      category = SQLDataType.Category.INTEGRAL;
       name = typeString;
 
     } else if (FRACTION_TYPES.contains(typeString)) {
-      category = SQLDataCategory.FRACTION;
+      category = SQLDataType.Category.FRACTION;
       name = typeString;
 
     } else if (TIME_TYPE.contains(typeString)) {
-      category = SQLDataCategory.TIME;
+      category = SQLDataType.Category.TIME;
       name = typeString;
 
     } else if (typeString.contains("bool")) {
-      category = SQLDataCategory.BOOLEAN;
+      category = SQLDataType.Category.BOOLEAN;
       name = typeString;
 
     } else if (typeString.contains("blob")) {
-      category = SQLDataCategory.BLOB;
+      category = SQLDataType.Category.BLOB;
       name = typeString;
 
     } else if (SET.equals(typeString) || ENUM.equals(typeString)) {
-      category = SQLDataCategory.ENUM;
+      category = SQLDataType.Category.ENUM;
       name = typeString;
 
     } else if (JSON.equals(typeString)) {
-      category = SQLDataCategory.JSON;
+      category = SQLDataType.Category.JSON;
       name = typeString;
 
     } else if (typeString.endsWith("char")
         || typeString.endsWith(BINARY)
         || typeString.endsWith(TEXT)
         || typeString.endsWith("varying")) {
-      category = SQLDataCategory.STRING;
+      category = SQLDataType.Category.STRING;
       if (typeString.contains("char")) name = typeString.contains("var") ? VARCHAR : CHAR;
       else if (typeString.contains("binary"))
         name = typeString.contains("var") ? VARBINARY : BINARY;
       else name = typeString;
 
     } else {
-      category = SQLDataCategory.GEO;
+      category = SQLDataType.Category.GEO;
       name = typeString;
     }
 

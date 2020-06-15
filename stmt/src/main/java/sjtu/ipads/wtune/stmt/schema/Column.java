@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
 
 /**
@@ -106,6 +107,10 @@ public class Column implements Attrs {
 
   public Set<Constraint> constraints() {
     return constraints == null ? emptySet() : constraints;
+  }
+
+  public Constraint foreignKeyConstraint() {
+    return find(it -> it.type() == FOREIGN, constraints);
   }
 
   public void addConstraint(Constraint constraint) {
