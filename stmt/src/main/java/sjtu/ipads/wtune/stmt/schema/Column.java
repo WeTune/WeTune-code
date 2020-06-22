@@ -17,7 +17,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
  *
  * <p>Note: equals and hashCode are override as only comparing [tableName, columnName]
  */
-public class Column implements Attrs {
+public class Column implements Attrs<Column> {
   private String tableName;
   private String columnName;
   private String rawDataType;

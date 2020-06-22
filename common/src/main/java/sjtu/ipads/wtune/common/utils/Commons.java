@@ -16,4 +16,10 @@ public interface Commons {
     final var ce = str.charAt(length - 1);
     return quota == c0 && quota == ce ? str.substring(1, length - 1) : str;
   }
+
+  /** Helper to make compiler happy. */
+  static <T> T assertFalse() {
+    assert false;
+    return null;
+  }
 }

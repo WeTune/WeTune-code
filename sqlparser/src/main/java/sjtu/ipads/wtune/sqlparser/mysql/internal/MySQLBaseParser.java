@@ -1,9 +1,10 @@
-package sjtu.ipads.wtune.sqlparser.mysql;
+package sjtu.ipads.wtune.sqlparser.mysql.internal;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
+import sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon;
 
-abstract class MySQLBaseParser extends Parser implements MySQLRecognizerCommon {
+public abstract class MySQLBaseParser extends Parser implements MySQLRecognizerCommon {
   private long serverVersion = 0;
   private int sqlMode = NoMode;
 

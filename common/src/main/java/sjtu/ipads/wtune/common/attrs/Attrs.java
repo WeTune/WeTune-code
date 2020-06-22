@@ -1,14 +1,24 @@
 package sjtu.ipads.wtune.common.attrs;
 
+import sjtu.ipads.wtune.common.utils.IPredicate;
+
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public interface Attrs {
+public interface Attrs<A extends Attrs<A>> {
   class Key<T> {
-    @SuppressWarnings("unchecked")
+    private final String name;
+    private final Class<T> type;
+    private IPredicate<Attrs<?>> check;
+
+    private Key(String name, Class<T> type) {
+      this.name = name;
+      this.type = type;
+    }
+
     public static <T> Key<T> of(String name, Class<T> cls) {
       return new Key<>(name, cls);
     }
@@ -18,12 +28,31 @@ public interface Attrs {
       return new Key<>(name, (Class<T>) cls);
     }
 
-    private final String name;
-    private final Class<T> type;
+    @SuppressWarnings("unchecked")
+    public static <A extends Attrs<A>> IPredicate<Attrs<?>> checkAgainst(
+        Class<A> cls, IPredicate<A> check) {
+      return it -> cls.isInstance(it) && check.test((A) it);
+    }
 
-    private Key(String name, Class<T> type) {
-      this.name = name;
-      this.type = type;
+    public static IPredicate<Attrs<?>> checkEquals(Key<?> conditionKey, Object conditionVal) {
+      return it -> Objects.equals(it.get(conditionKey), conditionVal);
+    }
+
+    public void setCheck(IPredicate<Attrs<?>> check) {
+      this.check = check;
+    }
+
+    public void addCheck(IPredicate<Attrs<?>> check) {
+      if (this.check == null) this.check = check;
+      else this.check = this.check.and(check);
+    }
+
+    public IPredicate<? extends Attrs<?>> check() {
+      return check;
+    }
+
+    public boolean doCheck(Attrs<?> attrs) {
+      return check == null || check.test(attrs);
     }
 
     public String name() {
@@ -140,15 +169,22 @@ public interface Attrs {
     return (o instanceof Boolean) && ((Boolean) o);
   }
 
+  default <T> T checkFailed(Key<T> key) {
+    return null;
+  }
+
   default <T> T put(Key<T> key, T obj) {
+    if (!key.doCheck(this)) return checkFailed(key);
     return put(key.name(), obj);
   }
 
   default <T> T putIfAbsent(Key<T> attrName, T obj) {
+    if (!attrName.doCheck(this)) return checkFailed(attrName);
     return putIfAbsent(attrName.name(), obj);
   }
 
   default <T> T supplyIfAbsent(Key<T> attrName, Supplier<T> obj) {
+    if (!attrName.doCheck(this)) return checkFailed(attrName);
     return supplyIfAbsent(attrName.name(), obj);
   }
 
@@ -161,20 +197,26 @@ public interface Attrs {
   }
 
   default void flag(Key<?> attrName) {
-    flag(attrName.name());
+    if (!attrName.doCheck(this)) checkFailed(attrName);
+    else flag(attrName.name());
   }
 
   default void unFlag(Key<?> attrName) {
-    unFlag(attrName.name());
+    if (!attrName.doCheck(this)) checkFailed(attrName);
+    else unFlag(attrName.name());
   }
 
   default <E extends Enum<E>> void flag(Key<EnumSet<E>> enumSetKey, E element) {
-    supplyIfAbsent(enumSetKey, () -> EnumSet.noneOf(element.getDeclaringClass())).add(element);
+    if (!enumSetKey.doCheck(this)) checkFailed(enumSetKey);
+    else supplyIfAbsent(enumSetKey, () -> EnumSet.noneOf(element.getDeclaringClass())).add(element);
   }
 
   default <E extends Enum<E>> void unFlag(Key<EnumSet<E>> enumSetKey, E element) {
-    final var enumSet = get(enumSetKey);
-    if (enumSet != null) enumSet.remove(element);
+    if (!enumSetKey.doCheck(this)) checkFailed(enumSetKey);
+    else {
+      final var enumSet = get(enumSetKey);
+      if (enumSet != null) enumSet.remove(element);
+    }
   }
 
   default boolean isFlagged(Key<?> attrName) {

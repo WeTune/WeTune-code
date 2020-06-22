@@ -1,15 +1,21 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
+import org.antlr.v4.runtime.Token;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.SQLExpr.IntervalUnit;
+import sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
+import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.ASC;
@@ -18,6 +24,20 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.DESC;
 public interface MySQLASTHelper {
   static SQLNode newNode(Type type) {
     return new SQLNode(MYSQL, type);
+  }
+
+  static String stringifyText(MySQLParser.TextStringContext text) {
+    if (text.textStringLiteral() != null) return stringifyText(text.textStringLiteral());
+    else if (text.HEX_NUMBER() != null) return text.HEX_NUMBER().getText();
+    else if (text.BIN_NUMBER() != null) return text.BIN_NUMBER().getText();
+    else {
+      assert false;
+      return null;
+    }
+  }
+
+  static String stringifyText(MySQLParser.TextLiteralContext text) {
+    return String.join("", listMap(MySQLASTHelper::stringifyText, text.textStringLiteral()));
   }
 
   static String stringifyText(MySQLParser.TextStringLiteralContext text) {
@@ -87,6 +107,30 @@ public interface MySQLASTHelper {
 
       return new String[] {null, null, stringifyIdentifier(dotPart)};
     }
+  }
+
+  /** @return string[3] */
+  static String[] stringifyIdentifier(MySQLParser.SimpleIdentifierContext id) {
+    final String[] triple = new String[3];
+
+    if (id.dotIdentifier(1) != null) {
+      triple[0] = stringifyIdentifier(id.identifier());
+      triple[1] = stringifyIdentifier(id.dotIdentifier(0));
+      triple[2] = stringifyIdentifier(id.dotIdentifier(1));
+    } else if (id.dotIdentifier(0) != null) {
+      triple[0] = null;
+      triple[1] = stringifyIdentifier(id.identifier());
+      triple[2] = stringifyIdentifier(id.dotIdentifier(0));
+    } else if (id.identifier() != null) {
+      triple[0] = null;
+      triple[1] = null;
+      triple[2] = stringifyIdentifier(id.identifier());
+    } else {
+      assert false;
+      return null;
+    }
+
+    return triple;
   }
 
   static SQLNode tableName(
@@ -206,6 +250,10 @@ public interface MySQLASTHelper {
     }
   }
 
+  static IntervalUnit parseIntervalUnit(MySQLParser.IntervalContext ctx) {
+    return IntervalUnit.valueOf(ctx.getText().toUpperCase());
+  }
+
   static SQLDataType parseDataType(MySQLParser.DataTypeContext ctx) {
     final var typeString = ctx.type.getText().toLowerCase();
 
@@ -286,9 +334,30 @@ public interface MySQLASTHelper {
     final List<String> valuesList =
         stringList == null
             ? emptyList()
-            : FuncUtils.listMap(MySQLParser.TextStringContext::getText, stringList.textString());
+            : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
 
     return new SQLDataType(category, name, w, p, unsigned, valuesList);
+  }
+
+  static Pair<LiteralType, Number> parseNumericLiteral(Token token) {
+    if (token == null) return null;
+
+    final String text = token.getText();
+    switch (token.getType()) {
+      case MySQLLexer.INT_NUMBER:
+        return Pair.of(LiteralType.INTEGER, Integer.parseInt(text));
+
+      case MySQLLexer.LONG_NUMBER:
+      case MySQLLexer.ULONGLONG_NUMBER:
+        return Pair.of(LiteralType.LONG, Long.parseLong(text));
+
+      case MySQLLexer.DECIMAL_NUMBER:
+      case MySQLLexer.FLOAT_NUMBER:
+        return Pair.of(LiteralType.FRACTIONAL, Double.parseDouble(text));
+
+      default:
+        return null;
+    }
   }
 
   private static int[] precision2Int(MySQLParser.PrecisionContext ctx) {

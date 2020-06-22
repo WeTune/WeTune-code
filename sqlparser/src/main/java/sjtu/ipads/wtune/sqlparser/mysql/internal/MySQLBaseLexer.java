@@ -1,16 +1,17 @@
-package sjtu.ipads.wtune.sqlparser.mysql;
+package sjtu.ipads.wtune.sqlparser.mysql.internal;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Pair;
+import sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon;
 
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-abstract class MySQLBaseLexer extends Lexer implements MySQLRecognizerCommon {
+public abstract class MySQLBaseLexer extends Lexer implements MySQLRecognizerCommon {
   private long serverVersion = 0;
   private int sqlMode = NoMode;
   public boolean inVersionComment = false;

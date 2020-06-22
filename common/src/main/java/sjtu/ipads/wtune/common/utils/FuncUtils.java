@@ -16,6 +16,11 @@ public interface FuncUtils {
     return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
   }
 
+  static <T> T coalesce(T... vals) {
+    for (T val : vals) if (val != null) return val;
+    return null;
+  }
+
   static <T> T coalesce(T val, T other) {
     return val == null ? other : val;
   }

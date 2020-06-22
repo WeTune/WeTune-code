@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
-interface MySQLRecognizerCommon {
+public interface MySQLRecognizerCommon {
   int NoMode = 0;
   int AnsiQuotes = 1;
   int HighNotPrecedence = 1 << 1;

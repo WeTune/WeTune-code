@@ -5,6 +5,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
+import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
+import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.Properties;
 import java.util.function.Function;
