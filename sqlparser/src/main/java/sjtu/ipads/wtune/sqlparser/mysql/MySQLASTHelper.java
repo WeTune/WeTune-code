@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLExpr.IntervalUnit;
 import sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
@@ -358,6 +359,56 @@ public interface MySQLASTHelper {
       default:
         return null;
     }
+  }
+
+  static OLAPOption parseOLAPOption(MySQLParser.OlapOptionContext ctx) {
+    if (ctx == null) return null;
+    else if (ctx.ROLLUP_SYMBOL() != null) return OLAPOption.WITH_ROLLUP;
+    else if (ctx.CUBE_SYMBOL() != null) return OLAPOption.WITH_CUBE;
+    else return null;
+  }
+
+  static IndexHintType parseIndexHintType(MySQLParser.IndexHintContext ctx) {
+    if (ctx.USE_SYMBOL() != null) return IndexHintType.USE;
+    else if (ctx.indexHintType().FORCE_SYMBOL() != null) return IndexHintType.FORCE;
+    else if (ctx.indexHintType().IGNORE_SYMBOL() != null) return IndexHintType.IGNORE;
+    else return null;
+  }
+
+  static IndexHintTarget parseIndexHintTarget(MySQLParser.IndexHintClauseContext ctx) {
+    if (ctx == null) return null;
+    else if (ctx.JOIN_SYMBOL() != null) return IndexHintTarget.JOIN;
+    else if (ctx.ORDER_SYMBOL() != null) return IndexHintTarget.ORDER_BY;
+    else if (ctx.GROUP_SYMBOL() != null) return IndexHintTarget.GROUP_BY;
+    else return null;
+  }
+
+  static String parseIndexListElement(MySQLParser.IndexListElementContext ctx) {
+    if (ctx.PRIMARY_SYMBOL() != null) return "PRIMARY";
+    else if (ctx.identifier() != null) return stringifyIdentifier(ctx.identifier());
+    else return null;
+  }
+
+  static SQLTableSource.JoinType parseJoinType(MySQLParser.InnerJoinTypeContext ctx) {
+    if (ctx == null) return null;
+    else if (ctx.CROSS_SYMBOL() != null) return SQLTableSource.JoinType.CROSS_JOIN;
+    else if (ctx.INNER_SYMBOL() != null) return SQLTableSource.JoinType.INNER_JOIN;
+    else if (ctx.STRAIGHT_JOIN_SYMBOL() != null) return SQLTableSource.JoinType.STRAIGHT_JOIN;
+    else return SQLTableSource.JoinType.INNER_JOIN;
+  }
+
+  static SQLTableSource.JoinType parseJoinType(MySQLParser.OuterJoinTypeContext ctx) {
+    if (ctx == null) return null;
+    else if (ctx.LEFT_SYMBOL() != null) return SQLTableSource.JoinType.LEFT_JOIN;
+    else if (ctx.RIGHT_SYMBOL() != null) return SQLTableSource.JoinType.RIGHT_JOIN;
+    else return null;
+  }
+
+  static SQLTableSource.JoinType parseJoinType(MySQLParser.NaturalJoinTypeContext ctx) {
+    if (ctx == null) return null;
+    else if (ctx.LEFT_SYMBOL() != null) return SQLTableSource.JoinType.NATURAL_LEFT_JOIN;
+    else if (ctx.RIGHT_SYMBOL() != null) return SQLTableSource.JoinType.NATURAL_RIGHT_JOIN;
+    else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
   }
 
   private static int[] precision2Int(MySQLParser.PrecisionContext ctx) {

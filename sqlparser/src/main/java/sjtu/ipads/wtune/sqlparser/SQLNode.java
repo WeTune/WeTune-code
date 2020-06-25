@@ -204,6 +204,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     REFERENCES,
     INDEX_DEF,
     KEY_PART,
+    UNION,
     QUERY,
     QUERY_SPEC,
     SELECT_ITEM,
@@ -211,7 +212,10 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     ORDER_ITEM,
     WINDOW_SPEC,
     WINDOW_FRAME,
-    FRAME_BOUND;
+    FRAME_BOUND,
+    TABLE_SOURCE,
+    INDEX_HINT,
+    STATEMENT;
 
     private final Set<String> attrs = new HashSet<>();
 
@@ -285,10 +289,57 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     }
   }
 
-  static final String ATTR_PREFIX = "sql.attr";
+  public enum UnionOption {
+    DISTINCT,
+    ALL
+  }
+
+  public enum OLAPOption {
+    WITH_ROLLUP("WITH ROLLUP"),
+    WITH_CUBE("WITH CUBE");
+    private final String text;
+
+    OLAPOption(String text) {
+      this.text = text;
+    }
+
+    public String text() {
+      return text;
+    }
+  }
+
+  public enum IndexHintType {
+    FORCE,
+    IGNORE,
+    USE
+  }
+
+  public enum IndexHintTarget {
+    JOIN("JOIN"),
+    ORDER_BY("ORDER BY"),
+    GROUP_BY("GROUP BY");
+    private final String text;
+
+    IndexHintTarget(String text) {
+      this.text = text;
+    }
+
+    public String text() {
+      return text;
+    }
+  }
+
+  public enum StmtType {
+    SELECT,
+    UPDATE,
+    INSERT,
+    DELETE
+  }
+
+  static final String ATTR_PREFIX = "sql.attr.";
 
   private static <T> Key<T> attr(Type nodeType, String name, Class<T> clazz) {
-    final Key<T> attr = Attrs.key(ATTR_PREFIX + nodeType.name().toLowerCase() + name, clazz);
+    final Key<T> attr = Attrs.key(ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
     attr.setCheck(checkAgainst(SQLNode.class, it -> it.type() == nodeType));
     nodeType.addAttr(attr.name());
     return attr;
@@ -364,12 +415,27 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<KeyDirection> KEY_PART_DIRECTION =
       attr(KEY_PART, "direction", KeyDirection.class);
 
+  //// Union
+  public static final Key<SQLNode> UNION_LEFT = nodeAttr(UNION, "left");
+  public static final Key<SQLNode> UNION_RIGHT = nodeAttr(UNION, "right");
+  public static final Key<UnionOption> UNION_OPTION = attr(UNION, "option", UnionOption.class);
+
   //// Query
   public static final Key<SQLNode> QUERY_BODY = nodeAttr(QUERY, "body");
+  public static final Key<List<SQLNode>> QUERY_ORDER_BY = nodesAttr(QUERY, "orderBy");
+  public static final Key<SQLNode> QUERY_LIMIT = nodeAttr(QUERY, "limit");
+  public static final Key<SQLNode> QUERY_OFFSET = nodeAttr(QUERY, "offset");
 
   //// QuerySpec
   public static final Key<Boolean> QUERY_SPEC_DISTINCT = booleanAttr(QUERY_SPEC, "distinct");
   public static final Key<List<SQLNode>> QUERY_SPEC_SELECT_ITEMS = nodesAttr(QUERY_SPEC, "items");
+  public static final Key<SQLNode> QUERY_SPEC_FROM = nodeAttr(QUERY_SPEC, "from");
+  public static final Key<SQLNode> QUERY_SPEC_WHERE = nodeAttr(QUERY_SPEC, "where");
+  public static final Key<List<SQLNode>> QUERY_SPEC_GROUP_BY = nodesAttr(QUERY_SPEC, "groupBy");
+  public static final Key<OLAPOption> QUERY_SPEC_OLAP_OPTION =
+      attr(QUERY_SPEC, "olapOption", OLAPOption.class);
+  public static final Key<SQLNode> QUERY_SPEC_HAVING = nodeAttr(QUERY_SPEC, "having");
+  public static final Key<List<SQLNode>> QUERY_SPEC_WINDOWS = nodesAttr(QUERY_SPEC, "windows");
 
   //// SelectItem
   public static final Key<SQLNode> SELECT_ITEM_EXPR = nodeAttr(SELECT_ITEM, "expr");
@@ -381,7 +447,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
       attr(ORDER_ITEM, "direction", KeyDirection.class);
 
   //// WindowSpec
-  public static final Key<String> WINDOW_SPEC_NAME = stringAttr(WINDOW_SPEC, "expr");
+  public static final Key<String> WINDOW_SPEC_ALIAS = stringAttr(WINDOW_SPEC, "alias");
+  public static final Key<String> WINDOW_SPEC_NAME = stringAttr(WINDOW_SPEC, "name");
   public static final Key<List<SQLNode>> WINDOW_SPEC_PARTITION =
       nodesAttr(WINDOW_SPEC, "partition");
   public static final Key<List<SQLNode>> WINDOW_SPEC_ORDER = nodesAttr(WINDOW_SPEC, "order");
@@ -399,4 +466,15 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<SQLNode> FRAME_BOUND_EXPR = nodeAttr(FRAME_BOUND, "expr");
   public static final Key<FrameBoundDirection> FRAME_BOUND_DIRECTION =
       attr(FRAME_BOUND, "direction", FrameBoundDirection.class);
+
+  //// IndexHint
+  public static final Key<IndexHintType> INDEX_HINT_TYPE =
+      attr(INDEX_HINT, "type", IndexHintType.class);
+  public static final Key<IndexHintTarget> INDEX_HINT_TARGET =
+      attr(INDEX_HINT, "target", IndexHintTarget.class);
+  public static final Key<List<String>> INDEX_HINT_NAMES = attr2(INDEX_HINT, "names", List.class);
+
+  //// Statement
+  public static final Key<StmtType> STATEMENT_TYPE = attr(STATEMENT, "type", StmtType.class);
+  public static final Key<SQLNode> STATEMENT_BODY = nodeAttr(STATEMENT, "body");
 }

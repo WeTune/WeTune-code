@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParserBaseVisitor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -23,6 +24,8 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.FULLTEXT;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.SPATIAL;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.*;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
@@ -265,12 +268,71 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.withClause() != null) return null;
 
     if (ctx.queryExpressionBody() != null) {
-      query.put(QUERY_BODY, visitQueryExpressionBody(ctx.queryExpressionBody()));
+      query.put(QUERY_BODY, ctx.queryExpressionBody().accept(this));
     } else if (ctx.queryExpressionParens() != null) {
-      query.put(QUERY_BODY, visitQueryExpressionParens(ctx.queryExpressionParens()));
+      query.put(QUERY_BODY, ctx.queryExpressionParens().accept(this));
     }
 
-    return super.visitQueryExpression(ctx);
+    final var orderByClause = ctx.orderClause();
+    if (orderByClause != null) query.put(QUERY_ORDER_BY, toOrderItems(orderByClause));
+
+    final var limitClause = ctx.limitClause();
+    if (limitClause != null) {
+      final var limitOptions = limitClause.limitOptions().limitOption();
+      if (limitOptions.size() == 1) {
+        query.put(QUERY_LIMIT, limitOptions.get(0).accept(this));
+      } else if (limitOptions.size() == 2) {
+        query.put(QUERY_OFFSET, limitOptions.get(0).accept(this));
+        query.put(QUERY_LIMIT, limitOptions.get(1).accept(this));
+      }
+    }
+
+    return query;
+  }
+
+  @Override
+  public SQLNode visitLimitOption(MySQLParser.LimitOptionContext ctx) {
+    if (ctx.PARAM_MARKER() != null) return paramMarker();
+    if (ctx.ULONGLONG_NUMBER() != null)
+      return literal(LiteralType.LONG, Long.parseLong(ctx.ULONGLONG_NUMBER().getText()));
+    if (ctx.LONG_NUMBER() != null)
+      return literal(LiteralType.LONG, Long.parseLong(ctx.LONG_NUMBER().getText()));
+    if (ctx.INT_NUMBER() != null)
+      return literal(LiteralType.INTEGER, Integer.parseInt(ctx.INT_NUMBER().getText()));
+    if (ctx.identifier() != null) {
+      final SQLNode variable = newExpr(VARIABLE);
+      variable.put(VARIABLE_NAME, stringifyIdentifier(ctx.identifier()));
+    }
+    return null;
+  }
+
+  @Override
+  public SQLNode visitQueryExpressionBody(MySQLParser.QueryExpressionBodyContext ctx) {
+    if (ctx.UNION_SYMBOL() == null) return ctx.querySpecification().accept(this);
+
+    final SQLNode left, right;
+    if (ctx.queryExpressionBody() != null) {
+      left = ctx.queryExpressionBody().accept(this);
+      if (ctx.querySpecification() != null) right = ctx.querySpecification().accept(this);
+      else right = ctx.queryExpressionParens(0).accept(this);
+
+    } else if (ctx.queryExpressionParens(0) != null) {
+      left = ctx.queryExpressionParens(0).accept(this);
+      if (ctx.querySpecification() != null) right = ctx.querySpecification().accept(this);
+      else right = ctx.queryExpressionParens(1).accept(this);
+    } else return assertFalse();
+
+    final UnionOption option =
+        ctx.unionOption() == null
+            ? null
+            : UnionOption.valueOf(ctx.unionOption().getText().toUpperCase());
+
+    final SQLNode node = new SQLNode(UNION);
+    node.put(UNION_LEFT, left);
+    node.put(UNION_RIGHT, right);
+    node.put(UNION_OPTION, option);
+
+    return node;
   }
 
   @Override
@@ -283,9 +345,157 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     final var selectItemList = ctx.selectItemList();
     final List<SQLNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
-
-    // TODO: handle wildcard
+    if (selectItemList.MULT_OPERATOR() != null) items.add(wildcard());
     items.addAll(listMap(this::visitSelectItem, selectItemList.selectItem()));
+    node.put(QUERY_SPEC_SELECT_ITEMS, items);
+
+    final var fromClause = ctx.fromClause();
+    if (fromClause != null) {
+      final SQLNode from = visitFromClause(fromClause);
+      if (from != null) node.put(QUERY_SPEC_FROM, from);
+    }
+
+    final var whereClause = ctx.whereClause();
+    if (whereClause != null) node.put(QUERY_SPEC_WHERE, toExpr(whereClause.expr()));
+
+    final var groupByClause = ctx.groupByClause();
+    if (groupByClause != null) {
+      final OLAPOption olapOption = parseOLAPOption(groupByClause.olapOption());
+      if (olapOption != null) node.put(QUERY_SPEC_OLAP_OPTION, olapOption);
+      node.put(QUERY_SPEC_GROUP_BY, toOrderItems(groupByClause.orderList()));
+    }
+
+    final var havingClause = ctx.havingClause();
+    if (havingClause != null) node.put(QUERY_SPEC_HAVING, toExpr(havingClause.expr()));
+
+    final var windowClause = ctx.windowClause();
+    if (windowClause != null)
+      node.put(
+          QUERY_SPEC_WINDOWS,
+          listMap(this::visitWindowDefinition, windowClause.windowDefinition()));
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitFromClause(MySQLParser.FromClauseContext ctx) {
+    if (ctx.DUAL_SYMBOL() != null) return null;
+
+    return ctx.tableReferenceList().tableReference().stream()
+        .map(this::visitTableReference)
+        .reduce((l, r) -> joined(l, r, JoinType.CROSS_JOIN))
+        .orElse(null);
+  }
+
+  @Override
+  public SQLNode visitSingleTable(MySQLParser.SingleTableContext ctx) {
+    final SQLNode node = newTableSource(SIMPLE);
+    node.put(SIMPLE_TABLE, visitTableRef(ctx.tableRef()));
+
+    if (ctx.usePartition() != null) {
+      final var identifiers =
+          ctx.usePartition().identifierListWithParentheses().identifierList().identifier();
+      node.put(SIMPLE_PARTITIONS, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+    }
+
+    if (ctx.tableAlias() != null)
+      node.put(SIMPLE_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
+
+    if (ctx.indexHintList() != null)
+      node.put(SIMPLE_HINTS, listMap(this::visitIndexHint, ctx.indexHintList().indexHint()));
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitDerivedTable(MySQLParser.DerivedTableContext ctx) {
+    final SQLNode node = newTableSource(DERIVED);
+
+    if (ctx.LATERAL_SYMBOL() != null) node.flag(DERIVED_LATERAL);
+
+    node.put(DERIVED_SUBQUERY, visitSubquery(ctx.subquery()));
+
+    if (ctx.tableAlias() != null)
+      node.put(DERIVED_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
+
+    if (ctx.columnInternalRefList() != null) {
+      final List<String> internalRefs =
+          ctx.columnInternalRefList().columnInternalRef().stream()
+              .map(it -> it.identifier())
+              .map(MySQLASTHelper::stringifyIdentifier)
+              .collect(Collectors.toList());
+      node.put(DERIVED_INTERNAL_REFS, internalRefs);
+    }
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitTableRefList(MySQLParser.TableRefListContext ctx) {
+    return ctx.tableRef().stream()
+        .map(this::visitTableRef)
+        .reduce((left, right) -> joined(left, right, JoinType.CROSS_JOIN))
+        .orElse(null);
+  }
+
+  @Override
+  public SQLNode visitTableReference(MySQLParser.TableReferenceContext ctx) {
+    final SQLNode left = ctx.tableFactor().accept(this);
+    final var joinedTables = ctx.joinedTable();
+    if (joinedTables == null || joinedTables.isEmpty()) return left;
+    return joinedTables.stream()
+        .map(this::visitJoinedTable)
+        .reduce(
+            left,
+            (l, r) -> {
+              r.put(JOINED_LEFT, l);
+              return r;
+            });
+  }
+
+  @Override
+  public SQLNode visitJoinedTable(MySQLParser.JoinedTableContext ctx) {
+    final SQLNode node = newTableSource(JOINED);
+    final JoinType joinType =
+        coalesce(
+            parseJoinType(ctx.innerJoinType()),
+            parseJoinType(ctx.outerJoinType()),
+            parseJoinType(ctx.naturalJoinType()));
+
+    assert joinType != null;
+
+    node.put(JOINED_TYPE, joinType);
+
+    if (ctx.expr() != null) node.put(JOINED_ON, toExpr(ctx.expr()));
+    if (ctx.identifierListWithParentheses() != null) {
+      final var identifiers = ctx.identifierListWithParentheses().identifierList().identifier();
+      node.put(JOINED_USING, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+    }
+
+    final SQLNode right;
+    if (ctx.tableReference() != null) right = ctx.tableReference().accept(this);
+    else if (ctx.tableFactor() != null) right = ctx.tableFactor().accept(this);
+    else return assertFalse();
+
+    node.put(JOINED_RIGHT, right);
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitIndexHint(MySQLParser.IndexHintContext ctx) {
+    final SQLNode node = new SQLNode(INDEX_HINT);
+    node.put(INDEX_HINT_TYPE, parseIndexHintType(ctx));
+
+    final IndexHintTarget target = parseIndexHintTarget(ctx.indexHintClause());
+    if (target != null) node.put(INDEX_HINT_TARGET, target);
+
+    final var indexList = ctx.indexList();
+    if (indexList != null) {
+      node.put(
+          INDEX_HINT_NAMES,
+          listMap(MySQLASTHelper::parseIndexListElement, indexList.indexListElement()));
+    }
 
     return node;
   }
@@ -293,18 +503,37 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitSelectItem(MySQLParser.SelectItemContext ctx) {
     final SQLNode item = newNode(SELECT_ITEM);
+    if (ctx.tableWild() != null) item.put(SELECT_ITEM_EXPR, visitTableWild(ctx.tableWild()));
+
     if (ctx.expr() != null) item.put(SELECT_ITEM_EXPR, toExpr(ctx.expr()));
 
     if (ctx.selectAlias() != null) {
       final var selectAlias = ctx.selectAlias();
       final String alias =
-          selectAlias.identifier() == null
+          selectAlias.identifier() != null
               ? stringifyIdentifier(selectAlias.identifier())
               : stringifyText(selectAlias.textStringLiteral());
       item.put(SELECT_ITEM_ALIAS, alias);
     }
 
     return item;
+  }
+
+  @Override
+  public SQLNode visitTableWild(MySQLParser.TableWildContext ctx) {
+    final SQLNode table = new SQLNode(TABLE_NAME);
+
+    final List<MySQLParser.IdentifierContext> ids = ctx.identifier();
+    final String id0 = stringifyIdentifier(ids.get(0));
+    final String id1 = ids.size() >= 2 ? stringifyIdentifier(ids.get(1)) : null;
+
+    final String schemaName = id1 != null ? id0 : null;
+    final String tableName = id1 != null ? id1 : id0;
+
+    table.put(TABLE_NAME_SCHEMA, schemaName);
+    table.put(TABLE_NAME_TABLE, tableName);
+
+    return wildcard(table);
   }
 
   @Override
@@ -509,6 +738,14 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     node.put(BINARY_RIGHT, right);
 
+    return node;
+  }
+
+  @Override
+  public SQLNode visitWindowDefinition(MySQLParser.WindowDefinitionContext ctx) {
+    final SQLNode node = ctx.windowSpec().accept(this);
+    if (ctx.windowName() != null)
+      node.put(WINDOW_SPEC_ALIAS, stringifyIdentifier(ctx.windowName().identifier()));
     return node;
   }
 
@@ -999,7 +1236,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitSimpleExprList(MySQLParser.SimpleExprListContext ctx) {
     final List<SQLNode> exprs = toExprs(ctx.exprList());
     final boolean asRow = ctx.ROW_SYMBOL() != null;
-    if (asRow && exprs.size() == 1) return exprs.get(0);
+    if (!asRow && exprs.size() == 1) return exprs.get(0);
 
     final SQLNode node = newExpr(TUPLE);
     node.put(TUPLE_EXPRS, exprs);
@@ -1011,18 +1248,16 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitSimpleExprSubQuery(MySQLParser.SimpleExprSubQueryContext ctx) {
     final SQLNode subquery = visitSubquery(ctx.subquery());
-    if (ctx.EXISTS_SYMBOL() == null) return subquery;
+
+    if (ctx.EXISTS_SYMBOL() == null) {
+      final SQLNode node = newExpr(QUERY_EXPR);
+      node.put(QUERY_EXPR_QUERY, subquery);
+      return subquery;
+    }
 
     final SQLNode node = newExpr(EXISTS);
     node.put(EXISTS_SUBQUERY, subquery);
     return node;
-  }
-
-  @Override
-  public SQLNode visitSubquery(MySQLParser.SubqueryContext ctx) {
-    final SQLNode subquery = newExpr(SUBQUERY);
-    // TODO
-    return subquery;
   }
 
   @Override

@@ -97,9 +97,9 @@ public interface SQLVisitor {
 
   void leaveExists(SQLNode exists);
 
-  boolean enterSubquery(SQLNode subquery);
+  boolean enterQueryExpr(SQLNode queryExpr);
 
-  void leaveSubquery(SQLNode subquery);
+  void leaveQueryExpr(SQLNode queryExpr);
 
   boolean enterWildcard(SQLNode wildcard);
 
@@ -144,4 +144,40 @@ public interface SQLVisitor {
   boolean enterTernary(SQLNode ternary);
 
   void leaveTernary(SQLNode ternary);
+
+  boolean enterSelectItem(SQLNode selectItem);
+
+  void leaveSelectItem(SQLNode selectItem);
+
+  boolean enterIndexHint(SQLNode indexHint);
+
+  void leaveIndexHint(SQLNode indexHint);
+
+  boolean enterSimpleTableSource(SQLNode simpleTableSource);
+
+  void leaveSimpleTableSource(SQLNode simpleTableSource);
+
+  boolean enterJoinedTableSource(SQLNode joinedTableSource);
+
+  void leaveJoinedTableSource(SQLNode joinedTableSource);
+
+  boolean enterDerivedTableSource(SQLNode derivedTableSource);
+
+  void leaveDerivedTableSource(SQLNode derivedTableSource);
+
+  boolean enterUnion(SQLNode union);
+
+  void leaveUnion(SQLNode union);
+
+  boolean enterStatement(SQLNode statement);
+
+  void leaveStatement(SQLNode statement);
+
+  boolean enterQuery(SQLNode query);
+
+  void leaveQuery(SQLNode query);
+
+  boolean enterQuerySpec(SQLNode querySpec);
+
+  void leaveQuerySpec(SQLNode querySpec);
 }

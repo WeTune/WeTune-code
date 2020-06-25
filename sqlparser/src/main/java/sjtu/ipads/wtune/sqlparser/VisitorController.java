@@ -6,6 +6,8 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.EXPR;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.TABLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 
 abstract class VisitorController {
   private static void safeAccept(SQLNode n, SQLVisitor v) {
@@ -28,6 +30,12 @@ abstract class VisitorController {
       case INVALID:
         return false;
 
+      case EXPR:
+        return enterExpr(n, v);
+
+      case TABLE_SOURCE:
+        return enterTableSource(n, v);
+
       case TABLE_NAME:
         return v.enterTableName(n);
 
@@ -49,9 +57,6 @@ abstract class VisitorController {
       case KEY_PART:
         return v.enterKeyPart(n);
 
-      case EXPR:
-        return enterExpr(n, v);
-
       case WINDOW_SPEC:
         return v.enterWindowSpec(n);
 
@@ -65,8 +70,19 @@ abstract class VisitorController {
         return v.enterOrderItem(n);
 
       case SELECT_ITEM:
+        return v.enterSelectItem(n);
+
+      case INDEX_HINT:
+        return v.enterIndexHint(n);
+
       case QUERY_SPEC:
+        return v.enterQuerySpec(n);
+
       case QUERY:
+        return v.enterQuery(n);
+
+      case UNION:
+        return v.enterUnion(n);
     }
 
     return false;
@@ -108,8 +124,8 @@ abstract class VisitorController {
         return v.enterInterval(n);
       case EXISTS:
         return v.enterExists(n);
-      case SUBQUERY:
-        return v.enterSubquery(n);
+      case QUERY_EXPR:
+        return v.enterQueryExpr(n);
       case WILDCARD:
         return v.enterWildcard(n);
       case AGGREGATE:
@@ -131,8 +147,31 @@ abstract class VisitorController {
     return false;
   }
 
+  static boolean enterTableSource(SQLNode n, SQLVisitor v) {
+    assert n.type() == TABLE_SOURCE;
+
+    switch (n.get(TABLE_SOURCE_KIND)) {
+      case SIMPLE:
+        return v.enterSimpleTableSource(n);
+      case JOINED:
+        return v.enterJoinedTableSource(n);
+      case DERIVED:
+        return v.enterDerivedTableSource(n);
+    }
+
+    return false;
+  }
+
   static void visitChildren(SQLNode n, SQLVisitor v) {
     switch (n.type()) {
+      case EXPR:
+        visitExprChildren(n, v);
+        break;
+
+      case TABLE_SOURCE:
+        visitTableSourceChildren(n, v);
+        break;
+
       case CREATE_TABLE:
         safeVisit(CREATE_TABLE_NAME, n, v);
         safeVisitList(CREATE_TABLE_COLUMNS, n, v);
@@ -152,10 +191,6 @@ abstract class VisitorController {
       case INDEX_DEF:
         safeVisitList(INDEX_DEF_KEYS, n, v);
         safeVisitList(INDEX_DEF_KEYS, n, v);
-        break;
-
-      case EXPR:
-        visitExprChildren(n, v);
         break;
 
       case WINDOW_SPEC:
@@ -178,9 +213,31 @@ abstract class VisitorController {
         break;
 
       case SELECT_ITEM:
-      case QUERY_SPEC:
-      case QUERY:
+        safeVisit(SELECT_ITEM_EXPR, n, v);
+        break;
 
+      case QUERY_SPEC:
+        safeVisitList(QUERY_SPEC_SELECT_ITEMS, n, v);
+        safeVisit(QUERY_SPEC_FROM, n, v);
+        safeVisit(QUERY_SPEC_WHERE, n, v);
+        safeVisitList(QUERY_SPEC_GROUP_BY, n, v);
+        safeVisit(QUERY_SPEC_HAVING, n, v);
+        safeVisitList(QUERY_SPEC_WINDOWS, n, v);
+        break;
+
+      case QUERY:
+        safeVisit(QUERY_BODY, n, v);
+        safeVisitList(QUERY_ORDER_BY, n, v);
+        safeVisit(QUERY_OFFSET, n, v);
+        safeVisit(QUERY_LIMIT, n, v);
+        break;
+
+      case UNION:
+        safeVisit(UNION_LEFT, n, v);
+        safeVisit(UNION_RIGHT, n, v);
+        break;
+
+      case INDEX_HINT:
       case KEY_PART:
       case COLUMN_NAME:
       case TABLE_NAME:
@@ -244,8 +301,8 @@ abstract class VisitorController {
         safeVisit(EXISTS_SUBQUERY, n, v);
         return;
 
-      case SUBQUERY:
-        safeVisit(SUBQUERY_QUERY, n, v);
+      case QUERY_EXPR:
+        safeVisit(QUERY_EXPR_QUERY, n, v);
         return;
 
       case AGGREGATE:
@@ -279,12 +336,35 @@ abstract class VisitorController {
         safeVisit(TERNARY_RIGHT, n, v);
         return;
 
+      case WILDCARD:
+        safeVisit(WILDCARD_TABLE, n, v);
+        return;
+
       case UNKNOWN:
 
-      case WILDCARD:
       case SYMBOL:
       case PARAM_MARKER:
       case LITERAL:
+        return;
+    }
+  }
+
+  static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
+    assert n.type() == TABLE_SOURCE;
+    switch (n.get(TABLE_SOURCE_KIND)) {
+      case SIMPLE:
+        safeVisit(SIMPLE_TABLE, n, v);
+        safeVisitList(SIMPLE_HINTS, n, v);
+        return;
+
+      case JOINED:
+        safeVisit(JOINED_LEFT, n, v);
+        safeVisit(JOINED_RIGHT, n, v);
+        safeVisit(JOINED_ON, n, v);
+        return;
+
+      case DERIVED:
+        safeVisit(DERIVED_SUBQUERY, n, v);
         return;
     }
   }
@@ -296,6 +376,13 @@ abstract class VisitorController {
     switch (n.type()) {
       case INVALID:
         return;
+
+      case EXPR:
+        leaveExpr(n, v);
+        break;
+
+      case TABLE_SOURCE:
+        leaveTableSource(n, v);
 
       case TABLE_NAME:
         v.leaveTableName(n);
@@ -325,10 +412,6 @@ abstract class VisitorController {
         v.leaveKeyPart(n);
         break;
 
-      case EXPR:
-        leaveExpr(n, v);
-        break;
-
       case WINDOW_SPEC:
         v.leaveWindowSpec(n);
         break;
@@ -346,8 +429,23 @@ abstract class VisitorController {
         break;
 
       case SELECT_ITEM:
+        v.leaveSelectItem(n);
+        break;
+
+      case INDEX_HINT:
+        v.leaveIndexHint(n);
+        break;
+
       case QUERY_SPEC:
+        v.leaveQuerySpec(n);
+        break;
+
       case QUERY:
+        v.leaveQuery(n);
+        break;
+
+      case UNION:
+        v.leaveUnion(n);
     }
   }
 
@@ -418,8 +516,8 @@ abstract class VisitorController {
         v.leaveExists(n);
         return;
 
-      case SUBQUERY:
-        v.leaveSubquery(n);
+      case QUERY_EXPR:
+        v.leaveQueryExpr(n);
         return;
 
       case WILDCARD:
@@ -451,6 +549,22 @@ abstract class VisitorController {
         return;
 
       case UNKNOWN:
+    }
+  }
+
+  static void leaveTableSource(SQLNode n, SQLVisitor v) {
+    assert n.type() == TABLE_SOURCE;
+
+    switch (n.get(TABLE_SOURCE_KIND)) {
+      case SIMPLE:
+        v.leaveSimpleTableSource(n);
+        return;
+      case JOINED:
+        v.leaveJoinedTableSource(n);
+        return;
+      case DERIVED:
+        v.leaveDerivedTableSource(n);
+        return;
     }
   }
 }

@@ -194,12 +194,12 @@ public abstract class SQLVisitorAdapter implements SQLVisitor {
   public void leaveExists(SQLNode exists) {}
 
   @Override
-  public boolean enterSubquery(SQLNode subquery) {
+  public boolean enterQueryExpr(SQLNode queryExpr) {
     return true;
   }
 
   @Override
-  public void leaveSubquery(SQLNode subquery) {}
+  public void leaveQueryExpr(SQLNode queryExpr) {}
 
   @Override
   public boolean enterWildcard(SQLNode wildcard) {
@@ -288,4 +288,76 @@ public abstract class SQLVisitorAdapter implements SQLVisitor {
 
   @Override
   public void leaveTernary(SQLNode ternary) {}
+
+  @Override
+  public boolean enterSelectItem(SQLNode selectItem) {
+    return true;
+  }
+
+  @Override
+  public void leaveSelectItem(SQLNode selectItem) {}
+
+  @Override
+  public boolean enterIndexHint(SQLNode indexHint) {
+    return true;
+  }
+
+  @Override
+  public void leaveIndexHint(SQLNode indexHint) {}
+
+  @Override
+  public boolean enterSimpleTableSource(SQLNode simpleTableSource) {
+    return true;
+  }
+
+  @Override
+  public void leaveSimpleTableSource(SQLNode simpleTableSource) {}
+
+  @Override
+  public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
+    return true;
+  }
+
+  @Override
+  public void leaveDerivedTableSource(SQLNode derivedTableSource) {}
+
+  @Override
+  public boolean enterJoinedTableSource(SQLNode joinedTableSource) {
+    return true;
+  }
+
+  @Override
+  public void leaveJoinedTableSource(SQLNode joinedTableSource) {}
+
+  @Override
+  public boolean enterQuery(SQLNode query) {
+    return true;
+  }
+
+  @Override
+  public void leaveQuery(SQLNode query) {}
+
+  @Override
+  public boolean enterQuerySpec(SQLNode querySpec) {
+    return true;
+  }
+
+  @Override
+  public void leaveQuerySpec(SQLNode querySpec) {}
+
+  @Override
+  public boolean enterUnion(SQLNode union) {
+    return true;
+  }
+
+  @Override
+  public void leaveUnion(SQLNode union) {}
+
+  @Override
+  public boolean enterStatement(SQLNode statement) {
+    return true;
+  }
+
+  @Override
+  public void leaveStatement(SQLNode statement) {}
 }

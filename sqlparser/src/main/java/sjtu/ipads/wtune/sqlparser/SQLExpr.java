@@ -29,14 +29,14 @@ public class SQLExpr {
     TERNARY,
     TUPLE,
     EXISTS,
-    SUBQUERY,
     MATCH,
     CAST,
     CASE,
     WHEN,
     CONVERT_USING,
     DEFAULT,
-    VALUES;
+    VALUES,
+    QUERY_EXPR;
 
     private final Set<String> attrs = new HashSet<>();
 
@@ -267,6 +267,12 @@ public class SQLExpr {
     return newExpr(Kind.WILDCARD);
   }
 
+  public static SQLNode wildcard(SQLNode table) {
+    final SQLNode node = newExpr(WILDCARD);
+    node.put(WILDCARD_TABLE, table);
+    return node;
+  }
+
   public static boolean isExpr(SQLNode node) {
     return node.type() == SQLNode.Type.EXPR;
   }
@@ -374,6 +380,9 @@ public class SQLExpr {
   /* GROUP_CONCAT only */
   public static final Attrs.Key<String> AGGREGATE_SEP = stringAttr(AGGREGATE, "sep");
 
+  // Wildcard
+  public static final Attrs.Key<SQLNode> WILDCARD_TABLE = nodeAttr(WILDCARD, "table");
+
   // Grouping
   public static final Attrs.Key<List<SQLNode>> GROUPING_OP_EXPRS = nodesAttr(GROUPING_OP, "exprs");
 
@@ -401,9 +410,6 @@ public class SQLExpr {
   // Exists
   public static final Attrs.Key<SQLNode> EXISTS_SUBQUERY = nodeAttr(EXISTS, "subquery");
 
-  // SubQuery
-  public static final Attrs.Key<SQLNode> SUBQUERY_QUERY = nodeAttr(SUBQUERY, "query");
-
   // MatchAgainst
   public static final Attrs.Key<List<SQLNode>> MATCH_COLS = nodesAttr(MATCH, "columns");
   public static final Attrs.Key<SQLNode> MATCH_EXPR = nodeAttr(MATCH, "expr");
@@ -429,8 +435,11 @@ public class SQLExpr {
   public static final Attrs.Key<SQLNode> CONVERT_USING_CHARSET = nodeAttr(CONVERT_USING, "charset");
 
   // Default
-  public static final Attrs.Key<SQLNode> DEFAULT_COL = nodeAttr(DEFAULT, "expr");
+  public static final Attrs.Key<SQLNode> DEFAULT_COL = nodeAttr(DEFAULT, "col");
 
   // Values
   public static final Attrs.Key<SQLNode> VALUES_EXPR = nodeAttr(VALUES, "expr");
+
+  // QueryExpr
+  public static final Attrs.Key<SQLNode> QUERY_EXPR_QUERY = nodeAttr(QUERY_EXPR, "query");
 }

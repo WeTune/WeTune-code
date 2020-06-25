@@ -22,4 +22,8 @@ public interface Commons {
     assert false;
     return null;
   }
+
+  static StringBuilder trimTrailing(StringBuilder sb, int i) {
+    return sb.delete(sb.length() - i, sb.length());
+  }
 }

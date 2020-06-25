@@ -697,4 +697,197 @@ public class MySQLASTBuilderTest {
       assertEquals("INTERVAL (1 + `a`) DAY + `b`", node.toString());
     }
   }
+
+  @Test
+  @DisplayName("select item")
+  void testSelectItem() {
+    final TestHelper helper = new TestHelper(MySQLParser::selectItem);
+    {
+      final SQLNode node = helper.sql("a.*");
+      assertEquals("`a`.*", node.toString());
+    }
+    {
+      final SQLNode node = helper.sql("a.b aaa");
+      assertEquals("`a`.`b` AS `aaa`", node.toString());
+    }
+  }
+
+  @Test
+  @DisplayName("index hint")
+  void testIndexHint() {
+    final TestHelper helper = new TestHelper(MySQLParser::indexHint);
+    {
+      final SQLNode node = helper.sql("ignore key for join (a, primary)");
+      assertEquals("IGNORE INDEX FOR JOIN (`a`, PRIMARY)", node.toString());
+    }
+    {
+      final SQLNode node = helper.sql("force key for order by (primary)");
+      assertEquals("FORCE INDEX FOR ORDER BY (PRIMARY)", node.toString());
+    }
+    {
+      final SQLNode node = helper.sql("use key for group by ()");
+      assertEquals("USE INDEX FOR GROUP BY ()", node.toString());
+    }
+  }
+
+  @Test
+  @DisplayName("simple table source")
+  void testSimpleTableSource() {
+    final TestHelper helper = new TestHelper(MySQLParser::singleTable);
+    {
+      PARSER.setServerVersion(50602);
+      final SQLNode node =
+          helper.sql("t partition (p,q) tt use key for group by (), use key for order by ()");
+      assertEquals(
+          "`t` PARTITION (`p`, `q`) AS `tt` USE INDEX FOR GROUP BY (), USE INDEX FOR ORDER BY ()",
+          node.toString());
+    }
+  }
+
+  @Test
+  @DisplayName("joined table source")
+  void testJoinedTableSource() {
+    final TestHelper helper = new TestHelper(MySQLParser::tableReference);
+    {
+      final SQLNode node = helper.sql("a join (b join c)");
+      assertEquals("`a` INNER JOIN `b` INNER JOIN `c`", node.toString());
+    }
+    {
+      final SQLNode node = helper.sql("a natural left join (b join c)");
+      assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString());
+      assertEquals(
+          "`a`\n" + "NATURAL LEFT JOIN (\n" + "  `b`\n  INNER JOIN `c`\n" + ")",
+          node.toString(false));
+    }
+    {
+      final SQLNode node = helper.sql("a left join b on a.col = b.col inner join c using (col)");
+      assertEquals(
+          "`a` LEFT JOIN `b` ON `a`.`col` = `b`.`col` INNER JOIN `c` USING (`col`)",
+          node.toString());
+      assertEquals(
+          "`a`\n"
+              + "LEFT JOIN `b`\n"
+              + "  ON `a`.`col` = `b`.`col`\n"
+              + "INNER JOIN `c`\n"
+              + "  USING (`col`)",
+          node.toString(false));
+    }
+  }
+
+  @Test
+  @DisplayName("select statement")
+  void testSelectStatement() {
+    final TestHelper helper = new TestHelper(MySQLParser::selectStatement);
+    {
+      final SQLNode node =
+          helper.sql(
+              ""
+                  + "select distinct "
+                  + "  a, b.*, count(1), "
+                  + "  case when c = 0 then 1 else 2 end "
+                  + "from t0 tt "
+                  + "  left join t1 on tt.a = t1.b "
+                  + "  inner join (select e from t2) as t3 on t3.e = tt.a "
+                  + "where tt.f in (select 1 from t4) "
+                  + "  and exists ("
+                  + "    select 1 from t5"
+                  + "    union all"
+                  + "    select 2 from t6"
+                  + "  ) "
+                  + "group by tt.g, tt.h "
+                  + "having sum(tt.i) < 10 "
+                  + "order by t1.x, t1.y "
+                  + "limit ?,?");
+
+      assertEquals(
+          ""
+              + "SELECT DISTINCT "
+              + "`a`, "
+              + "`b`.*, "
+              + "COUNT(1), "
+              + "CASE "
+              + "WHEN `c` = 0 THEN 1 "
+              + "ELSE 2 "
+              + "END "
+              + "FROM `t0` AS `tt` "
+              + "LEFT JOIN `t1` "
+              + "ON `tt`.`a` = `t1`.`b` "
+              + "INNER JOIN ("
+              + "SELECT "
+              + "`e` "
+              + "FROM `t2`"
+              + ") AS `t3` "
+              + "ON `t3`.`e` = `tt`.`a` "
+              + "WHERE "
+              + "`tt`.`f` IN ("
+              + "SELECT "
+              + "1 "
+              + "FROM `t4`"
+              + ") "
+              + "AND EXISTS ("
+              + "(SELECT "
+              + "1 "
+              + "FROM `t5`) "
+              + "UNION ALL "
+              + "(SELECT "
+              + "2 "
+              + "FROM `t6`)"
+              + ") "
+              + "GROUP BY "
+              + "`tt`.`g`, "
+              + "`tt`.`h` "
+              + "HAVING "
+              + "SUM(`tt`.`i`) < 10 "
+              + "ORDER BY "
+              + "`t1`.`x`, "
+              + "`t1`.`y` "
+              + "LIMIT ?, ?",
+          node.toString());
+
+      assertEquals(
+          ""
+              + "SELECT DISTINCT\n"
+              + "  `a`,\n"
+              + "  `b`.*,\n"
+              + "  COUNT(1),\n"
+              + "  CASE\n"
+              + "    WHEN `c` = 0 THEN 1\n"
+              + "    ELSE 2\n"
+              + "  END\n"
+              + "FROM `t0` AS `tt`\n"
+              + "  LEFT JOIN `t1`\n"
+              + "    ON `tt`.`a` = `t1`.`b`\n"
+              + "  INNER JOIN (\n"
+              + "    SELECT\n"
+              + "      `e`\n"
+              + "    FROM `t2`\n"
+              + "  ) AS `t3`\n"
+              + "    ON `t3`.`e` = `tt`.`a`\n"
+              + "WHERE\n"
+              + "  `tt`.`f` IN (\n"
+              + "    SELECT\n"
+              + "      1\n"
+              + "    FROM `t4`\n"
+              + "  )\n"
+              + "  AND EXISTS (\n"
+              + "    (SELECT\n"
+              + "      1\n"
+              + "    FROM `t5`)\n"
+              + "    UNION ALL\n"
+              + "    (SELECT\n"
+              + "      2\n"
+              + "    FROM `t6`)\n"
+              + "  )\n"
+              + "GROUP BY\n"
+              + "  `tt`.`g`,\n"
+              + "  `tt`.`h`\n"
+              + "HAVING\n"
+              + "  SUM(`tt`.`i`) < 10\n"
+              + "ORDER BY\n"
+              + "  `t1`.`x`,\n"
+              + "  `t1`.`y`\n"
+              + "LIMIT ?, ?",
+          node.toString(false));
+    }
+  }
 }
