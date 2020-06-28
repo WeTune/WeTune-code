@@ -34,4 +34,27 @@ task downloadDb(type: Exec) {
     }
 }
 
+task updateDb(type: Exec) {
+    if (file("$dataDir/wtune.db").exists()) {
+        workingDir dataDir
+        println "downloading wtune.db"
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
+                    '-Proxy', "\"$proxy\"",
+                    '-OutFile', 'wtune.db'
+        } else {
+            commandLine 'wget', '-e', "http_proxy=\'$proxy\'",
+                    '--no-check-certificate',
+                    "'$url'",
+                    '-O', 'wtune.db'
+        }
+        println "downloaded wtune.db"
+    } else {
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            commandLine 'powershell', 'echo', '\'wtune.db isn\'t present\''
+        else
+            commandLine 'echo', '\'wtune.db isn\'t present\''
+    }
+}
+
 test.dependsOn(downloadDb)
