@@ -22,6 +22,7 @@ task downloadDb(type: Exec) {
         } else {
             commandLine 'wget', '-e', 'use_proxy=yes',
                     '-e', "http_proxy=\'$proxy\'",
+                    '-e', "https_proxy=\'$proxy\'",
                     '--no-check-certificate',
                     "$url",
                     '-O', 'wtune.db'
