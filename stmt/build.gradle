@@ -22,7 +22,7 @@ task downloadDb(type: Exec) {
         } else {
             commandLine 'wget', '-e', "http_proxy=\'$proxy\'",
                     '--no-check-certificate',
-                    "'$url'",
+                    "$url",
                     '-O', 'wtune.db'
         }
         println "downloaded wtune.db"
