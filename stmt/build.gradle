@@ -9,7 +9,7 @@ dependencies {
 
 def dataDir = "../data"
 def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
-def proxy = "http://ipads:ipads123@202.120.40.82:11235"
+def proxy = "http://202.120.40.82:11235"
 
 task downloadDb(type: Exec) {
     if (!file("$dataDir/wtune.db").exists()) {
