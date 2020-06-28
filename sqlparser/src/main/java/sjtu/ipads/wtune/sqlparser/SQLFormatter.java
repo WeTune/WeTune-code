@@ -12,6 +12,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 public class SQLFormatter extends SQLVisitorAdapter {
   public static boolean DEFAULT_ONE_LINE = true;
   private static final String INDENT_STR = "  ";
+  private static final String UNKNOWN_PLACEHOLDER = "<??>";
 
   private final StringBuilder builder = new StringBuilder();
   private final boolean oneLine;
@@ -278,7 +279,7 @@ public class SQLFormatter extends SQLVisitorAdapter {
     if ("extract".equalsIgnoreCase(name)) {
       builder.append("EXTRACT");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 2) builder.append("<??>");
+        if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
         else {
           safeVisit(args.get(0));
           builder.append(" FROM ");

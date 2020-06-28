@@ -186,6 +186,7 @@ public class SQLExpr {
     public static BinaryOp ofOp(String opText) {
       if (opText.equalsIgnoreCase("DIV")) return DIV;
       if (opText.equalsIgnoreCase("MOD")) return MOD;
+      if (opText.equalsIgnoreCase("!=")) return NOT_EQUAL;
       for (BinaryOp op : values()) if (op.text.equals(opText)) return op;
       return null;
     }

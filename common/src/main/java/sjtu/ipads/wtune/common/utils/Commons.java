@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.util.function.Supplier;
+
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
   static String unquoted(String str) {
@@ -25,5 +27,11 @@ public interface Commons {
 
   static StringBuilder trimTrailing(StringBuilder sb, int i) {
     return sb.delete(sb.length() - i, sb.length());
+  }
+
+  static <T> T threadLocal(ThreadLocal<T> threadLocal, Supplier<T> supplier) {
+    T t = threadLocal.get();
+    if (t == null) threadLocal.set(t = supplier.get());
+    return t;
   }
 }
