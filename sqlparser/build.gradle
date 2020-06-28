@@ -23,9 +23,9 @@ task antlr(type: Exec) {
                     '-package', 'sjtu.ipads.wtune.sqlparser.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
     } else {
         if (Os.isFamily(Os.FAMILY_WINDOWS))
-            commandLine 'powershell', 'echo', '\'\''
+            commandLine 'powershell', 'echo', '\'use generated\''
         else
-            commandLine 'echo', '\'\''
+            commandLine 'echo', '\'use generated\''
     }
 }
 

@@ -4,6 +4,9 @@ before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
 cache:
+  key:
+    files:
+      - data/data.version
   paths:
     - .gradle/caches
 
