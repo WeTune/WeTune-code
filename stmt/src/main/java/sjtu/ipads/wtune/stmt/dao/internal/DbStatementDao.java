@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.stmt.dao;
+package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StatementDao;
 import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.sql.Connection;
@@ -79,12 +79,11 @@ public class DbStatementDao implements StatementDao {
     return threadLocal(findAllCache, () -> prepare(FIND_ALL_SQL));
   }
 
-  private static Statement inflate(ResultSet rs) throws SQLException {
+  private static Statement inflate(Statement stmt, ResultSet rs) throws SQLException {
     final String appName = rs.getString(KEY_APP_NAME);
     final int stmtId = rs.getInt(KEY_STMT_ID);
     final String rawSql = rs.getString(KEY_RAW_SQL);
 
-    final Statement stmt = new Statement();
     stmt.setAppName(appName);
     stmt.setStmtId(stmtId);
     stmt.setRawSql(rawSql);
@@ -101,7 +100,7 @@ public class DbStatementDao implements StatementDao {
 
       final ResultSet rs = ps.executeQuery();
 
-      if (rs.next()) return inflate(rs);
+      if (rs.next()) return inflate(new Statement(), rs);
       else return null;
 
     } catch (SQLException throwables) {
@@ -118,7 +117,7 @@ public class DbStatementDao implements StatementDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Statement> stmts = new ArrayList<>(250);
-      while (rs.next()) stmts.add(inflate(rs));
+      while (rs.next()) stmts.add(inflate(new Statement(), rs));
 
       return stmts;
 
@@ -134,7 +133,7 @@ public class DbStatementDao implements StatementDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Statement> stmts = new ArrayList<>(10000);
-      while (rs.next()) stmts.add(inflate(rs));
+      while (rs.next()) stmts.add(inflate(new Statement(), rs));
 
       return stmts;
 

@@ -166,6 +166,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final IndexType t;
     final String name;
     switch (type.getText().toLowerCase()) {
+      case "key":
       case "index":
         c = null;
         t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));

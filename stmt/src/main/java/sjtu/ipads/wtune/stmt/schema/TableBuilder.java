@@ -12,8 +12,8 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.stmt.StandardAttrs.RESOLVED_COLUMN;
-import static sjtu.ipads.wtune.stmt.StandardAttrs.RESOLVED_TABLE;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE;
 
 class TableBuilder {
   private static final System.Logger LOG = System.getLogger(TableBuilder.class.getSimpleName());

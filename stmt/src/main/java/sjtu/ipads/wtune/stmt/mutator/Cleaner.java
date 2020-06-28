@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.stmt.StandardAttrs.ATTR_PREFIX;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.ATTR_PREFIX;
 
 public class Cleaner {
   private static final Attrs.Key<Boolean> IS_CONSTANT =

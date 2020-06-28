@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.stmt.dao;
+package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StatementDao;
 import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;

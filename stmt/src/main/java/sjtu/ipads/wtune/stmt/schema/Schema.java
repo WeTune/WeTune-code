@@ -16,6 +16,7 @@ public class Schema {
   private final Map<String, Table> tables = new HashMap<>();
 
   public Schema addDefinition(SQLNode node) {
+    if (node == null) return this;
     if (node.type() == SQLNode.Type.CREATE_TABLE) {
       final Table table = new Table().fromCreateTable(node);
       final String tableName = table.tableName();
@@ -42,7 +43,7 @@ public class Schema {
   }
 
   public Table getTable(String name) {
-    return tables.get(simpleName(name));
+    return tables.get(simpleName(name).toLowerCase());
   }
 
   public Collection<Table> tables() {

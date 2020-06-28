@@ -5,32 +5,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
-import sjtu.ipads.wtune.stmt.StatementDao;
+import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CleanerTest {
   private static SQLParser MYSQL_PARSER;
 
-  private static String dbPath() {
-    return Paths.get(System.getProperty("user.dir"))
-        .getParent()
-        .resolve("data/wtune.db")
-        .toString();
-  }
-
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
-    StatementDao.fromDb(StatementDao.connectionSupplier("jdbc:sqlite://" + dbPath()))
-        .registerAsGlobal();
+    Setup._default().registerAsGlobal().setup();
     MYSQL_PARSER = SQLParser.mysql();
   }
 
@@ -63,17 +51,13 @@ public class CleanerTest {
     }
   }
 
-  private static final Set<String> PG_APPS =
-      new HashSet<>(Arrays.asList("gitlab", "discourse", "homeland"));
-
   @Test
   @DisplayName("[stmt.mutator.cleaner] all statements")
   void testAll() {
     final List<Statement> stmts = Statement.findAll();
     for (Statement stmt : stmts) {
-      if (PG_APPS.contains(stmt.appName())) continue;
-
-      SQLNode node = MYSQL_PARSER.parse(stmt.rawSql());
+      SQLNode node = stmt.parsed();
+      if (node == null) continue;
       final String original = node.toString();
       node = Cleaner.doMutate(node);
       final String modified = node.toString();

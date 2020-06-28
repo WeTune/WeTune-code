@@ -1,7 +1,8 @@
-package sjtu.ipads.wtune.stmt;
+package sjtu.ipads.wtune.stmt.dao;
 
-import sjtu.ipads.wtune.stmt.dao.DbStatementDao;
-import sjtu.ipads.wtune.stmt.dao.StatementDaoInstance;
+import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao;
+import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.sql.Connection;

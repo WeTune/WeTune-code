@@ -413,8 +413,8 @@ public interface MySQLASTHelper {
 
   private static int[] precision2Int(MySQLParser.PrecisionContext ctx) {
     final int[] ret = new int[2];
-    ret[0] = Integer.parseInt(ctx.INT_NUMBER(1).getText());
-    ret[1] = Integer.parseInt(ctx.INT_NUMBER(3).getText());
+    ret[0] = Integer.parseInt(ctx.INT_NUMBER(0).getText());
+    ret[1] = Integer.parseInt(ctx.INT_NUMBER(1).getText());
     return ret;
   }
 
