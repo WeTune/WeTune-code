@@ -1,183 +1,277 @@
 package sjtu.ipads.wtune.sqlparser;
 
 public interface SQLVisitor {
-  boolean enter(SQLNode node);
+  default boolean isMutator() {
+    return false;
+  }
 
-  void leave(SQLNode node);
+  default boolean enter(SQLNode node) {
+    return true;
+  }
 
-  boolean enterTableName(SQLNode tableName);
+  default void leave(SQLNode node) {}
 
-  void leaveTableName(SQLNode tableName);
+  default boolean enterCreateTable(SQLNode createTable) {
+    return true;
+  }
 
-  boolean enterColumnName(SQLNode colName);
+  default void leaveCreateTable(SQLNode createTable) {}
 
-  void leaveColumnName(SQLNode colName);
+  default boolean enterTableName(SQLNode tableName) {
+    return true;
+  }
 
-  boolean enterCreateTable(SQLNode createTable);
+  default void leaveTableName(SQLNode tableName) {}
 
-  void leaveCreateTable(SQLNode createTable);
+  default boolean enterColumnDef(SQLNode colDef) {
+    return true;
+  }
 
-  boolean enterColumnDef(SQLNode colDef);
+  default void leaveColumnDef(SQLNode colDef) {}
 
-  void leaveColumnDef(SQLNode colDef);
+  default boolean enterReferences(SQLNode ref) {
+    return true;
+  }
 
-  boolean enterReferences(SQLNode ref);
+  default void leaveReferences(SQLNode ref) {}
 
-  void leaveReferences(SQLNode ref);
+  default boolean enterColumnName(SQLNode colName) {
+    return true;
+  }
 
-  boolean enterIndexDef(SQLNode indexDef);
+  default void leaveColumnName(SQLNode colName) {}
 
-  void leaveIndexDef(SQLNode indexDef);
+  default boolean enterIndexDef(SQLNode indexDef) {
+    return true;
+  }
 
-  boolean enterKeyPart(SQLNode keyPart);
+  default void leaveIndexDef(SQLNode indexDef) {}
 
-  void leaveKeyPart(SQLNode keyPart);
+  default boolean enterKeyPart(SQLNode keyPart) {
+    return true;
+  }
 
-  boolean enterVariable(SQLNode variable);
+  default void leaveKeyPart(SQLNode keyPart) {}
 
-  void leaveVariable(SQLNode variable);
+  default boolean enterVariable(SQLNode variable) {
+    return true;
+  }
 
-  boolean enterColumnRef(SQLNode columnRef);
+  default void leaveVariable(SQLNode variable) {}
 
-  void leaveColumnRef(SQLNode columnRef);
+  default boolean enterColumnRef(SQLNode columnRef) {
+    return true;
+  }
 
-  boolean enterLiteral(SQLNode literal);
+  default void leaveColumnRef(SQLNode columnRef) {}
 
-  void leaveLiteral(SQLNode literal);
+  default boolean enterLiteral(SQLNode literal) {
+    return true;
+  }
 
-  boolean enterFuncCall(SQLNode funcCall);
+  default void leaveLiteral(SQLNode literal) {}
 
-  void leaveFuncCall(SQLNode funcCall);
+  default boolean enterFuncCall(SQLNode funcCall) {
+    return true;
+  }
 
-  boolean enterCollation(SQLNode collation);
+  default void leaveFuncCall(SQLNode funcCall) {}
 
-  void leaveCollation(SQLNode collation);
+  default boolean enterCollation(SQLNode collation) {
+    return true;
+  }
 
-  boolean enterParamMarker(SQLNode paramMarker);
+  default void leaveCollation(SQLNode collation) {}
 
-  void leaveParamMarker(SQLNode paramMarker);
+  default boolean enterParamMarker(SQLNode paramMarker) {
+    return true;
+  }
 
-  boolean enterUnary(SQLNode unary);
+  default void leaveParamMarker(SQLNode paramMarker) {}
 
-  void leaveUnary(SQLNode unary);
+  default boolean enterUnary(SQLNode unary) {
+    return true;
+  }
 
-  boolean enterGroupingOp(SQLNode groupingOp);
+  default void leaveUnary(SQLNode unary) {}
 
-  void leaveGroupingOp(SQLNode groupingOp);
+  default boolean enterGroupingOp(SQLNode groupingOp) {
+    return true;
+  }
 
-  boolean enterTuple(SQLNode tuple);
+  default void leaveGroupingOp(SQLNode groupingOp) {}
 
-  void leaveTuple(SQLNode tuple);
+  default boolean enterTuple(SQLNode tuple) {
+    return true;
+  }
 
-  boolean enterMatch(SQLNode match);
+  default void leaveTuple(SQLNode tuple) {}
 
-  void leaveMatch(SQLNode match);
+  default boolean enterMatch(SQLNode match) {
+    return true;
+  }
 
-  boolean enterCast(SQLNode cast);
+  default void leaveMatch(SQLNode match) {}
 
-  void leaveCast(SQLNode cast);
+  default boolean enterCast(SQLNode cast) {
+    return true;
+  }
 
-  boolean enterSymbol(SQLNode symbol);
+  default void leaveCast(SQLNode cast) {}
 
-  void leaveSymbol(SQLNode symbol);
+  default boolean enterSymbol(SQLNode symbol) {
+    return true;
+  }
 
-  boolean enterDefault(SQLNode _default);
+  default void leaveSymbol(SQLNode symbol) {}
 
-  void leaveDefault(SQLNode _default);
+  default boolean enterDefault(SQLNode _default) {
+    return true;
+  }
 
-  boolean enterValues(SQLNode values);
+  default void leaveDefault(SQLNode _default) {}
 
-  void leaveValues(SQLNode values);
+  default boolean enterValues(SQLNode values) {
+    return true;
+  }
 
-  boolean enterInterval(SQLNode interval);
+  default void leaveValues(SQLNode values) {}
 
-  void leaveInterval(SQLNode interval);
+  default boolean enterInterval(SQLNode interval) {
+    return true;
+  }
 
-  boolean enterExists(SQLNode exists);
+  default void leaveInterval(SQLNode interval) {}
 
-  void leaveExists(SQLNode exists);
+  default boolean enterExists(SQLNode exists) {
+    return true;
+  }
 
-  boolean enterQueryExpr(SQLNode queryExpr);
+  default void leaveExists(SQLNode exists) {}
 
-  void leaveQueryExpr(SQLNode queryExpr);
+  default boolean enterQueryExpr(SQLNode queryExpr) {
+    return true;
+  }
 
-  boolean enterWildcard(SQLNode wildcard);
+  default void leaveQueryExpr(SQLNode queryExpr) {}
 
-  void leaveWildcard(SQLNode wildcard);
+  default boolean enterWildcard(SQLNode wildcard) {
+    return true;
+  }
 
-  boolean enterAggregate(SQLNode aggregate);
+  default void leaveWildcard(SQLNode wildcard) {}
 
-  void leaveAggregate(SQLNode aggregate);
+  default boolean enterAggregate(SQLNode aggregate) {
+    return true;
+  }
 
-  boolean enterConvertUsing(SQLNode convertUsing);
+  default void leaveAggregate(SQLNode aggregate) {}
 
-  void leaveConvertUsing(SQLNode convertUsing);
+  default boolean enterConvertUsing(SQLNode convertUsing) {
+    return true;
+  }
 
-  boolean enterCase(SQLNode _case);
+  default void leaveConvertUsing(SQLNode convertUsing) {}
 
-  void leaveCase(SQLNode _case);
+  default boolean enterCase(SQLNode _case) {
+    return true;
+  }
 
-  boolean enterWhen(SQLNode when);
+  default void leaveCase(SQLNode _case) {}
 
-  void leaveWhen(SQLNode when);
+  default boolean enterWhen(SQLNode when) {
+    return true;
+  }
 
-  boolean enterBinary(SQLNode binary);
+  default void leaveWhen(SQLNode when) {}
 
-  void leaveBinary(SQLNode binary);
+  default boolean enterBinary(SQLNode binary) {
+    return true;
+  }
 
-  boolean enterWindowSpec(SQLNode windowSpec);
+  default void leaveBinary(SQLNode binary) {}
 
-  void leaveWindowSpec(SQLNode windowSpec);
+  default boolean enterFrameBound(SQLNode frameBound) {
+    return true;
+  }
 
-  boolean enterWindowFrame(SQLNode windowFrame);
+  default void leaveFrameBound(SQLNode frameBound) {}
 
-  void leaveWindowFrame(SQLNode windowFrame);
+  default boolean enterWindowFrame(SQLNode windowFrame) {
+    return true;
+  }
 
-  boolean enterFrameBound(SQLNode frameBound);
+  default void leaveWindowFrame(SQLNode windowFrame) {}
 
-  void leaveFrameBound(SQLNode frameBound);
+  default boolean enterWindowSpec(SQLNode windowSpec) {
+    return true;
+  }
 
-  boolean enterOrderItem(SQLNode orderItem);
+  default void leaveWindowSpec(SQLNode windowSpec) {}
 
-  void leaveOrderItem(SQLNode orderItem);
+  default boolean enterOrderItem(SQLNode orderItem) {
+    return true;
+  }
 
-  boolean enterTernary(SQLNode ternary);
+  default void leaveOrderItem(SQLNode orderItem) {}
 
-  void leaveTernary(SQLNode ternary);
+  default boolean enterTernary(SQLNode ternary) {
+    return true;
+  }
 
-  boolean enterSelectItem(SQLNode selectItem);
+  default void leaveTernary(SQLNode ternary) {}
 
-  void leaveSelectItem(SQLNode selectItem);
+  default boolean enterSelectItem(SQLNode selectItem) {
+    return true;
+  }
 
-  boolean enterIndexHint(SQLNode indexHint);
+  default void leaveSelectItem(SQLNode selectItem) {}
 
-  void leaveIndexHint(SQLNode indexHint);
+  default boolean enterIndexHint(SQLNode indexHint) {
+    return true;
+  }
 
-  boolean enterSimpleTableSource(SQLNode simpleTableSource);
+  default void leaveIndexHint(SQLNode indexHint) {}
 
-  void leaveSimpleTableSource(SQLNode simpleTableSource);
+  default boolean enterSimpleTableSource(SQLNode simpleTableSource) {
+    return true;
+  }
 
-  boolean enterJoinedTableSource(SQLNode joinedTableSource);
+  default void leaveSimpleTableSource(SQLNode simpleTableSource) {}
 
-  void leaveJoinedTableSource(SQLNode joinedTableSource);
+  default boolean enterDerivedTableSource(SQLNode derivedTableSource) {
+    return true;
+  }
 
-  boolean enterDerivedTableSource(SQLNode derivedTableSource);
+  default void leaveDerivedTableSource(SQLNode derivedTableSource) {}
 
-  void leaveDerivedTableSource(SQLNode derivedTableSource);
+  default boolean enterJoinedTableSource(SQLNode joinedTableSource) {
+    return true;
+  }
 
-  boolean enterUnion(SQLNode union);
+  default void leaveJoinedTableSource(SQLNode joinedTableSource) {}
 
-  void leaveUnion(SQLNode union);
+  default boolean enterQuery(SQLNode query) {
+    return true;
+  }
 
-  boolean enterStatement(SQLNode statement);
+  default void leaveQuery(SQLNode query) {}
 
-  void leaveStatement(SQLNode statement);
+  default boolean enterQuerySpec(SQLNode querySpec) {
+    return true;
+  }
 
-  boolean enterQuery(SQLNode query);
+  default void leaveQuerySpec(SQLNode querySpec) {}
 
-  void leaveQuery(SQLNode query);
+  default boolean enterUnion(SQLNode union) {
+    return true;
+  }
 
-  boolean enterQuerySpec(SQLNode querySpec);
+  default void leaveUnion(SQLNode union) {}
 
-  void leaveQuerySpec(SQLNode querySpec);
+  default boolean enterStatement(SQLNode statement) {
+    return true;
+  }
+
+  default void leaveStatement(SQLNode statement) {}
 }

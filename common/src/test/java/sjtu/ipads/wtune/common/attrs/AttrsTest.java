@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.common.attrs;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class AttrsTest {
       Attrs.Key.of2("wtune.third", List.class);
 
   @Test
+  @DisplayName("[common.attrs] attrs")
   public void test() {
     var foo = new Foo();
 

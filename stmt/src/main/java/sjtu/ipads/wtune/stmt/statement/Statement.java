@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.stmt.statement;
 
+import sjtu.ipads.wtune.stmt.dao.StatementDaoInstance;
+
+import java.util.List;
 import java.util.Objects;
 
 public class Statement {
@@ -10,6 +13,18 @@ public class Statement {
   private String appName;
   private int stmtId;
   private String rawSql;
+
+  public static Statement findOne(String appName, int id) {
+    return StatementDaoInstance.findOne(appName, id);
+  }
+
+  public static List<Statement> findByApp(String appName) {
+    return StatementDaoInstance.findByApp(appName);
+  }
+
+  public static List<Statement> findAll() {
+    return StatementDaoInstance.findAll();
+  }
 
   public Statement() {
     stmtId = -1;

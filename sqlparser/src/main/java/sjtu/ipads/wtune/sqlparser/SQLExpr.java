@@ -278,6 +278,10 @@ public class SQLExpr {
     return node.type() == SQLNode.Type.EXPR;
   }
 
+  public static Kind exprKind(SQLNode node) {
+    return node.get(EXPR_KIND);
+  }
+
   public static int getOperatorPrecedence(SQLNode node) {
     if (!isExpr(node)) return -1;
     final Kind kind = node.get(EXPR_KIND);

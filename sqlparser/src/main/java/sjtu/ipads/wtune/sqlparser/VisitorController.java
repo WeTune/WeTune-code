@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser;
 
 import java.util.List;
 
-import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.EXPR;
@@ -14,12 +13,19 @@ abstract class VisitorController {
     if (n != null) n.accept(v);
   }
 
-  private static void safeVisit(Key<SQLNode> key, SQLNode n, SQLVisitor v) {
+  private static boolean safeVisitChild(Key<SQLNode> key, SQLNode n, SQLVisitor v) {
     safeAccept(n.get(key), v);
+    return !n.structChanged();
   }
 
-  private static void safeVisitList(Key<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
-    n.getOr(key, emptyList()).forEach(it -> safeAccept(it, v));
+  private static boolean safeVisitList(Key<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
+    final List<SQLNode> children = n.get(key);
+    if (children != null)
+      for (SQLNode child : children) {
+        safeAccept(child, v);
+        if (n.structChanged()) return false;
+      }
+    return true;
   }
 
   static boolean enter(SQLNode n, SQLVisitor v) {
@@ -162,210 +168,128 @@ abstract class VisitorController {
     return false;
   }
 
-  static void visitChildren(SQLNode n, SQLVisitor v) {
+  static boolean visitChildren(SQLNode n, SQLVisitor v) {
     switch (n.type()) {
       case EXPR:
-        visitExprChildren(n, v);
-        break;
-
+        return visitExprChildren(n, v);
       case TABLE_SOURCE:
-        visitTableSourceChildren(n, v);
-        break;
-
+        return visitTableSourceChildren(n, v);
       case CREATE_TABLE:
-        safeVisit(CREATE_TABLE_NAME, n, v);
-        safeVisitList(CREATE_TABLE_COLUMNS, n, v);
-        safeVisitList(CREATE_TABLE_CONSTRAINTS, n, v);
-        break;
-
+        return safeVisitChild(CREATE_TABLE_NAME, n, v)
+            && safeVisitList(CREATE_TABLE_COLUMNS, n, v)
+            && safeVisitList(CREATE_TABLE_CONSTRAINTS, n, v);
       case COLUMN_DEF:
-        safeVisit(COLUMN_DEF_NAME, n, v);
-        safeVisit(COLUMN_DEF_REF, n, v);
-        break;
-
+        return safeVisitChild(COLUMN_DEF_NAME, n, v) && safeVisitChild(COLUMN_DEF_REF, n, v);
       case REFERENCES:
-        safeVisit(REFERENCES_TABLE, n, v);
-        safeVisitList(REFERENCES_COLUMNS, n, v);
-        break;
-
+        return safeVisitChild(REFERENCES_TABLE, n, v) && safeVisitList(REFERENCES_COLUMNS, n, v);
       case INDEX_DEF:
-        safeVisitList(INDEX_DEF_KEYS, n, v);
-        safeVisitList(INDEX_DEF_KEYS, n, v);
-        break;
-
+        return safeVisitList(INDEX_DEF_KEYS, n, v) && safeVisitList(INDEX_DEF_KEYS, n, v);
       case WINDOW_SPEC:
-        safeVisitList(WINDOW_SPEC_PARTITION, n, v);
-        safeVisitList(WINDOW_SPEC_ORDER, n, v);
-        safeVisit(WINDOW_SPEC_FRAME, n, v);
-        break;
-
+        return safeVisitList(WINDOW_SPEC_PARTITION, n, v)
+            && safeVisitList(WINDOW_SPEC_ORDER, n, v)
+            && safeVisitChild(WINDOW_SPEC_FRAME, n, v);
       case WINDOW_FRAME:
-        safeVisit(WINDOW_FRAME_START, n, v);
-        safeVisit(WINDOW_FRAME_END, n, v);
-        break;
-
+        return safeVisitChild(WINDOW_FRAME_START, n, v) && safeVisitChild(WINDOW_FRAME_END, n, v);
       case FRAME_BOUND:
-        safeVisit(FRAME_BOUND_EXPR, n, v);
-        break;
-
+        return safeVisitChild(FRAME_BOUND_EXPR, n, v);
       case ORDER_ITEM:
-        safeVisit(ORDER_ITEM_EXPR, n, v);
-        break;
-
+        return safeVisitChild(ORDER_ITEM_EXPR, n, v);
       case SELECT_ITEM:
-        safeVisit(SELECT_ITEM_EXPR, n, v);
-        break;
-
+        return safeVisitChild(SELECT_ITEM_EXPR, n, v);
       case QUERY_SPEC:
-        safeVisitList(QUERY_SPEC_SELECT_ITEMS, n, v);
-        safeVisit(QUERY_SPEC_FROM, n, v);
-        safeVisit(QUERY_SPEC_WHERE, n, v);
-        safeVisitList(QUERY_SPEC_GROUP_BY, n, v);
-        safeVisit(QUERY_SPEC_HAVING, n, v);
-        safeVisitList(QUERY_SPEC_WINDOWS, n, v);
-        break;
-
+        return safeVisitList(QUERY_SPEC_SELECT_ITEMS, n, v)
+            && safeVisitChild(QUERY_SPEC_FROM, n, v)
+            && safeVisitChild(QUERY_SPEC_WHERE, n, v)
+            && safeVisitList(QUERY_SPEC_GROUP_BY, n, v)
+            && safeVisitChild(QUERY_SPEC_HAVING, n, v)
+            && safeVisitList(QUERY_SPEC_WINDOWS, n, v);
       case QUERY:
-        safeVisit(QUERY_BODY, n, v);
-        safeVisitList(QUERY_ORDER_BY, n, v);
-        safeVisit(QUERY_OFFSET, n, v);
-        safeVisit(QUERY_LIMIT, n, v);
-        break;
-
+        return safeVisitChild(QUERY_BODY, n, v)
+            && safeVisitList(QUERY_ORDER_BY, n, v)
+            && safeVisitChild(QUERY_OFFSET, n, v)
+            && safeVisitChild(QUERY_LIMIT, n, v);
       case UNION:
-        safeVisit(UNION_LEFT, n, v);
-        safeVisit(UNION_RIGHT, n, v);
-        break;
-
+        return safeVisitChild(UNION_LEFT, n, v) && safeVisitChild(UNION_RIGHT, n, v);
       case INDEX_HINT:
       case KEY_PART:
       case COLUMN_NAME:
       case TABLE_NAME:
-        break;
+      default:
+        return true;
     }
   }
 
-  static void visitExprChildren(SQLNode n, SQLVisitor v) {
+  static boolean visitExprChildren(SQLNode n, SQLVisitor v) {
     assert n.type() == EXPR;
     switch (n.get(EXPR_KIND)) {
       case VARIABLE:
-        safeVisit(VARIABLE_ASSIGNMENT, n, v);
-        return;
-
+        return safeVisitChild(VARIABLE_ASSIGNMENT, n, v);
       case COLUMN_REF:
-        safeVisit(COLUMN_REF_COLUMN, n, v);
-        return;
-
+        return safeVisitChild(COLUMN_REF_COLUMN, n, v);
       case FUNC_CALL:
-        safeVisitList(FUNC_CALL_ARGS, n, v);
-        return;
-
+        return safeVisitList(FUNC_CALL_ARGS, n, v);
       case COLLATE:
-        safeVisit(COLLATE_EXPR, n, v);
-        return;
-
+        return safeVisitChild(COLLATE_EXPR, n, v);
       case UNARY:
-        safeVisit(UNARY_EXPR, n, v);
-        return;
-
+        return safeVisitChild(UNARY_EXPR, n, v);
       case GROUPING_OP:
-        safeVisitList(GROUPING_OP_EXPRS, n, v);
-        return;
-
+        return safeVisitList(GROUPING_OP_EXPRS, n, v);
       case TUPLE:
-        safeVisitList(TUPLE_EXPRS, n, v);
-        return;
-
+        return safeVisitList(TUPLE_EXPRS, n, v);
       case MATCH:
-        safeVisitList(MATCH_COLS, n, v);
-        safeVisit(MATCH_EXPR, n, v);
-        return;
-
+        return safeVisitList(MATCH_COLS, n, v) && safeVisitChild(MATCH_EXPR, n, v);
       case CAST:
-        safeVisit(CAST_EXPR, n, v);
-        return;
-
+        return safeVisitChild(CAST_EXPR, n, v);
       case DEFAULT:
-        safeVisit(DEFAULT_COL, n, v);
-        return;
-
+        return safeVisitChild(DEFAULT_COL, n, v);
       case VALUES:
-        safeVisit(VALUES_EXPR, n, v);
-        return;
-
+        return safeVisitChild(VALUES_EXPR, n, v);
       case INTERVAL:
-        safeVisit(INTERVAL_EXPR, n, v);
-        return;
-
+        return safeVisitChild(INTERVAL_EXPR, n, v);
       case EXISTS:
-        safeVisit(EXISTS_SUBQUERY, n, v);
-        return;
-
+        return safeVisitChild(EXISTS_SUBQUERY, n, v);
       case QUERY_EXPR:
-        safeVisit(QUERY_EXPR_QUERY, n, v);
-        return;
-
+        return safeVisitChild(QUERY_EXPR_QUERY, n, v);
       case AGGREGATE:
-        safeVisitList(AGGREGATE_ARGS, n, v);
-        safeVisitList(AGGREGATE_ORDER, n, v);
-        return;
-
+        return safeVisitList(AGGREGATE_ARGS, n, v) && safeVisitList(AGGREGATE_ORDER, n, v);
       case CONVERT_USING:
-        safeVisit(CONVERT_USING_EXPR, n, v);
-        return;
-
+        return safeVisitChild(CONVERT_USING_EXPR, n, v);
       case CASE:
-        safeVisit(CASE_COND, n, v);
-        safeVisitList(CASE_WHENS, n, v);
-        safeVisit(CASE_ELSE, n, v);
-        return;
-
+        return safeVisitChild(CASE_COND, n, v)
+            && safeVisitList(CASE_WHENS, n, v)
+            && safeVisitChild(CASE_ELSE, n, v);
       case WHEN:
-        safeVisit(WHEN_COND, n, v);
-        safeVisit(WHEN_EXPR, n, v);
-        return;
-
+        return safeVisitChild(WHEN_COND, n, v) && safeVisitChild(WHEN_EXPR, n, v);
       case BINARY:
-        safeVisit(BINARY_LEFT, n, v);
-        safeVisit(BINARY_RIGHT, n, v);
-        return;
-
+        return safeVisitChild(BINARY_LEFT, n, v) && safeVisitChild(BINARY_RIGHT, n, v);
       case TERNARY:
-        safeVisit(TERNARY_LEFT, n, v);
-        safeVisit(TERNARY_MIDDLE, n, v);
-        safeVisit(TERNARY_RIGHT, n, v);
-        return;
-
+        return safeVisitChild(TERNARY_LEFT, n, v)
+            && safeVisitChild(TERNARY_MIDDLE, n, v)
+            && safeVisitChild(TERNARY_RIGHT, n, v);
       case WILDCARD:
-        safeVisit(WILDCARD_TABLE, n, v);
-        return;
-
+        return safeVisitChild(WILDCARD_TABLE, n, v);
       case UNKNOWN:
-
       case SYMBOL:
       case PARAM_MARKER:
       case LITERAL:
-        return;
+      default:
+        return true;
     }
   }
 
-  static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
+  static boolean visitTableSourceChildren(SQLNode n, SQLVisitor v) {
     assert n.type() == TABLE_SOURCE;
     switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE:
-        safeVisit(SIMPLE_TABLE, n, v);
-        safeVisitList(SIMPLE_HINTS, n, v);
-        return;
-
+        return safeVisitChild(SIMPLE_TABLE, n, v) && safeVisitList(SIMPLE_HINTS, n, v);
       case JOINED:
-        safeVisit(JOINED_LEFT, n, v);
-        safeVisit(JOINED_RIGHT, n, v);
-        safeVisit(JOINED_ON, n, v);
-        return;
-
+        return safeVisitChild(JOINED_LEFT, n, v)
+            && safeVisitChild(JOINED_RIGHT, n, v)
+            && safeVisitChild(JOINED_ON, n, v);
       case DERIVED:
-        safeVisit(DERIVED_SUBQUERY, n, v);
-        return;
+        return safeVisitChild(DERIVED_SUBQUERY, n, v);
+      default:
+        return true;
     }
   }
 

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TableTest {
   @Test
-  @DisplayName("from CREATE TABLE")
+  @DisplayName("[stmt.table] from CREATE TABLE")
   void test() {
     final String createTable =
         ""

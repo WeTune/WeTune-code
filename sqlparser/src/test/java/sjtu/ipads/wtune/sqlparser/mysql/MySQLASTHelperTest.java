@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.stringifyIdentifie
 
 public class MySQLASTHelperTest {
   @Test
-  @DisplayName("stringify id")
+  @DisplayName("[sqlparser.mysql] stringify id")
   void testStringifyIdentifier0() {
     final MySQLASTParser parser = new MySQLASTParser();
     final String id0 = "a";
@@ -27,7 +27,7 @@ public class MySQLASTHelperTest {
   }
 
   @Test
-  @DisplayName("stringify dotId")
+  @DisplayName("[sqlparser.mysql] stringify dotId")
   void testStringifyIdentifier1() {
     final MySQLASTParser parser = new MySQLASTParser();
     final String id0 = ".a";
@@ -40,7 +40,7 @@ public class MySQLASTHelperTest {
   }
 
   @Test
-  @DisplayName("stringify qualified id")
+  @DisplayName("[sqlparser.mysql] stringify qualified id")
   void testStringifyIdentifier2() {
     final MySQLASTParser parser = new MySQLASTParser();
     final String id0 = "a";
@@ -61,7 +61,7 @@ public class MySQLASTHelperTest {
   }
 
   @Test
-  @DisplayName("stringify field id")
+  @DisplayName("[sqlparser.mysql] stringify field id")
   void testStringifyIdentifier3() {
     final MySQLASTParser parser = new MySQLASTParser();
     final String id0 = "a";

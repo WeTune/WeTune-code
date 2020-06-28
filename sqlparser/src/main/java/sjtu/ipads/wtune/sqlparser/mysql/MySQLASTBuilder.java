@@ -104,7 +104,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     }
 
-    return node.relinkAll();
+    return node;
   }
 
   @Override
@@ -1084,12 +1084,16 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = newExpr(FUNC_CALL);
 
     if (ctx.pureIdentifier() != null) {
-      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.pureIdentifier()));
+      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase());
+
       if (ctx.udfExprList() != null) node.put(FUNC_CALL_ARGS, toExprs(ctx.udfExprList()));
+      else node.put(FUNC_CALL_ARGS, emptyList());
 
     } else if (ctx.qualifiedIdentifier() != null) {
-      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.qualifiedIdentifier())[1]);
+      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.qualifiedIdentifier())[1].toLowerCase());
+
       if (ctx.exprList() != null) node.put(FUNC_CALL_ARGS, toExprs((ctx.exprList())));
+      else node.put(FUNC_CALL_ARGS, emptyList());
 
     } else {
       return assertFalse();

@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SchemaTest {
   @Test
-  @DisplayName("from Create Table")
+  @DisplayName("[stmt.schema] from CREATE TABLE")
   void test() {
     final String createTable =
         "create table `public`.t ("

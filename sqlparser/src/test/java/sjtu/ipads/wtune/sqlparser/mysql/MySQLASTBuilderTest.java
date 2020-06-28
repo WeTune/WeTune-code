@@ -43,7 +43,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("create table")
+  @DisplayName("[sqlparser.mysql] create table")
   void testCreateTable() {
     final TestHelper helper = new TestHelper(MySQLParser::createStatement);
     {
@@ -188,7 +188,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("variable")
+  @DisplayName("[sqlparser.mysql] variable")
   void testVariable() {
     String sql;
     SQLNode node;
@@ -226,7 +226,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("column ref")
+  @DisplayName("[sqlparser.mysql] column ref")
   void testColumnRef() {
     final TestHelper helper = new TestHelper(MySQLParser::columnRef);
 
@@ -237,7 +237,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("json ref")
+  @DisplayName("[sqlparser.mysql] json ref")
   void testJsonRef() {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
@@ -266,7 +266,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("literal")
+  @DisplayName("[sqlparser.mysql] literal")
   void testLiteral() {
     final TestHelper helper = new TestHelper(MySQLParser::literal);
 
@@ -310,7 +310,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("func call")
+  @DisplayName("[sqlparser.mysql] func call")
   void testFuncCall() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
@@ -399,7 +399,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("collation")
+  @DisplayName("[sqlparser.mysql] collation")
   void testCollation() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -412,7 +412,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("param marker")
+  @DisplayName("[sqlparser.mysql] param marker")
   void testParamMarker() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     final SQLNode node = helper.sql("?");
@@ -420,7 +420,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("concat ")
+  @DisplayName("[sqlparser.mysql] concat ")
   void testConcatPipe() {
     PARSER.setSqlMode(PipesAsConcat);
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
@@ -432,7 +432,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("unary")
+  @DisplayName("[sqlparser.mysql] unary")
   void testUnary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
@@ -462,7 +462,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("grouping op")
+  @DisplayName("[sqlparser.mysql] grouping op")
   void testGroupingOp() {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::groupingOperation);
@@ -473,7 +473,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("exists")
+  @DisplayName("[sqlparser.mysql] exists")
   void testExists() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     final SQLNode node = helper.sql("exists(select 1)");
@@ -481,7 +481,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("match against")
+  @DisplayName("[sqlparser.mysql] match against")
   void testMatchAgainst() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     final SQLNode node = helper.sql("match a against ('123' with query expansion)");
@@ -489,7 +489,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("cast")
+  @DisplayName("[sqlparser.mysql] cast")
   void testCast() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -504,7 +504,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("default")
+  @DisplayName("[sqlparser.mysql] default")
   void testDefault() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -514,7 +514,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("values")
+  @DisplayName("[sqlparser.mysql] values")
   void testValues() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -525,7 +525,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("aggregate")
+  @DisplayName("[sqlparser.mysql] aggregate")
   void testAggregate() {
     final TestHelper helper = new TestHelper(MySQLParser::sumExpr);
     {
@@ -551,7 +551,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("convert using")
+  @DisplayName("[sqlparser.mysql] convert using")
   void testConvertUsing() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -569,7 +569,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("case when")
+  @DisplayName("[sqlparser.mysql] case when")
   void testCaseWhen() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
@@ -583,7 +583,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("frame")
+  @DisplayName("[sqlparser.mysql] frame")
   void testFrame() {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::windowFrameClause);
@@ -598,7 +598,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("window spec")
+  @DisplayName("[sqlparser.mysql] window spec")
   void testWindowSpec() {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::windowSpecDetails);
@@ -616,7 +616,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("binary")
+  @DisplayName("[sqlparser.mysql] binary")
   void testBinary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
@@ -679,7 +679,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("ternary")
+  @DisplayName("[sqlparser.mysql] ternary")
   void testTernary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
@@ -689,7 +689,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("interval")
+  @DisplayName("[sqlparser.mysql] interval")
   void testInterval() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
@@ -699,7 +699,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("select item")
+  @DisplayName("[sqlparser.mysql] select item")
   void testSelectItem() {
     final TestHelper helper = new TestHelper(MySQLParser::selectItem);
     {
@@ -713,7 +713,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("index hint")
+  @DisplayName("[sqlparser.mysql] index hint")
   void testIndexHint() {
     final TestHelper helper = new TestHelper(MySQLParser::indexHint);
     {
@@ -731,7 +731,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("simple table source")
+  @DisplayName("[sqlparser.mysql] simple table source")
   void testSimpleTableSource() {
     final TestHelper helper = new TestHelper(MySQLParser::singleTable);
     {
@@ -745,7 +745,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("joined table source")
+  @DisplayName("[sqlparser.mysql] joined table source")
   void testJoinedTableSource() {
     final TestHelper helper = new TestHelper(MySQLParser::tableReference);
     {
@@ -775,7 +775,7 @@ public class MySQLASTBuilderTest {
   }
 
   @Test
-  @DisplayName("select statement")
+  @DisplayName("[sqlparser.mysql] select statement")
   void testSelectStatement() {
     final TestHelper helper = new TestHelper(MySQLParser::selectStatement);
     {

@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.stmt;
 
 import sjtu.ipads.wtune.stmt.dao.DbStatementDao;
+import sjtu.ipads.wtune.stmt.dao.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.sql.Connection;
@@ -30,5 +31,13 @@ public interface StatementDao {
         throw new StmtException(throwables);
       }
     };
+  }
+
+  static StatementDao getGlobal() {
+    return StatementDaoInstance.instance();
+  }
+
+  default void registerAsGlobal() {
+    StatementDaoInstance.register(this);
   }
 }

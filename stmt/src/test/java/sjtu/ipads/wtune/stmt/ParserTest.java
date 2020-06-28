@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.stmt.schema;
+package sjtu.ipads.wtune.stmt;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,8 +18,20 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class ParserTest {
-  private static StatementDao DAO;
   private static SQLParser MYSQL_PARSER;
+
+  @BeforeAll
+  static void setUp() throws ClassNotFoundException {
+    Class.forName("org.sqlite.JDBC");
+    StatementDao.fromDb(StatementDao.connectionSupplier("jdbc:sqlite://" + dbPath()))
+        .registerAsGlobal();
+    MYSQL_PARSER = SQLParser.mysql();
+  }
+
+  @AfterAll
+  static void toreDown() {
+    StatementDao.getGlobal().close();
+  }
 
   private static String dbPath() {
     return Paths.get(System.getProperty("user.dir"))
@@ -28,25 +40,13 @@ public class ParserTest {
         .toString();
   }
 
-  @BeforeAll
-  static void setUp() throws ClassNotFoundException {
-    Class.forName("org.sqlite.JDBC");
-    DAO = StatementDao.fromDb(StatementDao.connectionSupplier("jdbc:sqlite://" + dbPath()));
-    MYSQL_PARSER = SQLParser.mysql();
-  }
-
-  @AfterAll
-  static void toreDown() {
-    DAO.close();
-  }
-
   private static final Set<String> PG_APPS =
       new HashSet<>(Arrays.asList("gitlab", "discourse", "homeland"));
 
   @Test
-  @DisplayName("parser capability")
+  @DisplayName("[stmt] parsing all statements")
   void test() {
-    final List<Statement> stmts = DAO.findAll();
+    final List<Statement> stmts = Statement.findAll();
 
     for (Statement stmt : stmts) {
       if (PG_APPS.contains(stmt.appName())) continue; // TODO

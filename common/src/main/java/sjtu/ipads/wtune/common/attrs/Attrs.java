@@ -95,6 +95,10 @@ public interface Attrs<A extends Attrs<A>> {
     return Holders.get(this);
   }
 
+  default void remove(String attrName) {
+    directAttrs().remove(attrName);
+  }
+
   default <T> T put(String attrName, T obj) {
     directAttrs().put(attrName, obj);
     return obj;
@@ -171,6 +175,10 @@ public interface Attrs<A extends Attrs<A>> {
 
   default <T> T checkFailed(Key<T> key) {
     return null;
+  }
+
+  default void remove(Key<?> key) {
+    remove(key.name());
   }
 
   default <T> T put(Key<T> key, T obj) {

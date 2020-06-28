@@ -9,7 +9,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 
-public class SQLFormatter extends SQLVisitorAdapter {
+public class SQLFormatter implements SQLVisitor {
   public static boolean DEFAULT_ONE_LINE = true;
   private static final String INDENT_STR = "  ";
   private static final String UNKNOWN_PLACEHOLDER = "<??>";
@@ -52,6 +52,15 @@ public class SQLFormatter extends SQLVisitorAdapter {
 
   private void breakLine() {
     breakLine(true);
+  }
+
+  @Override
+  public boolean enter(SQLNode node) {
+    if (node.type() == Type.INVALID) {
+      builder.append("<??>");
+      return false;
+    }
+    return true;
   }
 
   @Override

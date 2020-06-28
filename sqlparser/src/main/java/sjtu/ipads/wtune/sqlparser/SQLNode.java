@@ -92,6 +92,9 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
 public class SQLNode implements Attrs<SQLNode>, Cloneable {
   private static final System.Logger LOG = System.getLogger("SQL.Core");
 
+  public SQLVisitor currentMutator = null;
+  public boolean structChanged = false;
+
   private String dbType;
   private Type type;
   private SQLNode parent;
@@ -147,11 +150,30 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     if (children != null) children.forEach(it -> it.setParent(this));
   }
 
+  @SuppressWarnings({"unchecked", "raw"})
+  public void replaceThis(SQLNode replacement) {
+    dbType = replacement.dbType;
+    type = replacement.type;
+    setChildren(new ArrayList<>(replacement.children()));
+
+    final var directAttrs = directAttrs();
+    directAttrs.clear();
+    directAttrs.putAll(replacement.directAttrs());
+  }
+
+  public boolean structChanged() {
+    return structChanged;
+  }
+
+  public void flagStructChanged(boolean flag) {
+    structChanged = flag;
+  }
+
   public SQLNode relink() {
     final List<SQLNode> children = new ArrayList<>();
 
     for (var e : ofPrefix(ATTR_PREFIX).entrySet()) {
-      final var value = e.getValue();
+      final Object value = e.getValue();
       if (value instanceof SQLNode) children.add((SQLNode) value);
       if (value instanceof List)
         for (Object o : (List<?>) value) if (o instanceof SQLNode) children.add((SQLNode) o);
@@ -178,8 +200,40 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   }
 
   public void accept(SQLVisitor visitor) {
-    if (VisitorController.enter(this, visitor)) VisitorController.visitChildren(this, visitor);
+    final boolean isMutator = visitor.isMutator();
+    if (isMutator && currentMutator != null && currentMutator != visitor)
+      throw new ConcurrentModificationException();
+
+    if (isMutator) {
+      currentMutator = visitor;
+      structChanged = false;
+    }
+
+    final boolean visitChildren = VisitorController.enter(this, visitor);
+
+    if (isMutator && structChanged) {
+      // struct changed, re-visit this
+      accept(visitor);
+      return;
+    }
+
+    if (visitChildren) {
+      VisitorController.visitChildren(this, visitor);
+
+      if (isMutator && structChanged) {
+        // struct changed, re-visit
+        accept(visitor);
+        return;
+      }
+    }
+
     VisitorController.leave(this, visitor);
+
+    if (isMutator && structChanged)
+      // struct changed, re-visit
+      accept(visitor);
+
+    if (isMutator) currentMutator = null;
   }
 
   public String toString() {
@@ -190,6 +244,13 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     final SQLFormatter formatter = new SQLFormatter(singleLine);
     accept(formatter);
     return formatter.toString();
+  }
+
+  public void invalidate() {
+    type = INVALID;
+    structChanged = true;
+    children.clear();
+    directAttrs().clear();
   }
 
   public static final String MYSQL = "mysql";
