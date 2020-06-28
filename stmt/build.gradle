@@ -9,7 +9,7 @@ dependencies {
 
 def dataDir = "../data"
 def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
-def proxy = "http://202.120.40.82:11235"
+def proxy = "http://ipads:ipads123!2020@202.120.40.85:11235"
 
 task downloadDb(type: Exec) {
     if (!file("$dataDir/wtune.db").exists()) {
@@ -21,8 +21,8 @@ task downloadDb(type: Exec) {
                     '-OutFile', 'wtune.db'
         } else {
             commandLine 'wget', '-e', 'use_proxy=yes',
-                    '-e', "http_proxy=\'$proxy\'",
-                    '-e', "https_proxy=\'$proxy\'",
+                    '-e', "http_proxy=$proxy",
+                    '-e', "https_proxy=$proxy",
                     '--no-check-certificate',
                     "$url",
                     '-O', 'wtune.db'
