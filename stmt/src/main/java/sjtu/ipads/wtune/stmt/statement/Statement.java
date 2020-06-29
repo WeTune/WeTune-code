@@ -2,16 +2,17 @@ package sjtu.ipads.wtune.stmt.statement;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
-import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
+import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resovler.Resolver;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.newInstance;
 
 public class Statement {
   public static final String KEY_APP_NAME = "appName";
@@ -77,25 +78,21 @@ public class Statement {
   public void resolve(Class<? extends Resolver> cls, boolean force) {
     if (!force && resolvedBy.contains(cls)) return;
 
-    final Resolver resolver;
-
-    try {
-      resolver = cls.getDeclaredConstructor().newInstance();
-    } catch (InstantiationException
-        | IllegalAccessException
-        | InvocationTargetException
-        | NoSuchMethodException e) {
-      throw new StmtException(e);
-    }
+    final Resolver resolver = newInstance(cls);
 
     for (Class<? extends Resolver> dependency : resolver.dependsOn()) resolve(dependency, force);
-
     resolver.resolve(this);
     resolvedBy.add(cls);
   }
 
   public void resolve(Class<? extends Resolver> cls) {
     resolve(cls, false);
+  }
+
+  public void mutate(Class<? extends Mutator> cls) {
+    final Mutator mutator = newInstance(cls);
+    for (Class<? extends Resolver> dependency : mutator.dependsOnResolver()) resolve(dependency);
+    mutator.mutate(this);
   }
 
   private void registerToApp() {
@@ -112,6 +109,7 @@ public class Statement {
 
   public void setRawSql(String rawSql) {
     this.rawSql = rawSql;
+    this.parsed = null;
   }
 
   public void setParsed(SQLNode parsed) {

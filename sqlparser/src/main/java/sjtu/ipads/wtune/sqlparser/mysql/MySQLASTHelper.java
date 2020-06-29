@@ -411,6 +411,15 @@ public interface MySQLASTHelper {
     else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
   }
 
+  static SQLNode wrapQuerySpec(SQLNode node) {
+    if (node.type() == Type.QUERY_SPEC) {
+      final SQLNode query = new SQLNode(Type.QUERY);
+      query.put(QUERY_BODY, node);
+      return query;
+    }
+    return node;
+  }
+
   private static int[] precision2Int(MySQLParser.PrecisionContext ctx) {
     final int[] ret = new int[2];
     ret[0] = Integer.parseInt(ctx.INT_NUMBER(0).getText());

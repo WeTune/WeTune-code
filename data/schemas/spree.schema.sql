@@ -1940,6 +1940,7 @@ CREATE TABLE `spree_variants` (
   `tax_category_id` int(11) DEFAULT NULL,
   `updated_at` datetime NOT NULL,
   `created_at` datetime NOT NULL,
+  `count_on_hand` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `index_spree_variants_on_product_id` (`product_id`),
   KEY `index_spree_variants_on_sku` (`sku`),

@@ -93,7 +93,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   private static final System.Logger LOG = System.getLogger("SQL.Core");
 
   public SQLVisitor currentMutator = null;
-  public boolean structChanged = false;
+  private boolean structChanged = false;
 
   private String dbType;
   private Type type;
@@ -189,11 +189,16 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     return this;
   }
 
+  /** Note: parent is not set. */
   public SQLNode copy() {
-    final var newNode = new SQLNode();
+    final SQLNode newNode = new SQLNode();
+
+    newNode.dbType = dbType;
+    newNode.type = type;
+
     newNode.directAttrs().putAll(this.directAttrs());
 
-    final var newChildren = FuncUtils.listMap(SQLNode::copy, children());
+    final List<SQLNode> newChildren = FuncUtils.listMap(SQLNode::copy, children());
     newNode.setChildren(newChildren);
 
     return newNode;
@@ -398,6 +403,13 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   }
 
   static final String ATTR_PREFIX = "sql.attr.";
+
+  public static SQLNode selectItem(SQLNode expr, String alias) {
+    final SQLNode node = new SQLNode(SELECT_ITEM);
+    node.put(SELECT_ITEM_EXPR, expr);
+    node.put(SELECT_ITEM_ALIAS, alias);
+    return node;
+  }
 
   private static <T> Key<T> attr(Type nodeType, String name, Class<T> clazz) {
     final Key<T> attr = Attrs.key(ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);

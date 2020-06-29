@@ -6,6 +6,7 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.COLUMN_NAME;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 /**
  * Table.
@@ -45,15 +46,15 @@ public class Table {
   }
 
   public Column getColumn(String name) {
-    return columns.get(name);
+    return columns.get(simpleName(name));
   }
 
   public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+    this.schemaName = simpleName(schemaName);
   }
 
   public void setTableName(String tableName) {
-    this.tableName = tableName;
+    this.tableName = simpleName(tableName);
   }
 
   public void setEngine(String engine) {

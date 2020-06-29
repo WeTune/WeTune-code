@@ -11,8 +11,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.POSTGRESQL;
 
 public class ConstantAppDao implements AppDao {
-  private static final Set<String> PG_APPS =
-      new HashSet<>(Arrays.asList("gitlab", "homeland", "discourse"));
+  private static final Set<String> PG_APPS = Set.of("gitlab", "homeland", "discourse");
 
   @Override
   public AppContext inflateOne(AppContext ctx) {

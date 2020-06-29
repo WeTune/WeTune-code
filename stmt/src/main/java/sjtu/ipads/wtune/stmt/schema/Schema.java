@@ -43,7 +43,7 @@ public class Schema {
   }
 
   public Table getTable(String name) {
-    return tables.get(simpleName(name).toLowerCase());
+    return tables.get(simpleName(name));
   }
 
   public Collection<Table> tables() {

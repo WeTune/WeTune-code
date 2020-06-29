@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Supplier;
 
 public interface Commons {
@@ -11,11 +12,11 @@ public interface Commons {
   /** if str[0] == quota and str[-1] == quota, return str[1:-2] */
   static String unquoted(String str, char quota) {
     if (str == null) return null;
-    final var length = str.length();
+    final int length = str.length();
     if (length <= 1) return str;
 
-    final var c0 = str.charAt(0);
-    final var ce = str.charAt(length - 1);
+    final char c0 = str.charAt(0);
+    final char ce = str.charAt(length - 1);
     return quota == c0 && quota == ce ? str.substring(1, length - 1) : str;
   }
 
@@ -34,4 +35,5 @@ public interface Commons {
     if (t == null) threadLocal.set(t = supplier.get());
     return t;
   }
+
 }

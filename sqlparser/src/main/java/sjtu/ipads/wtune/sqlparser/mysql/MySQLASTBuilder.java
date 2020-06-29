@@ -329,8 +329,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
             : UnionOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
     final SQLNode node = new SQLNode(UNION);
-    node.put(UNION_LEFT, left);
-    node.put(UNION_RIGHT, right);
+    node.put(UNION_LEFT, wrapQuerySpec(left));
+    node.put(UNION_RIGHT, wrapQuerySpec(right));
     node.put(UNION_OPTION, option);
 
     return node;
@@ -346,7 +346,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     final var selectItemList = ctx.selectItemList();
     final List<SQLNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
-    if (selectItemList.MULT_OPERATOR() != null) items.add(wildcard());
+    if (selectItemList.MULT_OPERATOR() != null) items.add(selectItem(wildcard(), null));
     items.addAll(listMap(this::visitSelectItem, selectItemList.selectItem()));
     node.put(QUERY_SPEC_SELECT_ITEMS, items);
 
@@ -1169,7 +1169,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitSumExpr(MySQLParser.SumExprContext ctx) {
     final SQLNode node = newExpr(AGGREGATE);
 
-    node.put(AGGREGATE_NAME, ctx.name.getText());
+    node.put(AGGREGATE_NAME, ctx.name.getText().toLowerCase());
 
     if (ctx.DISTINCT_SYMBOL() != null) node.flag(AGGREGATE_DISTINCT);
 

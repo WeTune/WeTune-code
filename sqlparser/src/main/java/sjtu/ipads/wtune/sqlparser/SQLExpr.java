@@ -8,7 +8,7 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.attrs.Attrs.Key.checkEquals;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.ATTR_PREFIX;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 
 public class SQLExpr {
   public enum Kind {
@@ -139,6 +139,10 @@ public class SQLExpr {
 
     public int precedence() {
       return precedence;
+    }
+
+    public boolean isLogic() {
+      return this == NOT;
     }
   }
 
@@ -272,6 +276,16 @@ public class SQLExpr {
     final SQLNode node = newExpr(WILDCARD);
     node.put(WILDCARD_TABLE, table);
     return node;
+  }
+
+  public static SQLNode columnRef(String tableName, String columnName) {
+    final SQLNode columnId = new SQLNode(SQLNode.Type.COLUMN_NAME);
+    columnId.put(COLUMN_NAME_TABLE, tableName);
+    columnId.put(COLUMN_NAME_COLUMN, columnName);
+
+    final SQLNode columnRef = newExpr(COLUMN_REF);
+    columnRef.put(COLUMN_REF_COLUMN, columnId);
+    return columnRef;
   }
 
   public static boolean isExpr(SQLNode node) {

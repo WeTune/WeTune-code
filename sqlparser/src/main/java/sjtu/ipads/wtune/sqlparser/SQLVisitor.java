@@ -1,5 +1,9 @@
 package sjtu.ipads.wtune.sqlparser;
 
+import sjtu.ipads.wtune.common.attrs.Attrs;
+
+import java.util.List;
+
 public interface SQLVisitor {
   default boolean isMutator() {
     return false;
@@ -10,6 +14,18 @@ public interface SQLVisitor {
   }
 
   default void leave(SQLNode node) {}
+
+  default boolean enterChild(Attrs.Key<SQLNode> key, SQLNode child) {
+    return true;
+  }
+
+  default void leaveChild(Attrs.Key<SQLNode> key, SQLNode child) {}
+
+  default boolean enterChildren(Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {
+    return true;
+  }
+
+  default void leaveChildren(Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {}
 
   default boolean enterCreateTable(SQLNode createTable) {
     return true;

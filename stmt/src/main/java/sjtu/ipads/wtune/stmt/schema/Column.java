@@ -11,6 +11,7 @@ import java.util.Set;
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 /**
  * Column.
@@ -134,7 +135,7 @@ public class Column implements Attrs<Column> {
   }
 
   public void setColumnName(String columnName) {
-    this.columnName = columnName;
+    this.columnName = simpleName(columnName);
   }
 
   public void setDataType(SQLDataType dataType) {

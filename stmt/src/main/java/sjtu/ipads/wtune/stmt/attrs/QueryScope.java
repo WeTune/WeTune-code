@@ -2,18 +2,42 @@ package sjtu.ipads.wtune.stmt.attrs;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
-public class QueryScope {
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
+
+public abstract class QueryScope {
+  public enum Clause {
+    SELECT_ITEM,
+    FROM,
+    ON,
+    WHERE,
+    HAVING,
+    ORDER_BY,
+    GROUP_BY,
+    LIMIT,
+    OFFSET
+  }
+
   private QueryScope parent;
   private SQLNode queryNode;
-  private SQLNode firstSpecNode;
-
-  private Map<String, TableSource> tableSources = new HashMap<>();
 
   public QueryScope parent() {
     return parent;
+  }
+
+  public SQLNode queryNode() {
+    return queryNode;
+  }
+
+  public SQLNode leftChild() {
+    return null;
+  }
+
+  public SQLNode rightChild() {
+    return null;
   }
 
   public int level() {
@@ -21,17 +45,19 @@ public class QueryScope {
     return parent.level() + 1;
   }
 
-  public SQLNode queryNode() {
-    return queryNode;
-  }
-
-  public SQLNode firstSpecNode() {
-    return firstSpecNode;
-  }
-
   public Map<String, TableSource> tableSources() {
-    return tableSources;
+    return Collections.emptyMap();
   }
+
+  public List<SelectItem> selectItems() {
+    return Collections.emptyList();
+  }
+
+  public void setLeftChild(SQLNode child) {}
+
+  public void setRightChild(SQLNode child) {}
+
+  public void setSpecNode(SQLNode specNode) {}
 
   public void setParent(QueryScope parent) {
     this.parent = parent;
@@ -41,11 +67,25 @@ public class QueryScope {
     this.queryNode = queryNode;
   }
 
-  public void setFirstSpecNode(SQLNode firstSpecNode) {
-    this.firstSpecNode = firstSpecNode;
+  public void addTable(TableSource tableSource) {}
+
+  public void addSelectItem(SelectItem item) {}
+
+  public void setScope(SQLNode node) {
+    if (node == null) return;
+    node.put(RESOLVED_QUERY_SCOPE, this);
+    node.children().forEach(this::setScope);
   }
 
-  public void addTable(TableSource tableSource) {
-    tableSources.put(tableSource.name, tableSource);
+  public TableSource resolveTable(String tableName) {
+    return null;
+  }
+
+  public SelectItem resolveSelection(String name) {
+    return null;
+  }
+
+  public ColumnRef resolveRef(String tableName, String columnName, Clause clause) {
+    return null;
   }
 }

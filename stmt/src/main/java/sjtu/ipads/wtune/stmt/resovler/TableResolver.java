@@ -14,6 +14,8 @@ import java.util.Set;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE_SOURCE;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 public class TableResolver implements SQLVisitor, Resolver {
   public static System.Logger LOG = System.getLogger("Stmt.Resolver.Table");
@@ -22,19 +24,20 @@ public class TableResolver implements SQLVisitor, Resolver {
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
-    final QueryScope queryScope = derivedTableSource.get(RESOLVED_QUERY_SCOPE);
+    final QueryScope simpleQueryScope = derivedTableSource.get(RESOLVED_QUERY_SCOPE);
 
     final String alias = derivedTableSource.get(DERIVED_ALIAS);
 
     final TableSource tableSource = new TableSource();
-    tableSource.setTableSource(derivedTableSource);
+    tableSource.setNode(derivedTableSource);
     tableSource.setTable(null);
     tableSource.setName(
         alias != null
             ? alias
-            : String.format("_sub_%s_%s", queryScope.level(), queryScope.tableSources().size()));
+            : String.format(
+                "_sub_%s_%s", simpleQueryScope.level(), simpleQueryScope.tableSources().size()));
 
-    queryScope.addTable(tableSource);
+    simpleQueryScope.addTable(tableSource);
     return true;
   }
 
@@ -57,10 +60,11 @@ public class TableResolver implements SQLVisitor, Resolver {
     }
 
     final TableSource tableSource = new TableSource();
-    tableSource.setTableSource(simpleTableSource);
+    tableSource.setNode(simpleTableSource);
     tableSource.setName(alias != null ? alias : table.tableName());
     tableSource.setTable(table);
 
+    simpleTableSource.put(RESOLVED_TABLE_SOURCE, tableSource);
     simpleTableSource.get(RESOLVED_QUERY_SCOPE).addTable(tableSource);
 
     return false;
@@ -68,13 +72,20 @@ public class TableResolver implements SQLVisitor, Resolver {
 
   @Override
   public void resolve(Statement stmt) {
+    LOG.log(
+        System.Logger.Level.TRACE, "resolving table for <{0}, {1}>", stmt.appName(), stmt.stmtId());
+
     this.stmt = stmt;
     this.schema = stmt.appContext().schema();
+
     stmt.parsed().accept(this);
   }
 
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
+      Collections.singleton(QueryScopeResolver.class);
+
   @Override
   public Set<Class<? extends Resolver>> dependsOn() {
-    return Collections.singleton(QueryScopeResolver.class);
+    return DEPENDENCIES;
   }
 }

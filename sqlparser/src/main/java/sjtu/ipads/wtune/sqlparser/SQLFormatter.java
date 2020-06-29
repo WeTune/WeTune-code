@@ -57,7 +57,7 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enter(SQLNode node) {
     if (node.type() == Type.INVALID) {
-      builder.append("<??>");
+      builder.append(UNKNOWN_PLACEHOLDER);
       return false;
     }
     return true;
@@ -301,7 +301,7 @@ public class SQLFormatter implements SQLVisitor {
     if ("position".equalsIgnoreCase(name)) {
       builder.append("POSITION");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 2) builder.append("<??>");
+        if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
         else {
           safeVisit(args.get(0));
           builder.append(" IN ");
@@ -314,21 +314,21 @@ public class SQLFormatter implements SQLVisitor {
     if ("trim".equalsIgnoreCase(name)) {
       builder.append("TRIM");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 3) builder.append("<??>");
+        if (args.size() != 3) builder.append(UNKNOWN_PLACEHOLDER);
         else {
           final SQLNode arg0 = args.get(0);
           final SQLNode arg1 = args.get(1);
           final SQLNode arg2 = args.get(2);
 
           if (arg0 != null) {
-            arg0.accept(this);
+            safeVisit(arg0);
             builder.append(' ');
           }
-          if (arg1 != null) arg1.accept(this);
+          if (arg1 != null) safeVisit(arg1);
           if (arg2 != null) {
             if (arg1 != null) builder.append(' ');
             builder.append("FROM ");
-            arg2.accept(this);
+            safeVisit(arg2);
           }
         }
       }
@@ -337,7 +337,7 @@ public class SQLFormatter implements SQLVisitor {
 
     builder.append(name.toUpperCase());
 
-    appendNodes(args);
+    appendNodes(args, true, true);
     return false;
   }
 
@@ -451,7 +451,7 @@ public class SQLFormatter implements SQLVisitor {
   public boolean enterWildcard(SQLNode wildcard) {
     final SQLNode table = wildcard.get(WILDCARD_TABLE);
     if (table != null) {
-      table.accept(this);
+      safeVisit(table);
       builder.append('.');
     }
     builder.append('*');
@@ -463,7 +463,7 @@ public class SQLFormatter implements SQLVisitor {
     builder.append(aggregate.get(AGGREGATE_NAME).toUpperCase()).append('(');
     if (aggregate.isFlagged(AGGREGATE_DISTINCT)) builder.append("DISTINCT ");
 
-    appendNodes(aggregate.get(AGGREGATE_ARGS), false);
+    appendNodes(aggregate.get(AGGREGATE_ARGS), false, true);
     final List<SQLNode> order = aggregate.get(AGGREGATE_ORDER);
 
     if (order != null && !order.isEmpty()) {
@@ -821,7 +821,7 @@ public class SQLFormatter implements SQLVisitor {
         safeVisit(offset);
         builder.append(", ");
       }
-      builder.append(offset);
+      safeVisit(limit);
     }
 
     return false;
@@ -973,7 +973,7 @@ public class SQLFormatter implements SQLVisitor {
   }
 
   private void safeVisit(SQLNode node) {
-    if (node == null) builder.append("<??>");
+    if (node == null) builder.append(UNKNOWN_PLACEHOLDER);
     else node.accept(this);
   }
 
@@ -998,7 +998,7 @@ public class SQLFormatter implements SQLVisitor {
     if (withParen) builder.append(')');
   }
 
-  private void appendNodes(List<SQLNode> exprs, boolean withParen) {
+  private void appendNodes(List<SQLNode> exprs, boolean withParen, boolean noBreak) {
     if (exprs == null || exprs.isEmpty()) {
       if (withParen) builder.append("()");
       return;
@@ -1008,19 +1008,20 @@ public class SQLFormatter implements SQLVisitor {
 
     for (int i = 0; i < exprs.size() - 1; i++) {
       final SQLNode expr = exprs.get(i);
-      if (expr == null) builder.append("<??>");
-      else {
-        expr.accept(this);
-        builder.append(",");
-        breakLine();
-      }
+      safeVisit(expr);
+      builder.append(',');
+      if (noBreak) builder.append(' ');
+      else breakLine();
     }
 
     final SQLNode last = exprs.get(exprs.size() - 1);
-    if (last == null) builder.append("<??>");
-    else last.accept(this);
+    safeVisit(last);
 
     if (withParen) builder.append(')');
+  }
+
+  private void appendNodes(List<SQLNode> exprs, boolean withParen) {
+    appendNodes(exprs, withParen, false);
   }
 
   private void appendNodes(List<SQLNode> exprs) {

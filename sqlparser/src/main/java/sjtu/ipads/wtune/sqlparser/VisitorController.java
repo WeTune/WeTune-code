@@ -14,23 +14,51 @@ abstract class VisitorController {
   }
 
   private static boolean safeVisitChild(Key<SQLNode> key, SQLNode n, SQLVisitor v) {
-    safeAccept(n.get(key), v);
-    return !n.structChanged();
+    final SQLNode child = n.get(key);
+    final boolean isMutator = v.isMutator();
+    final boolean visitChild = v.enterChild(key, child);
+
+    if (isMutator && n.structChanged()) return false; // require re-visit
+    if (!visitChild) return true;
+
+    // if the child has been replaced, re-enter
+    final SQLNode newChild = n.get(key);
+    if (newChild != child) return safeVisitChild(key, n, v);
+
+    // otherwise, we don't care child's structChanged since we haven't visited it yet
+    safeAccept(child, v);
+    if (isMutator && n.structChanged()) return false;
+
+    v.leaveChild(key, child);
+    return !isMutator || !n.structChanged();
   }
 
   private static boolean safeVisitList(Key<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
     final List<SQLNode> children = n.get(key);
+    final boolean isMutator = v.isMutator();
+    final boolean visitChildren = v.enterChildren(key, children);
+
+    if (isMutator && n.structChanged()) return false;
+    if (!visitChildren) return true;
+
+    final List<SQLNode> newChildren = n.get(key);
+    if (newChildren != children) return safeVisitList(key, n, v);
+
     if (children != null)
       for (SQLNode child : children) {
         safeAccept(child, v);
-        if (n.structChanged()) return false;
+        if (isMutator && n.structChanged()) return false;
       }
-    return true;
+
+    v.leaveChildren(key, children);
+    return !isMutator || !n.structChanged();
   }
 
   static boolean enter(SQLNode n, SQLVisitor v) {
     if (n == null) return false;
     if (!v.enter(n)) return false;
+    if (n.type() == null)
+      System.out.println();
 
     switch (n.type()) {
       case INVALID:

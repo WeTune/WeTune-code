@@ -3,19 +3,23 @@ package sjtu.ipads.wtune.stmt.mutator;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
+import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.ATTR_PREFIX;
 
-public class Cleaner {
+/** Remove constant expression like "1=1" */
+public class Cleaner implements Mutator {
   private static final Attrs.Key<Boolean> IS_CONSTANT =
       Attrs.Key.of(ATTR_PREFIX + "cleaner.isConstant", Boolean.class);
 
-  public static SQLNode doMutate(SQLNode node) {
+  @Override
+  public void mutate(Statement stmt) {
+    final SQLNode node = stmt.parsed();
     node.accept(MARK);
     node.accept(SWIPE);
-    return node.relinkAll();
+    node.relink();
   }
 
   private static final SQLVisitor MARK = new Mark();
