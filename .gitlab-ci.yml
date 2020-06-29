@@ -9,6 +9,7 @@ cache:
       - data/data.version
   paths:
     - .gradle/caches
+    - data/wtune.db
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
