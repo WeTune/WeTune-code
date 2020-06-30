@@ -86,6 +86,6 @@ public class Table {
 
   Column getColumn(SQLNode columnName) {
     assert columnName.type() == COLUMN_NAME;
-    return columns.get(columnName.get(COLUMN_NAME_COLUMN));
+    return getColumn(columnName.get(COLUMN_NAME_COLUMN));
   }
 }

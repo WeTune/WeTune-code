@@ -8,6 +8,8 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
+
 public class BoolNormalizerTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
@@ -19,7 +21,7 @@ public class BoolNormalizerTest {
   @DisplayName("[stmt.mutator.booleanNormalizer] all statements")
   void testAll() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() == null) continue;
       stmt.mutate(BoolNormalizer.class);
     }

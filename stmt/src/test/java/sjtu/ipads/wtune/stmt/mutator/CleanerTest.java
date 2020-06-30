@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 public class CleanerTest {
   @BeforeAll
@@ -51,7 +52,7 @@ public class CleanerTest {
   @DisplayName("[stmt.mutator.cleaner] all statements")
   void testAll() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() == null) continue;
       final String original = stmt.parsed().toString();
       stmt.mutate(Cleaner.class);

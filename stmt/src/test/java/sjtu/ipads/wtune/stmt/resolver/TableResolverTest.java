@@ -9,6 +9,8 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
+
 public class TableResolverTest {
 
   @BeforeAll
@@ -21,7 +23,7 @@ public class TableResolverTest {
   @DisplayName("[stmt.resolver.table] all statements")
   void test() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() == null) continue;
       stmt.resolve(TableResolver.class);
     }

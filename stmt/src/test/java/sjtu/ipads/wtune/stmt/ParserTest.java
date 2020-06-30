@@ -11,6 +11,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 public class ParserTest {
   @BeforeAll
@@ -29,7 +30,7 @@ public class ParserTest {
   void test() {
     final List<Statement> stmts = Statement.findAll();
 
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       final SQLNode parsed = stmt.parsed();
       if (parsed == null) continue;
       assertFalse(parsed.toString().contains("<??>"));

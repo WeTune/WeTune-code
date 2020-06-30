@@ -31,14 +31,9 @@ public class Schema {
   }
 
   public Schema buildRefs() {
-    for (Table table : tables.values()) {
-      for (Constraint constraint : table.constraints()) {
-        if (constraint.type() == FOREIGN) {
-          buildRef(constraint);
-        }
-      }
-    }
-
+    for (Table table : tables.values())
+      for (Constraint constraint : table.constraints())
+        if (constraint.type() == FOREIGN) buildRef(constraint);
     return this;
   }
 
@@ -51,18 +46,24 @@ public class Schema {
   }
 
   private void buildRef(Constraint constraint) {
-    assert constraint.type() == FOREIGN;
-    assert constraint.refTableName() != null;
-    assert constraint.refColNames() != null;
+    final SQLNode refTableName = constraint.refTableName();
+    final List<SQLNode> refColNames = constraint.refColNames();
 
-    final Table table = getTable(constraint.refTableName());
+    assert constraint.type() == FOREIGN;
+    assert refTableName != null;
+    assert refColNames != null;
+
+    constraint.setRefTableName(null);
+    constraint.setRefColNames(null);
+
+    final Table table = getTable(refTableName);
     if (table == null) {
-      LOG.log(Logger.Level.INFO, "unknown ref table: {0}", constraint.refTableName());
+      LOG.log(Logger.Level.INFO, "unknown ref table: {0}", refTableName);
       return;
     }
 
-    final List<Column> columns = new ArrayList<>(constraint.refColNames().size());
-    for (SQLNode colName : constraint.refColNames()) {
+    final List<Column> columns = new ArrayList<>(refColNames.size());
+    for (SQLNode colName : refColNames) {
       final Column column = table.getColumn(colName);
       if (column == null) {
         LOG.log(
@@ -78,6 +79,6 @@ public class Schema {
 
   private Table getTable(SQLNode tableName) {
     assert tableName.type() == TABLE_NAME;
-    return tables.get(tableName.get(TABLE_NAME_TABLE));
+    return getTable(tableName.get(TABLE_NAME_TABLE));
   }
 }

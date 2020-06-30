@@ -91,9 +91,7 @@ public interface Attrs<A extends Attrs<A>> {
     return new Key<>(name, (Class<T>) cls);
   }
 
-  default Map<String, Object> directAttrs() {
-    return Holders.get(this);
-  }
+  Map<String, Object> directAttrs();
 
   default void remove(String attrName) {
     directAttrs().remove(attrName);
@@ -251,10 +249,5 @@ public interface Attrs<A extends Attrs<A>> {
     if (singleLine) builder.delete(builder.length() - 2, Integer.MAX_VALUE).append(" }");
 
     return builder.toString();
-  }
-
-  // only for debug
-  static int cacheUsed() {
-    return Holders.size();
   }
 }

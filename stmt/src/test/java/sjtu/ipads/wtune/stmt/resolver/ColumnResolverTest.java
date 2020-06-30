@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 public class ColumnResolverTest {
 
@@ -23,7 +24,7 @@ public class ColumnResolverTest {
   @DisplayName("[stmt.resolver.column] all statements")
   void test() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() == null) continue;
       stmt.resolve(ColumnResolver.class);
       assertFalse(stmt.parsed().toString().contains("<??>"));

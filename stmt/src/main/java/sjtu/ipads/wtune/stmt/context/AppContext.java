@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.stmt.dao.internal.SchemaDaoInstance;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,10 @@ public class AppContext {
     app.setName(name);
     AppDaoInstance.inflateOne(app);
     return app;
+  }
+
+  public static Collection<AppContext> all() {
+    return KNOWN_APPS.values();
   }
 
   public String name() {
@@ -59,9 +64,13 @@ public class AppContext {
     this.dbType = dbType;
   }
 
-  public void addStatement(Statement stmt) {
+  public boolean addStatement(Statement stmt) {
     if (stmt.stmtId() == -1) stmt.setStmtId(maxIdSeen + 1);
     maxIdSeen = stmt.stmtId();
-    statements.put(stmt.stmtId(), stmt);
+    return statements.put(stmt.stmtId(), stmt) == stmt;
+  }
+
+  public void removeStatement(Statement stmt) {
+    statements.remove(stmt.stmtId());
   }
 }

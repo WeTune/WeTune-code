@@ -92,6 +92,13 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
 public class SQLNode implements Attrs<SQLNode>, Cloneable {
   private static final System.Logger LOG = System.getLogger("SQL.Core");
 
+  private final Map<String, Object> directAttrs = new HashMap<>();
+
+  @Override
+  public Map<String, Object> directAttrs() {
+    return directAttrs;
+  }
+
   public SQLVisitor currentMutator = null;
   private boolean structChanged = false;
 
@@ -419,7 +426,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   }
 
   private static <T> Key<T> attr2(Type nodeType, String name, Class<?> clazz) {
-    final Key<T> attr = Attrs.key2(ATTR_PREFIX + nodeType.name().toLowerCase() + name, clazz);
+    final Key<T> attr = Attrs.key2(ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
     attr.setCheck(checkAgainst(SQLNode.class, it -> it.type() == nodeType));
     nodeType.addAttr(attr.name());
     return attr;
@@ -473,7 +480,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<SQLNode> REFERENCES_TABLE = nodeAttr(REFERENCES, "table");
   public static final Key<List<SQLNode>> REFERENCES_COLUMNS = nodesAttr(REFERENCES, "columns");
 
-  //// Index
+  //// IndexDef
   public static final Key<String> INDEX_DEF_NAME = stringAttr(INDEX_DEF, "name");
   public static final Key<IndexType> INDEX_DEF_TYPE = attr(INDEX_DEF, "type", IndexType.class);
   public static final Key<ConstraintType> INDEX_DEF_CONS =

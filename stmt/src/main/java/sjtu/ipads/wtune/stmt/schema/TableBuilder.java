@@ -78,8 +78,8 @@ class TableBuilder {
       c.setRefTableName(references.get(REFERENCES_TABLE));
       c.setRefColNames(references.get(REFERENCES_COLUMNS));
 
-      table.addConstraint(c);
       column.addConstraint(c);
+      table.addConstraint(c);
     }
   }
 

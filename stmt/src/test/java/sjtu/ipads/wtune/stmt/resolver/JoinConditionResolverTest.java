@@ -9,6 +9,8 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
+
 public class JoinConditionResolverTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
@@ -20,7 +22,7 @@ public class JoinConditionResolverTest {
   @DisplayName("[stmt.resolver.joinCondition] all statements")
   void testAll() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : stmts) {
+    for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() == null) continue;
       stmt.resolve(JoinConditionResolver.class);
     }

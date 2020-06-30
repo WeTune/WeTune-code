@@ -2,14 +2,27 @@ package sjtu.ipads.wtune.common.attrs;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.common.memory.AutoReclaimRegion;
+import sjtu.ipads.wtune.common.memory.ReclaimWorker;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AttrsTest {
-  private static class Foo implements Attrs {}
+  private static class Foo implements Attrs {
+    private final Map<String, Object> directAttrs = new HashMap<>();
+
+    @Override
+    public Map<String, Object> directAttrs() {
+      return directAttrs;
+    }
+  }
 
   private static final Attrs.Key<String> ATTR_FIRST = Attrs.Key.of("wtune.first", String.class);
   private static final Attrs.Key<Integer> ATTR_SECOND = Attrs.Key.of("wtune.second", Integer.class);
@@ -36,10 +49,5 @@ public class AttrsTest {
     foo = new Foo();
     assertNotSame(oldAttrs, foo.directAttrs());
     assertEquals(0, foo.directAttrs().size());
-
-    foo = null;
-    System.gc();
-
-    assertEquals(0, Attrs.cacheUsed());
   }
 }

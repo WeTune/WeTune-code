@@ -29,21 +29,15 @@ public class Statement {
   private Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
 
   public static Statement findOne(String appName, int id) {
-    final Statement stmt = StatementDaoInstance.findOne(appName, id);
-    if (stmt != null) stmt.registerToApp();
-    return stmt;
+    return StatementDaoInstance.findOne(appName, id);
   }
 
   public static List<Statement> findByApp(String appName) {
-    final List<Statement> stmts = StatementDaoInstance.findByApp(appName);
-    if (stmts != null) stmts.forEach(Statement::registerToApp);
-    return stmts;
+    return StatementDaoInstance.findByApp(appName);
   }
 
   public static List<Statement> findAll() {
-    final List<Statement> stmts = StatementDaoInstance.findAll();
-    if (stmts != null) stmts.forEach(Statement::registerToApp);
-    return stmts;
+    return StatementDaoInstance.findAll();
   }
 
   public Statement() {
@@ -95,10 +89,6 @@ public class Statement {
     mutator.mutate(this);
   }
 
-  private void registerToApp() {
-    appContext().addStatement(this);
-  }
-
   public void setAppName(String appName) {
     this.appName = appName;
   }
@@ -116,7 +106,11 @@ public class Statement {
     this.parsed = parsed;
   }
 
-  @Override
+  public Statement registerToApp() {
+    appContext().addStatement(this);
+    return this;
+  }
+
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -131,6 +125,6 @@ public class Statement {
 
   @Override
   public String toString() {
-    return "<" + appName + "," + stmtId + "> " + rawSql;
+    return "<" + appName + ", " + stmtId + ">";
   }
 }

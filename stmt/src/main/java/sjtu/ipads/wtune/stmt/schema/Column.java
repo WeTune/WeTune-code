@@ -4,9 +4,7 @@ import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
@@ -154,5 +152,12 @@ public class Column implements Attrs<Column> {
   @Override
   public int hashCode() {
     return Objects.hash(tableName, columnName);
+  }
+
+  private final Map<String, Object> directAttrs = new HashMap<>();
+
+  @Override
+  public Map<String, Object> directAttrs() {
+    return directAttrs;
   }
 }

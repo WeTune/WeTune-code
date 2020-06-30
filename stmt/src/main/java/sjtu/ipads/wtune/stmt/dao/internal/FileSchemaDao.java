@@ -21,6 +21,7 @@ public class FileSchemaDao implements SchemaDao {
       final Schema schema = new Schema();
 
       SQLParser.splitSql(content).stream().map(parser::parse).forEach(schema::addDefinition);
+      schema.buildRefs();
 
       return schema;
     } catch (IOException e) {

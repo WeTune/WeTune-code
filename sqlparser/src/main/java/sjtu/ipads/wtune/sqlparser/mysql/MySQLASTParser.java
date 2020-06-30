@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Recognizer;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
@@ -34,7 +35,10 @@ public class MySQLASTParser implements SQLParser {
     parser.setServerVersion(serverVersion);
     parser.setSqlMode(sqlMode);
 
-    return rule.apply(parser);
+    final T ret = rule.apply(parser);
+    //    lexer.getInterpreter().clearDFA();
+    //    parser.getInterpreter().clearDFA();
+    return ret;
   }
 
   public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
