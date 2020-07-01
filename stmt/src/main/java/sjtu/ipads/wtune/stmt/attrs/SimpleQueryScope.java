@@ -46,7 +46,9 @@ public class SimpleQueryScope extends QueryScope {
     tableName = simpleName(tableName);
     final TableSource tableSource = tableSources.get(tableName);
     if (!recursive || tableSource != null) return Pair.of(tableSource, true);
-    return parent() != null ? parent().resolveTable(tableName, true) : Pair.of(null, true);
+    if (parent() == null) return Pair.of(null, true);
+    final Pair<TableSource, Boolean> parentResult = parent().resolveTable(tableName, true);
+    return Pair.of(parentResult.left(), parentResult.left() == null);
   }
 
   @Override

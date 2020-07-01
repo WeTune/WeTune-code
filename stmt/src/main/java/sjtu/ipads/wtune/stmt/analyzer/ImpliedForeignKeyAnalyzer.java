@@ -29,6 +29,11 @@ public class ImpliedForeignKeyAnalyzer implements Analyzer<Void>, SQLVisitor {
   }
 
   @Override
+  public Void analyze(SQLNode node) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public boolean enterBinary(SQLNode binary) {
     final BoolExpr boolExpr = binary.get(BOOL_EXPR);
     if (boolExpr == null || !boolExpr.isJoinCondtion()) return true;
