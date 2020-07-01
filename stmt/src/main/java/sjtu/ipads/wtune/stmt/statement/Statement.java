@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.statement;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
+import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
@@ -87,6 +88,12 @@ public class Statement {
     final Mutator mutator = newInstance(cls);
     for (Class<? extends Resolver> dependency : mutator.dependsOnResolver()) resolve(dependency);
     mutator.mutate(this);
+  }
+
+  public <T> T analyze(Class<? extends Analyzer<T>> cls) {
+    final Analyzer<T> analyzer = newInstance(cls);
+    for (Class<? extends Resolver> dependency : analyzer.dependsOn()) resolve(dependency);
+    return analyzer.analyze(this);
   }
 
   public void setAppName(String appName) {

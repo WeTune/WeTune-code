@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.context;
 
+import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.stmt.dao.internal.AppDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.SchemaDaoInstance;
 import sjtu.ipads.wtune.stmt.schema.Schema;
@@ -9,7 +10,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AppContext {
+public class AppContext implements Attrs<AppContext> {
   private static final Map<String, AppContext> KNOWN_APPS = new HashMap<>();
 
   private String name;
@@ -72,5 +73,12 @@ public class AppContext {
 
   public void removeStatement(Statement stmt) {
     statements.remove(stmt.stmtId());
+  }
+
+  private final Map<String, Object> directAttrs = new HashMap<>();
+
+  @Override
+  public Map<String, Object> directAttrs() {
+    return directAttrs;
   }
 }

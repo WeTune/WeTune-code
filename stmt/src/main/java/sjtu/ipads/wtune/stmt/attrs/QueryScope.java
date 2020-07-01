@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
+import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 public abstract class QueryScope {
@@ -53,6 +55,10 @@ public abstract class QueryScope {
     return Collections.emptyList();
   }
 
+  public Clause clause() {
+    return queryNode().get(RESOLVED_CLAUSE_SCOPE);
+  }
+
   public void setLeftChild(SQLNode child) {}
 
   public void setRightChild(SQLNode child) {}
@@ -75,6 +81,11 @@ public abstract class QueryScope {
     if (node == null) return;
     node.put(RESOLVED_QUERY_SCOPE, this);
     node.children().forEach(this::setScope);
+  }
+
+  /** @return table-source, is-local */
+  public Pair<TableSource, Boolean> resolveTable(String tableName, boolean recursive) {
+    return Pair.of(null, false);
   }
 
   public TableSource resolveTable(String tableName) {

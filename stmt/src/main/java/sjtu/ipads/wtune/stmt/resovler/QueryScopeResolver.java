@@ -62,26 +62,17 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
     }
   }
 
-  private static final Map<Key<?>, SimpleQueryScope.Clause> CLAUSE_KEYS =
-      Map.of(
-          QUERY_LIMIT,
-          SimpleQueryScope.Clause.LIMIT,
-          QUERY_OFFSET,
-          SimpleQueryScope.Clause.OFFSET,
-          QUERY_ORDER_BY,
-          SimpleQueryScope.Clause.ORDER_BY,
-          QUERY_SPEC_SELECT_ITEMS,
-          SimpleQueryScope.Clause.SELECT_ITEM,
-          QUERY_SPEC_FROM,
-          SimpleQueryScope.Clause.FROM,
-          JOINED_ON,
-          SimpleQueryScope.Clause.ON,
-          QUERY_SPEC_WHERE,
-          SimpleQueryScope.Clause.WHERE,
-          QUERY_SPEC_HAVING,
-          SimpleQueryScope.Clause.HAVING,
-          QUERY_SPEC_GROUP_BY,
-          SimpleQueryScope.Clause.GROUP_BY);
+  private static final Map<Key<?>, QueryScope.Clause> CLAUSE_KEYS =
+      Map.ofEntries(
+          Map.entry(QUERY_LIMIT, QueryScope.Clause.LIMIT),
+          Map.entry(QUERY_OFFSET, QueryScope.Clause.OFFSET),
+          Map.entry(QUERY_ORDER_BY, QueryScope.Clause.ORDER_BY),
+          Map.entry(QUERY_SPEC_SELECT_ITEMS, QueryScope.Clause.SELECT_ITEM),
+          Map.entry(QUERY_SPEC_FROM, QueryScope.Clause.FROM),
+          Map.entry(JOINED_ON, QueryScope.Clause.ON),
+          Map.entry(QUERY_SPEC_WHERE, QueryScope.Clause.WHERE),
+          Map.entry(QUERY_SPEC_HAVING, QueryScope.Clause.HAVING),
+          Map.entry(QUERY_SPEC_GROUP_BY, QueryScope.Clause.GROUP_BY));
 
   @Override
   public boolean enterChild(Key<SQLNode> key, SQLNode child) {

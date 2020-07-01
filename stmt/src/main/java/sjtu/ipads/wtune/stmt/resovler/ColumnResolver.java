@@ -28,6 +28,7 @@ public class ColumnResolver implements Resolver, SQLVisitor {
     final String columnName = columnIdentifier.get(COLUMN_NAME_COLUMN);
 
     final ColumnRef ref = scope.resolveRef(tableName, columnName, clause);
+
     if (ref != null) columnRef.put(RESOLVED_COLUMN_REF, ref.setNode(columnRef));
     else
       LOG.log(

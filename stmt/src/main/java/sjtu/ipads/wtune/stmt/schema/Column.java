@@ -50,6 +50,10 @@ public class Column implements Attrs<Column> {
     return dataType;
   }
 
+  public Table table() {
+    return table;
+  }
+
   private final int[] consCachedFlags = new int[SQLNode.ConstraintType.values().length + 1];
 
   private boolean consFlag(SQLNode.ConstraintType type) {
@@ -152,6 +156,13 @@ public class Column implements Attrs<Column> {
   @Override
   public int hashCode() {
     return Objects.hash(tableName, columnName);
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "%s.%s",
+        table() != null ? table().tableName() : tableName != null ? tableName : "??", columnName);
   }
 
   private final Map<String, Object> directAttrs = new HashMap<>();

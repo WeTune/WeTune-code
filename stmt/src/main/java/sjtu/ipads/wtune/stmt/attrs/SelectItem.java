@@ -8,11 +8,16 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.exprKind;
 
 public class SelectItem {
   private SQLNode node;
+  private SQLNode expr;
   private String simpleName;
   private String alias;
 
   public SQLNode node() {
     return node;
+  }
+
+  public SQLNode expr() {
+    return expr;
   }
 
   public String simpleName() {
@@ -26,6 +31,10 @@ public class SelectItem {
   public SelectItem setNode(SQLNode node) {
     this.node = node;
     return this;
+  }
+
+  public void setExpr(SQLNode expr) {
+    this.expr = expr;
   }
 
   public SelectItem setSimpleName(String simpleName) {

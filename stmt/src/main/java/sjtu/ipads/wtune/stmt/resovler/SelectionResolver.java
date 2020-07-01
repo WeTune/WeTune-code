@@ -54,6 +54,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
 
     final SelectItem item = new SelectItem();
     item.setNode(node);
+    item.setExpr(expr);
     item.setAlias(alias);
     if (exprKind(expr) == Kind.COLUMN_REF)
       item.setSimpleName(expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
@@ -100,6 +101,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
 
     final SelectItem item = new SelectItem();
     item.setNode(selectItem);
+    item.setExpr(expr);
     item.setAlias(alias);
 
     if (kind == Kind.COLUMN_REF) {

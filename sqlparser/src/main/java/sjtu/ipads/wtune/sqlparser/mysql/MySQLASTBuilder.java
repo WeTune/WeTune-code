@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.antlr.v4.runtime.Token;
-import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
+import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParserBaseVisitor;
@@ -852,8 +852,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final Pair<LiteralType, Number> pair = parseNumericLiteral(token);
     assert pair != null;
 
-    node.put(LITERAL_TYPE, pair.getLeft());
-    node.put(LITERAL_VALUE, pair.getRight());
+    node.put(LITERAL_TYPE, pair.left());
+    node.put(LITERAL_VALUE, pair.right());
 
     return node;
   }
