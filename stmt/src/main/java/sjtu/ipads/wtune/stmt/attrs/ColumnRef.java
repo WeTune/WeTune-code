@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.stmt.attrs;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.schema.Column;
 
+import java.util.Objects;
+
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 
 public class ColumnRef {
@@ -50,14 +52,46 @@ public class ColumnRef {
     return this;
   }
 
-  public Column resolveAsColumn() {
-    if (refColumn != null) return refColumn;
+  public ColumnRef resolveRootRef() {
+    if (refColumn != null) return this;
     if (refItem == null || refItem.expr() == null) return null;
     final ColumnRef columnRef = refItem.expr().get(RESOLVED_COLUMN_REF);
-    return columnRef != null ? columnRef.resolveAsColumn() : null;
+    return columnRef != null ? columnRef.resolveRootRef() : this;
+  }
+
+  public Column resolveAsColumn() {
+    final ColumnRef rootRef = resolveRootRef();
+    if (rootRef != null) return rootRef.refColumn();
+    else return null;
   }
 
   public void setDependent(boolean dependent) {
     isDependent = dependent;
+  }
+
+  private static boolean equals0(ColumnRef ref, ColumnRef other) {
+    return ref != null
+        && other != null
+        && Objects.equals(ref.source(), other.source())
+        && Objects.equals(ref.refColumn(), other.refColumn())
+        && Objects.equals(ref.refItem(), other.refItem());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ColumnRef columnRef = (ColumnRef) o;
+    return equals0(resolveRootRef(), columnRef.resolveRootRef());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(source, resolveRootRef());
+  }
+
+  @Override
+  public String toString() {
+    return String.format("{%s %s}", node, resolveRootRef());
   }
 }

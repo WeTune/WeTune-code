@@ -116,4 +116,11 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
 
     stmt.parsed().accept(new QueryScopeResolver());
   }
+
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(IdResolver.class);
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
+  }
 }

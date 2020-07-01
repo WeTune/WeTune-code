@@ -89,6 +89,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
     final List<SQLNode> items = new ArrayList<>(selections.size());
     for (String namedSelection : selections)
       items.add(selectItem(columnRef(tableSource.name(), namedSelection), null));
+    items.forEach(IdResolver::resolve);
     return items;
   }
 

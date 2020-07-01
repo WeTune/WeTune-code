@@ -6,9 +6,11 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public abstract class QueryScope {
   public enum Clause {
@@ -75,6 +77,8 @@ public abstract class QueryScope {
 
   public void addTable(TableSource tableSource) {}
 
+  public void removeTable(TableSource tableSource) {}
+
   public void addSelectItem(SelectItem item) {}
 
   public void setScope(SQLNode node) {
@@ -98,5 +102,18 @@ public abstract class QueryScope {
 
   public ColumnRef resolveRef(String tableName, String columnName, Clause clause) {
     return null;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    QueryScope scope = (QueryScope) o;
+    return nodeEquals(queryNode, scope.queryNode);
+  }
+
+  @Override
+  public int hashCode() {
+    return nodeHash(queryNode);
   }
 }

@@ -27,7 +27,7 @@ public class Statement {
   private AppContext appContext;
   private SQLNode parsed;
 
-  private Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
+  private final Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
 
   public static Statement findOne(String appName, int id) {
     return StatementDaoInstance.findOne(appName, id);
@@ -107,6 +107,7 @@ public class Statement {
   public void setRawSql(String rawSql) {
     this.rawSql = rawSql;
     this.parsed = null;
+    this.resolvedBy.clear();
   }
 
   public void setParsed(SQLNode parsed) {

@@ -11,6 +11,7 @@ public interface StmtAttrs {
     return ATTR_PREFIX + name;
   }
 
+  Attrs.Key<Long> NODE_ID = Attrs.key(attrPrefix("nodeId"), Long.class);
   Attrs.Key<QueryScope> RESOLVED_QUERY_SCOPE =
       Attrs.key(attrPrefix("resolvedQueryScope"), QueryScope.class);
   Attrs.Key<SimpleQueryScope.Clause> RESOLVED_CLAUSE_SCOPE =

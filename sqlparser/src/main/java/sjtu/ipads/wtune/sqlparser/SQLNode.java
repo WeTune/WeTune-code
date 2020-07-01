@@ -106,11 +106,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   private Type type;
   private SQLNode parent;
   private List<SQLNode> children;
-  private Map<String, Object> attrs;
 
-  public SQLNode() {
-    attrs = directAttrs(); // for debug use
-  }
+  private SQLNode() {}
 
   public SQLNode(Type type) {
     this();

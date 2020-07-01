@@ -13,8 +13,8 @@ import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 public class SimpleQueryScope extends QueryScope {
   private SQLNode specNode;
 
-  private Map<String, TableSource> tableSources = new HashMap<>();
-  private List<SelectItem> selectItems = new ArrayList<>();
+  private final Map<String, TableSource> tableSources = new HashMap<>();
+  private final List<SelectItem> selectItems = new ArrayList<>();
 
   public SQLNode specNode() {
     return specNode;
@@ -33,6 +33,13 @@ public class SimpleQueryScope extends QueryScope {
   @Override
   public void addTable(TableSource tableSource) {
     tableSources.put(tableSource.name(), tableSource);
+  }
+
+  @Override
+  public void removeTable(TableSource tableSource) {
+    final String targetName = tableSource.name();
+    final TableSource target = tableSources.get(targetName);
+    if (target == tableSource) tableSources.remove(targetName);
   }
 
   @Override

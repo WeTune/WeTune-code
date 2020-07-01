@@ -12,13 +12,14 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
+import static sjtu.ipads.wtune.stmt.utils.StmtHelper.*;
 
 public class TableSource {
   private SQLNode node;
   private String name;
   private Table table;
 
+  /** Name of the table source (not null). Either the alias or the table's name. */
   public String name() {
     return name;
   }
@@ -80,5 +81,18 @@ public class TableSource {
   public SelectItem resolveAsSelection(String name) {
     if (name == null || node == null) return null;
     return node.get(DERIVED_SUBQUERY).get(RESOLVED_QUERY_SCOPE).resolveSelection(name);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TableSource that = (TableSource) o;
+    return nodeEquals(node, that.node);
+  }
+
+  @Override
+  public int hashCode() {
+    return nodeHash(node);
   }
 }

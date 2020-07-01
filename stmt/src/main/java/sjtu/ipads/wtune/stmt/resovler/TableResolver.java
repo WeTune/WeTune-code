@@ -32,7 +32,7 @@ public class TableResolver implements SQLVisitor, Resolver {
     tableSource.setNode(derivedTableSource);
     tableSource.setTable(null);
     tableSource.setName(
-        alias != null
+        alias != null // in fact it shouldn't be null
             ? alias
             : String.format(
                 "_sub_%s_%s", simpleQueryScope.level(), simpleQueryScope.tableSources().size()));

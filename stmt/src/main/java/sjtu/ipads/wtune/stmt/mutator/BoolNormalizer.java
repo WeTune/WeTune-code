@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt.mutator;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
+import sjtu.ipads.wtune.stmt.resovler.IdResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
@@ -49,6 +50,7 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
       node.put(BINARY_LEFT, expr.copy());
       node.put(BINARY_RIGHT, literal(LiteralType.BOOL, true));
       expr.replaceThis(node);
+      IdResolver.resolve(node);
 
     } else if (kind == Kind.BINARY && expr.get(BINARY_OP).isLogic()) {
       handleExpr(expr.get(BINARY_LEFT));
