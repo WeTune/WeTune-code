@@ -26,6 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.SPATIAL;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.*;
+import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.tableName;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
@@ -73,36 +74,33 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitCreateTable(MySQLParser.CreateTableContext ctx) {
-    final var node = newNode(SQLNode.Type.CREATE_TABLE);
+    if (ctx.tableElementList() == null) return null;
+
+    final SQLNode node = newNode(CREATE_TABLE);
     node.put(CREATE_TABLE_NAME, visitTableName(ctx.tableName()));
 
-    if (ctx.tableElementList() != null) {
-      final List<SQLNode> columnDefs = new ArrayList<>();
-      final List<SQLNode> contraintDefs = new ArrayList<>();
+    final List<SQLNode> columnDefs = new ArrayList<>();
+    final List<SQLNode> contraintDefs = new ArrayList<>();
 
-      for (var element : ctx.tableElementList().tableElement()) {
-        final var colDefs = element.columnDefinition();
-        final var consDefs = element.tableConstraintDef();
+    for (var element : ctx.tableElementList().tableElement()) {
+      final var colDefs = element.columnDefinition();
+      final var consDefs = element.tableConstraintDef();
 
-        if (colDefs != null) columnDefs.add(visitColumnDefinition(colDefs));
-        else if (consDefs != null) contraintDefs.add(visitTableConstraintDef(consDefs));
-        else return assertFalse();
-      }
-
-      node.put(CREATE_TABLE_COLUMNS, columnDefs);
-      node.put(CREATE_TABLE_CONSTRAINTS, contraintDefs);
-
-      final var tableOptions = ctx.createTableOptions();
-      if (tableOptions != null)
-        for (var option : tableOptions.createTableOption())
-          if (option.ENGINE_SYMBOL() != null) {
-            node.put(CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
-            break;
-          }
-
-    } else if (ctx.tableRef() != null) {
-
+      if (colDefs != null) columnDefs.add(visitColumnDefinition(colDefs));
+      else if (consDefs != null) contraintDefs.add(visitTableConstraintDef(consDefs));
+      else return assertFalse();
     }
+
+    node.put(CREATE_TABLE_COLUMNS, columnDefs);
+    node.put(CREATE_TABLE_CONSTRAINTS, contraintDefs);
+
+    final var tableOptions = ctx.createTableOptions();
+    if (tableOptions != null)
+      for (var option : tableOptions.createTableOption())
+        if (option.ENGINE_SYMBOL() != null) {
+          node.put(CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
+          break;
+        }
 
     return node;
   }

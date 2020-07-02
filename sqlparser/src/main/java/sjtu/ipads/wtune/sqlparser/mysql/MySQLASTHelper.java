@@ -16,6 +16,7 @@ import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
@@ -256,7 +257,7 @@ public interface MySQLASTHelper {
   }
 
   static SQLDataType parseDataType(MySQLParser.DataTypeContext ctx) {
-    final var typeString = ctx.type.getText().toLowerCase();
+    final String typeString = coalesce(ctx.type.getText().toLowerCase(), "national");
 
     final SQLDataType.Category category;
     final String name;
@@ -288,15 +289,26 @@ public interface MySQLASTHelper {
       category = SQLDataType.Category.JSON;
       name = typeString;
 
-    } else if (typeString.endsWith("char")
-        || typeString.endsWith(BINARY)
-        || typeString.endsWith(TEXT)
-        || typeString.endsWith("varying")) {
+    } else if (typeString.endsWith(CHAR) || typeString.equals("national")) {
+      category = Category.STRING;
+      name =
+          (typeString.contains("var")
+                  || ctx.VARYING_SYMBOL() != null
+                  || ctx.VARCHAR_SYMBOL() != null)
+              ? VARCHAR
+              : CHAR;
+
+    } else if (typeString.contains(TEXT)) {
+      category = Category.STRING;
+      name = typeString;
+
+    } else if (typeString.endsWith(BINARY)) {
       category = SQLDataType.Category.STRING;
-      if (typeString.contains("char")) name = typeString.contains("var") ? VARCHAR : CHAR;
-      else if (typeString.contains("binary"))
-        name = typeString.contains("var") ? VARBINARY : BINARY;
-      else name = typeString;
+      name = typeString.contains("var") ? VARBINARY : BINARY;
+
+    } else if (typeString.equals("long")) {
+      category = Category.STRING;
+      name = ctx.VARBINARY_SYMBOL() != null ? VARBINARY : VARCHAR;
 
     } else {
       category = SQLDataType.Category.GEO;
@@ -337,7 +349,7 @@ public interface MySQLASTHelper {
             ? emptyList()
             : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
 
-    return new SQLDataType(category, name, w, p, unsigned, valuesList);
+    return new SQLDataType(category, name, w, p, unsigned, valuesList, null);
   }
 
   static Pair<LiteralType, Number> parseNumericLiteral(Token token) {
