@@ -48,7 +48,6 @@ public class RemoveTableSource implements Operator {
 
     } else assert false;
 
-    scope.removeTable(tableSource);
     return sqlNode;
   }
 }

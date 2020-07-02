@@ -278,6 +278,21 @@ public class SQLExpr {
     return node;
   }
 
+  public static SQLNode unary(SQLNode expr, UnaryOp op) {
+    final SQLNode node = newExpr(UNARY);
+    node.put(UNARY_EXPR, expr);
+    node.put(UNARY_OP, op);
+    return node;
+  }
+
+  public static SQLNode binary(SQLNode left, SQLNode right, BinaryOp op) {
+    final SQLNode binary = newExpr(BINARY);
+    binary.put(BINARY_LEFT, left);
+    binary.put(BINARY_RIGHT, right);
+    binary.put(BINARY_OP, op);
+    return binary;
+  }
+
   public static SQLNode columnRef(String tableName, String columnName) {
     final SQLNode columnId = new SQLNode(SQLNode.Type.COLUMN_NAME);
     columnId.put(COLUMN_NAME_TABLE, tableName);

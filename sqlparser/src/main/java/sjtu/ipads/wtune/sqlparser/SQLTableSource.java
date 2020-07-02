@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.attrs.Attrs.Key.checkEquals;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ATTR_PREFIX;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.tableName;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.*;
 
 public class SQLTableSource {
@@ -67,6 +68,13 @@ public class SQLTableSource {
   public static SQLNode newTableSource(Kind kind) {
     final SQLNode node = new SQLNode(SQLNode.Type.TABLE_SOURCE);
     node.put(TABLE_SOURCE_KIND, kind);
+    return node;
+  }
+
+  public static SQLNode simple(String name, String alias) {
+    final SQLNode node = newTableSource(SIMPLE);
+    node.put(SIMPLE_TABLE, tableName(name));
+    node.put(SIMPLE_ALIAS, alias);
     return node;
   }
 

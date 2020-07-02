@@ -11,4 +11,8 @@ public interface Operator {
   default SQLNode apply(Statement stmt, SQLNode sqlNode) {
     return apply(sqlNode);
   }
+
+  default SQLNode apply(Statement stmt) {
+    return apply(stmt, stmt.parsed());
+  }
 }

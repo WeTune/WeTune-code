@@ -36,13 +36,6 @@ public class SimpleQueryScope extends QueryScope {
   }
 
   @Override
-  public void removeTable(TableSource tableSource) {
-    final String targetName = tableSource.name();
-    final TableSource target = tableSources.get(targetName);
-    if (target == tableSource) tableSources.remove(targetName);
-  }
-
-  @Override
   public void addSelectItem(SelectItem item) {
     selectItems.add(item);
   }

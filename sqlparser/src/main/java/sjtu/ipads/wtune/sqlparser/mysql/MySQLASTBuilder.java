@@ -539,26 +539,19 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitExprIs(MySQLParser.ExprIsContext ctx) {
-    if (ctx.IS_SYMBOL() == null) return ctx.boolPri().accept(this);
-
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.IS);
-    node.put(BINARY_LEFT, ctx.boolPri().accept(this));
+    final SQLNode left = ctx.boolPri().accept(this);
+    if (ctx.IS_SYMBOL() == null) return left;
 
     final SQLNode right;
     if (ctx.UNKNOWN_SYMBOL() != null) right = literal(LiteralType.UNKNOWN, null);
     else if (ctx.TRUE_SYMBOL() != null) right = literal(LiteralType.BOOL, true);
     else if (ctx.FALSE_SYMBOL() != null) right = literal(LiteralType.BOOL, false);
     else return assertFalse();
-    node.put(BINARY_RIGHT, right);
+
+    final SQLNode node = binary(left, right, BinaryOp.IS);
 
     if (ctx.notRule() == null) return node;
-    else {
-      final SQLNode not = newExpr(UNARY);
-      not.put(UNARY_OP, UnaryOp.NOT);
-      not.put(UNARY_EXPR, node);
-      return not;
-    }
+    else return unary(node, UnaryOp.NOT);
   }
 
   @Override
@@ -571,40 +564,23 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitExprAnd(MySQLParser.ExprAndContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.AND);
-    node.put(BINARY_LEFT, ctx.expr(0).accept(this));
-    node.put(BINARY_RIGHT, ctx.expr(1).accept(this));
-
-    return node;
+    return binary(ctx.expr(0).accept(this), ctx.expr(1).accept(this), BinaryOp.AND);
   }
 
   @Override
   public SQLNode visitExprOr(MySQLParser.ExprOrContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.OR);
-    node.put(BINARY_LEFT, ctx.expr(0).accept(this));
-    node.put(BINARY_RIGHT, ctx.expr(1).accept(this));
-
-    return node;
+    return binary(ctx.expr(0).accept(this), ctx.expr(1).accept(this), BinaryOp.OR);
   }
 
   @Override
   public SQLNode visitExprXor(MySQLParser.ExprXorContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.XOR_SYMBOL);
-    node.put(BINARY_LEFT, ctx.expr(0).accept(this));
-    node.put(BINARY_RIGHT, ctx.expr(1).accept(this));
-
-    return node;
+    return binary(ctx.expr(0).accept(this), ctx.expr(1).accept(this), BinaryOp.XOR_SYMBOL);
   }
 
   @Override
   public SQLNode visitPrimaryExprIsNull(MySQLParser.PrimaryExprIsNullContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.IS);
-    node.put(BINARY_LEFT, ctx.boolPri().accept(this));
-    node.put(BINARY_RIGHT, literal(LiteralType.NULL, null));
+    final SQLNode node =
+        binary(ctx.boolPri().accept(this), literal(LiteralType.NULL, null), BinaryOp.IS);
 
     if (ctx.notRule() == null) return node;
     else {
@@ -617,23 +593,22 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitPrimaryExprCompare(MySQLParser.PrimaryExprCompareContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-    node.put(BINARY_OP, BinaryOp.ofOp(ctx.compOp().getText()));
-    node.put(BINARY_LEFT, ctx.boolPri().accept(this));
-    node.put(BINARY_RIGHT, visitPredicate(ctx.predicate()));
-    return node;
+    return binary(
+        ctx.boolPri().accept(this),
+        visitPredicate(ctx.predicate()),
+        BinaryOp.ofOp(ctx.compOp().getText()));
   }
 
   @Override
   public SQLNode visitPrimaryExprAllAny(MySQLParser.PrimaryExprAllAnyContext ctx) {
-    final SQLNode node = newExpr(BINARY);
+    final SQLNode node =
+        binary(
+            ctx.boolPri().accept(this),
+            visitSubquery(ctx.subquery()),
+            BinaryOp.ofOp(ctx.compOp().getText()));
 
     if (ctx.ALL_SYMBOL() != null) node.put(BINARY_SUBQUERY_OPTION, SubqueryOption.ALL);
     else if (ctx.ANY_SYMBOL() != null) node.put(BINARY_SUBQUERY_OPTION, SubqueryOption.ANY);
-
-    node.put(BINARY_OP, BinaryOp.ofOp(ctx.compOp().getText()));
-    node.put(BINARY_LEFT, ctx.boolPri().accept(this));
-    node.put(BINARY_RIGHT, visitSubquery(ctx.subquery()));
 
     return node;
   }
@@ -644,22 +619,24 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.predicateOperations() != null) {
       SQLNode node = null;
       final var predicateOp = ctx.predicateOperations();
-      if (predicateOp instanceof MySQLParser.PredicateExprInContext) {
-        node = newExpr(BINARY);
-        node.put(BINARY_LEFT, bitExpr);
 
+      if (predicateOp instanceof MySQLParser.PredicateExprInContext) {
         final var inExpr = (MySQLParser.PredicateExprInContext) predicateOp;
         final var subquery = inExpr.subquery();
-        if (subquery != null) {
-          node.put(BINARY_OP, BinaryOp.IN_SUBQUERY);
-          node.put(BINARY_RIGHT, visitSubquery(subquery));
 
+        final BinaryOp op;
+        final SQLNode right;
+        if (subquery != null) {
+          op = BinaryOp.IN_SUBQUERY;
+          right = subquery.accept(this);
         } else {
-          node.put(BINARY_OP, BinaryOp.IN_LIST);
           final SQLNode tuple = newExpr(TUPLE);
           tuple.put(TUPLE_EXPRS, toExprs(inExpr.exprList()));
-          node.put(BINARY_RIGHT, tuple);
+          op = BinaryOp.IN_LIST;
+          right = tuple;
         }
+
+        node = binary(bitExpr, right, op);
       }
 
       if (predicateOp instanceof MySQLParser.PredicateExprBetweenContext) {
@@ -672,50 +649,32 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         node.put(TERNARY_RIGHT, betweenExpr.predicate().accept(this));
       }
 
-      if (predicateOp instanceof MySQLParser.PredicateExprLikeContext) {
-        node = newExpr(BINARY);
-        node.put(BINARY_LEFT, bitExpr);
-        node.put(BINARY_OP, BinaryOp.LIKE);
-        node.put(
-            BINARY_RIGHT,
-            ((MySQLParser.PredicateExprLikeContext) predicateOp).simpleExpr(0).accept(this));
-      }
+      if (predicateOp instanceof MySQLParser.PredicateExprLikeContext)
+        node =
+            binary(
+                bitExpr,
+                ((MySQLParser.PredicateExprLikeContext) predicateOp).simpleExpr(0).accept(this),
+                BinaryOp.LIKE);
 
-      if (predicateOp instanceof MySQLParser.PredicateExprRegexContext) {
-        node = newExpr(BINARY);
-        node.put(BINARY_LEFT, bitExpr);
-        node.put(BINARY_OP, BinaryOp.REGEXP);
-        node.put(
-            BINARY_RIGHT,
-            ((MySQLParser.PredicateExprRegexContext) predicateOp).bitExpr().accept(this));
-      }
+      if (predicateOp instanceof MySQLParser.PredicateExprRegexContext)
+        node =
+            binary(
+                bitExpr,
+                ((MySQLParser.PredicateExprRegexContext) predicateOp).bitExpr().accept(this),
+                BinaryOp.REGEXP);
 
       if (node != null) {
-        if (ctx.notRule() != null) {
-          final SQLNode notNode = newExpr(UNARY);
-          notNode.put(UNARY_EXPR, node);
-          notNode.put(UNARY_OP, UnaryOp.NOT);
-          node = notNode;
-        }
+        if (ctx.notRule() != null) node = unary(node, UnaryOp.NOT);
         return node;
       } else return assertFalse();
     }
 
-    if (ctx.MEMBER_SYMBOL() != null) {
-      final SQLNode node = newExpr(BINARY);
-      node.put(BINARY_LEFT, bitExpr);
-      node.put(BINARY_OP, BinaryOp.MEMBER_OF);
-      node.put(BINARY_RIGHT, ctx.simpleExprWithParentheses().simpleExpr().accept(this));
-      return node;
-    }
+    if (ctx.MEMBER_SYMBOL() != null)
+      return binary(
+          bitExpr, ctx.simpleExprWithParentheses().simpleExpr().accept(this), BinaryOp.MEMBER_OF);
 
-    if (ctx.SOUNDS_SYMBOL() != null) {
-      final SQLNode node = newExpr(BINARY);
-      node.put(BINARY_LEFT, bitExpr);
-      node.put(BINARY_OP, BinaryOp.SOUNDS_LIKE);
-      node.put(BINARY_RIGHT, ctx.bitExpr(1).accept(this));
-      return node;
-    }
+    if (ctx.SOUNDS_SYMBOL() != null)
+      return binary(bitExpr, ctx.bitExpr(1).accept(this), BinaryOp.SOUNDS_LIKE);
 
     return bitExpr;
   }
@@ -723,11 +682,6 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitBitExpr(MySQLParser.BitExprContext ctx) {
     if (ctx.simpleExpr() != null) return ctx.simpleExpr().accept(this);
-
-    final SQLNode node = newExpr(BINARY);
-
-    node.put(BINARY_LEFT, ctx.bitExpr(0).accept(this));
-    node.put(BINARY_OP, BinaryOp.ofOp(ctx.op.getText()));
 
     final SQLNode right;
     if (ctx.interval() != null) {
@@ -737,9 +691,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     } else right = ctx.bitExpr(1).accept(this);
 
-    node.put(BINARY_RIGHT, right);
-
-    return node;
+    return binary(ctx.bitExpr(0).accept(this), right, BinaryOp.ofOp(ctx.op.getText()));
   }
 
   @Override
@@ -1367,17 +1319,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSimpleExprInterval(MySQLParser.SimpleExprIntervalContext ctx) {
-    final SQLNode node = newExpr(BINARY);
-
     final SQLNode interval = newExpr(INTERVAL);
     interval.put(INTERVAL_EXPR, toExpr(ctx.expr(0)));
     interval.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
 
-    node.put(BINARY_OP, BinaryOp.PLUS);
-    node.put(BINARY_LEFT, interval);
-    node.put(BINARY_RIGHT, toExpr(ctx.expr(1)));
-
-    return node;
+    return binary(interval, toExpr(ctx.expr(1)), BinaryOp.PLUS);
   }
 
   @Override

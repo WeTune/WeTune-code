@@ -408,6 +408,19 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   static final String ATTR_PREFIX = "sql.attr.";
 
+  public static SQLNode tableName(String name) {
+    final SQLNode node = new SQLNode(TABLE_NAME);
+    node.put(TABLE_NAME_TABLE, name);
+    return node;
+  }
+
+  public static SQLNode columnName(String table, String column) {
+    final SQLNode node = new SQLNode(COLUMN_NAME);
+    node.put(COLUMN_NAME_TABLE, table);
+    node.put(COLUMN_NAME_COLUMN, column);
+    return node;
+  }
+
   public static SQLNode selectItem(SQLNode expr, String alias) {
     final SQLNode node = new SQLNode(SELECT_ITEM);
     node.put(SELECT_ITEM_EXPR, expr);

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public interface FuncUtils {
+
   static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
   }

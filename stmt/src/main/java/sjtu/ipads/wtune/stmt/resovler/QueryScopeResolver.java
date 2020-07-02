@@ -8,9 +8,10 @@ import sjtu.ipads.wtune.stmt.attrs.UnionQueryScope;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static java.util.function.Function.identity;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
@@ -63,16 +64,8 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
   }
 
   private static final Map<Key<?>, QueryScope.Clause> CLAUSE_KEYS =
-      Map.ofEntries(
-          Map.entry(QUERY_LIMIT, QueryScope.Clause.LIMIT),
-          Map.entry(QUERY_OFFSET, QueryScope.Clause.OFFSET),
-          Map.entry(QUERY_ORDER_BY, QueryScope.Clause.ORDER_BY),
-          Map.entry(QUERY_SPEC_SELECT_ITEMS, QueryScope.Clause.SELECT_ITEM),
-          Map.entry(QUERY_SPEC_FROM, QueryScope.Clause.FROM),
-          Map.entry(JOINED_ON, QueryScope.Clause.ON),
-          Map.entry(QUERY_SPEC_WHERE, QueryScope.Clause.WHERE),
-          Map.entry(QUERY_SPEC_HAVING, QueryScope.Clause.HAVING),
-          Map.entry(QUERY_SPEC_GROUP_BY, QueryScope.Clause.GROUP_BY));
+      Arrays.stream(QueryScope.Clause.values())
+          .collect(Collectors.toMap(QueryScope.Clause::key, identity()));
 
   @Override
   public boolean enterChild(Key<SQLNode> key, SQLNode child) {

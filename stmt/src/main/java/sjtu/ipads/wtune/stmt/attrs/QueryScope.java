@@ -1,28 +1,39 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
+import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public abstract class QueryScope {
   public enum Clause {
-    SELECT_ITEM,
-    FROM,
-    ON,
-    WHERE,
-    HAVING,
-    ORDER_BY,
-    GROUP_BY,
-    LIMIT,
-    OFFSET
+    SELECT_ITEM(QUERY_SPEC_SELECT_ITEMS),
+    FROM(QUERY_SPEC_FROM),
+    ON(JOINED_ON),
+    WHERE(QUERY_SPEC_WHERE),
+    HAVING(QUERY_SPEC_HAVING),
+    ORDER_BY(QUERY_ORDER_BY),
+    GROUP_BY(QUERY_SPEC_GROUP_BY),
+    LIMIT(QUERY_LIMIT),
+    OFFSET(QUERY_OFFSET);
+    private final Attrs.Key<?> attr;
+
+    Clause(Attrs.Key<?> attr) {
+      this.attr = attr;
+    }
+
+    public Key<?> key() {
+      return attr;
+    }
   }
 
   private QueryScope parent;
@@ -76,8 +87,6 @@ public abstract class QueryScope {
   }
 
   public void addTable(TableSource tableSource) {}
-
-  public void removeTable(TableSource tableSource) {}
 
   public void addSelectItem(SelectItem item) {}
 

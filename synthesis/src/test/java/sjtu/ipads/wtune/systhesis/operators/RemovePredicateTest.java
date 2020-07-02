@@ -33,8 +33,9 @@ class RemovePredicateTest {
 
       stmt.setParsed(stmt.parsed().copy());
 
-      new RemovePredicate(16L).apply(stmt.parsed());
-      new RemovePredicate(8L).apply(stmt.parsed());
+
+      RemovePredicate.build(16L).apply(stmt.parsed());
+      RemovePredicate.build(8L).apply(stmt.parsed());
 
       assertEquals("SELECT 1 FROM `a` WHERE `a`.`j` = 3", stmt.parsed().toString());
     }

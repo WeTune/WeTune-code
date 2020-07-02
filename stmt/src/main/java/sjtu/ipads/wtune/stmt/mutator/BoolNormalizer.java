@@ -45,10 +45,7 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
     // `expr` must be evaluated as boolean
     final Kind kind = exprKind(expr);
     if (kind == Kind.COLUMN_REF) {
-      final SQLNode node = newExpr(Kind.BINARY);
-      node.put(BINARY_OP, BinaryOp.IS);
-      node.put(BINARY_LEFT, expr.copy());
-      node.put(BINARY_RIGHT, literal(LiteralType.BOOL, true));
+      final SQLNode node = binary(expr.copy(), literal(LiteralType.BOOL, true), BinaryOp.IS);
       expr.replaceThis(node);
       IdResolver.resolve(node);
 

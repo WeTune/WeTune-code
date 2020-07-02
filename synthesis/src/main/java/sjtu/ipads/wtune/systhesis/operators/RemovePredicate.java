@@ -15,7 +15,7 @@ public class RemovePredicate implements Operator, SQLVisitor {
   private final Long targetId;
   private boolean found = false;
 
-  public RemovePredicate(Long targetId) {
+  private RemovePredicate(Long targetId) {
     this.targetId = targetId;
   }
 
