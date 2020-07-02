@@ -12,11 +12,9 @@ import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.List;
-import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
@@ -186,9 +184,6 @@ public interface MySQLASTHelper {
     if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
   }
 
-  Set<String> TIME_TYPE = Set.of(YEAR, DATE, TIME, TIMESTAMP, DATETIME);
-  Set<String> FRACTION_TYPES = Set.of(REAL, DOUBLE, FLOAT, DECIMAL, NUMERIC, FIXED);
-
   static IndexType parseIndexType(MySQLParser.IndexTypeContext indexType) {
     if (indexType == null) return null;
 
@@ -257,12 +252,16 @@ public interface MySQLASTHelper {
   }
 
   static SQLDataType parseDataType(MySQLParser.DataTypeContext ctx) {
-    final String typeString = coalesce(ctx.type.getText().toLowerCase(), "national");
+    final String typeString = ctx.type != null ? ctx.type.getText().toLowerCase() : "national";
 
     final SQLDataType.Category category;
     final String name;
-    if (typeString.endsWith(INT) || typeString.equals(BIT) || typeString.equals(SERIAL)) {
+    if (typeString.endsWith("int") || typeString.equals(INT) || typeString.equals(SERIAL)) {
       category = SQLDataType.Category.INTEGRAL;
+      name = "int".equals(typeString) ? INT : typeString;
+
+    } else if (typeString.equals(BIT)) {
+      category = Category.BIT_STRING;
       name = typeString;
 
     } else if (FRACTION_TYPES.contains(typeString)) {
@@ -275,7 +274,7 @@ public interface MySQLASTHelper {
 
     } else if (typeString.contains("bool")) {
       category = SQLDataType.Category.BOOLEAN;
-      name = typeString;
+      name = BOOLEAN;
 
     } else if (typeString.contains("blob")) {
       category = SQLDataType.Category.BLOB;
@@ -349,7 +348,7 @@ public interface MySQLASTHelper {
             ? emptyList()
             : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
 
-    return new SQLDataType(category, name, w, p, unsigned, valuesList, null);
+    return new SQLDataType(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
   }
 
   static Pair<LiteralType, Number> parseNumericLiteral(Token token) {

@@ -7,10 +7,11 @@ dependencies {
 }
 
 def mysqlDir = 'src/main/java/sjtu/ipads/wtune/sqlparser/mysql/internal'
+def pgDir = 'src/main/java/sjtu/ipads/wtune/sqlparser/pg/internal'
 def genDir = 'src/gen/'
 def resourceDir = 'src/main/resources'
 
-task antlr(type: Exec) {
+task antlrMysql(type: Exec) {
     if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
         workingDir resourceDir
         if (Os.isFamily(Os.FAMILY_WINDOWS))
@@ -29,13 +30,42 @@ task antlr(type: Exec) {
     }
 }
 
+task antlrPg(type: Exec) {
+    if (!file("$pgDir/PGLexer.java").exists() || !file("$pgDir/PGParser.java").exists()) {
+        workingDir resourceDir
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+                    '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
+                    '-package', 'sjtu.ipads.wtune.sqlparser.pg.internal', 'PGLexer.g4', 'PGParser.g4'
+        else
+            commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
+                    '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
+                    '-package', 'sjtu.ipads.wtune.sqlparser.pg.internal', 'PGLexer.g4', 'PGParser.g4'
+    } else {
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            commandLine 'powershell', 'echo', '\'use generated\''
+        else
+            commandLine 'echo', '\'use generated\''
+    }
+}
+
 task copyMysql(type: Copy) {
-    dependsOn antlr
+    dependsOn antlrMysql
     if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
         from(genDir) {
-            include '*.java'
+            include 'MySQL*.java'
         }
         into(mysqlDir)
+    }
+}
+
+task copyPg(type: Copy) {
+    dependsOn antlrPg
+    if (!file("$pgDir/PGLexer.java").exists() || !file("$pgDir/PGParser.java").exists()) {
+        from(genDir) {
+            include 'PG*.java'
+        }
+        into(pgDir)
     }
 }
 
@@ -49,5 +79,17 @@ task removeMysql(type: Delete) {
     }
 }
 
+task removePg(type: Delete) {
+    delete fileTree(genDir)
+    delete fileTree(pgDir) {
+        include "PGLexer.java"
+        include "PGParser.java"
+        include "PGParserBaseVisitor.java"
+        include "PGParserVisitor.java"
+    }
+}
+
 cleanAll.dependsOn removeMysql
+cleanAll.dependsOn removePg
 compileJava.dependsOn copyMysql
+compileJava.dependsOn copyPg

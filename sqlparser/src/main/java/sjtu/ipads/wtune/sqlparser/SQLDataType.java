@@ -1,6 +1,10 @@
 package sjtu.ipads.wtune.sqlparser;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 
 public class SQLDataType {
   public enum Category {
@@ -9,20 +13,33 @@ public class SQLDataType {
     BOOLEAN,
     ENUM,
     STRING,
+    BIT_STRING,
     TIME,
     BLOB,
     JSON,
-    GEO
+    GEO,
+    INTERVAL,
+    NET,
+    MONETARY,
+    UUID,
+    XML,
+    RANGE,
+    UNCLASSIFIED
   }
 
   // integral
   public static final String TINYINT = "tinyint";
-  public static final String INT = "int";
+  public static final String INT = "integer";
   public static final String SMALLINT = "smallint";
   public static final String MEDIUMINT = "mediumint";
   public static final String BIGINT = "bigint";
-  public static final String BIT = "bit";
+  public static final String SMALLSERIAL = "smallserial";
   public static final String SERIAL = "serial";
+  public static final String BIGSERIAL = "bigserial";
+
+  // bit-string
+  public static final String BIT = "bit";
+  public static final String BIT_VARYING = "bit varying";
 
   // fraction
   public static final String REAL = "real";
@@ -33,7 +50,6 @@ public class SQLDataType {
   public static final String FIXED = "fixed";
 
   // boolean
-  public static final String BOOL = "bool";
   public static final String BOOLEAN = "boolean";
 
   // enum
@@ -54,7 +70,9 @@ public class SQLDataType {
   public static final String YEAR = "year";
   public static final String DATE = "date";
   public static final String TIME = "time";
+  public static final String TIMETZ = "timetz";
   public static final String TIMESTAMP = "timestamp";
+  public static final String TIMESTAMPTZ = "timestamptz";
   public static final String DATETIME = "datetime";
 
   // blob
@@ -75,27 +93,72 @@ public class SQLDataType {
   public static final String MULTILINESTRING = "multilinestring";
   public static final String POLYGON = "polygon";
   public static final String MULTIPOLYGON = "multipolygon";
+  public static final String BOX = "box";
+  public static final String CIRCLE = "circle";
+  public static final String LINE = "line";
+  public static final String LSEG = "lseg";
+  public static final String PATH = "path";
+
+  // interval
+  public static final String INTERVAL = "interval";
+
+  // net
+  public static final String CIDR = "cidr";
+  public static final String INET = "inet";
+  public static final String MACADDR = "MACADDR";
+
+  // money
+  public static final String MONEY = "money";
+
+  // uuid
+  public static final String UUID = "uuid";
+
+  // xml
+  public static final String XML = "xml";
+
+  public static final String PG_LSN = "pg_lsn";
+  public static final String TSVECTOR = "tsvector";
+  public static final String TSQUERY = "tsquery";
+  public static final String TXID_SNAPSHOT = "txid_snapshot";
+
+  public static Set<String> TIME_TYPE =
+      Set.of(YEAR, DATE, TIME, TIMETZ, TIMESTAMP, TIMESTAMPTZ, DATETIME);
+  public static Set<String> FRACTION_TYPES = Set.of(REAL, DOUBLE, FLOAT, DECIMAL, NUMERIC, FIXED);
+  public static Set<String> NET_TYPES = Set.of(CIDR, INET, MACADDR);
+  public static Set<String> GEOMETRY_TYPES =
+      Set.of(
+          GEOMETRY,
+          GEOMETRYCOLLECTION,
+          POINT,
+          MULTIPOINT,
+          LINESTRING,
+          MULTILINESTRING,
+          POLYGON,
+          MULTIPOLYGON,
+          BOX,
+          CIRCLE,
+          LINE,
+          LSEG,
+          PATH);
 
   private final Category category;
   private final String name;
   private final int width;
   private final int precision;
-  private final boolean unsigned;
-  private final List<String> valuesList;
+  private boolean unsigned;
+  private String intervalField;
+  private List<String> valuesList;
+  private int[] dimensions;
 
-  public SQLDataType(
-      Category category,
-      String name,
-      int width,
-      int precision,
-      boolean unsigned,
-      List<String> valuesList) {
+  private static final int[] EMPTY_INT_ARRAY = new int[0];
+
+  public SQLDataType(Category category, String name, int width, int precision) {
     this.category = category;
     this.name = name;
     this.width = width;
     this.precision = precision;
-    this.unsigned = unsigned;
-    this.valuesList = valuesList;
+    this.valuesList = Collections.emptyList();
+    this.dimensions = EMPTY_INT_ARRAY;
   }
 
   public Category category() {
@@ -118,6 +181,18 @@ public class SQLDataType {
     return unsigned;
   }
 
+  public String intervalField() {
+    return intervalField;
+  }
+
+  public List<String> valuesList() {
+    return valuesList;
+  }
+
+  public int[] dimensions() {
+    return dimensions;
+  }
+
   public void format(StringBuilder builder) {
     builder.append(name);
     if (width != -1 && precision != -1)
@@ -129,6 +204,26 @@ public class SQLDataType {
       builder.append('(').append(String.join(", ", valuesList)).append(')');
 
     if (unsigned) builder.append(" UNSIGNED");
+  }
+
+  public SQLDataType setUnsigned(boolean unsigned) {
+    this.unsigned = unsigned;
+    return this;
+  }
+
+  public SQLDataType setIntervalField(String intervalField) {
+    this.intervalField = intervalField;
+    return this;
+  }
+
+  public SQLDataType setValuesList(List<String> valuesList) {
+    this.valuesList = valuesList;
+    return this;
+  }
+
+  public SQLDataType setDimensions(int[] dimensions) {
+    this.dimensions = dimensions;
+    return this;
   }
 
   @Override
