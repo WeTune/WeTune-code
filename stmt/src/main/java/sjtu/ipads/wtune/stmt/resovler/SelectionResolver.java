@@ -115,7 +115,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public void resolve(Statement stmt) {
+  public boolean resolve(Statement stmt) {
     LOG.log(
         System.Logger.Level.TRACE,
         "resolving selection for <{0}, {1}>",
@@ -123,6 +123,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
         stmt.stmtId());
     this.stmt = stmt;
     stmt.parsed().accept(this);
+    return true;
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(TableResolver.class);

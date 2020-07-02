@@ -59,7 +59,14 @@ public class BoolPrimitiveResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public void resolve(Statement stmt) {
-    stmt.parsed().accept(this);
+  public boolean resolve(Statement stmt, SQLNode node) {
+    node.accept(this);
+    return true;
+  }
+
+  private static final BoolPrimitiveResolver INSTANCE = new BoolPrimitiveResolver();
+
+  public static BoolPrimitiveResolver singleton() {
+    return INSTANCE;
   }
 }

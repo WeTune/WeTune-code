@@ -27,7 +27,8 @@ public class Statement {
   private AppContext appContext;
   private SQLNode parsed;
 
-  private final Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
+  private Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
+  private Set<Class<? extends Resolver>> failToResolveBy = new HashSet<>();
 
   public static Statement findOne(String appName, int id) {
     return StatementDaoInstance.findOne(appName, id);
@@ -70,18 +71,44 @@ public class Statement {
     return appContext;
   }
 
-  public void resolve(Class<? extends Resolver> cls, boolean force) {
-    if (!force && resolvedBy.contains(cls)) return;
+  public boolean resolve(Class<? extends Resolver> cls, boolean force) {
+    if (!force && resolvedBy.contains(cls)) return true;
 
-    final Resolver resolver = newInstance(cls);
+    final Resolver resolver = Resolver.getResolver(cls);
 
     for (Class<? extends Resolver> dependency : resolver.dependsOn()) resolve(dependency, force);
-    resolver.resolve(this);
-    resolvedBy.add(cls);
+    final boolean isSuccessful = resolver.resolve(this);
+    if (isSuccessful) {
+      resolvedBy.add(cls);
+      failToResolveBy.remove(cls);
+    } else failToResolveBy.add(cls);
+    return isSuccessful;
   }
 
-  public void resolve(Class<? extends Resolver> cls) {
-    resolve(cls, false);
+  public boolean resolve(Class<? extends Resolver> cls) {
+    return resolve(cls, false);
+  }
+
+  public boolean reResolve() {
+    final Set<Class<? extends Resolver>> resolvedBy = this.resolvedBy;
+    this.resolvedBy = new HashSet<>();
+    this.failToResolveBy.clear();
+
+    boolean isAllSuccessful = true;
+    for (Class<? extends Resolver> cls : resolvedBy)
+      isAllSuccessful = resolve(cls) && isAllSuccessful;
+    return isAllSuccessful;
+  }
+
+  public boolean resolveStandard() {
+    boolean isAllSuccessful = true;
+    for (Class<? extends Resolver> cls : Resolver.STANDARD_RESOLVERS)
+      isAllSuccessful = resolve(cls) && isAllSuccessful;
+    return isAllSuccessful;
+  }
+
+  public Set<Class<? extends Resolver>> failedResolvers() {
+    return failToResolveBy;
   }
 
   public void mutate(Class<? extends Mutator> cls) {

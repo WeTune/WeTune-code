@@ -16,6 +16,14 @@ public class RemoveTableSource implements Operator {
     this.target = target;
   }
 
+  public static Operator build(String target) {
+    return new RemoveTableSource(target);
+  }
+
+  public static Operator build(TableSource source) {
+    return new RemoveTableSource(source.name());
+  }
+
   @Override
   public SQLNode apply(SQLNode sqlNode) {
     final QueryScope scope = sqlNode.get(RESOLVED_QUERY_SCOPE);

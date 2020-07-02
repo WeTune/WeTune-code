@@ -1,10 +1,13 @@
 package sjtu.ipads.wtune.stmt.utils;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
+import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
@@ -39,6 +42,23 @@ public class StmtHelper {
         | NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static Map<Class<?>, Object> SINGLETONS = new HashMap<>();
+
+  @SuppressWarnings("unchecked")
+  private static <T> T getSingleton0(Class<T> cls) {
+    try {
+      return (T)
+          MethodHandles.lookup().findStatic(cls, "singleton", MethodType.methodType(cls)).invoke();
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T getSingleton(Class<T> cls) {
+    return (T) SINGLETONS.computeIfAbsent(cls, StmtHelper::getSingleton0);
   }
 
   public static boolean nodeEquals(SQLNode n0, SQLNode n1) {

@@ -107,7 +107,7 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
   }
 
   @Override
-  public void resolve(Statement stmt) {
+  public boolean resolve(Statement stmt) {
     LOG.log(
         System.Logger.Level.TRACE,
         "resolving query scope for <{0}, {1}>",
@@ -115,6 +115,7 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
         stmt.stmtId());
 
     stmt.parsed().accept(new QueryScopeResolver());
+    return true;
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(IdResolver.class);

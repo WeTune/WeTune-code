@@ -15,12 +15,12 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE_SOURCE;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 public class TableResolver implements SQLVisitor, Resolver {
   public static System.Logger LOG = System.getLogger("Stmt.Resolver.Table");
   private Schema schema;
   private Statement stmt;
+  private boolean isAllSuccessful = true;
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
@@ -56,6 +56,7 @@ public class TableResolver implements SQLVisitor, Resolver {
           stmt.appName(),
           stmt.stmtId(),
           stmt.parsed().toString(false));
+      isAllSuccessful = false;
       return false;
     }
 
@@ -71,7 +72,7 @@ public class TableResolver implements SQLVisitor, Resolver {
   }
 
   @Override
-  public void resolve(Statement stmt) {
+  public boolean resolve(Statement stmt) {
     LOG.log(
         System.Logger.Level.TRACE, "resolving table for <{0}, {1}>", stmt.appName(), stmt.stmtId());
 
@@ -79,6 +80,7 @@ public class TableResolver implements SQLVisitor, Resolver {
     this.schema = stmt.appContext().schema();
 
     stmt.parsed().accept(this);
+    return isAllSuccessful;
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES =

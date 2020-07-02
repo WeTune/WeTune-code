@@ -32,9 +32,8 @@ class ReplaceColumnRefTest {
       stmt.resolve(ColumnResolver.class);
       final List<SQLNode> selectItems = stmt.parsed().get(QUERY_BODY).get(QUERY_SPEC_SELECT_ITEMS);
       final ColumnRef target = selectItems.get(0).get(SELECT_ITEM_EXPR).get(RESOLVED_COLUMN_REF);
-      final ColumnRef rep = selectItems.get(1).get(SELECT_ITEM_EXPR).get(RESOLVED_COLUMN_REF);
 
-      final ReplaceColumnRef op = new ReplaceColumnRef(target, rep);
+      final Operator op = ReplaceColumnRef.build(target, "b", "x");
       op.apply(stmt.parsed());
       assertEquals(
           "SELECT `b`.`x`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y` "

@@ -32,8 +32,9 @@ public class JoinConditionResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public void resolve(Statement stmt) {
+  public boolean resolve(Statement stmt) {
     stmt.parsed().accept(this);
+    return true;
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES =
@@ -42,5 +43,11 @@ public class JoinConditionResolver implements Resolver, SQLVisitor {
   @Override
   public Set<Class<? extends Resolver>> dependsOn() {
     return DEPENDENCIES;
+  }
+
+  private static final JoinConditionResolver INSTANCE = new JoinConditionResolver();
+
+  public static JoinConditionResolver singleton() {
+    return INSTANCE;
   }
 }

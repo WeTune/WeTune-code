@@ -18,18 +18,26 @@ public class ReplaceColumnRef implements Operator, SQLVisitor {
   private final String replacementTable;
   private final String replacementColumn;
 
-  public ReplaceColumnRef(ColumnRef target, ColumnRef replacement) {
+  private ReplaceColumnRef(ColumnRef target, String replacementTable, String replacementColumn) {
     this.target = target;
-    this.replacementTable = replacement.source().name();
+    this.replacementTable = replacementTable;
+    this.replacementColumn = replacementColumn;
+  }
+
+  public static Operator build(ColumnRef target, ColumnRef replacement) {
+    final String replacementTable = replacement.source().name();
 
     final Column column = replacement.refColumn();
     final SelectItem item = replacement.refItem();
-    this.replacementColumn =
+    final String replacementColumn =
         column != null
             ? column.columnName()
             : item.alias() != null ? item.alias() : item.simpleName();
+    return build(target, replacementTable, replacementColumn);
+  }
 
-    assert this.replacementColumn != null;
+  public static Operator build(ColumnRef target, String replacementTable, String replacementColumn) {
+    return new ReplaceColumnRef(target, replacementTable, replacementColumn);
   }
 
   @Override

@@ -18,13 +18,18 @@ public class IdResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public void resolve(Statement stmt) {
-    stmt.parsed().accept(this);
+  public boolean resolve(Statement stmt, SQLNode node) {
+    node.accept(this);
+    return true;
   }
 
   private static final IdResolver INSTANCE = new IdResolver();
 
+  public static IdResolver singleton() {
+    return INSTANCE;
+  }
+
   public static void resolve(SQLNode node) {
-    node.accept(INSTANCE);
+    INSTANCE.resolve(null, node);
   }
 }

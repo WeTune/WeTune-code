@@ -18,6 +18,7 @@ public class ColumnResolver implements Resolver, SQLVisitor {
   private static final System.Logger LOG = System.getLogger("Stmt.Resolver.Column");
 
   private Statement stmt;
+  private boolean isAllSuccessful = true;
 
   @Override
   public boolean enterColumnRef(SQLNode columnRef) {
@@ -30,7 +31,7 @@ public class ColumnResolver implements Resolver, SQLVisitor {
     final ColumnRef ref = scope.resolveRef(tableName, columnName, clause);
 
     if (ref != null) columnRef.put(RESOLVED_COLUMN_REF, ref.setNode(columnRef));
-    else
+    else {
       LOG.log(
           Level.WARNING,
           "failed to resolve column ref {3}\n<{0}, {1}>\n{2}",
@@ -38,12 +39,14 @@ public class ColumnResolver implements Resolver, SQLVisitor {
           stmt.stmtId(),
           stmt.parsed().toString(false),
           columnRef);
+      isAllSuccessful = false;
+    }
 
     return false;
   }
 
   @Override
-  public void resolve(Statement stmt) {
+  public boolean resolve(Statement stmt) {
     LOG.log(
         System.Logger.Level.TRACE,
         "resolving column for <{0}, {1}>",
@@ -51,6 +54,7 @@ public class ColumnResolver implements Resolver, SQLVisitor {
         stmt.stmtId());
     this.stmt = stmt;
     stmt.parsed().accept(this);
+    return isAllSuccessful;
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES =

@@ -24,29 +24,25 @@ class RemoveTableSourceTest {
     {
       stmt.setRawSql("select 1 from a");
       stmt.resolve(TableResolver.class);
-      final RemoveTableSource op = new RemoveTableSource("a");
-      op.apply(stmt.parsed());
+      RemoveTableSource.build("a").apply(stmt.parsed());
       assertEquals("SELECT 1", stmt.parsed().toString());
     }
     {
       stmt.setRawSql("select 1 from a join b on a.i = b.x");
       stmt.resolve(TableResolver.class);
-      final RemoveTableSource op = new RemoveTableSource("a");
-      op.apply(stmt.parsed());
+      RemoveTableSource.build("a").apply(stmt.parsed());
       assertEquals("SELECT 1 FROM `b`", stmt.parsed().toString());
     }
     {
       stmt.setRawSql("select 1 from (select i from a) ta join b on ta.i = b.x");
       stmt.resolve(TableResolver.class);
-      final RemoveTableSource op = new RemoveTableSource("ta");
-      op.apply(stmt.parsed());
+      RemoveTableSource.build("ta").apply(stmt.parsed());
       assertEquals("SELECT 1 FROM `b`", stmt.parsed().toString());
     }
     {
       stmt.setRawSql("select 1 from (select i from a) ta join b on ta.i = b.x");
       stmt.resolve(TableResolver.class);
-      final RemoveTableSource op = new RemoveTableSource("b");
-      op.apply(stmt.parsed());
+      RemoveTableSource.build("b").apply(stmt.parsed());
       assertEquals("SELECT 1 FROM (SELECT `i` FROM `a`) AS `ta`", stmt.parsed().toString());
     }
   }
