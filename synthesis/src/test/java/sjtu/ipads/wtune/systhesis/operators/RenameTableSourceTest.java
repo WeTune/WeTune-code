@@ -9,6 +9,9 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_FROM;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 class RenameTableSourceTest {
@@ -33,7 +36,7 @@ class RenameTableSourceTest {
       final TableSource tableSource =
           stmt.parsed().get(RESOLVED_QUERY_SCOPE).tableSources().get("a");
 
-      RenameTableSource.build(tableSource, "m").apply(stmt);
+      RenameTableSource.build(tableSource, "m", false).apply(stmt);
       Resolve.build().apply(stmt);
 
       assertEquals(
@@ -46,6 +49,24 @@ class RenameTableSourceTest {
               + "ORDER BY `m`.`j`",
           stmt.parsed().toString());
       assertTrue(stmt.failedResolvers().isEmpty());
+    }
+    {
+      stmt.setRawSql("select b.i from (select j as i from a) b");
+      stmt.retrofitStandard();
+      final TableSource tableSource =
+          stmt.parsed()
+              .get(QUERY_BODY)
+              .get(QUERY_SPEC_FROM)
+              .get(DERIVED_SUBQUERY)
+              .get(RESOLVED_QUERY_SCOPE)
+              .tableSources()
+              .get("a");
+
+      RenameTableSource.build(tableSource, "m", true).apply(stmt);
+
+      assertEquals(
+          "SELECT `m`.`i` FROM (SELECT `m`.`j` AS `i` FROM `a` AS `m`) AS `b`",
+          stmt.parsed().toString());
     }
   }
 }

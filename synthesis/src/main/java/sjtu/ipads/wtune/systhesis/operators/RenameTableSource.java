@@ -15,22 +15,24 @@ import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
 public class RenameTableSource implements Operator, SQLVisitor {
   private final TableSource source;
   private final String name;
+  private final boolean recursive;
 
-  private RenameTableSource(TableSource source, String name) {
+  private RenameTableSource(TableSource source, String name, boolean recursive) {
     this.source = source;
     this.name = name;
+    this.recursive = recursive;
   }
 
-  public static RenameTableSource build(TableSource source, String name) {
+  public static RenameTableSource build(TableSource source, String name, boolean recursive) {
     if (source == null || name == null) return null;
-    return new RenameTableSource(source, name);
+    return new RenameTableSource(source, name, recursive);
   }
 
   @Override
   public boolean enterColumnRef(SQLNode columnRef) {
     final ColumnRef cRef = columnRef.get(RESOLVED_COLUMN_REF);
     if (cRef == null) return false;
-    if (source.equals(cRef.source()))
+    if ((recursive && cRef.isFrom(source)) || (!recursive && source.equals(cRef.source())))
       cRef.node().get(COLUMN_REF_COLUMN).put(COLUMN_NAME_TABLE, name);
     return false;
   }
@@ -43,8 +45,11 @@ public class RenameTableSource implements Operator, SQLVisitor {
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
-    if (nodeEquals(derivedTableSource, source.node())) derivedTableSource.put(DERIVED_ALIAS, name);
-    return false;
+    if (nodeEquals(derivedTableSource, source.node())) {
+      derivedTableSource.put(DERIVED_ALIAS, name);
+      return false;
+    }
+    return recursive;
   }
 
   @Override

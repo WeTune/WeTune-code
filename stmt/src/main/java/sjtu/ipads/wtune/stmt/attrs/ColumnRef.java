@@ -52,10 +52,14 @@ public class ColumnRef {
     return this;
   }
 
+  private ColumnRef nextLevel() {
+    if (refItem == null || refItem.expr() == null) return null;
+    return refItem.expr().get(RESOLVED_COLUMN_REF);
+  }
+
   public ColumnRef resolveRootRef() {
     if (refColumn != null) return this;
-    if (refItem == null || refItem.expr() == null) return null;
-    final ColumnRef columnRef = refItem.expr().get(RESOLVED_COLUMN_REF);
+    final ColumnRef columnRef = nextLevel();
     return columnRef != null ? columnRef.resolveRootRef() : this;
   }
 
@@ -65,7 +69,12 @@ public class ColumnRef {
     else return null;
   }
 
-  public void resolveTo(QueryScope scope) {}
+  public boolean isFrom(TableSource source) {
+    if (this.source.equals(source)) return true;
+    final ColumnRef nextLevel = nextLevel();
+    if (nextLevel != null) return nextLevel.isFrom(source);
+    else return false;
+  }
 
   public void setDependent(boolean dependent) {
     isDependent = dependent;
