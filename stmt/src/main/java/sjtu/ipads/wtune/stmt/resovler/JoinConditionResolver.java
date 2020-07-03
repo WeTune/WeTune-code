@@ -12,6 +12,17 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 
+/**
+ * Marking all join conditions. Essentially, a join condition is used to eq-join two tables.
+ *
+ * <p><b>Definition (join condition)</b>
+ *
+ * <ol>
+ *   <li>A primitive bool expr
+ *   <li>A binary expression
+ *   <li>Both operands are column ref
+ * </ol>
+ */
 public class JoinConditionResolver implements Resolver, SQLVisitor {
   @Override
   public boolean enterBinary(SQLNode binary) {
@@ -38,7 +49,7 @@ public class JoinConditionResolver implements Resolver, SQLVisitor {
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES =
-      Set.of(BoolPrimitiveResolver.class, ColumnResolver.class);
+      Set.of(BoolExprResolver.class, ColumnResolver.class);
 
   @Override
   public Set<Class<? extends Resolver>> dependsOn() {

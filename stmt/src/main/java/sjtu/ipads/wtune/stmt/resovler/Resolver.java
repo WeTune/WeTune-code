@@ -25,7 +25,7 @@ public interface Resolver {
   Set<Class<? extends Resolver>> STANDARD_RESOLVERS =
       Set.of(
           IdResolver.class,
-          BoolPrimitiveResolver.class,
+          BoolExprResolver.class,
           QueryScopeResolver.class,
           TableResolver.class,
           SelectionResolver.class,

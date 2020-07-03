@@ -65,6 +65,8 @@ public class ColumnRef {
     else return null;
   }
 
+  public void resolveTo(QueryScope scope) {}
+
   public void setDependent(boolean dependent) {
     isDependent = dependent;
   }
@@ -92,6 +94,8 @@ public class ColumnRef {
 
   @Override
   public String toString() {
-    return String.format("{%s %s}", node, resolveRootRef());
+    final ColumnRef rootRef = resolveRootRef();
+    if (rootRef == this) return String.format("{%s | %s}", node, source);
+    else return String.format("{%s < %s}", node, rootRef);
   }
 }

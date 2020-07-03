@@ -11,4 +11,6 @@ module sjtu.ipads.wtune.stmt {
   requires sjtu.ipads.wtune.sqlparser;
   requires sqlite.jdbc;
   requires java.sql;
+
+  requires com.google.common;
 }

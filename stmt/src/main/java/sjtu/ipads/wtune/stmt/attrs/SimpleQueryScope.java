@@ -26,6 +26,11 @@ public class SimpleQueryScope extends QueryScope {
   }
 
   @Override
+  public List<SelectItem> selectItems() {
+    return selectItems;
+  }
+
+  @Override
   public void setSpecNode(SQLNode specNode) {
     this.specNode = specNode;
   }

@@ -107,6 +107,15 @@ public class Statement {
     return isAllSuccessful;
   }
 
+  public void mutateStandard() {
+    Mutator.STANDARD_MUTATORS.forEach(this::mutate);
+  }
+
+  public void retrofitStandard() {
+    mutateStandard();
+    resolveStandard();
+  }
+
   public Set<Class<? extends Resolver>> failedResolvers() {
     return failToResolveBy;
   }
@@ -151,6 +160,18 @@ public class Statement {
     if (o == null || getClass() != o.getClass()) return false;
     Statement statement = (Statement) o;
     return stmtId == statement.stmtId && Objects.equals(appName, statement.appName);
+  }
+
+  public Statement copy() {
+    final Statement copy = new Statement();
+    copy.appName = this.appName;
+    copy.stmtId = this.stmtId;
+    copy.rawSql = this.rawSql;
+    copy.appContext = this.appContext;
+    copy.parsed = this.parsed.copy();
+    copy.resolvedBy = new HashSet<>(resolvedBy);
+    copy.failToResolveBy = new HashSet<>(failToResolveBy);
+    return copy;
   }
 
   @Override

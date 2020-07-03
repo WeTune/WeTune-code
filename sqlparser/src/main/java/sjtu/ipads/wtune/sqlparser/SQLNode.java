@@ -156,7 +156,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   @SuppressWarnings({"unchecked", "raw"})
   public void replaceThis(SQLNode replacement) {
-    dbType = replacement.dbType;
+    //    dbType = replacement.dbType;
     type = replacement.type;
     setChildren(new ArrayList<>(replacement.children()));
 

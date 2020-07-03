@@ -95,4 +95,9 @@ public class TableSource {
   public int hashCode() {
     return nodeHash(node);
   }
+
+  @Override
+  public String toString() {
+    return node.toString();
+  }
 }

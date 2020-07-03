@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
-import sjtu.ipads.wtune.stmt.resovler.BoolPrimitiveResolver;
+import sjtu.ipads.wtune.stmt.resovler.BoolExprResolver;
 import sjtu.ipads.wtune.stmt.resovler.ColumnResolver;
 import sjtu.ipads.wtune.stmt.resovler.IdResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -28,7 +28,7 @@ class RemovePredicateTest {
           "select 1 from a where a.i = 1 and a.j = 3 "
               + "or a.k in (select 1 from b where b.x = 5)");
       stmt.resolve(IdResolver.class);
-      stmt.resolve(BoolPrimitiveResolver.class);
+      stmt.resolve(BoolExprResolver.class);
       stmt.resolve(ColumnResolver.class);
 
       stmt.setParsed(stmt.parsed().copy());

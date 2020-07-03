@@ -24,7 +24,7 @@ public class TableResolver implements SQLVisitor, Resolver {
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
-    final QueryScope simpleQueryScope = derivedTableSource.get(RESOLVED_QUERY_SCOPE);
+    final QueryScope scope = derivedTableSource.get(RESOLVED_QUERY_SCOPE);
 
     final String alias = derivedTableSource.get(DERIVED_ALIAS);
 
@@ -35,9 +35,10 @@ public class TableResolver implements SQLVisitor, Resolver {
         alias != null // in fact it shouldn't be null
             ? alias
             : String.format(
-                "_sub_%s_%s", simpleQueryScope.level(), simpleQueryScope.tableSources().size()));
+                "_sub_%s_%s", scope.level(), scope.tableSources().size()));
 
-    simpleQueryScope.addTable(tableSource);
+    derivedTableSource.put(RESOLVED_TABLE_SOURCE, tableSource);
+    scope.addTable(tableSource);
     return true;
   }
 

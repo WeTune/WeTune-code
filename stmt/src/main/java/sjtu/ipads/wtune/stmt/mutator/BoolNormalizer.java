@@ -47,7 +47,20 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
     if (kind == Kind.COLUMN_REF) {
       final SQLNode node = binary(expr.copy(), literal(LiteralType.BOOL, true), BinaryOp.IS);
       expr.replaceThis(node);
+      expr.relinkAll();
       IdResolver.resolve(node);
+
+    } else if (kind == Kind.BINARY && expr.get(BINARY_OP) == BinaryOp.IS) {
+      final SQLNode right = expr.get(BINARY_RIGHT);
+      if (exprKind(right) == Kind.LITERAL
+          && right.get(LITERAL_TYPE) == LiteralType.BOOL
+          && right.get(LITERAL_VALUE).equals(false)) {
+        handleExpr(expr.get(BINARY_LEFT));
+
+        expr.replaceThis(unary(expr.get(BINARY_LEFT), UnaryOp.NOT));
+        expr.relinkAll();
+        IdResolver.resolve(expr);
+      }
 
     } else if (kind == Kind.BINARY && expr.get(BINARY_OP).isLogic()) {
       handleExpr(expr.get(BINARY_LEFT));

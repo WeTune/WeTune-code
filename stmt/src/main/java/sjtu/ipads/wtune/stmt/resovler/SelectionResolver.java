@@ -94,27 +94,6 @@ public class SelectionResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public boolean enterSelectItem(SQLNode selectItem) {
-    final QueryScope scope = selectItem.get(RESOLVED_QUERY_SCOPE);
-    final String alias = selectItem.get(SELECT_ITEM_ALIAS);
-    final SQLNode expr = selectItem.get(SELECT_ITEM_EXPR);
-    final Kind kind = exprKind(expr);
-
-    final SelectItem item = new SelectItem();
-    item.setNode(selectItem);
-    item.setExpr(expr);
-    item.setAlias(alias);
-
-    if (kind == Kind.COLUMN_REF) {
-      final SQLNode columnId = expr.get(COLUMN_REF_COLUMN);
-      item.setSimpleName(columnId.get(COLUMN_NAME_COLUMN));
-    }
-
-    scope.addSelectItem(item);
-    return false;
-  }
-
-  @Override
   public boolean resolve(Statement stmt) {
     LOG.log(
         System.Logger.Level.TRACE,

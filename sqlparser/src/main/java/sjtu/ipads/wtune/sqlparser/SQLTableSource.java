@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.attrs.Attrs.Key.checkEquals;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.ATTR_PREFIX;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.tableName;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.*;
 
 public class SQLTableSource {
@@ -126,11 +125,14 @@ public class SQLTableSource {
     return attr2(kind, name, List.class);
   }
 
-  private static String getAlias(SQLNode node) {
+  public static String getName(SQLNode node) {
     if (node.type() != SQLNode.Type.TABLE_SOURCE) return null;
     switch (node.get(TABLE_SOURCE_KIND)) {
       case SIMPLE:
-        return node.get(SIMPLE_ALIAS);
+        {
+          final String alias = node.get(SIMPLE_ALIAS);
+          return alias != null ? alias : node.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE);
+        }
       case DERIVED:
         return node.get(DERIVED_ALIAS);
       default:

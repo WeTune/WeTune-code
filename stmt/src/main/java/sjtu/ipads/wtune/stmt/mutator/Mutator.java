@@ -12,4 +12,6 @@ public interface Mutator {
   default Set<Class<? extends Resolver>> dependsOnResolver() {
     return Collections.emptySet();
   }
+
+  Set<Class<? extends Mutator>> STANDARD_MUTATORS = Set.of(Cleaner.class, BoolNormalizer.class);
 }

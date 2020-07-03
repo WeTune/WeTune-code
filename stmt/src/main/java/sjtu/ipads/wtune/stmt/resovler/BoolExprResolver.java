@@ -12,7 +12,8 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 
-public class BoolPrimitiveResolver implements Resolver, SQLVisitor {
+/** Marking all expressions which is evaluated to be a boolean value. */
+public class BoolExprResolver implements Resolver, SQLVisitor {
   @Override
   public boolean enterCase(SQLNode _case) {
     // ignore the form CASE cond WHEN val0 THEN ... END,
@@ -64,9 +65,9 @@ public class BoolPrimitiveResolver implements Resolver, SQLVisitor {
     return true;
   }
 
-  private static final BoolPrimitiveResolver INSTANCE = new BoolPrimitiveResolver();
+  private static final BoolExprResolver INSTANCE = new BoolExprResolver();
 
-  public static BoolPrimitiveResolver singleton() {
+  public static BoolExprResolver singleton() {
     return INSTANCE;
   }
 }

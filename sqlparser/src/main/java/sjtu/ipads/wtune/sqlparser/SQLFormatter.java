@@ -688,7 +688,7 @@ public class SQLFormatter implements SQLVisitor {
     final SQLNode right = binary.get(BINARY_RIGHT);
 
     final boolean needParen =
-        op == BinaryOp.MEMBER_OF || op == BinaryOp.IN_SUBQUERY || needParen(binary, right, false);
+        op == BinaryOp.MEMBER_OF || right.type() == Type.QUERY || needParen(binary, right, false);
     final boolean needIndent = needParen && (op == BinaryOp.IN_SUBQUERY || op.isLogic());
 
     try (final var ignored0 = withParen(needParen)) {
