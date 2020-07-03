@@ -89,6 +89,14 @@ public class SQLTableSource {
     return node.type() == SQLNode.Type.TABLE_SOURCE && node.get(TABLE_SOURCE_KIND) == JOINED;
   }
 
+  public static boolean isDerived(SQLNode node) {
+    return node.type() == SQLNode.Type.TABLE_SOURCE && node.get(TABLE_SOURCE_KIND) == DERIVED;
+  }
+
+  public static boolean isSimple(SQLNode node) {
+    return node.type() == SQLNode.Type.TABLE_SOURCE && node.get(TABLE_SOURCE_KIND) == SIMPLE;
+  }
+
   static final String EXPR_ATTR_PREFIX = ATTR_PREFIX + ".tableSource.";
 
   private static String attrPrefix(Kind kind) {

@@ -43,7 +43,7 @@ public class ReplaceColumnRef implements Operator, SQLVisitor {
   @Override
   public boolean enterColumnRef(SQLNode columnRef) {
     final ColumnRef cRef = columnRef.get(RESOLVED_COLUMN_REF);
-    if (!Objects.equals(cRef, target)) return false;
+    if (!target.refEquals(cRef)) return false;
     final SQLNode columnName = columnRef.get(COLUMN_REF_COLUMN);
     columnName.put(COLUMN_NAME_TABLE, replacementTable);
     columnName.put(COLUMN_NAME_COLUMN, replacementColumn);

@@ -126,9 +126,10 @@ public class Statement {
     mutator.mutate(this);
   }
 
-  public <T> T analyze(Class<? extends Analyzer<T>> cls) {
+  public <T> T analyze(Class<? extends Analyzer<T>> cls, Object... args) {
     final Analyzer<T> analyzer = newInstance(cls);
     for (Class<? extends Resolver> dependency : analyzer.dependsOn()) resolve(dependency);
+    analyzer.setParam(args);
     return analyzer.analyze(this);
   }
 

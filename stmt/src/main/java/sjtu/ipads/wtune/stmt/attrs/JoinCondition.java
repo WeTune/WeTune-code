@@ -50,6 +50,30 @@ public class JoinCondition {
     this.rightColumn = rightColumn;
   }
 
+  public Relation thisRelation(Relation relation) {
+    if (left.equals(relation)) return left;
+    else if (right.equals(relation)) return right;
+    else return null;
+  }
+
+  public Relation thatRelation(Relation relation) {
+    if (left.equals(relation)) return right;
+    else if (right.equals(relation)) return left;
+    else return null;
+  }
+
+  public String thisColumn(Relation relation) {
+    if (left.equals(relation)) return leftColumn;
+    else if (right.equals(relation)) return rightColumn;
+    else return null;
+  }
+
+  public String thatColumn(Relation relation) {
+    if (left.equals(relation)) return rightColumn;
+    else if (right.equals(relation)) return leftColumn;
+    else return null;
+  }
+
   public SQLNode toBinary() {
     return binary(
         columnRef(left.name(), leftColumn),

@@ -51,7 +51,7 @@ class RenameTableSourceTest {
       assertTrue(stmt.failedResolvers().isEmpty());
     }
     {
-      stmt.setRawSql("select b.i from (select j as i from a) b");
+      stmt.setRawSql("select b.i from (select j as i from a where a.k = 3) b");
       stmt.retrofitStandard();
       final TableSource tableSource =
           stmt.parsed()
@@ -65,7 +65,8 @@ class RenameTableSourceTest {
       RenameTableSource.build(tableSource, "m", true).apply(stmt);
 
       assertEquals(
-          "SELECT `m`.`i` FROM (SELECT `m`.`j` AS `i` FROM `a` AS `m`) AS `b`",
+          "SELECT `m`.`i` "
+              + "FROM (SELECT `m`.`j` AS `i` FROM `a` AS `m` WHERE `m`.`k` = 3) AS `b`",
           stmt.parsed().toString());
     }
   }

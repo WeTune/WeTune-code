@@ -9,8 +9,9 @@ import java.util.Set;
 
 @FunctionalInterface
 public interface Analyzer<T> {
-
   T analyze(SQLNode node);
+
+  default void setParam(Object... args) {}
 
   default T analyze(Statement stmt) {
     return analyze(stmt.parsed());

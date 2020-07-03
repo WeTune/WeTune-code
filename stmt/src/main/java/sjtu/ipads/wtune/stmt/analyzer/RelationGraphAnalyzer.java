@@ -180,14 +180,14 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
             .allowsSelfLoops(false)
             .build();
 
+    relations.forEach(graph::addNode);
+
     for (SQLNode condNode : conditions) {
       final JoinCondition cond = buildJoinCondition(relations, condNode);
       if (cond == null) {
         LOG.log(WARNING, "unresolved join condition: {0}", condNode);
         continue;
       }
-      graph.addNode(cond.left());
-      graph.addNode(cond.right());
       graph.putEdgeValue(cond.left(), cond.right(), cond);
     }
 

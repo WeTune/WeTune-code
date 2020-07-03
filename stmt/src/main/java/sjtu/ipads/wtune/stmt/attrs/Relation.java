@@ -21,7 +21,11 @@ public class Relation {
   }
 
   public boolean isTableSource() {
-    return originalNode.type() == SQLNode.Type.TABLE_SOURCE;
+    return generatedNode != null || originalNode.type() == SQLNode.Type.TABLE_SOURCE;
+  }
+
+  public SQLNode node() {
+    return generatedNode != null ? generatedNode : originalNode;
   }
 
   public SQLNode originalNode() {

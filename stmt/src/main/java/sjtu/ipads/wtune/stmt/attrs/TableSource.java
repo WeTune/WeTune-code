@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.Table;
 
@@ -10,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.*;
 
@@ -81,6 +82,12 @@ public class TableSource {
   public SelectItem resolveAsSelection(String name) {
     if (name == null || node == null) return null;
     return node.get(DERIVED_SUBQUERY).get(RESOLVED_QUERY_SCOPE).resolveSelection(name);
+  }
+
+  public void putAlias(String name) {
+    if (isSimple(node)) node.put(SIMPLE_ALIAS, name);
+    else if (SQLTableSource.isDerived(node)) node.put(DERIVED_ALIAS, name);
+
   }
 
   @Override
