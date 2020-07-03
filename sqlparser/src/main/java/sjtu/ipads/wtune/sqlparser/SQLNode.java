@@ -267,9 +267,13 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   public enum Type {
     INVALID,
+    COMMON_NAME,
     TABLE_NAME,
     COLUMN_NAME,
     CREATE_TABLE,
+    ALTER_SEQUENCE,
+    ALTER_TABLE,
+    ALTER_TABLE_ACTION,
     COLUMN_DEF,
     REFERENCES,
     INDEX_DEF,
@@ -311,7 +315,11 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     RTREE,
     HASH,
     FULLTEXT,
-    SPATIAL
+    SPATIAL,
+    GIST,
+    SPGIST,
+    GIN,
+    BRIN
   }
 
   public enum KeyDirection {
@@ -467,6 +475,11 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<String> COLUMN_NAME_TABLE = stringAttr(COLUMN_NAME, "table");
   public static final Key<String> COLUMN_NAME_COLUMN = stringAttr(COLUMN_NAME, "column");
 
+  //// ColumnName
+  public static final Key<String> COMMON_NAME_0 = stringAttr(COMMON_NAME, "part0");
+  public static final Key<String> COMMON_NAME_1 = stringAttr(COMMON_NAME, "part1");
+  public static final Key<String> COMMON_NAME_2 = stringAttr(COMMON_NAME, "part2");
+
   //// CreateTable
   public static final Key<SQLNode> CREATE_TABLE_NAME = nodeAttr(CREATE_TABLE, "name");
   public static final Key<List<SQLNode>> CREATE_TABLE_COLUMNS = nodesAttr(CREATE_TABLE, "columns");
@@ -492,6 +505,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   //// IndexDef
   public static final Key<String> INDEX_DEF_NAME = stringAttr(INDEX_DEF, "name");
+  public static final Key<SQLNode> INDEX_DEF_TABLE = nodeAttr(INDEX_DEF, "table");
   public static final Key<IndexType> INDEX_DEF_TYPE = attr(INDEX_DEF, "type", IndexType.class);
   public static final Key<ConstraintType> INDEX_DEF_CONS =
       attr(INDEX_DEF, "constraint", ConstraintType.class);
@@ -567,4 +581,20 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   //// Statement
   public static final Key<StmtType> STATEMENT_TYPE = attr(STATEMENT, "type", StmtType.class);
   public static final Key<SQLNode> STATEMENT_BODY = nodeAttr(STATEMENT, "body");
+
+  //// AlterSequence
+  public static final Key<SQLNode> ALTER_SEQUENCE_NAME = nodeAttr(ALTER_SEQUENCE, "name");
+  public static final Key<String> ALTER_SEQUENCE_OPERATION =
+      stringAttr(ALTER_SEQUENCE, "operation");
+  public static final Key<Object> ALTER_SEQUENCE_PAYLOAD =
+      attr(ALTER_SEQUENCE, "payload", Object.class);
+
+  //// AlterTable
+  public static final Key<SQLNode> ALTER_TABLE_NAME = nodeAttr(ALTER_TABLE, "name");
+  public static final Key<List<SQLNode>> ALTER_TABLE_ACTIONS = nodesAttr(ALTER_TABLE, "actions");
+
+  //// AlterTableAction
+  public static final Key<String> ALTER_TABLE_ACTION_NAME = stringAttr(ALTER_TABLE_ACTION, "name");
+  public static final Key<Object> ALTER_TABLE_ACTION_PAYLOAD =
+      attr(ALTER_TABLE_ACTION, "payload", Object.class);
 }

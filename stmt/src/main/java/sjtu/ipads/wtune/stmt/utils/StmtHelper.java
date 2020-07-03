@@ -1,13 +1,14 @@
 package sjtu.ipads.wtune.stmt.utils;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;

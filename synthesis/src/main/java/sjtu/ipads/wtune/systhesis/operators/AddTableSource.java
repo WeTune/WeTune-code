@@ -5,8 +5,7 @@ import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_FROM;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.joined;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 public class AddTableSource implements Operator {
@@ -33,9 +32,14 @@ public class AddTableSource implements Operator {
     final SQLNode fromClause = querySpecNode.get(QUERY_SPEC_FROM);
     if (fromClause == null) querySpecNode.put(QUERY_SPEC_FROM, source);
     else {
-      final SQLNode joined = joined(fromClause, source, joinType);
+      SQLNode joinPoint = source;
+      while (joinPoint.get(JOINED_LEFT) != null) joinPoint = joinPoint.get(JOINED_LEFT);
+
+      final SQLNode joined = joined(fromClause, joinPoint.copy(), joinType);
       joined.put(JOINED_ON, joinCondition);
-      querySpecNode.put(QUERY_SPEC_FROM, joined);
+
+      joinPoint.replaceThis(joined);
+      querySpecNode.put(QUERY_SPEC_FROM, source);
     }
 
     return sqlNode;

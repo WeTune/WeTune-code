@@ -47,6 +47,24 @@ class TableBuilder {
     return table;
   }
 
+  Table fromAlterTable(SQLNode alterTable) {
+    final List<SQLNode> actions = alterTable.get(ALTER_TABLE_ACTIONS);
+    for (SQLNode action : actions) {
+      final String actionName = action.get(ALTER_TABLE_ACTION_NAME);
+      final Object payload = action.get(ALTER_TABLE_ACTION_PAYLOAD);
+      if ("add_constraint".equals(actionName)) {
+        final SQLNode constraint = (SQLNode) payload;
+        setConstraint(constraint);
+      }
+    }
+    return table;
+  }
+
+  Table fromCreateIndex(SQLNode createIndex) {
+    setConstraint(createIndex);
+    return table;
+  }
+
   private void setName(SQLNode name) {
     table.setSchemaName(name.get(TABLE_NAME_SCHEMA));
     table.setTableName(name.get(TABLE_NAME_TABLE));
@@ -93,6 +111,7 @@ class TableBuilder {
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
 
     for (SQLNode key : keys) {
+      if (key == null) continue; // TODO: remove this
       final String columnName = key.get(KEY_PART_COLUMN);
       final Column column = table.getColumn(columnName);
       if (column == null) {

@@ -5,29 +5,69 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import java.lang.System.Logger;
 import java.util.*;
 
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.FOREIGN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.TABLE_NAME;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
+import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_AUTOINCREMENT;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 public class Schema {
-  private static Logger LOG = System.getLogger(Schema.class.getSimpleName());
+  private static final Logger LOG = System.getLogger(Schema.class.getSimpleName());
 
   private final Map<String, Table> tables = new HashMap<>();
 
   public Schema addDefinition(SQLNode node) {
     if (node == null) return this;
-    if (node.type() == SQLNode.Type.CREATE_TABLE) {
-      final Table table = new Table().fromCreateTable(node);
-      final String tableName = table.tableName();
 
-      if (tables.containsKey(tableName))
-        LOG.log(Logger.Level.INFO, "replace table definition: {0}", tableName);
-
-      tables.put(tableName, table);
-    }
+    final SQLNode.Type type = node.type();
+    if (type == CREATE_TABLE) addCreateTable(node);
+    else if (type == ALTER_SEQUENCE) addAlterSequence(node);
+    else if (type == ALTER_TABLE) addAlterTable(node);
+    else if (type == INDEX_DEF) addIndexDef(node);
 
     return this;
+  }
+
+  private void addCreateTable(SQLNode node) {
+    final Table table = new Table().fromCreateTable(node);
+    final String tableName = table.tableName();
+
+    if (tables.containsKey(tableName))
+      LOG.log(Logger.Level.INFO, "replace table definition: {0}", tableName);
+
+    tables.put(tableName, table);
+  }
+
+  private void addAlterSequence(SQLNode node) {
+    final String operation = node.get(ALTER_SEQUENCE_OPERATION);
+    final Object payload = node.get(ALTER_SEQUENCE_PAYLOAD);
+    if ("owned_by".equals(operation)) {
+      final SQLNode columnName = (SQLNode) payload;
+
+      final Table table = getTable(columnName.get(COLUMN_NAME_TABLE));
+      if (table == null) return;
+
+      final Column column = table.getColumn(columnName.get(COLUMN_NAME_COLUMN));
+      if (column == null) return;
+
+      column.flag(COLUMN_AUTOINCREMENT);
+    }
+  }
+
+  private void addAlterTable(SQLNode node) {
+    final String tableName = node.get(ALTER_TABLE_NAME).get(TABLE_NAME_TABLE);
+    final Table table = getTable(tableName);
+    if (table == null) return;
+
+    new TableBuilder(table).fromAlterTable(node);
+  }
+
+  private void addIndexDef(SQLNode node) {
+    final String tableName = node.get(INDEX_DEF_TABLE).get(TABLE_NAME_TABLE);
+    final Table table = getTable(tableName);
+    if (table == null) return;
+
+    new TableBuilder(table).fromCreateIndex(node);
   }
 
   public Schema buildRefs() {

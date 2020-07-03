@@ -4,10 +4,13 @@ import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.TABLE_NAME_SCHEMA;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 
 interface PGASTHelper {
   static String stringifyIdentifier(PGParser.Id_tokenContext ctx) {
@@ -27,25 +30,98 @@ interface PGASTHelper {
     return stringifyIdentifier(ctx.id_token());
   }
 
-  static SQLNode tableName(PGParser.Schema_qualified_nameContext ctx) {
+  static String[] stringifyIdentifier(PGParser.Schema_qualified_nameContext ctx) {
     final var identifiers = ctx.identifier();
-    final String schema, table;
+    final String str0, str1, str2;
     if (identifiers.size() == 3) {
-      schema = stringifyIdentifier(identifiers.get(1));
-      table = stringifyIdentifier(identifiers.get(2));
+      str0 = stringifyIdentifier(identifiers.get(0));
+      str1 = stringifyIdentifier(identifiers.get(1));
+      str2 = stringifyIdentifier(identifiers.get(2));
+
     } else if (identifiers.size() == 2) {
-      schema = stringifyIdentifier(identifiers.get(0));
-      table = stringifyIdentifier(identifiers.get(1));
+      str0 = null;
+      str1 = stringifyIdentifier(identifiers.get(0));
+      str2 = stringifyIdentifier(identifiers.get(1));
+
     } else if (identifiers.size() == 1) {
-      schema = null;
-      table = stringifyIdentifier(identifiers.get(0));
+      str0 = null;
+      str1 = null;
+      str2 = stringifyIdentifier(identifiers.get(0));
+
     } else return assertFalse();
 
+    final String[] triple = new String[3];
+    triple[0] = str0;
+    triple[1] = str1;
+    triple[2] = str2;
+
+    return triple;
+  }
+
+  static SQLNode tableName(String[] triple) {
     final SQLNode node = new SQLNode(SQLNode.Type.TABLE_NAME);
-    node.put(TABLE_NAME_SCHEMA, schema);
-    node.put(TABLE_NAME_TABLE, table);
+    node.put(TABLE_NAME_SCHEMA, triple[1]);
+    node.put(TABLE_NAME_TABLE, triple[2]);
 
     return node;
+  }
+
+  static SQLNode commonName(String[] triple) {
+    final SQLNode node = new SQLNode(Type.COMMON_NAME);
+    node.put(COMMON_NAME_0, triple[0]);
+    node.put(COMMON_NAME_1, triple[1]);
+    node.put(COMMON_NAME_2, triple[2]);
+    return node;
+  }
+
+  static SQLNode columnName(String[] triple) {
+    final SQLNode node = new SQLNode(Type.COLUMN_NAME);
+    node.put(COLUMN_NAME_SCHEMA, triple[0]);
+    node.put(COLUMN_NAME_TABLE, triple[1]);
+    node.put(COLUMN_NAME_COLUMN, triple[2]);
+    return node;
+  }
+
+  static IndexType parseIndexType(String text) {
+    if (text == null) return null;
+    switch (text) {
+      case "btree":
+        return IndexType.BTREE;
+      case "hash":
+        return IndexType.HASH;
+      case "rtree":
+      case "gist":
+        return IndexType.GIST;
+      case "gin":
+        return IndexType.GIN;
+      case "spgist":
+        return IndexType.SPGIST;
+      case "brin":
+        return IndexType.BRIN;
+      default:
+        return null;
+    }
+  }
+
+  static List<SQLNode> columnNames(PGParser.Names_referencesContext ctx) {
+    return ctx.schema_qualified_name().stream()
+        .map(PGASTHelper::stringifyIdentifier)
+        .map(PGASTHelper::columnName)
+        .collect(Collectors.toList());
+  }
+
+  static List<SQLNode> keyParts(PGParser.Names_referencesContext ctx) {
+    final var idContexts = ctx.schema_qualified_name();
+    final List<SQLNode> keyParts = new ArrayList<>(idContexts.size());
+
+    for (var idContext : idContexts) {
+      final SQLNode keyPart = new SQLNode(Type.KEY_PART);
+      keyPart.put(KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
+
+      keyParts.add(keyPart);
+    }
+
+    return keyParts;
   }
 
   static SQLDataType parseDataType(PGParser.Data_typeContext ctx) {

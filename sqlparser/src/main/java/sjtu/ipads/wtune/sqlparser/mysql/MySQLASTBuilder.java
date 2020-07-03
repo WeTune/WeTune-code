@@ -255,12 +255,6 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   }
 
   @Override
-  public SQLNode visitCreateIndex(MySQLParser.CreateIndexContext ctx) {
-    // TODO
-    return super.visitCreateIndex(ctx);
-  }
-
-  @Override
   public SQLNode visitQueryExpression(MySQLParser.QueryExpressionContext ctx) {
     // currently WITH is not supported
     final SQLNode query = newNode(QUERY);

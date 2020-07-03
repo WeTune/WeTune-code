@@ -1699,8 +1699,8 @@ indirection_list
 
 indirection
     : DOT col_label
-    | LEFT_BRACKET vex RIGHT_BRACKET
     | LEFT_BRACKET vex? COLON vex? RIGHT_BRACKET
+    | LEFT_BRACKET vex RIGHT_BRACKET
     ;
 
 /*
