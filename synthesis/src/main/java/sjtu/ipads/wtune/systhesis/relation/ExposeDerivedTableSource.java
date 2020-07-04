@@ -9,6 +9,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.operators.*;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.BinaryOp.AND;
@@ -19,18 +20,20 @@ import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.SIMPLE;
 import static sjtu.ipads.wtune.stmt.attrs.QueryScope.Clause.WHERE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
-public class ExposeDerivedTableSource {
+public class ExposeDerivedTableSource implements RelationMutator {
   private final RelationGraph relationGraph;
   private final Relation target;
   private Set<JoinCondition> removedConds;
   private Set<JoinCondition> addedConds;
 
   public ExposeDerivedTableSource(final RelationGraph relationGraph, Relation target) {
+    assert relationGraph != null && target != null;
+
     this.relationGraph = relationGraph;
     this.target = target;
   }
 
-  public static boolean canExpose(Relation target) {
+  public static boolean canExpose(SQLNode root, Relation target) {
     // exclude non table source
     if (!target.isTableSource()) return false;
     // exclude simple source
@@ -43,7 +46,9 @@ public class ExposeDerivedTableSource {
     // e.g. SELECT 1 FROM (SELECT x AS x, y + 1 AS y FROM b) AS a WHERE a.y = 3
     // here `a` can not be exposed because a.y is used, which is originated
     // from `y + 1`, not column ref expr
-    final SQLNode node = target.node();
+    final SQLNode node = NodeFinder.find(root, target.node());
+    if (node == null) return false;
+
     final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
     final TableSource source = node.get(RESOLVED_TABLE_SOURCE);
 
@@ -56,18 +61,31 @@ public class ExposeDerivedTableSource {
     return true;
   }
 
-  private String genAlias(QueryScope scope, TableSource source) {
-    int suffix = 0;
-    final String prefix = source.name() + "_exposed_";
+  private String genAlias(QueryScope outerScope, TableSource source) {
+    int suffix = 1;
+    final String prefix = source.name() + "_exposed_" + (outerScope.level() + 1) + "_";
+
     String name = prefix + suffix;
-    while (scope.resolveTable(name, true).left() != null) {
+    while (outerScope.resolveTable(name, true).left() != null) {
       ++suffix;
       name = prefix + suffix;
     }
     return name;
   }
 
-  void modifyGraph() {
+  @Override
+  public boolean isValid(SQLNode node) {
+    return relationGraph.graph().nodes().contains(target)
+        && NodeFinder.find(node, target.node()) != null;
+  }
+
+  @Override
+  public Relation target() {
+    return target;
+  }
+
+  @Override
+  public void modifyGraph() {
     final SQLNode parent = target.node().parent();
     final var graph = relationGraph.graph();
 
@@ -89,13 +107,16 @@ public class ExposeDerivedTableSource {
     graph.removeNode(target);
   }
 
-  void undoModifyGraph() {
+  @Override
+  public void undoModifyGraph() {
     final var graph = relationGraph.graph();
     graph.addNode(target);
-    for (JoinCondition addedCond : addedConds)
-      graph.removeEdge(addedCond.left(), addedCond.right());
-    for (JoinCondition removedCond : removedConds)
-      graph.putEdgeValue(removedCond.left(), removedCond.right(), removedCond);
+    if (addedConds != null)
+      for (JoinCondition addedCond : addedConds)
+        graph.removeEdge(addedCond.left(), addedCond.right());
+    if (removedConds != null)
+      for (JoinCondition removedCond : removedConds)
+        graph.putEdgeValue(removedCond.left(), removedCond.right(), removedCond);
   }
 
   private JoinCondition resolveJoinCondition(JoinCondition cond) {
@@ -115,7 +136,8 @@ public class ExposeDerivedTableSource {
     return JoinCondition.of(newThisRelation, otherRelation, newThisColumn, otherColumn);
   }
 
-  SQLNode modifyAST(Statement stmt, SQLNode root) {
+  @Override
+  public SQLNode modifyAST(Statement stmt, SQLNode root) {
     final SQLNode targetNode = NodeFinder.find(root, target.node());
     final SQLNode subquery = targetNode.get(DERIVED_SUBQUERY).get(QUERY_BODY);
     final TableSource targetSource = targetNode.get(RESOLVED_TABLE_SOURCE);
@@ -157,5 +179,18 @@ public class ExposeDerivedTableSource {
 
     Resolve.build().apply(stmt);
     return root;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ExposeDerivedTableSource that = (ExposeDerivedTableSource) o;
+    return Objects.equals(target, that.target);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(target);
   }
 }

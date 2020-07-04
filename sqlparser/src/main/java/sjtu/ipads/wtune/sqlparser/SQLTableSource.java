@@ -133,7 +133,7 @@ public class SQLTableSource {
     return attr2(kind, name, List.class);
   }
 
-  public static String getName(SQLNode node) {
+  public static String tableSourceName(SQLNode node) {
     if (node.type() != SQLNode.Type.TABLE_SOURCE) return null;
     switch (node.get(TABLE_SOURCE_KIND)) {
       case SIMPLE:

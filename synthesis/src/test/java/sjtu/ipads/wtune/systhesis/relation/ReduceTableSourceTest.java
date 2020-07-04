@@ -13,7 +13,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.TABLE_SOURCE_KIND;
 
-class ExposeDerivedTableSourceTest {
+class ReduceTableSourceTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
@@ -21,39 +21,36 @@ class ExposeDerivedTableSourceTest {
   }
 
   @Test
-  @DisplayName("[Synthesis.Relation.ExposeDerivedTableSource] simple")
+  @DisplayName("[Synthesis.Relation.InlineSubquery] simple")
   void test() {
     final Statement stmt = new Statement();
     stmt.setAppName("test");
     {
       stmt.setRawSql(
-          "select 1 from a left join (select b.x as m, b.y from b inner join a on b.z = a.k "
-              + "where b.y = 1) c on a.i = c.m "
-              + "where exists (select 1 from b where b.z = c.y)");
+          "select a.i from a inner join (select i, x from a join b on a.j = b.y) c "
+              + "on a.i = c.x "
+              + "where exists (select 1 from b where a.i = 4)");
       stmt.retrofitStandard();
 
       final RelationGraph graph = stmt.analyze(RelationGraphAnalyzer.class);
       Relation target = null;
       for (Relation node : graph.graph().nodes())
-        if (node.isTableSource()
-            && node.node().get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.DERIVED) target = node;
+        if (node.node().get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.SIMPLE) target = node;
       assertNotNull(target);
-      assertTrue(ExposeDerivedTableSource.canExpose(stmt.parsed(), target));
+      assertTrue(ReduceTableSource.canReduce(stmt.parsed(), graph, target));
 
-      final ExposeDerivedTableSource op = new ExposeDerivedTableSource(graph, target);
+      final ReduceTableSource op = new ReduceTableSource(graph, target);
       final Statement copy = stmt.copy();
 
       op.modifyGraph();
       op.modifyAST(copy, copy.parsed());
+
       assertEquals(
-          "SELECT 1 FROM `a` "
-              + "LEFT JOIN `b` AS `b_exposed_1_1` ON `a`.`i` = `b_exposed_1_1`.`x` "
-              + "INNER JOIN `a` AS `a_exposed_1_1` ON `b_exposed_1_1`.`z` = `a_exposed_1_1`.`k` "
-              + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `b`.`z` = `b_exposed_1_1`.`y`) "
-              + "AND `b_exposed_1_1`.`y` = 1",
+          "SELECT `c`.`x` FROM (SELECT `i`, `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
+              + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `c`.`x` = 4)",
           copy.parsed().toString());
       assertEquals(3, graph.graph().nodes().size());
-      assertEquals(2, graph.graph().edges().size());
+      assertEquals(1, graph.graph().edges().size());
 
       op.undoModifyGraph();
       assertEquals(4, graph.graph().nodes().size());

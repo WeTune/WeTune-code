@@ -14,13 +14,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.attrs.Attrs.key;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
+import static sjtu.ipads.wtune.stmt.analyzer.DependentQueryAnalyzer.isDependent;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 /**
@@ -56,21 +56,22 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       // in this case, only if the following condition meets it would be counted:
       // 1. in "IN <subquery>" or "= <subquery>" expr
       // 2. path to root doesn't contain OR/XOR/NOT
+      // 3. not dependent
 
       final SQLNode parent = query.parent();
       if (!isExpr(parent))
-        return false; // shouldn't reach here since a query itself isn't a valid expr root
+        return true; // shouldn't reach here since a query itself isn't a valid expr root
 
       final SQLExpr.Kind kind = exprKind(parent);
       if (kind != SQLExpr.Kind.BINARY)
-        return false; // shouldn't reach here since a query cannot show in position
+        return true; // shouldn't reach here since a query cannot show in position
 
       final BinaryOp op = parent.get(BINARY_OP);
-      if (op.isLogic()) return false; // shouldn't reach here since a query cannot be a bool expr
-      if (op != BinaryOp.IN_SUBQUERY && op != BinaryOp.EQUAL) return false;
+      if (op.isLogic()) return true; // shouldn't reach here since a query cannot be a bool expr
+      if (op != BinaryOp.IN_SUBQUERY && op != BinaryOp.EQUAL) return true;
 
       final SQLNode left = parent.get(BINARY_LEFT);
-      if (left.get(RESOLVED_COLUMN_REF) == null) return false;
+      if (left.get(RESOLVED_COLUMN_REF) == null) return true;
 
       // check path to root
       SQLNode ascent = parent.parent();
@@ -79,17 +80,19 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
 
         if (ascentKind == SQLExpr.Kind.BINARY) {
           final BinaryOp ascentOp = ascent.get(BINARY_OP);
-          if (ascentOp == BinaryOp.XOR_SYMBOL || ascentOp == BinaryOp.OR) return false;
+          if (ascentOp == BinaryOp.XOR_SYMBOL || ascentOp == BinaryOp.OR) return true;
         } else if (ascentKind == SQLExpr.Kind.UNARY)
-          if (ascent.get(UNARY_OP) == UnaryOp.NOT) return false;
+          if (ascent.get(UNARY_OP) == UnaryOp.NOT) return true;
 
         ascent = ascent.parent();
       }
 
+      if (isDependent(query)) return true;
+
       // now it's a valid relation
       asRelation(query);
 
-      return false;
+      return true;
     }
 
     @Override
@@ -191,7 +194,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       graph.putEdgeValue(cond.left(), cond.right(), cond);
     }
 
-    return RelationGraph.build(rootScope, graph);
+    return RelationGraph.build(graph);
   }
 
   private static JoinCondition buildJoinCondition(Set<Relation> relations, SQLNode condition) {

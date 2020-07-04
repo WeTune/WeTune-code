@@ -37,13 +37,15 @@ public class Relation {
   }
 
   public String name() {
-    if (generatedNode != null) return SQLTableSource.getName(generatedNode);
-    if (isTableSource()) return SQLTableSource.getName(originalNode);
+    if (generatedNode != null) return SQLTableSource.tableSourceName(generatedNode);
+    if (isTableSource()) return SQLTableSource.tableSourceName(originalNode);
     else return "(" + originalNode.toString() + ")";
   }
 
   public void setGeneratedNode(SQLNode generatedNode) {
-    assert generatedNode == null || generatedNode.type() == SQLNode.Type.TABLE_SOURCE;
+    assert generatedNode == null
+        || generatedNode.type() == SQLNode.Type.INVALID
+        || generatedNode.type() == SQLNode.Type.TABLE_SOURCE;
     this.generatedNode = generatedNode;
   }
 

@@ -13,16 +13,23 @@ public class AddTableSource implements Operator {
   private final SQLNode joinCondition;
   private final SQLTableSource.JoinType joinType;
 
+  private SQLNode pointer;
+
   private AddTableSource(SQLNode source, SQLNode joinCondition, SQLTableSource.JoinType joinType) {
     this.source = source;
     this.joinCondition = joinCondition;
     this.joinType = joinType;
+    this.pointer = source;
   }
 
   public static Operator build(
       SQLNode source, SQLNode joinCondition, SQLTableSource.JoinType joinType) {
     assert source != null;
     return new AddTableSource(source, joinCondition, joinType);
+  }
+
+  public SQLNode pointer() {
+    return pointer;
   }
 
   @Override
@@ -35,7 +42,7 @@ public class AddTableSource implements Operator {
       SQLNode joinPoint = source;
       while (joinPoint.get(JOINED_LEFT) != null) joinPoint = joinPoint.get(JOINED_LEFT);
 
-      final SQLNode joined = joined(fromClause, joinPoint.copy(), joinType);
+      final SQLNode joined = joined(fromClause, pointer = joinPoint.copy(), joinType);
       joined.put(JOINED_ON, joinCondition);
 
       joinPoint.replaceThis(joined);

@@ -32,6 +32,10 @@ public class DependentQueryAnalyzer implements Analyzer<Boolean>, SQLVisitor {
     return false;
   }
 
+  public static boolean isDependent(SQLNode node) {
+    return new DependentQueryAnalyzer().analyze(node);
+  }
+
   private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(ColumnResolver.class);
 
   @Override

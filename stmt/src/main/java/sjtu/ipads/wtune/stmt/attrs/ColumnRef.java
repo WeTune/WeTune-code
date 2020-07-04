@@ -18,6 +18,8 @@ public class ColumnRef {
   private SelectItem refItem;
   private boolean isDependent;
 
+  public ColumnRef() {}
+
   public SQLNode node() {
     return node;
   }
@@ -74,7 +76,7 @@ public class ColumnRef {
   }
 
   public boolean isFrom(TableSource source) {
-    if (this.source.equals(source)) return true;
+    if (this.source != null && this.source.equals(source)) return true;
     final ColumnRef nextLevel = nextLevel();
     if (nextLevel != null) return nextLevel.isFrom(source);
     else return false;
@@ -92,6 +94,11 @@ public class ColumnRef {
     return Objects.equals(thisRoot.source(), thatRoot.source())
         && Objects.equals(thisRoot.refColumn(), thatRoot.refColumn())
         && Objects.equals(thisRoot.refItem(), thatRoot.refItem());
+  }
+
+  public int refHash() {
+    final ColumnRef root = resolveRootRef();
+    return Objects.hash(root.source(), root.refColumn(), root.refItem());
   }
 
   public void putColumnName(String name) {
@@ -116,5 +123,32 @@ public class ColumnRef {
     final ColumnRef rootRef = resolveRootRef();
     if (rootRef == this) return String.format("{%s | %s}", node, source);
     else return String.format("{%s < %s}", node, rootRef);
+  }
+
+  private Identity identity;
+
+  public Identity identity() {
+    return identity != null ? identity : (identity = new Identity(this));
+  }
+
+  public static class Identity {
+    private final ColumnRef ref;
+
+    private Identity(ColumnRef ref) {
+      this.ref = ref;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Identity identity = (Identity) o;
+      return ref.refEquals(identity.ref);
+    }
+
+    @Override
+    public int hashCode() {
+      return ref.refHash();
+    }
   }
 }
