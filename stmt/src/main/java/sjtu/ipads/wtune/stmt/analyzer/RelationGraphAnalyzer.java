@@ -185,7 +185,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     for (SQLNode condNode : conditions) {
       final JoinCondition cond = buildJoinCondition(relations, condNode);
       if (cond == null) {
-        LOG.log(WARNING, "unresolved join condition: {0}", condNode);
+        //        LOG.log(WARNING, "unresolved join condition: {0}", condNode);
         continue;
       }
       graph.putEdgeValue(cond.left(), cond.right(), cond);

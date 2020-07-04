@@ -29,4 +29,13 @@ public class NodeFinder implements Analyzer<SQLNode>, SQLVisitor {
     node.accept(this);
     return found;
   }
+
+  public static SQLNode find(SQLNode root, Long id) {
+    return new NodeFinder(id).analyze(root);
+  }
+
+  public static SQLNode find(SQLNode root, SQLNode target) {
+    if (target == null) return null;
+    return find(root, target.get(NODE_ID));
+  }
 }

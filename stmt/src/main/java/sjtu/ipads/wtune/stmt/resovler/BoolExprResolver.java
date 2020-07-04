@@ -28,7 +28,7 @@ public class BoolExprResolver implements Resolver, SQLVisitor {
   }
 
   @Override
-  public boolean enterChild(Attrs.Key<SQLNode> key, SQLNode child) {
+  public boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
     if (key == JOINED_ON || key == QUERY_SPEC_WHERE || key == QUERY_SPEC_HAVING) handleExpr(child);
     return true;
   }

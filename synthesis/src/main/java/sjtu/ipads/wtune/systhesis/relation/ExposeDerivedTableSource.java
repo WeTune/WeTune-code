@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -114,8 +115,8 @@ public class ExposeDerivedTableSource {
     return JoinCondition.of(newThisRelation, otherRelation, newThisColumn, otherColumn);
   }
 
-  SQLNode modifyAST(Statement stmt, SQLNode node) {
-    final SQLNode targetNode = target.node();
+  SQLNode modifyAST(Statement stmt, SQLNode root) {
+    final SQLNode targetNode = NodeFinder.find(root, target.node());
     final SQLNode subquery = targetNode.get(DERIVED_SUBQUERY).get(QUERY_BODY);
     final TableSource targetSource = targetNode.get(RESOLVED_TABLE_SOURCE);
     final QueryScope outerScope = targetNode.get(RESOLVED_QUERY_SCOPE);
@@ -152,10 +153,9 @@ public class ExposeDerivedTableSource {
 
     // 5. add the inner predicate to outer
     //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3 and `a_exposed_0`.j = 1
-    final SQLNode whereClause = subquery.get(QUERY_SPEC_WHERE);
-    if (whereClause != null) AddPredicateToClause.build(whereClause, WHERE, AND).apply(outerQuery);
+    if (whereNode != null) AddPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
 
     Resolve.build().apply(stmt);
-    return node;
+    return root;
   }
 }

@@ -62,7 +62,7 @@ public class SQLTableSource {
   }
 
   public static final Attrs.Key<Kind> TABLE_SOURCE_KIND =
-      Attrs.key(ATTR_PREFIX + ".expr.tableSource", Kind.class);
+      Attrs.key(SQL_ATTR_PREFIX + ".expr.tableSource", Kind.class);
 
   public static SQLNode newTableSource(Kind kind) {
     final SQLNode node = new SQLNode(SQLNode.Type.TABLE_SOURCE);
@@ -97,7 +97,7 @@ public class SQLTableSource {
     return node.type() == SQLNode.Type.TABLE_SOURCE && node.get(TABLE_SOURCE_KIND) == SIMPLE;
   }
 
-  static final String EXPR_ATTR_PREFIX = ATTR_PREFIX + ".tableSource.";
+  static final String EXPR_ATTR_PREFIX = SQL_ATTR_PREFIX + ".tableSource.";
 
   private static String attrPrefix(Kind kind) {
     return EXPR_ATTR_PREFIX + kind.name().toLowerCase() + ".";

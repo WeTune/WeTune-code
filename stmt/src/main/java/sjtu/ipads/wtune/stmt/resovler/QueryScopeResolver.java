@@ -68,21 +68,21 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
           .collect(Collectors.toMap(QueryScope.Clause::key, identity()));
 
   @Override
-  public boolean enterChild(Key<SQLNode> key, SQLNode child) {
+  public boolean enterChild(SQLNode parent, Key<SQLNode> key, SQLNode child) {
     final SimpleQueryScope.Clause clause = CLAUSE_KEYS.get(key);
     if (clause != null) clauses.push(clause);
     return true;
   }
 
   @Override
-  public boolean enterChildren(Key<List<SQLNode>> key, List<SQLNode> child) {
+  public boolean enterChildren(SQLNode parent, Key<List<SQLNode>> key, List<SQLNode> child) {
     final SimpleQueryScope.Clause clause = CLAUSE_KEYS.get(key);
     if (clause != null) clauses.push(clause);
     return true;
   }
 
   @Override
-  public void leaveChild(Key<SQLNode> key, SQLNode child) {
+  public void leaveChild(SQLNode parent, Key<SQLNode> key, SQLNode child) {
     final SimpleQueryScope.Clause clause = CLAUSE_KEYS.get(key);
     if (clause != null) {
       if (clauses.peek() != clause) throw new ConcurrentModificationException();
@@ -91,7 +91,7 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
   }
 
   @Override
-  public void leaveChildren(Key<List<SQLNode>> key, List<SQLNode> child) {
+  public void leaveChildren(SQLNode parent, Key<List<SQLNode>> key, List<SQLNode> child) {
     final SimpleQueryScope.Clause clause = CLAUSE_KEYS.get(key);
     if (clause != null) {
       if (clauses.peek() != clause) throw new ConcurrentModificationException();

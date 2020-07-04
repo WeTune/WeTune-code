@@ -172,6 +172,7 @@ public class Statement {
     copy.parsed = this.parsed.copy();
     copy.resolvedBy = new HashSet<>(resolvedBy);
     copy.failToResolveBy = new HashSet<>(failToResolveBy);
+    copy.reResolve();
     return copy;
   }
 

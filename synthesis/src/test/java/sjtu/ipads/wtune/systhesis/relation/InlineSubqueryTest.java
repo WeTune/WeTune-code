@@ -35,11 +35,19 @@ class InlineSubqueryTest {
 
       final InlineSubquery op = new InlineSubquery(graph, target);
       final Statement copy = stmt.copy();
+
       op.modifyGraph();
       op.modifyAST(copy, copy.parsed());
+
       assertEquals(
           "SELECT 1 FROM `a` INNER JOIN (SELECT `x` FROM `b`) AS `_inlined_1_1` ON `a`.`i` = `_inlined_1_1`.`x`",
           copy.parsed().toString());
+      assertEquals(2, graph.graph().nodes().size());
+      assertEquals(1, graph.graph().edges().size());
+
+      op.undoModifyGraph();
+      assertEquals(2, graph.graph().nodes().size());
+      assertEquals(1, graph.graph().edges().size());
     }
   }
 }

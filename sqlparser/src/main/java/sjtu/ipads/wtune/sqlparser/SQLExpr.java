@@ -243,7 +243,7 @@ public class SQLExpr {
     ALL
   }
 
-  public static final Attrs.Key<Kind> EXPR_KIND = Attrs.key(ATTR_PREFIX + ".expr.kind", Kind.class);
+  public static final Attrs.Key<Kind> EXPR_KIND = Attrs.key(SQL_ATTR_PREFIX + ".expr.kind", Kind.class);
 
   public static SQLNode newExpr(Kind kind) {
     final SQLNode node = new SQLNode(SQLNode.Type.EXPR);
@@ -333,7 +333,7 @@ public class SQLExpr {
     }
   }
 
-  static final String EXPR_ATTR_PREFIX = ATTR_PREFIX + ".expr.";
+  static final String EXPR_ATTR_PREFIX = SQL_ATTR_PREFIX + ".expr.";
 
   private static String attrPrefix(Kind kind) {
     return EXPR_ATTR_PREFIX + kind.name().toLowerCase() + ".";

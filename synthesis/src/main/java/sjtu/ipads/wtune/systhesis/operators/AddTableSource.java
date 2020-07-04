@@ -21,6 +21,7 @@ public class AddTableSource implements Operator {
 
   public static Operator build(
       SQLNode source, SQLNode joinCondition, SQLTableSource.JoinType joinType) {
+    assert source != null;
     return new AddTableSource(source, joinCondition, joinType);
   }
 
@@ -30,8 +31,7 @@ public class AddTableSource implements Operator {
     if (querySpecNode == null) return sqlNode;
 
     final SQLNode fromClause = querySpecNode.get(QUERY_SPEC_FROM);
-    if (fromClause == null) querySpecNode.put(QUERY_SPEC_FROM, source);
-    else {
+    if (fromClause != null) {
       SQLNode joinPoint = source;
       while (joinPoint.get(JOINED_LEFT) != null) joinPoint = joinPoint.get(JOINED_LEFT);
 
@@ -39,8 +39,9 @@ public class AddTableSource implements Operator {
       joined.put(JOINED_ON, joinCondition);
 
       joinPoint.replaceThis(joined);
-      querySpecNode.put(QUERY_SPEC_FROM, source);
     }
+
+    querySpecNode.put(QUERY_SPEC_FROM, source);
 
     return sqlNode;
   }

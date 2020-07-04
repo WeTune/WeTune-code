@@ -15,17 +15,17 @@ public interface SQLVisitor {
 
   default void leave(SQLNode node) {}
 
-  default boolean enterChild(Attrs.Key<SQLNode> key, SQLNode child) {
+  default boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
     return true;
   }
 
-  default void leaveChild(Attrs.Key<SQLNode> key, SQLNode child) {}
+  default void leaveChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {}
 
-  default boolean enterChildren(Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {
+  default boolean enterChildren(SQLNode parent, Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {
     return true;
   }
 
-  default void leaveChildren(Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {}
+  default void leaveChildren(SQLNode parent, Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {}
 
   default boolean enterCreateTable(SQLNode createTable) {
     return true;

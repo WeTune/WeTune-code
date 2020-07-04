@@ -51,7 +51,7 @@ public class InlineSubquery {
     final SQLNode originalNode = target.originalNode();
 
     final String alias = genAlias(originalNode.get(RESOLVED_QUERY_SCOPE));
-    tableSource.put(DERIVED_SUBQUERY, originalNode);
+    tableSource.put(DERIVED_SUBQUERY, originalNode.copy());
     tableSource.put(DERIVED_ALIAS, alias);
 
     target.setGeneratedNode(tableSource);

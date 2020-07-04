@@ -16,7 +16,7 @@ abstract class VisitorController {
   private static boolean safeVisitChild(Key<SQLNode> key, SQLNode n, SQLVisitor v) {
     final SQLNode child = n.get(key);
     final boolean isMutator = v.isMutator();
-    final boolean visitChild = v.enterChild(key, child);
+    final boolean visitChild = v.enterChild(n, key, child);
 
     if (isMutator && n.structChanged()) return false; // require re-visit
     if (!visitChild) return true;
@@ -29,14 +29,14 @@ abstract class VisitorController {
     safeAccept(child, v);
     if (isMutator && n.structChanged()) return false;
 
-    v.leaveChild(key, child);
+    v.leaveChild(n, key, child);
     return !isMutator || !n.structChanged();
   }
 
   private static boolean safeVisitList(Key<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
     final List<SQLNode> children = n.get(key);
     final boolean isMutator = v.isMutator();
-    final boolean visitChildren = v.enterChildren(key, children);
+    final boolean visitChildren = v.enterChildren(n, key, children);
 
     if (isMutator && n.structChanged()) return false;
     if (!visitChildren) return true;
@@ -50,7 +50,7 @@ abstract class VisitorController {
         if (isMutator && n.structChanged()) return false;
       }
 
-    v.leaveChildren(key, children);
+    v.leaveChildren(n, key, children);
     return !isMutator || !n.structChanged();
   }
 

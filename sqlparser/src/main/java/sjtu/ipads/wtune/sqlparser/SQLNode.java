@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.sqlparser;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
 
 import java.lang.System.Logger.Level;
 import java.util.*;
@@ -176,7 +175,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public SQLNode relink() {
     final List<SQLNode> children = new ArrayList<>();
 
-    for (var e : ofPrefix(ATTR_PREFIX).entrySet()) {
+    for (var e : ofPrefix(SQL_ATTR_PREFIX).entrySet()) {
       final Object value = e.getValue();
       if (value instanceof SQLNode) children.add((SQLNode) value);
       if (value instanceof List)
@@ -195,16 +194,12 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   /** Note: parent is not set. */
   public SQLNode copy() {
-    final SQLNode newNode = new SQLNode();
+    return CopyVisitor.doCopy(this);
+  }
 
-    newNode.dbType = dbType;
-    newNode.type = type;
-
+  SQLNode copy0() {
+    final SQLNode newNode = new SQLNode(this.type);
     newNode.directAttrs().putAll(this.directAttrs());
-
-    final List<SQLNode> newChildren = FuncUtils.listMap(SQLNode::copy, children());
-    newNode.setChildren(newChildren);
-
     return newNode;
   }
 
@@ -414,7 +409,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     DELETE
   }
 
-  static final String ATTR_PREFIX = "sql.attr.";
+  static final String SQL_ATTR_PREFIX = "sql.attr.";
 
   public static SQLNode tableName(String name) {
     final SQLNode node = new SQLNode(TABLE_NAME);
@@ -437,14 +432,16 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   }
 
   private static <T> Key<T> attr(Type nodeType, String name, Class<T> clazz) {
-    final Key<T> attr = Attrs.key(ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
+    final Key<T> attr =
+        Attrs.key(SQL_ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
     attr.setCheck(checkAgainst(SQLNode.class, it -> it.type() == nodeType));
     nodeType.addAttr(attr.name());
     return attr;
   }
 
   private static <T> Key<T> attr2(Type nodeType, String name, Class<?> clazz) {
-    final Key<T> attr = Attrs.key2(ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
+    final Key<T> attr =
+        Attrs.key2(SQL_ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
     attr.setCheck(checkAgainst(SQLNode.class, it -> it.type() == nodeType));
     nodeType.addAttr(attr.name());
     return attr;
