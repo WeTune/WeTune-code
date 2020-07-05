@@ -22,7 +22,7 @@ public class AddTableSource implements Operator {
     this.pointer = source;
   }
 
-  public static Operator build(
+  public static AddTableSource build(
       SQLNode source, SQLNode joinCondition, SQLTableSource.JoinType joinType) {
     assert source != null;
     return new AddTableSource(source, joinCondition, joinType);

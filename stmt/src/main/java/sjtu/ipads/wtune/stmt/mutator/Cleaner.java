@@ -5,11 +5,18 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.util.List;
+
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_USING;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.ATTR_PREFIX;
 
-/** Remove constant expression like "1=1" */
+/**
+ * Clean stmt.
+ *
+ * <p>1. Remove constant expression like "1=1"
+ */
 public class Cleaner implements Mutator {
   private static final Attrs.Key<Boolean> IS_CONSTANT =
       Attrs.Key.of(ATTR_PREFIX + "cleaner.isConstant", Boolean.class);

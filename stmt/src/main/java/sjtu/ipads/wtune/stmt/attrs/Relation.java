@@ -2,11 +2,14 @@ package sjtu.ipads.wtune.stmt.attrs;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
+import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.TABLE_SOURCE_KIND;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE_SOURCE;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
+/** Represent a relation, e.g. either a table source or a subquery. */
 public class Relation {
   private final SQLNode originalNode;
   private SQLNode generatedNode;
@@ -40,6 +43,16 @@ public class Relation {
     if (generatedNode != null) return SQLTableSource.tableSourceName(generatedNode);
     if (isTableSource()) return SQLTableSource.tableSourceName(originalNode);
     else return "(" + originalNode.toString() + ")";
+  }
+
+  /** Resolve the relation as SQLNode in given AST tree. */
+  public SQLNode locateNodeIn(SQLNode root) {
+    return NodeFinder.find(root, this.node());
+  }
+
+  public TableSource resolveTableSource(SQLNode root) {
+    final SQLNode node = locateNodeIn(root);
+    return node != null ? node.get(RESOLVED_TABLE_SOURCE) : null;
   }
 
   public void setGeneratedNode(SQLNode generatedNode) {

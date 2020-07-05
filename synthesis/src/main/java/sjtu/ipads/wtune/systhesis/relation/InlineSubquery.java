@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.stmt.analyzer.DependentQueryAnalyzer;
 import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.attrs.JoinCondition;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
@@ -30,6 +31,10 @@ public class InlineSubquery implements RelationMutator {
     assert relationGraph != null && target != null && !target.isTableSource();
 
     final var graph = relationGraph.graph();
+    // invariant 1: |independent_neighbours| <= |neighbours|
+    // invariant 2: for subquery relation, its |neighbours| <= 1
+    // since we have checked independent_neighbours == 1 in `canInline`
+    // its |neighbours| is guaranteed to be 1
     final Set<Relation> neighbour = graph.adjacentNodes(target);
     assert graph.nodes().contains(target) && neighbour.size() == 1;
 
@@ -41,9 +46,10 @@ public class InlineSubquery implements RelationMutator {
   }
 
   public static boolean canInline(SQLNode root, RelationGraph graph, Relation target) {
-    return !target.isTableSource()
-        && graph.graph().adjacentNodes(target).size() == 1
-        && NodeFinder.find(root, target.node()) != null;
+    if (target.isTableSource()) return false;
+    final SQLNode subquery = target.locateNodeIn(root);
+    if (subquery == null || DependentQueryAnalyzer.isDependent(subquery)) return false;
+    return graph.independentNeighbours(root, target).size() == 1;
   }
 
   private String genAlias(QueryScope outerScope) {
@@ -58,8 +64,8 @@ public class InlineSubquery implements RelationMutator {
   }
 
   @Override
-  public boolean isValid(SQLNode node) {
-    return NodeFinder.find(node, target.node()) != null;
+  public boolean isValid(SQLNode root) {
+    return target.locateNodeIn(root) != null;
   }
 
   @Override
@@ -68,7 +74,7 @@ public class InlineSubquery implements RelationMutator {
   }
 
   @Override
-  public void modifyGraph() {
+  public void modifyGraph(SQLNode root) {
     target.setGeneratedNode(new SQLNode(SQLNode.Type.INVALID)); // just a placeholder
   }
 
@@ -78,26 +84,27 @@ public class InlineSubquery implements RelationMutator {
   }
 
   @Override
-  public SQLNode modifyAST(Statement stmt, SQLNode node) {
-    final SQLNode queryNode =
-        NodeFinder.find(node, target.originalNode()).get(RESOLVED_QUERY_SCOPE).parent().queryNode();
+  public SQLNode modifyAST(Statement stmt, SQLNode root) {
+    final SQLNode outerQuery =
+        NodeFinder.find(root, target.originalNode()).get(RESOLVED_QUERY_SCOPE).parent().queryNode();
+    assert outerQuery != null;
 
-    final SQLNode tableSource = buildTableSource(queryNode);
-    target.setGeneratedNode(tableSource);
+    final SQLNode newTableSource = genTableSource(outerQuery);
+    final SQLNode joinCond = genJoinCondition(outerQuery, newTableSource);
 
-    final SQLNode joinCond = buildJoinCondition(queryNode);
-
-    RemovePredicate.build(target.originalNode().parent()).apply(queryNode);
+    RemovePredicate.build(target.originalNode().parent()).apply(outerQuery);
+    // Note: impl of AddTableSource modifies the newTableSource object in-place
+    //       to connect a JOIN. we need to retrieve the reference to the new node
     final AddTableSource addTableOp =
-        (AddTableSource) AddTableSource.build(tableSource, joinCond, JoinType.INNER_JOIN);
-    addTableOp.apply(queryNode);
+        AddTableSource.build(newTableSource, joinCond, JoinType.INNER_JOIN);
+    addTableOp.apply(outerQuery);
     Resolve.build().apply(stmt);
 
     target.setGeneratedNode(addTableOp.pointer());
-    return node;
+    return root;
   }
 
-  private SQLNode buildTableSource(SQLNode root) {
+  private SQLNode genTableSource(SQLNode root) {
     final SQLNode tableSource = newTableSource(DERIVED);
     final SQLNode originalNode = NodeFinder.find(root, target.originalNode());
     final String alias = genAlias(root.get(RESOLVED_QUERY_SCOPE));
@@ -109,15 +116,18 @@ public class InlineSubquery implements RelationMutator {
     return tableSource;
   }
 
-  private SQLNode buildJoinCondition(SQLNode root) {
-    final SQLNode parent = NodeFinder.find(root, target.originalNode()).parent();
-    assert exprKind(parent) == SQLExpr.Kind.BINARY && parent.get(BINARY_OP) == BinaryOp.IN_SUBQUERY;
+  private SQLNode genJoinCondition(SQLNode root, SQLNode generatedTableSource) {
+    final SQLNode inSubExpr = NodeFinder.find(root, target.originalNode()).parent();
+    assert inSubExpr.get(BINARY_OP) == BinaryOp.IN_SUBQUERY;
 
-    final SQLNode leftRef = parent.get(BINARY_LEFT);
-    final SQLNode rightNode = cond.right().node();
+    // use left node found in `root` since its name may have changed
+    final SQLNode leftRef = inSubExpr.get(BINARY_LEFT);
 
+    // right column name must keep the same, no need to resolve in `root`
     return binary(
-        leftRef, columnRef(tableSourceName(rightNode), cond.rightColumn()), SQLExpr.BinaryOp.EQUAL);
+        leftRef,
+        columnRef(tableSourceName(generatedTableSource), cond.rightColumn()),
+        SQLExpr.BinaryOp.EQUAL);
   }
 
   @Override

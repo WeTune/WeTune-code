@@ -5,11 +5,11 @@ import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 interface RelationMutator {
-  boolean isValid(SQLNode node);
-
   Relation target();
 
-  void modifyGraph();
+  boolean isValid(SQLNode root);
+
+  void modifyGraph(SQLNode root);
 
   void undoModifyGraph();
 

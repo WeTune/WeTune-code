@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.binary;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.columnRef;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 public class JoinCondition {
   private final Relation left;
@@ -72,13 +73,6 @@ public class JoinCondition {
     if (left.equals(relation)) return rightColumn;
     else if (right.equals(relation)) return leftColumn;
     else return null;
-  }
-
-  public SQLNode toBinary() {
-    return binary(
-        columnRef(left.name(), leftColumn),
-        columnRef(right.name(), rightColumn),
-        SQLExpr.BinaryOp.EQUAL);
   }
 
   @Override

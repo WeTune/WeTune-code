@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -31,16 +30,17 @@ public class ReduceTableSource implements RelationMutator {
     // exclude non table source
     if (!target.isTableSource()) return false;
 
-    // only the "leaf" node can be reduced
-    final var g = graph.graph();
-    long neighboursCount = g.adjacentNodes(target).stream().filter(Relation::isTableSource).count();
-    if (neighboursCount != 1) return false;
-
-    final SQLNode targetNode = NodeFinder.find(root, target.node());
+    final SQLNode targetNode = target.locateNodeIn(root);
     if (targetNode == null) return false;
+
+    // only the "leaf" node can be reduced
+    long neighboursCount =
+        graph.independentNeighbours(root, target).stream().filter(Relation::isTableSource).count();
+    if (neighboursCount != 1) return false;
 
     final QueryScope scope = targetNode.get(RESOLVED_QUERY_SCOPE);
     final TableSource source = targetNode.get(RESOLVED_TABLE_SOURCE);
+    // recursive table source resolution is unnecessary
     final Set<ColumnRef> columnRef = TableAccessAnalyzer.analyze(scope.queryNode(), source, false);
     final long usedColumnCount = columnRef.stream().map(ColumnRef::identity).distinct().count();
 
@@ -50,12 +50,13 @@ public class ReduceTableSource implements RelationMutator {
   }
 
   @Override
-  public boolean isValid(SQLNode node) {
+  public boolean isValid(SQLNode root) {
     final var graph = relationGraph.graph();
-    if (!graph.nodes().contains(target) || NodeFinder.find(node, target.node()) == null)
-      return false;
+    if (!graph.nodes().contains(target) || target.locateNodeIn(root) == null) return false;
     long neighboursCount =
-        graph.adjacentNodes(target).stream().filter(Relation::isTableSource).count();
+        relationGraph.independentNeighbours(root, target).stream()
+            .filter(Relation::isTableSource)
+            .count();
     return neighboursCount == 1;
   }
 
@@ -65,7 +66,7 @@ public class ReduceTableSource implements RelationMutator {
   }
 
   @Override
-  public void modifyGraph() {
+  public void modifyGraph(SQLNode root) {
     final var graph = relationGraph.graph();
     final Set<Relation> neighbours =
         graph.adjacentNodes(target).stream()
@@ -86,17 +87,16 @@ public class ReduceTableSource implements RelationMutator {
   @Override
   public SQLNode modifyAST(Statement stmt, SQLNode root) {
     assert removedEdge != null;
-    final Relation otherRelation = removedEdge.thatRelation(target);
+    final String otherRelName =
+        tableSourceName(removedEdge.thatRelation(target).locateNodeIn(root));
     final String otherColumn = removedEdge.thatColumn(target);
-    final String otherRelName = tableSourceName(NodeFinder.find(root, otherRelation.node()));
 
-    final SQLNode targetNode = NodeFinder.find(root, target.node());
+    final SQLNode targetNode = target.locateNodeIn(root);
     final QueryScope scope = targetNode.get(RESOLVED_QUERY_SCOPE);
     final SQLNode queryNode = scope.queryNode();
     final TableSource source = targetNode.get(RESOLVED_TABLE_SOURCE);
     final Set<ColumnRef> columnRefs = TableAccessAnalyzer.analyze(queryNode, source, false);
     // assert 1 == columnRef.stream().map(ColumnRef::identity).distinct().count();
-
     final ColumnRef columnRef = columnRefs.iterator().next();
 
     ReplaceColumnRef.build(columnRef, otherRelName, otherColumn).apply(queryNode);

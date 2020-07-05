@@ -21,7 +21,7 @@ class ReduceTableSourceTest {
   }
 
   @Test
-  @DisplayName("[Synthesis.Relation.InlineSubquery] simple")
+  @DisplayName("[Synthesis.Relation.ReduceTableSource] simple")
   void test() {
     final Statement stmt = new Statement();
     stmt.setAppName("test");
@@ -42,18 +42,18 @@ class ReduceTableSourceTest {
       final ReduceTableSource op = new ReduceTableSource(graph, target);
       final Statement copy = stmt.copy();
 
-      op.modifyGraph();
+      op.modifyGraph(copy.parsed());
       op.modifyAST(copy, copy.parsed());
 
       assertEquals(
           "SELECT `c`.`x` FROM (SELECT `i`, `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
               + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `c`.`x` = 4)",
           copy.parsed().toString());
-      assertEquals(3, graph.graph().nodes().size());
+      assertEquals(4, graph.graph().nodes().size());
       assertEquals(1, graph.graph().edges().size());
 
       op.undoModifyGraph();
-      assertEquals(4, graph.graph().nodes().size());
+      assertEquals(5, graph.graph().nodes().size());
       assertEquals(2, graph.graph().edges().size());
     }
   }

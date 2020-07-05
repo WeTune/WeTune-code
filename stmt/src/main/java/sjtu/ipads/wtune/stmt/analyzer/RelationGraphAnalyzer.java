@@ -56,7 +56,6 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       // in this case, only if the following condition meets it would be counted:
       // 1. in "IN <subquery>" or "= <subquery>" expr
       // 2. path to root doesn't contain OR/XOR/NOT
-      // 3. not dependent
 
       final SQLNode parent = query.parent();
       if (!isExpr(parent))
@@ -87,7 +86,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
         ascent = ascent.parent();
       }
 
-      if (isDependent(query)) return true;
+      //      if (isDependent(query)) return true;
 
       // now it's a valid relation
       asRelation(query);

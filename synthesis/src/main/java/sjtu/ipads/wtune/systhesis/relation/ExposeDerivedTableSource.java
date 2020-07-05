@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -41,12 +40,16 @@ public class ExposeDerivedTableSource implements RelationMutator {
     // exclude UNION
     if (target.node().get(DERIVED_SUBQUERY).get(QUERY_BODY).type() != Type.QUERY_SPEC) return false;
 
+    // now target must be a derived table source
+
     // condition:
     // the used column of this derived table source must be originated from a column ref expr.
+    // i.e. it must have a simple name
     // e.g. SELECT 1 FROM (SELECT x AS x, y + 1 AS y FROM b) AS a WHERE a.y = 3
     // here `a` can not be exposed because a.y is used, which is originated
-    // from `y + 1`, not column ref expr
-    final SQLNode node = NodeFinder.find(root, target.node());
+    // from `y + 1` which doesn't has a simple name
+
+    final SQLNode node = target.locateNodeIn(root);
     if (node == null) return false;
 
     final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
@@ -56,27 +59,15 @@ public class ExposeDerivedTableSource implements RelationMutator {
     for (ColumnRef columnRef : usedColumn) {
       assert source.equals(columnRef.source()) && columnRef.refItem() != null;
       if (exprKind(columnRef.refItem().expr()) != SQLExpr.Kind.COLUMN_REF) return false;
+      assert columnRef.refItem().simpleName() != null;
     }
 
     return true;
   }
 
-  private String genAlias(QueryScope outerScope, TableSource source) {
-    int suffix = 1;
-    final String prefix = source.name() + "_exposed_" + (outerScope.level() + 1) + "_";
-
-    String name = prefix + suffix;
-    while (outerScope.resolveTable(name, true).left() != null) {
-      ++suffix;
-      name = prefix + suffix;
-    }
-    return name;
-  }
-
   @Override
   public boolean isValid(SQLNode node) {
-    return relationGraph.graph().nodes().contains(target)
-        && NodeFinder.find(node, target.node()) != null;
+    return relationGraph.graph().nodes().contains(target) && target.locateNodeIn(node) != null;
   }
 
   @Override
@@ -85,18 +76,19 @@ public class ExposeDerivedTableSource implements RelationMutator {
   }
 
   @Override
-  public void modifyGraph() {
+  public void modifyGraph(SQLNode root) {
     final SQLNode parent = target.node().parent();
     final var graph = relationGraph.graph();
 
     if (isJoined(parent)) {
-      final Set<Relation> neighbours = graph.adjacentNodes(target);
+      // avoid ConcurrentModificationException
+      final Set<Relation> neighbours = new HashSet<>(graph.adjacentNodes(target));
       removedConds = new HashSet<>(neighbours.size());
       addedConds = new HashSet<>(neighbours.size());
 
       for (Relation neighbour : neighbours) {
         final JoinCondition joinCondition = graph.removeEdge(target, neighbour);
-        final JoinCondition newJoinCondition = resolveJoinCondition(joinCondition);
+        final JoinCondition newJoinCondition = rebuildJoinCondition(joinCondition);
         graph.putEdgeValue(newJoinCondition.left(), newJoinCondition.right(), newJoinCondition);
 
         removedConds.add(joinCondition);
@@ -119,7 +111,69 @@ public class ExposeDerivedTableSource implements RelationMutator {
         graph.putEdgeValue(removedCond.left(), removedCond.right(), removedCond);
   }
 
-  private JoinCondition resolveJoinCondition(JoinCondition cond) {
+  @Override
+  public SQLNode modifyAST(Statement stmt, SQLNode root) {
+    final SQLNode targetNode = target.locateNodeIn(root);
+    final TableSource targetSource = targetNode.get(RESOLVED_TABLE_SOURCE);
+    final SQLNode innerQuery = targetNode.get(DERIVED_SUBQUERY).get(QUERY_BODY); // QUERY_SPEC
+    final QueryScope innerScope = innerQuery.get(RESOLVED_QUERY_SCOPE);
+    final QueryScope outerScope = targetNode.get(RESOLVED_QUERY_SCOPE);
+    final SQLNode outerQuery = outerScope.queryNode();
+    final SQLNode parent = targetNode.parent();
+    final SQLNode condNode = isJoined(parent) ? parent.get(JOINED_ON) : null;
+    final JoinType joinType = isJoined(parent) ? parent.get(JOINED_TYPE) : null;
+    final SQLNode fromNode = innerQuery.get(QUERY_SPEC_FROM);
+    final SQLNode whereNode = innerQuery.get(QUERY_SPEC_WHERE);
+
+    // e.g. select * from (select a.i as x from a where a.j = 1) b where b.x = 3
+
+    // 1. modify column ref name
+    //    => select * from (select a.i as x from a where a.j = 1) b where b.i = 3
+    InlineRefName.build(targetSource).apply(outerQuery);
+
+    // 2. assign alias to each inner table and rename its refs
+    //    => select * from (select a.i as x from a AS `a_exposed_1_1` where `a_exposed_1_1`.j = 1)
+    //       where `a_exposed_1_1`.i = 3
+    for (TableSource source : innerScope.tableSources().values()) {
+      final String newAlias = genAlias(outerScope, source);
+      source.putAlias(newAlias);
+      // recursive resolution is needed since afterwards
+      // the inner tables will be exposed
+      RenameTableSource.build(source, newAlias, true).apply(outerQuery);
+    }
+
+    // 3. remove the derived table
+    //   => select * from where b.i = 3
+    RemoveTableSource.build(targetSource).apply(outerQuery);
+
+    // 4. add the inner tables
+    //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3
+    // we can just reuse the existing ON-condition node without any adjust
+    // since in step 1 and 2 the table and column name has been corrected
+    AddTableSource.build(fromNode, condNode, joinType).apply(outerQuery);
+
+    // 5. move the inner predicate to outer
+    //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3 and `a_exposed_0`.j = 1
+    // again, all names must be already corrected
+    if (whereNode != null) AddPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
+
+    Resolve.build().apply(stmt);
+    return root;
+  }
+
+  private String genAlias(QueryScope outerScope, TableSource source) {
+    int suffix = 1;
+    final String prefix = source.name() + "_exposed_" + (outerScope.level() + 1) + "_";
+
+    String name = prefix + suffix;
+    while (outerScope.resolveTable(name, true).left() != null) {
+      ++suffix;
+      name = prefix + suffix;
+    }
+    return name;
+  }
+
+  private JoinCondition rebuildJoinCondition(JoinCondition cond) {
     final Relation thisRelation = cond.thisRelation(target);
     final Relation otherRelation = cond.thatRelation(target);
     final String thisColumn = cond.thisColumn(target);
@@ -134,51 +188,6 @@ public class ExposeDerivedTableSource implements RelationMutator {
     final String newThisColumn = item.simpleName();
 
     return JoinCondition.of(newThisRelation, otherRelation, newThisColumn, otherColumn);
-  }
-
-  @Override
-  public SQLNode modifyAST(Statement stmt, SQLNode root) {
-    final SQLNode targetNode = NodeFinder.find(root, target.node());
-    final SQLNode subquery = targetNode.get(DERIVED_SUBQUERY).get(QUERY_BODY);
-    final TableSource targetSource = targetNode.get(RESOLVED_TABLE_SOURCE);
-    final QueryScope outerScope = targetNode.get(RESOLVED_QUERY_SCOPE);
-    final QueryScope innerScope = subquery.get(RESOLVED_QUERY_SCOPE);
-    final SQLNode outerQuery = outerScope.queryNode();
-    final SQLNode parent = targetNode.parent();
-    final SQLNode condNode = isJoined(parent) ? parent.get(JOINED_ON) : null;
-    final JoinType joinType = isJoined(parent) ? parent.get(JOINED_TYPE) : null;
-    final SQLNode fromNode = subquery.get(QUERY_SPEC_FROM);
-    final SQLNode whereNode = subquery.get(QUERY_SPEC_WHERE);
-
-    // e.g. select * from (select a.i as x from a where a.j = 1) b where b.x = 3
-
-    // 1. modify column ref name
-    //    => select * from (select a.i as x from a where a.j = 1) b where b.i = 3
-    InlineRefName.build(targetSource).apply(outerQuery);
-
-    // 2. assign alias to each inner table and rename its refs
-    //    => select * from (select a.i as x from a AS `a_exposed_0` where `a_exposed_0`.j = 1)
-    //       where `a_exposed`.i = 3
-    for (TableSource source : innerScope.tableSources().values()) {
-      final String newAlias = genAlias(outerScope, source);
-      source.putAlias(newAlias);
-      RenameTableSource.build(source, newAlias, true).apply(outerQuery);
-    }
-
-    // 3. remove the derived table
-    //   => select * from where b.i = 3
-    RemoveTableSource.build(targetSource).apply(outerQuery);
-
-    // 4. add the inner tables
-    //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3
-    AddTableSource.build(fromNode, condNode, joinType).apply(outerQuery);
-
-    // 5. add the inner predicate to outer
-    //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3 and `a_exposed_0`.j = 1
-    if (whereNode != null) AddPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
-
-    Resolve.build().apply(stmt);
-    return root;
   }
 
   @Override

@@ -39,6 +39,11 @@ public class TableAccessAnalyzer implements Analyzer<Set<ColumnRef>>, SQLVisitor
     return refs;
   }
 
+  /**
+   * Find column refs points to the given source.
+   *
+   * @param recursive: whether to recursively resolve the table source of column ref
+   */
   public static Set<ColumnRef> analyze(SQLNode node, TableSource source, boolean recursive) {
     final TableAccessAnalyzer analyzer = new TableAccessAnalyzer();
     analyzer.source = source;

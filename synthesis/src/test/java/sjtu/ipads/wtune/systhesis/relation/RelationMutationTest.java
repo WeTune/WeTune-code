@@ -22,6 +22,29 @@ class RelationMutationTest {
 
   @Test
   @DisplayName("[Synthesis.Relation.Mutation] mutation_0")
+  void test4() {
+    final Statement stmt = new Statement();
+    stmt.setAppName("test");
+    stmt.setRawSql("select 1 from a where exists (select 1 from b where a.i = b.x)");
+    stmt.retrofitStandard();
+
+    final List<Statement> output = new ArrayList<>();
+
+    final RelationMutation mutation = RelationMutation.build(stmt);
+    mutation.setNext(Stage.listCollector(output));
+    mutation.feed(stmt);
+
+    assertEquals(1, output.size());
+    assertEquals(
+        "SELECT 1 FROM `a` WHERE EXISTS (SELECT 1 FROM `b` WHERE `a`.`i` = `b`.`x`)",
+        stmt.parsed().toString());
+    assertEquals(
+        "SELECT 1 FROM `a` WHERE EXISTS (SELECT 1 FROM `b` WHERE `a`.`i` = `b`.`x`)",
+        output.get(0).parsed().toString());
+  }
+
+  @Test
+  @DisplayName("[Synthesis.Relation.Mutation] mutation_0")
   void test0() {
     final Statement stmt = new Statement();
     stmt.setAppName("test");
@@ -60,7 +83,6 @@ class RelationMutationTest {
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
 
-    output.forEach(it -> System.out.println(it.parsed()));
     assertEquals(3, output.size());
     assertEquals(
         "SELECT `a`.`i`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
@@ -111,7 +133,7 @@ class RelationMutationTest {
   }
 
   @Test
-  @DisplayName("[Synthesis.Relation.Mutation] mutation_2")
+  @DisplayName("[Synthesis.Relation.Mutation] all statements")
   void test3() {
     final List<Statement> all = Statement.findAll();
 

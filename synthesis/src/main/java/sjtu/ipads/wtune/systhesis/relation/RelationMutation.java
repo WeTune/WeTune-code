@@ -86,7 +86,7 @@ public class RelationMutation extends Stage {
     if (!mutator.isValid(stmt.parsed())) return true;
 
     final Statement copy = stmt.copy();
-    mutator.modifyGraph();
+    mutator.modifyGraph(copy.parsed());
     mutator.modifyAST(copy, copy.parsed());
     mutated.add(mutator.target());
 

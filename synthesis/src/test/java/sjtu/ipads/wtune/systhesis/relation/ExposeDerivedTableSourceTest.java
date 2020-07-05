@@ -43,7 +43,7 @@ class ExposeDerivedTableSourceTest {
       final ExposeDerivedTableSource op = new ExposeDerivedTableSource(graph, target);
       final Statement copy = stmt.copy();
 
-      op.modifyGraph();
+      op.modifyGraph(copy.parsed());
       op.modifyAST(copy, copy.parsed());
       assertEquals(
           "SELECT 1 FROM `a` "
@@ -52,12 +52,12 @@ class ExposeDerivedTableSourceTest {
               + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `b`.`z` = `b_exposed_1_1`.`y`) "
               + "AND `b_exposed_1_1`.`y` = 1",
           copy.parsed().toString());
-      assertEquals(3, graph.graph().nodes().size());
-      assertEquals(2, graph.graph().edges().size());
+      assertEquals(4, graph.graph().nodes().size());
+      assertEquals(3, graph.graph().edges().size());
 
       op.undoModifyGraph();
-      assertEquals(4, graph.graph().nodes().size());
-      assertEquals(2, graph.graph().edges().size());
+      assertEquals(5, graph.graph().nodes().size());
+      assertEquals(3, graph.graph().edges().size());
     }
   }
 }
