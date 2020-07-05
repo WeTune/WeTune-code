@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Recognizer;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
@@ -49,7 +48,9 @@ public class MySQLASTParser implements SQLParser {
 
   @Override
   public SQLNode parse(String str) {
-    return parse(str, MySQLParser::query);
+    final SQLNode node = parse(str, MySQLParser::query);
+    node.setDbTypeRec(SQLNode.MYSQL);
+    return node;
   }
 
   @Override

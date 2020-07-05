@@ -32,7 +32,9 @@ public class PGASTParser implements SQLParser {
 
   @Override
   public SQLNode parse(String string) {
-    return parse(string, PGParser::statement);
+    final SQLNode node = parse(string, PGParser::statement);
+    node.setDbTypeRec(SQLNode.POSTGRESQL);
+    return node;
   }
 
   @Override

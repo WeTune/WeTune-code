@@ -1699,7 +1699,7 @@ indirection_list
 
 indirection
     : DOT col_label
-    | LEFT_BRACKET vex? COLON vex? RIGHT_BRACKET
+    | LEFT_BRACKET start=vex? COLON end=vex? RIGHT_BRACKET
     | LEFT_BRACKET vex RIGHT_BRACKET
     ;
 
@@ -2461,20 +2461,20 @@ vex
   | LEFT_PAREN vex RIGHT_PAREN indirection_list?
   | LEFT_PAREN vex (COMMA vex)+ RIGHT_PAREN
   | vex collate_identifier
-  | <assoc=right> (PLUS | MINUS) vex
+  | <assoc=right> unary_operator=(PLUS | MINUS) vex
   | vex AT TIME ZONE vex
-  | vex EXP vex
-  | vex (MULTIPLY | DIVIDE | MODULAR) vex
-  | vex (PLUS | MINUS) vex
+  | vex binary_operator=EXP vex
+  | vex binary_operator=(MULTIPLY | DIVIDE | MODULAR) vex
+  | vex binary_operator=(PLUS | MINUS) vex
   // TODO a lot of ambiguities between 3 next alternatives
   | vex op vex
   | op vex
   | vex op
   | vex NOT? IN LEFT_PAREN (select_stmt_no_parens | vex (COMMA vex)*) RIGHT_PAREN
   | vex NOT? BETWEEN (ASYMMETRIC | SYMMETRIC)? vex_b AND vex
-  | vex NOT? (LIKE | ILIKE | SIMILAR TO) vex
-  | vex NOT? (LIKE | ILIKE | SIMILAR TO) vex ESCAPE vex
-  | vex (LTH | GTH | LEQ | GEQ | EQUAL | NOT_EQUAL) vex
+  | vex NOT? (binary_operator=LIKE | binary_operator=ILIKE | SIMILAR TO) vex
+  | vex NOT? (binary_operator=LIKE | binary_operator=ILIKE | SIMILAR TO) vex ESCAPE vex
+  | vex binary_operator=(LTH | GTH | LEQ | GEQ | EQUAL | NOT_EQUAL) vex
   | vex IS NOT? (truth_value | NULL)
   | vex IS NOT? DISTINCT FROM vex
   | vex IS NOT? DOCUMENT
@@ -2482,9 +2482,9 @@ vex
   | vex IS NOT? OF LEFT_PAREN type_list RIGHT_PAREN
   | vex ISNULL
   | vex NOTNULL
-  | <assoc=right> NOT vex
-  | vex AND vex
-  | vex OR vex
+  | <assoc=right> unary_operator=NOT vex
+  | vex binary_operator=AND vex
+  | vex binary_operator=OR vex
   | value_expression_primary
   ;
 
@@ -2496,14 +2496,14 @@ vex_b
   : vex_b CAST_EXPRESSION data_type
   | LEFT_PAREN vex RIGHT_PAREN indirection_list?
   | LEFT_PAREN vex (COMMA vex)+ RIGHT_PAREN
-  | <assoc=right> (PLUS | MINUS) vex_b
-  | vex_b EXP vex_b
-  | vex_b (MULTIPLY | DIVIDE | MODULAR) vex_b
-  | vex_b (PLUS | MINUS) vex_b
+  | <assoc=right> unary_operator=(PLUS | MINUS) vex_b
+  | vex_b binary_operator=EXP vex_b
+  | vex_b binary_operator=(MULTIPLY | DIVIDE | MODULAR) vex_b
+  | vex_b binary_operator=(PLUS | MINUS) vex_b
   | vex_b op vex_b
   | op vex_b
   | vex_b op
-  | vex_b (LTH | GTH | LEQ | GEQ | EQUAL | NOT_EQUAL) vex_b
+  | vex_b binary_operator=(LTH | GTH | LEQ | GEQ | EQUAL | NOT_EQUAL) vex_b
   | vex_b IS NOT? DISTINCT FROM vex_b
   | vex_b IS NOT? DOCUMENT
   | vex_b IS NOT? UNKNOWN
@@ -2559,7 +2559,7 @@ truth_value
   ;
 
 case_expression
-  : CASE vex? (WHEN vex THEN r+=vex)+ (ELSE r+=vex)? END
+  : CASE condition=vex? (WHEN when+=vex THEN then+=vex)+ (ELSE otherwise=vex)? END
   ;
 
 cast_specification
@@ -2672,7 +2672,12 @@ array_expression
     ;
 
 array_elements
-    : LEFT_BRACKET ((vex | array_elements) (COMMA (vex | array_elements))*)? RIGHT_BRACKET
+    : LEFT_BRACKET (array_element (COMMA array_element)*)? RIGHT_BRACKET
+    ;
+
+array_element
+    : vex
+    | array_elements
     ;
 
 type_coercion
@@ -2739,12 +2744,12 @@ select_ops_no_parens
 
 select_primary
     : SELECT
-        (set_qualifier (ON LEFT_PAREN vex (COMMA vex)* RIGHT_PAREN)?)?
+        (set_qualifier (ON LEFT_PAREN distinct+=vex (COMMA distinct+=vex)* RIGHT_PAREN)?)?
         select_list? into_table?
         (FROM from_item (COMMA from_item)*)?
-        (WHERE vex)?
+        (WHERE where=vex)?
         groupby_clause?
-        (HAVING vex)?
+        (HAVING having=vex)?
         (WINDOW identifier AS window_definition (COMMA identifier AS window_definition)*)?
     | TABLE ONLY? schema_qualified_name MULTIPLY?
     | values_stmt

@@ -279,7 +279,7 @@ public interface SQLVisitor {
 
   default void leaveQuerySpec(SQLNode querySpec) {}
 
-  default boolean enterUnion(SQLNode union) {
+  default boolean enterSetOp(SQLNode union) {
     return true;
   }
 
@@ -290,4 +290,22 @@ public interface SQLVisitor {
   }
 
   default void leaveStatement(SQLNode statement) {}
+
+  default boolean enterIndirection(SQLNode indirection) {
+    return true;
+  }
+
+  default void leaveIndirection(SQLNode indirection) {}
+
+  default boolean enterIndirectionComp(SQLNode indirectionComp) {
+    return true;
+  }
+
+  default void leaveIndirectionComp(SQLNode indirectionComp) {}
+
+  default boolean enterCommonName(SQLNode commonName) {
+    return true;
+  }
+
+  default void leaveCommonName(SQLNode commonName) {}
 }

@@ -1,7 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.ArrayList;
@@ -9,7 +12,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 
 interface PGASTHelper {
@@ -28,6 +34,11 @@ interface PGASTHelper {
     if (ctx.tokens_nonreserved() != null || ctx.tokens_nonreserved_except_function_type() != null)
       return ctx.getText();
     return stringifyIdentifier(ctx.id_token());
+  }
+
+  static String stringifyIdentifier(PGParser.Col_labelContext ctx) {
+    if (ctx.id_token() != null) return stringifyIdentifier(ctx.id_token());
+    else return ctx.getText();
   }
 
   static String[] stringifyIdentifier(PGParser.Schema_qualified_nameContext ctx) {
@@ -58,19 +69,18 @@ interface PGASTHelper {
     return triple;
   }
 
+  static String stringifyText(PGParser.Character_stringContext ctx) {
+    if (ctx.Text_between_Dollar() != null && !ctx.Text_between_Dollar().isEmpty())
+      return String.join("", listMap(TerminalNode::getText, ctx.Text_between_Dollar()));
+    else if (ctx.Character_String_Literal() != null) return ctx.getText();
+    else return assertFalse();
+  }
+
   static SQLNode tableName(String[] triple) {
     final SQLNode node = new SQLNode(SQLNode.Type.TABLE_NAME);
     node.put(TABLE_NAME_SCHEMA, triple[1]);
     node.put(TABLE_NAME_TABLE, triple[2]);
 
-    return node;
-  }
-
-  static SQLNode commonName(String[] triple) {
-    final SQLNode node = new SQLNode(Type.COMMON_NAME);
-    node.put(COMMON_NAME_0, triple[0]);
-    node.put(COMMON_NAME_1, triple[1]);
-    node.put(COMMON_NAME_2, triple[2]);
     return node;
   }
 
@@ -282,5 +292,93 @@ interface PGASTHelper {
     return new SQLDataType(category, name, w, p)
         .setIntervalField(interval)
         .setDimensions(arrayDims);
+  }
+
+  static Number parseNumericLiteral(PGParser.Unsigned_numeric_literalContext ctx) {
+    if (ctx.REAL_NUMBER() != null) return Double.parseDouble(ctx.getText());
+    else if (ctx.NUMBER_LITERAL() != null) return Long.parseLong(ctx.getText());
+    else return assertFalse();
+  }
+
+  static Boolean parseTruthValue(PGParser.Truth_valueContext ctx) {
+    if (ctx.TRUE() != null || ctx.ON() != null) return true;
+    else if (ctx.FALSE() != null) return false;
+    else return assertFalse();
+  }
+
+  static Object parseUnsignedValue(PGParser.Unsigned_value_specificationContext ctx) {
+    if (ctx.unsigned_numeric_literal() != null)
+      return parseNumericLiteral(ctx.unsigned_numeric_literal());
+    else if (ctx.character_string() != null) return stringifyText(ctx.character_string());
+    else if (ctx.truth_value() != null) return parseTruthValue(ctx.truth_value());
+    else return assertFalse();
+  }
+
+  static SQLNode parseUnsignedLiteral(PGParser.Unsigned_value_specificationContext ctx) {
+    final Object value = parseUnsignedValue(ctx);
+    if (value instanceof Boolean) return literal(BOOL, value);
+    else if (value instanceof Double) return literal(FRACTIONAL, value);
+    else if (value instanceof Long)
+      return (Long) value <= Integer.MAX_VALUE ? literal(INTEGER, value) : literal(LONG, value);
+    else if (value instanceof String) return literal(SQLExpr.LiteralType.TEXT, value);
+    else return assertFalse();
+  }
+
+  static SQLNode parseParam(PGParser.Dollar_numberContext ctx) {
+    return paramMarker(Integer.parseInt(ctx.getText().substring(1)));
+  }
+
+  static SQLNode buildIndirection(String id, List<SQLNode> indirections) {
+    assert indirections.size() > 0;
+
+    if (indirections.size() == 1) {
+      final SQLNode _0 = indirections.get(0);
+      if (exprKind(_0) == Kind.SYMBOL) return columnRef(id, _0.get(SYMBOL_TEXT));
+      else if (exprKind(_0) == Kind.WILDCARD) return wildcard(SQLNode.tableName(id));
+      else return indirection(columnRef(null, id), indirections);
+
+    } else if (indirections.size() == 2) {
+      final SQLNode _0 = indirections.get(0);
+      final SQLNode _1 = indirections.get(1);
+      final Kind kind1 = exprKind(_1);
+      if (exprKind(_0) != Kind.SYMBOL) return indirection(columnRef(null, id), indirections);
+      if (kind1 == Kind.SYMBOL) return columnRef(_0.get(SYMBOL_TEXT), _1.get(SYMBOL_TEXT));
+      else if (kind1 == Kind.WILDCARD) return wildcard(SQLNode.tableName(_0.get(SYMBOL_TEXT)));
+      else
+        return indirection(
+            columnRef(id, _0.get(SYMBOL_TEXT)), indirections.subList(1, indirections.size()));
+    } else {
+      final SQLNode _0 = indirections.get(0);
+      final SQLNode _1 = indirections.get(1);
+      if (exprKind(_0) != Kind.SYMBOL) return indirection(columnRef(null, id), indirections);
+      if (exprKind(_1) == Kind.SYMBOL)
+        return indirection(
+            columnRef(_0.get(SYMBOL_TEXT), _1.get(SYMBOL_TEXT)),
+            indirections.subList(2, indirections.size()));
+      else
+        return indirection(
+            columnRef(id, _0.get(SYMBOL_TEXT)), indirections.subList(1, indirections.size()));
+    }
+  }
+
+  static String parseAlias(PGParser.Alias_clauseContext ctx) {
+    return stringifyIdentifier(ctx.alias);
+  }
+
+  static SQLTableSource.JoinType parseJoinType(PGParser.From_itemContext ctx) {
+    if (ctx == null) return null;
+    if (ctx.NATURAL() != null) {
+      if (ctx.LEFT() != null) return SQLTableSource.JoinType.NATURAL_LEFT_JOIN;
+      else if (ctx.RIGHT() != null) return SQLTableSource.JoinType.NATURAL_RIGHT_JOIN;
+      else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
+    }
+
+    if (ctx.CROSS() != null) return SQLTableSource.JoinType.CROSS_JOIN;
+    if (ctx.INNER() != null) return SQLTableSource.JoinType.INNER_JOIN;
+    if (ctx.LEFT() != null) return SQLTableSource.JoinType.LEFT_JOIN;
+    if (ctx.RIGHT() != null) return SQLTableSource.JoinType.RIGHT_JOIN;
+    if (ctx.FULL() != null) return SQLTableSource.JoinType.FULL_JOIN;
+
+    return SQLTableSource.JoinType.INNER_JOIN;
   }
 }

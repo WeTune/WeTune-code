@@ -199,8 +199,14 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   SQLNode copy0() {
     final SQLNode newNode = new SQLNode(this.type);
+    newNode.dbType = this.dbType;
     newNode.directAttrs().putAll(this.directAttrs());
     return newNode;
+  }
+
+  public void setDbTypeRec(String dbType) {
+    this.dbType = dbType;
+    this.children.forEach(it -> it.setDbTypeRec(dbType));
   }
 
   public void accept(SQLVisitor visitor) {
@@ -273,7 +279,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     REFERENCES,
     INDEX_DEF,
     KEY_PART,
-    UNION,
+    SET_OPERATION,
     QUERY,
     QUERY_SPEC,
     SELECT_ITEM,
@@ -362,7 +368,13 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     }
   }
 
-  public enum UnionOption {
+  public enum SetOperation {
+    UNION,
+    INTERSECT,
+    EXCEPT
+  }
+
+  public enum SetOperationOption {
     DISTINCT,
     ALL
   }
@@ -421,6 +433,14 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     final SQLNode node = new SQLNode(COLUMN_NAME);
     node.put(COLUMN_NAME_TABLE, table);
     node.put(COLUMN_NAME_COLUMN, column);
+    return node;
+  }
+
+  public static SQLNode commonName(String[] triple) {
+    final SQLNode node = new SQLNode(Type.COMMON_NAME);
+    node.put(COMMON_NAME_0, triple[0]);
+    node.put(COMMON_NAME_1, triple[1]);
+    node.put(COMMON_NAME_2, triple[2]);
     return node;
   }
 
@@ -517,9 +537,12 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
       attr(KEY_PART, "direction", KeyDirection.class);
 
   //// Union
-  public static final Key<SQLNode> UNION_LEFT = nodeAttr(UNION, "left");
-  public static final Key<SQLNode> UNION_RIGHT = nodeAttr(UNION, "right");
-  public static final Key<UnionOption> UNION_OPTION = attr(UNION, "option", UnionOption.class);
+  public static final Key<SQLNode> SET_OPERATION_LEFT = nodeAttr(SET_OPERATION, "left");
+  public static final Key<SQLNode> SET_OPERATION_RIGHT = nodeAttr(SET_OPERATION, "right");
+  public static final Key<SetOperation> SET_OPERATION_TYPE =
+      attr(SET_OPERATION, "type", SetOperation.class);
+  public static final Key<SetOperationOption> SET_OPERATION_OPTION =
+      attr(SET_OPERATION, "option", SetOperationOption.class);
 
   //// Query
   public static final Key<SQLNode> QUERY_BODY = nodeAttr(QUERY, "body");

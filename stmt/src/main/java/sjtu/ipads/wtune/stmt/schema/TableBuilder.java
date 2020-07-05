@@ -111,7 +111,6 @@ class TableBuilder {
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
 
     for (SQLNode key : keys) {
-      if (key == null) continue; // TODO: remove this
       final String columnName = key.get(KEY_PART_COLUMN);
       final Column column = table.getColumn(columnName);
       if (column == null) {

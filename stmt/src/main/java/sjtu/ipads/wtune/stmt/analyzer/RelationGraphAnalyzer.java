@@ -20,7 +20,6 @@ import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
-import static sjtu.ipads.wtune.stmt.analyzer.DependentQueryAnalyzer.isDependent;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 /**
@@ -116,7 +115,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       if (scope == null) return null;
 
       final SQLNode body = scope.queryNode().get(QUERY_BODY);
-      if (body.type() == Type.UNION) return singleton(Relation.of(scope.queryNode()));
+      if (body.type() == Type.SET_OPERATION) return singleton(Relation.of(scope.queryNode()));
       assert body.type() == Type.QUERY_SPEC;
 
       final RelationCollector collector = new RelationCollector();

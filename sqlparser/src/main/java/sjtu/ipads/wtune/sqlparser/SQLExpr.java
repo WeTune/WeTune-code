@@ -36,7 +36,14 @@ public class SQLExpr {
     CONVERT_USING,
     DEFAULT,
     VALUES,
-    QUERY_EXPR;
+    QUERY_EXPR,
+    INDIRECTION,
+    INDIRECTION_COMP,
+    ARRAY,
+    TYPE_COERCION,
+    DATETIME_OVERLAP,
+    COMPARISON_MOD // actually invalid, just used in parsing process
+  ;
 
     private final Set<String> attrs = new HashSet<>();
 
@@ -148,6 +155,7 @@ public class SQLExpr {
 
   public enum BinaryOp {
     BITWISE_XOR("^", 12),
+    EXP("^", 12),
     MULT("*", 11),
     DIV("/", 11),
     MOD("%", 11),
@@ -167,7 +175,11 @@ public class SQLExpr {
     NOT_EQUAL("<>", 6),
     IN_LIST("IN", 6),
     IN_SUBQUERY("IN", 6),
+    AT_TIME_ZONE("AT TIME ZONE", 6),
     LIKE("LIKE", 6),
+    ILIKE("ILIKE", 6),
+    SIMILAR_TO("SIMILAR TO", 6),
+    IS_DISTINCT_FROM("IS DISTINCT FROM", 6),
     REGEXP("REGEXP", 6),
     MEMBER_OF("MEMBER OF", 6),
     SOUNDS_LIKE("SOUNDS LIKE", 6),
@@ -188,9 +200,10 @@ public class SQLExpr {
     }
 
     public static BinaryOp ofOp(String opText) {
-      if (opText.equalsIgnoreCase("DIV")) return DIV;
-      if (opText.equalsIgnoreCase("MOD")) return MOD;
-      if (opText.equalsIgnoreCase("!=")) return NOT_EQUAL;
+      opText = opText.toUpperCase();
+      if (opText.equals("DIV")) return DIV;
+      if (opText.equals("MOD")) return MOD;
+      if (opText.equals("!=")) return NOT_EQUAL;
       for (BinaryOp op : values()) if (op.text.equals(opText)) return op;
       return null;
     }
@@ -240,10 +253,12 @@ public class SQLExpr {
 
   public enum SubqueryOption {
     ANY,
-    ALL
+    ALL,
+    SOME
   }
 
-  public static final Attrs.Key<Kind> EXPR_KIND = Attrs.key(SQL_ATTR_PREFIX + ".expr.kind", Kind.class);
+  public static final Attrs.Key<Kind> EXPR_KIND =
+      Attrs.key(SQL_ATTR_PREFIX + ".expr.kind", Kind.class);
 
   public static SQLNode newExpr(Kind kind) {
     final SQLNode node = new SQLNode(SQLNode.Type.EXPR);
@@ -301,6 +316,19 @@ public class SQLExpr {
     final SQLNode columnRef = newExpr(COLUMN_REF);
     columnRef.put(COLUMN_REF_COLUMN, columnId);
     return columnRef;
+  }
+
+  public static SQLNode paramMarker(int number) {
+    final SQLNode node = newExpr(PARAM_MARKER);
+    node.put(PARAM_MARKER_NUMBER, number);
+    return node;
+  }
+
+  public static SQLNode indirection(SQLNode expr, List<SQLNode> indirections) {
+    final SQLNode indirection = newExpr(INDIRECTION);
+    indirection.put(INDIRECTION_EXPR, expr);
+    indirection.put(INDIRECTION_COMPS, indirections);
+    return indirection;
   }
 
   public static boolean isExpr(SQLNode node) {
@@ -387,7 +415,7 @@ public class SQLExpr {
 
   // Collate
   public static final Attrs.Key<SQLNode> COLLATE_EXPR = nodeAttr(COLLATE, "expr");
-  public static final Attrs.Key<String> COLLATE_COLLATION = stringAttr(COLLATE, "collation");
+  public static final Attrs.Key<SQLNode> COLLATE_COLLATION = nodeAttr(COLLATE, "collation");
 
   // Interval
   public static final Attrs.Key<SQLNode> INTERVAL_EXPR = nodeAttr(INTERVAL, "expr");
@@ -476,4 +504,38 @@ public class SQLExpr {
 
   // QueryExpr
   public static final Attrs.Key<SQLNode> QUERY_EXPR_QUERY = nodeAttr(QUERY_EXPR, "query");
+
+  // Indirection
+  public static final Attrs.Key<SQLNode> INDIRECTION_EXPR = nodeAttr(INDIRECTION, "expr");
+  public static final Attrs.Key<List<SQLNode>> INDIRECTION_COMPS = nodesAttr(INDIRECTION, "comps");
+
+  // IndirectionComp
+  public static final Attrs.Key<SQLNode> INDIRECTION_COMP_START =
+      nodeAttr(INDIRECTION_COMP, "start");
+  public static final Attrs.Key<SQLNode> INDIRECTION_COMP_END = nodeAttr(INDIRECTION_COMP, "end");
+
+  // ParamMarker
+  public static final Attrs.Key<Integer> PARAM_MARKER_NUMBER =
+      attr(PARAM_MARKER, "number", Integer.class);
+
+  // ComparisonMod
+  public static final Attrs.Key<SubqueryOption> COMPARISON_MOD_OPTION =
+      attr(COMPARISON_MOD, "option", SubqueryOption.class);
+  public static final Attrs.Key<SQLNode> COMPARISON_MOD_EXPR = nodeAttr(COMPARISON_MOD, "expr");
+
+  public static final Attrs.Key<List<SQLNode>> ARRAY_ELEMENTS = nodesAttr(ARRAY, "elements");
+
+  public static final Attrs.Key<SQLDataType> TYPE_COERCION_TYPE =
+      attr(Kind.TYPE_COERCION, "type", SQLDataType.class);
+  public static final Attrs.Key<String> TYPE_COERCION_STRING =
+      stringAttr(Kind.TYPE_COERCION, "type");
+
+  public static final Attrs.Key<SQLNode> DATETIME_OVERLAP_LEFT_START =
+      nodeAttr(DATETIME_OVERLAP, "leftStart");
+  public static final Attrs.Key<SQLNode> DATETIME_OVERLAP_LEFT_END =
+      nodeAttr(DATETIME_OVERLAP, "leftEnd");
+  public static final Attrs.Key<SQLNode> DATETIME_OVERLAP_RIGHT_START =
+      nodeAttr(DATETIME_OVERLAP, "rightStart");
+  public static final Attrs.Key<SQLNode> DATETIME_OVERLAP_RIGHT_END =
+      nodeAttr(DATETIME_OVERLAP, "rightEnd");
 }

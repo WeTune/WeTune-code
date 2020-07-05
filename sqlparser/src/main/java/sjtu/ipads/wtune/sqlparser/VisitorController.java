@@ -57,8 +57,7 @@ abstract class VisitorController {
   static boolean enter(SQLNode n, SQLVisitor v) {
     if (n == null) return false;
     if (!v.enter(n)) return false;
-    if (n.type() == null)
-      System.out.println();
+    if (n.type() == null) System.out.println();
 
     switch (n.type()) {
       case INVALID:
@@ -115,8 +114,11 @@ abstract class VisitorController {
       case QUERY:
         return v.enterQuery(n);
 
-      case UNION:
-        return v.enterUnion(n);
+      case SET_OPERATION:
+        return v.enterSetOp(n);
+
+      case COMMON_NAME:
+        return v.enterCommonName(n);
     }
 
     return false;
@@ -174,6 +176,10 @@ abstract class VisitorController {
         return v.enterBinary(n);
       case TERNARY:
         return v.enterTernary(n);
+      case INDIRECTION:
+        return v.enterIndirection(n);
+      case INDIRECTION_COMP:
+        return v.enterIndirectionComp(n);
 
       case UNKNOWN:
     }
@@ -236,12 +242,13 @@ abstract class VisitorController {
             && safeVisitList(QUERY_ORDER_BY, n, v)
             && safeVisitChild(QUERY_OFFSET, n, v)
             && safeVisitChild(QUERY_LIMIT, n, v);
-      case UNION:
-        return safeVisitChild(UNION_LEFT, n, v) && safeVisitChild(UNION_RIGHT, n, v);
+      case SET_OPERATION:
+        return safeVisitChild(SET_OPERATION_LEFT, n, v) && safeVisitChild(SET_OPERATION_RIGHT, n, v);
       case INDEX_HINT:
       case KEY_PART:
       case COLUMN_NAME:
       case TABLE_NAME:
+      case COMMON_NAME:
       default:
         return true;
     }
@@ -296,6 +303,12 @@ abstract class VisitorController {
             && safeVisitChild(TERNARY_RIGHT, n, v);
       case WILDCARD:
         return safeVisitChild(WILDCARD_TABLE, n, v);
+      case INDIRECTION:
+        return safeVisitChild(INDIRECTION_EXPR, n, v) && safeVisitList(INDIRECTION_COMPS, n, v);
+      case INDIRECTION_COMP:
+        return safeVisitChild(INDIRECTION_COMP_START, n, v)
+            && safeVisitChild(INDIRECTION_COMP_END, n, v);
+
       case UNKNOWN:
       case SYMBOL:
       case PARAM_MARKER:
@@ -343,6 +356,10 @@ abstract class VisitorController {
       case COLUMN_NAME:
         v.leaveColumnName(n);
         break;
+
+      case COMMON_NAME:
+        v.leaveCommonName(n);
+        return;
 
       case CREATE_TABLE:
         v.leaveCreateTable(n);
@@ -396,7 +413,7 @@ abstract class VisitorController {
         v.leaveQuery(n);
         break;
 
-      case UNION:
+      case SET_OPERATION:
         v.leaveUnion(n);
     }
   }
@@ -498,6 +515,14 @@ abstract class VisitorController {
 
       case TERNARY:
         v.leaveTernary(n);
+        return;
+
+      case INDIRECTION:
+        v.leaveIndirection(n);
+        return;
+
+      case INDIRECTION_COMP:
+        v.leaveIndirectionComp(n);
         return;
 
       case UNKNOWN:

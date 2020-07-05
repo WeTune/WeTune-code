@@ -315,15 +315,16 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       else right = ctx.queryExpressionParens(1).accept(this);
     } else return assertFalse();
 
-    final UnionOption option =
+    final SetOperationOption option =
         ctx.unionOption() == null
             ? null
-            : UnionOption.valueOf(ctx.unionOption().getText().toUpperCase());
+            : SetOperationOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
-    final SQLNode node = new SQLNode(UNION);
-    node.put(UNION_LEFT, wrapQuerySpec(left));
-    node.put(UNION_RIGHT, wrapQuerySpec(right));
-    node.put(UNION_OPTION, option);
+    final SQLNode node = new SQLNode(SET_OPERATION);
+    node.put(SET_OPERATION_TYPE, SetOperation.UNION);
+    node.put(SET_OPERATION_LEFT, wrapQuerySpec(left));
+    node.put(SET_OPERATION_RIGHT, wrapQuerySpec(right));
+    node.put(SET_OPERATION_OPTION, option);
 
     return node;
   }
@@ -414,7 +415,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.columnInternalRefList() != null) {
       final List<String> internalRefs =
           ctx.columnInternalRefList().columnInternalRef().stream()
-              .map(it -> it.identifier())
+              .map(MySQLParser.ColumnInternalRefContext::identifier)
               .map(MySQLASTHelper::stringifyIdentifier)
               .collect(Collectors.toList());
       node.put(DERIVED_INTERNAL_REFS, internalRefs);
@@ -683,7 +684,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     } else right = ctx.bitExpr(1).accept(this);
 
-    return binary(ctx.bitExpr(0).accept(this), right, BinaryOp.ofOp(ctx.op.getText()));
+    return binary(
+        ctx.bitExpr(0).accept(this),
+        right,
+        ctx.BITWISE_XOR_OPERATOR() != null
+            ? BinaryOp.BITWISE_XOR
+            : BinaryOp.ofOp(ctx.op.getText()));
   }
 
   @Override
@@ -1019,7 +1025,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = newExpr(COLLATE);
 
     node.put(COLLATE_EXPR, ctx.simpleExpr().accept(this));
-    node.put(COLLATE_COLLATION, stringifyText(ctx.textOrIdentifier()));
+    node.put(COLLATE_COLLATION, symbol(stringifyText(ctx.textOrIdentifier())));
 
     return node;
   }
