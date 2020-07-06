@@ -318,6 +318,13 @@ public class SQLExpr {
     return columnRef;
   }
 
+  public static SQLNode columnRef(SQLNode columnName) {
+    assert columnName.type() == Type.COLUMN_NAME;
+    final SQLNode node = newExpr(COLUMN_REF);
+    node.put(COLUMN_REF_COLUMN, columnName);
+    return node;
+  }
+
   public static SQLNode paramMarker(int number) {
     final SQLNode node = newExpr(PARAM_MARKER);
     node.put(PARAM_MARKER_NUMBER, number);

@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.common.utils.Pair;
+import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParserBaseVisitor;
@@ -1220,7 +1221,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = newExpr(MATCH);
     node.put(
         MATCH_COLS,
-        listMap(this::visitSimpleIdentifier, ctx.identListArg().identList().simpleIdentifier()));
+        listMap(
+            func(this::visitSimpleIdentifier).andThen(SQLExpr::columnRef),
+            ctx.identListArg().identList().simpleIdentifier()));
     node.put(MATCH_EXPR, ctx.bitExpr().accept(this));
 
     final var fullTextOption = ctx.fulltextOptions();

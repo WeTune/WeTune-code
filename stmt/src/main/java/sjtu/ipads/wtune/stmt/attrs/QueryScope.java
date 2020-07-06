@@ -10,12 +10,14 @@ import java.util.Map;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public abstract class QueryScope {
   public enum Clause {
+    QUERY_CONTENT(QUERY_BODY),
     SELECT_ITEM(QUERY_SPEC_SELECT_ITEMS),
     FROM(QUERY_SPEC_FROM),
     ON(JOINED_ON),
@@ -24,7 +26,9 @@ public abstract class QueryScope {
     ORDER_BY(QUERY_ORDER_BY),
     GROUP_BY(QUERY_SPEC_GROUP_BY),
     LIMIT(QUERY_LIMIT),
-    OFFSET(QUERY_OFFSET);
+    OFFSET(QUERY_OFFSET),
+    WINDOW(QUERY_SPEC_WINDOWS);
+
     private final Attrs.Key<?> attr;
 
     Clause(Attrs.Key<?> attr) {
@@ -33,6 +37,12 @@ public abstract class QueryScope {
 
     public Key<?> key() {
       return attr;
+    }
+
+    public void setClause(SQLNode node) {
+      if (node == null) return;
+      node.put(RESOLVED_CLAUSE_SCOPE, this);
+      if (node.type() != Type.QUERY) node.children().forEach(this::setClause);
     }
   }
 

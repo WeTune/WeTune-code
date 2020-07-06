@@ -2,6 +2,10 @@ package sjtu.ipads.wtune.stmt.analyzer;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
+import sjtu.ipads.wtune.stmt.resovler.IdResolver;
+import sjtu.ipads.wtune.stmt.resovler.Resolver;
+
+import java.util.Set;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
 
@@ -37,5 +41,12 @@ public class NodeFinder implements Analyzer<SQLNode>, SQLVisitor {
   public static SQLNode find(SQLNode root, SQLNode target) {
     if (target == null) return null;
     return find(root, target.get(NODE_ID));
+  }
+
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(IdResolver.class);
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
   }
 }

@@ -193,6 +193,10 @@ public class SQLDataType {
     return dimensions;
   }
 
+  public boolean isArray() {
+    return dimensions != null && dimensions.length > 0;
+  }
+
   public void format(StringBuilder builder) {
     builder.append(name);
     if (width != -1 && precision != -1)

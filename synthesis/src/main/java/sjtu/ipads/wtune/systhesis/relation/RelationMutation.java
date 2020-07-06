@@ -35,19 +35,21 @@ public class RelationMutation extends Stage {
     return recMutate(stmt, 0);
   }
 
-  private boolean registerMutator(Relation target, Class<? extends RelationMutator> cls) {
+  private boolean registerMutator(
+      SQLNode root, RelationGraph graph, Relation target, Class<? extends RelationMutator> cls) {
     final Pair<Relation, Class<? extends RelationMutator>> pair = Pair.of(target, cls);
-    if (!mutatorSet.add(pair)) return false;
+    if (mutatorSet.contains(pair)) return false;
 
     final RelationMutator mutator;
-    if (cls == ExposeDerivedTableSource.class) {
+    if (cls == ExposeDerivedTableSource.class && ExposeDerivedTableSource.canExpose(root, target)) {
       mutator = new ExposeDerivedTableSource(graph, target);
-    } else if (cls == InlineSubquery.class) {
+    } else if (cls == InlineSubquery.class && InlineSubquery.canInline(root, graph, target)) {
       mutator = new InlineSubquery(graph, target);
-    } else if (cls == ReduceTableSource.class) {
+    } else if (cls == ReduceTableSource.class && ReduceTableSource.canReduce(root, graph, target)) {
       mutator = new ReduceTableSource(graph, target);
     } else return false;
 
+    mutatorSet.add(pair);
     mutatorQueue.add(mutator);
     return true;
   }
@@ -56,15 +58,9 @@ public class RelationMutation extends Stage {
     final Set<Relation> relations = graph.graph().nodes();
     final int size = mutatorQueue.size();
     for (Relation relation : relations) {
-      if (ExposeDerivedTableSource.canExpose(root, relation)) {
-        registerMutator(relation, ExposeDerivedTableSource.class);
-      }
-      if (InlineSubquery.canInline(root, graph, relation)) {
-        registerMutator(relation, InlineSubquery.class);
-      }
-      if (ReduceTableSource.canReduce(root, graph, relation)) {
-        registerMutator(relation, ReduceTableSource.class);
-      }
+      registerMutator(root, graph, relation, ExposeDerivedTableSource.class);
+      registerMutator(root, graph, relation, InlineSubquery.class);
+      registerMutator(root, graph, relation, ReduceTableSource.class);
     }
     return mutatorQueue.size() - size;
   }

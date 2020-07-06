@@ -250,4 +250,12 @@ public interface Attrs<A extends Attrs<A>> {
 
     return builder.toString();
   }
+
+  static Attrs<?> build() {
+    return new AttrsImpl(new HashMap<>());
+  }
+
+  static Attrs<?> build(Map<String, Object> map) {
+    return new AttrsImpl(map);
+  }
 }
