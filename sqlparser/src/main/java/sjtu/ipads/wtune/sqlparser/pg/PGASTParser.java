@@ -26,15 +26,16 @@ public class PGASTParser implements SQLParser {
 
   public SQLNode parse(String str, Function<PGParser, ParserRuleContext> rule) {
     final SQLNode node = parse0(str, rule).accept(new PGASTBuilder());
-    if (node != null) node.relinkAll();
+    if (node != null) {
+      node.relinkAll();
+      node.setDbTypeRec(SQLNode.POSTGRESQL);
+    }
     return node;
   }
 
   @Override
   public SQLNode parse(String string) {
-    final SQLNode node = parse(string, PGParser::statement);
-    node.setDbTypeRec(SQLNode.POSTGRESQL);
-    return node;
+    return parse(string, PGParser::statement);
   }
 
   @Override

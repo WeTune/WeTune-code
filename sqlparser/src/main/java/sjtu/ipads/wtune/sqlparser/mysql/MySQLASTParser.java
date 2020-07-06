@@ -42,15 +42,16 @@ public class MySQLASTParser implements SQLParser {
 
   public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
     final SQLNode node = parse0(str, rule).accept(new MySQLASTBuilder());
-    if (node != null) node.relinkAll();
+    if (node != null) {
+      node.relinkAll();
+      node.setDbTypeRec(SQLNode.MYSQL);
+    }
     return node;
   }
 
   @Override
   public SQLNode parse(String str) {
-    final SQLNode node = parse(str, MySQLParser::query);
-    node.setDbTypeRec(SQLNode.MYSQL);
-    return node;
+    return parse(str, MySQLParser::query);
   }
 
   @Override

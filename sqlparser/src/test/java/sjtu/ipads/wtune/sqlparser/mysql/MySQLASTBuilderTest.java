@@ -406,7 +406,7 @@ public class MySQLASTBuilderTest {
       final SQLNode node = helper.sql("a collate 'utf8'");
       assertEquals(COLLATE, node.get(EXPR_KIND));
       assertEquals("`a`", node.get(COLLATE_EXPR).toString());
-      assertEquals("utf8", node.get(COLLATE_COLLATION));
+      assertEquals("utf8", node.get(COLLATE_COLLATION).get(SYMBOL_TEXT));
       assertEquals("`a` COLLATE 'utf8'", node.toString());
     }
   }

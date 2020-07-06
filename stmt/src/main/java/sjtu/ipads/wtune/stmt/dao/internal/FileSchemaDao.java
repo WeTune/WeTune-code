@@ -18,6 +18,8 @@ public class FileSchemaDao implements SchemaDao {
               Setup.current().dataDir().resolve("schemas").resolve(appName + ".schema.sql"));
 
       final SQLParser parser = SQLParser.ofDb(dbType);
+      if (parser == null) return null;
+
       final Schema schema = new Schema();
 
       SQLParser.splitSql(content).stream().map(parser::parse).forEach(schema::addDefinition);

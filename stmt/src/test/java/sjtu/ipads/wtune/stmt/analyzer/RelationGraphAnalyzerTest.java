@@ -33,7 +33,7 @@ class RelationGraphAnalyzerTest {
             + "and exists (select 5 from b) and not a.k in (select 7 from b) "
             + "and (a.i = 0 or a.i in (select 8 from b))");
     stmt.retrofitStandard();
-    assertEquals(6, RelationGraphAnalyzer.collectRelation(stmt.parsed()).size());
+    assertEquals(11, RelationGraphAnalyzer.collectRelation(stmt.parsed()).size());
   }
 
   @Test
@@ -63,7 +63,6 @@ class RelationGraphAnalyzerTest {
             + "and exists (select 5 from b) and not a.k in (select 7 from b) "
             + "and (a.i = 0 or a.i in (select 8 from b))");
     stmt.retrofitStandard();
-    System.out.println(stmt.analyze(RelationGraphAnalyzer.class));
-    //    assertEquals(4, RelationGraphAnalyzer.collectJoinCondition(stmt.parsed()).size());
+    assertEquals(4, RelationGraphAnalyzer.collectJoinCondition(stmt.parsed()).size());
   }
 }

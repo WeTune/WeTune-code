@@ -29,17 +29,17 @@ public class SQLFormatter implements SQLVisitor {
 
   private static char quotation(SQLNode node) {
     if (POSTGRESQL.equals(node.dbType())) {
-      return '`';
-    } else {
       return '"';
+    } else {
+      return '`';
     }
   }
 
   private static String quotation2(SQLNode node) {
     if (POSTGRESQL.equals(node.dbType())) {
-      return "`";
-    } else {
       return "\"";
+    } else {
+      return "`";
     }
   }
 
