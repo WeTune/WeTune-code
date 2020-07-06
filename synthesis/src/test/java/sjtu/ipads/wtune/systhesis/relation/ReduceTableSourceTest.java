@@ -11,6 +11,7 @@ import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.TABLE_SOURCE_KIND;
 
 class ReduceTableSourceTest {
@@ -27,15 +28,16 @@ class ReduceTableSourceTest {
     stmt.setAppName("test");
     {
       stmt.setRawSql(
-          "select a.i from a inner join (select i, x from a join b on a.j = b.y) c "
-              + "on a.i = c.x "
-              + "where exists (select 1 from b where a.i = 4)");
+          "select A.i from a as A inner join (select i, x from a join b on a.j = b.y) c "
+              + "on A.i = c.x "
+              + "where exists (select 1 from b where A.i = 4)");
       stmt.retrofitStandard();
 
       final RelationGraph graph = stmt.analyze(RelationGraphAnalyzer.class);
       Relation target = null;
       for (Relation node : graph.graph().nodes())
-        if (node.node().get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.SIMPLE) target = node;
+        if (node.node().get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.SIMPLE
+            && "A".equals(node.node().get(SIMPLE_ALIAS))) target = node;
       assertNotNull(target);
       assertTrue(ReduceTableSource.canReduce(stmt.parsed(), graph, target));
 
