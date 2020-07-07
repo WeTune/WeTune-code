@@ -38,7 +38,8 @@ public class ExposeDerivedTableSource implements RelationMutator {
     // exclude simple source
     if (target.node().get(TABLE_SOURCE_KIND) == SIMPLE) return false;
     // exclude UNION
-    if (target.node().get(DERIVED_SUBQUERY).get(QUERY_BODY).type() != Type.QUERY_SPEC) return false;
+    final SQLNode subquery = target.node().get(DERIVED_SUBQUERY).get(QUERY_BODY);
+    if (subquery.type() != Type.QUERY_SPEC || subquery.get(QUERY_LIMIT) != null) return false;
 
     // now target must be a derived table source
 

@@ -871,11 +871,11 @@ public class SQLFormatter implements SQLVisitor {
     if (limit != null) {
       breakLine();
       builder.append("LIMIT ");
-      if (offset != null) {
-        safeVisit(offset);
-        builder.append(", ");
-      }
       safeVisit(limit);
+      if (offset != null) {
+        builder.append(" OFFSET ");
+        safeVisit(offset);
+      }
     }
 
     return false;
