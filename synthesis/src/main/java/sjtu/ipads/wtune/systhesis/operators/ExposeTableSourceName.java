@@ -8,16 +8,27 @@ import sjtu.ipads.wtune.stmt.attrs.TableSource;
 
 import java.util.Set;
 
-public class InlineRefName implements Operator, SQLVisitor {
+/**
+ * Set internal name table source to outer scope
+ *
+ * <p>e.g.
+ *
+ * <p>SELECT a.i FROM (SELECT b.i, c.j FROM b, c) a WHERE a.j = 3
+ *
+ * <p>==> SELECT b.i FROM (SELECT b.i, c.j FROM b,c) a WHERE c.j = 3
+ *
+ * <p>The operation causes the statement invalid.
+ */
+public class ExposeTableSourceName implements Operator, SQLVisitor {
   private final TableSource source;
 
-  public InlineRefName(TableSource source) {
+  public ExposeTableSourceName(TableSource source) {
     this.source = source;
   }
 
-  public static InlineRefName build(TableSource source) {
+  public static ExposeTableSourceName build(TableSource source) {
     assert source.isDerived();
-    return new InlineRefName(source);
+    return new ExposeTableSourceName(source);
   }
 
   @Override

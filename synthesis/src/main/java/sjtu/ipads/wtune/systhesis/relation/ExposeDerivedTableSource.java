@@ -89,7 +89,7 @@ public class ExposeDerivedTableSource implements RelationMutator {
 
       for (Relation neighbour : neighbours) {
         final JoinCondition joinCondition = graph.removeEdge(target, neighbour);
-        final JoinCondition newJoinCondition = rebuildJoinCondition(joinCondition);
+        final JoinCondition newJoinCondition = rebuildJoinCondition(root, joinCondition);
         graph.putEdgeValue(newJoinCondition.left(), newJoinCondition.right(), newJoinCondition);
 
         removedConds.add(joinCondition);
@@ -130,7 +130,7 @@ public class ExposeDerivedTableSource implements RelationMutator {
 
     // 1. modify column ref name
     //    => select * from (select a.i as x from a where a.j = 1) b where b.i = 3
-    InlineRefName.build(targetSource).apply(outerQuery);
+    ExposeTableSourceName.build(targetSource).apply(outerQuery);
 
     // 2. assign alias to each inner table and rename its refs
     //    => select * from (select a.i as x from a AS `a_exposed_1_1` where `a_exposed_1_1`.j = 1)
@@ -145,18 +145,18 @@ public class ExposeDerivedTableSource implements RelationMutator {
 
     // 3. remove the derived table
     //   => select * from where b.i = 3
-    RemoveTableSource.build(targetSource).apply(outerQuery);
+    DropTableSource.build(targetSource).apply(outerQuery);
 
     // 4. add the inner tables
     //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3
     // we can just reuse the existing ON-condition node without any adjust
     // since in step 1 and 2 the table and column name has been corrected
-    AddTableSource.build(fromNode, condNode, joinType).apply(outerQuery);
+    AppendTableSource.build(fromNode, condNode, joinType).apply(outerQuery);
 
     // 5. move the inner predicate to outer
     //    => select * from a AS `a_exposed_0` where `a_exposed`.i = 3 and `a_exposed_0`.j = 1
     // again, all names must be already corrected
-    if (whereNode != null) AddPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
+    if (whereNode != null) AppendPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
 
     Resolve.build().apply(stmt);
     return root;
@@ -174,21 +174,22 @@ public class ExposeDerivedTableSource implements RelationMutator {
     return name;
   }
 
-  private JoinCondition rebuildJoinCondition(JoinCondition cond) {
+  private JoinCondition rebuildJoinCondition(SQLNode root, JoinCondition cond) {
     final Relation thisRelation = cond.thisRelation(target);
     final Relation otherRelation = cond.thatRelation(target);
     final String thisColumn = cond.thisColumn(target);
     final String otherColumn = cond.thatColumn(target);
 
     final SelectItem item =
-        thisRelation.node().get(RESOLVED_TABLE_SOURCE).resolveAsSelection(thisColumn);
+        thisRelation.locateNodeIn(root).get(RESOLVED_TABLE_SOURCE).resolveAsSelection(thisColumn);
     assert item != null;
 
     final ColumnRef columnRef = item.expr().get(RESOLVED_COLUMN_REF);
     final Relation newThisRelation = Relation.of(columnRef.source().node());
     final String newThisColumn = item.simpleName();
 
-    return JoinCondition.of(newThisRelation, otherRelation, newThisColumn, otherColumn);
+    return JoinCondition.of(
+        cond.node(), newThisRelation, otherRelation, newThisColumn, otherColumn);
   }
 
   @Override

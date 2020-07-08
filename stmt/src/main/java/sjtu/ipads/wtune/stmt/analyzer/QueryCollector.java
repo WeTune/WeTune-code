@@ -13,9 +13,10 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
-public class SubqueryCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
+public class QueryCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
   private final List<SQLNode> subqueries = new ArrayList<>();
   private QueryScope rootQueryScope;
+  private boolean subqueryOnly = true;
   private boolean shortCut = false;
   private boolean stop = false;
 
@@ -37,7 +38,8 @@ public class SubqueryCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
 
   @Override
   public void setParam(Object... args) {
-    shortCut = (boolean) args[0];
+    subqueryOnly = (boolean) args[0];
+    shortCut = (boolean) args[1];
   }
 
   @Override
@@ -49,12 +51,16 @@ public class SubqueryCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
     return subqueries;
   }
 
-  public static List<SQLNode> collect(SQLNode node) {
-    return new SubqueryCollector().analyze(node);
+  public static List<SQLNode> collect(SQLNode node, boolean subqueryOnly) {
+    final QueryCollector collector = new QueryCollector();
+    collector.subqueryOnly = subqueryOnly;
+    return collector.analyze(node);
   }
 
+
   public static boolean hasSubquery(SQLNode node) {
-    final SubqueryCollector collector = new SubqueryCollector();
+    final QueryCollector collector = new QueryCollector();
+    collector.subqueryOnly = true;
     collector.shortCut = true;
     return collector.analyze(node).size() != 0;
   }

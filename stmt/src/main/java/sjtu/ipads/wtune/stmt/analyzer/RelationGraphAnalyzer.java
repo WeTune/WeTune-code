@@ -171,7 +171,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
   }
 
   private static RelationGraph buildGraph(SQLNode node) {
-    final QueryScope rootScope = node.get(RESOLVED_QUERY_SCOPE);
+    //    final QueryScope rootScope = node.get(RESOLVED_QUERY_SCOPE);
     final Set<Relation> relations = RelationCollector.collect(node);
     final Set<SQLNode> conditions = JoinConditionCollector.collect(node);
 
@@ -221,7 +221,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
 
     if (rightColumn == null || !relations.contains(rightRelation)) return null;
 
-    return JoinCondition.of(leftRelation, rightRelation, leftColumn, rightColumn);
+    return JoinCondition.of(condition, leftRelation, rightRelation, leftColumn, rightColumn);
   }
 
   private static Relation relationOfColumnRef(SQLNode cRefNode) {

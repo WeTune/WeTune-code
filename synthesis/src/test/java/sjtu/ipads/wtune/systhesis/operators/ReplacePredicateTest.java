@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.systhesis.predicate;
+package sjtu.ipads.wtune.systhesis.operators;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -8,11 +8,10 @@ import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
 
-class DisplacePredicateMutatorTest {
+class ReplacePredicateTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
@@ -33,9 +32,8 @@ class DisplacePredicateMutatorTest {
       stmt.retrofitStandard();
       final SQLNode target = stmt.parsed().get(QUERY_BODY).get(QUERY_SPEC_WHERE);
 
-      assertTrue(DisplacePredicateMutator.canDisplace(target, rep));
-      final DisplacePredicateMutator mutator = new DisplacePredicateMutator(target, rep);
-      mutator.modifyAST(stmt.parsed());
+      final Operator op = ReplacePredicate.build(target, rep);
+      op.apply(stmt);
 
       assertEquals("SELECT 1 FROM `b` WHERE `b`.`x` = 0", stmt.parsed().toString());
     }

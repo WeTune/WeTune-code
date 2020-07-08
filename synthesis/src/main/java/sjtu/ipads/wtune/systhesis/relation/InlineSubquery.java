@@ -10,8 +10,8 @@ import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.resovler.IdResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.systhesis.operators.AddTableSource;
-import sjtu.ipads.wtune.systhesis.operators.RemovePredicate;
+import sjtu.ipads.wtune.systhesis.operators.AppendTableSource;
+import sjtu.ipads.wtune.systhesis.operators.DropPredicate;
 import sjtu.ipads.wtune.systhesis.operators.Resolve;
 
 import java.util.Objects;
@@ -26,6 +26,8 @@ public class InlineSubquery implements RelationMutator {
   private final RelationGraph relationGraph;
   private final Relation target;
   private final JoinCondition cond;
+
+  private SQLNode originalJoinNode;
 
   public InlineSubquery(final RelationGraph relationGraph, Relation target) {
     assert relationGraph != null && target != null && !target.isTableSource();
@@ -81,6 +83,8 @@ public class InlineSubquery implements RelationMutator {
   @Override
   public void undoModifyGraph() {
     target.setGeneratedNode(null);
+    cond.setNode(originalJoinNode);
+    originalJoinNode = null;
   }
 
   @Override
@@ -92,15 +96,13 @@ public class InlineSubquery implements RelationMutator {
     final SQLNode newTableSource = genTableSource(outerQuery);
     final SQLNode joinCond = genJoinCondition(outerQuery, newTableSource);
 
-    RemovePredicate.build(target.originalNode().parent()).apply(outerQuery);
-    // Note: impl of AddTableSource modifies the newTableSource object in-place
-    //       to connect a JOIN. we need to retrieve the reference to the new node
-    final AddTableSource addTableOp =
-        AddTableSource.build(newTableSource, joinCond, JoinType.INNER_JOIN);
-    addTableOp.apply(outerQuery);
+    DropPredicate.build(target.originalNode().parent()).apply(outerQuery);
+    AppendTableSource.build(newTableSource, joinCond, JoinType.INNER_JOIN).apply(outerQuery);
     Resolve.build().apply(stmt);
 
-    target.setGeneratedNode(addTableOp.pointer());
+    originalJoinNode = cond.node();
+    target.setGeneratedNode(newTableSource);
+    cond.setNode(joinCond);
     return root;
   }
 

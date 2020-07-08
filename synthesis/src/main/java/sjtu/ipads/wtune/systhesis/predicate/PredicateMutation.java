@@ -39,19 +39,19 @@ public class PredicateMutation extends Stage {
 
   private boolean registerMutator(
       SQLNode target, SQLNode reference, Class<? extends PredicateMutator> cls) {
-    final Long targetId = target.get(NODE_ID);
-    final Long referenceId = reference.get(NODE_ID);
-    if (Objects.equals(targetId, referenceId)) return false;
-
-    final Pair<Long, Long> pair = Pair.of(targetId, referenceId);
-    if (replacedPair.contains(pair)) return false;
 
     final PredicateMutator mutator;
-    if (cls == DisplacePredicateMutator.class
-        && DisplacePredicateMutator.canDisplace(target, reference)) {
-      mutator = new DisplacePredicateMutator(target, reference);
-      replacedPair.add(pair);
+    if (cls == DisplacePredicate.class) {
+      final Long targetId = target.get(NODE_ID);
+      final Long referenceId = reference.get(NODE_ID);
+      if (Objects.equals(targetId, referenceId)) return false;
 
+      final Pair<Long, Long> pair = Pair.of(targetId, referenceId);
+      if (replacedPair.contains(pair) || !DisplacePredicate.canDisplace(target, reference))
+        return false;
+
+      mutator = new DisplacePredicate(target, reference);
+      replacedPair.add(pair);
     } else return false;
 
     mutatorQueue.add(mutator);
@@ -65,7 +65,7 @@ public class PredicateMutation extends Stage {
     for (List<SQLNode> pair : Sets.cartesianProduct(targets, refs)) {
       final SQLNode target = pair.get(0);
       final SQLNode ref = pair.get(1);
-      registerMutator(target, ref, DisplacePredicateMutator.class);
+      registerMutator(target, ref, DisplacePredicate.class);
     }
     return mutatorQueue.size() - size;
   }

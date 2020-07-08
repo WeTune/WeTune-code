@@ -63,7 +63,7 @@ public class SQLTableSource {
   }
 
   public static final Attrs.Key<Kind> TABLE_SOURCE_KIND =
-      Attrs.key(SQL_ATTR_PREFIX + ".expr.tableSource", Kind.class);
+      Attrs.key(SQL_ATTR_PREFIX + "tableSource.kind", Kind.class);
 
   public static SQLNode newTableSource(Kind kind) {
     final SQLNode node = new SQLNode(SQLNode.Type.TABLE_SOURCE);

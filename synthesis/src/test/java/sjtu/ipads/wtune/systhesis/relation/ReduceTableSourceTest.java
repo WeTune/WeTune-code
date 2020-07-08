@@ -44,6 +44,9 @@ class ReduceTableSourceTest {
       final ReduceTableSource op = new ReduceTableSource(graph, target);
       final Statement copy = stmt.copy();
 
+      assertEquals(5, graph.graph().nodes().size());
+      assertEquals(2, graph.graph().edges().size());
+
       op.modifyGraph(copy.parsed());
       op.modifyAST(copy, copy.parsed());
 
@@ -56,6 +59,46 @@ class ReduceTableSourceTest {
 
       op.undoModifyGraph();
       assertEquals(5, graph.graph().nodes().size());
+      assertEquals(2, graph.graph().edges().size());
+    }
+  }
+
+  @Test
+  @DisplayName("[Synthesis.Relation.ReduceTableSource] simple")
+  void test0() {
+    final Statement stmt = new Statement();
+    stmt.setAppName("test");
+    {
+      stmt.setRawSql(
+          "select a.j from a join b as b on b.x = a.i join c on c.u = b.x where c.v = '123'");
+      stmt.retrofitStandard();
+
+      final RelationGraph graph = stmt.analyze(RelationGraphAnalyzer.class);
+      Relation target = null;
+      for (Relation node : graph.graph().nodes())
+        if (node.node().get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.SIMPLE
+            && "b".equals(node.node().get(SIMPLE_ALIAS))) target = node;
+      assertNotNull(target);
+      assertTrue(ReduceTableSource.canReduce(stmt.parsed(), graph, target));
+
+      final ReduceTableSource op = new ReduceTableSource(graph, target);
+      final Statement copy = stmt.copy();
+
+      assertEquals(3, graph.graph().nodes().size());
+      assertEquals(2, graph.graph().edges().size());
+
+      op.modifyGraph(copy.parsed());
+      op.modifyAST(copy, copy.parsed());
+
+      assertEquals(
+          "SELECT `a`.`j` FROM `a` INNER JOIN `c` ON `c`.`u` = `a`.`i` WHERE `c`.`v` = '123'",
+          copy.parsed().toString());
+
+      assertEquals(2, graph.graph().nodes().size());
+      assertEquals(1, graph.graph().edges().size());
+
+      op.undoModifyGraph();
+      assertEquals(3, graph.graph().nodes().size());
       assertEquals(2, graph.graph().edges().size());
     }
   }

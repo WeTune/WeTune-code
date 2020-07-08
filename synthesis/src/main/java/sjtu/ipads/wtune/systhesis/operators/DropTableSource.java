@@ -9,19 +9,19 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_FROM;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
-public class RemoveTableSource implements Operator {
+public class DropTableSource implements Operator {
   private String target;
 
-  public RemoveTableSource(String target) {
+  public DropTableSource(String target) {
     this.target = target;
   }
 
   public static Operator build(String target) {
-    return new RemoveTableSource(target);
+    return new DropTableSource(target);
   }
 
   public static Operator build(TableSource source) {
-    return new RemoveTableSource(source.name());
+    return new DropTableSource(source.name());
   }
 
   @Override

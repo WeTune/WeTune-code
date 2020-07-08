@@ -8,12 +8,12 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.binary;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
-public class AddPredicateToClause implements Operator {
+public class AppendPredicateToClause implements Operator {
   private final SQLNode predicate;
   private final QueryScope.Clause clause;
   private final SQLExpr.BinaryOp op;
 
-  private AddPredicateToClause(SQLNode predicate, QueryScope.Clause clause, SQLExpr.BinaryOp op) {
+  private AppendPredicateToClause(SQLNode predicate, QueryScope.Clause clause, SQLExpr.BinaryOp op) {
     this.predicate = predicate;
     this.clause = clause;
     this.op = op;
@@ -23,7 +23,7 @@ public class AddPredicateToClause implements Operator {
   public static Operator build(SQLNode node, QueryScope.Clause clause, SQLExpr.BinaryOp op) {
     if (op == null || (clause != QueryScope.Clause.WHERE && clause != QueryScope.Clause.HAVING))
       return null;
-    return new AddPredicateToClause(node, clause, op);
+    return new AppendPredicateToClause(node, clause, op);
   }
 
   @Override

@@ -30,7 +30,12 @@ public class RelationMutation extends Stage {
     return new RelationMutation(stmt.analyze(RelationGraphAnalyzer.class));
   }
 
-  public boolean feed0(Statement stmt) {
+  @Override
+  public boolean feed(Object o) {
+    return feed0((Statement) o);
+  }
+
+  private boolean feed0(Statement stmt) {
     registerApplicableMutators(stmt.parsed(), graph);
     return recMutate(stmt, 0);
   }
@@ -96,10 +101,5 @@ public class RelationMutation extends Stage {
     unregisterMutators(newMutatorCount);
 
     return true;
-  }
-
-  @Override
-  public boolean feed(Object o) {
-    return feed0((Statement) o);
   }
 }

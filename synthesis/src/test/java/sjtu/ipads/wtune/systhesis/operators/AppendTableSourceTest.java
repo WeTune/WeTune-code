@@ -14,7 +14,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.binary;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.columnRef;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 
-class AddTableSourceTest {
+class AppendTableSourceTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
@@ -41,10 +41,11 @@ class AddTableSourceTest {
 
       final SQLNode join = joined(ta1, tb1, JoinType.LEFT_JOIN);
       join.put(JOINED_ON, cond2);
+      join.relinkAll();
 
-      final Operator op0 = AddTableSource.build(ta0, null, null);
-      final Operator op1 = AddTableSource.build(tb0, cond0, JoinType.LEFT_JOIN);
-      final Operator op2 = AddTableSource.build(join, cond1, JoinType.INNER_JOIN);
+      final Operator op0 = AppendTableSource.build(ta0, null, null);
+      final Operator op1 = AppendTableSource.build(tb0, cond0, JoinType.LEFT_JOIN);
+      final Operator op2 = AppendTableSource.build(join, cond1, JoinType.INNER_JOIN);
       final Operator op3 = Resolve.build();
 
       op0.apply(stmt);

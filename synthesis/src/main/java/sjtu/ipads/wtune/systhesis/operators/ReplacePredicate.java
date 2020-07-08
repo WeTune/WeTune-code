@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.systhesis.operators;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.analyzer.ColumnRefCollector;
-import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.attrs.BoolExpr;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
 
@@ -21,16 +20,16 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
  *   <li>they shouldn't involves a subquery
  * </ol>
  */
-public class DisplacePredicate implements Operator {
+public class ReplacePredicate implements Operator {
   private final SQLNode target;
   private final SQLNode replacement;
 
-  private DisplacePredicate(SQLNode target, SQLNode replacement) {
+  private ReplacePredicate(SQLNode target, SQLNode replacement) {
     this.target = target;
     this.replacement = replacement;
   }
 
-  public static DisplacePredicate build(SQLNode target, SQLNode replacement) {
+  public static ReplacePredicate build(SQLNode target, SQLNode replacement) {
     // we use assertion here because it should be checked in Mutation class
     assert target != null && replacement != null;
     final BoolExpr boolExpr0 = target.get(BOOL_EXPR);
@@ -38,7 +37,7 @@ public class DisplacePredicate implements Operator {
     assert boolExpr0 != null && boolExpr1 != null;
     assert boolExpr0.isPrimitive() && boolExpr1.isPrimitive();
 
-    return new DisplacePredicate(target, replacement);
+    return new ReplacePredicate(target, replacement);
   }
 
   @Override

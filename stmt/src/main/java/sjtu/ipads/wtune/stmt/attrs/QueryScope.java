@@ -57,6 +57,10 @@ public abstract class QueryScope {
     return queryNode;
   }
 
+  public SQLNode specNode() {
+    return null;
+  }
+
   public SQLNode leftChild() {
     return null;
   }

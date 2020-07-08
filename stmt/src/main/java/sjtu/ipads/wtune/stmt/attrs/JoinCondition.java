@@ -1,30 +1,32 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.binary;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.columnRef;
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 public class JoinCondition {
   private final Relation left;
   private final Relation right;
   private String leftColumn;
   private String rightColumn;
+  private SQLNode node;
 
-  private JoinCondition(Relation left, Relation right, String leftColumn, String rightColumn) {
+  private JoinCondition(
+      SQLNode node, Relation left, Relation right, String leftColumn, String rightColumn) {
     this.left = left;
     this.right = right;
     this.leftColumn = leftColumn;
     this.rightColumn = rightColumn;
+    this.node = node;
   }
 
   public static JoinCondition of(
-      Relation left, Relation right, String leftColumn, String rightColumn) {
+      SQLNode node, Relation left, Relation right, String leftColumn, String rightColumn) {
     assert left != null && right != null && leftColumn != null && rightColumn != null;
 
-    return new JoinCondition(left, right, leftColumn, rightColumn);
+    return new JoinCondition(node, left, right, leftColumn, rightColumn);
+  }
+
+  public SQLNode node() {
+    return node;
   }
 
   public Relation left() {
@@ -49,6 +51,10 @@ public class JoinCondition {
 
   public void setRightColumn(String rightColumn) {
     this.rightColumn = rightColumn;
+  }
+
+  public void setNode(SQLNode node) {
+    this.node = node;
   }
 
   public Relation thisRelation(Relation relation) {

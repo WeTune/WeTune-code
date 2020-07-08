@@ -10,17 +10,17 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
 
-public class RemovePredicate implements Operator, SQLVisitor {
+public class DropPredicate implements Operator, SQLVisitor {
   private static final System.Logger LOG = System.getLogger("Synthesis.Operator.RemovePredicate");
   private final Long targetId;
   private boolean found = false;
 
-  private RemovePredicate(Long targetId) {
+  private DropPredicate(Long targetId) {
     this.targetId = targetId;
   }
 
   public static Operator build(Long targetId) {
-    return new RemovePredicate(targetId);
+    return new DropPredicate(targetId);
   }
 
   public static Operator build(SQLNode node) {

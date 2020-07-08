@@ -8,22 +8,22 @@ import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.attrs.BoolExpr;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.schema.Column;
-import sjtu.ipads.wtune.systhesis.operators.DisplacePredicate;
+import sjtu.ipads.wtune.systhesis.operators.ReplacePredicate;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.stmt.analyzer.SubqueryCollector.hasSubquery;
+import static sjtu.ipads.wtune.stmt.analyzer.QueryCollector.hasSubquery;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 
-public class DisplacePredicateMutator implements PredicateMutator {
+public class DisplacePredicate implements PredicateMutator {
   private final SQLNode original;
   private final SQLNode replacement;
 
   public static final Attrs.Key<Boolean> DISPLACED =
       Attrs.key("synthesis.predicate.displace.marker", Boolean.class);
 
-  public DisplacePredicateMutator(SQLNode original, SQLNode replacement) {
+  public DisplacePredicate(SQLNode original, SQLNode replacement) {
     this.original = original;
     this.replacement = replacement;
   }
@@ -88,7 +88,7 @@ public class DisplacePredicateMutator implements PredicateMutator {
   @Override
   public SQLNode modifyAST(SQLNode root) {
     final SQLNode target = NodeFinder.find(root, this.original);
-    DisplacePredicate.build(target, this.replacement.copy()).apply(root);
+    ReplacePredicate.build(target, this.replacement.copy()).apply(root);
     target.put(DISPLACED, true);
     return root;
   }

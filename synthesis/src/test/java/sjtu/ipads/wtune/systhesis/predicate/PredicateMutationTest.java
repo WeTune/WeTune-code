@@ -19,7 +19,7 @@ class PredicateMutationTest {
   }
 
   @Test
-  @DisplayName("[Synthesis.Operator.Predicate Mutation]")
+  @DisplayName("[Synthesis.Operator.PredicateMutation]")
   void test() {
     final Statement stmt0 = new Statement();
     stmt0.setAppName("test");

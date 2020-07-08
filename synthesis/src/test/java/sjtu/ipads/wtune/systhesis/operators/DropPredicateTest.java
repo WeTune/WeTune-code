@@ -15,7 +15,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
 
-class RemovePredicateTest {
+class DropPredicateTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
@@ -39,8 +39,8 @@ class RemovePredicateTest {
       final SQLNode target0 = whereClause.get(BINARY_RIGHT);
       final SQLNode target1 = whereClause.get(BINARY_LEFT).get(BINARY_LEFT);
 
-      RemovePredicate.build(target0).apply(stmt.parsed());
-      RemovePredicate.build(target1).apply(stmt.parsed());
+      DropPredicate.build(target0).apply(stmt.parsed());
+      DropPredicate.build(target1).apply(stmt.parsed());
 
       assertEquals("SELECT 1 FROM `a` WHERE `a`.`j` = 3", stmt.parsed().toString());
     }

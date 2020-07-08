@@ -10,7 +10,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
-class InlineRefNameTest {
+class ExposeTableSourceNameTest {
   @BeforeAll
   static void setUp() throws ClassNotFoundException {
     Class.forName("org.sqlite.JDBC");
@@ -28,7 +28,7 @@ class InlineRefNameTest {
               + "where b.n = 3 and exists (select 1 from a where a.j = b.o)");
       stmt.retrofitStandard();
       final TableSource target = stmt.parsed().get(RESOLVED_QUERY_SCOPE).tableSources().get("b");
-      InlineRefName.build(target).apply(stmt.parsed());
+      ExposeTableSourceName.build(target).apply(stmt.parsed());
       assertEquals(
           "SELECT `b`.`i` FROM "
               + "(SELECT `a`.`i` AS `m`, `a`.`j` AS `n`, `a`.`k` AS `o` "
