@@ -12,7 +12,6 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.POSTGRESQL;
 import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 public class ParserTest {

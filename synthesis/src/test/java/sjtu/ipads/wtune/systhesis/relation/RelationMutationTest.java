@@ -29,7 +29,7 @@ class RelationMutationTest {
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
     for (Statement s : output) {
-      System.out.println(s.parsed().toString());
+      //      System.out.println(s.parsed().toString());
       for (String expectation : expectations)
         if (expectation.equals(s.parsed().toString())) return output;
     }

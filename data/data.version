@@ -1,2 +1,3 @@
 [7f1eb210222a0441b510f41b2a8b4deaf7c546ff] migrate from GDrive
 [4422e09855893864b0245daaf9ea89640e87f572] remove lobsters-88 which access a VIEW
+[bfcba3f97d48ad0ca0c525079ebb82cfe3d51775] remove Chinese character in sql
