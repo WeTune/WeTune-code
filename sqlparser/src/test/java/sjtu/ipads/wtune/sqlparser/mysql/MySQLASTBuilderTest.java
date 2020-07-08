@@ -841,7 +841,7 @@ public class MySQLASTBuilderTest {
               + "ORDER BY "
               + "`t1`.`x`, "
               + "`t1`.`y` "
-              + "LIMIT ?, ?",
+              + "LIMIT ? OFFSET ?",
           node.toString());
 
       assertEquals(
@@ -886,7 +886,7 @@ public class MySQLASTBuilderTest {
               + "ORDER BY\n"
               + "  `t1`.`x`,\n"
               + "  `t1`.`y`\n"
-              + "LIMIT ?, ?",
+              + "LIMIT ? OFFSET ?",
           node.toString(false));
     }
   }
