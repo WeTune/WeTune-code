@@ -17,7 +17,7 @@ public interface SQLParser {
 
   static SQLParser ofDb(String dbType) {
     if (MYSQL.equals(dbType)) return new MySQLASTParser();
-    //    else if (POSTGRESQL.equals(dbType)) return new PGASTParser();
+    else if (POSTGRESQL.equals(dbType)) return new PGASTParser();
     else return null;
   }
 

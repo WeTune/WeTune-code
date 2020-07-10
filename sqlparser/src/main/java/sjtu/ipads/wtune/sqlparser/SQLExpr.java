@@ -121,18 +121,24 @@ public class SQLExpr {
   }
 
   public enum UnaryOp {
-    NOT("NOT", 4),
-    BINARY("BINARY", 13),
-    UNARY_PLUS("+", 12),
-    UNARY_MINUS("-", 12),
-    UNARY_FLIP("~", 12);
+    NOT("NOT", 4, true),
+    SQRT_ROOT("|/", 6, true),
+    CUBE_ROOT("||/", 6, true),
+    FACTORIAL("!!", 6, true),
+    ABSOLUTE_VALUE("@", 6, true),
+    BINARY("BINARY", 13, true),
+    UNARY_PLUS("+", 12, true),
+    UNARY_MINUS("-", 12, true),
+    UNARY_FLIP("~", 12, true);
 
     private final String text;
     private final int precedence;
+    private final boolean atLeft;
 
-    UnaryOp(String text, int precedence) {
+    UnaryOp(String text, int precedence, boolean atLeft) {
       this.text = text;
       this.precedence = precedence;
+      this.atLeft = atLeft;
     }
 
     public String text() {
@@ -140,6 +146,7 @@ public class SQLExpr {
     }
 
     public static UnaryOp ofOp(String text) {
+      if (text.equals("!")) return FACTORIAL;
       for (UnaryOp value : values()) if (value.text().equalsIgnoreCase(text)) return value;
       return null;
     }
@@ -165,6 +172,7 @@ public class SQLExpr {
     RIGHT_SHIFT(">>", 9),
     BITWISE_AND("&", 8),
     BITWISE_OR("|", 7),
+    BITWISE_XOR_PG("#", 6, BITWISE_XOR),
     EQUAL("=", 6),
     IS("IS", 6),
     NULL_SAFE_EQUAL("<=>", 6),
@@ -180,7 +188,12 @@ public class SQLExpr {
     ILIKE("ILIKE", 6),
     SIMILAR_TO("SIMILAR TO", 6),
     IS_DISTINCT_FROM("IS DISTINCT FROM", 6),
+    ARRAY_CONTAINS("@>", 6),
+    ARRAY_CONTAINED_BY("<@", 6),
+    CONCAT("||", 6),
     REGEXP("REGEXP", 6),
+    REGEXP_PG("~", 6, REGEXP),
+    REGEXP_I_PG("~*", 6, REGEXP),
     MEMBER_OF("MEMBER OF", 6),
     SOUNDS_LIKE("SOUNDS LIKE", 6),
     AND("AND", 3),
@@ -189,10 +202,18 @@ public class SQLExpr {
 
     private final String text;
     private final int precedence;
+    private final BinaryOp standard;
 
     BinaryOp(String text, int precedence) {
       this.text = text.toUpperCase();
       this.precedence = precedence < 0 ? Integer.MAX_VALUE : precedence;
+      this.standard = null;
+    }
+
+    BinaryOp(String text, int precedence, BinaryOp standard) {
+      this.text = text.toUpperCase();
+      this.precedence = precedence < 0 ? Integer.MAX_VALUE : precedence;
+      this.standard = standard;
     }
 
     public String text() {
@@ -206,6 +227,10 @@ public class SQLExpr {
       if (opText.equals("!=")) return NOT_EQUAL;
       for (BinaryOp op : values()) if (op.text.equals(opText)) return op;
       return null;
+    }
+
+    public BinaryOp standard() {
+      return standard == null ? this : standard;
     }
 
     public boolean isArithmetic() {
@@ -318,6 +343,17 @@ public class SQLExpr {
     return columnRef;
   }
 
+  public static SQLNode columnRef(String schemaName, String tableName, String columnName) {
+    final SQLNode columnId = new SQLNode(SQLNode.Type.COLUMN_NAME);
+    columnId.put(COLUMN_NAME_SCHEMA, schemaName);
+    columnId.put(COLUMN_NAME_TABLE, tableName);
+    columnId.put(COLUMN_NAME_COLUMN, columnName);
+
+    final SQLNode columnRef = newExpr(COLUMN_REF);
+    columnRef.put(COLUMN_REF_COLUMN, columnId);
+    return columnRef;
+  }
+
   public static SQLNode columnRef(SQLNode columnName) {
     assert columnName.type() == Type.COLUMN_NAME;
     final SQLNode node = newExpr(COLUMN_REF);
@@ -417,7 +453,7 @@ public class SQLExpr {
   public static final Attrs.Key<SQLNode> COLUMN_REF_COLUMN = nodeAttr(COLUMN_REF, "column");
 
   // Func Call
-  public static final Attrs.Key<String> FUNC_CALL_NAME = stringAttr(FUNC_CALL, "name");
+  public static final Attrs.Key<SQLNode> FUNC_CALL_NAME = nodeAttr(FUNC_CALL, "name");
   public static final Attrs.Key<List<SQLNode>> FUNC_CALL_ARGS = nodesAttr(FUNC_CALL, "args");
 
   // Collate
@@ -444,9 +480,10 @@ public class SQLExpr {
   public static final Attrs.Key<List<SQLNode>> AGGREGATE_ARGS = nodesAttr(AGGREGATE, "args");
   public static final Attrs.Key<String> AGGREGATE_WINDOW_NAME = stringAttr(AGGREGATE, "windowName");
   public static final Attrs.Key<SQLNode> AGGREGATE_WINDOW_SPEC = nodeAttr(AGGREGATE, "windowSpec");
-  /* GROUP_CONCAT only */
+  public static final Attrs.Key<SQLNode> AGGREGATE_FILTER = nodeAttr(AGGREGATE, "filter");
+  public static final Attrs.Key<List<SQLNode>> AGGREGATE_WITHIN_GROUP_ORDER =
+      nodesAttr(AGGREGATE, "withinGroupOrder");
   public static final Attrs.Key<List<SQLNode>> AGGREGATE_ORDER = nodesAttr(AGGREGATE, "order");
-  /* GROUP_CONCAT only */
   public static final Attrs.Key<String> AGGREGATE_SEP = stringAttr(AGGREGATE, "sep");
 
   // Wildcard
@@ -487,7 +524,7 @@ public class SQLExpr {
 
   // Cast
   public static final Attrs.Key<SQLNode> CAST_EXPR = nodeAttr(CAST, "expr");
-  public static final Attrs.Key<SQLNode> CAST_TYPE = nodeAttr(CAST, "type");
+  public static final Attrs.Key<SQLDataType> CAST_TYPE = attr(CAST, "type", SQLDataType.class);
   public static final Attrs.Key<Boolean> CAST_IS_ARRAY = booleanAttr(CAST, "isArray");
 
   // Case
@@ -517,6 +554,8 @@ public class SQLExpr {
   public static final Attrs.Key<List<SQLNode>> INDIRECTION_COMPS = nodesAttr(INDIRECTION, "comps");
 
   // IndirectionComp
+  public static final Attrs.Key<Boolean> INDIRECTION_COMP_SUBSCRIPT =
+      booleanAttr(INDIRECTION_COMP, "subscript");
   public static final Attrs.Key<SQLNode> INDIRECTION_COMP_START =
       nodeAttr(INDIRECTION_COMP, "start");
   public static final Attrs.Key<SQLNode> INDIRECTION_COMP_END = nodeAttr(INDIRECTION_COMP, "end");

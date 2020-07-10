@@ -248,7 +248,7 @@ public class MySQLASTBuilderTest {
       final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
       assertEquals(2, args.size());
 
-      assertEquals("json_extract", node.get(FUNC_CALL_NAME));
+      assertEquals("json_extract", node.get(FUNC_CALL_NAME).get(NAME_2_1));
       assertEquals("`a`", args.get(0).toString());
       assertEquals("'$.b'", args.get(1).toString());
       assertEquals("JSON_EXTRACT(`a`, '$.b')", node.toString());
@@ -260,7 +260,7 @@ public class MySQLASTBuilderTest {
       final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
 
       assertEquals(1, args.size());
-      assertEquals("json_unquote", node.get(FUNC_CALL_NAME));
+      assertEquals("json_unquote", node.get(FUNC_CALL_NAME).get(NAME_2_1));
       assertEquals("JSON_UNQUOTE(JSON_EXTRACT(`a`, '$.b'))", node.toString());
     }
   }
@@ -426,7 +426,7 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     final SQLNode node = helper.sql("'a' || b");
     assertEquals(FUNC_CALL, node.get(EXPR_KIND));
-    assertEquals("concat", node.get(FUNC_CALL_NAME));
+    assertEquals("concat", node.get(FUNC_CALL_NAME).get(NAME_2_1));
     assertEquals(2, node.get(FUNC_CALL_ARGS).size());
     assertEquals("CONCAT('a', `b`)", node.toString());
   }
@@ -605,11 +605,11 @@ public class MySQLASTBuilderTest {
     {
       final SQLNode node =
           helper.sql(
-              "window_name partition by col_a asc "
+              "window_name partition by col_a "
                   + "order by col_b desc "
                   + "rows interval 1 year preceding exclude current row");
       assertEquals(
-          "(`window_name` PARTITION BY `col_a` ASC ORDER BY `col_b` DESC "
+          "(`window_name` PARTITION BY `col_a` ORDER BY `col_b` DESC "
               + "ROWS INTERVAL 1 YEAR PRECEDING EXCLUDE CURRENT ROW)",
           node.toString());
     }

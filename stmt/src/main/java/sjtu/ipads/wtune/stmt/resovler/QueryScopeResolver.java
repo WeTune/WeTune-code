@@ -32,10 +32,10 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
         scope = new SimpleQueryScope();
         scope.setSpecNode(body);
 
-      } else if (body.type() == Type.SET_OPERATION) {
+      } else if (body.type() == Type.SET_OP) {
         scope = new UnionQueryScope();
-        scope.setLeftChild(body.get(SET_OPERATION_LEFT));
-        scope.setRightChild(body.get(SET_OPERATION_RIGHT));
+        scope.setLeftChild(body.get(SET_OP_LEFT));
+        scope.setRightChild(body.get(SET_OP_RIGHT));
 
       } else throw new IllegalStateException();
 

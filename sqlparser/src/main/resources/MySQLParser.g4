@@ -2680,18 +2680,18 @@ elseExpression:
 ;
 
 castType:
-    BINARY_SYMBOL fieldLength?
-    | CHAR_SYMBOL fieldLength? charsetWithOptBinary?
+    type=BINARY_SYMBOL fieldLength?
+    | type=CHAR_SYMBOL fieldLength? charsetWithOptBinary?
     | nchar fieldLength?
-    | SIGNED_SYMBOL INT_SYMBOL?
-    | UNSIGNED_SYMBOL INT_SYMBOL?
-    | DATE_SYMBOL
-    | TIME_SYMBOL typeDatetimePrecision?
-    | DATETIME_SYMBOL typeDatetimePrecision?
-    | DECIMAL_SYMBOL floatOptions?
-    | {serverVersion() >= 50708}? JSON_SYMBOL
+    | SIGNED_SYMBOL type=INT_SYMBOL?
+    | UNSIGNED_SYMBOL type=INT_SYMBOL?
+    | type=DATE_SYMBOL
+    | type=TIME_SYMBOL typeDatetimePrecision?
+    | type=DATETIME_SYMBOL typeDatetimePrecision?
+    | type=DECIMAL_SYMBOL floatOptions?
+    | {serverVersion() >= 50708}? type=JSON_SYMBOL
     | {serverVersion() >= 80017}? realType
-    | {serverVersion() >= 80017}? FLOAT_SYMBOL standardFloatOptions?
+    | {serverVersion() >= 80017}? type=FLOAT_SYMBOL standardFloatOptions?
 ;
 
 exprList:

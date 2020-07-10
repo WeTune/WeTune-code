@@ -152,9 +152,9 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterCommonName(SQLNode commonName) {
-    appendName(commonName, commonName.get(COMMON_NAME_0), true);
-    appendName(commonName, commonName.get(COMMON_NAME_1), true);
-    appendName(commonName, commonName.get(COMMON_NAME_2), false);
+    appendName(commonName, commonName.get(NAME_3_0), true);
+    appendName(commonName, commonName.get(NAME_3_1), true);
+    appendName(commonName, commonName.get(NAME_3_2), false);
     return false;
   }
 
@@ -210,7 +210,7 @@ public class SQLFormatter implements SQLVisitor {
 
     builder.append("KEY ");
 
-    if (name != null) builder.append(quotation(indexDef)).append(name).append(quotation(indexDef));
+    if (name != null) appendName(indexDef, name, false);
 
     try (final var ignored = withParen(true)) {
       for (SQLNode key : keys) {
@@ -245,8 +245,7 @@ public class SQLFormatter implements SQLVisitor {
     final KeyDirection direction = keyPart.get(KEY_PART_DIRECTION);
     final SQLNode expr = keyPart.get(KEY_PART_EXPR);
 
-    if (columnName != null)
-      builder.append(quotation(keyPart)).append(columnName).append(quotation(keyPart));
+    if (columnName != null) appendName(keyPart, columnName, false);
     if (length != null) builder.append('(').append(length).append(')');
     if (direction != null) builder.append(' ').append(direction);
     if (expr != null)
@@ -306,10 +305,13 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterFuncCall(SQLNode funcCall) {
-    final String name = funcCall.get(FUNC_CALL_NAME);
+    final SQLNode name = funcCall.get(FUNC_CALL_NAME);
     final List<SQLNode> args = funcCall.getOr(FUNC_CALL_ARGS, emptyList());
 
-    if ("extract".equalsIgnoreCase(name)) {
+    final String schemaName = name.get(NAME_2_0);
+    final String funcName = name.get(NAME_2_1);
+
+    if (schemaName == null && "extract".equalsIgnoreCase(funcName)) {
       builder.append("EXTRACT");
       try (final var ignored = withParen(true)) {
         if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
@@ -322,7 +324,7 @@ public class SQLFormatter implements SQLVisitor {
       return false;
     }
 
-    if ("position".equalsIgnoreCase(name)) {
+    if (schemaName == null && "position".equalsIgnoreCase(funcName)) {
       builder.append("POSITION");
       try (final var ignored = withParen(true)) {
         if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
@@ -335,7 +337,7 @@ public class SQLFormatter implements SQLVisitor {
       return false;
     }
 
-    if ("trim".equalsIgnoreCase(name)) {
+    if (schemaName == null && "trim".equalsIgnoreCase(funcName)) {
       builder.append("TRIM");
       try (final var ignored = withParen(true)) {
         if (args.size() != 3) builder.append(UNKNOWN_PLACEHOLDER);
@@ -345,7 +347,7 @@ public class SQLFormatter implements SQLVisitor {
           final SQLNode arg2 = args.get(2);
 
           if (arg0 != null) {
-            safeVisit(arg0);
+            safeVisit(arg0); // LEADING/TRAILING/BOTH
             builder.append(' ');
           }
           if (arg1 != null) safeVisit(arg1);
@@ -359,7 +361,45 @@ public class SQLFormatter implements SQLVisitor {
       return false;
     }
 
-    builder.append(name.toUpperCase());
+    if (schemaName == null && "overlay".equalsIgnoreCase(funcName)) {
+      builder.append("OVERLAY");
+      try (final var ignored = withParen(true)) {
+        if (args.size() < 3) builder.append(UNKNOWN_PLACEHOLDER);
+        else {
+          final SQLNode arg0 = args.get(0);
+          final SQLNode arg1 = args.get(1);
+          final SQLNode arg2 = args.get(2);
+          final SQLNode arg3 = args.size() > 3 ? args.get(3) : null;
+          safeVisit(arg0);
+          builder.append(" PLACING ");
+          safeVisit(arg1);
+          builder.append(" FROM ");
+          safeVisit(arg2);
+          if (arg3 != null) {
+            builder.append(" FOR ");
+            safeVisit(arg3);
+          }
+        }
+      }
+      return false;
+    }
+
+    if (schemaName == null && args.isEmpty() && POSTGRESQL.equals(funcCall.dbType())) {
+      final String upperCase = funcName.toUpperCase();
+      if (upperCase.startsWith("CURRENT")
+          || "SESSION_USER".equals(upperCase)
+          || "USER".equals(upperCase)
+          || "LOCALTIME".equals(upperCase)
+          || "LOCALTIMESTAMP".equals(upperCase)) {
+        builder.append(upperCase);
+        return false;
+      }
+    }
+
+    appendName(name, schemaName, true);
+    // we choose not quote the function name for beauty and convention
+    // in most case this doesn't cause problem
+    builder.append(funcName.toUpperCase());
 
     appendNodes(args, true, true);
     return false;
@@ -439,8 +479,11 @@ public class SQLFormatter implements SQLVisitor {
 
     safeVisit(cast.get(CAST_EXPR));
 
-    builder.append(" AS ").append(cast.get(CAST_TYPE));
-    if (cast.isFlagged(CAST_IS_ARRAY)) builder.append(" ARRAY");
+    builder.append(" AS ");
+    final SQLDataType castType = cast.get(CAST_TYPE);
+    castType.formatAsCastType(builder, cast.dbType());
+
+    if (MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) builder.append(" ARRAY");
     builder.append(')');
 
     return false;
@@ -511,12 +554,10 @@ public class SQLFormatter implements SQLVisitor {
 
     final String windowName = aggregate.get(AGGREGATE_WINDOW_NAME);
     final SQLNode windowSpec = aggregate.get(AGGREGATE_WINDOW_SPEC);
-    if (windowName != null)
-      builder
-          .append(" OVER ")
-          .append(quotation(aggregate))
-          .append(windowName)
-          .append(quotation(aggregate));
+    if (windowName != null) {
+      builder.append(" OVER ");
+      appendName(aggregate, windowName, false);
+    }
     if (windowSpec != null) {
       builder.append(" OVER ");
       safeVisit(windowSpec);
@@ -679,18 +720,15 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterWindowSpec(SQLNode windowSpec) {
     final String alias = windowSpec.get(WINDOW_SPEC_ALIAS);
-    if (alias != null)
-      builder
-          .append(quotation(windowSpec))
-          .append(alias)
-          .append(quotation(windowSpec))
-          .append(" AS ");
+    if (alias != null) {
+      appendName(windowSpec, alias, false);
+      builder.append(" AS ");
+    }
 
     builder.append("(");
 
     final String name = windowSpec.get(WINDOW_SPEC_NAME);
-    if (name != null)
-      builder.append(quotation(windowSpec)).append(name).append(quotation(windowSpec));
+    if (name != null) appendName(windowSpec, name, false);
 
     final List<SQLNode> partition = windowSpec.get(WINDOW_SPEC_PARTITION);
     if (partition != null && !partition.isEmpty()) {
@@ -789,13 +827,10 @@ public class SQLFormatter implements SQLVisitor {
     safeVisit(selectItem.get(SELECT_ITEM_EXPR));
 
     final String alias = selectItem.get(SELECT_ITEM_ALIAS);
-    if (alias != null)
-      builder
-          .append(" AS ")
-          .append(quotation(selectItem))
-          .append(alias)
-          .append(quotation(selectItem));
-
+    if (alias != null) {
+      builder.append(" AS ");
+      appendName(selectItem, alias, false);
+    }
     return false;
   }
 
@@ -814,7 +849,7 @@ public class SQLFormatter implements SQLVisitor {
       if (names != null && !names.isEmpty()) {
         for (String name : names) {
           if (name.equalsIgnoreCase("primary")) builder.append("PRIMARY");
-          else builder.append(quotation(indexHint)).append(name).append(quotation(indexHint));
+          else appendName(indexHint, name, false);
           builder.append(", ");
         }
         trimTrailing(builder, 2);
@@ -835,15 +870,13 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     final String alias = simpleTableSource.get(SIMPLE_ALIAS);
-    if (alias != null)
-      builder
-          .append(" AS ")
-          .append(quotation(simpleTableSource))
-          .append(alias)
-          .append(quotation(simpleTableSource));
+    if (alias != null) {
+      builder.append(" AS ");
+      appendName(simpleTableSource, alias, false);
+    }
 
     final List<SQLNode> hints = simpleTableSource.get(SIMPLE_HINTS);
-    if (hints != null && !hints.isEmpty()) {
+    if (MYSQL.equals(simpleTableSource.dbType()) && hints != null && !hints.isEmpty()) {
       builder.append(' ');
       appendNodes(hints, false);
     }
@@ -964,18 +997,18 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterSetOp(SQLNode setOp) {
     try (final var ignored = withParen(true)) {
-      safeVisit(setOp.get(SET_OPERATION_LEFT));
+      safeVisit(setOp.get(SET_OP_LEFT));
     }
 
     breakLine();
-    builder.append(setOp.get(SET_OPERATION_TYPE));
+    builder.append(setOp.get(SET_OP_TYPE));
 
-    final SetOperationOption option = setOp.get(SET_OPERATION_OPTION);
+    final SetOperationOption option = setOp.get(SET_OP_OPTION);
     if (option != null) builder.append(' ').append(option);
     breakLine();
 
     try (final var ignored = withParen(true)) {
-      safeVisit(setOp.get(SET_OPERATION_RIGHT));
+      safeVisit(setOp.get(SET_OP_RIGHT));
     }
 
     return false;
@@ -993,12 +1026,10 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     final String alias = derivedTableSource.get(DERIVED_ALIAS);
-    if (alias != null)
-      builder
-          .append(" AS ")
-          .append(quotation(derivedTableSource))
-          .append(alias)
-          .append(quotation(derivedTableSource));
+    if (alias != null) {
+      builder.append(" AS ");
+      appendName(derivedTableSource, alias, false);
+    }
 
     final List<String> internalRefs = derivedTableSource.get(DERIVED_INTERNAL_REFS);
     if (internalRefs != null && !internalRefs.isEmpty()) {

@@ -114,10 +114,10 @@ abstract class VisitorController {
       case QUERY:
         return v.enterQuery(n);
 
-      case SET_OPERATION:
+      case SET_OP:
         return v.enterSetOp(n);
 
-      case COMMON_NAME:
+      case NAME_3:
         return v.enterCommonName(n);
     }
 
@@ -242,13 +242,13 @@ abstract class VisitorController {
             && safeVisitList(QUERY_ORDER_BY, n, v)
             && safeVisitChild(QUERY_OFFSET, n, v)
             && safeVisitChild(QUERY_LIMIT, n, v);
-      case SET_OPERATION:
-        return safeVisitChild(SET_OPERATION_LEFT, n, v) && safeVisitChild(SET_OPERATION_RIGHT, n, v);
+      case SET_OP:
+        return safeVisitChild(SET_OP_LEFT, n, v) && safeVisitChild(SET_OP_RIGHT, n, v);
       case INDEX_HINT:
       case KEY_PART:
       case COLUMN_NAME:
       case TABLE_NAME:
-      case COMMON_NAME:
+      case NAME_3:
       default:
         return true;
     }
@@ -357,7 +357,7 @@ abstract class VisitorController {
         v.leaveColumnName(n);
         break;
 
-      case COMMON_NAME:
+      case NAME_3:
         v.leaveCommonName(n);
         return;
 
@@ -413,7 +413,7 @@ abstract class VisitorController {
         v.leaveQuery(n);
         break;
 
-      case SET_OPERATION:
+      case SET_OP:
         v.leaveUnion(n);
     }
   }

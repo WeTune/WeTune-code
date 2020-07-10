@@ -7,8 +7,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import static java.lang.System.Logger.Level.TRACE;
-import static java.lang.System.Logger.Level.WARNING;
+import static java.lang.System.Logger.Level.*;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
@@ -112,6 +111,10 @@ class TableBuilder {
 
     for (SQLNode key : keys) {
       final String columnName = key.get(KEY_PART_COLUMN);
+      if (columnName == null) {
+        LOG.log(INFO, "expr-based index: {0}", key);
+        continue;
+      }
       final Column column = table.getColumn(columnName);
       if (column == null) {
         LOG.log(

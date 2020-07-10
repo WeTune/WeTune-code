@@ -5,11 +5,9 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
-import java.util.List;
-
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.NAME_2_1;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_USING;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.ATTR_PREFIX;
 
 /**
@@ -102,7 +100,7 @@ public class Cleaner implements Mutator {
 
     if (kind == Kind.TUPLE) return node.get(TUPLE_EXPRS).stream().allMatch(Cleaner::isConstant);
     if (kind == Kind.FUNC_CALL)
-      return !node.get(FUNC_CALL_NAME).contains("rand")
+      return !node.get(FUNC_CALL_NAME).get(NAME_2_1).contains("rand")
           && node.get(FUNC_CALL_ARGS).stream().allMatch(Cleaner::isConstant);
 
     if (kind == Kind.MATCH)

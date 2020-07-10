@@ -14,6 +14,7 @@ import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
@@ -256,9 +257,9 @@ public interface MySQLASTHelper {
 
     final SQLDataType.Category category;
     final String name;
-    if (typeString.endsWith("int") || typeString.equals(INT) || typeString.equals(SERIAL)) {
+    if (typeString.endsWith("int") || typeString.equals(INTEGER) || typeString.equals(SERIAL)) {
       category = SQLDataType.Category.INTEGRAL;
-      name = "int".equals(typeString) ? INT : typeString;
+      name = "int".equals(typeString) ? INTEGER : typeString;
 
     } else if (typeString.equals(BIT)) {
       category = Category.BIT_STRING;
@@ -349,6 +350,69 @@ public interface MySQLASTHelper {
             : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
 
     return new SQLDataType(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
+  }
+
+  static SQLDataType parseDataType(MySQLParser.CastTypeContext ctx) {
+    final String typeString =
+        ctx.type != null
+            ? ctx.type.getText().toLowerCase()
+            : ctx.realType() != null ? ctx.realType().type.getText().toLowerCase() : "national";
+
+    final SQLDataType.Category category;
+    final String name;
+    if (INT.equals(typeString)) {
+      category = SQLDataType.Category.INTEGRAL;
+      name = INT;
+
+    } else if (FRACTION_TYPES.contains(typeString)) {
+      category = SQLDataType.Category.FRACTION;
+      name = typeString;
+
+    } else if (TIME_TYPE.contains(typeString)) {
+      category = SQLDataType.Category.TIME;
+      name = typeString;
+
+    } else if (typeString.endsWith(CHAR) || typeString.equals("national")) {
+      category = Category.STRING;
+      name = CHAR;
+
+    } else if (typeString.endsWith(BINARY)) {
+      category = Category.STRING;
+      name = BINARY;
+
+    } else if (JSON.equals(typeString)) {
+      category = Category.JSON;
+      name = JSON;
+
+    } else return assertFalse();
+
+    final var fieldLength = ctx.fieldLength();
+    final var floatOptions = ctx.floatOptions();
+    final var standardFloatOptions = ctx.standardFloatOptions();
+    final int w, p;
+    if (fieldLength != null) {
+      w = fieldLength2Int(fieldLength);
+      p = -1;
+
+    } else if (floatOptions != null) {
+      final int[] widthAndPrecision = floatOptions2Int(floatOptions);
+      assert widthAndPrecision != null;
+      w = widthAndPrecision[0];
+      p = widthAndPrecision[1];
+
+    } else if (standardFloatOptions != null) {
+      final int[] widthAndPrecision = precision2Int(standardFloatOptions.precision());
+      w = widthAndPrecision[0];
+      p = widthAndPrecision[1];
+
+    } else {
+      w = -1;
+      p = -1;
+    }
+
+    final boolean unsigned = ctx.UNSIGNED_SYMBOL() != null;
+
+    return new SQLDataType(category, name, w, p).setUnsigned(unsigned);
   }
 
   static Pair<LiteralType, Number> parseNumericLiteral(Token token) {

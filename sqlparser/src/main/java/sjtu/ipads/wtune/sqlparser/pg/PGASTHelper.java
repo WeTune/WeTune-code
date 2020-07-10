@@ -7,41 +7,47 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.INTEGER;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 
 interface PGASTHelper {
   static String stringifyIdentifier(PGParser.Id_tokenContext ctx) {
+    if (ctx == null) return null;
     // the parser rule has quoted the text already
     return ctx.getText();
   }
 
   static String stringifyIdentifier(PGParser.Identifier_nontypeContext ctx) {
+    if (ctx == null) return null;
     if (ctx.tokens_nonreserved() != null || ctx.tokens_reserved_except_function_type() != null)
       return ctx.getText();
     return stringifyIdentifier(ctx.id_token());
   }
 
   static String stringifyIdentifier(PGParser.IdentifierContext ctx) {
+    if (ctx == null) return null;
     if (ctx.tokens_nonreserved() != null || ctx.tokens_nonreserved_except_function_type() != null)
       return ctx.getText();
     return stringifyIdentifier(ctx.id_token());
   }
 
   static String stringifyIdentifier(PGParser.Col_labelContext ctx) {
+    if (ctx == null) return null;
     if (ctx.id_token() != null) return stringifyIdentifier(ctx.id_token());
     else return ctx.getText();
   }
 
+  /** @return String[3] */
   static String[] stringifyIdentifier(PGParser.Schema_qualified_nameContext ctx) {
+    if (ctx == null) return null;
     final var identifiers = ctx.identifier();
     final String str0, str1, str2;
     if (identifiers.size() == 3) {
@@ -69,7 +75,16 @@ interface PGASTHelper {
     return triple;
   }
 
+  static String[] stringifyIdentifier(PGParser.Schema_qualified_name_nontypeContext ctx) {
+    if (ctx == null) return null;
+    final String[] pair = new String[2];
+    if (ctx.schema != null) pair[0] = stringifyIdentifier(ctx.schema);
+    pair[1] = stringifyIdentifier(ctx.identifier_nontype());
+    return pair;
+  }
+
   static String stringifyText(PGParser.Character_stringContext ctx) {
+    if (ctx == null) return null;
     if (ctx.Text_between_Dollar() != null && !ctx.Text_between_Dollar().isEmpty())
       return String.join("", listMap(TerminalNode::getText, ctx.Text_between_Dollar()));
     else if (ctx.Character_String_Literal() != null) return ctx.getText();
@@ -145,9 +160,9 @@ interface PGASTHelper {
 
     final String name;
     final SQLDataType.Category category;
-    if (typeString.endsWith("int") || typeString.equals(INT)) {
+    if (typeString.endsWith("int") || typeString.equals(SQLDataType.INTEGER)) {
       category = SQLDataType.Category.INTEGRAL;
-      name = typeString.equals("int") ? INT : typeString;
+      name = typeString.equals("int") ? SQLDataType.INTEGER : typeString;
 
     } else if (typeString.contains("bit")) {
       category = Category.BIT_STRING;
@@ -160,7 +175,7 @@ interface PGASTHelper {
           name = SMALLINT;
           break;
         case "int4":
-          name = INT;
+          name = SQLDataType.INTEGER;
           break;
         case "int8":
           name = BIGINT;
@@ -331,34 +346,55 @@ interface PGASTHelper {
   static SQLNode buildIndirection(String id, List<SQLNode> indirections) {
     assert indirections.size() > 0;
 
-    if (indirections.size() == 1) {
-      final SQLNode _0 = indirections.get(0);
-      if (exprKind(_0) == Kind.SYMBOL) return columnRef(id, _0.get(SYMBOL_TEXT));
-      else if (exprKind(_0) == Kind.WILDCARD) return wildcard(SQLNode.tableName(id));
-      else return indirection(columnRef(null, id), indirections);
+    final SQLNode _0 = indirections.get(0);
 
-    } else if (indirections.size() == 2) {
-      final SQLNode _0 = indirections.get(0);
-      final SQLNode _1 = indirections.get(1);
-      final Kind kind1 = exprKind(_1);
-      if (exprKind(_0) != Kind.SYMBOL) return indirection(columnRef(null, id), indirections);
-      if (kind1 == Kind.SYMBOL) return columnRef(_0.get(SYMBOL_TEXT), _1.get(SYMBOL_TEXT));
-      else if (kind1 == Kind.WILDCARD) return wildcard(SQLNode.tableName(_0.get(SYMBOL_TEXT)));
-      else
-        return indirection(
-            columnRef(id, _0.get(SYMBOL_TEXT)), indirections.subList(1, indirections.size()));
-    } else {
-      final SQLNode _0 = indirections.get(0);
-      final SQLNode _1 = indirections.get(1);
-      if (exprKind(_0) != Kind.SYMBOL) return indirection(columnRef(null, id), indirections);
-      if (exprKind(_1) == Kind.SYMBOL)
-        return indirection(
-            columnRef(_0.get(SYMBOL_TEXT), _1.get(SYMBOL_TEXT)),
-            indirections.subList(2, indirections.size()));
-      else
-        return indirection(
-            columnRef(id, _0.get(SYMBOL_TEXT)), indirections.subList(1, indirections.size()));
+    if (indirections.size() == 1) return buildIndirection1(id, _0);
+
+    final SQLNode _1 = indirections.get(1);
+    final SQLNode header = buildIndirection2(id, _0, _1);
+
+    if (indirections.size() == 2) return header;
+
+    final Kind headerKind = exprKind(header);
+    assert headerKind == Kind.COLUMN_REF || headerKind == Kind.INDIRECTION;
+
+    return headerKind == Kind.COLUMN_REF
+        ? indirection(header, indirections.subList(2, indirections.size()))
+        : indirection(
+            header.get(INDIRECTION_EXPR),
+            header.get(INDIRECTION_COMPS).size() == 2
+                ? indirections
+                : indirections.subList(1, indirections.size()));
+  }
+
+  private static SQLNode buildIndirection1(String id, SQLNode indirection) {
+    if (!indirection.isFlagged(INDIRECTION_COMP_SUBSCRIPT)) {
+      final SQLNode indirectionExpr = indirection.get(INDIRECTION_COMP_START);
+      final Kind kind = exprKind(indirectionExpr);
+      if (kind == Kind.SYMBOL) return columnRef(id, indirectionExpr.get(SYMBOL_TEXT));
+      else if (kind == Kind.WILDCARD) return wildcard(SQLNode.tableName(id));
     }
+
+    return indirection(columnRef(null, id), Collections.singletonList(indirection));
+  }
+
+  private static SQLNode buildIndirection2(String id, SQLNode _0, SQLNode _1) {
+    if (_0.isFlagged(INDIRECTION_COMP_SUBSCRIPT))
+      return indirection(columnRef(null, id), Arrays.asList(_0, _1));
+
+    final SQLNode expr0 = _0.get(INDIRECTION_COMP_START);
+    final Kind kind0 = exprKind(expr0);
+    if (kind0 != Kind.SYMBOL) return indirection(columnRef(null, id), Arrays.asList(_0, _1));
+
+    if (_1.isFlagged(INDIRECTION_COMP_SUBSCRIPT))
+      return indirection(buildIndirection1(id, expr0), Collections.singletonList(_1));
+
+    final SQLNode expr1 = _1.get(INDIRECTION_COMP_START);
+    final Kind kind1 = exprKind(expr1);
+
+    if (kind1 == Kind.SYMBOL) return columnRef(id, expr0.get(SYMBOL_TEXT), expr1.get(SYMBOL_TEXT));
+    else if (kind1 == Kind.WILDCARD) return wildcard(SQLNode.tableName(expr0.get(SYMBOL_TEXT)));
+    else return indirection(columnRef(id, expr0.get(SYMBOL_TEXT)), Collections.singletonList(_1));
   }
 
   static String parseAlias(PGParser.Alias_clauseContext ctx) {
@@ -380,5 +416,56 @@ interface PGASTHelper {
     if (ctx.FULL() != null) return SQLTableSource.JoinType.FULL_JOIN;
 
     return SQLTableSource.JoinType.INNER_JOIN;
+  }
+
+  static int typeLength2Int(PGParser.Type_lengthContext ctx) {
+    return Integer.parseInt(ctx.NUMBER_LITERAL().getText());
+  }
+
+  Set<String> KNOWN_AGG_BASIC =
+      Set.of(
+          "array_agg",
+          "avg",
+          "bit_and",
+          "bit_or",
+          "bool_and",
+          "bool_or",
+          "count",
+          "every",
+          "json_agg",
+          "jsonb_agg",
+          "json_object_agg",
+          "jsonb_agg_obejct",
+          "max",
+          "min",
+          "string_agg",
+          "sum",
+          "xmlagg");
+
+  Set<String> KNOWN_AGG_STATISTIC =
+      Set.of(
+          "corr",
+          "covar_pop",
+          "covar_samp",
+          "regr_avgx",
+          "regr_count",
+          "regr_intercept",
+          "regr_r2",
+          "regr_slope",
+          "regr_sxx",
+          "regr_sxy",
+          "regr_syy",
+          "stddev",
+          "stddev_pop",
+          "stddev_samp",
+          "variance",
+          "var_pop",
+          "var_samp");
+
+  static boolean isAggregator(String[] pair) {
+    final String schemaName = pair[0];
+    final String funcName = pair[1];
+    return schemaName == null
+        && (KNOWN_AGG_BASIC.contains(funcName) || KNOWN_AGG_STATISTIC.contains(funcName));
   }
 }

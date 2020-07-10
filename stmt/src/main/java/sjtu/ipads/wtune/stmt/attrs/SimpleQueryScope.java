@@ -90,26 +90,40 @@ public class SimpleQueryScope extends QueryScope {
       return null;
     }
 
-    // only if in GROUP BY, HAVING or ORDER BY can it be an alias
-    // in that case, resolve it against select item first
-    if (clause == SimpleQueryScope.Clause.GROUP_BY
-        || clause == SimpleQueryScope.Clause.HAVING
-        || clause == SimpleQueryScope.Clause.ORDER_BY) {
-      final SelectItem selectItem = resolveSelection(columnName);
-      if (selectItem != null) return ref.setRefItem(selectItem);
-    }
+    if (clause == Clause.GROUP_BY || clause == Clause.HAVING) {
+      // GROUP BY & HAVING: first search among input column (table source)
+      //                    then search output column (table source)
+      final ColumnRef result = searchInputColumn(ref, columnName);
+      return result != null ? result : searchOutputColumn(ref, columnName);
 
-    // otherwise, it must come from a table source
-    // so first, look up all local table sources
+    } else if (clause == Clause.ORDER_BY) {
+      // ORDER BY: first search among output column (select item)
+      //           then input column (table source)
+      final ColumnRef result = searchOutputColumn(ref, columnName);
+      return result != null ? result : searchInputColumn(ref, columnName);
+
+    } else {
+      // other: only search among input column
+      return searchInputColumn(ref, columnName);
+    }
+  }
+
+  private ColumnRef searchOutputColumn(ColumnRef ref, String columnName) {
+    final SelectItem selectItem = resolveSelection(columnName);
+    return selectItem == null ? null : ref.setRefItem(selectItem);
+  }
+
+  private ColumnRef searchInputColumn(ColumnRef ref, String columnName) {
+    // first, look up all local table sources
     for (TableSource tableSource : tableSources().values())
       if (tableSource.resolveRef(columnName, ref)) return ref;
-
     // then, if recursion is permitted, resolve in parent scope
     // `clause` should be replaced by the subquery's clause.
     // e.g. when resolving `k` in SELECT * FROM a WHERE EXISTS (SELECT k),
     // this step will perform parent().resolveRef(null, "k", WHERE)
-    if (!shouldRecurse) return null;
+    if (!shouldRecurse()) return null;
 
+    // if recursive resolution is allowed, search in parent scope
     final ColumnRef columnRef = parent().resolveRef(null, columnName, clause());
     // now it must be a dependent ref since it comes from parent
     if (columnRef != null) columnRef.setDependent(true);

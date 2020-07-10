@@ -115,7 +115,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       if (scope == null) return null;
 
       final SQLNode body = scope.queryNode().get(QUERY_BODY);
-      if (body.type() == Type.SET_OPERATION) return singleton(Relation.of(scope.queryNode()));
+      if (body.type() == Type.SET_OP) return singleton(Relation.of(scope.queryNode()));
       assert body.type() == Type.QUERY_SPEC;
 
       final RelationCollector collector = new RelationCollector();

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
@@ -7,12 +8,15 @@ import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParserBaseVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.PRIMARY;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.UNIQUE;
@@ -98,7 +102,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitAlter_sequence_statement(PGParser.Alter_sequence_statementContext ctx) {
     final SQLNode node = new SQLNode(ALTER_SEQUENCE);
-    node.put(ALTER_SEQUENCE_NAME, commonName(stringifyIdentifier(ctx.name)));
+    node.put(ALTER_SEQUENCE_NAME, name3(stringifyIdentifier(ctx.name)));
 
     for (var bodyCtx : ctx.sequence_body()) {
       if (bodyCtx.OWNED() != null) {
@@ -173,8 +177,11 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       final String direction = ctx.order.getText().toLowerCase();
       if ("asc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.ASC);
       else if ("desc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.DESC);
+      // TODO: USING
     }
 
+    // TODO: opclass
+    // TODO: NULL ordering
     return node;
   }
 
@@ -188,72 +195,80 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
   }
 
   @Override
+  public SQLNode visitSelect_stmt_no_parens(PGParser.Select_stmt_no_parensContext ctx) {
+    if (ctx.with_clause() != null) return null;
+
+    final SQLNode node = new SQLNode(QUERY);
+    node.put(QUERY_BODY, ctx.select_ops_no_parens().accept(this));
+    ctx.after_ops().forEach(it -> addAfterOp(node, it));
+    return node;
+  }
+
+  @Override
   public SQLNode visitSelect_ops(PGParser.Select_opsContext ctx) {
     if (ctx.select_stmt() != null) return ctx.select_stmt().accept(this);
     else if (ctx.select_primary() != null) return ctx.select_primary().accept(this);
     else {
-      final SQLNode node = new SQLNode(SET_OPERATION);
-      node.put(SET_OPERATION_LEFT, ctx.select_ops(0).accept(this));
-      node.put(SET_OPERATION_RIGHT, ctx.select_ops(1).accept(this));
+      final SQLNode node = new SQLNode(SET_OP);
+      node.put(SET_OP_LEFT, ctx.select_ops(0).accept(this));
+      node.put(SET_OP_RIGHT, ctx.select_ops(1).accept(this));
+
       final SetOperation op;
       if (ctx.UNION() != null) op = SetOperation.UNION;
       else if (ctx.INTERSECT() != null) op = SetOperation.INTERSECT;
       else if (ctx.EXCEPT() != null) op = SetOperation.EXCEPT;
       else return assertFalse();
+      node.put(SET_OP_TYPE, op);
 
-      node.put(SET_OPERATION_TYPE, op);
       if (ctx.set_qualifier() != null)
         node.put(
-            SET_OPERATION_OPTION,
-            SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+            SET_OP_OPTION, SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
       return node;
     }
   }
 
   @Override
   public SQLNode visitSelect_ops_no_parens(PGParser.Select_ops_no_parensContext ctx) {
-    if (ctx.select_ops() != null) {
-      final SQLNode node = new SQLNode(SET_OPERATION);
-      node.put(SET_OPERATION_LEFT, ctx.select_ops().accept(this));
+    if (ctx.select_primary() != null) return ctx.select_primary().accept(this);
+    else if (ctx.select_ops() != null) {
+      final SQLNode node = new SQLNode(SET_OP);
+      node.put(SET_OP_LEFT, ctx.select_ops().accept(this));
       node.put(
-          SET_OPERATION_RIGHT,
+          SET_OP_RIGHT,
           ctx.select_primary() != null
               ? ctx.select_primary().accept(this)
               : ctx.select_stmt().accept(this));
+
       final SetOperation op;
       if (ctx.UNION() != null) op = SetOperation.UNION;
       else if (ctx.INTERSECT() != null) op = SetOperation.INTERSECT;
       else if (ctx.EXCEPT() != null) op = SetOperation.EXCEPT;
       else return assertFalse();
+      node.put(SET_OP_TYPE, op);
 
-      node.put(SET_OPERATION_TYPE, op);
       if (ctx.set_qualifier() != null)
         node.put(
-            SET_OPERATION_OPTION,
-            SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+            SET_OP_OPTION, SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+
       return node;
 
-    } else if (ctx.select_primary() != null) return ctx.select_primary().accept(this);
-    else return assertFalse();
+    } else return assertFalse();
   }
 
   @Override
   public SQLNode visitSelect_primary(PGParser.Select_primaryContext ctx) {
     final SQLNode node = new SQLNode(QUERY_SPEC);
-    if (ctx.where != null) node.put(QUERY_SPEC_WHERE, ctx.where.accept(this));
-    if (ctx.having != null) node.put(QUERY_SPEC_HAVING, ctx.having.accept(this));
+
+    if (ctx.set_qualifier() != null && ctx.set_qualifier().DISTINCT() != null) {
+      node.flag(QUERY_SPEC_DISTINCT);
+      if (ctx.distinct != null)
+        node.put(QUERY_SPEC_DISTINCT_ON, listMap(this::visitVex, ctx.distinct));
+    }
 
     if (ctx.select_list() != null)
       node.put(
           QUERY_SPEC_SELECT_ITEMS,
           listMap(this::visitSelect_sublist, ctx.select_list().select_sublist()));
-
-    if (ctx.groupby_clause() != null)
-      node.put(
-          QUERY_SPEC_GROUP_BY,
-          listMap(
-              this::visitGrouping_element,
-              ctx.groupby_clause().grouping_element_list().grouping_element()));
 
     final var fromItems = ctx.from_item();
     if (fromItems != null) {
@@ -265,6 +280,18 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       node.put(QUERY_SPEC_FROM, tableSourceNode);
     }
 
+    if (ctx.where != null) node.put(QUERY_SPEC_WHERE, ctx.where.accept(this));
+    if (ctx.having != null) node.put(QUERY_SPEC_HAVING, ctx.having.accept(this));
+
+    if (ctx.groupby_clause() != null)
+      node.put(
+          QUERY_SPEC_GROUP_BY,
+          listMap(
+              this::visitGrouping_element,
+              ctx.groupby_clause().grouping_element_list().grouping_element()));
+
+    // TODO: WINDOW
+
     return node;
   }
 
@@ -272,11 +299,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
   public SQLNode visitFrom_item(PGParser.From_itemContext ctx) {
     if (ctx.LEFT_PAREN() != null) return ctx.from_item(0).accept(this);
     if (ctx.from_primary() != null) return ctx.from_primary().accept(this);
+
     final SQLNode left = ctx.from_item(0).accept(this);
     final SQLNode right = ctx.from_item(1).accept(this);
     final SQLNode node = joined(left, right, parseJoinType(ctx));
     if (ctx.vex() != null) node.put(JOINED_ON, ctx.vex().accept(this));
     // TODO: USING
+
     return node;
   }
 
@@ -294,16 +323,24 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       if (ctx.alias_clause() != null) node.put(DERIVED_ALIAS, parseAlias(ctx.alias_clause()));
       return node;
     }
+    // TODO: other table sources
     return null;
+  }
+
+  @Override
+  public SQLNode visitTable_subquery(PGParser.Table_subqueryContext ctx) {
+    return ctx.select_stmt().accept(this);
   }
 
   @Override
   public SQLNode visitSelect_sublist(PGParser.Select_sublistContext ctx) {
     final SQLNode node = new SQLNode(SELECT_ITEM);
     node.put(SELECT_ITEM_EXPR, ctx.vex().accept(this));
+
     if (ctx.col_label() != null) node.put(SELECT_ITEM_ALIAS, stringifyIdentifier(ctx.col_label()));
     else if (ctx.id_token() != null)
       node.put(SELECT_ITEM_ALIAS, stringifyIdentifier(ctx.id_token()));
+
     return node;
   }
 
@@ -318,14 +355,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     if (ctx.CAST_EXPRESSION() != null) {
       final SQLNode node = newExpr(SQLExpr.Kind.CAST);
       node.put(CAST_EXPR, ctx.vex(0).accept(this));
-      node.put(CAST_TYPE, symbol(ctx.data_type().getText().toLowerCase()));
+      node.put(CAST_TYPE, parseDataType(ctx.data_type()));
       return node;
 
     } else if (ctx.collate_identifier() != null) {
       final SQLNode node = newExpr(SQLExpr.Kind.COLLATE);
       node.put(COLLATE_EXPR, ctx.vex(0).accept(this));
-      node.put(
-          COLLATE_COLLATION, commonName(stringifyIdentifier(ctx.collate_identifier().collation)));
+      node.put(COLLATE_COLLATION, name3(stringifyIdentifier(ctx.collate_identifier().collation)));
       return node;
 
     } else if (ctx.value_expression_primary() != null) {
@@ -346,7 +382,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       return binary(ctx.vex(0).accept(this), ctx.vex(1).accept(this), BinaryOp.AT_TIME_ZONE);
 
     } else if (ctx.SIMILAR() != null) {
-      return binary(ctx.vex(0).accept(this), ctx.vex(1).accept(this), BinaryOp.AT_TIME_ZONE);
+      return binary(ctx.vex(0).accept(this), ctx.vex(1).accept(this), BinaryOp.SIMILAR_TO);
 
     } else if (ctx.ISNULL() != null) {
       return binary(ctx.vex(0).accept(this), literal(LiteralType.NULL, null), BinaryOp.IS);
@@ -385,7 +421,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       else if (ctx.DOCUMENT() != null) right = symbol("DOCUMENT");
       else if (ctx.UNKNOWN() != null) right = literal(LiteralType.UNKNOWN, null);
       else if (ctx.vex(1) != null) right = ctx.vex(1).accept(this);
-      // TODO: omit IS OF for now
+      // TODO: IS OF
       else return assertFalse();
 
       final BinaryOp op;
@@ -395,9 +431,31 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       return binary(left, right, op);
 
     } else if (ctx.op() != null) {
-      // custom operator, omit it for now
-      // TODO: custom operator
-      return null;
+      final var opCtx = ctx.op();
+      if (opCtx.OPERATOR() != null) return null; // TODO: custom operator
+      final String opString = ctx.op().getText();
+      if (ctx.left != null || ctx.right != null) {
+        final UnaryOp op = UnaryOp.ofOp(opString);
+        if (op == null) return null;
+        return unary(coalesce(ctx.left, ctx.right).accept(this), op);
+
+      } else {
+        final BinaryOp op = BinaryOp.ofOp(opString);
+        if (op == null) return null;
+        final SQLNode left = ctx.vex(0).accept(this);
+        final SQLNode right = ctx.vex(1).accept(this);
+
+        if (exprKind(left) != ARRAY && exprKind(right) != ARRAY && op == BinaryOp.CONCAT) {
+          final SQLNode funcCallNode = newExpr(FUNC_CALL);
+          funcCallNode.put(FUNC_CALL_NAME, name2(null, "concat"));
+          funcCallNode.put(FUNC_CALL_ARGS, Arrays.asList(left, right));
+          return funcCallNode;
+        }
+
+        return op != BinaryOp.ARRAY_CONTAINED_BY
+            ? binary(left, right, op)
+            : binary(right, left, BinaryOp.ARRAY_CONTAINS);
+      }
 
     } else if (ctx.vex().size() == 1) {
       final SQLNode node = ctx.vex(0).accept(this);
@@ -418,7 +476,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     if (ctx.CAST_EXPRESSION() != null) {
       final SQLNode node = newExpr(SQLExpr.Kind.CAST);
       node.put(CAST_EXPR, ctx.vex_b(0).accept(this));
-      node.put(CAST_TYPE, symbol(ctx.data_type().getText().toLowerCase()));
+      node.put(CAST_TYPE, parseDataType(ctx.data_type()));
       return node;
 
     } else if (ctx.value_expression_primary() != null) {
@@ -494,6 +552,9 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     } else if (ctx.comparison_mod() != null) {
       return ctx.comparison_mod().accept(this);
 
+    } else if (ctx.function_call() != null) {
+      return ctx.function_call().accept(this);
+
     } else if (ctx.indirection_var() != null) {
       return ctx.indirection_var().accept(this);
 
@@ -502,6 +563,9 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
     } else if (ctx.datetime_overlaps() != null) {
       return ctx.datetime_overlaps().accept(this);
+
+    } else if (ctx.array_expression() != null) {
+      return ctx.array_expression().accept(this);
 
     } else return assertFalse();
   }
@@ -540,9 +604,11 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       final var end = ctx.end;
       if (start != null) node.put(INDIRECTION_COMP_START, start.accept(this));
       if (end != null) node.put(INDIRECTION_COMP_END, end.accept(this));
+      node.flag(INDIRECTION_COMP_SUBSCRIPT);
 
     } else {
       node.put(INDIRECTION_COMP_START, ctx.vex(0).accept(this));
+      node.flag(INDIRECTION_COMP_SUBSCRIPT);
     }
 
     return node;
@@ -630,17 +696,63 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     return node;
   }
 
-  private SQLNode addAfterOp(SQLNode node, PGParser.After_opsContext ctx) {
-    if (ctx.LIMIT() != null && ctx.ALL() == null) node.put(QUERY_LIMIT, ctx.vex().accept(this));
-    else if (ctx.OFFSET() != null) node.put(QUERY_OFFSET, ctx.vex().accept(this));
-    else if (ctx.orderby_clause() != null) {
-      node.put(
-          QUERY_ORDER_BY,
-          listMap(
-              this::visitSort_specifier,
-              ctx.orderby_clause().sort_specifier_list().sort_specifier()));
-    }
+  @Override
+  public SQLNode visitWindow_definition(PGParser.Window_definitionContext ctx) {
+    final SQLNode node = new SQLNode(WINDOW_SPEC);
+
+    if (ctx.identifier() != null) node.put(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.identifier()));
+    if (ctx.partition_by_columns() != null)
+      node.put(WINDOW_SPEC_PARTITION, listMap(this::visitVex, ctx.partition_by_columns().vex()));
+    if (ctx.orderby_clause() != null)
+      node.put(WINDOW_SPEC_ORDER, parseOrderBy(ctx.orderby_clause()));
+    if (ctx.frame_clause() != null) node.put(WINDOW_SPEC_FRAME, ctx.frame_clause().accept(this));
+
     return node;
+  }
+
+  @Override
+  public SQLNode visitFrame_clause(PGParser.Frame_clauseContext ctx) {
+    final SQLNode node = new SQLNode(WINDOW_FRAME);
+
+    if (ctx.RANGE() != null) node.put(WINDOW_FRAME_UNIT, WindowUnit.RANGE);
+    else if (ctx.ROWS() != null) node.put(WINDOW_FRAME_UNIT, WindowUnit.ROWS);
+    else if (ctx.GROUPS() != null) node.put(WINDOW_FRAME_UNIT, WindowUnit.GROUPS);
+
+    node.put(WINDOW_FRAME_START, ctx.frame_bound(0).accept(this));
+    if (ctx.BETWEEN() != null) node.put(WINDOW_FRAME_END, ctx.frame_bound(1).accept(this));
+
+    if (ctx.EXCLUDE() != null) {
+      if (ctx.CURRENT() != null) node.put(WINDOW_FRAME_EXCLUSION, WindowExclusion.CURRENT_ROW);
+      else if (ctx.GROUP() != null) node.put(WINDOW_FRAME_EXCLUSION, WindowExclusion.GROUP);
+      else if (ctx.TIES() != null) node.put(WINDOW_FRAME_EXCLUSION, WindowExclusion.TIES);
+      else if (ctx.OTHERS() != null) node.put(WINDOW_FRAME_EXCLUSION, WindowExclusion.NO_OTHERS);
+    }
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitFrame_bound(PGParser.Frame_boundContext ctx) {
+    final SQLNode node = new SQLNode(FRAME_BOUND);
+
+    if (ctx.CURRENT() != null) node.put(FRAME_BOUND_EXPR, symbol("current row"));
+    else if (ctx.vex() != null) node.put(FRAME_BOUND_EXPR, ctx.vex().accept(this));
+
+    if (ctx.PRECEDING() != null) node.put(FRAME_BOUND_DIRECTION, FrameBoundDirection.PRECEDING);
+    else if (ctx.FOLLOWING() != null)
+      node.put(FRAME_BOUND_DIRECTION, FrameBoundDirection.FOLLOWING);
+
+    return node;
+  }
+
+  @Override
+  public SQLNode visitFunction_call(PGParser.Function_callContext ctx) {
+    if (ctx.schema_qualified_name_nontype() != null) {
+      final String[] funcName = stringifyIdentifier(ctx.schema_qualified_name_nontype());
+      return isAggregator(funcName) || ctx.WITHIN() != null
+          ? parseAggregate(ctx, funcName)
+          : parseFuncCall(ctx, funcName);
+    } else return parseFuncCall(ctx, null);
   }
 
   private void addConstraint(SQLNode node, PGParser.Constr_bodyContext ctx) {
@@ -660,6 +772,23 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     }
   }
 
+  private void addAfterOp(SQLNode node, PGParser.After_opsContext ctx) {
+    if (ctx.LIMIT() != null && ctx.ALL() == null) node.put(QUERY_LIMIT, ctx.vex().accept(this));
+    else if (ctx.FETCH() != null)
+      node.put(
+          QUERY_LIMIT,
+          ctx.vex() != null ? ctx.vex().accept(this) : literal(LiteralType.INTEGER, 1));
+    else if (ctx.OFFSET() != null) node.put(QUERY_OFFSET, ctx.vex().accept(this));
+    else if (ctx.orderby_clause() != null)
+      node.put(QUERY_ORDER_BY, parseOrderBy(ctx.orderby_clause()));
+
+    // TODO: FOR UPDATE and other options
+  }
+
+  private List<SQLNode> parseOrderBy(PGParser.Orderby_clauseContext ctx) {
+    return listMap(this::visitSort_specifier, ctx.sort_specifier_list().sort_specifier());
+  }
+
   private List<SQLNode> parseIndirectionList(PGParser.Indirection_listContext ctx) {
     final List<SQLNode> indirections = listMap(this::visitIndirection, ctx.indirection());
     if (ctx.MULTIPLY() != null) {
@@ -668,5 +797,135 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       indirections.add(node);
     }
     return indirections;
+  }
+
+  private SQLNode parseFuncCall(PGParser.Function_callContext ctx, String[] name) {
+    final SQLNode node = newExpr(FUNC_CALL);
+    if (name != null) {
+      node.put(FUNC_CALL_NAME, name2(name));
+      node.put(
+          FUNC_CALL_ARGS, listMap(this::visitVex_or_named_notation, ctx.vex_or_named_notation()));
+      return node;
+
+    } else if (ctx.function_construct() != null) {
+      final var funcConstructCtx = ctx.function_construct();
+      if (funcConstructCtx.funcName != null) {
+        node.put(FUNC_CALL_NAME, name2(null, funcConstructCtx.funcName.getText()));
+        node.put(FUNC_CALL_ARGS, listMap(this::visitVex, funcConstructCtx.vex()));
+        return node;
+
+      } else if (funcConstructCtx.ROW() != null) {
+        final SQLNode tupleNode = newExpr(TUPLE);
+        tupleNode.put(TUPLE_EXPRS, listMap(this::visitVex, funcConstructCtx.vex()));
+        tupleNode.flag(TUPLE_AS_ROW);
+        return tupleNode;
+      } else return assertFalse();
+
+    } else if (ctx.extract_function() != null) {
+      final var extractFuncCtx = ctx.extract_function();
+      node.put(FUNC_CALL_NAME, name2(null, "extract"));
+      final SQLNode firstArg =
+          symbol(
+              coalesce(
+                  stringifyIdentifier(extractFuncCtx.identifier()),
+                  stringifyText(extractFuncCtx.character_string())));
+      final SQLNode secondArg = extractFuncCtx.vex().accept(this);
+      node.put(FUNC_CALL_ARGS, Arrays.asList(firstArg, secondArg));
+      return node;
+
+    } else if (ctx.system_function() != null) {
+      final var systemFuncCtx = ctx.system_function();
+      if (systemFuncCtx.cast_specification() != null) {
+        node.put(FUNC_CALL_NAME, name2(null, systemFuncCtx.getText()));
+        node.put(FUNC_CALL_ARGS, Collections.emptyList());
+        return node;
+
+      } else {
+        final var castCtx = systemFuncCtx.cast_specification();
+        final SQLNode castNode = newExpr(CAST);
+        castNode.put(CAST_EXPR, castCtx.vex().accept(this));
+        castNode.put(CAST_TYPE, parseDataType(castCtx.data_type()));
+        return castNode;
+      }
+
+    } else if (ctx.date_time_function() != null) {
+      final var dateTimeFuncCtx = ctx.date_time_function();
+      node.put(FUNC_CALL_NAME, name2(null, dateTimeFuncCtx.funcName.getText()));
+      if (dateTimeFuncCtx.type_length() != null)
+        node.put(
+            FUNC_CALL_ARGS,
+            Collections.singletonList(
+                literal(LiteralType.INTEGER, typeLength2Int(dateTimeFuncCtx.type_length()))));
+      else node.put(FUNC_CALL_ARGS, Collections.emptyList());
+
+      return node;
+
+    } else if (ctx.string_value_function() != null) {
+      final var strValueFuncCtx = ctx.string_value_function();
+      final String funcName = strValueFuncCtx.funcName.getText();
+      node.put(FUNC_CALL_NAME, name2(null, funcName));
+
+      if ("trim".equalsIgnoreCase(funcName)) {
+        final TerminalNode firstArg =
+            coalesce(strValueFuncCtx.LEADING(), strValueFuncCtx.TRAILING(), strValueFuncCtx.BOTH());
+        final SQLNode arg0 = firstArg == null ? null : symbol(firstArg.getText());
+        final SQLNode arg1 =
+            strValueFuncCtx.chars == null ? null : strValueFuncCtx.chars.accept(this);
+        final SQLNode arg2 = strValueFuncCtx.str.accept(this);
+        node.put(FUNC_CALL_ARGS, Arrays.asList(arg0, arg1, arg2));
+
+      } else if ("position".equalsIgnoreCase(funcName)) {
+        node.put(
+            FUNC_CALL_ARGS,
+            Arrays.asList(
+                strValueFuncCtx.vex_b().accept(this), strValueFuncCtx.vex(0).accept(this)));
+
+      } else node.put(FUNC_CALL_ARGS, listMap(this::visitVex, strValueFuncCtx.vex()));
+
+      return node;
+
+    } else if (ctx.xml_function() != null) {
+      return null; // TODO
+
+    } else return assertFalse();
+  }
+
+  private SQLNode parseAggregate(PGParser.Function_callContext ctx, String[] name) {
+    final SQLNode node = newExpr(AGGREGATE);
+    node.put(AGGREGATE_NAME, name[1]);
+
+    if (ctx.set_qualifier() != null && ctx.set_qualifier().DISTINCT() != null)
+      node.flag(AGGREGATE_DISTINCT);
+
+    final var argsCtx = ctx.vex_or_named_notation();
+    if (argsCtx != null) {
+      final List<SQLNode> argExprs = new ArrayList<>(argsCtx.size());
+
+      for (final var argCtx : argsCtx) {
+        final var argNode = argCtx.vex().accept(this);
+
+        argExprs.add(argNode);
+        if (argCtx.VARIADIC() != null) argNode.flag(EXPR_FUNC_ARG_VARIADIC);
+        if (argCtx.argname != null)
+          argNode.put(EXPR_FUNC_ARG_NAME, stringifyIdentifier(argCtx.argname));
+      }
+
+      node.put(AGGREGATE_ARGS, argExprs);
+
+    } else node.put(AGGREGATE_ARGS, Collections.emptyList());
+
+    if (ctx.order0 != null) node.put(AGGREGATE_ORDER, parseOrderBy(ctx.order0));
+
+    if (ctx.order1 != null) node.put(AGGREGATE_WITHIN_GROUP_ORDER, parseOrderBy(ctx.order1));
+
+    if (ctx.filter_clause() != null)
+      node.put(AGGREGATE_FILTER, ctx.filter_clause().vex().accept(this));
+
+    if (ctx.identifier() != null)
+      node.put(AGGREGATE_WINDOW_NAME, stringifyIdentifier(ctx.identifier()));
+    else if (ctx.window_definition() != null)
+      node.put(AGGREGATE_WINDOW_SPEC, ctx.window_definition().accept(this));
+
+    return node;
   }
 }

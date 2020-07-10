@@ -2468,8 +2468,8 @@ vex
   | vex binary_operator=(PLUS | MINUS) vex
   // TODO a lot of ambiguities between 3 next alternatives
   | vex op vex
-  | op vex
-  | vex op
+  | op right=vex
+  | left=vex op
   | vex NOT? IN LEFT_PAREN (select_stmt_no_parens | vex (COMMA vex)*) RIGHT_PAREN
   | vex NOT? BETWEEN (ASYMMETRIC | SYMMETRIC)? vex_b AND vex
   | vex NOT? (binary_operator=LIKE | binary_operator=ILIKE | SIMILAR TO) vex
@@ -2569,8 +2569,8 @@ cast_specification
 // using data_type for function name because keyword-named functions
 // use the same category of keywords as keyword-named types
 function_call
-    : schema_qualified_name_nontype LEFT_PAREN (set_qualifier? vex_or_named_notation (COMMA vex_or_named_notation)* orderby_clause?)? RIGHT_PAREN
-        (WITHIN GROUP LEFT_PAREN orderby_clause RIGHT_PAREN)?
+    : schema_qualified_name_nontype LEFT_PAREN (set_qualifier? vex_or_named_notation (COMMA vex_or_named_notation)* order0=orderby_clause?)? RIGHT_PAREN
+        (WITHIN GROUP LEFT_PAREN order1=orderby_clause RIGHT_PAREN)?
         filter_clause? (OVER (identifier | window_definition))?
     | function_construct
     | extract_function
@@ -2589,7 +2589,7 @@ pointer
     ;
 
 function_construct
-    : (COALESCE | GREATEST | GROUPING | LEAST | NULLIF | XMLCONCAT) LEFT_PAREN vex (COMMA vex)* RIGHT_PAREN
+    : funcName=(COALESCE | GREATEST | GROUPING | LEAST | NULLIF | XMLCONCAT) LEFT_PAREN vex (COMMA vex)* RIGHT_PAREN
     | ROW LEFT_PAREN (vex (COMMA vex)*)? RIGHT_PAREN
     ;                       
 
@@ -2609,19 +2609,19 @@ system_function
     ;
 
 date_time_function
-    : CURRENT_DATE
-    | CURRENT_TIME type_length?
-    | CURRENT_TIMESTAMP type_length?
-    | LOCALTIME type_length?
-    | LOCALTIMESTAMP type_length?
+    : funcName=CURRENT_DATE
+    | funcName=CURRENT_TIME type_length?
+    | funcName=CURRENT_TIMESTAMP type_length?
+    | funcName=LOCALTIME type_length?
+    | funcName=LOCALTIMESTAMP type_length?
     ;
 
 string_value_function
-    : TRIM LEFT_PAREN (LEADING | TRAILING | BOTH)? (chars=vex FROM str=vex | FROM? str=vex (COMMA chars=vex)?) RIGHT_PAREN
-    | SUBSTRING LEFT_PAREN vex (COMMA vex)* (FROM vex)? (FOR vex)? RIGHT_PAREN
-    | POSITION LEFT_PAREN vex_b IN vex RIGHT_PAREN
-    | OVERLAY LEFT_PAREN vex PLACING vex FROM vex (FOR vex)? RIGHT_PAREN
-    | COLLATION FOR LEFT_PAREN vex RIGHT_PAREN
+    : funcName=TRIM LEFT_PAREN (LEADING | TRAILING | BOTH)? (chars=vex FROM str=vex | FROM? str=vex (COMMA chars=vex)?) RIGHT_PAREN
+    | funcName=SUBSTRING LEFT_PAREN vex (COMMA vex)* (FROM vex)? (FOR vex)? RIGHT_PAREN
+    | funcName=POSITION LEFT_PAREN vex_b IN vex RIGHT_PAREN
+    | funcName=OVERLAY LEFT_PAREN vex PLACING vex FROM vex (FOR vex)? RIGHT_PAREN
+    | funcName=COLLATION FOR LEFT_PAREN vex RIGHT_PAREN
     ;
 
 xml_function

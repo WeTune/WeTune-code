@@ -321,11 +321,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
             ? null
             : SetOperationOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
-    final SQLNode node = new SQLNode(SET_OPERATION);
-    node.put(SET_OPERATION_TYPE, SetOperation.UNION);
-    node.put(SET_OPERATION_LEFT, wrapQuerySpec(left));
-    node.put(SET_OPERATION_RIGHT, wrapQuerySpec(right));
-    node.put(SET_OPERATION_OPTION, option);
+    final SQLNode node = new SQLNode(SET_OP);
+    node.put(SET_OP_TYPE, SetOperation.UNION);
+    node.put(SET_OP_LEFT, wrapQuerySpec(left));
+    node.put(SET_OP_RIGHT, wrapQuerySpec(right));
+    node.put(SET_OP_OPTION, option);
 
     return node;
   }
@@ -706,7 +706,17 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = new SQLNode(WINDOW_SPEC);
     if (ctx.windowName() != null)
       node.put(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.windowName().identifier()));
-    if (ctx.orderList() != null) node.put(WINDOW_SPEC_PARTITION, toOrderItems(ctx.orderList()));
+    // partition by
+    // in .g4 partition by clause is defined as an orderList
+    // but it should be just a expression list
+    if (ctx.orderList() != null)
+      node.put(
+          WINDOW_SPEC_PARTITION,
+          ctx.orderList().orderExpression().stream()
+              .map(MySQLParser.OrderExpressionContext::expr)
+              .map(it -> it.accept(this))
+              .collect(Collectors.toList()));
+    // order by
     if (ctx.orderClause() != null) node.put(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderClause()));
     if (ctx.windowFrameClause() != null)
       node.put(WINDOW_SPEC_FRAME, visitWindowFrameClause(ctx.windowFrameClause()));
@@ -818,7 +828,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       final SQLNode node = newExpr(FUNC_CALL);
       final var jsonOperator = ctx.jsonOperator();
 
-      node.put(FUNC_CALL_NAME, "json_extract");
+      node.put(FUNC_CALL_NAME, name2(null, "json_extract"));
       node.put(
           FUNC_CALL_ARGS,
           Arrays.asList(
@@ -829,7 +839,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       else {
         final SQLNode unquoteCall = newExpr(FUNC_CALL);
 
-        unquoteCall.put(FUNC_CALL_NAME, "json_unquote");
+        unquoteCall.put(FUNC_CALL_NAME, name2(null, "json_unquote"));
         unquoteCall.put(FUNC_CALL_ARGS, singletonList(node));
 
         return unquoteCall;
@@ -901,7 +911,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final List<SQLNode> args;
 
     if (ctx.name != null) {
-      node.put(FUNC_CALL_NAME, ctx.name.getText().toLowerCase());
+      node.put(FUNC_CALL_NAME, name2(null, ctx.name.getText().toLowerCase()));
 
       if (ctx.parentheses() != null) {
         // no-arg
@@ -966,7 +976,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         args = emptyList();
       }
     } else if (ctx.trimFunction() != null) {
-      node.put(FUNC_CALL_NAME, "trim");
+      node.put(FUNC_CALL_NAME, name2(null, "trim"));
       args = new ArrayList<>(3);
 
       final var trimFunc = ctx.trimFunction();
@@ -991,13 +1001,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       }
 
     } else if (ctx.substringFunction() != null) {
-      node.put(FUNC_CALL_NAME, "substring");
+      node.put(FUNC_CALL_NAME, name2(null, "substring"));
       final var substringFunc = ctx.substringFunction();
       args = listMap(this::toExpr, substringFunc.expr());
 
     } else if (ctx.geometryFunction() != null) {
       final var geoFunc = ctx.geometryFunction();
-      node.put(FUNC_CALL_NAME, geoFunc.name.getText().toLowerCase());
+      node.put(FUNC_CALL_NAME, name2(null, geoFunc.name.getText().toLowerCase()));
 
       if (geoFunc.exprListWithParentheses() != null) {
         // var-arg
@@ -1036,13 +1046,16 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = newExpr(FUNC_CALL);
 
     if (ctx.pureIdentifier() != null) {
-      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase());
+      node.put(
+          FUNC_CALL_NAME, name2(null, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase()));
 
       if (ctx.udfExprList() != null) node.put(FUNC_CALL_ARGS, toExprs(ctx.udfExprList()));
       else node.put(FUNC_CALL_ARGS, emptyList());
 
     } else if (ctx.qualifiedIdentifier() != null) {
-      node.put(FUNC_CALL_NAME, stringifyIdentifier(ctx.qualifiedIdentifier())[1].toLowerCase());
+      node.put(
+          FUNC_CALL_NAME,
+          name2(null, stringifyIdentifier(ctx.qualifiedIdentifier())[1].toLowerCase()));
 
       if (ctx.exprList() != null) node.put(FUNC_CALL_ARGS, toExprs((ctx.exprList())));
       else node.put(FUNC_CALL_ARGS, emptyList());
@@ -1167,7 +1180,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitSimpleExprConcat(MySQLParser.SimpleExprConcatContext ctx) {
     final SQLNode node = newExpr(FUNC_CALL);
-    node.put(FUNC_CALL_NAME, "concat");
+    node.put(FUNC_CALL_NAME, name2(null, "concat"));
     node.put(FUNC_CALL_ARGS, listMap(arg -> arg.accept(this), ctx.simpleExpr()));
     return node;
   }
@@ -1257,7 +1270,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitSimpleExprCast(MySQLParser.SimpleExprCastContext ctx) {
     final SQLNode node = newExpr(CAST);
     node.put(CAST_EXPR, toExpr(ctx.expr()));
-    node.put(CAST_TYPE, symbol(ctx.castType().getText().toLowerCase()));
+    node.put(CAST_TYPE, parseDataType(ctx.castType()));
     node.put(CAST_IS_ARRAY, ctx.arrayCast() != null);
     return node;
   }
@@ -1266,7 +1279,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitSimpleExprConvert(MySQLParser.SimpleExprConvertContext ctx) {
     final SQLNode node = newExpr(CAST);
     node.put(CAST_EXPR, toExpr(ctx.expr()));
-    node.put(CAST_TYPE, symbol(ctx.castType().getText().toLowerCase()));
+    node.put(CAST_TYPE, parseDataType(ctx.castType()));
     return node;
   }
 

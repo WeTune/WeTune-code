@@ -34,6 +34,23 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
  * <h3>AST Nodes</h3>
  *
  * <pre>{@code
+ * INVALID
+ * }</pre>
+ *
+ * <pre>{@code
+ * NAME_2
+ * | 0: String
+ * | 1: String
+ * }</pre>
+ *
+ * <pre>{@code
+ * NAME_3
+ * | 0: String
+ * | 1: String
+ * | 2: String
+ * }</pre>
+ *
+ * <pre>{@code
  * TABLE_NAME
  * | SCHEMA: String
  * | TABLE: String
@@ -268,7 +285,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   public enum Type {
     INVALID,
-    COMMON_NAME,
+    NAME_2,
+    NAME_3,
     TABLE_NAME,
     COLUMN_NAME,
     CREATE_TABLE,
@@ -279,7 +297,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     REFERENCES,
     INDEX_DEF,
     KEY_PART,
-    SET_OPERATION,
+    SET_OP,
     QUERY,
     QUERY_SPEC,
     SELECT_ITEM,
@@ -436,11 +454,33 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     return node;
   }
 
-  public static SQLNode commonName(String[] triple) {
-    final SQLNode node = new SQLNode(Type.COMMON_NAME);
-    node.put(COMMON_NAME_0, triple[0]);
-    node.put(COMMON_NAME_1, triple[1]);
-    node.put(COMMON_NAME_2, triple[2]);
+  public static SQLNode name2(String _0, String _1) {
+    final SQLNode node = new SQLNode(Type.NAME_2);
+    node.put(NAME_2_0, _0);
+    node.put(NAME_2_1, _1);
+    return node;
+  }
+
+  public static SQLNode name3(String _0, String _1, String _2) {
+    final SQLNode node = new SQLNode(Type.NAME_3);
+    node.put(NAME_3_0, _0);
+    node.put(NAME_3_1, _1);
+    node.put(NAME_3_2, _2);
+    return node;
+  }
+
+  public static SQLNode name2(String[] triple) {
+    final SQLNode node = new SQLNode(Type.NAME_2);
+    node.put(NAME_2_0, triple[0]);
+    node.put(NAME_2_1, triple[1]);
+    return node;
+  }
+
+  public static SQLNode name3(String[] triple) {
+    final SQLNode node = new SQLNode(Type.NAME_3);
+    node.put(NAME_3_0, triple[0]);
+    node.put(NAME_3_1, triple[1]);
+    node.put(NAME_3_2, triple[2]);
     return node;
   }
 
@@ -492,10 +532,14 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<String> COLUMN_NAME_TABLE = stringAttr(COLUMN_NAME, "table");
   public static final Key<String> COLUMN_NAME_COLUMN = stringAttr(COLUMN_NAME, "column");
 
-  //// ColumnName
-  public static final Key<String> COMMON_NAME_0 = stringAttr(COMMON_NAME, "part0");
-  public static final Key<String> COMMON_NAME_1 = stringAttr(COMMON_NAME, "part1");
-  public static final Key<String> COMMON_NAME_2 = stringAttr(COMMON_NAME, "part2");
+  //// CommonName2
+  public static final Key<String> NAME_2_0 = stringAttr(NAME_2, "part0");
+  public static final Key<String> NAME_2_1 = stringAttr(NAME_2, "part1");
+
+  //// CommonName3
+  public static final Key<String> NAME_3_0 = stringAttr(NAME_3, "part0");
+  public static final Key<String> NAME_3_1 = stringAttr(NAME_3, "part1");
+  public static final Key<String> NAME_3_2 = stringAttr(NAME_3, "part2");
 
   //// CreateTable
   public static final Key<SQLNode> CREATE_TABLE_NAME = nodeAttr(CREATE_TABLE, "name");
@@ -537,12 +581,11 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
       attr(KEY_PART, "direction", KeyDirection.class);
 
   //// Union
-  public static final Key<SQLNode> SET_OPERATION_LEFT = nodeAttr(SET_OPERATION, "left");
-  public static final Key<SQLNode> SET_OPERATION_RIGHT = nodeAttr(SET_OPERATION, "right");
-  public static final Key<SetOperation> SET_OPERATION_TYPE =
-      attr(SET_OPERATION, "type", SetOperation.class);
-  public static final Key<SetOperationOption> SET_OPERATION_OPTION =
-      attr(SET_OPERATION, "option", SetOperationOption.class);
+  public static final Key<SQLNode> SET_OP_LEFT = nodeAttr(SET_OP, "left");
+  public static final Key<SQLNode> SET_OP_RIGHT = nodeAttr(SET_OP, "right");
+  public static final Key<SetOperation> SET_OP_TYPE = attr(SET_OP, "type", SetOperation.class);
+  public static final Key<SetOperationOption> SET_OP_OPTION =
+      attr(SET_OP, "option", SetOperationOption.class);
 
   //// Query
   public static final Key<SQLNode> QUERY_BODY = nodeAttr(QUERY, "body");
@@ -552,6 +595,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   //// QuerySpec
   public static final Key<Boolean> QUERY_SPEC_DISTINCT = booleanAttr(QUERY_SPEC, "distinct");
+  public static final Key<List<SQLNode>> QUERY_SPEC_DISTINCT_ON =
+      nodesAttr(QUERY_SPEC, "distinctOn");
   public static final Key<List<SQLNode>> QUERY_SPEC_SELECT_ITEMS = nodesAttr(QUERY_SPEC, "items");
   public static final Key<SQLNode> QUERY_SPEC_FROM = nodeAttr(QUERY_SPEC, "from");
   public static final Key<SQLNode> QUERY_SPEC_WHERE = nodeAttr(QUERY_SPEC, "where");
@@ -617,4 +662,9 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<String> ALTER_TABLE_ACTION_NAME = stringAttr(ALTER_TABLE_ACTION, "name");
   public static final Key<Object> ALTER_TABLE_ACTION_PAYLOAD =
       attr(ALTER_TABLE_ACTION, "payload", Object.class);
+
+  //// Expr
+  //// Common attributes for expr. The attributes specific to certain expr type is defined in SQLExpr.java
+  public static final Key<String> EXPR_FUNC_ARG_NAME = stringAttr(EXPR, "argName");
+  public static final Key<Boolean> EXPR_FUNC_ARG_VARIADIC = booleanAttr(EXPR, "variadic");
 }

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
 
 public class SQLDataType {
   public enum Category {
@@ -29,7 +29,8 @@ public class SQLDataType {
 
   // integral
   public static final String TINYINT = "tinyint";
-  public static final String INT = "integer";
+  public static final String INT = "int";
+  public static final String INTEGER = "integer";
   public static final String SMALLINT = "smallint";
   public static final String MEDIUMINT = "mediumint";
   public static final String BIGINT = "bigint";
@@ -197,17 +198,43 @@ public class SQLDataType {
     return dimensions != null && dimensions.length > 0;
   }
 
-  public void format(StringBuilder builder) {
-    builder.append(name);
+  private void formatTypeBody(StringBuilder builder, String dbType) {
+    builder.append(name.toUpperCase());
+
+    if (intervalField != null) builder.append(' ').append(intervalField);
+
     if (width != -1 && precision != -1)
       builder.append('(').append(width).append(", ").append(precision).append(')');
     else if (width != -1) builder.append('(').append(width).append(')');
     else if (precision != -1) builder.append('(').append(precision).append(')');
+  }
+
+  public void formatAsDataType(StringBuilder builder, String dbType) {
+    formatTypeBody(builder, dbType);
 
     if (valuesList != null && !valuesList.isEmpty())
       builder.append('(').append(String.join(", ", valuesList)).append(')');
 
+    if (dimensions != null && dimensions.length != 0)
+      for (int dimension : dimensions) {
+        builder.append('[');
+        if (dimension != 0) builder.append(dimension);
+        builder.append(']');
+      }
+
     if (unsigned) builder.append(" UNSIGNED");
+  }
+
+  public void formatAsCastType(StringBuilder builder, String dbType) {
+    if (MYSQL.equals(dbType)) {
+      if (category == Category.INTEGRAL)
+        if (unsigned) builder.append("UNSIGNED ");
+        else builder.append("SIGNED ");
+
+      formatTypeBody(builder, dbType);
+    } else { // postgres use same rule for dataType and castType
+      formatAsDataType(builder, dbType);
+    }
   }
 
   public SQLDataType setUnsigned(boolean unsigned) {
@@ -232,8 +259,9 @@ public class SQLDataType {
 
   @Override
   public String toString() {
-    final var builder = new StringBuilder();
-    format(builder);
-    return builder.toString();
+    //    final var builder = new StringBuilder();
+    //    formatAsDataType(builder);
+    //    return builder.toString();
+    return null;
   }
 }

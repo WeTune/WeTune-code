@@ -154,6 +154,7 @@ public class SQLTableSource {
   public static final Attrs.Key<List<String>> SIMPLE_PARTITIONS =
       attr2(SIMPLE, "partitions", List.class);
   public static final Attrs.Key<String> SIMPLE_ALIAS = stringAttr(SIMPLE, "alias");
+  // mysql only
   public static final Attrs.Key<List<SQLNode>> SIMPLE_HINTS = nodesAttr(SIMPLE, "hints");
 
   //// Joined
