@@ -308,4 +308,10 @@ public interface SQLVisitor {
   }
 
   default void leaveCommonName(SQLNode commonName) {}
+
+  default boolean enterArray(SQLNode array) {
+    return true;
+  }
+
+  default void leaveArray(SQLNode array) {}
 }

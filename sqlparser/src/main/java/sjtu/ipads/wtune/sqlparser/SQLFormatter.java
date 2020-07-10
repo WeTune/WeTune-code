@@ -454,7 +454,7 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterTuple(SQLNode tuple) {
     if (tuple.isFlagged(TUPLE_AS_ROW)) builder.append("ROW");
-    appendNodes(tuple.getOr(TUPLE_EXPRS, emptyList()));
+    appendNodes(tuple.getOr(TUPLE_EXPRS, emptyList()), true, true);
     return false;
   }
 
@@ -475,17 +475,23 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterCast(SQLNode cast) {
-    builder.append("CAST(");
+    if (POSTGRESQL.equals(cast.dbType())) {
+      safeVisit(cast.get(CAST_EXPR));
+      builder.append("::");
+      cast.get(CAST_TYPE).formatAsCastType(builder, POSTGRESQL);
 
-    safeVisit(cast.get(CAST_EXPR));
+    } else {
+      builder.append("CAST(");
 
-    builder.append(" AS ");
-    final SQLDataType castType = cast.get(CAST_TYPE);
-    castType.formatAsCastType(builder, cast.dbType());
+      safeVisit(cast.get(CAST_EXPR));
 
-    if (MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) builder.append(" ARRAY");
-    builder.append(')');
+      builder.append(" AS ");
+      final SQLDataType castType = cast.get(CAST_TYPE);
+      castType.formatAsCastType(builder, cast.dbType());
 
+      if (MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) builder.append(" ARRAY");
+      builder.append(')');
+    }
     return false;
   }
 
@@ -767,10 +773,16 @@ public class SQLFormatter implements SQLVisitor {
 
     builder.append(op.text()).append(' ');
 
+    final SubqueryOption subqueryOption = binary.get(BINARY_SUBQUERY_OPTION);
+    if (subqueryOption != null) builder.append(subqueryOption).append(' ');
+
     final SQLNode right = binary.get(BINARY_RIGHT);
 
     final boolean needParen =
-        op == BinaryOp.MEMBER_OF || right.type() == Type.QUERY || needParen(binary, right, false);
+        op == BinaryOp.MEMBER_OF
+            || right.type() == Type.QUERY
+            || exprKind(right) == SQLExpr.Kind.ARRAY
+            || needParen(binary, right, false);
     final boolean needIndent = needParen && (op == BinaryOp.IN_SUBQUERY || op.isLogic());
 
     try (final var ignored0 = withParen(needParen)) {
@@ -1037,6 +1049,14 @@ public class SQLFormatter implements SQLVisitor {
       appendStrings(internalRefs, true, quotation2(derivedTableSource));
     }
 
+    return false;
+  }
+
+  @Override
+  public boolean enterArray(SQLNode array) {
+    builder.append("ARRAY[");
+    appendNodes(array.get(ARRAY_ELEMENTS), false, true);
+    builder.append(']');
     return false;
   }
 

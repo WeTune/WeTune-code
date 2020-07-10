@@ -501,7 +501,7 @@ public class SQLExpr {
   public static final Attrs.Key<SQLNode> BINARY_LEFT = nodeAttr(BINARY, "left");
   public static final Attrs.Key<SQLNode> BINARY_RIGHT = nodeAttr(BINARY, "right");
   public static final Attrs.Key<SubqueryOption> BINARY_SUBQUERY_OPTION =
-      attr(BINARY, "right", SubqueryOption.class);
+      attr(BINARY, "subqueryOption", SubqueryOption.class);
 
   // TERNARY
   public static final Attrs.Key<TernaryOp> TERNARY_OP = attr(TERNARY, "op", TernaryOp.class);

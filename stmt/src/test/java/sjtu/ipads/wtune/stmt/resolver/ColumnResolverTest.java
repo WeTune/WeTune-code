@@ -30,4 +30,10 @@ public class ColumnResolverTest {
       assertFalse(stmt.parsed().toString().contains("<??>"));
     }
   }
+
+  @Test
+  void test0() {
+    final Statement stmt = Statement.findOne("gitlab", 1104);
+    stmt.resolve(ColumnResolver.class);
+  }
 }

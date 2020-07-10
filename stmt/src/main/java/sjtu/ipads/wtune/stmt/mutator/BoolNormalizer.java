@@ -74,7 +74,8 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
         || kind == Kind.TERNARY
         || kind == Kind.EXISTS
         || kind == Kind.MATCH
-        || kind == Kind.COLUMN_REF;
+        || kind == Kind.COLUMN_REF
+        || kind == Kind.LITERAL;
   }
 
   @Override

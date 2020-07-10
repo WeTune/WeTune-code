@@ -2501,8 +2501,8 @@ vex_b
   | vex_b binary_operator=(MULTIPLY | DIVIDE | MODULAR) vex_b
   | vex_b binary_operator=(PLUS | MINUS) vex_b
   | vex_b op vex_b
-  | op vex_b
-  | vex_b op
+  | op right=vex_b
+  | left=vex_b op
   | vex_b binary_operator=(LTH | GTH | LEQ | GEQ | EQUAL | NOT_EQUAL) vex_b
   | vex_b IS NOT? DISTINCT FROM vex_b
   | vex_b IS NOT? DOCUMENT

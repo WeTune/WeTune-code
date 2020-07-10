@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
+import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
@@ -87,7 +88,7 @@ interface PGASTHelper {
     if (ctx == null) return null;
     if (ctx.Text_between_Dollar() != null && !ctx.Text_between_Dollar().isEmpty())
       return String.join("", listMap(TerminalNode::getText, ctx.Text_between_Dollar()));
-    else if (ctx.Character_String_Literal() != null) return ctx.getText();
+    else if (ctx.Character_String_Literal() != null) return unquoted(ctx.getText(), '\'');
     else return assertFalse();
   }
 
@@ -420,6 +421,15 @@ interface PGASTHelper {
 
   static int typeLength2Int(PGParser.Type_lengthContext ctx) {
     return Integer.parseInt(ctx.NUMBER_LITERAL().getText());
+  }
+
+  static SQLNode wrapQuerySpec(SQLNode node) {
+    if (node.type() == Type.QUERY_SPEC || node.type() == Type.SET_OP) {
+      final SQLNode query = new SQLNode(Type.QUERY);
+      query.put(QUERY_BODY, node);
+      return query;
+    }
+    return node;
   }
 
   Set<String> KNOWN_AGG_BASIC =

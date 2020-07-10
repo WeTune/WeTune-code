@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.pg;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.SQLParserException;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParserBaseVisitor;
@@ -156,8 +157,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     }
 
     final List<SQLNode> keyParts =
-        listMap(
-            this::visitSort_specifier, restCtx.index_sort().sort_specifier_list().sort_specifier());
+        listMap(this::toKeyPart, restCtx.index_sort().sort_specifier_list().sort_specifier());
 
     node.put(INDEX_DEF_KEYS, keyParts);
 
@@ -165,31 +165,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
   }
 
   @Override
-  public SQLNode visitSort_specifier(PGParser.Sort_specifierContext ctx) {
-    final SQLNode node = new SQLNode(KEY_PART);
-    final SQLNode expr = ctx.vex().accept(this);
-
-    if (exprKind(expr) == SQLExpr.Kind.COLUMN_REF)
-      node.put(KEY_PART_COLUMN, expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
-    else node.put(KEY_PART_EXPR, expr);
-
-    if (ctx.order != null) {
-      final String direction = ctx.order.getText().toLowerCase();
-      if ("asc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.ASC);
-      else if ("desc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.DESC);
-      // TODO: USING
-    }
-
-    // TODO: opclass
-    // TODO: NULL ordering
-    return node;
-  }
-
-  @Override
   public SQLNode visitSelect_stmt(PGParser.Select_stmtContext ctx) {
     if (ctx.with_clause() != null) return null;
+    final SQLNode body = ctx.select_ops().accept(this);
+    if (body == null) return null;
+
     final SQLNode node = new SQLNode(QUERY);
-    node.put(QUERY_BODY, ctx.select_ops().accept(this));
+    node.put(QUERY_BODY, body);
     ctx.after_ops().forEach(it -> addAfterOp(node, it));
     return node;
   }
@@ -210,8 +192,8 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     else if (ctx.select_primary() != null) return ctx.select_primary().accept(this);
     else {
       final SQLNode node = new SQLNode(SET_OP);
-      node.put(SET_OP_LEFT, ctx.select_ops(0).accept(this));
-      node.put(SET_OP_RIGHT, ctx.select_ops(1).accept(this));
+      node.put(SET_OP_LEFT, wrapQuerySpec(ctx.select_ops(0).accept(this)));
+      node.put(SET_OP_RIGHT, wrapQuerySpec(ctx.select_ops(1).accept(this)));
 
       final SetOperation op;
       if (ctx.UNION() != null) op = SetOperation.UNION;
@@ -257,6 +239,8 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSelect_primary(PGParser.Select_primaryContext ctx) {
+    if (ctx.values_stmt() != null) return null;
+
     final SQLNode node = new SQLNode(QUERY_SPEC);
 
     if (ctx.set_qualifier() != null && ctx.set_qualifier().DISTINCT() != null) {
@@ -319,12 +303,15 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
     } else if (ctx.table_subquery() != null) {
       final SQLNode node = newTableSource(SQLTableSource.Kind.DERIVED);
-      node.put(DERIVED_SUBQUERY, ctx.table_subquery().accept(this));
+      final SQLNode subquery = ctx.table_subquery().accept(this);
+      if (subquery == null) throw new SQLParserException("unsupported table source");
+
+      node.put(DERIVED_SUBQUERY, subquery);
       if (ctx.alias_clause() != null) node.put(DERIVED_ALIAS, parseAlias(ctx.alias_clause()));
       return node;
     }
     // TODO: other table sources
-    return null;
+    throw new SQLParserException("unsupported table source");
   }
 
   @Override
@@ -371,11 +358,17 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       return unary(ctx.vex(0).accept(this), UnaryOp.ofOp(ctx.unary_operator.getText()));
 
     } else if (ctx.binary_operator != null) {
+      final SQLNode left = ctx.vex(0).accept(this);
+      final SQLNode right = ctx.vex(1).accept(this);
       final SQLNode node =
           binary(
-              ctx.vex(0).accept(this),
-              ctx.vex(1).accept(this),
+              left,
+              right,
               ctx.EXP() != null ? BinaryOp.EXP : BinaryOp.ofOp(ctx.binary_operator.getText()));
+      if (exprKind(right) == COMPARISON_MOD) {
+        node.put(BINARY_RIGHT, right.get(COMPARISON_MOD_EXPR));
+        node.put(BINARY_SUBQUERY_OPTION, right.get(COMPARISON_MOD_OPTION));
+      }
       return ctx.NOT() != null ? unary(node, UnaryOp.NOT) : node;
 
     } else if (ctx.AT() != null) {
@@ -425,10 +418,11 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       else return assertFalse();
 
       final BinaryOp op;
-      if (ctx.DISTINCT() != null) op = BinaryOp.IS;
+      if (ctx.DISTINCT() == null) op = BinaryOp.IS;
       else op = BinaryOp.IS_DISTINCT_FROM;
 
-      return binary(left, right, op);
+      final SQLNode node = binary(left, right, op);
+      return ctx.NOT() != null ? unary(node, UnaryOp.NOT) : node;
 
     } else if (ctx.op() != null) {
       final var opCtx = ctx.op();
@@ -486,11 +480,18 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       return unary(ctx.vex_b(0).accept(this), UnaryOp.ofOp(ctx.unary_operator.getText()));
 
     } else if (ctx.binary_operator != null) {
+      final SQLNode left = ctx.vex_b(0).accept(this);
+      final SQLNode right = ctx.vex_b(1).accept(this);
       final SQLNode node =
           binary(
-              ctx.vex_b(0).accept(this),
-              ctx.vex_b(1).accept(this),
+              left,
+              right,
               ctx.EXP() != null ? BinaryOp.EXP : BinaryOp.ofOp(ctx.binary_operator.getText()));
+
+      if (exprKind(right) == COMPARISON_MOD) {
+        node.put(BINARY_RIGHT, right.get(COMPARISON_MOD_EXPR));
+        node.put(BINARY_SUBQUERY_OPTION, right.get(COMPARISON_MOD_OPTION));
+      }
       return ctx.NOT() != null ? unary(node, UnaryOp.NOT) : node;
 
     } else if (ctx.IS() != null) {
@@ -504,15 +505,38 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       else return assertFalse();
 
       final BinaryOp op;
-      if (ctx.DISTINCT() != null) op = BinaryOp.IS;
+      if (ctx.DISTINCT() == null) op = BinaryOp.IS;
       else op = BinaryOp.IS_DISTINCT_FROM;
 
-      return binary(left, right, op);
+      final SQLNode node = binary(left, right, op);
+      return ctx.NOT() != null ? unary(node, UnaryOp.NOT) : node;
 
     } else if (ctx.op() != null) {
-      // custom operator, omit it for now
-      // TODO: custom operator
-      return null;
+      final var opCtx = ctx.op();
+      if (opCtx.OPERATOR() != null) return null; // TODO: custom operator
+      final String opString = ctx.op().getText();
+      if (ctx.left != null || ctx.right != null) {
+        final UnaryOp op = UnaryOp.ofOp(opString);
+        if (op == null) return null;
+        return unary(coalesce(ctx.left, ctx.right).accept(this), op);
+
+      } else {
+        final BinaryOp op = BinaryOp.ofOp(opString);
+        if (op == null) return null;
+        final SQLNode left = ctx.vex_b(0).accept(this);
+        final SQLNode right = ctx.vex_b(1).accept(this);
+
+        if (exprKind(left) != ARRAY && exprKind(right) != ARRAY && op == BinaryOp.CONCAT) {
+          final SQLNode funcCallNode = newExpr(FUNC_CALL);
+          funcCallNode.put(FUNC_CALL_NAME, name2(null, "concat"));
+          funcCallNode.put(FUNC_CALL_ARGS, Arrays.asList(left, right));
+          return funcCallNode;
+        }
+
+        return op != BinaryOp.ARRAY_CONTAINED_BY
+            ? binary(left, right, op)
+            : binary(right, left, BinaryOp.ARRAY_CONTAINS);
+      }
 
     } else if (ctx.vex().size() == 1) {
       final SQLNode node = ctx.vex(0).accept(this);
@@ -628,6 +652,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       final SQLNode whenNode = newExpr(SQLExpr.Kind.WHEN);
       whenNode.put(WHEN_COND, when.accept(this));
       whenNode.put(WHEN_EXPR, then.accept(this));
+      whenNodes.add(whenNode);
     }
 
     _case.put(CASE_WHENS, whenNodes);
@@ -704,7 +729,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     if (ctx.partition_by_columns() != null)
       node.put(WINDOW_SPEC_PARTITION, listMap(this::visitVex, ctx.partition_by_columns().vex()));
     if (ctx.orderby_clause() != null)
-      node.put(WINDOW_SPEC_ORDER, parseOrderBy(ctx.orderby_clause()));
+      node.put(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderby_clause()));
     if (ctx.frame_clause() != null) node.put(WINDOW_SPEC_FRAME, ctx.frame_clause().accept(this));
 
     return node;
@@ -780,13 +805,51 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
           ctx.vex() != null ? ctx.vex().accept(this) : literal(LiteralType.INTEGER, 1));
     else if (ctx.OFFSET() != null) node.put(QUERY_OFFSET, ctx.vex().accept(this));
     else if (ctx.orderby_clause() != null)
-      node.put(QUERY_ORDER_BY, parseOrderBy(ctx.orderby_clause()));
+      node.put(QUERY_ORDER_BY, toOrderItems(ctx.orderby_clause()));
 
     // TODO: FOR UPDATE and other options
   }
 
-  private List<SQLNode> parseOrderBy(PGParser.Orderby_clauseContext ctx) {
-    return listMap(this::visitSort_specifier, ctx.sort_specifier_list().sort_specifier());
+  private SQLNode toKeyPart(PGParser.Sort_specifierContext ctx) {
+    final SQLNode node = new SQLNode(KEY_PART);
+    final SQLNode expr = ctx.vex().accept(this);
+
+    if (exprKind(expr) == SQLExpr.Kind.COLUMN_REF)
+      node.put(KEY_PART_COLUMN, expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
+    else node.put(KEY_PART_EXPR, expr);
+
+    if (ctx.order != null) {
+      final String direction = ctx.order.getText().toLowerCase();
+      if ("asc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.ASC);
+      else if ("desc".equals(direction)) node.put(KEY_PART_DIRECTION, KeyDirection.DESC);
+      // TODO: USING
+    }
+
+    // TODO: opclass
+    // TODO: NULL ordering
+    return node;
+  }
+
+  private SQLNode toOrderItem(PGParser.Sort_specifierContext ctx) {
+    final SQLNode node = new SQLNode(ORDER_ITEM);
+    final SQLNode expr = ctx.vex().accept(this);
+
+    node.put(ORDER_ITEM_EXPR, expr);
+
+    if (ctx.order != null) {
+      final String direction = ctx.order.getText().toLowerCase();
+      if ("asc".equals(direction)) node.put(ORDER_ITEM_DIRECTION, KeyDirection.ASC);
+      else if ("desc".equals(direction)) node.put(ORDER_ITEM_DIRECTION, KeyDirection.DESC);
+      // TODO: USING
+    }
+
+    // TODO: opclass
+    // TODO: NULL ordering
+    return node;
+  }
+
+  private List<SQLNode> toOrderItems(PGParser.Orderby_clauseContext ctx) {
+    return listMap(this::toOrderItem, ctx.sort_specifier_list().sort_specifier());
   }
 
   private List<SQLNode> parseIndirectionList(PGParser.Indirection_listContext ctx) {
@@ -914,9 +977,9 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
     } else node.put(AGGREGATE_ARGS, Collections.emptyList());
 
-    if (ctx.order0 != null) node.put(AGGREGATE_ORDER, parseOrderBy(ctx.order0));
+    if (ctx.order0 != null) node.put(AGGREGATE_ORDER, toOrderItems(ctx.order0));
 
-    if (ctx.order1 != null) node.put(AGGREGATE_WITHIN_GROUP_ORDER, parseOrderBy(ctx.order1));
+    if (ctx.order1 != null) node.put(AGGREGATE_WITHIN_GROUP_ORDER, toOrderItems(ctx.order1));
 
     if (ctx.filter_clause() != null)
       node.put(AGGREGATE_FILTER, ctx.filter_clause().vex().accept(this));

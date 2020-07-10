@@ -486,8 +486,8 @@ public interface MySQLASTHelper {
     else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
   }
 
-  static SQLNode wrapQuerySpec(SQLNode node) {
-    if (node.type() == Type.QUERY_SPEC) {
+  static SQLNode wrapAsQuery(SQLNode node) {
+    if (node.type() == Type.QUERY_SPEC || node.type() == Type.SET_OP) {
       final SQLNode query = new SQLNode(Type.QUERY);
       query.put(QUERY_BODY, node);
       return query;

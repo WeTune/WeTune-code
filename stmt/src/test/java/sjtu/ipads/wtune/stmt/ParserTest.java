@@ -11,7 +11,7 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 public class ParserTest {
@@ -40,8 +40,29 @@ public class ParserTest {
 
     for (Statement stmt : fastRecycleIter(stmts)) {
       final SQLNode parsed = stmt.parsed();
-      if (parsed == null) continue;
+      if (parsed == null) {
+        System.out.println(stmt.toString());
+        continue;
+      }
       assertFalse(parsed.toString().contains("<??>"));
+      final Statement stmt1 = new Statement();
+      stmt1.setAppName(stmt.appName());
+      stmt1.setRawSql(stmt.parsed().toString());
+      assertNotNull(stmt1.parsed(), stmt.toString());
+      assertEquals(stmt.parsed().toString(), stmt1.parsed().toString(), stmt.toString());
     }
   }
+
+  //  @Test
+  //  void testStatement0() {
+  //    final Statement stmt = Statement.findOne("redmine", 1049);
+  //
+  //    final SQLNode parsed = stmt.parsed();
+  //    System.out.println(parsed);
+  //    final Statement stmt1 = new Statement();
+  //    stmt1.setAppName(stmt.appName());
+  //    stmt1.setRawSql(stmt.parsed().toString());
+  //    stmt1.parsed();
+  //    System.out.println(stmt1.parsed());
+  //  }
 }

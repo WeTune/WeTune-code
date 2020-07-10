@@ -275,9 +275,15 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       final var limitOptions = limitClause.limitOptions().limitOption();
       if (limitOptions.size() == 1) {
         query.put(QUERY_LIMIT, limitOptions.get(0).accept(this));
+
       } else if (limitOptions.size() == 2) {
-        query.put(QUERY_OFFSET, limitOptions.get(0).accept(this));
-        query.put(QUERY_LIMIT, limitOptions.get(1).accept(this));
+        if (limitClause.limitOptions().OFFSET_SYMBOL() != null) {
+          query.put(QUERY_OFFSET, limitOptions.get(1).accept(this));
+          query.put(QUERY_LIMIT, limitOptions.get(0).accept(this));
+        } else {
+          query.put(QUERY_OFFSET, limitOptions.get(0).accept(this));
+          query.put(QUERY_LIMIT, limitOptions.get(1).accept(this));
+        }
       }
     }
 
@@ -323,8 +329,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     final SQLNode node = new SQLNode(SET_OP);
     node.put(SET_OP_TYPE, SetOperation.UNION);
-    node.put(SET_OP_LEFT, wrapQuerySpec(left));
-    node.put(SET_OP_RIGHT, wrapQuerySpec(right));
+    node.put(SET_OP_LEFT, wrapAsQuery(left));
+    node.put(SET_OP_RIGHT, wrapAsQuery(right));
     node.put(SET_OP_OPTION, option);
 
     return node;
@@ -1221,7 +1227,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.EXISTS_SYMBOL() == null) {
       final SQLNode node = newExpr(QUERY_EXPR);
       node.put(QUERY_EXPR_QUERY, subquery);
-      return subquery;
+      return node;
     }
 
     final SQLNode node = newExpr(EXISTS);

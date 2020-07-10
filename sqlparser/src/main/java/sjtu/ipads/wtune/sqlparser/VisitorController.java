@@ -180,6 +180,8 @@ abstract class VisitorController {
         return v.enterIndirection(n);
       case INDIRECTION_COMP:
         return v.enterIndirectionComp(n);
+      case ARRAY:
+        return v.enterArray(n);
 
       case UNKNOWN:
     }
@@ -308,6 +310,8 @@ abstract class VisitorController {
       case INDIRECTION_COMP:
         return safeVisitChild(INDIRECTION_COMP_START, n, v)
             && safeVisitChild(INDIRECTION_COMP_END, n, v);
+      case ARRAY:
+        return safeVisitList(ARRAY_ELEMENTS, n, v);
 
       case UNKNOWN:
       case SYMBOL:
@@ -523,6 +527,10 @@ abstract class VisitorController {
 
       case INDIRECTION_COMP:
         v.leaveIndirectionComp(n);
+        return;
+
+      case ARRAY:
+        v.leaveArray(n);
         return;
 
       case UNKNOWN:

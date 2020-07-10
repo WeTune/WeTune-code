@@ -42,7 +42,7 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
       scope.setParent(scopes.peek());
       scope.setQueryNode(node);
 
-      scopes.push(scope);
+     scopes.push(scope);
     }
 
     final QueryScope currentScope = scopes.peek();

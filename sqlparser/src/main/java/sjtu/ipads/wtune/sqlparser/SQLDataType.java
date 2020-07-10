@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.POSTGRESQL;
 
 public class SQLDataType {
   public enum Category {
@@ -259,9 +260,9 @@ public class SQLDataType {
 
   @Override
   public String toString() {
-    //    final var builder = new StringBuilder();
-    //    formatAsDataType(builder);
-    //    return builder.toString();
-    return null;
+    final StringBuilder builder = new StringBuilder();
+    if (dimensions != null && dimensions.length > 0) formatAsDataType(builder, POSTGRESQL);
+    else formatAsDataType(builder, MYSQL);
+    return builder.toString();
   }
 }

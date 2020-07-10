@@ -36,4 +36,13 @@ class DependentQueryAnalyzerTest {
       stmt.analyze(DependentQueryAnalyzer.class);
     }
   }
+
+  @Test
+  void test0() {
+    final Statement stmt = Statement.findOne("discourse", 3330);
+
+    final SQLNode parsed = stmt.parsed();
+    System.out.println(parsed);
+    stmt.analyze(DependentQueryAnalyzer.class);
+  }
 }

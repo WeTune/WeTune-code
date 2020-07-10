@@ -105,7 +105,7 @@ public abstract class QueryScope {
   public void addSelectItem(SelectItem item) {}
 
   public void setScope(SQLNode node) {
-    if (node == null) return;
+    if (node == null || node.type() == Type.QUERY) return;
     node.put(RESOLVED_QUERY_SCOPE, this);
     node.children().forEach(this::setScope);
   }
