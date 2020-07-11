@@ -13,6 +13,7 @@ import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 public class Relation {
   private final SQLNode originalNode;
   private SQLNode generatedNode;
+  private int position = -1;
 
   private Relation(SQLNode originalNode) {
     this.originalNode = originalNode;
@@ -45,6 +46,10 @@ public class Relation {
     else return "(" + originalNode.toString() + ")";
   }
 
+  public int position() {
+    return position;
+  }
+
   /** Resolve the relation as SQLNode in given AST tree. */
   public SQLNode locateNodeIn(SQLNode root) {
     return NodeFinder.find(root, this.node());
@@ -60,6 +65,10 @@ public class Relation {
         || generatedNode.type() == SQLNode.Type.INVALID
         || generatedNode.type() == SQLNode.Type.TABLE_SOURCE;
     this.generatedNode = generatedNode;
+  }
+
+  public void setPosition(int position) {
+    this.position = position;
   }
 
   @Override

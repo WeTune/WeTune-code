@@ -378,6 +378,13 @@ public class SQLExpr {
     return node.type() == SQLNode.Type.EXPR;
   }
 
+  public static SQLNode binaryOtherSide(SQLNode binary, SQLNode thisSide) {
+    assert exprKind(binary) == BINARY;
+    final SQLNode left = binary.get(BINARY_LEFT);
+    final SQLNode right = binary.get(BINARY_RIGHT);
+    return left == thisSide ? right : (right == thisSide ? left : null);
+  }
+
   public static Kind exprKind(SQLNode node) {
     return node.get(EXPR_KIND);
   }

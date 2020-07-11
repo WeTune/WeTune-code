@@ -27,7 +27,7 @@ public class RelationMutation extends Stage {
   }
 
   public static RelationMutation build(Statement stmt) {
-    return new RelationMutation(stmt.analyze(RelationGraphAnalyzer.class));
+    return new RelationMutation(stmt.relationGraph());
   }
 
   @Override

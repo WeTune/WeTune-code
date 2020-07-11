@@ -2683,8 +2683,8 @@ castType:
     type=BINARY_SYMBOL fieldLength?
     | type=CHAR_SYMBOL fieldLength? charsetWithOptBinary?
     | nchar fieldLength?
-    | SIGNED_SYMBOL type=INT_SYMBOL?
-    | UNSIGNED_SYMBOL type=INT_SYMBOL?
+    | type=SIGNED_SYMBOL INT_SYMBOL?
+    | type=UNSIGNED_SYMBOL INT_SYMBOL?
     | type=DATE_SYMBOL
     | type=TIME_SYMBOL typeDatetimePrecision?
     | type=DATETIME_SYMBOL typeDatetimePrecision?

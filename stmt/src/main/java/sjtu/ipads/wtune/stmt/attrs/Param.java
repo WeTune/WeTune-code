@@ -1,22 +1,15 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
+import sjtu.ipads.wtune.sqlparser.SQLNode;
+
+import java.util.List;
+
 public class Param {
-  enum Modifier {
-    EQ,
-    GT,
-    GE,
-    LT,
-    LE
-  }
+  private final List<ParamModifier> modifiers;
+  private final SQLNode paramNode;
 
-  private ColumnRef columnRef;
-
-  public ColumnRef columnRef() {
-    return columnRef;
-  }
-
-  public Param setColumnRef(ColumnRef columnRef) {
-    this.columnRef = columnRef;
-    return this;
+  public Param(SQLNode paramNode, List<ParamModifier> modifiers) {
+    this.paramNode = paramNode;
+    this.modifiers = modifiers;
   }
 }

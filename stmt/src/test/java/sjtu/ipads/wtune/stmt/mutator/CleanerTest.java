@@ -49,6 +49,30 @@ public class CleanerTest {
   }
 
   @Test
+  @DisplayName("[stmt.mutator.cleaner] join concat")
+  void testConcat() {
+    Statement stmt = new Statement();
+    stmt.setAppName("test");
+    {
+      stmt.setRawSql("select a from t where a like concat('%', concat('1', '%'))");
+      stmt.mutate(Cleaner.class);
+      assertEquals("SELECT `a` FROM `t` WHERE `a` LIKE '%1%'", stmt.parsed().toString());
+    }
+  }
+
+  @Test
+  @DisplayName("[stmt.mutator.cleaner] normalize element count")
+  void testElements() {
+    Statement stmt = new Statement();
+    stmt.setAppName("test");
+    {
+      stmt.setRawSql("select a from t where (a, b) in ((1,2),(3,4))");
+      stmt.mutate(TupleElementsNormalizer.class);
+      assertEquals("SELECT `a` FROM `t` WHERE (`a`, `b`) IN (?)", stmt.parsed().toString());
+    }
+  }
+
+  @Test
   @DisplayName("[stmt.mutator.cleaner] all statements")
   void testAll() {
     final List<Statement> stmts = Statement.findAll();

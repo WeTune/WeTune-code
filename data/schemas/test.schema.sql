@@ -1,17 +1,17 @@
 CREATE TABLE a (
-    i INT,
+    i INT PRIMARY KEY,
     j INT,
     k INT
 );
 
 CREATE TABLE b (
-x INT,
+x INT PRIMARY KEY,
 y INT,
 z INT
 );
 
 CREATE TABLE c (
-u INT,
+u INT PRIMARY KEY,
 v CHAR(10),
 w DECIMAL(1, 10)
 );

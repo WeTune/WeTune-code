@@ -161,6 +161,10 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     return children == null ? emptyList() : children;
   }
 
+  public void setType(Type type) {
+    this.type = type;
+  }
+
   public void setParent(SQLNode parent) {
     this.parent = parent;
   }
@@ -664,7 +668,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
       attr(ALTER_TABLE_ACTION, "payload", Object.class);
 
   //// Expr
-  //// Common attributes for expr. The attributes specific to certain expr type is defined in SQLExpr.java
+  //// Common attributes for expr. The attributes specific to certain expr type is defined in
+  // SQLExpr.java
   public static final Key<String> EXPR_FUNC_ARG_NAME = stringAttr(EXPR, "argName");
   public static final Key<Boolean> EXPR_FUNC_ARG_VARIADIC = booleanAttr(EXPR, "variadic");
 }

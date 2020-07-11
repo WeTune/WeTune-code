@@ -24,7 +24,7 @@ public class BoolExprResolver implements Resolver, SQLVisitor {
   @Override
   public boolean enterWhen(SQLNode when) {
     handleExpr(when.get(WHEN_COND));
-    return false;
+    return true;
   }
 
   @Override

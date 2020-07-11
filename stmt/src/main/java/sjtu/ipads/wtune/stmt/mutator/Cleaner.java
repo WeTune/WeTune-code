@@ -5,9 +5,11 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.util.Collections;
+import java.util.List;
+
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.NAME_2_1;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.ATTR_PREFIX;
 
 /**
@@ -24,11 +26,13 @@ public class Cleaner implements Mutator {
     final SQLNode node = stmt.parsed();
     node.accept(MARK);
     node.accept(SWIPE);
-    node.relink();
+    node.accept(TEXT);
+    node.relinkAll();
   }
 
   private static final SQLVisitor MARK = new Mark();
   private static final SQLVisitor SWIPE = new Swipe();
+  private static final SQLVisitor TEXT = new TextNormalizer();
 
   private static class Mark implements SQLVisitor {
     @Override
@@ -74,6 +78,51 @@ public class Cleaner implements Mutator {
       }
 
       return false;
+    }
+  }
+
+  private static class TextNormalizer implements SQLVisitor {
+    @Override
+    public void leaveFuncCall(SQLNode funcCall) {
+      final SQLNode name = funcCall.get(FUNC_CALL_NAME);
+      if (name.get(NAME_2_0) != null) return;
+      if ("concat".equalsIgnoreCase(name.get(NAME_2_1))) {
+        final List<SQLNode> args = funcCall.get(FUNC_CALL_ARGS);
+        final StringBuilder builder = new StringBuilder();
+        for (SQLNode arg : args) {
+          if (exprKind(arg) != Kind.LITERAL) return;
+          builder.append(arg.get(LITERAL_VALUE).toString());
+        }
+
+        funcCall.put(EXPR_KIND, Kind.LITERAL);
+        funcCall.put(LITERAL_TYPE, LiteralType.TEXT);
+        funcCall.put(LITERAL_VALUE, builder.toString());
+        funcCall.remove(FUNC_CALL_ARGS);
+        funcCall.remove(FUNC_CALL_NAME);
+        return;
+      }
+
+      if ("lower".equalsIgnoreCase(name.get(NAME_2_1))) {
+        final List<SQLNode> args = funcCall.get(FUNC_CALL_ARGS);
+        if (args.size() == 1 && exprKind(args.get(0)) == Kind.LITERAL) {
+          funcCall.put(EXPR_KIND, Kind.LITERAL);
+          funcCall.put(LITERAL_TYPE, LiteralType.TEXT);
+          funcCall.put(LITERAL_VALUE, args.get(0).get(LITERAL_VALUE).toString().toLowerCase());
+          funcCall.remove(FUNC_CALL_ARGS);
+          funcCall.remove(FUNC_CALL_NAME);
+        }
+        return;
+      }
+
+      if ("upper".equalsIgnoreCase(name.get(NAME_2_1))) {
+        final List<SQLNode> args = funcCall.get(FUNC_CALL_ARGS);
+        if (args.size() == 1 && exprKind(args.get(0)) == Kind.LITERAL) {
+          funcCall.put(EXPR_KIND, Kind.LITERAL);
+          funcCall.put(LITERAL_VALUE, args.get(0).get(LITERAL_VALUE).toString().toUpperCase());
+          funcCall.remove(FUNC_CALL_ARGS);
+          funcCall.remove(FUNC_CALL_NAME);
+        }
+      }
     }
   }
 

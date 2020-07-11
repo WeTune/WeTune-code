@@ -22,5 +22,7 @@ public interface StmtAttrs {
       Attrs.key(attrPrefix("resolvedTableSource"), TableSource.class);
   Attrs.Key<ColumnRef> RESOLVED_COLUMN_REF =
       Attrs.key(attrPrefix("resolvedColumnRef"), ColumnRef.class);
+  Attrs.Key<Param> RESOLVED_PARAM = Attrs.key(attrPrefix("resolvedParam"), Param.class);
+  Attrs.Key<Integer> RELATION_POSITION = Attrs.key(attrPrefix("relationPosition"), Integer.class);
   Attrs.Key<BoolExpr> BOOL_EXPR = Attrs.key(attrPrefix("boolExpr"), BoolExpr.class);
 }

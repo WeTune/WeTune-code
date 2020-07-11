@@ -363,7 +363,7 @@ public interface MySQLASTHelper {
 
     final SQLDataType.Category category;
     final String name;
-    if (INT.equals(typeString)) {
+    if (INT.equals(typeString) || typeString.endsWith("signed")) {
       category = SQLDataType.Category.INTEGRAL;
       name = INT;
 

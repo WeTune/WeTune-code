@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.stmt.statement;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
+import sjtu.ipads.wtune.stmt.analyzer.RelationGraphAnalyzer;
+import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
@@ -26,6 +28,7 @@ public class Statement {
 
   private AppContext appContext;
   private SQLNode parsed;
+  private RelationGraph relationGraph;
 
   private Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
   private Set<Class<? extends Resolver>> failToResolveBy = new HashSet<>();
@@ -131,6 +134,15 @@ public class Statement {
     for (Class<? extends Resolver> dependency : analyzer.dependsOn()) resolve(dependency);
     analyzer.setParam(args);
     return analyzer.analyze(this);
+  }
+
+  public RelationGraph relationGraph(boolean forceResolve) {
+    if (relationGraph == null || forceResolve) relationGraph = analyze(RelationGraphAnalyzer.class);
+    return relationGraph;
+  }
+
+  public RelationGraph relationGraph() {
+    return relationGraph(false);
   }
 
   public void setAppName(String appName) {

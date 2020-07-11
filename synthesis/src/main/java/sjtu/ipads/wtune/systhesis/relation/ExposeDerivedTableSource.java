@@ -48,7 +48,11 @@ public class ExposeDerivedTableSource implements RelationMutator {
     // i.e. it must have a simple name
     // e.g. SELECT 1 FROM (SELECT x AS x, y + 1 AS y FROM b) AS a WHERE a.y = 3
     // here `a` can not be exposed because a.y is used, which is originated
-    // from `y + 1` which doesn't has a simple name
+    // from `y + 1` which doesn't has a simple name. there is no way to
+    // reference that column if exposed
+    // (Actually we can, in some cases. In the example above, we can rewrite it
+    // as 'SELECT 1 FROM b AS a WHERE a.y + 1 = 3'. Due to the complexity we
+    // don't implement it)
 
     final SQLNode node = target.locateNodeIn(root);
     if (node == null) return false;
