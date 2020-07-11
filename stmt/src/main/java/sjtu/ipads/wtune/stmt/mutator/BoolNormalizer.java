@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.stmt.mutator;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
-import sjtu.ipads.wtune.stmt.resovler.IdResolver;
+import sjtu.ipads.wtune.stmt.resolver.IdResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;

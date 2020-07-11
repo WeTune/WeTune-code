@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 
 import java.util.HashSet;
 import java.util.List;

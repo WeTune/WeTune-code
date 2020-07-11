@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.stmt.resovler;
+package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;

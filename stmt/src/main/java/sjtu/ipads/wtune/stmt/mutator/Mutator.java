@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.Collections;

@@ -4,8 +4,8 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.BoolExpr;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
-import sjtu.ipads.wtune.stmt.resovler.JoinConditionResolver;
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.JoinConditionResolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 

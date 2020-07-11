@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.stmt.analyzer;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
-import sjtu.ipads.wtune.stmt.resovler.QueryScopeResolver;
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.QueryScopeResolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
-import sjtu.ipads.wtune.stmt.resovler.ColumnResolver;
+import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;

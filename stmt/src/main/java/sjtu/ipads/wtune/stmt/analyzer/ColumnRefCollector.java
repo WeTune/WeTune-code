@@ -2,9 +2,8 @@ package sjtu.ipads.wtune.stmt.analyzer;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
-import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
-import sjtu.ipads.wtune.stmt.resovler.ColumnResolver;
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLNode.Type;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.*;
-import sjtu.ipads.wtune.stmt.resovler.*;
+import sjtu.ipads.wtune.stmt.resolver.*;
 
 import java.util.HashSet;
 import java.util.List;

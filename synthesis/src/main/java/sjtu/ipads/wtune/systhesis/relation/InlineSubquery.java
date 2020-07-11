@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.stmt.attrs.JoinCondition;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
 import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
-import sjtu.ipads.wtune.stmt.resovler.IdResolver;
+import sjtu.ipads.wtune.stmt.resolver.IdResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.operators.AppendTableSource;
 import sjtu.ipads.wtune.systhesis.operators.DropPredicate;

@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
-import sjtu.ipads.wtune.stmt.resovler.TableResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.List;

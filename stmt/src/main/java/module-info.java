@@ -3,7 +3,7 @@ module sjtu.ipads.wtune.stmt {
   exports sjtu.ipads.wtune.stmt.statement;
   exports sjtu.ipads.wtune.stmt.attrs;
   exports sjtu.ipads.wtune.stmt;
-  exports sjtu.ipads.wtune.stmt.resovler;
+  exports sjtu.ipads.wtune.stmt.resolver;
   exports sjtu.ipads.wtune.stmt.analyzer;
   exports sjtu.ipads.wtune.stmt.utils;
 

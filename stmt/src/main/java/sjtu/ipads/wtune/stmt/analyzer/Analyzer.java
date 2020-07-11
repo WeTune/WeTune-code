@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.analyzer;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.resovler.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.Collections;
