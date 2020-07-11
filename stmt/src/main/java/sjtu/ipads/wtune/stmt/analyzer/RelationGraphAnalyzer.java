@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt.analyzer;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLNode.Type;
@@ -18,6 +19,7 @@ import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.attrs.Attrs.key;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
@@ -43,35 +45,22 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     private final Set<Relation> relations = new HashSet<>();
 
     @Override
-    public boolean enterQuery(SQLNode query) {
-      if (query.parent() == null) return true; // the root query
-      final QueryScope.Clause clause = query.get(RESOLVED_CLAUSE_SCOPE);
-      // subquery in FROM, e.g. derived table source
-      // it has been counted as relation when visit FROM clause
-      // return true here to allow to recursively collect in the subquery scope
-      if (clause == QueryScope.Clause.FROM) return true;
+    public boolean enterQueryExpr(SQLNode queryExpr) {
+      final SQLNode parent = queryExpr.parent();
+      if (!isExpr(parent)) return true;
 
-      // otherwise, it should belong to an expr tree
-      // in this case, only if the following condition meets it would be counted:
-      // 1. in "IN <subquery>" or "= <subquery>" expr
-      // 2. path to root doesn't contain OR/XOR/NOT
-
-      final SQLNode parent = query.parent();
-      if (!isExpr(parent))
-        return true; // shouldn't reach here since a query itself isn't a valid expr root
-
-      final SQLExpr.Kind kind = exprKind(parent);
-      if (kind != SQLExpr.Kind.BINARY)
-        return true; // shouldn't reach here since a query cannot show in position
+      final Kind paretKind = exprKind(parent);
+      if (paretKind != Kind.BINARY) return true;
 
       final BinaryOp op = parent.get(BINARY_OP);
-      if (op.isLogic()) return true; // shouldn't reach here since a query cannot be a bool expr
+      if (op.isLogic()) return true;
       if (op != BinaryOp.IN_SUBQUERY && op != BinaryOp.EQUAL) return true;
 
-      final SQLNode left = parent.get(BINARY_LEFT);
-      if (left.get(RESOLVED_COLUMN_REF) == null) return true;
+      final SQLNode otherSide =
+          parent.get(BINARY_LEFT) == queryExpr ? parent.get(BINARY_RIGHT) : parent.get(BINARY_LEFT);
+      if (otherSide.get(RESOLVED_COLUMN_REF) == null) return true;
 
-      // check path to root
+      // check path to expr root
       SQLNode ascent = parent.parent();
       while (ascent != null && isExpr(ascent)) {
         final SQLExpr.Kind ascentKind = exprKind(ascent);
@@ -85,10 +74,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
         ascent = ascent.parent();
       }
 
-      //      if (isDependent(query)) return true;
-
-      // now it's a valid relation
-      asRelation(query);
+      asRelation(queryExpr.get(QUERY_EXPR_QUERY));
 
       return true;
     }
@@ -145,7 +131,10 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
       if (boolExpr == null) return false;
       if (boolExpr.isJoinCondtion()) return true;
 
-      return binary.get(BINARY_RIGHT).get(RELATION_KEY) != null;
+      final SQLNode rightQuery = binary.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY);
+      final SQLNode leftQuery = binary.get(BINARY_LEFT).get(QUERY_EXPR_QUERY);
+      return (rightQuery != null && rightQuery.get(RELATION_KEY) != null)
+          || (leftQuery != null && leftQuery.get(RELATION_KEY) != null);
     }
 
     private static Set<SQLNode> collect(QueryScope scope) {
@@ -195,39 +184,49 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     return RelationGraph.build(graph);
   }
 
+  private static Pair<SQLNode, SQLNode> sidesOf(SQLNode condition) {
+    final SQLNode left = condition.get(BINARY_LEFT);
+    final SQLNode right = condition.get(BINARY_RIGHT);
+    if (exprKind(left) == Kind.COLUMN_REF) return Pair.of(left, right);
+    else return Pair.of(right, left);
+  }
+
   private static JoinCondition buildJoinCondition(Set<Relation> relations, SQLNode condition) {
     assert exprKind(condition) == Kind.BINARY;
     final BinaryOp op = condition.get(BINARY_OP);
     assert op == BinaryOp.EQUAL || op == BinaryOp.IN_SUBQUERY;
 
-    final SQLNode left = condition.get(BINARY_LEFT);
-    final Relation leftRelation = relationOfColumnRef(left);
-    final String leftColumn = left.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
-    if (leftColumn == null || !relations.contains(leftRelation)) return null;
+    final Pair<SQLNode, SQLNode> pair = sidesOf(condition);
+    final SQLNode columnSide = pair.left();
+    final SQLNode otherSide = pair.right();
 
-    final SQLNode right = condition.get(BINARY_RIGHT);
+    final Relation columnRel = relationOfColumnRef(columnSide);
+    final String leftColumn = columnSide.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
+    if (leftColumn == null || !relations.contains(columnRel)) return null;
+
     final Relation rightRelation;
     final String rightColumn;
 
-    if (exprKind(right) == Kind.COLUMN_REF) {
-      rightRelation = relationOfColumnRef(right);
-      rightColumn = right.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
+    if (exprKind(otherSide) == Kind.COLUMN_REF) {
+      rightRelation = relationOfColumnRef(otherSide);
+      rightColumn = otherSide.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
 
-    } else if (right.type() == Type.QUERY) {
-      rightRelation = right.get(RELATION_KEY);
-      rightColumn = singularSelectItemOf(right);
+    } else if (exprKind(otherSide) == QUERY_EXPR) {
+      final SQLNode subquery = otherSide.get(QUERY_EXPR_QUERY);
+      rightRelation = subquery.get(RELATION_KEY);
+      rightColumn = singularSelectItemOf(subquery);
 
     } else return assertFalse();
 
     if (rightColumn == null || !relations.contains(rightRelation)) return null;
 
-    return JoinCondition.of(condition, leftRelation, rightRelation, leftColumn, rightColumn);
+    return JoinCondition.of(condition, columnRel, rightRelation, leftColumn, rightColumn);
   }
 
   private static Relation relationOfColumnRef(SQLNode cRefNode) {
     final ColumnRef cRef = cRefNode.get(RESOLVED_COLUMN_REF);
     assert cRef != null && cRef.source() != null;
-    return Relation.of(cRef.source().node());
+    return cRef.source().node().get(RELATION_KEY);
   }
 
   private static String singularSelectItemOf(SQLNode queryNode) {

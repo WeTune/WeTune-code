@@ -192,8 +192,8 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     else if (ctx.select_primary() != null) return ctx.select_primary().accept(this);
     else {
       final SQLNode node = new SQLNode(SET_OP);
-      node.put(SET_OP_LEFT, wrapQuerySpec(ctx.select_ops(0).accept(this)));
-      node.put(SET_OP_RIGHT, wrapQuerySpec(ctx.select_ops(1).accept(this)));
+      node.put(SET_OP_LEFT, warpAsQuery(ctx.select_ops(0).accept(this)));
+      node.put(SET_OP_RIGHT, warpAsQuery(ctx.select_ops(1).accept(this)));
 
       final SetOperation op;
       if (ctx.UNION() != null) op = SetOperation.UNION;
@@ -388,7 +388,8 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     } else if (ctx.IN() != null) {
       final SQLNode left = ctx.vex(0).accept(this);
       if (ctx.select_stmt_no_parens() != null)
-        return binary(left, ctx.select_stmt_no_parens().accept(this), BinaryOp.IN_SUBQUERY);
+        return binary(
+            left, wrapAsQueryExpr(ctx.select_stmt_no_parens().accept(this)), BinaryOp.IN_SUBQUERY);
       else {
         final var vexs = ctx.vex();
         final SQLNode tuple = newExpr(SQLExpr.Kind.TUPLE);
@@ -560,7 +561,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     else if (ctx.MULTIPLY() != null) return wildcard();
     else if (ctx.EXISTS() != null) {
       final SQLNode node = newExpr(SQLExpr.Kind.EXISTS);
-      node.put(EXISTS_SUBQUERY, ctx.table_subquery().accept(this));
+      node.put(EXISTS_SUBQUERY_EXPR, wrapAsQueryExpr(ctx.table_subquery().accept(this)));
       return node;
 
     } else if (ctx.select_stmt_no_parens() != null) {
@@ -672,7 +673,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
     node.put(COMPARISON_MOD_OPTION, option);
     if (ctx.vex() != null) node.put(COMPARISON_MOD_EXPR, ctx.vex().accept(this));
     else if (ctx.select_stmt_no_parens() != null)
-      node.put(COMPARISON_MOD_EXPR, ctx.select_stmt_no_parens().accept(this));
+      node.put(COMPARISON_MOD_EXPR, wrapAsQueryExpr(ctx.select_stmt_no_parens().accept(this)));
 
     return node;
   }

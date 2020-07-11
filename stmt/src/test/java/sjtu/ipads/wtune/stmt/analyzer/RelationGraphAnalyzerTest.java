@@ -5,10 +5,17 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
+import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
+import sjtu.ipads.wtune.stmt.resovler.ColumnResolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.util.List;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
 
 class RelationGraphAnalyzerTest {
   @BeforeAll

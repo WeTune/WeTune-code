@@ -284,7 +284,7 @@ abstract class VisitorController {
       case INTERVAL:
         return safeVisitChild(INTERVAL_EXPR, n, v);
       case EXISTS:
-        return safeVisitChild(EXISTS_SUBQUERY, n, v);
+        return safeVisitChild(EXISTS_SUBQUERY_EXPR, n, v);
       case QUERY_EXPR:
         return safeVisitChild(QUERY_EXPR_QUERY, n, v);
       case AGGREGATE:

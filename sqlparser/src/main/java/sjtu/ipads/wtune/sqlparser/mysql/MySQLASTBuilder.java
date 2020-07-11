@@ -604,7 +604,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node =
         binary(
             ctx.boolPri().accept(this),
-            visitSubquery(ctx.subquery()),
+            wrapAsQueryExpr(ctx.subquery().accept(this)),
             BinaryOp.ofOp(ctx.compOp().getText()));
 
     if (ctx.ALL_SYMBOL() != null) node.put(BINARY_SUBQUERY_OPTION, SubqueryOption.ALL);
@@ -628,7 +628,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         final SQLNode right;
         if (subquery != null) {
           op = BinaryOp.IN_SUBQUERY;
-          right = subquery.accept(this);
+          right = wrapAsQueryExpr(subquery.accept(this));
+
         } else {
           final SQLNode tuple = newExpr(TUPLE);
           tuple.put(TUPLE_EXPRS, toExprs(inExpr.exprList()));
@@ -1222,16 +1223,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSimpleExprSubQuery(MySQLParser.SimpleExprSubQueryContext ctx) {
-    final SQLNode subquery = visitSubquery(ctx.subquery());
+    final SQLNode subquery = wrapAsQueryExpr(visitSubquery(ctx.subquery()));
 
-    if (ctx.EXISTS_SYMBOL() == null) {
-      final SQLNode node = newExpr(QUERY_EXPR);
-      node.put(QUERY_EXPR_QUERY, subquery);
-      return node;
-    }
+    if (ctx.EXISTS_SYMBOL() == null) return subquery;
 
     final SQLNode node = newExpr(EXISTS);
-    node.put(EXISTS_SUBQUERY, subquery);
+    node.put(EXISTS_SUBQUERY_EXPR, subquery);
     return node;
   }
 

@@ -96,7 +96,8 @@ public class InlineSubquery implements RelationMutator {
     final SQLNode newTableSource = genTableSource(outerQuery);
     final SQLNode joinCond = genJoinCondition(outerQuery, newTableSource);
 
-    DropPredicate.build(target.originalNode().parent()).apply(outerQuery);
+    // parent: queryExpr, parent.parent: binary
+    DropPredicate.build(target.originalNode().parent().parent()).apply(outerQuery);
     AppendTableSource.build(newTableSource, joinCond, JoinType.INNER_JOIN).apply(outerQuery);
     Resolve.build().apply(stmt);
 
@@ -118,16 +119,23 @@ public class InlineSubquery implements RelationMutator {
     return tableSource;
   }
 
+  private static SQLNode columnSideOf(SQLNode binaryExpr) {
+    final SQLNode left = binaryExpr.get(BINARY_LEFT);
+    return exprKind(left) == SQLExpr.Kind.COLUMN_REF ? left : binaryExpr.get(BINARY_RIGHT);
+  }
+
   private SQLNode genJoinCondition(SQLNode root, SQLNode generatedTableSource) {
-    final SQLNode inSubExpr = NodeFinder.find(root, target.originalNode()).parent();
-    assert inSubExpr.get(BINARY_OP) == BinaryOp.IN_SUBQUERY;
+    // parent: query expr, parent.parent: binary
+    final SQLNode binaryExpr = NodeFinder.find(root, target.originalNode()).parent().parent();
+    final BinaryOp op = binaryExpr.get(BINARY_OP);
+    assert op == BinaryOp.IN_SUBQUERY || op == BinaryOp.EQUAL;
 
     // use left node found in `root` since its name may have changed
-    final SQLNode leftRef = inSubExpr.get(BINARY_LEFT);
+    final SQLNode columnSide = columnSideOf(binaryExpr);
 
     // right column name must keep the same, no need to resolve in `root`
     return binary(
-        leftRef,
+        columnSide,
         columnRef(tableSourceName(generatedTableSource), cond.rightColumn()),
         SQLExpr.BinaryOp.EQUAL);
   }

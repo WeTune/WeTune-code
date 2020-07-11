@@ -45,7 +45,7 @@ class RenameTableSourceTest {
               + "WHERE `m`.`j` = 1 "
               + "AND EXISTS (SELECT 1 FROM `b` WHERE `b`.`z` = `m`.`k` "
               + "AND EXISTS (SELECT `a`.`i` FROM `a`)) "
-              + "GROUP BY `j` "
+              + "GROUP BY `m`.`j` "
               + "ORDER BY `m`.`j`",
           stmt.parsed().toString());
       assertTrue(stmt.failedResolvers().isEmpty());

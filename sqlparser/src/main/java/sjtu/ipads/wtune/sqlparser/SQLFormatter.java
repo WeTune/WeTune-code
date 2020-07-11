@@ -574,13 +574,7 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterExists(SQLNode exists) {
     builder.append("EXISTS ");
-    try (final var ignored = withParen(true)) {
-      increaseIndent();
-      breakLine(false);
-      safeVisit(exists.get(EXISTS_SUBQUERY));
-      decreaseIndent();
-      breakLine(false);
-    }
+    safeVisit(exists.get(EXISTS_SUBQUERY_EXPR));
     return false;
   }
 
@@ -780,10 +774,9 @@ public class SQLFormatter implements SQLVisitor {
 
     final boolean needParen =
         op == BinaryOp.MEMBER_OF
-            || right.type() == Type.QUERY
             || exprKind(right) == SQLExpr.Kind.ARRAY
             || needParen(binary, right, false);
-    final boolean needIndent = needParen && (op == BinaryOp.IN_SUBQUERY || op.isLogic());
+    final boolean needIndent = needParen && op.isLogic();
 
     try (final var ignored0 = withParen(needParen)) {
       if (needIndent) {
@@ -999,8 +992,10 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterQueryExpr(SQLNode queryExpr) {
     try (final var ignored = withParen(true)) {
+      increaseIndent();
       breakLine(false);
       safeVisit(queryExpr.get(QUERY_EXPR_QUERY));
+      decreaseIndent();
       breakLine(false);
     }
     return false;

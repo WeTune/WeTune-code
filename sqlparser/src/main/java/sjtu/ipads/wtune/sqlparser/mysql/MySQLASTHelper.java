@@ -18,6 +18,9 @@ import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.newExpr;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.DESC;
@@ -493,6 +496,13 @@ public interface MySQLASTHelper {
       return query;
     }
     return node;
+  }
+
+  static SQLNode wrapAsQueryExpr(SQLNode node) {
+    assert node.type() == Type.QUERY;
+    final SQLNode exprNode = newExpr(QUERY_EXPR);
+    exprNode.put(QUERY_EXPR_QUERY, node);
+    return exprNode;
   }
 
   private static int[] precision2Int(MySQLParser.PrecisionContext ctx) {

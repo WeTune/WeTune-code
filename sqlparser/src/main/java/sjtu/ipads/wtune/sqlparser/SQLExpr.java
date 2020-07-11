@@ -172,7 +172,7 @@ public class SQLExpr {
     RIGHT_SHIFT(">>", 9),
     BITWISE_AND("&", 8),
     BITWISE_OR("|", 7),
-    BITWISE_XOR_PG("#", 6, BITWISE_XOR),
+    BITWISE_XOR_PG("#", 7, BITWISE_XOR),
     EQUAL("=", 6),
     IS("IS", 6),
     NULL_SAFE_EQUAL("<=>", 6),
@@ -183,19 +183,19 @@ public class SQLExpr {
     NOT_EQUAL("<>", 6),
     IN_LIST("IN", 6),
     IN_SUBQUERY("IN", 6),
-    AT_TIME_ZONE("AT TIME ZONE", 6),
     LIKE("LIKE", 6),
     ILIKE("ILIKE", 6),
     SIMILAR_TO("SIMILAR TO", 6),
     IS_DISTINCT_FROM("IS DISTINCT FROM", 6),
     ARRAY_CONTAINS("@>", 6),
     ARRAY_CONTAINED_BY("<@", 6),
-    CONCAT("||", 6),
     REGEXP("REGEXP", 6),
     REGEXP_PG("~", 6, REGEXP),
     REGEXP_I_PG("~*", 6, REGEXP),
     MEMBER_OF("MEMBER OF", 6),
     SOUNDS_LIKE("SOUNDS LIKE", 6),
+    AT_TIME_ZONE("AT TIME ZONE", 6),
+    CONCAT("||", 6),
     AND("AND", 3),
     XOR_SYMBOL("XOR", 2),
     OR("OR", 1);
@@ -234,11 +234,11 @@ public class SQLExpr {
     }
 
     public boolean isArithmetic() {
-      return precedence >= BITWISE_AND.precedence;
+      return precedence >= BITWISE_OR.precedence;
     }
 
     public boolean isRelation() {
-      return precedence == LIKE.precedence;
+      return precedence == LIKE.precedence && this != AT_TIME_ZONE && this != CONCAT;
     }
 
     public boolean isLogic() {
@@ -514,7 +514,7 @@ public class SQLExpr {
   public static final Attrs.Key<Boolean> TUPLE_AS_ROW = booleanAttr(TUPLE, "asRow");
 
   // Exists
-  public static final Attrs.Key<SQLNode> EXISTS_SUBQUERY = nodeAttr(EXISTS, "subquery");
+  public static final Attrs.Key<SQLNode> EXISTS_SUBQUERY_EXPR = nodeAttr(EXISTS, "subquery");
 
   // MatchAgainst
   public static final Attrs.Key<List<SQLNode>> MATCH_COLS = nodesAttr(MATCH, "columns");

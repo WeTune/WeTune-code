@@ -41,14 +41,14 @@ class ImpliedForeignKeyAnalyzerTest {
       stmt.analyze(ImpliedForeignKeyAnalyzer.class);
     }
 
-        for (AppContext appContext : AppContext.all()) {
-          final Set<Column> keys = appContext.get(IMPLIED_FOREIGN_KEYS);
-          if (keys == null) continue;
-
-          if (!keys.isEmpty()) {
-            System.out.println(">" + appContext.name() + ":");
-            System.out.println("  " + String.join("\n  ", listMap(Column::toString, keys)));
-          }
-        }
+    //        for (AppContext appContext : AppContext.all()) {
+    //          final Set<Column> keys = appContext.get(IMPLIED_FOREIGN_KEYS);
+    //          if (keys == null) continue;
+    //
+    //          if (!keys.isEmpty()) {
+    //            System.out.println(">" + appContext.name() + ":");
+    //            System.out.println("  " + String.join("\n  ", listMap(Column::toString, keys)));
+    //          }
+    //        }
   }
 }

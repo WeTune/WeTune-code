@@ -15,6 +15,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.INTEGER;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
@@ -423,13 +424,20 @@ interface PGASTHelper {
     return Integer.parseInt(ctx.NUMBER_LITERAL().getText());
   }
 
-  static SQLNode wrapQuerySpec(SQLNode node) {
+  static SQLNode warpAsQuery(SQLNode node) {
     if (node.type() == Type.QUERY_SPEC || node.type() == Type.SET_OP) {
       final SQLNode query = new SQLNode(Type.QUERY);
       query.put(QUERY_BODY, node);
       return query;
     }
     return node;
+  }
+
+  static SQLNode wrapAsQueryExpr(SQLNode node) {
+    assert node.type() == Type.QUERY;
+    final SQLNode exprNode = newExpr(QUERY_EXPR);
+    exprNode.put(QUERY_EXPR_QUERY, node);
+    return exprNode;
   }
 
   Set<String> KNOWN_AGG_BASIC =
