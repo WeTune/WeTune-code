@@ -147,25 +147,25 @@ class RelationMutationTest {
         output.get(0).parsed().toString());
   }
 
-  //  @Test
-  //  @DisplayName("[Synthesis.Relation.Mutation] all statements")
-  //  void testAll() {
-  //    final List<Statement> all = Statement.findAll();
-  //
-  //    for (Statement statement : fastRecycleIter(all)) {
-  //      if (statement.parsed() == null) continue;
-  //
-  //      statement.retrofitStandard();
-  //      //      System.out.println(statement);
-  //
-  //      final RelationMutation mutation = RelationMutation.build(statement);
-  //      final List<Statement> output = new ArrayList<>();
-  //      mutation.setNext(Stage.listCollector(output));
-  //      mutation.feed(statement);
-  //      //      if (output.size() != 1) System.out.println(output.size());
-  //    }
-  //  }
-  //
+  @Test
+  @DisplayName("[Synthesis.Relation.Mutation] all statements")
+  void testAll() {
+    final List<Statement> all = Statement.findAll();
+
+    for (Statement statement : fastRecycleIter(all)) {
+      if (statement.parsed() == null) continue;
+
+      statement.retrofitStandard();
+      //      System.out.println(statement);
+
+      final RelationMutation mutation = RelationMutation.build(statement);
+      final List<Statement> output = new ArrayList<>();
+      mutation.setNext(Stage.listCollector(output));
+      mutation.feed(statement);
+      //      if (output.size() != 1) System.out.println(output.size());
+    }
+  }
+
   @Test
   void broadleaf90() {
     doTest(
