@@ -23,7 +23,7 @@ public class ScriptUtils {
   }
 
   public static void genSchema(Schema schema, String appName) {
-    genSchema(schema, Setup.current().scriptOutputDir(), appName);
+    genSchema(schema, Setup.current().outputDir(), appName);
   }
 
   public static void genSchema(Schema schema, Path outputDir, String appName) {
@@ -53,7 +53,7 @@ public class ScriptUtils {
           "wtune.lua");
 
   public static void copyResources() {
-    copyResources(Setup.current().scriptOutputDir());
+    copyResources(Setup.current().outputDir());
   }
 
   public static void copyResources(Path outputDir) {
@@ -71,7 +71,7 @@ public class ScriptUtils {
   }
 
   public static void main(String[] args) {
-    Setup._default().registerAsGlobal().setup();
+    Setup._default().registerAsGlobal();
     ScriptUtils.copyResources();
     ScriptUtils.genSchema(AppContext.of("broadleaf"));
   }

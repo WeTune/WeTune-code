@@ -23,13 +23,21 @@ public class DefaultSetup extends Setup {
   public Path dataDir() {
     final String wtuneDataDir = System.getProperty("wtune.dataDir");
     if (wtuneDataDir != null) return Paths.get(wtuneDataDir);
-    return Paths.get(System.getProperty("user.dir")).getParent().resolve("data");
+    final Path wd = Paths.get(System.getProperty("user.dir"));
+    Path dataDir;
+    if ((dataDir = wd.resolve("data")).toFile().exists()) return dataDir;
+    if ((dataDir = wd.getParent().resolve("data")).toFile().exists()) return dataDir;
+    return null;
   }
 
   @Override
-  public Path scriptOutputDir() {
-    final String wtuneScriptDir = System.getProperty("wtune.scriptOutputDir");
+  public Path outputDir() {
+    final String wtuneScriptDir = System.getProperty("wtune.outputDir");
     if (wtuneScriptDir != null) return Paths.get(wtuneScriptDir);
-    return Paths.get(System.getProperty("user.dir")).getParent().resolve("script_out");
+    final Path wd = Paths.get(System.getProperty("user.dir"));
+    Path dataDir;
+    if ((dataDir = wd.resolve("wtune_out")).toFile().exists()) return dataDir;
+    if ((dataDir = wd.getParent().resolve("wtune_out")).toFile().exists()) return dataDir;
+    return null;
   }
 }

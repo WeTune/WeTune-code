@@ -15,6 +15,7 @@ public abstract class Setup {
 
   public Setup registerAsGlobal() {
     INSTANCE = this;
+    setup();
     return this;
   }
 
@@ -22,5 +23,5 @@ public abstract class Setup {
 
   public abstract Path dataDir();
 
-  public abstract Path scriptOutputDir();
+  public abstract Path outputDir();
 }
