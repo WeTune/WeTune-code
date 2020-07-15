@@ -13,9 +13,7 @@ subprojects {
     apply plugin: 'org.javamodularity.moduleplugin'
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_14
         targetCompatibility = JavaVersion.VERSION_14
-        modularity.inferModulePath = true
     }
 
     repositories {

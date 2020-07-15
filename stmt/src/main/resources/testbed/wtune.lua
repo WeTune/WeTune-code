@@ -48,7 +48,17 @@ function WTune:enableProfile(profileName)
     end
 end
 
+function WTune:cleanOptions(options)
+    for k, v in pairs(options) do
+        if v == "" then
+            options[k] = nil
+        end
+    end
+    return options
+end
+
 function WTune:initOptions(options)
+    options = self:cleanOptions(options)
     if options.profile then
         self:enableProfile(options.profile)
     end
@@ -74,7 +84,7 @@ function WTune:initConn()
     end
 
     local drv = sysbench.sql.driver()
-    local con = self.drv:connect()
+    local con = drv:connect()
 
     if sysbench.opt.db_driver ~= "pgsql" then
         con:query("SET FOREIGN_KEY_CHECKS=0")
@@ -122,14 +132,14 @@ if sysbench then
         app = { "app name" },
         profile = { "profile name" },
         schema = { "schema file" },
-        rows = { "#rows", 100 },
+        rows = { "#rows" },
         randdist = { "random distribution", "uniform" },
         randseq = { "type of random sequence", "typed" },
         continue = { "continue populate tables from given index" },
         tables = { "populate given tables" }
     }
     sysbench.cmdline.commands = {
-        prepare = doPrepare
+        prepare = { doPrepare }
     }
 end
 

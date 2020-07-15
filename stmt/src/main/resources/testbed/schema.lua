@@ -54,9 +54,22 @@ function Constraint:priority()
     end
 end
 
-function Constraint:__lt(x, y)
-    return x:priority() < y.priority()
+function Constraint.compare(x, y)
+    local uniqueX = x:isPrimary() or x:isUnique()
+    local uniqueY = y:isPrimary() or y:isUnique()
+
+    if uniqueX and not uniqueY then
+        return true
+    elseif not uniqueX and uniqueY then
+        return false
+    else
+        return x.index < y.index
+    end
 end
+
+--function Constraint:__lt(x, y)
+--    return x:priority() < y:priority()
+--end
 
 function PrimaryKey:modifyValue(lineNumber, origValue, maxLine)
     if self.total == 1 then
@@ -79,7 +92,7 @@ end
 
 function UniqueKey:modifyValue(lineNumber, origValue, maxLine)
     if self.total == 1 then
-        return origValue
+        return lineNumber
     end
 
     local base
@@ -90,9 +103,9 @@ function UniqueKey:modifyValue(lineNumber, origValue, maxLine)
     end
 
     if self.index == 1 then
-        return math.ceil(origValue / base)
+        return math.ceil(lineNumber / base)
     else
-        return math.fmod(origValue, base) + 1
+        return math.fmod(lineNumber, base) + 1
     end
 end
 
@@ -313,11 +326,11 @@ function Column:valueAt(lineNumber, randSeq, maxLine, dbType)
     --print("1. ", value)
     if #self.constraints == 0 then
         value = self.dataType:modifyValue(lineNumber, value, maxLine)
+        value = self:modifyValue(lineNumber, value, maxLine)
     else
         value = self.constraints[1]:modifyValue(lineNumber, value, maxLine)
     end
     --print("2. ", value)
-    value = self:modifyValue(lineNumber, value, maxLine)
     --print("3. ", value)
     value = self.dataType:convertType(value, dbType)
     --print("4. ", value)
@@ -344,8 +357,8 @@ function Schema:addTable(tableDesc)
         end
     end
 
-    for _, column in ipairs(newTable.columns) do
-        table.sort(column.constraints)
+    for _, column in pairs(newTable.columns) do
+        table.sort(column.constraints, Constraint.compare)
     end
 
     return newTable

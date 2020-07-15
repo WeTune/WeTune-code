@@ -15,7 +15,7 @@ public class FileSchemaDao implements SchemaDao {
     try {
       final String content =
           Files.readString(
-              Setup.current().dataDir().resolve("schemas").resolve(appName + ".schema.sql"));
+              Setup.current().dataDir().resolve("schemas").resolve(appName + ".base.schema.sql"));
 
       final SQLParser parser = SQLParser.ofDb(dbType);
       if (parser == null) return null;

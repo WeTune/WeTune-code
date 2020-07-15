@@ -3,3 +3,4 @@
 build/
 */build/
 *.un~
+stale_outputs_checked
