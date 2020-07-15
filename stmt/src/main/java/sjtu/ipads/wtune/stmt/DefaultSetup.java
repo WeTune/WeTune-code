@@ -25,4 +25,11 @@ public class DefaultSetup extends Setup {
     if (wtuneDataDir != null) return Paths.get(wtuneDataDir);
     return Paths.get(System.getProperty("user.dir")).getParent().resolve("data");
   }
+
+  @Override
+  public Path scriptOutputDir() {
+    final String wtuneScriptDir = System.getProperty("wtune.scriptOutputDir");
+    if (wtuneScriptDir != null) return Paths.get(wtuneScriptDir);
+    return Paths.get(System.getProperty("user.dir")).getParent().resolve("script_out");
+  }
 }

@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.stmt;
 
 import java.nio.file.Path;
-import java.util.Set;
 
 public abstract class Setup {
   private static Setup INSTANCE;
@@ -22,4 +21,6 @@ public abstract class Setup {
   public abstract void setup();
 
   public abstract Path dataDir();
+
+  public abstract Path scriptOutputDir();
 }

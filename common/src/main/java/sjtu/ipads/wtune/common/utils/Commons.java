@@ -29,10 +29,13 @@ public interface Commons {
     return sb.delete(sb.length() - i, sb.length());
   }
 
+  static String surround(String str, char quota) {
+    return quota + str + quota;
+  }
+
   static <T> T threadLocal(ThreadLocal<T> threadLocal, Supplier<T> supplier) {
     T t = threadLocal.get();
     if (t == null) threadLocal.set(t = supplier.get());
     return t;
   }
-
 }

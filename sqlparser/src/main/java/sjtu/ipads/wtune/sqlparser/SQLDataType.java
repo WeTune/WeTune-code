@@ -107,7 +107,7 @@ public class SQLDataType {
   // net
   public static final String CIDR = "cidr";
   public static final String INET = "inet";
-  public static final String MACADDR = "MACADDR";
+  public static final String MACADDR = "macaddr";
 
   // money
   public static final String MONEY = "money";
