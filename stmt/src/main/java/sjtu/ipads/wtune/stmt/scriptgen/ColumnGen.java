@@ -2,6 +2,9 @@ package sjtu.ipads.wtune.stmt.scriptgen;
 
 import sjtu.ipads.wtune.stmt.schema.Column;
 
+import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_BOOLEAN;
+import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_ENUM;
+
 public class ColumnGen implements ScriptNode {
   private final Column column;
   private final DataTypeGen dataTypeGen;
@@ -14,7 +17,9 @@ public class ColumnGen implements ScriptNode {
   @Override
   public void output(Output out) {
     out.print("{ ")
-        .printf("columnName = '%s', ", column.columnName())
+        .printf(
+            "columnName = '%s', isBoolean = %s, isEnum = %s, ",
+            column.columnName(), column.isFlagged(COLUMN_IS_BOOLEAN), column.isFlagged(COLUMN_IS_ENUM))
         .print("dataType = ")
         .accept(dataTypeGen)
         .print(" }");

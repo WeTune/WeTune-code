@@ -1,7 +1,13 @@
 package sjtu.ipads.wtune.bootstrap;
 
-import java.util.List;
-
 public interface Task {
-  void doTask(List<String> appNames);
+  default void setArgs(String... args) {}
+
+  default void doTasks(String... appNames) {
+    for (String appName : appNames) doTask(appName);
+  }
+
+  default void doTask(String appName) {
+    doTasks(appName);
+  }
 }

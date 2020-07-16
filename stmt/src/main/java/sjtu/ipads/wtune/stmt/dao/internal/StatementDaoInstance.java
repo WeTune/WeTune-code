@@ -36,8 +36,4 @@ public class StatementDaoInstance {
   public static List<Statement> findAll() {
     return instance0().findAll();
   }
-
-  public static void close() {
-    instance0().close();
-  }
 }

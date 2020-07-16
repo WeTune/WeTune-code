@@ -2,21 +2,25 @@ package sjtu.ipads.wtune.stmt;
 
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.dao.internal.ConstantAppDao;
+import sjtu.ipads.wtune.stmt.dao.internal.DbSchemaPatchDao;
 import sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao;
 import sjtu.ipads.wtune.stmt.dao.internal.FileSchemaDao;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.util.function.Supplier;
 
 public class DefaultSetup extends Setup {
   @Override
   public void setup() {
+    final Supplier<Connection> supplier =
+        StatementDao.connectionSupplier(
+            "jdbc:sqlite://" + dataDir().resolve("wtune.db").toString());
     new ConstantAppDao().registerAsGlobal();
     new FileSchemaDao().registerAsGlobal();
-    new DbStatementDao(
-            StatementDao.connectionSupplier(
-                "jdbc:sqlite://" + dataDir().resolve("wtune.db").toString()))
-        .registerAsGlobal();
+    new DbSchemaPatchDao(supplier).registerAsGlobal();
+    new DbStatementDao(supplier).registerAsGlobal();
   }
 
   @Override

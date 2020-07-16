@@ -300,7 +300,7 @@ end
 
 function Column:guessBoolean()
     local ret = self.isBoolean or self.columnName:match("ed$") or self.columnName:match("able$")
-            or self.dataType.width == 1
+            or self.columnName:match("^is") or self.dataType.width == 1
     self.isBoolean = ret
     return ret
 end
@@ -343,6 +343,8 @@ function Schema:addTable(tableDesc)
 
     for _, columnDesc in ipairs(tableDesc.columns) do
         local column = Column:make(columnDesc.columnName:lower(), columnDesc.dataType)
+        column.isBoolean = columnDesc.isBoolean
+        column.isEnum = columnDesc.isEnum
         newTable.columns[column.columnName] = column
     end
 

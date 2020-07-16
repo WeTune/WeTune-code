@@ -12,72 +12,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sjtu.ipads.wtune.common.utils.Commons.threadLocal;
 import static sjtu.ipads.wtune.stmt.statement.Statement.*;
 
-public class DbStatementDao implements StatementDao {
-  private final Supplier<Connection> connectionSupplier;
-  private ThreadLocal<Connection> connection = new ThreadLocal<>();
-
+public class DbStatementDao extends DbDao implements StatementDao {
   public DbStatementDao(Supplier<Connection> connectionSupplier) {
-    this.connectionSupplier = connectionSupplier;
+    super(connectionSupplier);
   }
 
   private static final String SELECT_ITEMS =
       String.format(
           "stmt_app_name AS %s, stmt_id AS %s, stmt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-
-  private static final String FIND_ONE_SQL =
-      "SELECT "
-          + SELECT_ITEMS
-          + "FROM wtune_stmts "
-          + "WHERE stmt_app_name = ? "
-          + "  AND stmt_id = ?";
-
-  private static final String FIND_BY_APP_SQL =
-      "SELECT " + SELECT_ITEMS + "FROM wtune_stmts WHERE stmt_app_name = ?";
-
-  private static final String FIND_ALL_SQL = "SELECT " + SELECT_ITEMS + "FROM wtune_stmts";
-
-  private final ThreadLocal<PreparedStatement> findOneCache = new ThreadLocal<>();
-  private final ThreadLocal<PreparedStatement> findByAppCache = new ThreadLocal<>();
-  private final ThreadLocal<PreparedStatement> findAllCache = new ThreadLocal<>();
-
-  private Connection connection() {
-    return threadLocal(connection, connectionSupplier);
-  }
-
-  private void closeConnection() throws SQLException {
-    findOneCache.remove();
-    findByAppCache.remove();
-    findAllCache.remove();
-
-    final Connection conn = connection.get();
-    if (conn == null) return;
-    conn.close();
-  }
-
-  private PreparedStatement prepare(String sql) {
-    final Connection conn = connection();
-    try {
-      return conn.prepareStatement(sql);
-    } catch (SQLException throwables) {
-      throw new StmtException(throwables);
-    }
-  }
-
-  private PreparedStatement findOne0() {
-    return threadLocal(findOneCache, () -> prepare(FIND_ONE_SQL));
-  }
-
-  private PreparedStatement findByApp0() {
-    return threadLocal(findByAppCache, () -> prepare(FIND_BY_APP_SQL));
-  }
-
-  private PreparedStatement findAll0() {
-    return threadLocal(findAllCache, () -> prepare(FIND_ALL_SQL));
-  }
+  private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM wtune_stmts ";
+  private static final String FIND_ONE = FIND_ALL + "WHERE stmt_app_name = ? AND stmt_id = ?";
+  private static final String FIND_BY_APP = FIND_ALL + "WHERE stmt_app_name = ?";
 
   private static Statement inflate(Statement stmt, ResultSet rs) throws SQLException {
     final String appName = rs.getString(KEY_APP_NAME);
@@ -93,7 +41,7 @@ public class DbStatementDao implements StatementDao {
 
   @Override
   public Statement findOne(String appName, int stmtId) {
-    final PreparedStatement ps = findOne0();
+    final PreparedStatement ps = prepare(FIND_ONE);
     try {
       ps.setString(1, appName);
       ps.setInt(2, stmtId);
@@ -110,7 +58,7 @@ public class DbStatementDao implements StatementDao {
 
   @Override
   public List<Statement> findByApp(String appName) {
-    final PreparedStatement ps = findByApp0();
+    final PreparedStatement ps = prepare(FIND_BY_APP);
     try {
       ps.setString(1, appName);
 
@@ -128,7 +76,7 @@ public class DbStatementDao implements StatementDao {
 
   @Override
   public List<Statement> findAll() {
-    final PreparedStatement ps = findAll0();
+    final PreparedStatement ps = prepare(FIND_ALL);
     try {
       final ResultSet rs = ps.executeQuery();
 
@@ -137,15 +85,6 @@ public class DbStatementDao implements StatementDao {
 
       return stmts;
 
-    } catch (SQLException throwables) {
-      throw new StmtException(throwables);
-    }
-  }
-
-  @Override
-  public void close() {
-    try {
-      closeConnection();
     } catch (SQLException throwables) {
       throw new StmtException(throwables);
     }

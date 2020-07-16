@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao;
 
 import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
@@ -18,12 +17,6 @@ public interface StatementDao {
 
   List<Statement> findAll();
 
-  void close();
-
-  static StatementDao fromDb(Supplier<Connection> connectionSupplier) {
-    return new DbStatementDao(connectionSupplier);
-  }
-
   static Supplier<Connection> connectionSupplier(String url) {
     return () -> {
       try {
@@ -32,10 +25,6 @@ public interface StatementDao {
         throw new StmtException(throwables);
       }
     };
-  }
-
-  static StatementDao getGlobal() {
-    return StatementDaoInstance.instance();
   }
 
   default void registerAsGlobal() {

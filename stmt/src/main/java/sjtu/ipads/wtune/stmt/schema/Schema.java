@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt.schema;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.lang.System.Logger;
+import java.nio.file.Path;
 import java.util.*;
 
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
@@ -13,8 +14,17 @@ import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 public class Schema {
   private static final Logger LOG = System.getLogger(Schema.class.getSimpleName());
+  private Path sourcePath;
 
   private final Map<String, Table> tables = new HashMap<>();
+
+  public Path sourcePath() {
+    return sourcePath;
+  }
+
+  public void setSourcePath(Path sourcePath) {
+    this.sourcePath = sourcePath;
+  }
 
   public Schema addDefinition(SQLNode node) {
     if (node == null) return this;
@@ -68,6 +78,12 @@ public class Schema {
     if (table == null) return;
 
     new TableBuilder(table).fromCreateIndex(node);
+  }
+
+  public Schema addPatch(SchemaPatch patch) {
+    final Table table = getTable(patch.tableName());
+    if (table != null) patch.patch(table);
+    return this;
   }
 
   public Schema buildRefs() {

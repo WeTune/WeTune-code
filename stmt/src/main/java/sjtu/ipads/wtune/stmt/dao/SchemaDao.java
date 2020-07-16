@@ -9,4 +9,5 @@ public interface SchemaDao {
   default void registerAsGlobal() {
     SchemaDaoInstance.register(this);
   }
+
 }

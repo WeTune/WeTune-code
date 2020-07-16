@@ -21,11 +21,6 @@ public class ParserTest {
     Setup._default().registerAsGlobal().setup();
   }
 
-  @AfterAll
-  static void toreDown() {
-    StatementDao.getGlobal().close();
-  }
-
   @Test
   @DisplayName("[stmt] parsing all schema")
   void testSchema() {

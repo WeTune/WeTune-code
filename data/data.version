@@ -2,3 +2,4 @@
 [4422e09855893864b0245daaf9ea89640e87f572] remove lobsters-88 which access a VIEW
 [bfcba3f97d48ad0ca0c525079ebb82cfe3d51775] remove Chinese character in sql
 [dc24a47acc5e4f8cdb96827a2ef5ed463642a09c] correct invalid statements
+[342ae364af1e19ab46bf464a499eb0e14084299c] add schema patch

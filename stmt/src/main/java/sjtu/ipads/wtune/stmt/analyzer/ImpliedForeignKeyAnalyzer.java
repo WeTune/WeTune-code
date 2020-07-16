@@ -18,18 +18,18 @@ import static sjtu.ipads.wtune.stmt.attrs.AppAttrs.IMPLIED_FOREIGN_KEYS;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 
-public class ImpliedForeignKeyAnalyzer implements Analyzer<Void>, SQLVisitor {
+public class ImpliedForeignKeyAnalyzer implements Analyzer<Set<Column>>, SQLVisitor {
   private Set<Column> impliedForeignKey;
 
   @Override
-  public Void analyze(Statement stmt) {
+  public Set<Column> analyze(Statement stmt) {
     impliedForeignKey = stmt.appContext().supplyIfAbsent(IMPLIED_FOREIGN_KEYS, HashSet::new);
     stmt.parsed().accept(this);
-    return null;
+    return impliedForeignKey;
   }
 
   @Override
-  public Void analyze(SQLNode node) {
+  public Set<Column> analyze(SQLNode node) {
     throw new UnsupportedOperationException();
   }
 

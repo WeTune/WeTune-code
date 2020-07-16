@@ -2,6 +2,7 @@ local Schema = require("testbed.schema")
 local RandGen = require("testbed.randgen")
 local RandSeq = require("testbed.randseq")
 local Prepare = require("testbed.prepare")
+local Util = require("testbed.util")
 
 local WTune = {}
 
@@ -86,23 +87,27 @@ function WTune:initConn()
     local drv = sysbench.sql.driver()
     local con = drv:connect()
 
-    if sysbench.opt.db_driver ~= "pgsql" then
-        con:query("SET FOREIGN_KEY_CHECKS=0")
-        con:query("SET UNIQUE_CHECKS=0")
-    else
-        con:query("SET session_replication_role='replica'")
-    end
-
     self.sysbench = sysbench
     self.drv = drv
     self.con = con
+
+    if sysbench.opt.db_driver ~= "pgsql" then
+        con:query("SET FOREIGN_KEY_CHECKS=0")
+        con:query("SET UNIQUE_CHECKS=0")
+        self.db = sysbench.opt.pgsql_db
+    else
+        con:query("SET session_replication_role='replica'")
+        self.db = sysbench.opt.pgsql_db
+    end
+
 end
 
 local predefined = {
-    app = "test",
+    app = "broadleaf",
     profile = "base",
     dbType = "mysql",
-    --tables = "blc_email_tracking_opens,",
+    tables = "blc_order_item_adjustment,",
+    rows = 3
 }
 
 function WTune:init()
@@ -120,6 +125,9 @@ function WTune:make()
 end
 
 function WTune:doPrepare()
+    Util.log("[Prepare] Start to prepare database")
+    Util.log(("[Prepare] app: %s, schema: %s, db: %s"):format(self.app, self.schemaTag, self.db))
+    Util.log(("[Prepare] rows: %d, dist: %s, seq: %s"):format(self.rows, self.randdist.type, self.randseq.type))
     Prepare.populateDb(self.con, self.schema, self.rows, self.randseq, self.dbType, self.tableFilter)
 end
 

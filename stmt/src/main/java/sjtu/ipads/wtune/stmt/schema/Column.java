@@ -33,6 +33,10 @@ public class Column implements Attrs<Column> {
       Attrs.key(ATTR_PREFIX + ".default", Boolean.class);
   public static final Key<Boolean> COLUMN_AUTOINCREMENT =
       Attrs.key(ATTR_PREFIX + ".autoIncrement", Boolean.class);
+  public static final Key<Boolean> COLUMN_IS_BOOLEAN =
+      Attrs.key(ATTR_PREFIX + ".isBoolean", Boolean.class);
+  public static final Key<Boolean> COLUMN_IS_ENUM =
+      Attrs.key(ATTR_PREFIX + ".isEnum", Boolean.class);
 
   public String tableName() {
     return tableName;

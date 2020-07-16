@@ -17,7 +17,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 public class ScriptUtils {
-
   public static void genSchema(AppContext ctx) {
     genSchema(ctx.schema(), ctx.name());
   }
@@ -37,6 +36,8 @@ public class ScriptUtils {
       new SchemaGen(schema).output(new OutputImpl(writer));
       writer.flush();
 
+      final Path sourcePath = schema.sourcePath();
+      Files.copy(sourcePath, directory.resolve(sourcePath.getFileName()), REPLACE_EXISTING);
     } catch (IOException e) {
       throw new StmtException(e);
     }
@@ -64,7 +65,9 @@ public class ScriptUtils {
     final InputStream input = ScriptUtils.class.getResourceAsStream("/testbed/" + fileName);
     assert input != null;
     try {
-      Files.copy(input, outputDir.resolve("testbed").resolve(fileName), REPLACE_EXISTING);
+      final Path directory = outputDir.resolve("testbed");
+      directory.toFile().mkdirs();
+      Files.copy(input, directory.resolve(fileName), REPLACE_EXISTING);
     } catch (IOException e) {
       throw new StmtException(e);
     }
