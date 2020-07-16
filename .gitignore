@@ -3,4 +3,5 @@
 build/
 */build/
 *.un~
+*.swp
 stale_outputs_checked
