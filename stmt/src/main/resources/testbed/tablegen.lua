@@ -35,7 +35,7 @@ function TableGen:genTable(t, ordinal, callback)
         prefix = "INSERT INTO `%s` (%s) VALUES"
     end
 
-    local insertSql = string.format(prefix, t.tableName, columnList(t.columns))
+    local insertSql = string.format(prefix, t.tableName, columnList(t.columns, self.dbType))
 
     local gen = function(lineNum)
         return self:genRow(t, lineNum)

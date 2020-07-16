@@ -12,10 +12,13 @@ local function doInsert(con, numLines)
                 Util.log(".", 1)
             end
 
-            if i % 10000 == 0 then
-                Util.log(i, 1)
+            if i % 2000 == 0 then
                 con:bulk_insert_done()
                 con:bulk_insert_init(insertSql)
+            end
+
+            if i % 10000 == 0 then
+                Util.log(i)
             end
 
             con:bulk_insert_next(string.format('(%s)', table.concat(rowGen(i), ', ')))

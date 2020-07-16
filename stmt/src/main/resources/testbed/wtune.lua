@@ -109,7 +109,7 @@ function WTune:initOptions(options)
     self.dump = options.dump == 'true' or options.dump == 'yes'
 
     if options.continue then
-        self.tableFilter = tableFilter("continue", options.continue)
+        self.tableFilter = tableFilter("continue", tonumber(options.continue))
     elseif options.tables then
         self.tableFilter = tableFilter("target", options.tables)
     end

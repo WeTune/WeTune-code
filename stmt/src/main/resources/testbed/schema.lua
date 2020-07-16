@@ -180,6 +180,7 @@ function DataType:convertType(value, dbType)
     local name = self.name
     local width = self.width
     local precision = self.precision
+    local isArray = self.isArray
 
     local ret
     if category == "integral" then
@@ -232,12 +233,12 @@ function DataType:convertType(value, dbType)
         ret = string.format("0x%x", value)
 
     elseif category == "json" then
-        ret = string.format("'{id = %d}'::json", value)
+        ret = string.format("'{\"id\": %d}'::json", value)
 
-    elseif category == "inet" then
+    elseif category == "net" then
         local _0 = math.fmod(value, 256)
         local _1 = math.fmod(math.ceil(value / 256), 256)
-        local _2 = math.fmod(value / 65536)
+        local _2 = math.ceil(value / 65536)
         ret = string.format("'127.%d.%d.%d'::inet", _2, _1, _0)
 
     elseif category == "uuid" then
@@ -250,6 +251,10 @@ function DataType:convertType(value, dbType)
     elseif name == "bytea" then
         ret = string.format("'%d'::bytea", value)
 
+    end
+
+    if isArray then
+        ret = "ARRAY[" .. ret .. "]"
     end
 
     return ret

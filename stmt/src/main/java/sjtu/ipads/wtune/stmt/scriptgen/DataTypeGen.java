@@ -20,7 +20,8 @@ public class DataTypeGen implements ScriptNode {
         .printf("category = '%s', ", type.category().name().toLowerCase())
         .printf("name = '%s', ", type.name())
         .printf("width = %d, ", type.width())
-        .printf("precision = %d, ", type.precision());
+        .printf("precision = %d, ", type.precision())
+        .printf("isArray = %s, ", type.isArray());
 
     final List<String> values = type.valuesList();
     if (values != null && !values.isEmpty())
