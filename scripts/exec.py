@@ -37,7 +37,7 @@ def prepare_args(args, app):
   app = pair[0]
   db_type = pair[1] if len(pair) >= 2 else 'pgsql' if app in pg_apps else 'mysql'
 
-  pack = profiles[args['profile']] if 'profile' in args else {}
+  pack = profiles[args['profile']] if args.get('profile') else {}
 
   pack['db_type'] = db_type
   pack['conn'] = conn_params[db_type]
@@ -79,12 +79,15 @@ def echo_args(args):
 
 
 def invoke_sysbench(args):
+  if args['db_type'] == 'pgsql':
+    return
+
   real_args = ['sysbench', '--app=' + args['app'], # '--tag=' + args['tag'],
                '--schema=' + args['schema'], # '--workload=' + args['workload'],
                '--rows=' + args['rows'], '--randdist=' + args['dist'], '--randseq=' + args['seq']]
 
-  if 'continue' in args: real_args.append('--continue' + args['continue'])
-  if 'table' in args: real_args.append('--tables' + args['tables'])
+  if 'continue' in args: real_args.append('--continue=' + args['continue'])
+  if 'tables' in args: real_args.append('--tables=' + args['tables'])
 
   db_type = args['db_type']
   real_args.append("--db-driver=" + db_type)
@@ -95,7 +98,7 @@ def invoke_sysbench(args):
 
   real_args += ["testbed/wtune.lua", args['cmd']]
 
-  print("[Exec] " + " ".join(real_args))
+  print("[Exec] " + " ".join(real_args), flush=True)
 
   subprocess.run(real_args)
 
@@ -103,7 +106,7 @@ def invoke_sysbench(args):
 def invoke_mysql(args, cmd, inFile=None):
   real_args = ['mysql', '-u', args['user'], '-p' + args['password'], '-h', args['host']]
   real_args += cmd
-  print(real_args)
+  print("[Exec] " + " ".join(real_args), flush=True)
   subprocess.run(real_args, stdin=inFile)
 
 
@@ -123,7 +126,8 @@ def recreate(args):
   if args['db_type'] == 'mysql':
     recreate_mysql(args)
   else:
-    assert False
+    pass
+    # assert False
 
 
 parser = argparse.ArgumentParser()
@@ -141,8 +145,18 @@ parser.add_argument('--continue')
 parser.add_argument('--tables')
 parser.add_argument('apps', action='append')
 
+known_apps = ["halo", "sagan", "refinerycms", "diaspora", "fanchaoo", "guns", "redmine", "eladmin", "wordpress",
+              "solidus", "discourse", "spree", "homeland", "broadleaf", "gitlab", "publiccms", "shopizer", "pybbs",
+              "fatfreecrm", "lobsters", "springblog", "febs", "forest_blog"]
+
 if __name__ == '__main__':
   args = vars(parser.parse_args())
+  appSpec = args['apps'][0]
+  if appSpec == 'all':
+    args['apps'] = known_apps
+  elif appSpec.startswith('>'):
+    args['apps'] = known_apps[known_apps.index(appSpec[1:]):]
+
   for app in args['apps']:
     args = prepare_args(args, app)
     echo_args(args)

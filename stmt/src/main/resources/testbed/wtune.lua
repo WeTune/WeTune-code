@@ -67,7 +67,7 @@ function WTune:initOptions(options)
     self.app = options.app
     self.schemaTag = options.schema or self.schema or "base"
     self.schema = Schema:make(self.app):buildFrom(require(string.format("%s.%s_schema", self.app, self.schemaTag)))
-    self.rows = options.rows or self.rows or 100
+    self.rows = tonumber(options.rows or self.rows or 100)
     self.randdist = RandGen.make(options.randdist or self.randdist or "uniform")
     self.randseq = RandSeq.make(self.randdist, self.rows, options.randseq or self.randseq or "typed")
     self.dbType = options.dbType or (sysbench and sysbench.opt.db_driver or "mysql")
@@ -94,7 +94,7 @@ function WTune:initConn()
     if sysbench.opt.db_driver ~= "pgsql" then
         con:query("SET FOREIGN_KEY_CHECKS=0")
         con:query("SET UNIQUE_CHECKS=0")
-        self.db = sysbench.opt.pgsql_db
+        self.db = sysbench.opt.mysql_db
     else
         con:query("SET session_replication_role='replica'")
         self.db = sysbench.opt.pgsql_db
@@ -125,9 +125,9 @@ function WTune:make()
 end
 
 function WTune:doPrepare()
-    Util.log("[Prepare] Start to prepare database")
-    Util.log(("[Prepare] app: %s, schema: %s, db: %s"):format(self.app, self.schemaTag, self.db))
-    Util.log(("[Prepare] rows: %d, dist: %s, seq: %s"):format(self.rows, self.randdist.type, self.randseq.type))
+    Util.log(string.format("[Prepare] Start to prepare database for %s\n", self.app))
+    Util.log(("[Prepare] app: %s, schema: %s, db: %s\n"):format(self.app, self.schemaTag, self.db))
+    Util.log(("[Prepare] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randdist.type, self.randseq.type))
     Prepare.populateDb(self.con, self.schema, self.rows, self.randseq, self.dbType, self.tableFilter)
 end
 

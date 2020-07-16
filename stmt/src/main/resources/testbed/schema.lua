@@ -63,7 +63,7 @@ function Constraint.compare(x, y)
     elseif not uniqueX and uniqueY then
         return false
     else
-        return x.index < y.index
+        return x.index < y.index or x.total < y.total
     end
 end
 
@@ -214,6 +214,13 @@ function DataType:convertType(value, dbType)
     elseif category == "string" then
         if width == -1 or width > 5 then
             width = 5
+        end
+        if width == 2 then
+            value = math.fmod(value, 100)
+        elseif width == 3 then
+            value = math.fmod(value, 1000)
+        elseif width == 4 then
+            value = math.fmod(value, 10000)
         end
 
         ret = string.format("'%0" .. width .. "d'", value)

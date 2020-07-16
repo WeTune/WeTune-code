@@ -3,7 +3,7 @@
 local Uniform = {}
 
 function Uniform:make()
-    local rand = {}
+    local rand = { type = 'uniform' }
     setmetatable(rand, self);
     self.__index = self
     return rand
