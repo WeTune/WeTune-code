@@ -14,7 +14,7 @@ public class SQLFormatter implements SQLVisitor {
   private static final String INDENT_STR = "  ";
   private static final String UNKNOWN_PLACEHOLDER = "<??>";
 
-  private final StringBuilder builder = new StringBuilder();
+  protected final StringBuilder builder = new StringBuilder();
   private final boolean oneLine;
 
   private int indent = 0;
@@ -138,6 +138,21 @@ public class SQLFormatter implements SQLVisitor {
     final var references = colDef.get(COLUMN_DEF_REF);
     if (references != null) safeVisit(references);
 
+    return false;
+  }
+
+  @Override
+  public boolean enterName2(SQLNode name2) {
+    appendName(name2, name2.get(NAME_2_0), true);
+    appendName(name2, name2.get(NAME_2_1), false);
+    return false;
+  }
+
+  @Override
+  public boolean enterName3(SQLNode name3) {
+    appendName(name3, name3.get(NAME_3_0), true);
+    appendName(name3, name3.get(NAME_3_1), true);
+    appendName(name3, name3.get(NAME_3_2), false);
     return false;
   }
 

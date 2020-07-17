@@ -12,4 +12,8 @@ public class Param {
     this.paramNode = paramNode;
     this.modifiers = modifiers;
   }
+
+  public List<ParamModifier> modifiers() {
+    return modifiers;
+  }
 }

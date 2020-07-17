@@ -131,6 +131,23 @@ function WTune:doPrepare()
     Prepare.populateDb(self.con, self.schema, self.rows, self.randseq, self.dbType, self.tableFilter)
 end
 
+function WTune:getTable(tableName)
+    return self.schema:getTable(tableName)
+end
+
+function WTune:getColumn(tableName, columnName)
+    return self:getTable(tableName):getColumn(columnName)
+end
+
+function WTune:getColumnValue(tableName, columnName, lineNum)
+    return self:getColumn(tableName, columnName)
+               :valueAt(lineNum, self.randseq, self.rows, self.dbType)
+end
+
+function WTune:redirect(lineNum)
+    return self.schema:redirect(lineNum, self.rows)
+end
+
 local function doPrepare()
     WTune:make():init():doPrepare()
 end

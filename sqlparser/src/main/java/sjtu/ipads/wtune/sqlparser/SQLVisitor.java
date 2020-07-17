@@ -33,6 +33,18 @@ public interface SQLVisitor {
 
   default void leaveCreateTable(SQLNode createTable) {}
 
+  default boolean enterName2(SQLNode name2) {
+    return true;
+  }
+
+  default void leaveName2(SQLNode name2) {}
+
+  default boolean enterName3(SQLNode name3) {
+    return true;
+  }
+
+  default void leaveName3(SQLNode name3) {}
+
   default boolean enterTableName(SQLNode tableName) {
     return true;
   }

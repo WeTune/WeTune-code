@@ -117,6 +117,9 @@ abstract class VisitorController {
       case SET_OP:
         return v.enterSetOp(n);
 
+      case NAME_2:
+        return v.enterName2(n);
+
       case NAME_3:
         return v.enterCommonName(n);
     }
@@ -250,6 +253,7 @@ abstract class VisitorController {
       case KEY_PART:
       case COLUMN_NAME:
       case TABLE_NAME:
+      case NAME_2:
       case NAME_3:
       default:
         return true;
@@ -361,6 +365,10 @@ abstract class VisitorController {
         v.leaveColumnName(n);
         break;
 
+      case NAME_2:
+        v.leaveName2(n);
+        break;
+
       case NAME_3:
         v.leaveCommonName(n);
         return;
@@ -419,6 +427,7 @@ abstract class VisitorController {
 
       case SET_OP:
         v.leaveUnion(n);
+        break;
     }
   }
 

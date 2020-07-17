@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
+import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
@@ -110,6 +111,7 @@ public class ParamResolver implements SQLVisitor, Resolver {
   private static boolean resolveReversedModifier(SQLNode target, List<ParamModifier> stack) {
     final SQLNode parent = target.parent();
     final Kind kind = exprKind(parent);
+
     if (kind == Kind.UNARY) {
       final UnaryOp op = parent.get(UNARY_OP);
       if (op == UnaryOp.UNARY_MINUS) stack.add(ParamModifier.of(ParamModifier.Type.INVERSE));
@@ -119,29 +121,19 @@ public class ParamResolver implements SQLVisitor, Resolver {
       return true;
 
     } else if (kind == Kind.BINARY) {
-      final SQLNode otherSide = binaryOtherSide(parent, target);
-      if (!resolveModifier(otherSide, stack)) return false;
-
+      // if target is on the right, the operator should be reversed
+      final SQLNode left = parent.get(BINARY_LEFT);
+      final SQLNode right = parent.get(BINARY_RIGHT);
+      final boolean inverseOp = right == target;
+      final SQLNode otherSide = inverseOp ? left : right;
       final BinaryOp op = parent.get(BINARY_OP);
-      if (op == BinaryOp.EQUAL || op == BinaryOp.IN_LIST || op == BinaryOp.ARRAY_CONTAINS)
-        return true;
-      if (op == BinaryOp.NOT_EQUAL) return stack.add(ParamModifier.of(NEQ));
-      else if (op == BinaryOp.GREATER_OR_EQUAL || op == BinaryOp.GREATER_THAN)
-        stack.add(ParamModifier.of(DECREASE));
-      else if (op == BinaryOp.LESS_OR_EQUAL || op == BinaryOp.LESS_THAN)
-        stack.add(ParamModifier.of(INCREASE));
-      else if (op == BinaryOp.LIKE || op == BinaryOp.ILIKE || op == BinaryOp.SIMILAR_TO)
-        stack.add(ofLike(target));
-      else if (op == BinaryOp.IS) stack.add(ofIs(target));
-      else if (op.standard() == BinaryOp.REGEXP) stack.add(ParamModifier.of(REGEX));
-      else if (op == BinaryOp.PLUS) stack.add(ParamModifier.of(SUBTRACT));
-      else if (op == BinaryOp.MINUS) stack.add(ParamModifier.of(ADD));
-      else if (op == BinaryOp.MULT) stack.add(ParamModifier.of(DIVIDE));
-      else if (op == BinaryOp.DIV) stack.add(ParamModifier.of(TIMES));
-      // omit others since not encountered
-      else return false;
 
-      return true;
+      final ParamModifier modifier = ParamModifier.fromBinaryOp(op, target, inverseOp);
+      if (modifier == null) return false;
+
+      if (modifier.type() != KEEP) stack.add(modifier);
+
+      return resolveModifier(otherSide, stack);
 
     } else if (kind == Kind.TUPLE) {
       stack.add(ParamModifier.of(TUPLE_ELEMENT));
@@ -155,18 +147,19 @@ public class ParamResolver implements SQLVisitor, Resolver {
       if (parent.get(TERNARY_MIDDLE) == target) stack.add(ParamModifier.of(DECREASE));
       else if (parent.get(TERNARY_RIGHT) == target) stack.add(ParamModifier.of(INCREASE));
       else return assertFalse();
-      return true;
+
+      return resolveModifier(parent.get(TERNARY_LEFT), stack);
 
     } else if (kind == Kind.MATCH) {
-      if (!resolveModifier(parent.get(MATCH_COLS).get(0), stack)) return false;
       stack.add(ParamModifier.of(MATCHING));
-      return true;
+      return resolveModifier(parent.get(MATCH_COLS).get(0), stack);
 
     } else return false;
   }
 
   private static boolean resolveModifier(SQLNode target, List<ParamModifier> stack) {
     final Kind kind = exprKind(target);
+
     if (kind == Kind.COLUMN_REF) {
       final ColumnRef cRef = target.get(RESOLVED_COLUMN_REF);
       final Column column = cRef.resolveAsColumn();
@@ -175,9 +168,6 @@ public class ParamResolver implements SQLVisitor, Resolver {
 
       } else {
         final Integer position = cRef.resolveRootRef().source().node().get(RELATION_POSITION);
-        if (position == null) {
-          System.out.println();
-        }
         assert position != null;
         stack.add(
             ParamModifier.of(
@@ -185,13 +175,13 @@ public class ParamResolver implements SQLVisitor, Resolver {
       }
 
     } else if (kind == Kind.FUNC_CALL) {
-      for (SQLNode arg : target.get(FUNC_CALL_ARGS)) if (!resolveModifier(arg, stack)) return false;
-      stack.add(ParamModifier.of(INVOKE_FUNC, target.get(FUNC_CALL_NAME).toString().toLowerCase()));
+      final List<SQLNode> args = target.get(FUNC_CALL_ARGS);
+      stack.add(
+          ParamModifier.of(
+              INVOKE_FUNC, target.get(FUNC_CALL_NAME).toString().toLowerCase(), args.size()));
+      for (SQLNode arg : Lists.reverse(args)) if (!resolveModifier(arg, stack)) return false;
 
     } else if (kind == Kind.BINARY) {
-      if (!resolveModifier(target.get(BINARY_LEFT), stack)
-          || !resolveModifier(target.get(BINARY_RIGHT), stack)) return false;
-
       switch (target.get(BINARY_OP)) {
         case PLUS:
           stack.add(ParamModifier.of(ADD));
@@ -209,6 +199,9 @@ public class ParamResolver implements SQLVisitor, Resolver {
           return false;
       }
 
+      return resolveModifier(target.get(BINARY_RIGHT), stack)
+          && resolveModifier(target.get(BINARY_LEFT), stack);
+
     } else if (kind == Kind.AGGREGATE) {
       stack.add(ParamModifier.of(INVOKE_AGG, target.get(AGGREGATE_NAME)));
 
@@ -219,9 +212,10 @@ public class ParamResolver implements SQLVisitor, Resolver {
       stack.add(ParamModifier.of(DIRECT_VALUE, target.get(LITERAL_VALUE)));
 
     } else if (kind == Kind.TUPLE) {
-      for (SQLNode elements : target.get(TUPLE_EXPRS))
+      final List<SQLNode> exprs = target.get(TUPLE_EXPRS);
+      stack.add(ParamModifier.of(MAKE_TUPLE, exprs.size()));
+      for (SQLNode elements : Lists.reverse(exprs))
         if (!resolveModifier(elements, stack)) return false;
-      stack.add(ParamModifier.of(MAKE_TUPLE));
 
     } else if (kind == Kind.SYMBOL) {
       stack.add(ParamModifier.of(DIRECT_VALUE, target.get(SYMBOL_TEXT)));
@@ -231,23 +225,6 @@ public class ParamResolver implements SQLVisitor, Resolver {
     } else return false;
 
     return true;
-  }
-
-  private static ParamModifier ofLike(SQLNode param) {
-    if (exprKind(param) == Kind.LITERAL) {
-      final String value = param.get(LITERAL_VALUE).toString();
-      return ParamModifier.of(LIKE, value.startsWith("%"), value.endsWith("%"));
-    }
-    return ParamModifier.of(LIKE);
-  }
-
-  private static ParamModifier ofIs(SQLNode param) {
-    if (exprKind(param) == Kind.LITERAL) {
-      if (param.get(LITERAL_TYPE) == LiteralType.NULL) return ParamModifier.of(CHECK_NULL);
-      else if (param.get(LITERAL_TYPE) == LiteralType.BOOL) return ParamModifier.of(CHECK_BOOL);
-      else return assertFalse();
-
-    } else return assertFalse();
   }
 
   @Override

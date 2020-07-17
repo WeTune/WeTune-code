@@ -46,7 +46,7 @@ public class Main {
     final Task task;
     switch (cmd) {
       case "genscript":
-        task = new ScriptGen();
+        task = new GenScript();
         break;
       case "genpatch":
         task = new PatchSchema();

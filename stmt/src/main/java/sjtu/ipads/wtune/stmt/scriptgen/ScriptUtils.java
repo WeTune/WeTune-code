@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.schema.Schema;
+import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +18,8 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 public class ScriptUtils {
-  public static void genSchema(AppContext ctx) {
+  public static void genSchema(String appName) {
+    final AppContext ctx = AppContext.of(appName);
     genSchema(ctx.schema(), ctx.name());
   }
 
@@ -43,8 +45,36 @@ public class ScriptUtils {
     }
   }
 
+  public static void genWorkload(String appName, String tag, boolean modifySelectItem) {
+    genWorkload(Statement.findByApp(appName), appName, tag, modifySelectItem);
+  }
+
+  public static void genWorkload(
+      List<Statement> stmts, String appName, String tag, boolean modifySelectItem) {
+    genWorkload(stmts, Setup.current().outputDir(), appName, tag, modifySelectItem);
+  }
+
+  public static void genWorkload(
+      List<Statement> stmts, Path outputDir, String appName, String tag, boolean modifySelectItem) {
+    final Path directory = outputDir.resolve(appName);
+    directory.toFile().mkdir();
+
+    try (final PrintWriter writer =
+        new PrintWriter(
+            Files.newBufferedWriter(
+                directory.resolve(tag + "_workload.lua"), CREATE, TRUNCATE_EXISTING))) {
+      new OutputImpl(writer).accept(new WorkloadGen(stmts, modifySelectItem));
+      writer.flush();
+
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
+  }
+
   private static final List<String> RESOURCES =
       List.of(
+          "paramgen.lua",
+          "parammod.lua",
           "prepare.lua",
           "randgen.lua",
           "randseq.lua",
@@ -76,6 +106,6 @@ public class ScriptUtils {
   public static void main(String[] args) {
     Setup._default().registerAsGlobal();
     ScriptUtils.copyResources();
-    ScriptUtils.genSchema(AppContext.of("broadleaf"));
+    ScriptUtils.genSchema("broadleaf");
   }
 }

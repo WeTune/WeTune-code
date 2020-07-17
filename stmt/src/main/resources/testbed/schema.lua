@@ -112,7 +112,7 @@ end
 function ForeignKey:modifyValue(lineNumber, origValue, maxLine)
     math.randomseed(lineNumber)
     math.random()
-    return math.fmod(origValue + math.random(1, maxLine), maxLine) + 1
+    return math.fmod(lineNumber + math.random(1, maxLine), maxLine) + 1
 end
 
 local DataType = {}
@@ -226,10 +226,7 @@ function DataType:convertType(value, dbType)
         ret = string.format("'%0" .. width .. "d'", value)
 
     elseif category == "time" then
-        ret = Util.ts2Str(Util.int2Ts(Util.baseTs() + 43200 * (value - 100)))
-        if dbType == "pgsql" then
-            ret = ret .. "::timestamp"
-        end
+        ret = Util.timeFmt(Util.timeBase():addhours(12 * value), dbType)
 
     elseif category == "blob" then
         ret = string.format("0x%x", value)
@@ -265,6 +262,10 @@ function Table:make(tableName)
     setmetatable(table, self)
     self.__index = self
     return table
+end
+
+function Table:getColumn(columnName)
+    return self.columns[columnName]
 end
 
 local Column = {}
@@ -344,6 +345,10 @@ function Column:valueAt(lineNumber, randSeq, maxLine, dbType)
     return value
 end
 
+function Schema:redirect(lineNumber, maxLine)
+    return ForeignKey:modifyValue(lineNumber, nil, maxLine)
+end
+
 function Schema:addTable(tableDesc)
     local newTable = Table:make(tableDesc.tableName:lower())
     self.tables[newTable.tableName] = newTable
@@ -371,6 +376,10 @@ function Schema:addTable(tableDesc)
     end
 
     return newTable
+end
+
+function Schema:getTable(tableName)
+    return self.tables[tableName:lower()]
 end
 
 function Schema:buildFrom(schemaDesc)

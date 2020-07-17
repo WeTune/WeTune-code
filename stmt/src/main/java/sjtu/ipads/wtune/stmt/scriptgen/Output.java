@@ -17,6 +17,8 @@ public interface Output {
 
   Output printf(String str, Object... args);
 
+  String currentIndent();
+
   default Output prints(String delimiter, List<String> strs) {
     print(String.join(delimiter, strs));
     return this;
