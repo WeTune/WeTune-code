@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.stmt.mutator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 

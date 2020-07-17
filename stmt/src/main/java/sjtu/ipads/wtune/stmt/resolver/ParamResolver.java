@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.attrs.Param;
 import sjtu.ipads.wtune.stmt.attrs.ParamModifier;
+import sjtu.ipads.wtune.stmt.mutator.TupleElementsNormalizer;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
@@ -48,7 +49,8 @@ public class ParamResolver implements SQLVisitor, Resolver {
   @Override
   public boolean resolve(Statement stmt, SQLNode node) {
     stmt.relationGraph().expanded().calcRelationPosition();
-    node.accept(new ParamResolver());
+    stmt.mutate(TupleElementsNormalizer.class);
+    stmt.parsed().accept(new ParamResolver());
     return true;
   }
 

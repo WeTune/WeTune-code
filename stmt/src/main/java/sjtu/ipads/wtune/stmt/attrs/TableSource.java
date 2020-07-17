@@ -87,7 +87,6 @@ public class TableSource {
   public void putAlias(String name) {
     if (isSimple(node)) node.put(SIMPLE_ALIAS, name);
     else if (SQLTableSource.isDerived(node)) node.put(DERIVED_ALIAS, name);
-
   }
 
   @Override
