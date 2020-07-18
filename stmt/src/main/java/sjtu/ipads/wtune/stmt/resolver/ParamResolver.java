@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt.resolver;
 import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.Pair;
+import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
@@ -58,6 +59,12 @@ public class ParamResolver implements SQLVisitor, Resolver {
   @Override
   public boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
     if (key == QUERY_LIMIT) {
+      if (child != null && exprKind(child) == Kind.PARAM_MARKER) {
+        child.remove(PARAM_MARKER_NUMBER);
+        child.put(EXPR_KIND, Kind.LITERAL);
+        child.put(LITERAL_TYPE, LiteralType.INTEGER);
+        child.put(LITERAL_VALUE, 10);
+      }
       return false;
 
     } else if (key == QUERY_OFFSET) {
@@ -206,6 +213,8 @@ public class ParamResolver implements SQLVisitor, Resolver {
       stack.add(ParamModifier.of(INVOKE_AGG, target.get(AGGREGATE_NAME)));
 
     } else if (kind == Kind.CAST) {
+      if (target.get(CAST_TYPE).category() == SQLDataType.Category.INTERVAL) return false;
+
       resolveModifier(target.get(CAST_EXPR), stack);
 
     } else if (kind == Kind.LITERAL) {

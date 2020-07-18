@@ -12,7 +12,7 @@ local function doInsert(con, numLines)
                 Util.log(".", 1)
             end
 
-            if i % 2000 == 0 then
+            if i % 1000 == 0 then
                 con:bulk_insert_done()
                 con:bulk_insert_init(insertSql)
             end

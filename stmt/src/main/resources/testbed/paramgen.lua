@@ -10,7 +10,10 @@ function ParamGen:produce(paramDesc, lineNum)
     local warning = false
 
     for _, modifier in ipairs(paramDesc) do
-        modifier(self.wtune, lineNum, stack)
+        local status, err = pcall(modifier, self.wtune, lineNum, stack)
+        if not status then
+            return err, true
+        end
     end
 
     if stack:size() ~= 1 then

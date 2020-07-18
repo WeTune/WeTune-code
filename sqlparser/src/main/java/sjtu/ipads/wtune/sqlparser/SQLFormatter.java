@@ -43,8 +43,28 @@ public class SQLFormatter implements SQLVisitor {
     }
   }
 
+  protected SQLFormatter append(Object o) {
+    builder.append(o);
+    return this;
+  }
+
+  protected SQLFormatter append(int i) {
+    builder.append(i);
+    return this;
+  }
+
+  protected SQLFormatter append(char c) {
+    builder.append(c);
+    return this;
+  }
+
+  protected SQLFormatter append(String s) {
+    builder.append(s);
+    return this;
+  }
+
   private void breakLine0() {
-    builder.append('\n');
+    append('\n');
   }
 
   private void increaseIndent() {
@@ -56,14 +76,14 @@ public class SQLFormatter implements SQLVisitor {
   }
 
   private void insertIndent() {
-    builder.append(INDENT_STR.repeat(indent));
+    append(INDENT_STR.repeat(indent));
   }
 
   private void breakLine(boolean spaceIfOneLine) {
     if (!oneLine) {
       breakLine0();
       insertIndent();
-    } else if (spaceIfOneLine) builder.append(' ');
+    } else if (spaceIfOneLine) append(' ');
   }
 
   private void breakLine() {
@@ -72,14 +92,14 @@ public class SQLFormatter implements SQLVisitor {
 
   private void appendName(SQLNode node, String name, boolean withDot) {
     if (name == null) return;
-    builder.append(quotation(node)).append(name).append(quotation(node));
-    if (withDot) builder.append('.');
+    append(quotation(node)).append(name).append(quotation(node));
+    if (withDot) append('.');
   }
 
   @Override
   public boolean enter(SQLNode node) {
     if (node.type() == Type.INVALID) {
-      builder.append(UNKNOWN_PLACEHOLDER);
+      append(UNKNOWN_PLACEHOLDER);
       return false;
     }
     return true;
@@ -87,33 +107,33 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterCreateTable(SQLNode createTable) {
-    builder.append("CREATE TABLE ");
+    append("CREATE TABLE ");
 
     safeVisit(createTable.get(CREATE_TABLE_NAME));
 
-    builder.append(" (");
+    append(" (");
     increaseIndent();
 
     for (var colDef : createTable.get(CREATE_TABLE_COLUMNS)) {
       breakLine();
       safeVisit(colDef);
-      builder.append(',');
+      append(',');
     }
 
     for (var conDef : createTable.get(CREATE_TABLE_CONSTRAINTS)) {
       breakLine();
       safeVisit(conDef);
-      builder.append(',');
+      append(',');
     }
 
     trimTrailing(builder, 1);
     decreaseIndent();
     breakLine();
     insertIndent();
-    builder.append(')');
+    append(')');
 
     final String engine = createTable.get(CREATE_TABLE_ENGINE);
-    if (engine != null) builder.append(" ENGINE = '").append(engine).append('\'');
+    if (engine != null) append(" ENGINE = '").append(engine).append('\'');
     return false;
   }
 
@@ -128,12 +148,12 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterColumnDef(SQLNode colDef) {
     safeVisit(colDef.get(COLUMN_DEF_NAME));
-    builder.append(' ').append(colDef.get(COLUMN_DEF_DATATYPE_RAW));
+    append(' ').append(colDef.get(COLUMN_DEF_DATATYPE_RAW));
 
-    if (colDef.isFlagged(COLUMN_DEF_CONS, UNIQUE)) builder.append(" UNIQUE");
-    if (colDef.isFlagged(COLUMN_DEF_CONS, PRIMARY)) builder.append(" PRIMARY KEY");
-    if (colDef.isFlagged(COLUMN_DEF_CONS, NOT_NULL)) builder.append(" NOT NULL");
-    if (colDef.isFlagged(COLUMN_DEF_AUTOINCREMENT)) builder.append(" AUTO_INCREMENT");
+    if (colDef.isFlagged(COLUMN_DEF_CONS, UNIQUE)) append(" UNIQUE");
+    if (colDef.isFlagged(COLUMN_DEF_CONS, PRIMARY)) append(" PRIMARY KEY");
+    if (colDef.isFlagged(COLUMN_DEF_CONS, NOT_NULL)) append(" NOT NULL");
+    if (colDef.isFlagged(COLUMN_DEF_AUTOINCREMENT)) append(" AUTO_INCREMENT");
 
     final var references = colDef.get(COLUMN_DEF_REF);
     if (references != null) safeVisit(references);
@@ -175,7 +195,7 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterReferences(SQLNode ref) {
-    builder.append(" REFERENCES ");
+    append(" REFERENCES ");
     safeVisit(ref.get(REFERENCES_TABLE));
 
     final var columns = ref.get(REFERENCES_COLUMNS);
@@ -183,7 +203,7 @@ public class SQLFormatter implements SQLVisitor {
       try (final var ignored = withParen(true)) {
         for (SQLNode column : columns) {
           safeVisit(column);
-          builder.append(", ");
+          append(", ");
         }
         builder.delete(builder.length() - 2, builder.length());
       }
@@ -203,34 +223,34 @@ public class SQLFormatter implements SQLVisitor {
     if (constraint != null)
       switch (constraint) {
         case PRIMARY:
-          builder.append("PRIMARY ");
+          append("PRIMARY ");
           break;
         case UNIQUE:
-          builder.append("UNIQUE ");
+          append("UNIQUE ");
           break;
         case FOREIGN:
-          builder.append("FOREIGN ");
+          append("FOREIGN ");
           break;
       }
 
     if (type != null)
       switch (type) {
         case FULLTEXT:
-          builder.append("FULLTEXT ");
+          append("FULLTEXT ");
           break;
         case SPATIAL:
-          builder.append("SPATIAL ");
+          append("SPATIAL ");
           break;
       }
 
-    builder.append("KEY ");
+    append("KEY ");
 
     if (name != null) appendName(indexDef, name, false);
 
     try (final var ignored = withParen(true)) {
       for (SQLNode key : keys) {
         safeVisit(key);
-        builder.append(", ");
+        append(", ");
       }
       builder.delete(builder.length() - 2, builder.length());
     }
@@ -240,13 +260,13 @@ public class SQLFormatter implements SQLVisitor {
     if (type != null)
       switch (type) {
         case BTREE:
-          builder.append(" USING BTREE ");
+          append(" USING BTREE ");
           break;
         case RTREE:
-          builder.append(" USING RTREE ");
+          append(" USING RTREE ");
           break;
         case HASH:
-          builder.append(" USING HASH ");
+          append(" USING HASH ");
           break;
       }
 
@@ -261,8 +281,8 @@ public class SQLFormatter implements SQLVisitor {
     final SQLNode expr = keyPart.get(KEY_PART_EXPR);
 
     if (columnName != null) appendName(keyPart, columnName, false);
-    if (length != null) builder.append('(').append(length).append(')');
-    if (direction != null) builder.append(' ').append(direction);
+    if (length != null) append('(').append(length).append(')');
+    if (direction != null) append(' ').append(direction);
     if (expr != null)
       try (final var ignored = withParen(true)) {
         safeVisit(expr);
@@ -273,12 +293,12 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterVariable(SQLNode variable) {
-    builder.append(variable.get(VARIABLE_SCOPE).prefix());
-    builder.append(variable.get(VARIABLE_NAME));
+    append(variable.get(VARIABLE_SCOPE).prefix());
+    append(variable.get(VARIABLE_NAME));
 
     final SQLNode assignment = variable.get(VARIABLE_ASSIGNMENT);
     if (assignment != null) {
-      builder.append(" = ");
+      append(" = ");
       safeVisit(assignment);
     }
 
@@ -290,22 +310,22 @@ public class SQLFormatter implements SQLVisitor {
     final Object value = literal.get(LITERAL_VALUE);
     switch (literal.get(LITERAL_TYPE)) {
       case TEXT:
-        builder.append('\'').append(value).append('\'');
+        append('\'').append(value).append('\'');
         break;
       case INTEGER:
       case LONG:
       case FRACTIONAL:
       case HEX:
-        builder.append(value);
+        append(value);
         break;
       case BOOL:
-        builder.append(value.toString().toUpperCase());
+        append(value.toString().toUpperCase());
         break;
       case NULL:
-        builder.append("NULL");
+        append("NULL");
         break;
       case UNKNOWN:
-        builder.append("UNKNOWN");
+        append("UNKNOWN");
         break;
       case TEMPORAL:
         builder
@@ -327,12 +347,12 @@ public class SQLFormatter implements SQLVisitor {
     final String funcName = name.get(NAME_2_1);
 
     if (schemaName == null && "extract".equalsIgnoreCase(funcName)) {
-      builder.append("EXTRACT");
+      append("EXTRACT");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
+        if (args.size() != 2) append(UNKNOWN_PLACEHOLDER);
         else {
           safeVisit(args.get(0));
-          builder.append(" FROM ");
+          append(" FROM ");
           safeVisit(args.get(1));
         }
       }
@@ -340,12 +360,12 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     if (schemaName == null && "position".equalsIgnoreCase(funcName)) {
-      builder.append("POSITION");
+      append("POSITION");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 2) builder.append(UNKNOWN_PLACEHOLDER);
+        if (args.size() != 2) append(UNKNOWN_PLACEHOLDER);
         else {
           safeVisit(args.get(0));
-          builder.append(" IN ");
+          append(" IN ");
           safeVisit(args.get(1));
         }
       }
@@ -353,9 +373,9 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     if (schemaName == null && "trim".equalsIgnoreCase(funcName)) {
-      builder.append("TRIM");
+      append("TRIM");
       try (final var ignored = withParen(true)) {
-        if (args.size() != 3) builder.append(UNKNOWN_PLACEHOLDER);
+        if (args.size() != 3) append(UNKNOWN_PLACEHOLDER);
         else {
           final SQLNode arg0 = args.get(0);
           final SQLNode arg1 = args.get(1);
@@ -363,12 +383,12 @@ public class SQLFormatter implements SQLVisitor {
 
           if (arg0 != null) {
             safeVisit(arg0); // LEADING/TRAILING/BOTH
-            builder.append(' ');
+            append(' ');
           }
           if (arg1 != null) safeVisit(arg1);
           if (arg2 != null) {
-            if (arg1 != null) builder.append(' ');
-            builder.append("FROM ");
+            if (arg1 != null) append(' ');
+            append("FROM ");
             safeVisit(arg2);
           }
         }
@@ -377,21 +397,21 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     if (schemaName == null && "overlay".equalsIgnoreCase(funcName)) {
-      builder.append("OVERLAY");
+      append("OVERLAY");
       try (final var ignored = withParen(true)) {
-        if (args.size() < 3) builder.append(UNKNOWN_PLACEHOLDER);
+        if (args.size() < 3) append(UNKNOWN_PLACEHOLDER);
         else {
           final SQLNode arg0 = args.get(0);
           final SQLNode arg1 = args.get(1);
           final SQLNode arg2 = args.get(2);
           final SQLNode arg3 = args.size() > 3 ? args.get(3) : null;
           safeVisit(arg0);
-          builder.append(" PLACING ");
+          append(" PLACING ");
           safeVisit(arg1);
-          builder.append(" FROM ");
+          append(" FROM ");
           safeVisit(arg2);
           if (arg3 != null) {
-            builder.append(" FOR ");
+            append(" FOR ");
             safeVisit(arg3);
           }
         }
@@ -406,7 +426,7 @@ public class SQLFormatter implements SQLVisitor {
           || "USER".equals(upperCase)
           || "LOCALTIME".equals(upperCase)
           || "LOCALTIMESTAMP".equals(upperCase)) {
-        builder.append(upperCase);
+        append(upperCase);
         return false;
       }
     }
@@ -414,7 +434,7 @@ public class SQLFormatter implements SQLVisitor {
     appendName(name, schemaName, true);
     // we choose not quote the function name for beauty and convention
     // in most case this doesn't cause problem
-    builder.append(funcName.toUpperCase());
+    append(funcName.toUpperCase());
 
     appendNodes(args, true, true);
     return false;
@@ -426,11 +446,11 @@ public class SQLFormatter implements SQLVisitor {
     try (final var ignored = withParen(needParen(collation, expr, true))) {
       safeVisit(expr);
     }
-    builder.append(" COLLATE ");
+    append(" COLLATE ");
     if (POSTGRESQL.equals(collation.dbType())) {
       collation.get(COLLATE_COLLATION).accept(this);
     } else {
-      builder.append('\'').append(collation.get(COLLATE_COLLATION).get(SYMBOL_TEXT)).append('\'');
+      append('\'').append(collation.get(COLLATE_COLLATION).get(SYMBOL_TEXT)).append('\'');
     }
     return false;
   }
@@ -438,9 +458,9 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterParamMarker(SQLNode paramMarker) {
     if (POSTGRESQL.equals(paramMarker.dbType())) {
-      builder.append('$').append(paramMarker.getOr(PARAM_MARKER_NUMBER, 1));
+      append('$').append(paramMarker.getOr(PARAM_MARKER_NUMBER, 1));
     } else {
-      builder.append('?');
+      append('?');
     }
     return false;
   }
@@ -448,8 +468,8 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterUnary(SQLNode unary) {
     final String op = unary.get(UNARY_OP).text();
-    builder.append(op);
-    if (op.length() > 1) builder.append(' ');
+    append(op);
+    if (op.length() > 1) append(' ');
 
     final SQLNode expr = unary.get(UNARY_EXPR);
     try (final var ignored = withParen(needParen(unary, expr, false))) {
@@ -461,29 +481,29 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterGroupingOp(SQLNode groupingOp) {
-    builder.append("GROUPING");
+    append("GROUPING");
     appendNodes(groupingOp.getOr(GROUPING_OP_EXPRS, emptyList()));
     return false;
   }
 
   @Override
   public boolean enterTuple(SQLNode tuple) {
-    if (tuple.isFlagged(TUPLE_AS_ROW)) builder.append("ROW");
+    if (tuple.isFlagged(TUPLE_AS_ROW)) append("ROW");
     appendNodes(tuple.getOr(TUPLE_EXPRS, emptyList()), true, true);
     return false;
   }
 
   @Override
   public boolean enterMatch(SQLNode match) {
-    builder.append("MATCH ");
+    append("MATCH ");
     appendNodes(match.get(MATCH_COLS), false);
 
-    builder.append(" AGAINST (");
+    append(" AGAINST (");
     safeVisit(match.get(MATCH_EXPR));
 
     final MatchOption option = match.get(MATCH_OPTION);
-    if (option != null) builder.append(' ').append(option.optionText());
-    builder.append(')');
+    if (option != null) append(' ').append(option.optionText());
+    append(')');
 
     return false;
   }
@@ -492,54 +512,54 @@ public class SQLFormatter implements SQLVisitor {
   public boolean enterCast(SQLNode cast) {
     if (POSTGRESQL.equals(cast.dbType())) {
       safeVisit(cast.get(CAST_EXPR));
-      builder.append("::");
+      append("::");
       cast.get(CAST_TYPE).formatAsCastType(builder, POSTGRESQL);
 
     } else {
-      builder.append("CAST(");
+      append("CAST(");
 
       safeVisit(cast.get(CAST_EXPR));
 
-      builder.append(" AS ");
+      append(" AS ");
       final SQLDataType castType = cast.get(CAST_TYPE);
       castType.formatAsCastType(builder, cast.dbType());
 
-      if (MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) builder.append(" ARRAY");
-      builder.append(')');
+      if (MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) append(" ARRAY");
+      append(')');
     }
     return false;
   }
 
   @Override
   public boolean enterDefault(SQLNode _default) {
-    builder.append("DEFAULT(");
+    append("DEFAULT(");
     safeVisit(_default.get(DEFAULT_COL));
-    builder.append(')');
+    append(')');
     return false;
   }
 
   @Override
   public boolean enterValues(SQLNode values) {
-    builder.append("VALUES(");
+    append("VALUES(");
     safeVisit(values.get(VALUES_EXPR));
-    builder.append(')');
+    append(')');
     return false;
   }
 
   @Override
   public boolean enterSymbol(SQLNode symbol) {
-    builder.append(symbol.get(SYMBOL_TEXT).toUpperCase());
+    append(symbol.get(SYMBOL_TEXT).toUpperCase());
     return false;
   }
 
   @Override
   public boolean enterInterval(SQLNode interval) {
-    builder.append("INTERVAL ");
+    append("INTERVAL ");
     final SQLNode expr = interval.get(INTERVAL_EXPR);
     try (final var ignored = withParen(needParen(interval, expr, false))) {
       safeVisit(expr);
     }
-    builder.append(' ').append(interval.get(INTERVAL_UNIT));
+    append(' ').append(interval.get(INTERVAL_UNIT));
 
     return false;
   }
@@ -549,38 +569,38 @@ public class SQLFormatter implements SQLVisitor {
     final SQLNode table = wildcard.get(WILDCARD_TABLE);
     if (table != null) {
       safeVisit(table);
-      builder.append('.');
+      append('.');
     }
-    builder.append('*');
+    append('*');
     return false;
   }
 
   @Override
   public boolean enterAggregate(SQLNode aggregate) {
-    builder.append(aggregate.get(AGGREGATE_NAME).toUpperCase()).append('(');
-    if (aggregate.isFlagged(AGGREGATE_DISTINCT)) builder.append("DISTINCT ");
+    append(aggregate.get(AGGREGATE_NAME).toUpperCase()).append('(');
+    if (aggregate.isFlagged(AGGREGATE_DISTINCT)) append("DISTINCT ");
 
     appendNodes(aggregate.get(AGGREGATE_ARGS), false, true);
     final List<SQLNode> order = aggregate.get(AGGREGATE_ORDER);
 
     if (order != null && !order.isEmpty()) {
-      builder.append(" ORDER BY ");
+      append(" ORDER BY ");
       appendNodes(order, false);
     }
 
     final String sep = aggregate.get(AGGREGATE_SEP);
-    if (sep != null) builder.append(" SEPARATOR '").append(sep).append('\'');
+    if (sep != null) append(" SEPARATOR '").append(sep).append('\'');
 
-    builder.append(')');
+    append(')');
 
     final String windowName = aggregate.get(AGGREGATE_WINDOW_NAME);
     final SQLNode windowSpec = aggregate.get(AGGREGATE_WINDOW_SPEC);
     if (windowName != null) {
-      builder.append(" OVER ");
+      append(" OVER ");
       appendName(aggregate, windowName, false);
     }
     if (windowSpec != null) {
-      builder.append(" OVER ");
+      append(" OVER ");
       safeVisit(windowSpec);
     }
     return false;
@@ -588,7 +608,7 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterExists(SQLNode exists) {
-    builder.append("EXISTS ");
+    append("EXISTS ");
     safeVisit(exists.get(EXISTS_SUBQUERY_EXPR));
     return false;
   }
@@ -605,7 +625,7 @@ public class SQLFormatter implements SQLVisitor {
 
     breakLine();
 
-    builder.append(joinType.text()).append(' ');
+    append(joinType.text()).append(' ');
     final boolean needParen =
         isJoined(right) && !(joinType.isInner() && right.get(JOINED_TYPE).isInner());
     try (final var ignored = withParen(needParen)) {
@@ -620,10 +640,10 @@ public class SQLFormatter implements SQLVisitor {
         increaseIndent();
         breakLine();
         if (on != null) {
-          builder.append("ON ");
+          append("ON ");
           safeVisit(on);
         } else {
-          builder.append("USING ");
+          append("USING ");
           appendStrings(using, true, quotation2(joinedTableSource));
         }
         decreaseIndent();
@@ -640,25 +660,25 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterConvertUsing(SQLNode convertUsing) {
-    builder.append("CONVERT(");
+    append("CONVERT(");
     safeVisit(convertUsing.get(CONVERT_USING_EXPR));
-    builder.append(" USING ");
+    append(" USING ");
 
     String charset = convertUsing.get(CONVERT_USING_CHARSET).get(SYMBOL_TEXT);
     if (!charset.equalsIgnoreCase("binary") && !charset.equalsIgnoreCase("default"))
       charset = "'" + charset + "'";
 
-    builder.append(charset);
-    builder.append(')');
+    append(charset);
+    append(')');
     return false;
   }
 
   @Override
   public boolean enterCase(SQLNode _case) {
-    builder.append("CASE");
+    append("CASE");
     final SQLNode cond = _case.get(CASE_COND);
     if (cond != null) {
-      builder.append(' ');
+      append(' ');
       try (final var ignored = withParen(needParen(_case, cond, false))) {
         safeVisit(cond);
       }
@@ -673,7 +693,7 @@ public class SQLFormatter implements SQLVisitor {
     final SQLNode _else = _case.get(CASE_ELSE);
     if (_else != null) {
       breakLine();
-      builder.append("ELSE ");
+      append("ELSE ");
       try (final var ignored = withParen(needParen(_case, _else, false))) {
         safeVisit(_else);
       }
@@ -681,20 +701,20 @@ public class SQLFormatter implements SQLVisitor {
 
     decreaseIndent();
     breakLine();
-    builder.append("END");
+    append("END");
 
     return false;
   }
 
   @Override
   public boolean enterWhen(SQLNode when) {
-    builder.append("WHEN ");
+    append("WHEN ");
     final SQLNode cond = when.get(WHEN_COND);
     try (final var ignored = withParen(needParen(when, cond, false))) {
       safeVisit(cond);
     }
 
-    builder.append(" THEN ");
+    append(" THEN ");
     final SQLNode expr = when.get(WHEN_EXPR);
     try (final var ignored = withParen(needParen(when, expr, false))) {
       safeVisit(expr);
@@ -704,29 +724,29 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterWindowFrame(SQLNode windowFrame) {
-    builder.append(windowFrame.get(WINDOW_FRAME_UNIT)).append(' ');
+    append(windowFrame.get(WINDOW_FRAME_UNIT)).append(' ');
     final SQLNode start = windowFrame.get(WINDOW_FRAME_START);
     final SQLNode end = windowFrame.get(WINDOW_FRAME_END);
 
-    if (end != null) builder.append("BETWEEN ");
+    if (end != null) append("BETWEEN ");
     safeVisit(start);
     if (end != null) {
-      builder.append(" AND ");
+      append(" AND ");
       safeVisit(end);
     }
 
     final WindowExclusion exclusion = windowFrame.get(WINDOW_FRAME_EXCLUSION);
-    if (exclusion != null) builder.append(" EXCLUDE ").append(exclusion.text());
+    if (exclusion != null) append(" EXCLUDE ").append(exclusion.text());
 
     return false;
   }
 
   @Override
   public boolean enterFrameBound(SQLNode frameBound) {
-    if (frameBound.get(FRAME_BOUND_DIRECTION) == null) builder.append("CURRENT ROW");
+    if (frameBound.get(FRAME_BOUND_DIRECTION) == null) append("CURRENT ROW");
     else {
       safeVisit(frameBound.get(FRAME_BOUND_EXPR));
-      builder.append(' ').append(frameBound.get(FRAME_BOUND_DIRECTION));
+      append(' ').append(frameBound.get(FRAME_BOUND_DIRECTION));
     }
 
     return false;
@@ -737,33 +757,33 @@ public class SQLFormatter implements SQLVisitor {
     final String alias = windowSpec.get(WINDOW_SPEC_ALIAS);
     if (alias != null) {
       appendName(windowSpec, alias, false);
-      builder.append(" AS ");
+      append(" AS ");
     }
 
-    builder.append("(");
+    append("(");
 
     final String name = windowSpec.get(WINDOW_SPEC_NAME);
     if (name != null) appendName(windowSpec, name, false);
 
     final List<SQLNode> partition = windowSpec.get(WINDOW_SPEC_PARTITION);
     if (partition != null && !partition.isEmpty()) {
-      builder.append(" PARTITION BY ");
+      append(" PARTITION BY ");
       appendNodes(partition, false);
     }
 
     final List<SQLNode> order = windowSpec.get(WINDOW_SPEC_ORDER);
     if (order != null && !order.isEmpty()) {
-      builder.append(" ORDER BY ");
+      append(" ORDER BY ");
       appendNodes(order, false);
     }
 
     final SQLNode frame = windowSpec.get(WINDOW_SPEC_FRAME);
     if (frame != null) {
-      builder.append(' ');
+      append(' ');
       safeVisit(frame);
     }
 
-    builder.append(')');
+    append(')');
 
     return false;
   }
@@ -778,12 +798,12 @@ public class SQLFormatter implements SQLVisitor {
     final BinaryOp op = binary.get(BINARY_OP);
 
     if (op.isLogic()) breakLine();
-    else builder.append(' ');
+    else append(' ');
 
-    builder.append(op.text()).append(' ');
+    append(op.text()).append(' ');
 
     final SubqueryOption subqueryOption = binary.get(BINARY_SUBQUERY_OPTION);
-    if (subqueryOption != null) builder.append(subqueryOption).append(' ');
+    if (subqueryOption != null) append(subqueryOption).append(' ');
 
     final SQLNode right = binary.get(BINARY_RIGHT);
 
@@ -821,12 +841,12 @@ public class SQLFormatter implements SQLVisitor {
       safeVisit(left);
     }
 
-    builder.append(' ').append(operator.text0()).append(' ');
+    append(' ').append(operator.text0()).append(' ');
     try (final var ignored = withParen(needParen(ternary, middle, false))) {
       safeVisit(middle);
     }
 
-    builder.append(' ').append(operator.text1()).append(' ');
+    append(' ').append(operator.text1()).append(' ');
     try (final var ignored = withParen(needParen(ternary, right, false))) {
       safeVisit(right);
     }
@@ -838,7 +858,7 @@ public class SQLFormatter implements SQLVisitor {
   public boolean enterOrderItem(SQLNode orderItem) {
     safeVisit(orderItem.get(ORDER_ITEM_EXPR));
     final KeyDirection direction = orderItem.get(ORDER_ITEM_DIRECTION);
-    if (direction != null) builder.append(' ').append(direction.name());
+    if (direction != null) append(' ').append(direction.name());
     return false;
   }
 
@@ -848,7 +868,7 @@ public class SQLFormatter implements SQLVisitor {
 
     final String alias = selectItem.get(SELECT_ITEM_ALIAS);
     if (alias != null) {
-      builder.append(" AS ");
+      append(" AS ");
       appendName(selectItem, alias, false);
     }
     return false;
@@ -857,20 +877,20 @@ public class SQLFormatter implements SQLVisitor {
   @Override
   public boolean enterIndexHint(SQLNode indexHint) {
     final IndexHintType type = indexHint.get(INDEX_HINT_TYPE);
-    builder.append(type).append(" INDEX");
+    append(type).append(" INDEX");
 
     final IndexHintTarget target = indexHint.get(INDEX_HINT_TARGET);
-    if (target != null) builder.append(" FOR ").append(target.text());
+    if (target != null) append(" FOR ").append(target.text());
 
-    builder.append(' ');
+    append(' ');
     try (final var ignored = withParen(true)) {
       final List<String> names = indexHint.get(INDEX_HINT_NAMES);
 
       if (names != null && !names.isEmpty()) {
         for (String name : names) {
-          if (name.equalsIgnoreCase("primary")) builder.append("PRIMARY");
+          if (name.equalsIgnoreCase("primary")) append("PRIMARY");
           else appendName(indexHint, name, false);
-          builder.append(", ");
+          append(", ");
         }
         trimTrailing(builder, 2);
       }
@@ -885,19 +905,19 @@ public class SQLFormatter implements SQLVisitor {
 
     final List<String> partitions = simpleTableSource.get(SIMPLE_PARTITIONS);
     if (partitions != null && !partitions.isEmpty()) {
-      builder.append(" PARTITION ");
+      append(" PARTITION ");
       appendStrings(partitions, true, quotation2(simpleTableSource));
     }
 
     final String alias = simpleTableSource.get(SIMPLE_ALIAS);
     if (alias != null) {
-      builder.append(" AS ");
+      append(" AS ");
       appendName(simpleTableSource, alias, false);
     }
 
     final List<SQLNode> hints = simpleTableSource.get(SIMPLE_HINTS);
     if (MYSQL.equals(simpleTableSource.dbType()) && hints != null && !hints.isEmpty()) {
-      builder.append(' ');
+      append(' ');
       appendNodes(hints, false);
     }
 
@@ -911,7 +931,7 @@ public class SQLFormatter implements SQLVisitor {
     final List<SQLNode> orderBy = query.get(QUERY_ORDER_BY);
     if (orderBy != null) {
       breakLine();
-      builder.append("ORDER BY");
+      append("ORDER BY");
       increaseIndent();
       breakLine();
       appendNodes(orderBy, false);
@@ -923,10 +943,10 @@ public class SQLFormatter implements SQLVisitor {
 
     if (limit != null) {
       breakLine();
-      builder.append("LIMIT ");
+      append("LIMIT ");
       safeVisit(limit);
       if (offset != null) {
-        builder.append(" OFFSET ");
+        append(" OFFSET ");
         safeVisit(offset);
       }
     }
@@ -945,8 +965,15 @@ public class SQLFormatter implements SQLVisitor {
     final SQLNode having = querySpec.get(QUERY_SPEC_HAVING);
     final List<SQLNode> windows = querySpec.get(QUERY_SPEC_WINDOWS);
 
-    builder.append("SELECT");
-    if (distinct) builder.append(" DISTINCT");
+    append("SELECT");
+    if (distinct) append(" DISTINCT");
+    if (POSTGRESQL.equals(querySpec.dbType())) {
+      final List<SQLNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
+      if (distinctOn != null && !distinctOn.isEmpty()) {
+        append(" ON");
+        appendNodes(distinctOn, true, true);
+      }
+    }
 
     increaseIndent();
     breakLine();
@@ -955,7 +982,7 @@ public class SQLFormatter implements SQLVisitor {
 
     if (from != null) {
       breakLine();
-      builder.append("FROM ");
+      append("FROM ");
       increaseIndent();
       safeVisit(from);
       decreaseIndent();
@@ -963,7 +990,7 @@ public class SQLFormatter implements SQLVisitor {
 
     if (where != null) {
       breakLine();
-      builder.append("WHERE");
+      append("WHERE");
       increaseIndent();
       breakLine();
       safeVisit(where);
@@ -972,20 +999,20 @@ public class SQLFormatter implements SQLVisitor {
 
     if (groupBy != null) {
       breakLine();
-      builder.append("GROUP BY");
+      append("GROUP BY");
       increaseIndent();
       breakLine();
       appendNodes(groupBy, false);
       if (olapOption != null) {
         breakLine();
-        builder.append(olapOption.text());
+        append(olapOption.text());
       }
       decreaseIndent();
     }
 
     if (having != null) {
       breakLine();
-      builder.append("HAVING");
+      append("HAVING");
       increaseIndent();
       breakLine();
       safeVisit(having);
@@ -994,7 +1021,7 @@ public class SQLFormatter implements SQLVisitor {
 
     if (windows != null) {
       breakLine();
-      builder.append("WINDOW");
+      append("WINDOW");
       increaseIndent();
       breakLine();
       appendNodes(windows, false);
@@ -1023,10 +1050,10 @@ public class SQLFormatter implements SQLVisitor {
     }
 
     breakLine();
-    builder.append(setOp.get(SET_OP_TYPE));
+    append(setOp.get(SET_OP_TYPE));
 
     final SetOperationOption option = setOp.get(SET_OP_OPTION);
-    if (option != null) builder.append(' ').append(option);
+    if (option != null) append(' ').append(option);
     breakLine();
 
     try (final var ignored = withParen(true)) {
@@ -1038,7 +1065,7 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
-    if (derivedTableSource.isFlagged(DERIVED_LATERAL)) builder.append("LATERAL ");
+    if (derivedTableSource.isFlagged(DERIVED_LATERAL)) append("LATERAL ");
     try (final var ignored = withParen(true)) {
       increaseIndent();
       breakLine(false);
@@ -1049,7 +1076,7 @@ public class SQLFormatter implements SQLVisitor {
 
     final String alias = derivedTableSource.get(DERIVED_ALIAS);
     if (alias != null) {
-      builder.append(" AS ");
+      append(" AS ");
       appendName(derivedTableSource, alias, false);
     }
 
@@ -1064,9 +1091,9 @@ public class SQLFormatter implements SQLVisitor {
 
   @Override
   public boolean enterArray(SQLNode array) {
-    builder.append("ARRAY[");
+    append("ARRAY[");
     appendNodes(array.get(ARRAY_ELEMENTS), false, true);
-    builder.append(']');
+    append(']');
     return false;
   }
 
@@ -1083,61 +1110,61 @@ public class SQLFormatter implements SQLVisitor {
 
   private class ParenCtx extends DumbAutoCloseable {
     ParenCtx() {
-      builder.append('(');
+      append('(');
     }
 
     @Override
     public void close() {
-      builder.append(')');
+      append(')');
     }
   }
 
   private void safeVisit(SQLNode node) {
-    if (node == null) builder.append(UNKNOWN_PLACEHOLDER);
+    if (node == null) append(UNKNOWN_PLACEHOLDER);
     else node.accept(this);
   }
 
   private void appendStrings(List<String> exprs, boolean withParen, String surround) {
     if (exprs == null || exprs.isEmpty()) {
-      if (withParen) builder.append("()");
+      if (withParen) append("()");
       return;
     }
 
-    if (withParen) builder.append('(');
+    if (withParen) append('(');
 
     for (String arg : exprs) {
       if (arg == null) continue;
-      if (surround != null) builder.append(surround);
-      builder.append(arg);
-      if (surround != null) builder.append(surround);
-      builder.append(", ");
+      if (surround != null) append(surround);
+      append(arg);
+      if (surround != null) append(surround);
+      append(", ");
     }
 
     trimTrailing(builder, 2);
 
-    if (withParen) builder.append(')');
+    if (withParen) append(')');
   }
 
   private void appendNodes(List<SQLNode> exprs, boolean withParen, boolean noBreak) {
     if (exprs == null || exprs.isEmpty()) {
-      if (withParen) builder.append("()");
+      if (withParen) append("()");
       return;
     }
 
-    if (withParen) builder.append('(');
+    if (withParen) append('(');
 
     for (int i = 0; i < exprs.size() - 1; i++) {
       final SQLNode expr = exprs.get(i);
       safeVisit(expr);
-      builder.append(',');
-      if (noBreak) builder.append(' ');
+      append(',');
+      if (noBreak) append(' ');
       else breakLine();
     }
 
     final SQLNode last = exprs.get(exprs.size() - 1);
     safeVisit(last);
 
-    if (withParen) builder.append(')');
+    if (withParen) append(')');
   }
 
   private void appendNodes(List<SQLNode> exprs, boolean withParen) {

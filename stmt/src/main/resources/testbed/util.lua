@@ -1,10 +1,10 @@
 local date = require("date")
 
-local BASE_TS = date("2020-06-15 00:00:00")
+local BASE_TS = "2020-06-15 00:00:00"
 local TS_FORMAT = "'%Y-%m-%d %T'"
 
 local function timeBase()
-    return BASE_TS
+    return date(BASE_TS)
 end
 
 local function timeFmt(dateObj, dbType)
@@ -16,7 +16,7 @@ local function timeFmt(dateObj, dbType)
 end
 
 local function timeParse(str)
-    str = str:gsub("'(.+)'", '%1')
+    str = str:gsub("'(.+)'.*", '%1')
     return date(str)
 end
 
@@ -43,23 +43,25 @@ local function unquote(str, quotation)
     local last = str:sub(#str, #str)
     if first == quotation and last == quotation then
         return str:sub(2, #str - 1)
+    else
+        return str
     end
 end
 
 local function log(_content, level)
     level = level or 1
-    if not sysbench or sysbench.opt.verbosity >= level then
+    if not sysbench or (sysbench.opt and sysbench.opt.verbosity >= level) then
         io.write(_content)
     end
 end
 
 local function tryRequire(path)
-    log("[TRACE] try to find " .. path, 5)
+    log(("[TRACE] try to find %s\n"):format(path), 5)
     local status, result = pcall(require, path)
     if status then
         return result
     else
-        log("[TRACE] not found " .. path, 1)
+        log(("[TRACE] not found %s\n"):format(path), 1)
         return nil
     end
 end
@@ -79,6 +81,14 @@ local function processResultSet(rs)
     end
 
     return numRows, table.concat(ret, "\n")
+end
+
+local function normalizeParam(p)
+    if type(p) == 'number' and p < 0 then
+        return ('(%s)'):format(p)
+    else
+        return p
+    end
 end
 
 local Stack = {}
@@ -119,6 +129,7 @@ return {
     timeCompare = timeCompare,
     timeNow = timeNow,
     tryRequire = tryRequire,
+    normalizeParam = normalizeParam,
     unquote = unquote,
     processResultSet = processResultSet,
     log = log,

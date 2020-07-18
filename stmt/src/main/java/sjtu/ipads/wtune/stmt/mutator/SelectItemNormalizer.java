@@ -168,7 +168,10 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
 
   @Override
   public void mutate(Statement stmt) {
-    stmt.parsed().accept(new SelectItemNormalizer());
+    final SQLNode parsed = stmt.parsed();
+    parsed.accept(new SelectItemNormalizer());
+    parsed.relinkAll();
+    parsed.setDbTypeRec(parsed.dbType());
   }
 
   private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(ColumnResolver.class);

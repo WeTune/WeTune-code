@@ -47,7 +47,25 @@ local function tableFilter(type, value)
         return function(ordinal, t)
             return target[t.tableName]
         end
+    end
+end
 
+local function stmtFilter(type, value)
+    if type == "continue" then
+        return function(stmt)
+            return stmt.stmtId >= value
+        end
+
+    elseif type == "target" then
+        local target = {}
+        for id in value:gmatch("(.-),") do
+            if tonumber(id) then
+                target[tonumber(id)] = true
+            end
+        end
+        return function(stmt)
+            return target[stmt.stmtId]
+        end
     end
 end
 
@@ -57,7 +75,7 @@ function WTune:loadSchema()
     if schemaDesc then
         return Schema(self.app):buildFrom(schemaDesc)
     else
-        return ni
+        return nil
     end
 end
 
@@ -110,8 +128,10 @@ function WTune:initOptions(options)
 
     if options.continue then
         self.tableFilter = tableFilter("continue", tonumber(options.continue))
-    elseif options.tables then
-        self.tableFilter = tableFilter("target", options.tables)
+        self.stmtFilter = stmtFilter("continue", tonumber(options.continue))
+    elseif options.targets then
+        self.tableFilter = tableFilter("target", options.targets)
+        self.stmtFilter = stmtFilter("target", options.targets)
     end
 end
 
@@ -212,10 +232,10 @@ if sysbench then
         schema = { "schema file" },
         workload = { "workload file" },
         rows = { "#rows" },
-        randDist = { "random distribution", "uniform" },
-        randSeq = { "type of random sequence", "typed" },
+        randdist = { "random distribution", "uniform" },
+        randseq = { "type of random sequence", "typed" },
         continue = { "continue populate tables from given index" },
-        tables = { "populate given tables" },
+        targets = { "populate given tables" },
         dump = { "whether to dump to file" }
     }
     sysbench.cmdline.commands = {

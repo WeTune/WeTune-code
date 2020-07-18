@@ -6,9 +6,9 @@ public class GenScript implements Task {
 
   @Override
   public void doTasks(String... appNames) {
-    //    ScriptUtils.copyResources();
+    ScriptUtils.copyResources();
     for (String appName : appNames) {
-      //      ScriptUtils.genSchema(appName);
+     ScriptUtils.genSchema(appName);
       ScriptUtils.genWorkload(appName, "base", true);
     }
   }

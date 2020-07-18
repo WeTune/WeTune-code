@@ -5,9 +5,9 @@ import subprocess
 
 base_profile = {
     'db': 'base',
+    'tag': 'base',
     'schema': 'base',
     'workload': 'base',
-    'tag': 'base',
     'rows': '10000',
     'dist': 'uniform',
     'seq': 'typed'
@@ -57,11 +57,12 @@ def prepare_args(args, app):
   set_arg('seq', 'typed')
   set_arg('host', '10.0.0.102')
   set_arg('continue', None)
-  set_arg('tables', None)
+  set_arg('targets', None)
+  set_arg('dump', None)
 
-  tables = pack.get('tables')
-  if tables and tables[-1] != ',':
-    pack['tables'] = tables + ','
+  targets = pack.get('targets')
+  if targets and targets[-1] != ',':
+    pack['targets'] = targets + ','
 
   if pack['host'] in hosts:
     pack['host'] = hosts[pack['host']]
@@ -79,15 +80,14 @@ def echo_args(args):
 
 
 def invoke_sysbench(args):
-  if args['db_type'] == 'pgsql':
-    return
-
-  real_args = ['sysbench', '--app=' + args['app'], # '--tag=' + args['tag'],
-               '--schema=' + args['schema'], # '--workload=' + args['workload'],
+  real_args = ['sysbench', '--verbosity=3', '--app=' + args['app'], '--tag=' + args['tag'],
+               '--schema=' + args['schema'], '--workload=' + args['workload'],
                '--rows=' + args['rows'], '--randdist=' + args['dist'], '--randseq=' + args['seq']]
 
   if 'continue' in args: real_args.append('--continue=' + args['continue'])
-  if 'tables' in args: real_args.append('--tables=' + args['tables'])
+  if 'targets' in args: real_args.append('--targets=' + args['targets'])
+
+  if 'dump' in args: real_args.append('--dump=true')
 
   db_type = args['db_type']
   real_args.append("--db-driver=" + db_type)
@@ -109,6 +109,12 @@ def invoke_mysql(args, cmd, inFile=None):
   print("[Exec] " + " ".join(real_args), flush=True)
   subprocess.run(real_args, stdin=inFile)
 
+def invoke_pgsql(args, cmd):
+  real_args = ['psql', '-U', args['user'], '-h', args['host']]
+  real_args += cmd
+  print("[Exec] " + " ".join(real_args), flush=True)
+  subprocess.run(real_args)
+
 
 def recreate_mysql(args):
   app = args['app']
@@ -121,13 +127,24 @@ def recreate_mysql(args):
   with open(schema_sql) as inFile:
     invoke_mysql(conn_param, ['-D', db_name], inFile)
 
+def recreate_pgsql(args):
+  app = args['app']
+  db = args['db']
+  db_name = '{}_{}'.format(app, db)
+  schema_sql = '{}/{}.{}.schema.sql'.format(app, app, db)
+  conn_param = args['conn']
+  invoke_pgsql(conn_param, ['-c', 'drop database if exists "{}"'.format(db_name)])
+  invoke_pgsql(conn_param, ['-c', 'create database "{}"'.format(db_name)])
+  invoke_pgsql(conn_param, ['-d', db_name, '-f', schema_sql])
+
 
 def recreate(args):
   if args['db_type'] == 'mysql':
     recreate_mysql(args)
+  elif args['db_type'] == 'pgsql':
+    recreate_pgsql(args)
   else:
-    pass
-    # assert False
+    assert False
 
 
 parser = argparse.ArgumentParser()
@@ -141,13 +158,12 @@ parser.add_argument('-r', '--rows')
 parser.add_argument('-D', '--dist')
 parser.add_argument('-S', '--seq')
 parser.add_argument('-H', '--host')
-parser.add_argument('--continue')
-parser.add_argument('--tables')
+parser.add_argument('-C', '--continue')
+parser.add_argument('-T', '--targets')
+parser.add_argument('-o', '--dump', action='store_true')
 parser.add_argument('apps', action='append')
 
-known_apps = ["halo", "sagan", "refinerycms", "diaspora", "fanchaoo", "guns", "redmine", "eladmin", "wordpress",
-              "solidus", "discourse", "spree", "homeland", "broadleaf", "gitlab", "publiccms", "shopizer", "pybbs",
-              "fatfreecrm", "lobsters", "springblog", "febs", "forest_blog"]
+known_apps = ['broadleaf', 'diaspora', 'discourse', 'eladmin', 'fanchaoo', 'fatfreecrm', 'febs', 'forest_blog', 'gitlab', 'guns', 'halo', 'homeland', 'lobsters', 'publiccms', 'pybbs', 'redmine', 'refinerycms', 'sagan', 'shopizer', 'solidus', 'spree', 'springblog', 'wordpress']
 
 if __name__ == '__main__':
   args = vars(parser.parse_args())

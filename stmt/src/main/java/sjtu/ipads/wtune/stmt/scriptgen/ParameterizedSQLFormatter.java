@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.stmt.attrs.Param;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_PARAM;
 
@@ -18,6 +19,25 @@ public class ParameterizedSQLFormatter extends SQLFormatter {
 
   public ParameterizedSQLFormatter(boolean oneLine) {
     super(oneLine);
+  }
+
+  @Override
+  protected SQLFormatter append(String s) {
+    builder.append(s.replace("%", "%%"));
+    return this;
+  }
+
+  @Override
+  protected SQLFormatter append(Object obj) {
+    builder.append(String.valueOf(obj).replace("%", "%%"));
+    return this;
+  }
+
+  @Override
+  protected SQLFormatter append(char c) {
+    if (c == '%') builder.append("%%");
+    else builder.append(c);
+    return this;
   }
 
   @Override

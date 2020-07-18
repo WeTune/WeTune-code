@@ -4,7 +4,22 @@ local date = require("date")
 local Modifiers = {}
 local Funcs = {}
 
-function Modifiers.columnValue(tableName, columnName, position)
+local function shiftValue(value, shift)
+    shift = shift or 2
+    if type(value) == 'number' then
+        return value + shift
+
+    elseif type(value) == 'string' then
+        local num = tonumber(Util.unquote(value, "'"))
+        if num then
+            return "'" .. num + shift .. "'"
+        end
+    end
+
+    return nil
+end
+
+function Modifiers.column_value(tableName, columnName, position)
     return function(wtune, lineNum, stack)
         for _ = 1, position do
             lineNum = wtune:redirect(lineNum)
@@ -50,11 +65,16 @@ function Modifiers.times()
 end
 
 function Modifiers.decrease()
-    -- TODO: time
     return function(wtune, _, stack)
         local value = stack:pop()
         if type(value) == 'number' then
-            stack:push(stack:pop() - 10)
+            stack:push(value - 10)
+        elseif value:len() < 19 then
+            if value:len() == 1 then
+                stack:push(value == "'0'" and "'1'" or "'0'")
+            else
+                stack:push(shiftValue(value, -10) or ("'0" .. value:sub(2)))
+            end
         else
             stack:push(Util.timeFmt(Util.timeParse(value):addhours(-24), wtune.dbType))
         end
@@ -65,7 +85,13 @@ function Modifiers.increase()
     return function(wtune, _, stack)
         local value = stack:pop()
         if type(value) == 'number' then
-            stack:push(stack:pop() - 10)
+            stack:push(value + 10)
+        elseif value:len() < 19 then
+            if value:len() == 1 then
+                stack:push(value == "'0'" and "'1'" or "'0'")
+            else
+                stack:push(shiftValue(value, 10) or ("'0" .. value:sub(2)))
+            end
         else
             stack:push(Util.timeFmt(Util.timeParse(value):addhours(24), wtune.dbType))
         end
@@ -102,9 +128,14 @@ function Modifiers.check_null()
     end
 end
 
-function Modifiers.check_boolean()
-    return function(_, _, _)
-        -- don't need to do anything
+function Modifiers.check_bool()
+    return function(_, _, stack)
+        local value = stack:pop()
+        if value == 'TRUE' or value == 0 then
+            stack:push('TRUE')
+        else
+            stack:push('FALSE')
+        end
     end
 end
 
@@ -129,28 +160,14 @@ function Modifiers.make_tuple(count)
     end
 end
 
-local function shiftValue(value)
-    if type(value) == 'number' then
-        return value + 2
-
-    elseif type(value) == 'string' then
-        local num = tonumber(Util.unquote(value, "'"))
-        if num then
-            return "'" .. num + 2 .. "'"
-        end
-    end
-
-    return nil
-end
-
 function Modifiers.array_element()
     return function(_, _, stack)
         local value = stack:pop()
         local shifted = shiftValue(value)
         if shifted then
-            value.push({ value, shifted })
+            stack:push({ value, shifted })
         else
-            value.push(value)
+            stack:push(value)
         end
     end
 end
@@ -160,9 +177,9 @@ function Modifiers.tuple_element()
         local value = stack:pop()
         local shifted = shiftValue(value)
         if shifted then
-            value.push({ value, shifted })
+            stack:push({ value, shifted })
         else
-            value.push(value)
+            stack:push(value)
         end
     end
 end
@@ -185,7 +202,7 @@ function Modifiers.invoke_agg(funcName)
     end
 end
 
-function Modifiers.invoke_function(funcName, argCount)
+function Modifiers.invoke_func(funcName, argCount)
     return function(_, _, stack)
         local args = {}
         for i = argCount, 1, -1 do

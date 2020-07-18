@@ -24,6 +24,7 @@ function Workload:buildFrom(workloadDesc)
     for _, stmtDesc in ipairs(workloadDesc) do
         self:addStmt(stmtDesc)
     end
+    return self
 end
 
 local function makeWorkload(appName)
