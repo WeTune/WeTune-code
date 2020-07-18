@@ -8,7 +8,8 @@ public class GenScript implements Task {
   public void doTasks(String... appNames) {
     ScriptUtils.copyResources();
     for (String appName : appNames) {
-     ScriptUtils.genSchema(appName);
+      ScriptUtils.genSchema(appName, "base");
+      ScriptUtils.genSchema(appName, "opt");
       ScriptUtils.genWorkload(appName, "base", true);
     }
   }

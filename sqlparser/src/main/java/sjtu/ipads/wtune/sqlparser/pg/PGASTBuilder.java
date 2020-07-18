@@ -775,7 +775,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
   public SQLNode visitFunction_call(PGParser.Function_callContext ctx) {
     if (ctx.schema_qualified_name_nontype() != null) {
       final String[] funcName = stringifyIdentifier(ctx.schema_qualified_name_nontype());
-      return isAggregator(funcName) || ctx.WITHIN() != null
+      return ctx.WITHIN() != null || ctx.OVER() != null || isAggregator(funcName)
           ? parseAggregate(ctx, funcName)
           : parseFuncCall(ctx, funcName);
     } else return parseFuncCall(ctx, null);

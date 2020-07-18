@@ -23,7 +23,7 @@ public class SchemaDaoInstance {
     return INSTANCE;
   }
 
-  public static Schema findOne(String appName, String dbType) {
-    return INSTANCE.findOne(appName, dbType);
+  public static Schema findOne(String appName, String tag, String dbType) {
+    return INSTANCE.findOne(appName, tag, dbType);
   }
 }

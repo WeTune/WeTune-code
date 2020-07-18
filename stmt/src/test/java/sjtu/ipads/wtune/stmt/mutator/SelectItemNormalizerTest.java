@@ -47,4 +47,14 @@ class SelectItemNormalizerTest {
       assertFalse(stmt.parsed().toString().contains("SELECT  FROM"));
     }
   }
+
+  //  @Test
+  //  @DisplayName("[Stmt.Mutator.SelectItem] all statements")
+  //  void test0() {
+  //    final Statement stmt = Statement.findOne("redmine", 1049);
+  //    System.out.println((stmt).parsed().toString(false));
+  //      stmt.retrofitStandard();
+  //      stmt.mutate(SelectItemNormalizer.class);
+  //    System.out.println((stmt.parsed().toString(false)));
+  //  }
 }

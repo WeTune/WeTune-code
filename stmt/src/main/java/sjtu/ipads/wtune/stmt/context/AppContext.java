@@ -16,6 +16,7 @@ public class AppContext implements Attrs<AppContext> {
   private String name;
   private String dbType;
   private Schema schema;
+  private Map<String, Schema> alternativeSchemas = new HashMap<>();
   private Map<Integer, Statement> statements = new HashMap<>();
   public int maxIdSeen = -1;
 
@@ -49,7 +50,7 @@ public class AppContext implements Attrs<AppContext> {
   }
 
   public Schema schema() {
-    if (schema == null) schema = SchemaDaoInstance.findOne(name, dbType);
+    if (schema == null) schema = SchemaDaoInstance.findOne(name, "base", dbType);
     return schema;
   }
 
@@ -59,6 +60,13 @@ public class AppContext implements Attrs<AppContext> {
 
   public void setSchema(Schema schema) {
     this.schema = schema;
+  }
+
+  public Schema alternativeSchema(String tag) {
+    Schema schema = alternativeSchemas.get(tag);
+    if (schema == null)
+      alternativeSchemas.put(tag, schema = SchemaDaoInstance.findOne(name, tag, dbType));
+    return schema;
   }
 
   public void setDbType(String dbType) {

@@ -92,8 +92,12 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
     return false;
   }
 
-  private static String genAlias(int ordinal) {
+  private static String genPrimaryAlias(int ordinal) {
     return "_primary_" + ordinal;
+  }
+
+  private static String genMandatoryAlias(int ordinal) {
+    return "_mandatory_" + ordinal;
   }
 
   private static boolean selectInputColumns(
@@ -104,7 +108,7 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
     for (Column column : source.table().columns())
       if (filter.test(column)) {
         selected = true;
-        final SelectItem item = selectInputColumn(source, column, genAlias(dest.size()));
+        final SelectItem item = selectInputColumn(source, column, genPrimaryAlias(dest.size()));
         item.setPrimary(true);
 
         dest.add(item);
@@ -117,7 +121,7 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
     for (SelectItem subItem :
         source.node().get(DERIVED_SUBQUERY).get(RESOLVED_QUERY_SCOPE).selectItems()) {
       if (subItem.isPrimary()) {
-        final SelectItem item = selectOutputColumn(source, subItem, genAlias(dest.size()));
+        final SelectItem item = selectOutputColumn(source, subItem, genPrimaryAlias(dest.size()));
         item.setPrimary(true);
 
         dest.add(item);
@@ -131,31 +135,45 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
       if (cRef == null) continue;
 
       if (cRef.refItem() != null) {
-        if (cRef.refItem().isPrimary()) item.setPrimary(true);
+        if (cRef.refItem().isPrimary())
+          item.setPrimary(true);
 
       } else {
         final Column column = cRef.resolveAsColumn();
-        if (column.primaryKeyPart() || column.uniquePart()) item.setPrimary(true);
+        if (column.primaryKeyPart() || column.uniquePart())
+          item.setPrimary(true);
       }
     }
   }
 
   private static Set<SelectItem> collectMandatory(QueryScope scope) {
     final Set<SelectItem> ret = new HashSet<>();
-    collectRefItems(scope.specNode().get(QUERY_SPEC_GROUP_BY), ret);
-    collectRefItems(scope.queryNode().get(QUERY_ORDER_BY), ret);
+    collectRefItems(scope, scope.specNode().get(QUERY_SPEC_GROUP_BY), ret);
+    collectRefItems(scope, scope.queryNode().get(QUERY_ORDER_BY), ret);
 
     return ret;
   }
 
-  private static void collectRefItems(List<SQLNode> nodes, Collection<SelectItem> dest) {
+  private static void collectRefItems(QueryScope scope, List<SQLNode> nodes, Collection<SelectItem> dest) {
     if (nodes == null) return;
 
     for (SQLNode node : nodes)
       for (SQLNode refNode : ColumnRefCollector.collect(node)) {
         final ColumnRef cRef = refNode.get(RESOLVED_COLUMN_REF);
-        if (cRef.refItem() != null) dest.add(cRef.refItem());
+        if (cRef.node().get(RESOLVED_QUERY_SCOPE) != scope) continue;
+
+        if (cRef.refColumn() != null) {
+          final SelectItem item = selectInputColumn(cRef.source(), cRef.refColumn(), genMandatoryAlias(dest.size()));
+          dest.add(item);
+        }
+        if (cRef.refItem() != null) {
+          SelectItem item = cRef.refItem();
+          if (item.node().get(RESOLVED_QUERY_SCOPE) != scope)
+            item = selectOutputColumn(cRef.source(), item, genMandatoryAlias(dest.size()));
+          dest.add(item);
+        }
       }
+
   }
 
   private static void addSelectItems(QueryScope scope, Collection<SelectItem> items) {

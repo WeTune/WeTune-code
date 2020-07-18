@@ -6,6 +6,7 @@ local Util = require("testbed.util")
 local Workload = require("testbed.workload")
 local ParamGen = require("testbed.paramgen")
 local Sample = require("testbed.sample")
+local Eval = require("testbed.eval")
 
 local WTune = {}
 
@@ -120,7 +121,12 @@ function WTune:initOptions(options)
     self.schema = self:loadSchema()
     self.workloadTag = options.workload or self.workload or "base"
     self.workload = self:loadWorkload()
-    self.rows = tonumber(options.rows or self.rows or 100)
+    if not self.workload then
+        self.workloadTag = 'base'
+        self.workload = self:loadWorkload()
+    end
+    self.rows = tonumber(options.rows or self.rows or 10000)
+    self.times = tonumber(options.times or self.times or 100)
     self.randDist = RandGen(options.ranDdist or self.randDist or "uniform")
     self.randSeq = RandSeq(self.randDist, self.rows, options.randSeq or self.randSeq or "typed")
     self.paramGen = ParamGen(self.rows, self)
@@ -210,10 +216,18 @@ end
 
 function WTune:doSample()
     Util.log(("[Sample] Start to sample %s\n"):format(self.app), 1)
-    Util.log(("[Sample] app: %s, schema: %s, db: %s\n"):format(self.app, self.schemaTag, self.db), 2)
-    Util.log(("[Sample] rows: %d, dist: %s, seq: %s, workload: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type, self.workloadTag), 2)
+    Util.log(("[Sample] app: %s, schema: %s, db: %s, workload: %s\n"):format(self.app, self.schemaTag, self.db, self.workloadTag), 2)
+    Util.log(("[Sample] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type), 2)
 
     Sample(self.workload.stmts, self)
+end
+
+function WTune:doEval()
+    Util.log(("[Eval] Start to eval %s\n"):format(self.app), 1)
+    Util.log(("[Eval] app: %s, schema: %s, db: %s, workload: %s\n"):format(self.app, self.schemaTag, self.db, self.workloadTag), 2)
+    Util.log(("[Eval] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type), 2)
+
+    Eval(self.workload.stmts, self)
 end
 
 local function doPrepare()
@@ -222,6 +236,10 @@ end
 
 local function doSample()
     WTune:make():init():doSample()
+end
+
+local function doEval()
+    WTune:make():init():doEval()
 end
 
 if sysbench then
@@ -236,11 +254,13 @@ if sysbench then
         randseq = { "type of random sequence", "typed" },
         continue = { "continue populate tables from given index" },
         targets = { "populate given tables" },
-        dump = { "whether to dump to file" }
+        dump = { "whether to dump to file" },
+        times = { "how many times is a statement run" }
     }
     sysbench.cmdline.commands = {
         prepare = { doPrepare },
-        sample = { doSample }
+        sample = { doSample },
+        eval = { doEval },
     }
 end
 

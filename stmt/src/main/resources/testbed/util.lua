@@ -48,10 +48,10 @@ local function unquote(str, quotation)
     end
 end
 
-local function log(_content, level)
+local function log(content, level)
     level = level or 1
     if not sysbench or (sysbench.opt and sysbench.opt.verbosity >= level) then
-        io.write(_content)
+        io.stdout:write(content)
     end
 end
 
@@ -89,6 +89,30 @@ local function normalizeParam(p)
     else
         return p
     end
+end
+
+local function iterate(len)
+    local arr = {}
+    for i = 1, len do
+        table.insert(arr, i)
+    end
+    return arr
+end
+
+local function shuffle(list)
+    for i = #list, 1, -1 do
+        local index = math.random(1, i)
+        list[index], list[i] = list[i], list[index]
+    end
+    return list
+end
+
+local function percentile(list, p)
+    p = p <= 1 and p or 1
+    p = p >= 0 and p or 0
+
+    local index = math.ceil(#list * p)
+    return list[index]
 end
 
 local Stack = {}
@@ -129,6 +153,9 @@ return {
     timeCompare = timeCompare,
     timeNow = timeNow,
     tryRequire = tryRequire,
+    iterate = iterate,
+    shuffle = shuffle,
+    percentile = percentile,
     normalizeParam = normalizeParam,
     unquote = unquote,
     processResultSet = processResultSet,

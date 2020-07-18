@@ -18,23 +18,24 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 public class ScriptUtils {
-  public static void genSchema(String appName) {
+  public static void genSchema(String appName, String tag) {
     final AppContext ctx = AppContext.of(appName);
-    genSchema(ctx.schema(), ctx.name());
+    if ("base".equals(tag)) genSchema(ctx.schema(), ctx.name(), tag);
+    else genSchema(ctx.alternativeSchema(tag), ctx.name(), tag);
   }
 
-  public static void genSchema(Schema schema, String appName) {
-    genSchema(schema, Setup.current().outputDir(), appName);
+  public static void genSchema(Schema schema, String appName, String tag) {
+    genSchema(schema, Setup.current().outputDir(), appName, tag);
   }
 
-  public static void genSchema(Schema schema, Path outputDir, String appName) {
+  public static void genSchema(Schema schema, Path outputDir, String appName, String tag) {
     final Path directory = outputDir.resolve(appName);
     directory.toFile().mkdir();
 
     try (final PrintWriter writer =
         new PrintWriter(
             Files.newBufferedWriter(
-                directory.resolve("base_schema.lua"), CREATE, TRUNCATE_EXISTING))) {
+                directory.resolve(tag + "_schema.lua"), CREATE, TRUNCATE_EXISTING))) {
       new SchemaGen(schema).output(new OutputImpl(writer));
       writer.flush();
 
@@ -105,11 +106,5 @@ public class ScriptUtils {
     } catch (IOException e) {
       throw new StmtException(e);
     }
-  }
-
-  public static void main(String[] args) {
-    Setup._default().registerAsGlobal();
-    ScriptUtils.copyResources();
-    ScriptUtils.genSchema("broadleaf");
   }
 }

@@ -13,7 +13,6 @@ public class Main {
         "diaspora",
         "discourse",
         "eladmin",
-        "fanchaoo",
         "fatfreecrm",
         "febs",
         "forest_blog",
@@ -29,10 +28,13 @@ public class Main {
         "sagan",
         "shopizer",
         "solidus",
-        "spree",
-        "springblog",
-        "wordpress"
+        "spree"
       };
+  //              ,
+  //              "fanchaoo",
+  //        "springblog",
+  //        "wordpress"
+  //      };
 
   public static void main(String[] args) {
     DefaultSetup._default().registerAsGlobal();
