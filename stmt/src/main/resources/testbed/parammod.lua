@@ -76,19 +76,19 @@ function Modifiers.like(wildcardPrefix, wildcardSuffix)
     return function(_, _, stack)
         local value = stack:pop()
         if wildcardPrefix then
-            value = '%' .. value
+            value = "'%" .. value:sub(2)
         end
         if wildcardSuffix then
-            value = value .. '%'
+            value = value:sub(1, #value - 1) .. "%'"
         end
-
         stack:push(value)
     end
 end
 
 function Modifiers.regex()
     return function(_, _, stack)
-        stack:push(stack:pop() .. ".*")
+        local value = stack:pop()
+        stack:push(value:sub(1, #value - 1) .. ".*'")
     end
 end
 
@@ -124,7 +124,46 @@ function Modifiers.make_tuple(count)
         for i = count, 1, -1 do
             tuple[i] = stack:pop()
         end
+        tuple.asTuple = true
         stack:push(tuple)
+    end
+end
+
+local function shiftValue(value)
+    if type(value) == 'number' then
+        return value + 2
+
+    elseif type(value) == 'string' then
+        local num = tonumber(Util.unquote(value, "'"))
+        if num then
+            return "'" .. num + 2 .. "'"
+        end
+    end
+
+    return nil
+end
+
+function Modifiers.array_element()
+    return function(_, _, stack)
+        local value = stack:pop()
+        local shifted = shiftValue(value)
+        if shifted then
+            value.push({ value, shifted })
+        else
+            value.push(value)
+        end
+    end
+end
+
+function Modifiers.tuple_element()
+    return function(_, _, stack)
+        local value = stack:pop()
+        local shifted = shiftValue(value)
+        if shifted then
+            value.push({ value, shifted })
+        else
+            value.push(value)
+        end
     end
 end
 
@@ -135,7 +174,7 @@ function Modifiers.matching()
 end
 
 function Modifiers.gen_offset()
-    return function(_, _, _)
+    return function(_, _, stack)
         stack:push(0)
     end
 end
@@ -232,7 +271,7 @@ local function second(values)
 end
 
 local function date_format(values)
-    return Util.timeParse(values[1]):fmt(values[2])
+    return "'" .. Util.timeParse(values[1]):fmt(values[2]) .. "'"
 end
 
 return Modifiers

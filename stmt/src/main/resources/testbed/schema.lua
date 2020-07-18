@@ -396,4 +396,8 @@ function Schema:make(appName)
     return schema
 end
 
-return Schema
+local function makeSchema(appName)
+    return Schema:make(appName)
+end
+
+return makeSchema

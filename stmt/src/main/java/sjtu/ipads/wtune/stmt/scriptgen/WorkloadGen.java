@@ -20,7 +20,7 @@ public class WorkloadGen implements ScriptNode {
 
   @Override
   public void outputHead(Output out) {
-    out.println("local M = require('testbed.paramgen').Mods")
+    out.println("local M = require('testbed.parammod')")
         .println("local statements = {")
         .increaseIndent();
   }

@@ -31,6 +31,4 @@ local function makeGen(type)
     end
 end
 
-return {
-    make = makeGen
-}
+return makeGen

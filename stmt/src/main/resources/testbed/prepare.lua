@@ -3,17 +3,17 @@ local TableGen = require("testbed.tablegen")
 
 local function doInsert(con, numLines)
     return function(insertSql, tableName, ordinal, rowGen)
-        Util.log(string.format("[Prepare] %03d. %s", ordinal, tableName))
+        Util.log(string.format("[Prepare] %03d. %s", ordinal, tableName), 1)
 
         con:bulk_insert_init(insertSql)
 
         for i = 1, numLines do
             if i % 2000 == 0 and i % 10000 ~= 0 then
-                Util.log(".")
+                Util.log(".", 1)
             end
 
             if i % 10000 == 0 then
-                Util.log(i)
+                Util.log(i, 1)
                 con:bulk_insert_done()
                 con:bulk_insert_init(insertSql)
             end
@@ -22,53 +22,39 @@ local function doInsert(con, numLines)
         end
 
         con:bulk_insert_done()
-        Util.log(" done\n")
+        Util.log(" done\n", 1)
     end
 end
 
 local function doDump(con, numLines)
     return function(insertSql, tableName, ordinal, rowGen)
         for i = 1, numLines do
-            Util.log(string.format('%s (%s)\n', insertSql, table.concat(rowGen(i), ', ')))
+            Util.log(string.format('%s (%s)\n', insertSql, table.concat(rowGen(i), ', ')), 1)
         end
     end
 end
 
-local function populateTable(con, t, ordinal, numLines, randSeq, dbType)
+local function populateTable(t, ordinal, wtune)
+    local con = wtune.con
+    local numLines = wtune.rows
+    local randSeq = wtune.randSeq
+    local dbType = wtune. dbType
+
     local func = con and doInsert or doDump
     TableGen:make(numLines, randSeq, dbType):genTable(t, ordinal, func(con, numLines))
 end
 
-local function populateDb(con, schema, numLines, randSeq, dbType, filter)
+--local function populateDb(con, tables, numLines, randSeq, dbType, filter)
+local function populateDb(tables, wtune)
     local ordinal = 0
-    for _, t in pairs(schema.tables) do
+    local filter = wtune.tableFilter
+
+    for _, t in pairs(tables) do
         ordinal = ordinal + 1
         if not filter or filter(ordinal, t) then
-            populateTable(con, t, ordinal, numLines, randSeq, dbType)
+            populateTable(t, ordinal, wtune)
         end
     end
 end
 
-local function tableFilter(type, value)
-    if type == "continue" then
-        return function(ordinal, t)
-            return ordinal >= value
-        end
-
-    elseif type == "target" then
-        local target = {}
-        for tableName in value:gmatch("(.-),") do
-            target[tableName:lower()] = true
-        end
-        return function(ordinal, t)
-            return target[t.tableName]
-        end
-
-    end
-end
-
-return {
-    populateTable = populateTable,
-    populateDb = populateDb,
-    tableFilter = tableFilter
-}
+return populateDb

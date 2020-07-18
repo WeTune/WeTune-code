@@ -94,6 +94,4 @@ local function makeSeq(rand, max, type)
     end
 end
 
-return {
-    make = makeSeq
-}
+return makeSeq

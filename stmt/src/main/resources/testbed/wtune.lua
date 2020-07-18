@@ -3,42 +3,73 @@ local RandGen = require("testbed.randgen")
 local RandSeq = require("testbed.randseq")
 local Prepare = require("testbed.prepare")
 local Util = require("testbed.util")
+local Workload = require("testbed.workload")
+local ParamGen = require("testbed.paramgen")
+local Sample = require("testbed.sample")
 
 local WTune = {}
 
 local PROFILES = {
-    eval = {
-        schema = "base",
-        rows = 100,
-        randdist = "uniform",
-        randseq = "random",
-    },
     base = {
         schema = "base",
+        rows = 100,
+        randDist = "uniform",
+        randSeq = "random",
+        workload = "base",
+    },
+    opt = {
+        schema = "opt",
+        rows = 100,
+        randDist = "uniform",
+        randSeq = "random",
+        workload = "opt",
+    },
+    sample = {
+        schema = "opt",
         rows = 10000,
-        randdist = "uniform",
-        randseq = "typed",
+        randDist = "uniform",
+        randSeq = "typed",
+        workload = "base"
     },
-    large = {
-        schema = "base",
-        rows = 1000000,
-        randdist = "uniform",
-        randseq = "typed",
-    },
-    zipf = {
-        schema = "base",
-        rows = 10000,
-        randdist = "zipf",
-        randseq = "typed",
-    },
-    large_zipf = {
-        schema = "base",
-        rows = 1000000,
-        randdist = "zipf",
-        randseq = "typed",
-    }
-
 }
+
+local function tableFilter(type, value)
+    if type == "continue" then
+        return function(ordinal, t)
+            return ordinal >= value
+        end
+
+    elseif type == "target" then
+        local target = {}
+        for tableName in value:gmatch("(.-),") do
+            target[tableName:lower()] = true
+        end
+        return function(ordinal, t)
+            return target[t.tableName]
+        end
+
+    end
+end
+
+function WTune:loadSchema()
+    local fileName = string.format("%s.%s_schema", self.app, self.schemaTag)
+    local schemaDesc = Util.tryRequire(fileName)
+    if schemaDesc then
+        return Schema(self.app):buildFrom(schemaDesc)
+    else
+        return ni
+    end
+end
+
+function WTune:loadWorkload()
+    local fileName = string.format("%s.%s_workload", self.app, self.workloadTag)
+    local workloadDesc = Util.tryRequire(fileName)
+    if workloadDesc then
+        return Workload(self.app):buildFrom(workloadDesc)
+    else
+        return nil
+    end
+end
 
 function WTune:enableProfile(profileName)
     local profile = PROFILES[profileName]
@@ -65,17 +96,22 @@ function WTune:initOptions(options)
     end
 
     self.app = options.app
-    self.schemaTag = options.schema or self.schema or "base"
-    self.schema = Schema:make(self.app):buildFrom(require(string.format("%s.%s_schema", self.app, self.schemaTag)))
-    self.rows = tonumber(options.rows or self.rows or 100)
-    self.randdist = RandGen.make(options.randdist or self.randdist or "uniform")
-    self.randseq = RandSeq.make(self.randdist, self.rows, options.randseq or self.randseq or "typed")
     self.dbType = options.dbType or (sysbench and sysbench.opt.db_driver or "mysql")
+    self.tag = options.tag or self.tag or "notag"
+    self.schemaTag = options.schema or self.schema or "base"
+    self.schema = self:loadSchema()
+    self.workloadTag = options.workload or self.workload or "base"
+    self.workload = self:loadWorkload()
+    self.rows = tonumber(options.rows or self.rows or 100)
+    self.randDist = RandGen(options.ranDdist or self.randDist or "uniform")
+    self.randSeq = RandSeq(self.randDist, self.rows, options.randSeq or self.randSeq or "typed")
+    self.paramGen = ParamGen(self.rows, self)
+    self.dump = options.dump == 'true' or options.dump == 'yes'
 
     if options.continue then
-        self.tableFilter = Prepare.tableFilter("continue", options.continue)
+        self.tableFilter = tableFilter("continue", options.continue)
     elseif options.tables then
-        self.tableFilter = Prepare.tableFilter("target", options.tables)
+        self.tableFilter = tableFilter("target", options.tables)
     end
 end
 
@@ -124,13 +160,6 @@ function WTune:make()
     return o
 end
 
-function WTune:doPrepare()
-    Util.log(string.format("[Prepare] Start to prepare database for %s\n", self.app))
-    Util.log(("[Prepare] app: %s, schema: %s, db: %s\n"):format(self.app, self.schemaTag, self.db))
-    Util.log(("[Prepare] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randdist.type, self.randseq.type))
-    Prepare.populateDb(self.con, self.schema, self.rows, self.randseq, self.dbType, self.tableFilter)
-end
-
 function WTune:getTable(tableName)
     return self.schema:getTable(tableName)
 end
@@ -141,30 +170,57 @@ end
 
 function WTune:getColumnValue(tableName, columnName, lineNum)
     return self:getColumn(tableName, columnName)
-               :valueAt(lineNum, self.randseq, self.rows, self.dbType)
+               :valueAt(lineNum, self.randSeq, self.rows, self.dbType)
 end
 
 function WTune:redirect(lineNum)
     return self.schema:redirect(lineNum, self.rows)
 end
 
+function WTune:appFile(fileName, flag)
+    return io.open(("%s/%s"):format(self.app, fileName), flag)
+end
+
+function WTune:doPrepare()
+    Util.log(("[Prepare] Start to prepare database for %s\n"):format(self.app), 1)
+    Util.log(("[Prepare] app: %s, schema: %s, db: %s\n"):format(self.app, self.schemaTag, self.db), 2)
+    Util.log(("[Prepare] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type), 2)
+    Prepare(self.schema.tables, self)
+end
+
+function WTune:doSample()
+    Util.log(("[Sample] Start to sample %s\n"):format(self.app), 1)
+    Util.log(("[Sample] app: %s, schema: %s, db: %s\n"):format(self.app, self.schemaTag, self.db), 2)
+    Util.log(("[Sample] rows: %d, dist: %s, seq: %s, workload: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type, self.workloadTag), 2)
+
+    Sample(self.workload.stmts, self)
+end
+
 local function doPrepare()
     WTune:make():init():doPrepare()
+end
+
+local function doSample()
+    WTune:make():init():doSample()
 end
 
 if sysbench then
     sysbench.cmdline.options = {
         app = { "app name" },
         profile = { "profile name" },
+        tag = { "tag" },
         schema = { "schema file" },
+        workload = { "workload file" },
         rows = { "#rows" },
-        randdist = { "random distribution", "uniform" },
-        randseq = { "type of random sequence", "typed" },
+        randDist = { "random distribution", "uniform" },
+        randSeq = { "type of random sequence", "typed" },
         continue = { "continue populate tables from given index" },
-        tables = { "populate given tables" }
+        tables = { "populate given tables" },
+        dump = { "whether to dump to file" }
     }
     sysbench.cmdline.commands = {
-        prepare = { doPrepare }
+        prepare = { doPrepare },
+        sample = { doSample }
     }
 end
 

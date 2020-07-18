@@ -46,10 +46,39 @@ local function unquote(str, quotation)
     end
 end
 
-local function log(_content)
-    if not sysbench or sysbench.opt.verbosity ~= 0 then
+local function log(_content, level)
+    level = level or 1
+    if not sysbench or sysbench.opt.verbosity >= level then
         io.write(_content)
     end
+end
+
+local function tryRequire(path)
+    log("[TRACE] try to find " .. path, 5)
+    local status, result = pcall(require, path)
+    if status then
+        return result
+    else
+        log("[TRACE] not found " .. path, 1)
+        return nil
+    end
+end
+
+local function processResultSet(rs)
+    local numRows = rs.nrows
+    local numFields = rs.nfields
+    local ret = {}
+
+    for _ = 1, numRows do
+        local row = rs:fetch_row()
+        local r = {}
+        for j = 1, numFields do
+            table.insert(r, row[j] or " ")
+        end
+        table.insert(ret, table.concat(r, "|"))
+    end
+
+    return numRows, table.concat(ret, "\n")
 end
 
 local Stack = {}
@@ -79,13 +108,19 @@ function Stack:pop()
     return top
 end
 
+function Stack:size()
+    return self.top
+end
+
 return {
     timeBase = timeBase,
     timeFmt = timeFmt,
     timeParse = timeParse,
     timeCompare = timeCompare,
     timeNow = timeNow,
+    tryRequire = tryRequire,
     unquote = unquote,
+    processResultSet = processResultSet,
     log = log,
     Stack = Stack
 }

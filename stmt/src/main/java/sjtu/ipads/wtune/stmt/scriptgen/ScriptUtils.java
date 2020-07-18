@@ -73,14 +73,18 @@ public class ScriptUtils {
 
   private static final List<String> RESOURCES =
       List.of(
+          "exec.lua",
           "paramgen.lua",
           "parammod.lua",
           "prepare.lua",
           "randgen.lua",
           "randseq.lua",
+          "sample.lua",
           "schema.lua",
           "tablegen.lua",
+          "timer.lua",
           "util.lua",
+          "workload.lua",
           "wtune.lua");
 
   public static void copyResources() {
