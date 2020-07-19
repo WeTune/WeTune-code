@@ -26,6 +26,11 @@ public class DbStatementDao extends DbDao implements StatementDao {
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM wtune_stmts ";
   private static final String FIND_ONE = FIND_ALL + "WHERE stmt_app_name = ? AND stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE stmt_app_name = ?";
+  private static final String DELETE_ONE =
+      "DELETE FROM wtune_stmts WHERE stmt_app_name = ? AND stmt_id = ?";
+  private static final String INSERT_DELETED =
+      "INSERT INTO wtune_deleted_stmts (stmt_app_name, stmt_id, stmt_raw_sql, cause) "
+          + "VALUES (?, ?, ?, ?)";
 
   private static Statement inflate(Statement stmt, ResultSet rs) throws SQLException {
     final String appName = rs.getString(KEY_APP_NAME);
@@ -84,6 +89,26 @@ public class DbStatementDao extends DbDao implements StatementDao {
       while (rs.next()) stmts.add(inflate(new Statement(), rs));
 
       return stmts;
+
+    } catch (SQLException throwables) {
+      throw new StmtException(throwables);
+    }
+  }
+
+  @Override
+  public void delete(Statement stmt, String cause) {
+    final PreparedStatement delete = prepare(DELETE_ONE);
+    final PreparedStatement insert = prepare(INSERT_DELETED);
+    try {
+      insert.setString(1, stmt.appName());
+      insert.setInt(2, stmt.stmtId());
+      insert.setString(3, stmt.rawSql());
+      insert.setString(4, cause);
+      insert.executeUpdate();
+
+      delete.setString(1, stmt.appName());
+      delete.setInt(2, stmt.stmtId());
+      delete.executeUpdate();
 
     } catch (SQLException throwables) {
       throw new StmtException(throwables);

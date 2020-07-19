@@ -36,4 +36,8 @@ public class StatementDaoInstance {
   public static List<Statement> findAll() {
     return instance0().findAll();
   }
+
+  public static void delete(Statement stmt, String cause) {
+    INSTANCE.delete(stmt, cause);
+  }
 }

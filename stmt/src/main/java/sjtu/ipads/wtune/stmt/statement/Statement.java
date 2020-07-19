@@ -188,6 +188,10 @@ public class Statement {
     return copy;
   }
 
+  public void delete(String cause) {
+    StatementDaoInstance.delete(this, cause);
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(appName, stmtId);

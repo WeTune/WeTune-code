@@ -17,6 +17,8 @@ public interface StatementDao {
 
   List<Statement> findAll();
 
+  void delete(Statement stmt, String cause);
+
   static Supplier<Connection> connectionSupplier(String url) {
     return () -> {
       try {

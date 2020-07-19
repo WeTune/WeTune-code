@@ -53,6 +53,9 @@ public class Main {
       case "genpatch":
         task = new PatchSchema();
         break;
+      case "maintenance":
+        task = new Maintenance();
+        break;
       default:
         assertFalse();
         return;
