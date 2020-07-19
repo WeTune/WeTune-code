@@ -15,7 +15,7 @@ public class SchemaPatchDaoInstance {
 
   private static SchemaPatchDao instance0() {
     if (INSTANCE == null) {
-      throw new StmtException("no global statement dao");
+      throw new StmtException("no global schema patch dao");
     }
 
     return INSTANCE;

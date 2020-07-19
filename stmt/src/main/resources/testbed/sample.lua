@@ -26,8 +26,8 @@ local function sampleStmtAtPoint(stmt, point, wtune)
     local status, _, res = Exec(stmt, point, wtune)
 
     if not status then
-        print(('[Sample] error in %s-%s (point = %s)'):format(wtune.app, stmt.stmtId, point))
-        print(Inspect(res))
+        Util.log(('[Sample] error in %s-%s (point = %s)\n'):format(wtune.app, stmt.stmtId, point), 0)
+        Util.log(Inspect(res) .. '\n', 0)
         error(res)
     end
 

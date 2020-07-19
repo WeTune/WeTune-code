@@ -257,37 +257,37 @@ function Funcs.now(values)
     return Util.timeNow()
 end
 
-local function datediff(values)
+function Funcs.datediff(values)
     local left = Util.timeParse(values[1])
     local right = values[2] -- cheat based on current workload
     return date.diff(left, right):spandays()
 end
 
-local function year(values)
+function Funcs.year(values)
     return Util.timeParse(values[1]):getyear()
 end
 
-local function month(values)
+function Funcs.month(values)
     return Util.timeParse(values[1]):getmonth()
 end
 
-local function dayofmonth(values)
+function Funcs.dayofmonth(values)
     return Util.timeParse(values[1]):getday()
 end
 
-local function minute(values)
+function Funcs.minute(values)
     return Util.timeParse(values[1]):getminutes()
 end
 
-local function weekday(values)
+function Funcs.weekday(values)
     return Util.timeParse(values[1]):getweekday()
 end
 
-local function second(values)
+function Funcs.second(values)
     return Util.timeParse(values[1]):getseconds()
 end
 
-local function date_format(values)
+function Funcs.date_format(values)
     return "'" .. Util.timeParse(values[1]):fmt(values[2]) .. "'"
 end
 

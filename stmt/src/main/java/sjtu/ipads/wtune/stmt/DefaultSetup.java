@@ -1,10 +1,7 @@
 package sjtu.ipads.wtune.stmt;
 
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
-import sjtu.ipads.wtune.stmt.dao.internal.ConstantAppDao;
-import sjtu.ipads.wtune.stmt.dao.internal.DbSchemaPatchDao;
-import sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao;
-import sjtu.ipads.wtune.stmt.dao.internal.FileSchemaDao;
+import sjtu.ipads.wtune.stmt.dao.internal.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +18,7 @@ public class DefaultSetup extends Setup {
     new FileSchemaDao().registerAsGlobal();
     new DbSchemaPatchDao(supplier).registerAsGlobal();
     new DbStatementDao(supplier).registerAsGlobal();
+    new DbAltStatementDao(supplier).registerAsGlobal();
   }
 
   @Override

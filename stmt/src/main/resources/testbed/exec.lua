@@ -18,7 +18,7 @@ local function execute(stmt, lineNum, wtune)
         if warning then
             Util.log(('error when gen %d-th param for %s-%s\n'):format(i, wtune.app, stmt.stmtId), 0)
             if value then
-                print(Inspect(value))
+                Util.log(Inspect(value) .. '\n', 0)
                 error(value)
             end
         end

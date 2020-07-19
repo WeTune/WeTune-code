@@ -84,11 +84,15 @@ local function processResultSet(rs)
 end
 
 local function normalizeParam(p)
-    if type(p) == 'number' and p < 0 then
-        return ('(%s)'):format(p)
-    else
-        return p
+    if type(p) == 'number' then
+        if p < 0 then
+            return ('(%s)'):format(p)
+        elseif p == 0 then
+            return 0 -- handle wired '-0'
+        end
     end
+
+    return p
 end
 
 local function iterate(len)

@@ -13,7 +13,7 @@ public class SchemaDaoInstance {
 
   private static SchemaDao instance0() {
     if (INSTANCE == null) {
-      throw new StmtException("no global statement dao");
+      throw new StmtException("no global schema dao");
     }
 
     return INSTANCE;

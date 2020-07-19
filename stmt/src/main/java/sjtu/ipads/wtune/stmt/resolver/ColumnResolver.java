@@ -34,9 +34,8 @@ public class ColumnResolver implements Resolver, SQLVisitor {
     else {
       LOG.log(
           Level.WARNING,
-          "failed to resolve column ref {3}\n<{0}, {1}>\n{2}",
-          stmt.appName(),
-          stmt.stmtId(),
+          "failed to resolve column ref {2}\n{0}\n{1}",
+          stmt,
           stmt.parsed().toString(false),
           columnRef);
       isAllSuccessful = false;

@@ -83,8 +83,8 @@ local function evalStmts(stmts, wtune)
                 local status, value = pcall(evalStmt, stmt, wtune)
 
                 if not status then
-                    Util.log(('error when eval %s-%s (pass=%d)'):format(wtune.app, stmt.stmtId, pass), 0)
-                    Util.log(Inspect(value), 0)
+                    Util.log(('error when eval %s-%s (pass=%d)\n'):format(wtune.app, stmt.stmtId, pass), 0)
+                    Util.log(Inspect(value) .. '\n', 0)
                     error(value)
                 end
 
