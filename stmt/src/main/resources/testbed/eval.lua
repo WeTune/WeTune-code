@@ -24,6 +24,20 @@ local function flush(stmts, start, stop)
     end
 end
 
+local function workaroundHang(stmt, wtune)
+    -- shopizer-60 hangs after several runs, don't know why, workaround for now
+    if wtune.app ~= 'shopizer' then
+        return true
+    end
+
+    if stmt.stmtId ~= 60 and stmt.stmtId ~= 104
+      and stmt.stmtId ~= 3 and stmt.stmtId ~= 39 then
+        return true
+    end
+
+    return not stmt.runs or stmt.runs < 1
+end
+
 local function evalStmt(stmt, wtune)
     local status, elapsed, value = Exec(stmt, wtune.paramGen:randomLine(), wtune)
     if not status then
@@ -79,7 +93,8 @@ local function evalStmts(stmts, wtune)
             if (not filter or filter(stmt)) and (not stmt.is_slow
                     or (stmt.is_slow == 1 and stmt.runs <= 20)
                     or (stmt.is_slow == 2 and stmt.runs <= 3)
-                    or (stmt.is_slow == 3 and stmt.runs <= 1)) then
+                    or (stmt.is_slow == 3 and stmt.runs <= 1))
+                    and workaroundHang(stmt, wtune) then
                 local status, value = pcall(evalStmt, stmt, wtune)
 
                 if not status then

@@ -2,29 +2,45 @@
 
 import argparse
 import subprocess
+import os
+from datetime import datetime
 
-base_profile = {
+profile_base = {
     'db': 'base',
     'tag': 'base',
     'schema': 'base',
     'workload': 'base',
     'rows': '10000',
+    'times': '100',
     'dist': 'uniform',
-    'seq': 'typed'
+    'seq': 'typed',
 }
 
-opt_profile = {
-    'db': 'indexed',
-    'schema': 'indexed',
+profile_indexed = {
+    'db': 'opt',
+    'schema': 'opt',
+    'tag': 'index',
+    'workload': 'index',
+    'rows': '10000',
+    'times': '100',
+    'dist': 'uniform',
+    'seq': 'typed',
+}
+
+profile_opt = {
+    'db': 'opt',
+    'tag': 'opt',
+    'schema': 'opt',
     'workload': 'opt',
     'rows': '10000',
+    'times': '100',
     'dist': 'uniform',
-    'seq': 'typed'
+    'seq': 'typed',
 }
 
-profiles = { 'base': base_profile, 'opt': opt_profile }
+profiles = { 'base': profile_base, 'index': profile_indexed, 'opt': profile_opt }
 
-mysql_conn_params = { 'user': 'root', 'password': 'admin', 'port': '3306' }
+mysql_conn_params = { 'user': 'root', 'password': 'admin', 'port': '3307' }
 pgsql_conn_params = { 'user': 'zxd', 'port': '5432' }
 conn_params = { 'mysql': mysql_conn_params, 'pgsql': pgsql_conn_params }
 
@@ -53,6 +69,7 @@ def prepare_args(args, app):
   set_arg('schema', 'base')
   set_arg('workload', 'base')
   set_arg('rows', '10000')
+  set_arg('times', '100')
   set_arg('dist', 'uniform')
   set_arg('seq', 'typed')
   set_arg('host', '10.0.0.102')
@@ -74,7 +91,7 @@ def prepare_args(args, app):
 
 
 def echo_args(args):
-  print("[Exec] app: {}, db: {}, host: {}, tag: {}".format(args['app'], args['app'], args['host'], args['db'], args['tag']))
+  print("[Exec] app: {}, db: {}, host: {}, tag: {}".format(args['app'], args['db'], args['host'], args['tag']))
   print("[Exec] schema.sql: {}, schema.lua: {}, workload.lua: {}".format(args['schema'], args['schema'], args['workload']))
   print("[Exec] #rows: {}, dist: {}, seq: {}".format(args['rows'], args['dist'], args['seq']))
 
@@ -82,7 +99,8 @@ def echo_args(args):
 def invoke_sysbench(args):
   real_args = ['sysbench', '--verbosity=3', '--app=' + args['app'], '--tag=' + args['tag'],
                '--schema=' + args['schema'], '--workload=' + args['workload'],
-               '--rows=' + args['rows'], '--randdist=' + args['dist'], '--randseq=' + args['seq']]
+               '--rows=' + args['rows'], '--times=' + args['times'],
+               '--randdist=' + args['dist'], '--randseq=' + args['seq']]
 
   if 'continue' in args: real_args.append('--continue=' + args['continue'])
   if 'targets' in args: real_args.append('--targets=' + args['targets'])
@@ -100,11 +118,11 @@ def invoke_sysbench(args):
 
   print("[Exec] " + " ".join(real_args), flush=True)
 
-  subprocess.run(real_args)
+  return subprocess.run(real_args).returncode
 
 
 def invoke_mysql(args, cmd, inFile=None):
-  real_args = ['mysql', '-u', args['user'], '-p' + args['password'], '-h', args['host']]
+  real_args = ['mysql', '-u', args['user'], '-p' + args['password'], '-h', args['host'], '-P3307']
   real_args += cmd
   print("[Exec] " + " ".join(real_args), flush=True)
   subprocess.run(real_args, stdin=inFile)
@@ -146,6 +164,14 @@ def recreate(args):
   else:
     assert False
 
+def backup(apps):
+  backup_dir = datetime.now().strftime('backup_%m%d%H%M')
+  os.system('rm -rf ' + backup_dir)
+  for app in apps:
+    os.system('mkdir -p {}/{}'.format(backup_dir, app))
+    os.system('cp {}/eval.* {}/{}/'.format(app, backup_dir, app))
+    os.system('cp {}/sample {}/{}/'.format(app, backup_dir, app))
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--cmd', required=True)
@@ -155,6 +181,7 @@ parser.add_argument('-t', '--tag')
 parser.add_argument('-s', '--schema')
 parser.add_argument('-w', '--workload')
 parser.add_argument('-r', '--rows')
+parser.add_argument('-R', '--times')
 parser.add_argument('-D', '--dist')
 parser.add_argument('-S', '--seq')
 parser.add_argument('-H', '--host')
@@ -163,21 +190,33 @@ parser.add_argument('-T', '--targets')
 parser.add_argument('-o', '--dump', action='store_true')
 parser.add_argument('apps', action='append')
 
-known_apps = ['broadleaf', 'diaspora', 'discourse', 'eladmin', 'fanchaoo', 'fatfreecrm', 'febs', 'forest_blog', 'gitlab', 'guns', 'halo', 'homeland', 'lobsters', 'publiccms', 'pybbs', 'redmine', 'refinerycms', 'sagan', 'shopizer', 'solidus', 'spree', 'springblog', 'wordpress']
+known_apps = ['broadleaf', 'diaspora', 'discourse', 'eladmin',  'fatfreecrm', 'febs', 'forest_blog', 'gitlab', 'guns', 'halo', 'homeland', 'lobsters', 'publiccms', 'pybbs', 'redmine', 'refinerycms', 'sagan', 'shopizer', 'solidus', 'spree'] # 'fanchaoo', 'springblog', 'wordpress']
 
 if __name__ == '__main__':
   args = vars(parser.parse_args())
+  if args['cmd'] == 'backup':
+    backup(known_apps)
+    exit()
+
   appSpec = args['apps'][0]
   if appSpec == 'all':
     args['apps'] = known_apps
   elif appSpec.startswith('>'):
     args['apps'] = known_apps[known_apps.index(appSpec[1:]):]
 
+  failed = set()
   for app in args['apps']:
-    args = prepare_args(args, app)
-    echo_args(args)
+    app_args = prepare_args(args, app)
+    echo_args(app_args)
     if args['cmd'] == 'recreate':
-      recreate(args)
+      recreate(app_args)
     else:
-      invoke_sysbench(args)
+      if invoke_sysbench(app_args) != 0:
+        failed.add(app)
+
+  if len(failed) != 0:
+    print('failed apps:')
+    for app in failed:
+      print(app)
+
 

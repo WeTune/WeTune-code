@@ -7,8 +7,8 @@ local POINTS = { 57, 783, 3722, 6951, 8704 }
 local function flushOne(stmt)
     if stmt.samples then
         for point, sample in pairs(stmt.samples) do
-            io.write(('>%d;%d\n'):format(point, stmt.stmtId, point))
-            io.write(sample)
+            io.write(('>%d;%d;%d\n'):format(point, stmt.stmtId, sample.rows))
+            io.write(sample.res)
             io.write('\n')
         end
     end
@@ -31,8 +31,9 @@ local function sampleStmtAtPoint(stmt, point, wtune)
         error(res)
     end
 
-    local numRows
-    numRows, stmt.samples[point] = Util.processResultSet(res)
+    local numRows, strRes = Util.processResultSet(res)
+    stmt.samples[point] = { rows = numRows, res = strRes }
+
     return numRows
 end
 
