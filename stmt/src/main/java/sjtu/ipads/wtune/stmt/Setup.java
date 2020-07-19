@@ -5,6 +5,8 @@ import java.nio.file.Path;
 public abstract class Setup {
   private static Setup INSTANCE;
 
+  public static String CSV_SEP = ";";
+
   public static Setup _default() {
     return new DefaultSetup();
   }

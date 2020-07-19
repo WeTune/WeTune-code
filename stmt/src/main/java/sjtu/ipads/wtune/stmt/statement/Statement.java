@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.statement;
 
+import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
@@ -8,10 +9,14 @@ import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.AltStatementDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.internal.TimingDaoInstance;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.newInstance;
 
@@ -20,8 +25,9 @@ public class Statement {
   public static final String KEY_STMT_ID = "stmtId";
   public static final String KEY_RAW_SQL = "rawSql";
 
-  public static final String ALT_OPT = "opt";
-  public static final String ALT_INDEX = "index";
+  public static final String TAG_BASE = "base";
+  public static final String TAG_OPT = "opt";
+  public static final String TAG_INDEX = "index";
 
   private String appName;
   private int stmtId;
@@ -34,7 +40,8 @@ public class Statement {
   protected Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
   protected Set<Class<? extends Resolver>> failToResolveBy = new HashSet<>();
 
-  private Map<String, AltStatement> alt;
+  private List<AltStatement> alt;
+  private List<Timing> timing;
 
   public static Statement findOne(String appName, int id) {
     return StatementDaoInstance.findOne(appName, id);
@@ -78,12 +85,14 @@ public class Statement {
   }
 
   public Statement alt(String kind) {
-    if (alt == null) {
-      alt = new HashMap<>();
-      for (AltStatement altStmt : AltStatementDaoInstance.findByStmt(this))
-        alt.put(altStmt.kind(), altStmt);
-    }
-    return alt.get(kind);
+    if (alt == null) alt = AltStatementDaoInstance.findByStmt(this);
+
+    return FuncUtils.find(it -> kind.equals(it.kind()), alt);
+  }
+
+  public Timing timing(String tag) {
+    if (timing == null) timing = TimingDaoInstance.findByStmt(this);
+    return FuncUtils.find(it -> tag.equals(it.tag()), timing);
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {

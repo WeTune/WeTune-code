@@ -18,8 +18,8 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.stmt.statement.Statement.ALT_INDEX;
-import static sjtu.ipads.wtune.stmt.statement.Statement.ALT_OPT;
+import static sjtu.ipads.wtune.stmt.statement.Statement.TAG_INDEX;
+import static sjtu.ipads.wtune.stmt.statement.Statement.TAG_OPT;
 
 public class ScriptUtils {
   public static void genSchema(String appName, String tag) {
@@ -52,9 +52,9 @@ public class ScriptUtils {
 
   public static void genWorkload(String appName, String tag, boolean modifySelectItem) {
     List<Statement> stmt = Statement.findByApp(appName);
-    if ("index".equals(tag)) stmt = listMap(it -> coalesce(it.alt(ALT_INDEX), it), stmt);
+    if ("index".equals(tag)) stmt = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmt);
     if ("opt".equals(tag))
-      stmt = listMap(it -> coalesce(it.alt(ALT_OPT), it.alt(ALT_INDEX), it), stmt);
+      stmt = listMap(it -> coalesce(it.alt(TAG_OPT), it.alt(TAG_INDEX), it), stmt);
     genWorkload(stmt, appName, tag, modifySelectItem);
   }
 

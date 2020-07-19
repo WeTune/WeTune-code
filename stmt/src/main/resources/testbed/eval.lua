@@ -61,7 +61,7 @@ local function evalStmts(stmts, wtune)
         io.output(wtune:appFile('eval.' .. wtune.tag, "w"))
     end
 
-    Util.log(('[Eval] %d statements to sample, %d times for each\n'):format(#stmts, wtune.times), 1)
+    Util.log(('[Eval] %d statements to eval, %d times for each\n'):format(#stmts, wtune.times), 1)
     Util.log('[Eval] ', 1)
 
     for pass = 1, totalTimes do

@@ -1,14 +1,19 @@
 package sjtu.ipads.wtune.stmt.context;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.stmt.Setup;
+import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.internal.AppDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.SchemaDaoInstance;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.statement.Statement;
+import sjtu.ipads.wtune.stmt.statement.Timing;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AppContext implements Attrs<AppContext> {
   private static final Map<String, AppContext> KNOWN_APPS = new HashMap<>();
@@ -52,6 +57,21 @@ public class AppContext implements Attrs<AppContext> {
   public Schema schema() {
     if (schema == null) schema = SchemaDaoInstance.findOne(name, "base", dbType);
     return schema;
+  }
+
+  public List<Timing> timing(String tag) {
+    try {
+      final Path path = Setup.current().outputDir().resolve(name).resolve("eval." + tag);
+      if (!path.toFile().exists()) return Collections.emptyList();
+
+      return Files.lines(path)
+          .map(Timing::fromLine)
+          .peek(it -> it.setAppName(name).setTag(tag))
+          .collect(Collectors.toList());
+
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
   }
 
   public void setName(String name) {

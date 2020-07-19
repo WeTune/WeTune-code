@@ -19,6 +19,7 @@ public class DefaultSetup extends Setup {
     new DbSchemaPatchDao(supplier).registerAsGlobal();
     new DbStatementDao(supplier).registerAsGlobal();
     new DbAltStatementDao(supplier).registerAsGlobal();
+    new DbTimingDao(supplier).registerAsGlobal();
   }
 
   @Override
