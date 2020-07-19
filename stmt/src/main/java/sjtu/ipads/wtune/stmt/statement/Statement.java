@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.stmt.analyzer.RelationGraphAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.internal.AltStatementDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.internal.FingerprintDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.TimingDaoInstance;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
@@ -42,6 +43,7 @@ public class Statement {
 
   private List<AltStatement> alt;
   private List<Timing> timing;
+  private List<OutputFingerprint> fingerprints;
 
   public static Statement findOne(String appName, int id) {
     return StatementDaoInstance.findOne(appName, id);
@@ -93,6 +95,10 @@ public class Statement {
   public Timing timing(String tag) {
     if (timing == null) timing = TimingDaoInstance.findByStmt(this);
     return FuncUtils.find(it -> tag.equals(it.tag()), timing);
+  }
+
+  public List<OutputFingerprint> fingerprints() {
+    return FingerprintDaoInstance.findByStmt(this);
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {

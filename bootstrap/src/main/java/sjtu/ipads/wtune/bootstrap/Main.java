@@ -56,6 +56,9 @@ public class Main {
       case "maintenance":
         task = new Maintenance();
         break;
+      case "updatedb":
+        task = new UpdateDb();
+        break;
       default:
         assertFalse();
         return;

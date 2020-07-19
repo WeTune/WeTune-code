@@ -6,9 +6,13 @@ import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.internal.AppDaoInstance;
 import sjtu.ipads.wtune.stmt.dao.internal.SchemaDaoInstance;
 import sjtu.ipads.wtune.stmt.schema.Schema;
+import sjtu.ipads.wtune.stmt.statement.OutputFingerprint;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.stmt.statement.Timing;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,6 +73,21 @@ public class AppContext implements Attrs<AppContext> {
           .peek(it -> it.setAppName(name).setTag(tag))
           .collect(Collectors.toList());
 
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
+  }
+
+  public List<OutputFingerprint> fingerprints() {
+    final Path path = Setup.current().outputDir().resolve(name).resolve("sample");
+    if (!path.toFile().exists()) return Collections.emptyList();
+
+    try (final var reader = new BufferedReader(new FileReader(path.toFile()))) {
+      final List<OutputFingerprint> fingerprints = new ArrayList<>();
+      OutputFingerprint fingerprint;
+      while ((fingerprint = OutputFingerprint.readNext(reader)) != null)
+        fingerprints.add(fingerprint);
+      return fingerprints;
     } catch (IOException e) {
       throw new StmtException(e);
     }

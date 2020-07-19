@@ -20,6 +20,7 @@ public class DefaultSetup extends Setup {
     new DbStatementDao(supplier).registerAsGlobal();
     new DbAltStatementDao(supplier).registerAsGlobal();
     new DbTimingDao(supplier).registerAsGlobal();
+    new DbFingerprintDao(supplier).registerAsGlobal();
   }
 
   @Override
