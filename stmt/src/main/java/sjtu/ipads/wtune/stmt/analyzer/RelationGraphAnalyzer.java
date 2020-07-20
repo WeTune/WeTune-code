@@ -6,7 +6,6 @@ import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLNode.Type;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.resolver.*;
@@ -15,13 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.attrs.Attrs.key;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_BODY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 /**
@@ -129,7 +126,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
 
       final BoolExpr boolExpr = binary.get(BOOL_EXPR);
       if (boolExpr == null) return false;
-      if (boolExpr.isJoinCondtion()) return true;
+      if (boolExpr.isJoinCondition()) return true;
 
       final SQLNode rightQuery = binary.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY);
       final SQLNode leftQuery = binary.get(BINARY_LEFT).get(QUERY_EXPR_QUERY);

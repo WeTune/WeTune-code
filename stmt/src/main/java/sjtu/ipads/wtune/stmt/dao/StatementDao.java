@@ -20,16 +20,39 @@ public interface StatementDao {
   void delete(Statement stmt, String cause);
 
   static Supplier<Connection> connectionSupplier(String url) {
-    return () -> {
-      try {
-        return DriverManager.getConnection(url);
-      } catch (SQLException throwables) {
-        throw new StmtException(throwables);
-      }
-    };
+    return new ConnectionHolder(url)::get;
   }
 
   default void registerAsGlobal() {
     StatementDaoInstance.register(this);
+  }
+
+  class ConnectionHolder {
+    private final String url;
+    private Connection connection;
+
+    public ConnectionHolder(String url) {
+      this.url = url;
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    try {
+                      if (connection != null && !connection.isClosed()) connection.close();
+                    } catch (SQLException throwables) {
+                      throwables.printStackTrace();
+                    }
+                  }));
+    }
+
+    public Connection get() {
+      try {
+        if (connection == null || connection.isClosed())
+          connection = DriverManager.getConnection(url);
+      } catch (SQLException throwables) {
+        throw new StmtException(throwables);
+      }
+      return connection;
+    }
   }
 }

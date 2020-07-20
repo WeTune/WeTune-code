@@ -7,6 +7,7 @@ local Workload = require("testbed.workload")
 local ParamGen = require("testbed.paramgen")
 local Sample = require("testbed.sample")
 local Eval = require("testbed.eval")
+local Inspect = require("inspect")
 
 local WTune = {}
 
@@ -70,6 +71,19 @@ local function stmtFilter(type, value)
     end
 end
 
+local function lines(value)
+    if not value then
+        return {}
+    end
+    local target = {}
+    for line in value:gmatch("(.-),") do
+        if tonumber(line) then
+            table.insert(target, tonumber(line))
+        end
+    end
+    return target
+end
+
 function WTune:loadSchema()
     local fileName = string.format("%s.%s_schema", self.app, self.schemaTag)
     local schemaDesc = Util.tryRequire(fileName)
@@ -131,6 +145,7 @@ function WTune:initOptions(options)
     self.randSeq = RandSeq(self.randDist, self.rows, options.randSeq or self.randSeq or "typed")
     self.paramGen = ParamGen(self.rows, self)
     self.dump = options.dump == 'true' or options.dump == 'yes'
+    self.lines = lines(options.lines)
 
     if options.continue then
         self.tableFilter = tableFilter("continue", tonumber(options.continue))
@@ -175,7 +190,9 @@ local predefined = {
 function WTune:init()
     local options = sysbench and sysbench.opt or predefined
     self:initOptions(options)
-    self:initConn()
+    if sysbench and sysbench.cmdline.command ~= 'param' then
+        self:initConn()
+    end
     return self
 end
 
@@ -230,6 +247,32 @@ function WTune:doEval()
     Eval(self.workload.stmts, self)
 end
 
+function WTune:doParam()
+    local filter = self.stmtFilter
+    for _, stmt in ipairs(self.workload.stmts) do
+        if not filter or filter(stmt) then
+            for _, lineNum in ipairs(self.lines) do
+                local args = {}
+
+                for i, param in ipairs(stmt.params) do
+                    local value, warning = self.paramGen:produce(param, lineNum)
+                    if warning then
+                        Util.log(('error when gen %d-th param for %s-%s\n'):format(i, self.app, stmt.stmtId), 0)
+                        if value then
+                            Util.log(Inspect(value) .. '\n', 0)
+                        end
+                    end
+                    table.insert(args, Util.normalizeParam(value))
+                end
+
+                Util.log(table.concat(args, ', ') .. '\n', 1)
+                Util.log(stmt.sql:format(unpack(args)) .. '\n', 3)
+            end
+        end
+    end
+
+end
+
 local function doPrepare()
     WTune:make():init():doPrepare()
 end
@@ -240,6 +283,10 @@ end
 
 local function doEval()
     WTune:make():init():doEval()
+end
+
+local function doParam()
+    WTune:make():init():doParam()
 end
 
 if sysbench then
@@ -255,12 +302,14 @@ if sysbench then
         continue = { "continue populate tables from given index" },
         targets = { "populate given tables" },
         dump = { "whether to dump to file" },
-        times = { "how many times is a statement run" }
+        times = { "how many times is a statement run" },
+        lines = { "target lines" }
     }
     sysbench.cmdline.commands = {
         prepare = { doPrepare },
         sample = { doSample },
         eval = { doEval },
+        param = { doParam }
     }
 end
 

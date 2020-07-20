@@ -14,6 +14,7 @@ public class SchemaPatch {
   public enum Type {
     BOOLEAN,
     ENUM,
+    UNIQUE,
     FOREIGN_KEY;
   }
 
@@ -80,7 +81,14 @@ public class SchemaPatch {
     final List<Column> columns = listMap(table::getColumn, columnNames);
     if (type == Type.BOOLEAN) columns.forEach(it -> it.flag(COLUMN_IS_BOOLEAN));
     else if (type == Type.ENUM) columns.forEach(it -> it.flag(COLUMN_IS_ENUM));
-    else if (type == Type.FOREIGN_KEY) {
+    else if (type == Type.UNIQUE) {
+      final Constraint c = new Constraint();
+      c.setType(SQLNode.ConstraintType.UNIQUE);
+      c.setColumns(columns);
+      table.addConstraint(c);
+      columns.forEach(it -> it.addConstraint(c));
+
+    } else if (type == Type.FOREIGN_KEY) {
       final Constraint c = new Constraint();
       c.setType(SQLNode.ConstraintType.FOREIGN);
       c.setColumns(columns);

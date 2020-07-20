@@ -10,6 +10,14 @@ public interface SchemaPatchDao {
 
   void save(SchemaPatch patch);
 
+  void beginBatch();
+
+  void endBatch();
+
+  static SchemaPatchDao instance() {
+    return SchemaPatchDaoInstance.instance();
+  }
+
   default void registerAsGlobal() {
     SchemaPatchDaoInstance.register(this);
   }

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.bootstrap;
 
 import sjtu.ipads.wtune.stmt.analyzer.ImpliedForeignKeyAnalyzer;
 import sjtu.ipads.wtune.stmt.context.AppContext;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -22,7 +23,10 @@ public class PatchSchema implements Task {
     if (implied != null) {
       System.out.println(appName);
       for (Column column : implied) System.out.println("  " + column);
+
+      SchemaPatchDao.instance().beginBatch();
       listMap(it -> impliedFK(appName, it), implied).forEach(SchemaPatch::save);
+      SchemaPatchDao.instance().endBatch();
     }
   }
 }

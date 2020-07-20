@@ -2,30 +2,28 @@ package sjtu.ipads.wtune.stmt.attrs;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
-import java.util.Objects;
-
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public class BoolExpr {
   private boolean isPrimitive;
   private SQLNode node;
-  private boolean isJoinCondtion;
+  private boolean isJoinCondition;
 
   public boolean isPrimitive() {
     return isPrimitive;
   }
 
-  public boolean isJoinCondtion() {
-    return isJoinCondtion;
+  public boolean isJoinCondition() {
+    return isJoinCondition;
   }
 
   public SQLNode node() {
     return node;
   }
 
-  public void setJoinCondtion(boolean joinCondtion) {
-    isJoinCondtion = joinCondtion;
+  public void setJoinCondition(boolean joinCondition) {
+    isJoinCondition = joinCondition;
   }
 
   public void setPrimitive(boolean primitive) {

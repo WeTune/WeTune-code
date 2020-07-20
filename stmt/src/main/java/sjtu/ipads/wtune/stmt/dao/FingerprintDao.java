@@ -11,6 +11,14 @@ public interface FingerprintDao {
 
   void save(OutputFingerprint fingerprint);
 
+  void beginBatch();
+
+  void endBatch();
+
+  static FingerprintDao instance() {
+    return FingerprintDaoInstance.instance();
+  }
+
   default void registerAsGlobal() {
     FingerprintDaoInstance.register(this);
   }

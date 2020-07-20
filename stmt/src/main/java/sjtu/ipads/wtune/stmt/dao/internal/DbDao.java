@@ -9,31 +9,50 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static sjtu.ipads.wtune.common.utils.Commons.threadLocal;
-
 public abstract class DbDao {
   private final Supplier<Connection> connectionSupplier;
-  private final ThreadLocal<Connection> connection = new ThreadLocal<>();
-  private final Map<String, ThreadLocal<PreparedStatement>> caches = new HashMap<>();
+  private final Map<String, PreparedStatement> caches = new HashMap<>();
+  private Connection connection = null;
 
   public DbDao(Supplier<Connection> connectionSupplier) {
     this.connectionSupplier = connectionSupplier;
   }
 
   protected Connection connection() {
-    return threadLocal(connection, connectionSupplier);
+    if (connection == null) connection = connectionSupplier.get();
+    return connection;
   }
 
   protected PreparedStatement prepare(String sql) {
-    final ThreadLocal<PreparedStatement> threadLocal =
-        caches.computeIfAbsent(sql, ignored -> new ThreadLocal<>());
-    PreparedStatement ps = threadLocal.get();
+    PreparedStatement ps = caches.get(sql);
     if (ps != null) return ps;
 
     final Connection conn = connection();
     try {
-      threadLocal.set(ps = conn.prepareStatement(sql));
+      caches.put(sql, ps = conn.prepareStatement(sql));
       return ps;
+    } catch (SQLException throwables) {
+      throw new StmtException(throwables);
+    }
+  }
+
+  protected void begin() {
+    try {
+      final Connection conn = connection();
+      conn.setAutoCommit(false);
+    } catch (SQLException throwables) {
+      throw new StmtException(throwables);
+    }
+  }
+
+  protected void commit() {
+    try {
+      final Connection conn = connection();
+      conn.commit();
+      conn.setAutoCommit(true);
+      //      conn.close();
+      //      this.connection = null;
+      //      caches.clear();
     } catch (SQLException throwables) {
       throw new StmtException(throwables);
     }

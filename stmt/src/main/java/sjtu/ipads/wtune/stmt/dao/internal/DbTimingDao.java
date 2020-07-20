@@ -80,6 +80,16 @@ public class DbTimingDao extends DbDao implements TimingDao {
   }
 
   @Override
+  public void beginBatch() {
+    begin();
+  }
+
+  @Override
+  public void endBatch() {
+    commit();
+  }
+
+  @Override
   public void insert(Timing timing) {
     final PreparedStatement find = prepare(FIND_ONE);
     final PreparedStatement insertHistory = prepare(INSERT_HISTORY);

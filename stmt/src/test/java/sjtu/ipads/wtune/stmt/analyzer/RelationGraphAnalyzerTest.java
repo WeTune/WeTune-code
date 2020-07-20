@@ -4,7 +4,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
+import sjtu.ipads.wtune.stmt.attrs.Param;
+import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
+import sjtu.ipads.wtune.stmt.mutator.ConstantTableNormalizer;
+import sjtu.ipads.wtune.stmt.mutator.SelectItemNormalizer;
+import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
+import sjtu.ipads.wtune.stmt.scriptgen.ParameterizedSQLFormatter;
 import sjtu.ipads.wtune.stmt.statement.Statement;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

@@ -48,7 +48,7 @@ public class RelationGraph {
 
   public RelationGraph expanded() {
     final var expandedGraph = ValueGraphBuilder.from(graph).build();
-    graph.nodes().forEach(expandedGraph::addNode);
+    //    graph.nodes().forEach(expandedGraph::addNode);
 
     for (EndpointPair<Relation> edge : graph.edges()) {
       final JoinCondition expendedEdge = expandEdge(graph.edgeValue(edge).get());
@@ -60,6 +60,10 @@ public class RelationGraph {
 
       expandedGraph.putEdgeValue(expendedEdge.left(), expendedEdge.right(), expendedEdge);
     }
+
+    graph.nodes().stream()
+        .filter(it -> !expandedGraph.nodes().contains(it))
+        .forEach(expandedGraph::addNode);
 
     return RelationGraph.build(expandedGraph);
   }
@@ -136,11 +140,17 @@ public class RelationGraph {
   public void calcRelationPosition() {
     for (Relation rel : graph.nodes()) {
       if (!rel.isTableSource()) continue;
-      if (rel.position() == -1) calc(rel);
+      if (rel.position() == Integer.MIN_VALUE) calc(rel);
     }
-    final int max = graph.nodes().stream().mapToInt(Relation::position).max().orElse(0);
+    final int min =
+        graph.nodes().stream()
+            .mapToInt(Relation::position)
+            .filter(it -> it != Integer.MIN_VALUE)
+            .min()
+            .orElse(0);
+
     for (Relation rel : graph.nodes()) {
-      final int position = rel.position() != -1 ? max - rel.position() : 0;
+      final int position = rel.position() != Integer.MIN_VALUE ? rel.position() - min : 0;
       rel.setPosition(position);
       if (rel.isTableSource()) rel.node().put(RELATION_POSITION, position);
     }
@@ -187,14 +197,15 @@ public class RelationGraph {
     final Set<Relation> cached = cache.get(rel);
     if (cached != null) return cached;
 
-    final Set<Relation> parent = new HashSet<>();
+    final Set<Relation> filtered = new HashSet<>();
     for (Relation neighbour : graph.adjacentNodes(rel)) {
       final JoinCondition edge = graph.edgeValue(rel, neighbour).get();
-      if (filter.apply(edge, edge.thisRelation(rel), edge.thatRelation(rel))) parent.add(neighbour);
+      if (filter.apply(edge, edge.thisRelation(rel), edge.thatRelation(rel)))
+        filtered.add(neighbour);
     }
 
-    cache.put(rel, parent);
-    return parent;
+    cache.put(rel, filtered);
+    return filtered;
   }
 
   private static boolean isPeer(JoinCondition cond, Relation thisRel, Relation thatRel) {

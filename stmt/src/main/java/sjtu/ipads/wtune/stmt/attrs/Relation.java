@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 public class Relation {
   private final SQLNode originalNode;
   private SQLNode generatedNode;
-  private int position = -1;
+  private int position = Integer.MIN_VALUE;
 
   private Relation(SQLNode originalNode) {
     this.originalNode = originalNode;

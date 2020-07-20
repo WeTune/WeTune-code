@@ -30,10 +30,19 @@ public class JoinConditionResolver implements Resolver, SQLVisitor {
     final SQLNode left = binary.get(BINARY_LEFT);
     final SQLNode right = binary.get(BINARY_RIGHT);
 
-    if (op == SQLExpr.BinaryOp.EQUAL && isColumn(left) && isColumn(right))
-      binary.get(BOOL_EXPR).setJoinCondtion(true);
+    if (op == SQLExpr.BinaryOp.EQUAL && isColumn(left) && isColumn(right)) {
+      SQLNode parent = binary.parent();
+      while (isExpr(parent)) {
+        if (parent.get(UNARY_OP) == UnaryOp.NOT || parent.get(BINARY_OP) == BinaryOp.OR)
+          return false;
+        parent = parent.parent();
+      }
 
-    return false;
+      binary.get(BOOL_EXPR).setJoinCondition(true);
+      return false;
+    }
+
+    return true;
   }
 
   private static boolean isColumn(SQLNode node) {

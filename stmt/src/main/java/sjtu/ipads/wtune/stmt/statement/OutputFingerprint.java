@@ -26,12 +26,13 @@ public class OutputFingerprint {
       final OutputFingerprint fingerprint = new OutputFingerprint();
 
       final String[] fields = line.split(CSV_SEP);
-      fingerprint.point = Integer.parseInt(fields[0]);
+      fingerprint.point = Integer.parseInt(fields[0].substring(1));
       fingerprint.stmtId = Integer.parseInt(fields[1]);
 
       final int rows = Integer.parseInt(fields[2]);
       if (rows == 0) {
-        fingerprint.hashes = Collections.emptyList();
+        reader.readLine(); // skip an empty line
+        fingerprint.hashes = Collections.singletonList(0);
         return fingerprint;
       }
 
@@ -47,7 +48,7 @@ public class OutputFingerprint {
         result.add(split);
       }
 
-      final List<Integer> hashes = new ArrayList<>();
+      final List<Integer> hashes = new ArrayList<>(5);
       for (int i = 0; i < maxColumns; i++) {
         final String[] columnValue = new String[rows];
         for (int j = 0; j < rows; j++) columnValue[j] = safeGet(result.get(j), i);
@@ -86,19 +87,23 @@ public class OutputFingerprint {
     return hashes;
   }
 
-  public void setAppName(String appName) {
+  public OutputFingerprint setAppName(String appName) {
     this.appName = appName;
+    return this;
   }
 
-  public void setStmtId(int stmtId) {
+  public OutputFingerprint setStmtId(int stmtId) {
     this.stmtId = stmtId;
+    return this;
   }
 
-  public void setPoint(int point) {
+  public OutputFingerprint setPoint(int point) {
     this.point = point;
+    return this;
   }
 
-  public void setHashes(List<Integer> hashes) {
+  public OutputFingerprint setHashes(List<Integer> hashes) {
     this.hashes = hashes;
+    return this;
   }
 }

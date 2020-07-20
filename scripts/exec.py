@@ -5,6 +5,17 @@ import subprocess
 import os
 from datetime import datetime
 
+profile_sample = {
+    'db': 'opt',
+    'tag': 'notag',
+    'schema': 'opt',
+    'workload': 'base',
+    'rows': '10000',
+    'times': '100',
+    'dist': 'uniform',
+    'seq': 'typed',
+}
+
 profile_base = {
     'db': 'base',
     'tag': 'base',
@@ -38,7 +49,7 @@ profile_opt = {
     'seq': 'typed',
 }
 
-profiles = { 'base': profile_base, 'index': profile_indexed, 'opt': profile_opt }
+profiles = { 'sample': profile_sample, 'base': profile_base, 'index': profile_indexed, 'opt': profile_opt }
 
 mysql_conn_params = { 'user': 'root', 'password': 'admin', 'port': '3307' }
 pgsql_conn_params = { 'user': 'zxd', 'port': '5432' }
@@ -75,11 +86,20 @@ def prepare_args(args, app):
   set_arg('host', '10.0.0.102')
   set_arg('continue', None)
   set_arg('targets', None)
+  set_arg('lines', None)
   set_arg('dump', None)
 
   targets = pack.get('targets')
-  if targets and targets[-1] != ',':
-    pack['targets'] = targets + ','
+  if targets:
+    if targets[-1] != ',':
+      targets = targets + ','
+    pack['targets'] = targets
+
+  lines = pack.get('lines')
+  if lines:
+    if lines[-1] != ',':
+      lines = lines + ','
+    pack['lines'] = lines
 
   if pack['host'] in hosts:
     pack['host'] = hosts[pack['host']]
@@ -104,6 +124,7 @@ def invoke_sysbench(args):
 
   if 'continue' in args: real_args.append('--continue=' + args['continue'])
   if 'targets' in args: real_args.append('--targets=' + args['targets'])
+  if 'lines' in args: real_args.append('--lines=' + args['lines'])
 
   if 'dump' in args: real_args.append('--dump=true')
 
@@ -188,6 +209,7 @@ parser.add_argument('-H', '--host')
 parser.add_argument('-C', '--continue')
 parser.add_argument('-T', '--targets')
 parser.add_argument('-o', '--dump', action='store_true')
+parser.add_argument('-l', '--lines')
 parser.add_argument('apps', action='append')
 
 known_apps = ['broadleaf', 'diaspora', 'discourse', 'eladmin',  'fatfreecrm', 'febs', 'forest_blog', 'gitlab', 'guns', 'halo', 'homeland', 'lobsters', 'publiccms', 'pybbs', 'redmine', 'refinerycms', 'sagan', 'shopizer', 'solidus', 'spree'] # 'fanchaoo', 'springblog', 'wordpress']

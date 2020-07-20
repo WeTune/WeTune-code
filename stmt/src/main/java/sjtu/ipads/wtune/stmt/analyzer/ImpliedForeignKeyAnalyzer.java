@@ -36,7 +36,7 @@ public class ImpliedForeignKeyAnalyzer implements Analyzer<Set<Column>>, SQLVisi
   @Override
   public boolean enterBinary(SQLNode binary) {
     final BoolExpr boolExpr = binary.get(BOOL_EXPR);
-    if (boolExpr == null || !boolExpr.isJoinCondtion()) return true;
+    if (boolExpr == null || !boolExpr.isJoinCondition()) return true;
 
     final ColumnRef leftRef = binary.get(BINARY_LEFT).get(RESOLVED_COLUMN_REF);
     final ColumnRef rightRef = binary.get(BINARY_RIGHT).get(RESOLVED_COLUMN_REF);

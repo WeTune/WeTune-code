@@ -112,7 +112,7 @@ class TableBuilder {
     for (SQLNode key : keys) {
       final String columnName = key.get(KEY_PART_COLUMN);
       if (columnName == null) {
-        LOG.log(INFO, "expr-based index: {0}", key);
+        LOG.log(INFO, "expr-based index: {0} in {1}", key, table.tableName());
         continue;
       }
       final Column column = table.getColumn(columnName);

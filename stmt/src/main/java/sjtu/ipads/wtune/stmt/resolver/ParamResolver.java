@@ -83,11 +83,18 @@ public class ParamResolver implements SQLVisitor, Resolver {
     if (pair == null) return;
     final SQLNode ctx = pair.left();
 
+    boolean not = false;
+    SQLNode parent = ctx.parent();
+    while (isExpr(parent)) {
+      if (parent.get(UNARY_OP) == UnaryOp.NOT) not = !not;
+      parent = parent.parent();
+    }
+
     final LinkedList<ParamModifier> modifierStack = new LinkedList<>();
     SQLNode p = startPoint;
 
     do {
-      if (!resolveReversedModifier(p, modifierStack)) return;
+      if (!resolveReversedModifier(p, modifierStack, not)) return;
       p = p.parent();
     } while (p != ctx);
 
@@ -115,7 +122,8 @@ public class ParamResolver implements SQLVisitor, Resolver {
   private static final Set<Class<? extends Resolver>> DEPENDENCIES =
       Set.of(BoolExprResolver.class, ColumnResolver.class);
 
-  private static boolean resolveReversedModifier(SQLNode target, List<ParamModifier> stack) {
+  private static boolean resolveReversedModifier(
+      SQLNode target, List<ParamModifier> stack, boolean not) {
     final SQLNode parent = target.parent();
     final Kind kind = exprKind(parent);
 
@@ -135,7 +143,7 @@ public class ParamResolver implements SQLVisitor, Resolver {
       final SQLNode otherSide = inverseOp ? left : right;
       final BinaryOp op = parent.get(BINARY_OP);
 
-      final ParamModifier modifier = ParamModifier.fromBinaryOp(op, target, inverseOp);
+      final ParamModifier modifier = ParamModifier.fromBinaryOp(op, target, inverseOp, not);
       if (modifier == null) return false;
 
       if (modifier.type() != KEEP) stack.add(modifier);

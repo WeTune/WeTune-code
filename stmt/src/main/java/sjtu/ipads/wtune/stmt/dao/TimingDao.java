@@ -9,7 +9,15 @@ import java.util.List;
 public interface TimingDao {
   List<Timing> findByStmt(Statement stmt);
 
+  void beginBatch();
+
+  void endBatch();
+
   void insert(Timing timing);
+
+  static TimingDao instance() {
+    return TimingDaoInstance.instance();
+  }
 
   default void registerAsGlobal() {
     TimingDaoInstance.register(this);

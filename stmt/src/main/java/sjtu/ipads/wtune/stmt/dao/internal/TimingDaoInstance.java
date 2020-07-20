@@ -33,4 +33,12 @@ public class TimingDaoInstance {
   public static void save(Timing timing) {
     instance0().insert(timing);
   }
+
+  public static void beginBatch() {
+    instance0().beginBatch();
+  }
+
+  public static void endBatch() {
+    instance0().endBatch();
+  }
 }

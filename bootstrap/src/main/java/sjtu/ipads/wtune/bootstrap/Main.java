@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.stmt.DefaultSetup;
 
 import java.util.Arrays;
 
+import static java.util.Arrays.binarySearch;
+import static java.util.Arrays.copyOfRange;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 
 public class Main {
@@ -38,11 +40,17 @@ public class Main {
 
   public static void main(String[] args) {
     DefaultSetup._default().registerAsGlobal();
-    assert args.length >= 2;
+    if (args.length < 2) {
+      System.err.println("wrong arguments");
+      System.exit(1);
+    }
     final String cmd = args[0];
     final String apps = args[1];
     final String[] appNames;
     if ("all".equals(apps)) appNames = KNOWN_APPS;
+    else if (apps.startsWith(">"))
+      appNames =
+          copyOfRange(KNOWN_APPS, binarySearch(KNOWN_APPS, apps.substring(1)), KNOWN_APPS.length);
     else appNames = apps.split(",");
 
     final Task task;
@@ -64,7 +72,7 @@ public class Main {
         return;
     }
 
-    task.setArgs(Arrays.copyOfRange(args, 2, args.length));
+    task.setArgs(copyOfRange(args, 2, args.length));
     task.doTasks(appNames);
   }
 }

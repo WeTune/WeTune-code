@@ -131,10 +131,33 @@ end
 function Modifiers.check_bool()
     return function(_, _, stack)
         local value = stack:pop()
-        if value == 'TRUE' or value == 0 then
+        if value == 'TRUE' or value == 1 then
             stack:push('TRUE')
         else
             stack:push('FALSE')
+        end
+    end
+end
+
+function Modifiers.check_null_not()
+    return function(_, _, stack)
+        local value = stack:pop()
+        if value ~= "NULL" then
+            value = "NULL"
+        else
+            value = "NOT NULL"
+        end
+        stack:push(value)
+    end
+end
+
+function Modifiers.check_bool_not()
+    return function(_, _, stack)
+        local value = stack:pop()
+        if value == 'TRUE' or value == 1 then
+            stack:push('FALSE')
+        else
+            stack:push('TRUE')
         end
     end
 end
@@ -162,13 +185,13 @@ end
 
 function Modifiers.array_element()
     return function(_, _, stack)
-        local value = stack:pop()
-        local shifted = shiftValue(value)
-        if shifted then
-            stack:push({ value, shifted })
-        else
-            stack:push(value)
-        end
+        --local value = stack:pop()
+        --local shifted = shiftValue(value)
+        --if shifted then
+        --    stack:push({ value, shifted })
+        --else
+        --    stack:push(value)
+        --end
     end
 end
 

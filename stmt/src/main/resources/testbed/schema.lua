@@ -72,41 +72,45 @@ end
 --end
 
 function PrimaryKey:modifyValue(lineNumber, origValue, maxLine)
-    if self.total == 1 then
-        return lineNumber
-    end
-
-    local base
-    if maxLine <= 10000 then
-        base = 100
-    elseif maxLine <= 1000000 then
-        base = 10000
-    end
-
-    if self.index == 1 then
-        return math.ceil(lineNumber / base)
-    else
-        return math.fmod(lineNumber, base) + 1
-    end
+    return lineNumber
+    --if self.total == 1 then
+    --    return lineNumber
+    --end
+    --
+    --local base
+    --if maxLine <= 10000 then
+    --    base = 100
+    --elseif maxLine <= 1000000 then
+    --    base = 10000
+    --end
+    --
+    --if self.index == 1 then
+    --    return math.ceil(lineNumber / base)
+    --else
+    --    return math.fmod(lineNumber, base) + 1
+    --end
+    --
 end
 
 function UniqueKey:modifyValue(lineNumber, origValue, maxLine)
-    if self.total == 1 then
-        return lineNumber
-    end
-
-    local base
-    if maxLine <= 10000 then
-        base = 100
-    elseif maxLine <= 1000000 then
-        base = 10000
-    end
-
-    if self.index == 1 then
-        return math.ceil(lineNumber / base)
-    else
-        return math.fmod(lineNumber, base) + 1
-    end
+    return lineNumber
+    --if self.total == 1 then
+    --    return lineNumber
+    --end
+    --
+    --local base
+    --if maxLine <= 10000 then
+    --    base = 100
+    --elseif maxLine <= 1000000 then
+    --    base = 10000
+    --end
+    --
+    --if self.index == 1 then
+    --    return math.ceil(lineNumber / base)
+    --else
+    --    return math.fmod(lineNumber, base) + 1
+    --end
+    --
 end
 
 function ForeignKey:modifyValue(lineNumber, origValue, maxLine)

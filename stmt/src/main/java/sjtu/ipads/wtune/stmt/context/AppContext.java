@@ -86,7 +86,7 @@ public class AppContext implements Attrs<AppContext> {
       final List<OutputFingerprint> fingerprints = new ArrayList<>();
       OutputFingerprint fingerprint;
       while ((fingerprint = OutputFingerprint.readNext(reader)) != null)
-        fingerprints.add(fingerprint);
+        fingerprints.add(fingerprint.setAppName(name));
       return fingerprints;
     } catch (IOException e) {
       throw new StmtException(e);

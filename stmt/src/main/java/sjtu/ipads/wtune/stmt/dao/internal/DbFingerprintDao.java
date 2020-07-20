@@ -43,6 +43,16 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
           + "VALUES (?, ?, ?, ?, ?)";
 
   @Override
+  public void beginBatch() {
+    begin();
+  }
+
+  @Override
+  public void endBatch() {
+    commit();
+  }
+
+  @Override
   public List<OutputFingerprint> findByStmt(Statement stmt) {
     final PreparedStatement find = prepare(FIND_BY_STMT);
     try {
@@ -66,7 +76,7 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
           fingerprint.setAppName(appName);
           fingerprint.setStmtId(stmtId);
           fingerprint.setPoint(curInput = input);
-          fingerprint.setHashes(hashes = new ArrayList<>());
+          fingerprint.setHashes(hashes = new ArrayList<>(5));
 
           ret.add(fingerprint);
         }
@@ -101,7 +111,7 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
         upsert.setInt(5, hash);
         upsert.addBatch();
       }
-      upsert.executeUpdate();
+      upsert.executeBatch();
     } catch (SQLException throwables) {
       throw new StmtException(throwables);
     }

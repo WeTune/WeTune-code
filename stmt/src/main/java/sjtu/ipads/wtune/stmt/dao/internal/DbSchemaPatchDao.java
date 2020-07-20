@@ -39,6 +39,16 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
   }
 
   @Override
+  public void beginBatch() {
+    begin();
+  }
+
+  @Override
+  public void endBatch() {
+    commit();
+  }
+
+  @Override
   public List<SchemaPatch> findByApp(String appName) {
     final PreparedStatement ps = prepare(FIND_BY_APP);
     try {
