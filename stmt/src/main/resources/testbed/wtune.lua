@@ -12,26 +12,48 @@ local Inspect = require("inspect")
 local WTune = {}
 
 local PROFILES = {
-    base = {
-        schema = "base",
-        rows = 100,
-        randDist = "uniform",
-        randSeq = "random",
-        workload = "base",
-    },
-    opt = {
-        schema = "opt",
-        rows = 100,
-        randDist = "uniform",
-        randSeq = "random",
-        workload = "opt",
-    },
     sample = {
-        schema = "opt",
+        tag = 'notag',
+        schema = 'opt',
+        workload = 'base',
+        randDist = 'uniform',
+        randSeq = 'typed',
         rows = 10000,
-        randDist = "uniform",
-        randSeq = "typed",
-        workload = "base"
+    },
+    evalBase = {
+        tag = 'base',
+        schema = 'base',
+        workload = 'base',
+        randDist = 'uniform',
+        randSeq = 'typed',
+        rows = 10000,
+        times = 100,
+    },
+    evalIndex = {
+        tag = 'index',
+        schema = 'opt',
+        workload = 'index',
+        randDist = 'uniform',
+        randSeq = 'typed',
+        rows = 10000,
+        times = 100,
+    },
+    evalOpt = {
+        tag = 'opt',
+        schema = 'opt',
+        workload = 'opt',
+        randDist = 'uniform',
+        randSeq = 'typed',
+        rows = 10000,
+        times = 100,
+    },
+    verify = {
+        tag = 'notag',
+        schema = 'opt',
+        workload = 'verify',
+        randDist = 'uniform',
+        randSeq = 'random',
+        rows = 100,
     },
 }
 
