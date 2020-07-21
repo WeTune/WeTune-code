@@ -54,10 +54,6 @@ public class RelationGraph {
       final JoinCondition expendedEdge = expandEdge(graph.edgeValue(edge).get());
       // deal with weird stmt like "tbl.id in (select tbl.id where tbl.col = xx)"
       if (expendedEdge.left().equals(expendedEdge.right())) continue;
-
-      assert expandedGraph.nodes().contains(expendedEdge.left());
-      assert expandedGraph.nodes().contains(expendedEdge.right());
-
       expandedGraph.putEdgeValue(expendedEdge.left(), expendedEdge.right(), expendedEdge);
     }
 

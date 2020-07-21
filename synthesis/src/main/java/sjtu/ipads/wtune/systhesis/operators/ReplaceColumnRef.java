@@ -6,11 +6,8 @@ import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.attrs.SelectItem;
 import sjtu.ipads.wtune.stmt.schema.Column;
 
-import java.util.Objects;
-
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 
 public class ReplaceColumnRef implements Operator, SQLVisitor {
@@ -36,7 +33,8 @@ public class ReplaceColumnRef implements Operator, SQLVisitor {
     return build(target, replacementTable, replacementColumn);
   }
 
-  public static Operator build(ColumnRef target, String replacementTable, String replacementColumn) {
+  public static Operator build(
+      ColumnRef target, String replacementTable, String replacementColumn) {
     return new ReplaceColumnRef(target, replacementTable, replacementColumn);
   }
 
@@ -44,10 +42,20 @@ public class ReplaceColumnRef implements Operator, SQLVisitor {
   public boolean enterColumnRef(SQLNode columnRef) {
     final ColumnRef cRef = columnRef.get(RESOLVED_COLUMN_REF);
     if (!target.refEquals(cRef)) return false;
+    if (columnRef.parent().type() == SQLNode.Type.SELECT_ITEM)
+      fixSelectItemAlias(columnRef.parent());
+
     final SQLNode columnName = columnRef.get(COLUMN_REF_COLUMN);
     columnName.put(COLUMN_NAME_TABLE, replacementTable);
     columnName.put(COLUMN_NAME_COLUMN, replacementColumn);
     return false;
+  }
+
+  private void fixSelectItemAlias(SQLNode selectItem) {
+    if (selectItem.get(SELECT_ITEM_ALIAS) != null) return;
+    final String simpleName =
+        selectItem.get(SELECT_ITEM_EXPR).get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
+    selectItem.put(SELECT_ITEM_ALIAS, simpleName);
   }
 
   @Override

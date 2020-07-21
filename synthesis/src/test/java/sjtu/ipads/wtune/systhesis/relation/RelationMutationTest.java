@@ -29,7 +29,7 @@ class RelationMutationTest {
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
     for (Statement s : output) {
-      //      System.out.println(s.parsed().toString());
+      System.out.println(s.parsed().toString());
       for (String expectation : expectations)
         if (expectation.equals(s.parsed().toString())) return output;
     }
@@ -83,10 +83,12 @@ class RelationMutationTest {
     assertEquals(
         "SELECT `a`.`i`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
         output.get(0).parsed().toString());
-    final String expect1 = "SELECT `a`.`i`, `a`.`i` FROM `a` WHERE `a`.`i` = 1";
-    final String expect2 = "SELECT `b`.`x`, `b`.`x` FROM `b` WHERE `b`.`x` = 1";
+    final String expect1 = "SELECT `a`.`i`, `a`.`i` AS `x` FROM `a` WHERE `a`.`i` = 1";
+    final String expect2 = "SELECT `b`.`x` AS `i`, `b`.`x` FROM `b` WHERE `b`.`x` = 1";
     final String output1 = output.get(1).parsed().toString();
     final String output2 = output.get(2).parsed().toString();
+    System.out.println(output1);
+    System.out.println(output2);
     assertTrue(
         (expect1.equals(output1) && expect2.equals(output2))
             || (expect1.equals(output2) && expect2.equals(output1)));
@@ -233,8 +235,8 @@ class RelationMutationTest {
   void diaspora577() {
     doTest(
         Statement.findOne("diaspora", 577),
-        "SELECT COUNT(DISTINCT `people_exposed_1_2`.`id`) FROM `contacts` AS `contacts_exposed_1_1` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_1_1` ON `aspect_memberships_exposed_1_1`.`contact_id` = `contacts_exposed_1_1`.`id` INNER JOIN `people` AS `people_exposed_1_2` ON `people_exposed_1_2`.`id` = `people_exposed_1_2`.`id` INNER JOIN `profiles` AS `profiles_exposed_1_1` ON `profiles_exposed_1_1`.`person_id` = `people_exposed_1_2`.`id` INNER JOIN `contacts` AS `contacts_people_exposed_1_1` ON `contacts_people_exposed_1_1`.`person_id` = `people_exposed_1_2`.`id` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_1_2` ON `aspect_memberships_exposed_1_2`.`contact_id` = `contacts_people_exposed_1_1`.`id` LEFT JOIN `contacts` AS `contacts_exposed_1_2` ON `contacts_exposed_1_2`.`user_id` = 488 AND `contacts_exposed_1_2`.`person_id` = `people_exposed_1_2`.`id` WHERE `contacts_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_1_1`.`aspect_id` = 322 AND ((`profiles_exposed_1_1`.`searchable` = TRUE OR `contacts_exposed_1_2`.`user_id` = 488) AND (`profiles_exposed_1_1`.`full_name` LIKE '%my% aspect% contact%' OR `people_exposed_1_2`.`diaspora_handle` LIKE 'myaspectcontact%') AND `people_exposed_1_2`.`closed_account` = FALSE AND `contacts_exposed_1_2`.`user_id` = 488 AND `aspect_memberships_exposed_1_2`.`aspect_id` = 321)",
-        "SELECT COUNT(DISTINCT `people_exposed_2_1_exposed_1_1`.`id`) FROM `contacts` AS `contacts_exposed_1_1` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_1_1` ON `aspect_memberships_exposed_1_1`.`contact_id` = `contacts_exposed_1_1`.`id` INNER JOIN `people` AS `people_exposed_2_1_exposed_1_1` ON `people_exposed_2_1_exposed_1_1`.`id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `profiles` AS `profiles_exposed_2_1_exposed_1_1` ON `profiles_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `contacts` AS `contacts_people_exposed_2_1_exposed_1_1` ON `contacts_people_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_2_1_exposed_1_1` ON `aspect_memberships_exposed_2_1_exposed_1_1`.`contact_id` = `contacts_people_exposed_2_1_exposed_1_1`.`id` LEFT JOIN `contacts` AS `contacts_exposed_2_1_exposed_1_1` ON `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `contacts_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` WHERE `contacts_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_1_1`.`aspect_id` = 322 AND ((`profiles_exposed_2_1_exposed_1_1`.`searchable` = TRUE OR `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488) AND (`profiles_exposed_2_1_exposed_1_1`.`full_name` LIKE '%my% aspect% contact%' OR `people_exposed_2_1_exposed_1_1`.`diaspora_handle` LIKE 'myaspectcontact%') AND `people_exposed_2_1_exposed_1_1`.`closed_account` = FALSE AND `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_2_1_exposed_1_1`.`aspect_id` = 321)");
+        "SELECT COUNT(DISTINCT `people_exposed_1_1`.`id`) FROM `people` AS `people_exposed_1_1` INNER JOIN `contacts` AS `contacts_exposed_1_1` ON `contacts_exposed_1_1`.`person_id` = `people_exposed_1_1`.`id` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_1_1` ON `aspect_memberships_exposed_1_1`.`contact_id` = `contacts_exposed_1_1`.`id` INNER JOIN `people` AS `people_exposed_2_1_exposed_1_1` ON `people_exposed_1_1`.`id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `profiles` AS `profiles_exposed_2_1_exposed_1_1` ON `profiles_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `contacts` AS `contacts_people_exposed_2_1_exposed_1_1` ON `contacts_people_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_2_1_exposed_1_1` ON `aspect_memberships_exposed_2_1_exposed_1_1`.`contact_id` = `contacts_people_exposed_2_1_exposed_1_1`.`id` LEFT JOIN `contacts` AS `contacts_exposed_2_1_exposed_1_1` ON `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `contacts_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` WHERE `contacts_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_1_1`.`aspect_id` = 322 AND ((`profiles_exposed_2_1_exposed_1_1`.`searchable` = TRUE OR `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488) AND (`profiles_exposed_2_1_exposed_1_1`.`full_name` LIKE '%my% aspect% contact%' OR `people_exposed_2_1_exposed_1_1`.`diaspora_handle` LIKE 'myaspectcontact%') AND `people_exposed_2_1_exposed_1_1`.`closed_account` = FALSE AND `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_2_1_exposed_1_1`.`aspect_id` = 321)",
+        "SELECT COUNT(DISTINCT `contacts_exposed_1_1`.`person_id`) FROM `contacts` AS `contacts_exposed_1_1` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_1_1` ON `aspect_memberships_exposed_1_1`.`contact_id` = `contacts_exposed_1_1`.`id` INNER JOIN `people` AS `people_exposed_2_1_exposed_1_1` ON `contacts_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `profiles` AS `profiles_exposed_2_1_exposed_1_1` ON `profiles_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `contacts` AS `contacts_people_exposed_2_1_exposed_1_1` ON `contacts_people_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` INNER JOIN `aspect_memberships` AS `aspect_memberships_exposed_2_1_exposed_1_1` ON `aspect_memberships_exposed_2_1_exposed_1_1`.`contact_id` = `contacts_people_exposed_2_1_exposed_1_1`.`id` LEFT JOIN `contacts` AS `contacts_exposed_2_1_exposed_1_1` ON `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `contacts_exposed_2_1_exposed_1_1`.`person_id` = `people_exposed_2_1_exposed_1_1`.`id` WHERE `contacts_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_1_1`.`aspect_id` = 322 AND ((`profiles_exposed_2_1_exposed_1_1`.`searchable` = TRUE OR `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488) AND (`profiles_exposed_2_1_exposed_1_1`.`full_name` LIKE '%my% aspect% contact%' OR `people_exposed_2_1_exposed_1_1`.`diaspora_handle` LIKE 'myaspectcontact%') AND `people_exposed_2_1_exposed_1_1`.`closed_account` = FALSE AND `contacts_exposed_2_1_exposed_1_1`.`user_id` = 488 AND `aspect_memberships_exposed_2_1_exposed_1_1`.`aspect_id` = 321)");
   }
 
   @Test
@@ -276,14 +278,14 @@ class RelationMutationTest {
   void fatfreecrm9() {
     doTest(
         Statement.findOne("fatfreecrm", 9),
-        "SELECT `taggings`.`tag_id` FROM `taggings` WHERE `taggings`.`taggable_id` = 1234 AND `taggings`.`taggable_type` = 'Contact' AND `taggings`.`context` = 'tags'");
+        "SELECT `taggings`.`tag_id` AS `id` FROM `taggings` WHERE `taggings`.`taggable_id` = 1234 AND `taggings`.`taggable_type` = 'Contact' AND `taggings`.`context` = 'tags'");
   }
 
   @Test
   void fatfreecrm16() {
     doTest(
         Statement.findOne("fatfreecrm", 16),
-        "SELECT `groups_users`.`group_id` FROM `groups_users` WHERE `groups_users`.`user_id` = 3056");
+        "SELECT `groups_users`.`group_id` AS `id` FROM `groups_users` WHERE `groups_users`.`user_id` = 3056");
   }
 
   @Test
@@ -332,7 +334,7 @@ class RelationMutationTest {
   void fatfreecrm141() {
     doTest(
         Statement.findOne("fatfreecrm", 141),
-        "SELECT DISTINCT `contact_opportunities`.`opportunity_id` FROM `contact_opportunities` WHERE `contact_opportunities`.`contact_id` = 2076 ORDER BY `contact_opportunities`.`opportunity_id` DESC");
+        "SELECT DISTINCT `contact_opportunities`.`opportunity_id` AS `id` FROM `contact_opportunities` WHERE `contact_opportunities`.`contact_id` = 2076 ORDER BY `contact_opportunities`.`opportunity_id` DESC");
   }
 
   @Test
@@ -360,14 +362,14 @@ class RelationMutationTest {
   void fatfreecrm155() {
     doTest(
         Statement.findOne("fatfreecrm", 155),
-        "SELECT DISTINCT `account_opportunities`.`opportunity_id` FROM `account_opportunities` WHERE `account_opportunities`.`account_id` = 1106 ORDER BY `account_opportunities`.`opportunity_id` DESC");
+        "SELECT DISTINCT `account_opportunities`.`opportunity_id` AS `id` FROM `account_opportunities` WHERE `account_opportunities`.`account_id` = 1106 ORDER BY `account_opportunities`.`opportunity_id` DESC");
   }
 
   @Test
   void fatfreecrm156() {
     doTest(
         Statement.findOne("fatfreecrm", 156),
-        "SELECT DISTINCT `account_contacts`.`contact_id` FROM `account_contacts` WHERE `account_contacts`.`account_id` = 1106");
+        "SELECT DISTINCT `account_contacts`.`contact_id` AS `id` FROM `account_contacts` WHERE `account_contacts`.`account_id` = 1106");
   }
 
   @Test

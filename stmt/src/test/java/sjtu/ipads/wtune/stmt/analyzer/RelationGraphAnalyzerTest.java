@@ -66,4 +66,19 @@ class RelationGraphAnalyzerTest {
     stmt.retrofitStandard();
     assertEquals(4, RelationGraphAnalyzer.collectJoinCondition(stmt.parsed()).size());
   }
+
+  @Test
+  void test() {
+    final Statement stmt = Statement.findOne("discourse", 450);
+    stmt.retrofitStandard();
+//    final RelationGraph graph = stmt.analyze(RelationGraphAnalyzer.class);
+//    graph.expanded().calcRelationPosition();
+//    System.out.println();
+    stmt.mutate(SelectItemNormalizer.class);
+    stmt.resolve(ParamResolver.class);
+    final ParameterizedSQLFormatter formatter = new ParameterizedSQLFormatter(false);
+    stmt.parsed().accept(formatter);
+    final List<Param> params = formatter.params();
+    System.out.println();
+  }
 }

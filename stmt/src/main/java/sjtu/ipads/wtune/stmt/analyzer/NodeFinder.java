@@ -39,7 +39,7 @@ public class NodeFinder implements Analyzer<SQLNode>, SQLVisitor {
   }
 
   public static SQLNode find(SQLNode root, SQLNode target) {
-    if (target == null) return null;
+    if (root == null || target == null) return null;
     return find(root, target.get(NODE_ID));
   }
 

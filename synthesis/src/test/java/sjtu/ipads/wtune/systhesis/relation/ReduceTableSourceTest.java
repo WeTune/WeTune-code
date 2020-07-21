@@ -51,7 +51,7 @@ class ReduceTableSourceTest {
       op.modifyAST(copy, copy.parsed());
 
       assertEquals(
-          "SELECT `c`.`x` FROM (SELECT `i`, `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
+          "SELECT `c`.`x` AS `i` FROM (SELECT `i`, `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
               + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `c`.`x` = 4)",
           copy.parsed().toString());
       assertEquals(4, graph.graph().nodes().size());
