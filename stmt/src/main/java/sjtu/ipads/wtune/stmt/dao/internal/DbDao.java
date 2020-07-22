@@ -23,17 +23,13 @@ public abstract class DbDao {
     return connection;
   }
 
-  protected PreparedStatement prepare(String sql) {
+  protected PreparedStatement prepare(String sql) throws SQLException {
     PreparedStatement ps = caches.get(sql);
     if (ps != null) return ps;
 
     final Connection conn = connection();
-    try {
-      caches.put(sql, ps = conn.prepareStatement(sql));
-      return ps;
-    } catch (SQLException throwables) {
-      throw new StmtException(throwables);
-    }
+    caches.put(sql, ps = conn.prepareStatement(sql));
+    return ps;
   }
 
   protected void begin() {

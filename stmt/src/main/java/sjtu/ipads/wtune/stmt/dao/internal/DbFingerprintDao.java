@@ -27,7 +27,7 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
   private static final String SELECT_ITEM =
       String.format(
           "output_app_name AS %s, output_stmt_id AS %s, "
-              + "output_input AS %s, output_index AS %s, output_hash AS %ss",
+              + "output_input AS %s, output_index AS %s, output_hash AS %s",
           KEY_APP_NAME, KEY_STMT_ID, KEY_POINT, KEY_INDEX, KEY_HASH);
 
   private static final String FIND_BY_STMT =
@@ -54,8 +54,8 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
 
   @Override
   public List<OutputFingerprint> findByStmt(Statement stmt) {
-    final PreparedStatement find = prepare(FIND_BY_STMT);
     try {
+      final PreparedStatement find = prepare(FIND_BY_STMT);
       final String appName = stmt.appName();
       final int stmtId = stmt.stmtId();
 
@@ -72,13 +72,11 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
       while (rs.next()) {
         final int input = rs.getInt(KEY_POINT);
         if (curInput != input) {
-          fingerprint = new OutputFingerprint();
+          ret.add(fingerprint = new OutputFingerprint());
           fingerprint.setAppName(appName);
           fingerprint.setStmtId(stmtId);
           fingerprint.setPoint(curInput = input);
           fingerprint.setHashes(hashes = new ArrayList<>(5));
-
-          ret.add(fingerprint);
         }
 
         assert fingerprint != null;
@@ -96,12 +94,12 @@ public class DbFingerprintDao extends DbDao implements FingerprintDao {
 
   @Override
   public void save(OutputFingerprint fingerprint) {
-    final PreparedStatement upsert = prepare(UPSERT);
     final String appName = fingerprint.appName();
     final int stmtId = fingerprint.stmtId();
     final int input = fingerprint.point();
     final List<Integer> hashes = fingerprint.hashes();
     try {
+      final PreparedStatement upsert = prepare(UPSERT);
       for (int i = 0; i < hashes.size(); i++) {
         final Integer hash = hashes.get(i);
         upsert.setString(1, appName);

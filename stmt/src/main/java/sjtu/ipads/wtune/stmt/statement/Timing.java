@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.statement;
 
-import sjtu.ipads.wtune.stmt.dao.internal.TimingDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.TimingDao;
 
 import static sjtu.ipads.wtune.stmt.Setup.CSV_SEP;
 
@@ -91,7 +91,7 @@ public class Timing {
   }
 
   public void save() {
-    TimingDaoInstance.save(this);
+    TimingDao.instance().save(this);
   }
 
   public void setStatement(Statement statement) {

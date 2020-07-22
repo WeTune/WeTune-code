@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.SchemaDao;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class FileSchemaDao implements SchemaDao {
       SQLParser.splitSql(content).stream().map(parser::parse).forEach(schema::addDefinition);
       schema.buildRefs();
 
-      SchemaPatchDaoInstance.findByApp(appName).forEach(schema::addPatch);
+      SchemaPatchDao.instance().findByApp(appName).forEach(schema::addPatch);
 
       return schema;
     } catch (IOException e) {

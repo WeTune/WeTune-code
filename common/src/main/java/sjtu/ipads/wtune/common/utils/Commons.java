@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.Optional;
 
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
@@ -33,9 +34,13 @@ public interface Commons {
     return quota + str + quota;
   }
 
-  static <T> T threadLocal(ThreadLocal<T> threadLocal, Supplier<T> supplier) {
-    T t = threadLocal.get();
-    if (t == null) threadLocal.set(t = supplier.get());
-    return t;
+  static <T> Optional<T> safeGet(T[] arr, int idx) {
+    if (idx >= arr.length) return Optional.empty();
+    return Optional.of(arr[idx]);
+  }
+
+  static <T> Optional<T> safeGet(List<T> list, int idx) {
+    if (idx >= list.size()) return Optional.empty();
+    return Optional.of(list.get(idx));
   }
 }

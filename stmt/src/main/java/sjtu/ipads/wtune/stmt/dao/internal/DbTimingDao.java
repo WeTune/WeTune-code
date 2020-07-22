@@ -63,8 +63,8 @@ public class DbTimingDao extends DbDao implements TimingDao {
 
   @Override
   public List<Timing> findByStmt(Statement stmt) {
-    final PreparedStatement ps = prepare(FIND_BY_STMT);
     try {
+      final PreparedStatement ps = prepare(FIND_BY_STMT);
       ps.setString(1, stmt.appName());
       ps.setInt(2, stmt.stmtId());
       final ResultSet rs = ps.executeQuery();
@@ -90,12 +90,13 @@ public class DbTimingDao extends DbDao implements TimingDao {
   }
 
   @Override
-  public void insert(Timing timing) {
-    final PreparedStatement find = prepare(FIND_ONE);
-    final PreparedStatement insertHistory = prepare(INSERT_HISTORY);
-    final PreparedStatement upsert = prepare(UPSERT_PERF);
+  public void save(Timing timing) {
 
     try {
+      final PreparedStatement find = prepare(FIND_ONE);
+      final PreparedStatement insertHistory = prepare(INSERT_HISTORY);
+      final PreparedStatement upsert = prepare(UPSERT_PERF);
+
       find.setString(1, timing.appName());
       find.setInt(2, timing.stmtId());
       find.setString(3, timing.tag());

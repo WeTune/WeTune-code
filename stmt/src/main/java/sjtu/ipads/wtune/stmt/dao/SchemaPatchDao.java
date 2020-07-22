@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.stmt.dao;
 
-import sjtu.ipads.wtune.stmt.dao.internal.SchemaPatchDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.internal.DaoInstances;
 import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 
 import java.util.List;
 
-public interface SchemaPatchDao {
+public interface SchemaPatchDao extends Dao {
   List<SchemaPatch> findByApp(String appName);
 
   void save(SchemaPatch patch);
@@ -15,10 +15,6 @@ public interface SchemaPatchDao {
   void endBatch();
 
   static SchemaPatchDao instance() {
-    return SchemaPatchDaoInstance.instance();
-  }
-
-  default void registerAsGlobal() {
-    SchemaPatchDaoInstance.register(this);
+    return DaoInstances.get(SchemaPatchDao.class);
   }
 }

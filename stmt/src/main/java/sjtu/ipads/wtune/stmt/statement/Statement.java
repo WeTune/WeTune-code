@@ -7,10 +7,10 @@ import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
 import sjtu.ipads.wtune.stmt.analyzer.RelationGraphAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.context.AppContext;
-import sjtu.ipads.wtune.stmt.dao.internal.AltStatementDaoInstance;
-import sjtu.ipads.wtune.stmt.dao.internal.FingerprintDaoInstance;
-import sjtu.ipads.wtune.stmt.dao.internal.StatementDaoInstance;
-import sjtu.ipads.wtune.stmt.dao.internal.TimingDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
+import sjtu.ipads.wtune.stmt.dao.FingerprintDao;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
+import sjtu.ipads.wtune.stmt.dao.TimingDao;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
 
@@ -46,15 +46,15 @@ public class Statement {
   private List<OutputFingerprint> fingerprints;
 
   public static Statement findOne(String appName, int id) {
-    return StatementDaoInstance.findOne(appName, id);
+    return StatementDao.instance().findOne(appName, id);
   }
 
   public static List<Statement> findByApp(String appName) {
-    return StatementDaoInstance.findByApp(appName);
+    return StatementDao.instance().findByApp(appName);
   }
 
   public static List<Statement> findAll() {
-    return StatementDaoInstance.findAll();
+    return StatementDao.instance().findAll();
   }
 
   public Statement() {
@@ -70,13 +70,14 @@ public class Statement {
   }
 
   public String rawSql() {
+    if (rawSql == null) rawSql = StatementDao.instance().findOne(appName, stmtId).rawSql;
     return rawSql;
   }
 
   public SQLNode parsed() {
     if (parsed == null) {
       final SQLParser parser = SQLParser.ofDb(appContext().dbType());
-      if (parser != null) parsed = parser.parse(rawSql);
+      if (parser != null) parsed = parser.parse(rawSql());
     }
     return parsed;
   }
@@ -87,18 +88,18 @@ public class Statement {
   }
 
   public Statement alt(String kind) {
-    if (alt == null) alt = AltStatementDaoInstance.findByStmt(this);
+    if (alt == null) alt = AltStatementDao.instance().findByStmt(this);
 
     return FuncUtils.find(it -> kind.equals(it.kind()), alt);
   }
 
   public Timing timing(String tag) {
-    if (timing == null) timing = TimingDaoInstance.findByStmt(this);
+    if (timing == null) timing = TimingDao.instance().findByStmt(this);
     return FuncUtils.find(it -> tag.equals(it.tag()), timing);
   }
 
   public List<OutputFingerprint> fingerprints() {
-    return FingerprintDaoInstance.findByStmt(this);
+    return FingerprintDao.instance().findByStmt(this);
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {
@@ -216,7 +217,7 @@ public class Statement {
   }
 
   public void delete(String cause) {
-    StatementDaoInstance.delete(this, cause);
+    StatementDao.instance().delete(this, cause);
   }
 
   @Override

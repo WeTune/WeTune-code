@@ -3,15 +3,14 @@ package sjtu.ipads.wtune.stmt.context;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.dao.internal.AppDaoInstance;
-import sjtu.ipads.wtune.stmt.dao.internal.SchemaDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.AppDao;
+import sjtu.ipads.wtune.stmt.dao.SchemaDao;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.statement.OutputFingerprint;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.stmt.statement.Timing;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,7 +37,7 @@ public class AppContext implements Attrs<AppContext> {
     }
 
     app.setName(name);
-    AppDaoInstance.inflateOne(app);
+    AppDao.instance().inflateOne(app);
     return app;
   }
 
@@ -59,7 +58,7 @@ public class AppContext implements Attrs<AppContext> {
   }
 
   public Schema schema() {
-    if (schema == null) schema = SchemaDaoInstance.findOne(name, "base", dbType);
+    if (schema == null) schema = SchemaDao.instance().findOne(name, "base", dbType);
     return schema;
   }
 
@@ -104,7 +103,7 @@ public class AppContext implements Attrs<AppContext> {
   public Schema alternativeSchema(String tag) {
     Schema schema = alternativeSchemas.get(tag);
     if (schema == null)
-      alternativeSchemas.put(tag, schema = SchemaDaoInstance.findOne(name, tag, dbType));
+      alternativeSchemas.put(tag, schema = SchemaDao.instance().findOne(name, tag, dbType));
     return schema;
   }
 

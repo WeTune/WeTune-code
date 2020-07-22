@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.stmt.dao;
 
 import sjtu.ipads.wtune.stmt.context.AppContext;
-import sjtu.ipads.wtune.stmt.dao.internal.AppDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.internal.DaoInstances;
 
-public interface AppDao {
+public interface AppDao extends Dao {
   AppContext inflateOne(AppContext ctx);
 
-  default void registerAsGlobal() {
-    AppDaoInstance.register(this);
+  static AppDao instance() {
+    return DaoInstances.get(AppDao.class);
   }
 }

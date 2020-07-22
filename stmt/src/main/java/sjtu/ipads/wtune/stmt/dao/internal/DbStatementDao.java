@@ -46,8 +46,8 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
   @Override
   public Statement findOne(String appName, int stmtId) {
-    final PreparedStatement ps = prepare(FIND_ONE);
     try {
+      final PreparedStatement ps = prepare(FIND_ONE);
       ps.setString(1, appName);
       ps.setInt(2, stmtId);
 
@@ -63,8 +63,8 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
   @Override
   public List<Statement> findByApp(String appName) {
-    final PreparedStatement ps = prepare(FIND_BY_APP);
     try {
+      final PreparedStatement ps = prepare(FIND_BY_APP);
       ps.setString(1, appName);
 
       final ResultSet rs = ps.executeQuery();
@@ -81,8 +81,8 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
   @Override
   public List<Statement> findAll() {
-    final PreparedStatement ps = prepare(FIND_ALL);
     try {
+      final PreparedStatement ps = prepare(FIND_ALL);
       final ResultSet rs = ps.executeQuery();
 
       final List<Statement> stmts = new ArrayList<>(10000);
@@ -97,9 +97,9 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
   @Override
   public void delete(Statement stmt, String cause) {
-    final PreparedStatement delete = prepare(DELETE_ONE);
-    final PreparedStatement insert = prepare(INSERT_DELETED);
     try {
+      final PreparedStatement delete = prepare(DELETE_ONE);
+      final PreparedStatement insert = prepare(INSERT_DELETED);
       insert.setString(1, stmt.appName());
       insert.setInt(2, stmt.stmtId());
       insert.setString(3, stmt.rawSql());

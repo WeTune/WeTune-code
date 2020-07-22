@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.stmt.statement;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.dao.internal.FingerprintDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.FingerprintDao;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,7 +52,8 @@ public class OutputFingerprint {
       final List<Integer> hashes = new ArrayList<>(5);
       for (int i = 0; i < maxColumns; i++) {
         final String[] columnValue = new String[rows];
-        for (int j = 0; j < rows; j++) columnValue[j] = safeGet(result.get(j), i);
+        for (int j = 0; j < rows; j++)
+          columnValue[j] = Commons.safeGet(result.get(j), i).orElse(null);
         hashes.add(Arrays.hashCode(columnValue));
       }
 
@@ -62,13 +64,8 @@ public class OutputFingerprint {
     }
   }
 
-  private static String safeGet(String[] arr, int idx) {
-    if (idx >= arr.length) return null;
-    return arr[idx];
-  }
-
   public void save() {
-    FingerprintDaoInstance.save(this);
+    FingerprintDao.instance().save(this);
   }
 
   public String appName() {

@@ -9,6 +9,7 @@ module sjtu.ipads.wtune.stmt {
   exports sjtu.ipads.wtune.stmt.scriptgen;
   exports sjtu.ipads.wtune.stmt.context;
   exports sjtu.ipads.wtune.stmt.dao;
+  exports sjtu.ipads.wtune.stmt.similarity.output;
 
   requires transitive sjtu.ipads.wtune.common;
   requires transitive sjtu.ipads.wtune.sqlparser;

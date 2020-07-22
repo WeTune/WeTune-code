@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.schema;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.dao.internal.SchemaPatchDaoInstance;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,11 +38,11 @@ public class SchemaPatch {
   }
 
   public static List<SchemaPatch> findByApp(String appName) {
-    return SchemaPatchDaoInstance.findByApp(appName);
+    return SchemaPatchDao.instance().findByApp(appName);
   }
 
   public void save() {
-    SchemaPatchDaoInstance.save(this);
+    SchemaPatchDao.instance().save(this);
   }
 
   public List<String> columnNames() {

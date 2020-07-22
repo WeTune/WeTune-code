@@ -67,6 +67,9 @@ public class Main {
       case "updatedb":
         task = new UpdateDb();
         break;
+      case "groupoutput":
+        task = new GroupOutput();
+        break;
       default:
         assertFalse();
         return;

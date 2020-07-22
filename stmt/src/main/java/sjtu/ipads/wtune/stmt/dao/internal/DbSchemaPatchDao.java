@@ -50,8 +50,8 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
 
   @Override
   public List<SchemaPatch> findByApp(String appName) {
-    final PreparedStatement ps = prepare(FIND_BY_APP);
     try {
+      final PreparedStatement ps = prepare(FIND_BY_APP);
       ps.setString(1, appName);
 
       final ResultSet rs = ps.executeQuery();
@@ -68,8 +68,8 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
 
   @Override
   public void save(SchemaPatch patch) {
-    final PreparedStatement ps = prepare(INSERT);
     try {
+      final PreparedStatement ps = prepare(INSERT);
       ps.setString(1, patch.app());
       ps.setString(2, patch.type().name());
       ps.setString(3, patch.tableName());

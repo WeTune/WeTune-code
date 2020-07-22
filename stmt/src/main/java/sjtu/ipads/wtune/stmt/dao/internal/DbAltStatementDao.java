@@ -39,8 +39,8 @@ public class DbAltStatementDao extends DbDao implements AltStatementDao {
 
   @Override
   public List<AltStatement> findByStmt(Statement stmt) {
-    final PreparedStatement ps = prepare(FIND_BY_STMT);
     try {
+      final PreparedStatement ps = prepare(FIND_BY_STMT);
       ps.setString(1, stmt.appName());
       ps.setInt(2, stmt.stmtId());
       final ResultSet rs = ps.executeQuery();
