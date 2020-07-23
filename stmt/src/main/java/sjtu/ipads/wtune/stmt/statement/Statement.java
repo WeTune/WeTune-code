@@ -7,12 +7,10 @@ import sjtu.ipads.wtune.stmt.analyzer.Analyzer;
 import sjtu.ipads.wtune.stmt.analyzer.RelationGraphAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.context.AppContext;
-import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
-import sjtu.ipads.wtune.stmt.dao.FingerprintDao;
-import sjtu.ipads.wtune.stmt.dao.StatementDao;
-import sjtu.ipads.wtune.stmt.dao.TimingDao;
+import sjtu.ipads.wtune.stmt.dao.*;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
+import sjtu.ipads.wtune.stmt.similarity.output.OutputSimGroup;
 
 import java.util.HashSet;
 import java.util.List;
@@ -100,6 +98,10 @@ public class Statement {
 
   public List<OutputFingerprint> fingerprints() {
     return FingerprintDao.instance().findByStmt(this);
+  }
+
+  public List<OutputSimGroup> outputSimilarGroups() {
+    return OutputGroupDao.instance().findByStmt(this);
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {

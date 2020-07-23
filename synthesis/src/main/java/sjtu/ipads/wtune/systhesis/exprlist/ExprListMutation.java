@@ -23,6 +23,10 @@ public class ExprListMutation extends Stage {
     this.mutatorSet = new HashSet<>();
   }
 
+  public static ExprListMutation build() {
+    return new ExprListMutation();
+  }
+
   private boolean registerMutator(SQLNode root, Class<? extends ExprListMutator> cls) {
     final Pair<Long, Class<? extends ExprListMutator>> pair = Pair.of(root.get(NODE_ID), cls);
     if (mutatorSet.contains(pair)) return false;

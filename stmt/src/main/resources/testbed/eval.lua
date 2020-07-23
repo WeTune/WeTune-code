@@ -31,7 +31,7 @@ local function workaroundHang(stmt, wtune)
     end
 
     if stmt.stmtId ~= 60 and stmt.stmtId ~= 104
-      and stmt.stmtId ~= 3 and stmt.stmtId ~= 39 then
+            and stmt.stmtId ~= 3 and stmt.stmtId ~= 39 then
         return true
     end
 
@@ -53,13 +53,13 @@ local function evalStmt(stmt, wtune)
 
     if elapsed >= 100000000 then
         -- 0.1s
-        stmt.is_slow = math.max(1, stmt.is_slow or 0)
+        stmt.isSlow = math.max(1, stmt.isSlow or 0)
     elseif elapsed >= 1000000000 then
         -- 1s
-        stmt.is_slow = math.max(2, stmt.is_slow or 0)
+        stmt.isSlow = math.max(2, stmt.isSlow or 0)
     elseif elapsed >= 10000000000 then
         -- 10s
-        stmt.is_slow = math.max(3, stmt.is_slow or 0)
+        stmt.isSlow = math.max(3, stmt.isSlow or 0)
     end
 end
 
@@ -90,10 +90,10 @@ local function evalStmts(stmts, wtune)
         for _, i in ipairs(seq) do
             local stmt = stmts[i]
 
-            if (not filter or filter(stmt)) and (not stmt.is_slow
-                    or (stmt.is_slow == 1 and stmt.runs <= 20)
-                    or (stmt.is_slow == 2 and stmt.runs <= 3)
-                    or (stmt.is_slow == 3 and stmt.runs <= 1))
+            if (not filter or filter(stmt)) and (not stmt.isSlow
+                    or (stmt.isSlow == 1 and stmt.runs <= 20)
+                    or (stmt.isSlow == 2 and stmt.runs <= 3)
+                    or (stmt.isSlow == 3 and stmt.runs <= 1))
                     and workaroundHang(stmt, wtune) then
                 local status, value = pcall(evalStmt, stmt, wtune)
 

@@ -52,6 +52,7 @@ public class ParamResolver implements SQLVisitor, Resolver {
   public boolean resolve(Statement stmt, SQLNode node) {
     stmt.relationGraph().expanded().calcRelationPosition();
     stmt.mutate(TupleElementsNormalizer.class);
+    stmt.resolve(SimpleParamResolver.class, true);
     stmt.parsed().accept(new ParamResolver());
     return true;
   }
@@ -71,7 +72,10 @@ public class ParamResolver implements SQLVisitor, Resolver {
       if (child != null)
         child.put(
             RESOLVED_PARAM,
-            new Param(child, Collections.singletonList(ParamModifier.of(GEN_OFFSET))));
+            new Param(
+                child.get(PARAM_INDEX),
+                child,
+                Collections.singletonList(ParamModifier.of(GEN_OFFSET))));
       return false;
     }
 
@@ -105,7 +109,8 @@ public class ParamResolver implements SQLVisitor, Resolver {
       else modifierStack.add(ParamModifier.of(DIRECT_VALUE, "UNKNOWN"));
     }
 
-    startPoint.put(RESOLVED_PARAM, new Param(startPoint, modifierStack));
+    startPoint.put(
+        RESOLVED_PARAM, new Param(startPoint.get(PARAM_INDEX), startPoint, modifierStack));
   }
 
   private static Pair<SQLNode, SQLNode> boolContext(SQLNode startPoint) {
@@ -118,9 +123,6 @@ public class ParamResolver implements SQLVisitor, Resolver {
 
     return parent.get(BOOL_EXPR) == null ? null : Pair.of(parent, child);
   }
-
-  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
-      Set.of(BoolExprResolver.class, ColumnResolver.class);
 
   private static boolean resolveReversedModifier(
       SQLNode target, List<ParamModifier> stack, boolean not) {
@@ -243,6 +245,9 @@ public class ParamResolver implements SQLVisitor, Resolver {
 
     return true;
   }
+
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
+      Set.of(BoolExprResolver.class, ColumnResolver.class);
 
   @Override
   public Set<Class<? extends Resolver>> dependsOn() {

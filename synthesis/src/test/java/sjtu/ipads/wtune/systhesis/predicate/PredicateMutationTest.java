@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.systhesis.OptContext;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
 
 import java.util.List;
 
@@ -34,14 +34,14 @@ class PredicateMutationTest {
     //    stmt1.setRawSql("select 1 from d where d.p > 10 or d.p < 15");
     stmt1.retrofitStandard();
 
-    final OptContext ctx = new OptContext(stmt0);
+    final SynthesisContext ctx = new SynthesisContext(stmt0);
     ctx.setReferenceStmt(stmt1);
 
     final PredicateMutation mutation = new PredicateMutation(ctx, Integer.MAX_VALUE, 2);
-    mutation.setNext(ctx.outputStage());
+    mutation.setNext(ctx.collector());
 
     mutation.feed(stmt0);
-    final List<Statement> output = ctx.output();
+    final List<Statement> output = ctx.candidates();
     assertEquals(18, output.size());
   }
 }

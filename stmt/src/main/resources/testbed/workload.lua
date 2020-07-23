@@ -13,8 +13,8 @@ function Workload:addStmt(stmtDesc)
     return stmt
 end
 
-function Workload:make(appName)
-    local workload = { appName = appName, stmts = {} }
+function Workload:make(appName, tag)
+    local workload = { appName = appName, tag = tag, stmts = {} }
     setmetatable(workload, self)
     self.__index = self
     return workload
@@ -27,8 +27,8 @@ function Workload:buildFrom(workloadDesc)
     return self
 end
 
-local function makeWorkload(appName)
-    return Workload:make(appName)
+local function makeWorkload(appName, tag)
+    return Workload:make(appName, tag)
 end
 
 return makeWorkload

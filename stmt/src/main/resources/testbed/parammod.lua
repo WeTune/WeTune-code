@@ -10,6 +10,9 @@ local function shiftValue(value, shift)
         return value + shift
 
     elseif type(value) == 'string' then
+        if value == 'NULL' then
+            return value
+        end
         local num = tonumber(Util.unquote(value, "'"))
         if num then
             return ("'%0" .. #value .. "d'"):format(num + shift)

@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.stmt.utils;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -19,21 +18,6 @@ public class StmtHelper {
     return unquoted(unquoted(unquoted(name.toLowerCase(), '\''), '`'), '"');
   }
 
-  public static void log(
-      System.Logger logger,
-      System.Logger.Level level,
-      String prefix,
-      Statement stmt,
-      Object... remaining) {
-    logger.log(
-        level,
-        prefix + "\n<{0}, {1}>\n{2}",
-        stmt.appName(),
-        stmt.stmtId(),
-        stmt.parsed().toString(false),
-        remaining);
-  }
-
   public static <T> T newInstance(Class<T> cls) {
     try {
       return cls.getDeclaredConstructor().newInstance();
@@ -45,7 +29,7 @@ public class StmtHelper {
     }
   }
 
-  private static Map<Class<?>, Object> SINGLETONS = new HashMap<>();
+  private static final Map<Class<?>, Object> SINGLETONS = new HashMap<>();
 
   @SuppressWarnings("unchecked")
   private static <T> T getSingleton0(Class<T> cls) {

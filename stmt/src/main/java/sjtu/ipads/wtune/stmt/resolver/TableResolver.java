@@ -34,8 +34,7 @@ public class TableResolver implements SQLVisitor, Resolver {
     tableSource.setName(
         alias != null // in fact it shouldn't be null
             ? alias
-            : String.format(
-                "_sub_%s_%s", scope.level(), scope.tableSources().size()));
+            : String.format("_sub_%s_%s", scope.level(), scope.tableSources().size()));
 
     derivedTableSource.put(RESOLVED_TABLE_SOURCE, tableSource);
     scope.addTable(tableSource);
@@ -51,12 +50,11 @@ public class TableResolver implements SQLVisitor, Resolver {
     if (table == null) {
       LOG.log(
           System.Logger.Level.WARNING,
-          "failed to resolve table {0} in {1}\n<{2}, {3}>:\n{4}",
+          "unresolved table {2} in {3}\n<{0}>:\n{1}",
+          stmt,
+          stmt.parsed().toString(false),
           tableName,
-          simpleTableSource,
-          stmt.appName(),
-          stmt.stmtId(),
-          stmt.parsed().toString(false));
+          simpleTableSource);
       isAllSuccessful = false;
       return false;
     }
@@ -74,9 +72,6 @@ public class TableResolver implements SQLVisitor, Resolver {
 
   @Override
   public boolean resolve(Statement stmt) {
-    LOG.log(
-        System.Logger.Level.TRACE, "resolving table for <{0}, {1}>", stmt.appName(), stmt.stmtId());
-
     this.stmt = stmt;
     this.schema = stmt.appContext().schema();
 

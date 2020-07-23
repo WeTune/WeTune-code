@@ -49,7 +49,31 @@ profile_opt = {
     'seq': 'typed',
 }
 
-profiles = { 'sample': profile_sample, 'base': profile_base, 'index': profile_indexed, 'opt': profile_opt }
+profile_verify = {
+    'db': 'verify',
+    'tag': 'notag',
+    'schema': 'opt',
+    'workload': 'verify',
+    'rows': '100',
+    'times': '100',
+    'dist': 'uniform',
+    'seq': 'random',
+}
+
+profile_compare = {
+    'db': 'opt',
+    'tag': 'notag',
+    'schema': 'opt',
+    'workload': 'verify',
+    'rows': '10000',
+    'times': '30',
+    'dist': 'uniform',
+    'seq': 'typed',
+}
+
+profiles = { 'sample': profile_sample, 'base': profile_base,
+             'index': profile_indexed, 'opt': profile_opt,
+             'verify': profile_verify, 'compare': profile_compare }
 
 mysql_conn_params = { 'user': 'root', 'password': 'admin', 'port': '3307' }
 pgsql_conn_params = { 'user': 'zxd', 'port': '5432' }
@@ -84,6 +108,7 @@ def prepare_args(args, app):
   set_arg('dist', 'uniform')
   set_arg('seq', 'typed')
   set_arg('host', '10.0.0.102')
+  set_arg('verbosity', '0' if should_mutate(args) else '3')
   set_arg('continue', None)
   set_arg('targets', None)
   set_arg('lines', None)
@@ -113,14 +138,17 @@ def prepare_args(args, app):
 def echo_args(args):
   print("[Exec] app: {}, db: {}, host: {}, tag: {}".format(args['app'], args['db'], args['host'], args['tag']))
   print("[Exec] schema.sql: {}, schema.lua: {}, workload.lua: {}".format(args['schema'], args['schema'], args['workload']))
-  print("[Exec] #rows: {}, dist: {}, seq: {}".format(args['rows'], args['dist'], args['seq']))
+  print("[Exec] #rows: {}, times: {}, dist: {}, seq: {}".format(args['rows'], args['times'], args['dist'], args['seq']))
 
+
+def should_mutate(args):
+  return args['cmd'] == 'verify' or args['cmd'] == 'compare'
 
 def invoke_sysbench(args):
-  real_args = ['sysbench', '--verbosity=3', '--app=' + args['app'], '--tag=' + args['tag'],
+  real_args = ['sysbench', '--verbosity=' + args['verbosity'], '--app=' + args['app'], '--tag=' + args['tag'],
                '--schema=' + args['schema'], '--workload=' + args['workload'],
                '--rows=' + args['rows'], '--times=' + args['times'],
-               '--randdist=' + args['dist'], '--randseq=' + args['seq']]
+               '--randDist=' + args['dist'], '--randSeq=' + args['seq']]
 
   if 'continue' in args: real_args.append('--continue=' + args['continue'])
   if 'targets' in args: real_args.append('--targets=' + args['targets'])
@@ -137,7 +165,8 @@ def invoke_sysbench(args):
 
   real_args += ["testbed/wtune.lua", args['cmd']]
 
-  print("[Exec] " + " ".join(real_args), flush=True)
+  if not should_mutate(args):
+    print("[Exec] " + " ".join(real_args), flush=True)
 
   return subprocess.run(real_args).returncode
 
@@ -158,8 +187,9 @@ def invoke_pgsql(args, cmd):
 def recreate_mysql(args):
   app = args['app']
   db = args['db']
+  schema = args['schema']
   db_name = '{}_{}'.format(app, db)
-  schema_sql = '{}/{}.{}.schema.sql'.format(app, app, db)
+  schema_sql = '{}/{}.{}.schema.sql'.format(app, app, schema)
   conn_param = args['conn']
   invoke_mysql(conn_param, ['-e', "drop database if exists `{}`".format(db_name)])
   invoke_mysql(conn_param, ['-e', 'create database `{}`'.format(db_name)])
@@ -169,8 +199,9 @@ def recreate_mysql(args):
 def recreate_pgsql(args):
   app = args['app']
   db = args['db']
+  schema = args['schema']
   db_name = '{}_{}'.format(app, db)
-  schema_sql = '{}/{}.{}.schema.sql'.format(app, app, db)
+  schema_sql = '{}/{}.{}.schema.sql'.format(app, app, schema)
   conn_param = args['conn']
   invoke_pgsql(conn_param, ['-c', 'drop database if exists "{}"'.format(db_name)])
   invoke_pgsql(conn_param, ['-c', 'create database "{}"'.format(db_name)])
@@ -210,6 +241,7 @@ parser.add_argument('-C', '--continue')
 parser.add_argument('-T', '--targets')
 parser.add_argument('-o', '--dump', action='store_true')
 parser.add_argument('-l', '--lines')
+parser.add_argument('-v', '--verbosity')
 parser.add_argument('apps', action='append')
 
 known_apps = ['broadleaf', 'diaspora', 'discourse', 'eladmin',  'fatfreecrm', 'febs', 'forest_blog', 'gitlab', 'guns', 'halo', 'homeland', 'lobsters', 'publiccms', 'pybbs', 'redmine', 'refinerycms', 'sagan', 'shopizer', 'solidus', 'spree'] # 'fanchaoo', 'springblog', 'wordpress']
@@ -229,10 +261,13 @@ if __name__ == '__main__':
   failed = set()
   for app in args['apps']:
     app_args = prepare_args(args, app)
-    echo_args(app_args)
+
     if args['cmd'] == 'recreate':
+      echo_args(app_args)
       recreate(app_args)
     else:
+      if app_args['verbosity'] != '0':
+        echo_args(app_args)
       if invoke_sysbench(app_args) != 0:
         failed.add(app)
 

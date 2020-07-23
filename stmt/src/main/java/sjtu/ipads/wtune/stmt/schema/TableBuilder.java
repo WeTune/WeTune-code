@@ -15,7 +15,7 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE;
 
 class TableBuilder {
-  private static final System.Logger LOG = System.getLogger(TableBuilder.class.getSimpleName());
+  private static final System.Logger LOG = System.getLogger("Stmt.Core.Table");
 
   private final Table table;
 
@@ -25,7 +25,7 @@ class TableBuilder {
 
   Table fromCreateTable(SQLNode createTable) {
     if (createTable == null || createTable.type() != Type.CREATE_TABLE) {
-      LOG.log(TRACE, "illegal statement: " + createTable);
+      LOG.log(DEBUG, "illegal statement: " + createTable);
       return table;
     }
 
@@ -112,7 +112,7 @@ class TableBuilder {
     for (SQLNode key : keys) {
       final String columnName = key.get(KEY_PART_COLUMN);
       if (columnName == null) {
-        LOG.log(INFO, "expr-based index: {0} in {1}", key, table.tableName());
+        LOG.log(DEBUG, "expr-based index: {0} in {1}", key, table.tableName());
         continue;
       }
       final Column column = table.getColumn(columnName);

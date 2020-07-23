@@ -34,7 +34,7 @@ public class ColumnResolver implements Resolver, SQLVisitor {
     else {
       LOG.log(
           Level.WARNING,
-          "failed to resolve column ref {2}\n{0}\n{1}",
+          "unresolved column {2}\n{0}\n{1}",
           stmt,
           stmt.parsed().toString(false),
           columnRef);
@@ -46,11 +46,6 @@ public class ColumnResolver implements Resolver, SQLVisitor {
 
   @Override
   public boolean resolve(Statement stmt) {
-    LOG.log(
-        System.Logger.Level.TRACE,
-        "resolving column for <{0}, {1}>",
-        stmt.appName(),
-        stmt.stmtId());
     this.stmt = stmt;
     stmt.parsed().accept(this);
     return isAllSuccessful;

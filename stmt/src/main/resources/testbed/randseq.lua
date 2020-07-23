@@ -1,4 +1,6 @@
-local TypedRandSeq = {}
+local Util = require('testbed.util')
+
+local TypedSeq = {}
 local TYPE_OFFSET = {
     integral = 1,
     fraction = 2,
@@ -20,7 +22,7 @@ local TYPE_OFFSET = {
 }
 local MAX_VALUE = 1000000
 
-function TypedRandSeq:make(rand, max)
+function TypedSeq:make(rand, max)
     local gen = { type = 'typed', rand = rand, max = max,
                   nonUniqueCaches = {}, uniqueCaches = {} }
     setmetatable(gen, self)
@@ -28,7 +30,7 @@ function TypedRandSeq:make(rand, max)
     return gen
 end
 
-function TypedRandSeq:getNonUniqueSeq(dataTypeCat)
+function TypedSeq:getNonUniqueSeq(dataTypeCat)
     local seq = self.nonUniqueCaches[dataTypeCat]
     if seq then
         return seq
@@ -48,7 +50,7 @@ function TypedRandSeq:getNonUniqueSeq(dataTypeCat)
     return seq
 end
 
-function TypedRandSeq:getUniqueSeq(dataTypeCat)
+function TypedSeq:getUniqueSeq(dataTypeCat)
     local seq = self.uniqueCaches[dataTypeCat]
     if seq then
         return seq
@@ -70,7 +72,7 @@ function TypedRandSeq:getUniqueSeq(dataTypeCat)
     return seq
 end
 
-function TypedRandSeq:getSeq(dataTypeCat, isUnique)
+function TypedSeq:getSeq(dataTypeCat, isUnique)
     if isUnique then
         return self:getUniqueSeq(dataTypeCat)
     else
@@ -78,16 +80,32 @@ function TypedRandSeq:getSeq(dataTypeCat, isUnique)
     end
 end
 
-function TypedRandSeq:gen(column, lineNum)
+function TypedSeq:gen(column, lineNum)
     local dataTypeCat = column.dataType.category:lower()
     local seq = self:getSeq(dataTypeCat, column:uniqueIndex())
     assert(seq)
     return seq[lineNum]
 end
 
+local RandSeq = {}
+
+function RandSeq:make(rand, max)
+    local gen = { type = 'random', rand = rand, max = max, }
+    setmetatable(gen, self)
+    self.__index = self
+    return gen
+end
+
+function RandSeq:gen(column, lineNum)
+    self.rand:setSeed(Util.strHash(column.tableName .. column.columnName) + lineNum)
+    return self.rand:nextInt(1, MAX_VALUE)
+end
+
 local function makeSeq(rand, max, type)
     if type == "typed" then
-        return TypedRandSeq:make(rand, max)
+        return TypedSeq:make(rand, max)
+    elseif type == 'random' then
+        return RandSeq:make(rand, max)
     else
         assert(false)
         return nil

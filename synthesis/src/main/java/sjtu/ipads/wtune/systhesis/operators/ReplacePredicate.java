@@ -1,10 +1,12 @@
 package sjtu.ipads.wtune.systhesis.operators;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.analyzer.ColumnRefCollector;
 import sjtu.ipads.wtune.stmt.attrs.BoolExpr;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
@@ -49,6 +51,12 @@ public class ReplacePredicate implements Operator {
     final List<SQLNode> repRefs = ColumnRefCollector.collect(replacement);
     assert originalRefs.size() == repRefs.size();
 
+    // inherit param index
+    final List<SQLNode> repParams = collectParams(replacement);
+    final List<SQLNode> targetParams = collectParams(target);
+    for (int i = 0, bound = Math.min(repParams.size(), targetParams.size()); i < bound; i++)
+      repParams.get(i).put(PARAM_INDEX, targetParams.get(i).get(PARAM_INDEX));
+
     // replace column ref in replacement by original ones
     for (int i = 0; i < originalRefs.size(); i++) {
       final SQLNode originalRef = originalRefs.get(i);
@@ -64,5 +72,27 @@ public class ReplacePredicate implements Operator {
     clause.setClause(target);
 
     return root;
+  }
+
+  private static List<SQLNode> collectParams(SQLNode node) {
+    final CollectParam collector = new CollectParam();
+    node.accept(collector);
+    return collector.params;
+  }
+
+  private static class CollectParam implements SQLVisitor {
+    private List<SQLNode> params = new ArrayList<>();
+
+    @Override
+    public boolean enterLiteral(SQLNode literal) {
+      params.add(literal);
+      return false;
+    }
+
+    @Override
+    public boolean enterParamMarker(SQLNode paramMarker) {
+      params.add(paramMarker);
+      return false;
+    }
   }
 }

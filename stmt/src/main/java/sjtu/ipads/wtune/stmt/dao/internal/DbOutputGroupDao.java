@@ -35,7 +35,12 @@ public class DbOutputGroupDao extends DbDao implements OutputGroupDao {
   private static final String SELECT_BY_STMT =
       "SELECT "
           + SELECT_ITEMS
-          + " FROM wtune_output_group WHERE group_app_name = ? AND group_stmt_id = ?"
+          + " FROM wtune_output_group"
+          + " WHERE group_id IN ("
+          + "  SELECT group_id "
+          + "  FROM wtune_output_group "
+          + "  WHERE group_app_name = ? AND group_stmt_id = ?"
+          + " )"
           + " ORDER BY group_id";
 
   private static final String INSERT =

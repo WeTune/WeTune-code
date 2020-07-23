@@ -18,6 +18,7 @@ public class BoolExprCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
   private Predicate<BoolExpr> filter;
 
   public static final Predicate<BoolExpr> PRIMITIVE = BoolExpr::isPrimitive;
+  public static final Predicate<BoolExpr> NOT_JOIN = Predicate.not(BoolExpr::isJoinCondition);
 
   @Override
   public boolean enter(SQLNode node) {
@@ -44,7 +45,7 @@ public class BoolExprCollector implements Analyzer<List<SQLNode>>, SQLVisitor {
 
   public static List<SQLNode> collectPrimitive(SQLNode node) {
     final BoolExprCollector collector = new BoolExprCollector();
-    collector.filter = PRIMITIVE;
+    collector.filter = PRIMITIVE.and(NOT_JOIN);
     return collector.analyze(node);
   }
 

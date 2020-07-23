@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.scriptgen;
 
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -10,7 +11,8 @@ public class WorkloadGen implements ScriptNode {
   private final List<StmtGen> stmtGens;
 
   public WorkloadGen(List<Statement> stmts, boolean modifySelectItem) {
-    stmtGens = listMap(it -> new StmtGen(it, modifySelectItem), stmts);
+    final List<StmtGen> gens = stmtGens = new ArrayList<>(stmts.size());
+    for (int i = 0; i < stmts.size(); i++) gens.add(new StmtGen(stmts.get(i), i, modifySelectItem));
   }
 
   @Override

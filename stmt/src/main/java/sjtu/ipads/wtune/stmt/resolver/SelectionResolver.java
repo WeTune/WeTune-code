@@ -14,7 +14,6 @@ import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.SelectItem.fromNode;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.log;
 
 public class SelectionResolver implements Resolver, SQLVisitor {
   private static final System.Logger LOG = System.getLogger("Stmt.Resolver.Selection");
@@ -57,7 +56,8 @@ public class SelectionResolver implements Resolver, SQLVisitor {
       final TableSource tableSource = scope.resolveTable(tableName);
       if (tableSource != null) return allFromTableSource(tableSource);
 
-      log(LOG, WARNING, "failed to resolve selection {3}", stmt, node);
+      LOG.log(
+          WARNING, "unresolved selection {3}\n{0}\n{1}", stmt, stmt.parsed().toString(false), node);
       return Collections.emptyList();
 
     } else
@@ -79,11 +79,6 @@ public class SelectionResolver implements Resolver, SQLVisitor {
 
   @Override
   public boolean resolve(Statement stmt) {
-    LOG.log(
-        System.Logger.Level.TRACE,
-        "resolving selection for <{0}, {1}>",
-        stmt.appName(),
-        stmt.stmtId());
     this.stmt = stmt;
     stmt.parsed().accept(this);
     return true;

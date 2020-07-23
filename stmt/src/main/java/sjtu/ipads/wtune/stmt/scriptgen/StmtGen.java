@@ -7,11 +7,13 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 public class StmtGen implements ScriptNode {
   private final Statement stmt;
   private final SQLGen sqlGen;
+  private final int index;
 
-  public StmtGen(Statement stmt, boolean modifySelectItem) {
+  public StmtGen(Statement stmt, int index, boolean modifySelectItem) {
+    this.index = index;
     stmt.retrofitStandard();
     if (modifySelectItem) stmt.mutate(SelectItemNormalizer.class);
-    stmt.resolve(ParamResolver.class);
+    stmt.resolve(ParamResolver.class, true);
 
     this.stmt = stmt;
     this.sqlGen = new SQLGen(stmt.parsed());
@@ -19,6 +21,10 @@ public class StmtGen implements ScriptNode {
 
   @Override
   public void output(Output out) {
-    out.println("{").indent().printf("stmtId = %d,\n", stmt.stmtId()).accept(sqlGen).print("}");
+    out.println("{")
+        .indent()
+        .printf("index = %d, stmtId = %d,\n", index, stmt.stmtId())
+        .accept(sqlGen)
+        .print("}");
   }
 }

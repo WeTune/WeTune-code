@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.systhesis.OptContext;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
 
 import java.util.List;
 
@@ -28,12 +28,12 @@ class ExprListMutationTest {
             + "where exists (select distinct u from c)");
     stmt0.retrofitStandard();
 
-    final OptContext ctx = new OptContext(stmt0);
+    final SynthesisContext ctx = new SynthesisContext(stmt0);
     final ExprListMutation mutation = new ExprListMutation();
-    mutation.setNext(ctx.outputStage());
+    mutation.setNext(ctx.collector());
 
     mutation.feed(stmt0);
-    final List<Statement> output = ctx.output();
+    final List<Statement> output = ctx.candidates();
     assertEquals(8, output.size());
   }
 
@@ -47,12 +47,12 @@ class ExprListMutationTest {
             + "where exists (select u from c order by c.v) order by a.j");
     stmt0.retrofitStandard();
 
-    final OptContext ctx = new OptContext(stmt0);
+    final SynthesisContext ctx = new SynthesisContext(stmt0);
     final ExprListMutation mutation = new ExprListMutation();
-    mutation.setNext(ctx.outputStage());
+    mutation.setNext(ctx.collector());
 
     mutation.feed(stmt0);
-    final List<Statement> output = ctx.output();
+    final List<Statement> output = ctx.candidates();
     assertEquals(4, output.size());
   }
 }

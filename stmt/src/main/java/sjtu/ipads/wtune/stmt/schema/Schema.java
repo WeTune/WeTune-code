@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_AUTOINCREMENT;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 public class Schema {
-  private static final Logger LOG = System.getLogger(Schema.class.getSimpleName());
+  private static final Logger LOG = System.getLogger("Stmt.Core.Schema");
   private Path sourcePath;
 
   private final Map<String, Table> tables = new HashMap<>();
@@ -43,7 +43,7 @@ public class Schema {
     final String tableName = table.tableName();
 
     if (tables.containsKey(tableName))
-      LOG.log(Logger.Level.INFO, "replace table definition: {0}", tableName);
+      LOG.log(Logger.Level.DEBUG, "replaced table definition: {0}", tableName);
 
     tables.put(tableName, table);
   }
@@ -114,7 +114,7 @@ public class Schema {
 
     final Table table = getTable(refTableName);
     if (table == null) {
-      LOG.log(Logger.Level.INFO, "unknown ref table: {0}", refTableName);
+      LOG.log(Logger.Level.WARNING, "unknown referenced table: {0}", refTableName, constraint);
       return;
     }
 
@@ -123,7 +123,10 @@ public class Schema {
       final Column column = table.getColumn(colName);
       if (column == null) {
         LOG.log(
-            Logger.Level.INFO, "unknown ref column {1} in table {0}", colName, table.tableName());
+            Logger.Level.WARNING,
+            "unknown referenced column {1} in table {0}",
+            colName,
+            table.tableName());
         return;
       }
       columns.add(column);

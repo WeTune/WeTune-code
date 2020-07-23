@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+
 public class Constraint {
   public static class Key {
     private Column column;

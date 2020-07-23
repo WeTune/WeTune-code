@@ -5,27 +5,31 @@ import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.analyzer.BoolExprCollector;
 import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.systhesis.OptContext;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
 import sjtu.ipads.wtune.systhesis.Stage;
 
 import java.util.*;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
-import static sjtu.ipads.wtune.systhesis.OptContext.REF_PRIMITIVE_PREDICATE_CACHE_KEY;
+import static sjtu.ipads.wtune.systhesis.SynthesisContext.REF_PRIMITIVE_PREDICATE_CACHE_KEY;
 
 public class PredicateMutation extends Stage {
-  private final OptContext ctx;
+  private final SynthesisContext ctx;
   private final List<PredicateMutator> mutatorQueue;
   private final Set<Pair<Long, Long>> replacedPair;
   private final int maxModCount;
   private final int maxDepth;
 
-  public PredicateMutation(OptContext ctx, int maxModCount, int maxDepth) {
+  public PredicateMutation(SynthesisContext ctx, int maxModCount, int maxDepth) {
     this.ctx = ctx;
     this.maxModCount = maxModCount;
     this.maxDepth = maxDepth;
     this.replacedPair = new HashSet<>();
     this.mutatorQueue = new ArrayList<>();
+  }
+
+  public static PredicateMutation build(SynthesisContext ctx, int maxModCount, int maxDepth) {
+    return new PredicateMutation(ctx, maxModCount, maxDepth);
   }
 
   private static Set<SQLNode> collectPrimitivePredicates(SQLNode root) {

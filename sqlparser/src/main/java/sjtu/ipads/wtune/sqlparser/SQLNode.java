@@ -139,8 +139,8 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   @Override
   public <T> T checkFailed(Key<T> key) {
     if (type == EXPR && key.name().startsWith(EXPR_ATTR_PREFIX))
-      LOG.log(Level.WARNING, "mismatching attr {0} on {1}", key, get(EXPR_KIND));
-    else LOG.log(Level.WARNING, "mismatching attr {0} on {1}", key, type());
+      LOG.log(Level.WARNING, "mismatching attribute {0} -> {1}", key, get(EXPR_KIND));
+    else LOG.log(Level.WARNING, "mismatching attribute {0} -> {1}", key, type());
 
     return null;
   }
@@ -272,7 +272,10 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   }
 
   public String toString(boolean singleLine) {
-    final SQLFormatter formatter = new SQLFormatter(singleLine);
+    return toString(new SQLFormatter(singleLine));
+  }
+
+  public String toString(SQLFormatter formatter) {
     accept(formatter);
     return formatter.toString();
   }

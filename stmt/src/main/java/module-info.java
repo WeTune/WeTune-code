@@ -10,6 +10,7 @@ module sjtu.ipads.wtune.stmt {
   exports sjtu.ipads.wtune.stmt.context;
   exports sjtu.ipads.wtune.stmt.dao;
   exports sjtu.ipads.wtune.stmt.similarity.output;
+  exports sjtu.ipads.wtune.stmt.mutator;
 
   requires transitive sjtu.ipads.wtune.common;
   requires transitive sjtu.ipads.wtune.sqlparser;

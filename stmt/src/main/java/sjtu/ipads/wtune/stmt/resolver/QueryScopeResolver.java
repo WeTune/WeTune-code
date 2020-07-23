@@ -16,8 +16,6 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
 public class QueryScopeResolver implements SQLVisitor, Resolver {
-  private static final System.Logger LOG = System.getLogger("Stmt.Resolver.QueryScope");
-
   private final Deque<QueryScope> scopes = new LinkedList<>();
   private final Deque<QueryScope.Clause> clauses = new LinkedList<>();
 
@@ -42,7 +40,7 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
       scope.setParent(scopes.peek());
       scope.setQueryNode(node);
 
-     scopes.push(scope);
+      scopes.push(scope);
     }
 
     final QueryScope currentScope = scopes.peek();
@@ -101,12 +99,6 @@ public class QueryScopeResolver implements SQLVisitor, Resolver {
 
   @Override
   public boolean resolve(Statement stmt) {
-    LOG.log(
-        System.Logger.Level.TRACE,
-        "resolving query scope for <{0}, {1}>",
-        stmt.appName(),
-        stmt.stmtId());
-
     stmt.parsed().accept(new QueryScopeResolver());
     return true;
   }

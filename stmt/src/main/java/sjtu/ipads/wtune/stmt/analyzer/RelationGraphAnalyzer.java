@@ -36,7 +36,6 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
   private static final Attrs.Key<Relation> RELATION_KEY =
       key(ATTR_PREFIX + ".analyzer.relation", Relation.class);
-  private static final System.Logger LOG = System.getLogger("[Stmt.Analyzer.RelationGraph]");
 
   private static class RelationCollector implements SQLVisitor {
     private final Set<Relation> relations = new HashSet<>();

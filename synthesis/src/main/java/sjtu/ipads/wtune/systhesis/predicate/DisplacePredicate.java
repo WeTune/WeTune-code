@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.systhesis.predicate;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.analyzer.ColumnRefCollector;
 import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
@@ -12,6 +13,7 @@ import sjtu.ipads.wtune.systhesis.operators.ReplacePredicate;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.BINARY_OP;
 import static sjtu.ipads.wtune.stmt.analyzer.QueryCollector.hasSubquery;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
@@ -37,6 +39,10 @@ public class DisplacePredicate implements PredicateMutator {
     // 1. both are boolean primitive
     if (boolExpr0 == null || boolExpr1 == null) return false;
     if (!boolExpr0.isPrimitive() || !boolExpr1.isPrimitive()) return false;
+
+    // heuristic: "=" shouldn't be replaced
+    // since it technically cannot be expressed by other operation
+    if (original.get(BINARY_OP) == SQLExpr.BinaryOp.EQUAL) return false;
 
     // 2. neither contains subquery
     // complex logic is needed to handle subquery, we just omit it for now

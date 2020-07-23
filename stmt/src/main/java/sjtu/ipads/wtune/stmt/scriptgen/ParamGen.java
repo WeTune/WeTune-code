@@ -13,7 +13,7 @@ public class ParamGen implements ScriptNode {
 
   @Override
   public void output(Output out) {
-    out.print("{ ");
+    out.printf("[%d] = { ", param.index());
 
     assert !param.modifiers().isEmpty();
     for (ParamModifier modifier : Lists.reverse(param.modifiers())) {

@@ -1,13 +1,15 @@
-local Schema = require("testbed.schema")
+local Inspect = require("inspect")
+local Util = require("testbed.util")
 local RandGen = require("testbed.randgen")
 local RandSeq = require("testbed.randseq")
-local Prepare = require("testbed.prepare")
-local Util = require("testbed.util")
+local Schema = require("testbed.schema")
 local Workload = require("testbed.workload")
 local ParamGen = require("testbed.paramgen")
+local Prepare = require("testbed.prepare")
 local Sample = require("testbed.sample")
 local Eval = require("testbed.eval")
-local Inspect = require("inspect")
+local Verify = require('testbed.verify')
+local Compare = require('testbed.compare')
 
 local WTune = {}
 
@@ -93,6 +95,25 @@ local function stmtFilter(type, value)
     end
 end
 
+local function indexFilter(type, value)
+    if type == "continue" then
+        return function(stmt)
+            return stmt.index >= value
+        end
+
+    elseif type == "target" then
+        local target = {}
+        for id in value:gmatch("(.-),") do
+            if tonumber(id) then
+                target[tonumber(id)] = true
+            end
+        end
+        return function(stmt)
+            return target[stmt.index]
+        end
+    end
+end
+
 local function lines(value)
     if not value then
         return {}
@@ -120,7 +141,7 @@ function WTune:loadWorkload()
     local fileName = string.format("%s.%s_workload", self.app, self.workloadTag)
     local workloadDesc = Util.tryRequire(fileName)
     if workloadDesc then
-        return Workload(self.app):buildFrom(workloadDesc)
+        return Workload(self.app, self.workloadTag):buildFrom(workloadDesc)
     else
         return nil
     end
@@ -163,7 +184,7 @@ function WTune:initOptions(options)
     end
     self.rows = tonumber(options.rows or self.rows or 10000)
     self.times = tonumber(options.times or self.times or 100)
-    self.randDist = RandGen(options.ranDdist or self.randDist or "uniform")
+    self.randDist = RandGen(options.randDist or self.randDist or "uniform")
     self.randSeq = RandSeq(self.randDist, self.rows, options.randSeq or self.randSeq or "typed")
     self.paramGen = ParamGen(self.rows, self)
     self.dump = options.dump == 'true' or options.dump == 'yes'
@@ -172,9 +193,11 @@ function WTune:initOptions(options)
     if options.continue then
         self.tableFilter = tableFilter("continue", tonumber(options.continue))
         self.stmtFilter = stmtFilter("continue", tonumber(options.continue))
+        self.indexFilter = indexFilter("continue", tonumber(options.continue))
     elseif options.targets then
         self.tableFilter = tableFilter("target", options.targets)
         self.stmtFilter = stmtFilter("target", options.targets)
+        self.indexFilter = indexFilter("target", options.targets)
     end
 end
 
@@ -270,7 +293,7 @@ function WTune:doEval()
 end
 
 function WTune:doParam()
-    local filter = self.stmtFilter
+    local filter = self.workloadTag == 'verify' and self.indexFilter or self.stmtFilter
     for _, stmt in ipairs(self.workload.stmts) do
         if not filter or filter(stmt) then
             for _, lineNum in ipairs(self.lines) do
@@ -295,6 +318,20 @@ function WTune:doParam()
 
 end
 
+function WTune:doVerify()
+    Util.log(("[Verify] Start to verify %s\n"):format(self.app), 2)
+    Util.log(("[Verify] app: %s, schema: %s, db: %s, workload: %s\n"):format(self.app, self.schemaTag, self.db, self.workloadTag), 2)
+    Util.log(("[Verify] rows: %d, dist: %s, seq: %s\n"):format(self.rows, self.randDist.type, self.randSeq.type), 2)
+    Verify(self.workload.stmts, self)
+end
+
+function WTune:doCompare()
+    Util.log(("[Compare] Start to compare %s\n"):format(self.app), 2)
+    Util.log(("[Compare] app: %s, schema: %s, db: %s, workload: %s\n"):format(self.app, self.schemaTag, self.db, self.workloadTag), 2)
+    Util.log(("[Compare] rows: %d, dist: %s, seq: %s, times: %d\n"):format(self.rows, self.randDist.type, self.randSeq.type, self.times), 2)
+    Compare(self.workload.stmts, self)
+end
+
 local function doPrepare()
     WTune:make():init():doPrepare()
 end
@@ -311,6 +348,14 @@ local function doParam()
     WTune:make():init():doParam()
 end
 
+local function doVerify()
+    WTune:make():init():doVerify()
+end
+
+local function doCompare()
+    WTune:make():init():doCompare()
+end
+
 if sysbench then
     sysbench.cmdline.options = {
         app = { "app name" },
@@ -319,8 +364,8 @@ if sysbench then
         schema = { "schema file" },
         workload = { "workload file" },
         rows = { "#rows" },
-        randdist = { "random distribution", "uniform" },
-        randseq = { "type of random sequence", "typed" },
+        randDist = { "random distribution", "uniform" },
+        randSeq = { "type of random sequence", "typed" },
         continue = { "continue populate tables from given index" },
         targets = { "populate given tables" },
         dump = { "whether to dump to file" },
@@ -331,7 +376,9 @@ if sysbench then
         prepare = { doPrepare },
         sample = { doSample },
         eval = { doEval },
-        param = { doParam }
+        param = { doParam },
+        verify = { doVerify },
+        compare = { doCompare }
     }
 end
 

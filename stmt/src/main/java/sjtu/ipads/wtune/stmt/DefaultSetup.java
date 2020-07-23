@@ -3,14 +3,24 @@ package sjtu.ipads.wtune.stmt;
 import sjtu.ipads.wtune.stmt.dao.ConnectionHolder;
 import sjtu.ipads.wtune.stmt.dao.internal.*;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.LogManager;
 
 public class DefaultSetup extends Setup {
   @Override
   public void setup() {
+    try {
+      LogManager.getLogManager()
+          .readConfiguration(Setup.class.getResourceAsStream("/logging.properties"));
+    } catch (IOException ignored) {
+    }
+
     final Supplier<Connection> supplier =
         ConnectionHolder.supplier("jdbc:sqlite://" + dataDir().resolve("wtune.db").toString());
     new ConstantAppDao().registerAsGlobal();

@@ -14,11 +14,13 @@ end
 local PrimaryKey = Constraint:makeBase("primary")
 local UniqueKey = Constraint:makeBase("unique")
 local ForeignKey = Constraint:makeBase("foreign")
+local NotNull = Constraint:makeBase("not_null")
 
 Constraint.Types = {
     primary = PrimaryKey,
     unique = UniqueKey,
-    foreign = ForeignKey
+    foreign = ForeignKey,
+    not_null = NotNull,
 }
 
 function Constraint:isPrimary()
@@ -31,6 +33,10 @@ end
 
 function Constraint:isForeign()
     return self.type == "foreign"
+end
+
+function Constraint:isNotNull()
+    return self.type == "not_null"
 end
 
 function Constraint:make(type, index, total)
@@ -51,6 +57,8 @@ function Constraint:priority()
         return 2
     elseif self.type == "foreign" then
         return 3
+    elseif self.type == "not_null" then
+        return 10
     end
 end
 
@@ -119,6 +127,10 @@ function ForeignKey:modifyValue(lineNumber, origValue, maxLine)
     return math.fmod(lineNumber + math.random(1, maxLine), maxLine) + 1
 end
 
+function NotNull:modifyValue(lineNumber, origValue, maxLine)
+    return nil
+end
+
 local DataType = {}
 
 function DataType:make(desc)
@@ -143,7 +155,7 @@ function DataType:numUniqueValues(maxLine)
 
     end
 
-    return math.max(3, math.ceil(ret))
+    return math.max(4, math.ceil(ret))
 end
 
 function DataType:modifyValue(lineNumber, origValue, maxLine)
@@ -279,8 +291,8 @@ end
 
 local Column = {}
 
-function Column:make(columnName, dataTypeDesc)
-    local column = { columnName = columnName,
+function Column:make(tableName, columnName, dataTypeDesc)
+    local column = { tableName = tableName, columnName = columnName,
                      dataType = DataType:make(dataTypeDesc),
                      constraints = {} }
     setmetatable(column, self)
@@ -328,13 +340,20 @@ function Column:guessEnum()
     return ret
 end
 
-function Column:modifyValue(lineNumber, origValue, maxLine)
+function Column:modifyValue(lineNumber, origValue, maxLine, notNull)
+    local value
     if self:guessBoolean() then
-        return origValue % 2
+        value = origValue % 2
     elseif self:guessEnum() then
-        return origValue % 8
+        value = origValue % 8
     else
-        return origValue
+        value = origValue
+    end
+
+    if notNull or origValue % 20 ~= 0 then
+        return value
+    else
+        return "NULL"
     end
 end
 
@@ -345,7 +364,13 @@ function Column:valueAt(lineNumber, randSeq, maxLine, dbType)
         value = self.dataType:modifyValue(lineNumber, value, maxLine)
         value = self:modifyValue(lineNumber, value, maxLine)
     else
-        value = self.constraints[1]:modifyValue(lineNumber, value, maxLine)
+        local modified = self.constraints[1]:modifyValue(lineNumber, value, maxLine)
+        if modified then
+            value = modified
+        else
+            value = self.dataType:modifyValue(lineNumber, value, maxLine)
+            value = self:modifyValue(lineNumber, value, maxLine, true)
+        end
     end
     --print("2. ", value)
     --print("3. ", value)
@@ -363,7 +388,7 @@ function Schema:addTable(tableDesc)
     self.tables[newTable.tableName] = newTable
 
     for _, columnDesc in ipairs(tableDesc.columns) do
-        local column = Column:make(columnDesc.columnName:lower(), columnDesc.dataType)
+        local column = Column:make(newTable.tableName, columnDesc.columnName:lower(), columnDesc.dataType)
         column.isBoolean = columnDesc.isBoolean
         column.isEnum = columnDesc.isEnum
         newTable.columns[column.columnName] = column

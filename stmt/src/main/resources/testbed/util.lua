@@ -111,6 +111,23 @@ local function shuffle(list)
     return list
 end
 
+local INT_MAX = 2147483647
+local INT_MIN = -2147483648
+
+local function strHash(str)
+    local hash = 0
+    for i = 1, string.len(str) do
+        hash = hash * 31 + string.byte(str, i)
+        while hash > INT_MAX do
+            hash = hash - INT_MAX + INT_MIN
+        end
+        while hash < INT_MIN do
+            hash = hash - INT_MIN + INT_MAX
+        end
+    end
+    return hash
+end
+
 local function percentile(list, p)
     p = p <= 1 and p or 1
     p = p >= 0 and p or 0
@@ -159,6 +176,7 @@ return {
     tryRequire = tryRequire,
     iterate = iterate,
     shuffle = shuffle,
+    strHash = strHash,
     percentile = percentile,
     normalizeParam = normalizeParam,
     unquote = unquote,

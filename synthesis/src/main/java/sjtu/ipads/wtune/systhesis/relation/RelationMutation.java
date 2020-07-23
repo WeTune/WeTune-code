@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.analyzer.RelationGraphAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.statement.Statement;
@@ -19,6 +18,9 @@ public class RelationMutation extends Stage {
   private final Set<Pair<Relation, Class<? extends RelationMutator>>> mutatorSet;
   private final Set<Relation> mutated;
 
+  private final List<Statement> produced = new ArrayList<>();
+  private final Set<String> known = new HashSet<>();
+
   private RelationMutation(RelationGraph graph) {
     this.graph = graph;
     this.mutatorQueue = new ArrayList<>(graph.graph().nodes().size());
@@ -32,7 +34,25 @@ public class RelationMutation extends Stage {
 
   @Override
   public boolean feed(Object o) {
-    return feed0((Statement) o);
+    // relation mutation is independent from the reference.
+    // So we can do this for only one time, cache the results
+    // and then reuse them when reference changes
+    if (!produced.isEmpty()) {
+      for (Statement statement : produced) if (!offer(statement)) return false;
+      return true;
+
+    } else {
+      return feed0((Statement) o);
+    }
+  }
+
+  public boolean offer0(Object obj) {
+    final Statement output = (Statement) obj;
+    if (known.add(output.parsed().toString())) {
+      produced.add(output);
+      return super.offer(output);
+    }
+    return true;
   }
 
   private boolean feed0(Statement stmt) {
@@ -79,7 +99,7 @@ public class RelationMutation extends Stage {
   }
 
   private boolean recMutate(Statement stmt, int i) {
-    if (i >= mutatorQueue.size()) return offer(stmt);
+    if (i >= mutatorQueue.size()) return offer0(stmt);
 
     if (!recMutate(stmt, i + 1)) return false;
 
