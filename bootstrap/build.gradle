@@ -2,6 +2,7 @@ dependencies {
     implementation project(':sqlparser')
     implementation project(':stmt')
     implementation project(':common')
+    implementation project(':synthesis')
 }
 
 application {

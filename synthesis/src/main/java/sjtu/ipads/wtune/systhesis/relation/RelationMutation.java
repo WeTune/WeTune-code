@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.stmt.attrs.Relation;
 import sjtu.ipads.wtune.stmt.attrs.RelationGraph;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.Stage;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 public class RelationMutation extends Stage {
+  private final SynthesisContext ctx;
+
   private final RelationGraph graph;
   private final List<RelationMutator> mutatorQueue;
   private final Set<Pair<Relation, Class<? extends RelationMutator>>> mutatorSet;
@@ -21,15 +24,16 @@ public class RelationMutation extends Stage {
   private final List<Statement> produced = new ArrayList<>();
   private final Set<String> known = new HashSet<>();
 
-  private RelationMutation(RelationGraph graph) {
+  private RelationMutation(SynthesisContext ctx, RelationGraph graph) {
+    this.ctx = ctx;
     this.graph = graph;
     this.mutatorQueue = new ArrayList<>(graph.graph().nodes().size());
     this.mutatorSet = new HashSet<>(graph.graph().nodes().size());
     this.mutated = new HashSet<>(graph.graph().nodes().size());
   }
 
-  public static RelationMutation build(Statement stmt) {
-    return new RelationMutation(stmt.relationGraph());
+  public static RelationMutation build(SynthesisContext ctx, Statement stmt) {
+    return new RelationMutation(ctx, stmt.relationGraph());
   }
 
   @Override
@@ -37,13 +41,20 @@ public class RelationMutation extends Stage {
     // relation mutation is independent from the reference.
     // So we can do this for only one time, cache the results
     // and then reuse them when reference changes
-    if (!produced.isEmpty()) {
-      for (Statement statement : produced) if (!offer(statement)) return false;
-      return true;
+    final long start = System.currentTimeMillis();
+    boolean ret = true;
+    if (produced.isEmpty()) ret = feed0((Statement) o);
+    else
+      for (Statement statement : produced)
+        if (!offer(statement)) {
+          ret = false;
+          break;
+        }
 
-    } else {
-      return feed0((Statement) o);
-    }
+    ctx.output().relationElapsed += System.currentTimeMillis() - start;
+    mutatorSet.clear();
+
+    return ret;
   }
 
   public boolean offer0(Object obj) {
@@ -98,12 +109,12 @@ public class RelationMutation extends Stage {
     subList.clear();
   }
 
-  private boolean recMutate(Statement stmt, int i) {
-    if (i >= mutatorQueue.size()) return offer0(stmt);
+  private boolean recMutate(Statement stmt, int nextMutator) {
+    if (nextMutator >= mutatorQueue.size()) return offer0(stmt);
 
-    if (!recMutate(stmt, i + 1)) return false;
+    if (!recMutate(stmt, nextMutator + 1)) return false;
 
-    final RelationMutator mutator = mutatorQueue.get(i);
+    final RelationMutator mutator = mutatorQueue.get(nextMutator);
     if (!mutator.isValid(stmt.parsed())) return true;
 
     final Statement copy = stmt.copy();
@@ -113,7 +124,7 @@ public class RelationMutation extends Stage {
 
     final int newMutatorCount = registerApplicableMutators(copy.parsed(), graph);
 
-    if (!recMutate(copy, i + 1)) return false;
+    if (!recMutate(copy, nextMutator + 1)) return false;
 
     mutator.undoModifyGraph();
     mutated.remove(mutator.target());

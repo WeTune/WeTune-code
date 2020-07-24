@@ -1,4 +1,2 @@
-data.csv
-patches.csv
-opt.csv
-wtune.db
+*
+!data.version

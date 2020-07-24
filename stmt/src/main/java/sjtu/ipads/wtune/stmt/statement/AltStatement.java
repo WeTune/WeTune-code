@@ -24,10 +24,6 @@ public class AltStatement extends Statement {
     return kind;
   }
 
-  public void setKind(String kind) {
-    this.kind = kind;
-  }
-
   @Override
   public String appName() {
     return main.appName();
@@ -43,6 +39,10 @@ public class AltStatement extends Statement {
     return main.appContext();
   }
 
+  public void setKind(String kind) {
+    this.kind = kind;
+  }
+
   @Override
   public void setAppName(String appName) {
     throw new UnsupportedOperationException("cannot set app name of alt statement");
@@ -51,11 +51,6 @@ public class AltStatement extends Statement {
   @Override
   public void setStmtId(int stmtId) {
     throw new UnsupportedOperationException("cannot set stmt id of alt statement");
-  }
-
-  @Override
-  public Statement registerToApp() {
-    throw new UnsupportedOperationException("cannot register alt statement to app");
   }
 
   @Override

@@ -42,7 +42,7 @@ public class DisplacePredicate implements PredicateMutator {
 
     // heuristic: "=" shouldn't be replaced
     // since it technically cannot be expressed by other operation
-    if (original.get(BINARY_OP) == SQLExpr.BinaryOp.EQUAL) return false;
+    //    if (original.get(BINARY_OP) == SQLExpr.BinaryOp.EQUAL) return false;
 
     // 2. neither contains subquery
     // complex logic is needed to handle subquery, we just omit it for now

@@ -967,7 +967,7 @@ public class SQLFormatter implements SQLVisitor {
 
     append("SELECT");
     if (distinct) append(" DISTINCT");
-    if (POSTGRESQL.equals(querySpec.dbType())) {
+    if (distinct && POSTGRESQL.equals(querySpec.dbType())) {
       final List<SQLNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
       if (distinctOn != null && !distinctOn.isEmpty()) {
         append(" ON");

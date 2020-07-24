@@ -11,6 +11,7 @@ import sjtu.ipads.wtune.stmt.dao.*;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.similarity.output.OutputSimGroup;
+import sjtu.ipads.wtune.stmt.similarity.output.OutputSimKey;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,9 +40,12 @@ public class Statement {
   protected Set<Class<? extends Resolver>> resolvedBy = new HashSet<>();
   protected Set<Class<? extends Resolver>> failToResolveBy = new HashSet<>();
 
+  // caches
   private List<AltStatement> alt;
   private List<Timing> timing;
   private List<OutputFingerprint> fingerprints;
+  private OutputSimKey[] keys;
+  private List<OutputSimGroup> groups;
 
   public static Statement findOne(String appName, int id) {
     return StatementDao.instance().findOne(appName, id);
@@ -97,24 +101,40 @@ public class Statement {
   }
 
   public List<OutputFingerprint> fingerprints() {
-    return FingerprintDao.instance().findByStmt(this);
+    if (fingerprints == null) {
+      fingerprints = FingerprintDao.instance().findByStmt(this);
+      keys = OutputFingerprint.extractKey(this);
+    }
+    return fingerprints;
+  }
+
+  public OutputSimKey[] keys() {
+    fingerprints();
+    return keys;
   }
 
   public List<OutputSimGroup> outputSimilarGroups() {
-    return OutputGroupDao.instance().findByStmt(this);
+    if (groups == null) groups = OutputGroupDao.instance().findByStmt(this);
+    return groups;
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {
     if (!force && resolvedBy.contains(cls)) return true;
 
-    final Resolver resolver = Resolver.getResolver(cls);
+    final Set<Class<? extends Resolver>> resolvedBy = this.resolvedBy;
 
-    for (Class<? extends Resolver> dependency : resolver.dependsOn()) resolve(dependency, force);
+    if (force) this.resolvedBy = new HashSet<>();
+
+    final Resolver resolver = Resolver.getResolver(cls);
+    for (Class<? extends Resolver> dependency : resolver.dependsOn()) resolve(dependency, false);
     final boolean isSuccessful = resolver.resolve(this);
+
     if (isSuccessful) {
-      resolvedBy.add(cls);
+      this.resolvedBy.add(cls);
       failToResolveBy.remove(cls);
     } else failToResolveBy.add(cls);
+
+    if (force) this.resolvedBy = resolvedBy;
     return isSuccessful;
   }
 
@@ -191,11 +211,6 @@ public class Statement {
 
   public void setParsed(SQLNode parsed) {
     this.parsed = parsed;
-  }
-
-  public Statement registerToApp() {
-    appContext().addStatement(this);
-    return this;
   }
 
   public boolean equals(Object o) {

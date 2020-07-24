@@ -10,9 +10,9 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 public class WorkloadGen implements ScriptNode {
   private final List<StmtGen> stmtGens;
 
-  public WorkloadGen(List<Statement> stmts, boolean modifySelectItem) {
+  public WorkloadGen(List<Statement> stmts) {
     final List<StmtGen> gens = stmtGens = new ArrayList<>(stmts.size());
-    for (int i = 0; i < stmts.size(); i++) gens.add(new StmtGen(stmts.get(i), i, modifySelectItem));
+    for (int i = 0; i < stmts.size(); i++) gens.add(new StmtGen(stmts.get(i), i));
   }
 
   @Override

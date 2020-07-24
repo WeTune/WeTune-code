@@ -5,13 +5,13 @@ import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.analyzer.BoolExprCollector;
 import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.systhesis.SynthesisContext;
 import sjtu.ipads.wtune.systhesis.Stage;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
+import sjtu.ipads.wtune.systhesis.TemplatizeSQLFormatter;
 
 import java.util.*;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
-import static sjtu.ipads.wtune.systhesis.SynthesisContext.REF_PRIMITIVE_PREDICATE_CACHE_KEY;
 
 public class PredicateMutation extends Stage {
   private final SynthesisContext ctx;
@@ -19,6 +19,8 @@ public class PredicateMutation extends Stage {
   private final Set<Pair<Long, Long>> replacedPair;
   private final int maxModCount;
   private final int maxDepth;
+
+  private final Set<String> seenPredicates = new HashSet<>();
 
   public PredicateMutation(SynthesisContext ctx, int maxModCount, int maxDepth) {
     this.ctx = ctx;
@@ -37,8 +39,14 @@ public class PredicateMutation extends Stage {
   }
 
   private Set<SQLNode> collectRefPrimitivePredicates(SQLNode thisRoot, SQLNode refRoot) {
-    return ctx.supplyIfAbsent(
-        REF_PRIMITIVE_PREDICATE_CACHE_KEY, () -> collectPrimitivePredicates(refRoot));
+    final Set<SQLNode> refPreds = collectPrimitivePredicates(refRoot);
+    final Iterator<SQLNode> iter = refPreds.iterator();
+    while (iter.hasNext()) {
+      final SQLNode node = iter.next();
+      final String template = TemplatizeSQLFormatter.templatize(node, true);
+      if (!seenPredicates.add(template)) iter.remove();
+    }
+    return refPreds;
   }
 
   private boolean registerMutator(
@@ -54,8 +62,8 @@ public class PredicateMutation extends Stage {
       if (replacedPair.contains(pair) || !DisplacePredicate.canDisplace(target, reference))
         return false;
 
-      mutator = new DisplacePredicate(target, reference);
       replacedPair.add(pair);
+      mutator = new DisplacePredicate(target, reference);
     } else return false;
 
     mutatorQueue.add(mutator);
@@ -63,6 +71,7 @@ public class PredicateMutation extends Stage {
   }
 
   private int registerApplicableMutators(SQLNode root) {
+    if (ctx.referenceStmt() == null) return 0;
     final Set<SQLNode> targets = collectPrimitivePredicates(root);
     final Set<SQLNode> refs = collectRefPrimitivePredicates(root, ctx.referenceStmt().parsed());
     final int size = mutatorQueue.size();
@@ -86,7 +95,6 @@ public class PredicateMutation extends Stage {
 
   private boolean recMutate0(Statement stmt, int nextMutatorIdx, int depth, int modCount) {
     // after a pass, re-resolve the stmt
-
     if (depth > 0) stmt.reResolve();
     // if max depth exceeded, then shift to next stage
     if (depth >= maxDepth) return offer(stmt);
@@ -102,7 +110,10 @@ public class PredicateMutation extends Stage {
 
   private boolean recMutate1(Statement stmt, int nextMutatorIdx, int depth, int modCount) {
     // max mod count is exceeded, stop here
-    if (modCount >= maxModCount) return offer(stmt);
+    if (modCount >= maxModCount) {
+      stmt.reResolve();
+      return offer(stmt);
+    }
     // the queue being drained indicates that current pass is over
     if (nextMutatorIdx >= mutatorQueue.size())
       return recMutate0(stmt, nextMutatorIdx, depth, modCount);
@@ -123,10 +134,16 @@ public class PredicateMutation extends Stage {
 
   @Override
   public boolean feed(Object o) {
-    return feed0((Statement) o);
+    final long start = System.currentTimeMillis();
+    boolean ret = feed0((Statement) o);
+    ctx.output().predicateElapsed += System.currentTimeMillis() - start;
+    return ret;
   }
 
   public boolean feed0(Statement stmt) {
-    return recMutate0(stmt, 0, 0, 0);
+    final boolean ret = recMutate0(stmt, 0, 0, 0);
+    assert mutatorQueue.isEmpty();
+    replacedPair.clear();
+    return ret;
   }
 }

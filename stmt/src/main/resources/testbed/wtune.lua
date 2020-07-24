@@ -189,6 +189,7 @@ function WTune:initOptions(options)
     self.paramGen = ParamGen(self.rows, self)
     self.dump = options.dump == 'true' or options.dump == 'yes'
     self.lines = lines(options.lines)
+    self.base = options.base and tonumber(options.base)
 
     if options.continue then
         self.tableFilter = tableFilter("continue", tonumber(options.continue))
@@ -294,28 +295,19 @@ end
 
 function WTune:doParam()
     local filter = self.workloadTag == 'verify' and self.indexFilter or self.stmtFilter
+
     for _, stmt in ipairs(self.workload.stmts) do
         if not filter or filter(stmt) then
             for _, lineNum in ipairs(self.lines) do
-                local args = {}
-
-                for i, param in ipairs(stmt.params) do
-                    local value, warning = self.paramGen:produce(param, lineNum)
-                    if warning then
-                        Util.log(('error when gen %d-th param for %s-%s\n'):format(i, self.app, stmt.stmtId), 0)
-                        if value then
-                            Util.log(Inspect(value) .. '\n', 0)
-                        end
-                    end
-                    table.insert(args, Util.normalizeParam(value))
+                local args = self.paramGen:produce(stmt, lineNum, false, Util.dumb)
+                Util.log(('%s-%d @ %d'):format(self.app, stmt.stmtId, lineNum))
+                for index, value in ipairs(args) do
+                    Util.log(('  [%d] %s\n'):format(index, value), 1)
                 end
-
-                Util.log(table.concat(args, ', ') .. '\n', 1)
                 Util.log(stmt.sql:format(unpack(args)) .. '\n', 3)
             end
         end
     end
-
 end
 
 function WTune:doVerify()
@@ -370,7 +362,8 @@ if sysbench then
         targets = { "populate given tables" },
         dump = { "whether to dump to file" },
         times = { "how many times is a statement run" },
-        lines = { "target lines" }
+        lines = { "target lines" },
+        base = { "baseline" }
     }
     sysbench.cmdline.commands = {
         prepare = { doPrepare },
@@ -380,6 +373,10 @@ if sysbench then
         verify = { doVerify },
         compare = { doCompare }
     }
+    sysbench.hooks.sql_error_ignorable = function(err)
+        Util.log(Inspect(err) .. '\n', 1)
+        return true
+    end
 end
 
 return WTune

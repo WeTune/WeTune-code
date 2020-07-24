@@ -29,7 +29,26 @@ class ExprListMutationTest {
     stmt0.retrofitStandard();
 
     final SynthesisContext ctx = new SynthesisContext(stmt0);
-    final ExprListMutation mutation = new ExprListMutation();
+    final ExprListMutation mutation = ExprListMutation.build(ctx, stmt0);
+    mutation.setNext(ctx.collector());
+
+    mutation.feed(stmt0);
+    final List<Statement> output = ctx.candidates();
+    assertEquals(8, output.size());
+  }
+
+  @Test
+  @DisplayName("[Synthesis.Operator.ExprListMutation] distinct")
+  void testReduceCountDistinct() {
+    final Statement stmt0 = new Statement();
+    stmt0.setAppName("test");
+    stmt0.setRawSql(
+        "select count(distinct a.i) from a inner join (select count(distinct x) from b) x "
+            + "where exists (select count(distinct u) from c)");
+    stmt0.retrofitStandard();
+
+    final SynthesisContext ctx = new SynthesisContext(stmt0);
+    final ExprListMutation mutation = ExprListMutation.build(ctx, stmt0);
     mutation.setNext(ctx.collector());
 
     mutation.feed(stmt0);
@@ -48,7 +67,7 @@ class ExprListMutationTest {
     stmt0.retrofitStandard();
 
     final SynthesisContext ctx = new SynthesisContext(stmt0);
-    final ExprListMutation mutation = new ExprListMutation();
+    final ExprListMutation mutation = ExprListMutation.build(ctx, stmt0);
     mutation.setNext(ctx.collector());
 
     mutation.feed(stmt0);

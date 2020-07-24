@@ -24,6 +24,21 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
  * </ol>
  */
 public class JoinConditionResolver implements Resolver, SQLVisitor {
+
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
+      Set.of(BoolExprResolver.class, ColumnResolver.class);
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
+  }
+
+  @Override
+  public boolean resolve(Statement stmt) {
+    stmt.parsed().accept(this);
+    return true;
+  }
+
   @Override
   public boolean enterBinary(SQLNode binary) {
     final SQLExpr.BinaryOp op = binary.get(BINARY_OP);
@@ -49,20 +64,6 @@ public class JoinConditionResolver implements Resolver, SQLVisitor {
     final ColumnRef ref = node.get(RESOLVED_COLUMN_REF);
     assert ref == null || ref.refColumn() != null || ref.refItem() != null;
     return ref != null;
-  }
-
-  @Override
-  public boolean resolve(Statement stmt) {
-    stmt.parsed().accept(this);
-    return true;
-  }
-
-  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
-      Set.of(BoolExprResolver.class, ColumnResolver.class);
-
-  @Override
-  public Set<Class<? extends Resolver>> dependsOn() {
-    return DEPENDENCIES;
   }
 
   private static final JoinConditionResolver INSTANCE = new JoinConditionResolver();

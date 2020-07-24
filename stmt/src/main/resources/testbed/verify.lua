@@ -1,43 +1,84 @@
 local Exec = require('testbed.exec')
 local Util = require('testbed.util')
 
-local function check(stmt, wtune, baseResult, baseArgs)
-    for lineNum = 1, 100, 4 do
-        local status, _, rs = Exec(stmt, lineNum, wtune, nil, baseArgs[lineNum])
-        if not status then
-            return false
+local function sample(stmt, wtune, step, argsOverride, shouldStop)
+    local allArgs = {}
+    local allResults = {}
+
+    for lineNum = 1, 100, step do
+        local args, argsMap = wtune.paramGen:produce(stmt, lineNum, true)
+
+        if argsOverride then
+            for id, override in pairs(argsOverride[lineNum]) do
+                local current = argsMap[id]
+                if current then
+                    args[current.index] = override.value
+                end
+            end
+        else
+            allArgs[lineNum] = argsMap
         end
 
-        local _, str = Util.processResultSet(rs)
-        if str ~= baseResult[lineNum] then
-            return false
+        local status, _, rs = Exec(stmt, args, wtune)
+        if not status then
+            return nil
         end
+
+        local _, str = Util.stringifyResultSet(rs)
+        if shouldStop and shouldStop(lineNum, str) then
+            return nil
+        end
+
+        allResults[lineNum] = str
     end
-    return true
+
+    return allArgs, allResults
 end
 
+local function compareResult(baseResults)
+    return function(lineNum, str)
+        return baseResults[lineNum] ~= str
+    end
+end
+
+-- check whether candidates are equivalent to base stmt
 local function doVerify(stmts, wtune)
     local baseStmt = stmts[1]
-    local baseResult = {}
-    local baseArgs = {}
     local filter = wtune.indexFilter
 
-    for lineNum = 1, 100, 4 do
-        local _, _, rs, args = Exec(baseStmt, lineNum, wtune)
-        local _, str = Util.processResultSet(rs)
-        baseArgs[lineNum] = args
-        baseResult[lineNum] = str
-    end
+    -- pass 1
+    -- compare candidates to base stmt
+    local pass1Checked = {}
+    local baseArgs, baseResults = sample(baseStmt, wtune, 4)
+    local baseVerifier = compareResult(baseResults)
 
-    local checked = {}
     for i = 2, #stmts do
         local stmt = stmts[i]
-        if (not filter or filter(stmt)) and check(stmt, wtune, baseResult, baseArgs) then
-            table.insert(checked, stmt.index)
+
+        if not filter or filter(stmt) then
+            if sample(stmt, wtune, 4, baseArgs, baseVerifier) then
+                table.insert(pass1Checked, stmt)
+            end
         end
     end
 
-    print('>' .. table.concat(checked, ',') .. ',')
+    -- pass 2
+    -- compare base stmt to candidates
+    local pass2Checked = {}
+    for _, stmt in ipairs(pass1Checked) do
+        local stmtArgs, stmtResults = sample(stmt, wtune, 20)
+        local stmtVerifier = compareResult(stmtResults)
+
+        if sample(baseStmt, wtune, 20, stmtArgs, stmtVerifier) then
+            table.insert(pass2Checked, stmt)
+        end
+    end
+
+    for i = 1, #pass2Checked do
+        pass2Checked[i] = pass2Checked[i].index
+    end
+
+    print('>' .. table.concat(pass2Checked, ','))
 end
 
 return doVerify

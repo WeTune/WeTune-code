@@ -15,10 +15,27 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.SelectItem.fromNode;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 
+/**
+ * Resolve output column (i.e. select item) of query scope, meanwhile expand wildcard expression.
+ */
 public class SelectionResolver implements Resolver, SQLVisitor {
   private static final System.Logger LOG = System.getLogger("Stmt.Resolver.Selection");
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(TableResolver.class);
 
   private Statement stmt;
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
+  }
+
+  @Override
+  public boolean resolve(Statement stmt) {
+    this.stmt = stmt;
+    stmt.parsed().accept(this);
+    stmt.parsed().setDbTypeRec(stmt.parsed().dbType());
+    return true;
+  }
 
   @Override
   public void leaveQuerySpec(SQLNode querySpec) {
@@ -29,23 +46,20 @@ public class SelectionResolver implements Resolver, SQLVisitor {
 
     for (SQLNode itemNode : selectItems) {
       final SQLNode expr = itemNode.get(SELECT_ITEM_EXPR);
-      if (exprKind(expr) == Kind.WILDCARD) {
-        final List<SQLNode> items = fromWildcard(expr);
-        modifiedSelectItems.addAll(items);
-        items.forEach(it -> scope.addSelectItem(fromNode(it)));
-
-      } else {
-        modifiedSelectItems.add(itemNode);
-        scope.addSelectItem(fromNode(itemNode));
-      }
+      if (exprKind(expr) == Kind.WILDCARD) modifiedSelectItems.addAll(expandWildcard(expr));
+      else modifiedSelectItems.add(itemNode);
     }
 
     querySpec.put(QUERY_SPEC_SELECT_ITEMS, modifiedSelectItems);
     querySpec.relinkAll();
-    modifiedSelectItems.forEach(scope::setScope);
+
+    for (SQLNode item : modifiedSelectItems) {
+      scope.setScope(item);
+      scope.addSelectItem(fromNode(item));
+    }
   }
 
-  private List<SQLNode> fromWildcard(SQLNode node) {
+  private List<SQLNode> expandWildcard(SQLNode node) {
     assert exprKind(node) == Kind.WILDCARD;
     final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
     final SQLNode tableId = node.get(WILDCARD_TABLE);
@@ -54,40 +68,30 @@ public class SelectionResolver implements Resolver, SQLVisitor {
       // qualified
       final String tableName = tableId.get(TABLE_NAME_TABLE);
       final TableSource tableSource = scope.resolveTable(tableName);
-      if (tableSource != null) return allFromTableSource(tableSource);
+      if (tableSource != null) return selectItemsFrom(tableSource);
 
       LOG.log(
-          WARNING, "unresolved selection {3}\n{0}\n{1}", stmt, stmt.parsed().toString(false), node);
+          WARNING,
+          "unresolved wildcard selection {3}\n{0}\n{1}",
+          stmt,
+          stmt.parsed().toString(false),
+          node);
       return Collections.emptyList();
 
     } else
       // unqualified
       return scope.tableSources().values().stream()
-          .map(SelectionResolver::allFromTableSource)
+          .map(SelectionResolver::selectItemsFrom)
           .flatMap(Collection::stream)
           .collect(Collectors.toList());
   }
 
-  private static List<SQLNode> allFromTableSource(TableSource tableSource) {
+  private static List<SQLNode> selectItemsFrom(TableSource tableSource) {
     final List<String> selections = tableSource.namedSelections();
     final List<SQLNode> items = new ArrayList<>(selections.size());
-    for (String namedSelection : selections)
-      items.add(selectItem(columnRef(tableSource.name(), namedSelection), null));
+    for (String selection : selections)
+      items.add(selectItem(columnRef(tableSource.name(), selection), null));
     items.forEach(IdResolver::resolve);
     return items;
-  }
-
-  @Override
-  public boolean resolve(Statement stmt) {
-    this.stmt = stmt;
-    stmt.parsed().accept(this);
-    return true;
-  }
-
-  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(TableResolver.class);
-
-  @Override
-  public Set<Class<? extends Resolver>> dependsOn() {
-    return DEPENDENCIES;
   }
 }

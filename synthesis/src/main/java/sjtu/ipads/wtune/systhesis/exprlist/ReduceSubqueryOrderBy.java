@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.systhesis.exprlist;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
 import sjtu.ipads.wtune.stmt.attrs.QueryScope;
 import sjtu.ipads.wtune.systhesis.operators.DropOrderBy;
 
@@ -26,7 +27,7 @@ public class ReduceSubqueryOrderBy implements ExprListMutator {
 
   @Override
   public SQLNode modifyAST(SQLNode root) {
-    DropOrderBy.build().apply(root);
+    DropOrderBy.build().apply(NodeFinder.find(root, target));
     return root;
   }
 }

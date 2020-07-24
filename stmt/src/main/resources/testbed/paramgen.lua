@@ -1,35 +1,69 @@
 local Util = require("testbed.util")
+local Inspect = require('inspect')
+
 local ParamGen = {}
 
 function ParamGen:randomLine()
     return math.random(self.maxLine)
 end
 
-function ParamGen:produce(paramDesc, lineNum)
+function ParamGen:normalize(p)
+    if type(p) == 'number' then
+        if p < 0 then
+            return ('(%s)'):format(p)
+        elseif p == 0 then
+            return 0 -- handle wired '-0'
+        end
+    end
+
+    return p
+end
+
+function ParamGen:produceOne(paramDesc, lineNum)
     local stack = Util.Stack:make()
-    local warning = false
 
     for _, modifier in ipairs(paramDesc) do
         local status, err = pcall(modifier, self.wtune, lineNum, stack)
         if not status then
-            return err, true
+            return nil, err
         end
     end
 
-    if stack:size() ~= 1 then
-        warning = true
-    end
-
+    local warning = stack:size() ~= 1
     local value = stack:pop()
+
     if type(value) == 'table' then
+        value = table.concat(value, ', ')
         if value.asTuple then
-            value = '(' .. table.concat(value, ', ') .. ')'
-        else
-            value = table.concat(value, ', ')
+            value = '(' .. value .. ')'
         end
     end
 
-    return value, warning
+    return self:normalize(value), warning
+end
+
+function ParamGen:produce(stmt, lineNum, genMap, reportError)
+    local args = {}
+    local indexedArgs = {}
+    reportError = reportError or error
+
+    for i, param in ipairs(stmt.params) do
+        local value, warning = self:produceOne(param.mods, lineNum)
+        if not value then
+            Util.log(('[Param] err: %s-%d [%d] %s\n'):format(self.wtune.app, stmt.stmtId, i, Inspect(value)), 1)
+            reportError(value)
+            value = '<error>'
+        end
+        if warning then
+            Util.log(('[Param] unbalanced stack: %s-%d [%d]\n'):format(self.wtune.app, stmt.stmtId, i), 1)
+        end
+        table.insert(args, value)
+        if genMap then
+            indexedArgs[param.id] = { index = i, value = value }
+        end
+    end
+
+    return args, indexedArgs
 end
 
 function ParamGen:make(maxLine, wtune)

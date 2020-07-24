@@ -62,7 +62,7 @@ public class OutputSimGroup {
     private Builder() {}
 
     public void add(Statement stmt) {
-      for (OutputSimKey key : extractKey(stmt))
+      for (OutputSimKey key : OutputFingerprint.extractKey(stmt))
         groups.computeIfAbsent(key, ignored -> new HashSet<>()).add(stmt);
     }
 
@@ -75,26 +75,6 @@ public class OutputSimGroup {
               .collect(Collectors.toList());
       for (int i = 0; i < groups.size(); i++) groups.get(i).setGroupId(i);
       return groups;
-    }
-
-    private static final OutputSimKey[] EMPTY_ARRAY = new OutputSimKey[0];
-
-    private static OutputSimKey[] extractKey(Statement stmt) {
-      final List<OutputFingerprint> fingerprints = stmt.fingerprints();
-      final int numColumns =
-          fingerprints.stream().map(OutputFingerprint::hashes).mapToInt(List::size).max().orElse(0);
-      if (numColumns == 0) return EMPTY_ARRAY;
-
-      final OutputSimKey[] keys = new OutputSimKey[numColumns];
-
-      for (int i = 0; i < numColumns; i++) {
-        final int[] columnHashes = new int[fingerprints.size()];
-        for (int j = 0; j < fingerprints.size(); j++)
-          columnHashes[j] = safeGet(fingerprints.get(j).hashes(), i).orElse(0);
-        keys[i] = new OutputSimKey(columnHashes);
-      }
-
-      return keys;
     }
   }
 }

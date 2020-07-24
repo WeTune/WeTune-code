@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt.statement;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.FingerprintDao;
+import sjtu.ipads.wtune.stmt.similarity.output.OutputSimKey;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,9 +12,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.Commons.safeGet;
 import static sjtu.ipads.wtune.stmt.Setup.CSV_SEP;
 
 public class OutputFingerprint {
+  private static final OutputSimKey[] EMPTY_ARRAY = new OutputSimKey[0];
   private String appName;
   private int stmtId;
   private int point;
@@ -62,6 +65,24 @@ public class OutputFingerprint {
     } catch (IOException e) {
       throw new StmtException(e);
     }
+  }
+
+  public static OutputSimKey[] extractKey(Statement stmt) {
+    final List<OutputFingerprint> fingerprints = stmt.fingerprints();
+    final int numColumns =
+        fingerprints.stream().map(OutputFingerprint::hashes).mapToInt(List::size).max().orElse(0);
+    if (numColumns == 0) return EMPTY_ARRAY; // shouldn't reach
+
+    final OutputSimKey[] keys = new OutputSimKey[numColumns];
+
+    for (int i = 0; i < numColumns; i++) {
+      final int[] columnHashes = new int[fingerprints.size()];
+      for (int j = 0; j < fingerprints.size(); j++)
+        columnHashes[j] = safeGet(fingerprints.get(j).hashes(), i).orElse(0);
+      keys[i] = new OutputSimKey(columnHashes);
+    }
+
+    return keys;
   }
 
   public void save() {

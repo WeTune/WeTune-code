@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.Stage;
+import sjtu.ipads.wtune.systhesis.SynthesisContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,7 +25,7 @@ class RelationMutationTest {
 
   private static List<Statement> doTest(Statement stmt, String... expectations) {
     stmt.retrofitStandard();
-    final RelationMutation mutation = RelationMutation.build(stmt);
+    final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
     final List<Statement> output = new ArrayList<>();
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
@@ -46,7 +47,7 @@ class RelationMutationTest {
 
     final List<Statement> output = new ArrayList<>();
 
-    final RelationMutation mutation = RelationMutation.build(stmt);
+    final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
 
@@ -72,7 +73,7 @@ class RelationMutationTest {
 
     final List<Statement> output = new ArrayList<>();
 
-    final RelationMutation mutation = RelationMutation.build(stmt);
+    final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
 
@@ -104,7 +105,7 @@ class RelationMutationTest {
 
     final List<Statement> output = new ArrayList<>();
 
-    final RelationMutation mutation = RelationMutation.build(stmt);
+    final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
 
@@ -136,7 +137,7 @@ class RelationMutationTest {
 
     final List<Statement> output = new ArrayList<>();
 
-    final RelationMutation mutation = RelationMutation.build(stmt);
+    final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
     mutation.setNext(Stage.listCollector(output));
     mutation.feed(stmt);
 
@@ -154,16 +155,16 @@ class RelationMutationTest {
   void testAll() {
     final List<Statement> all = Statement.findAll();
 
-    for (Statement statement : fastRecycleIter(all)) {
-      if (statement.parsed() == null) continue;
+    for (Statement stmt : fastRecycleIter(all)) {
+      if (stmt.parsed() == null) continue;
 
-      statement.retrofitStandard();
+      stmt.retrofitStandard();
       //      System.out.println(statement);
 
-      final RelationMutation mutation = RelationMutation.build(statement);
+      final RelationMutation mutation = RelationMutation.build(new SynthesisContext(stmt), stmt);
       final List<Statement> output = new ArrayList<>();
       mutation.setNext(Stage.listCollector(output));
-      mutation.feed(statement);
+      mutation.feed(stmt);
       //      if (output.size() != 1) System.out.println(output.size());
     }
   }

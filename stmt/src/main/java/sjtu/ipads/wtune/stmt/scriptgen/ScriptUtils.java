@@ -3,6 +3,9 @@ package sjtu.ipads.wtune.stmt.scriptgen;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.context.AppContext;
+import sjtu.ipads.wtune.stmt.mutator.SelectItemNormalizer;
+import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
+import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
@@ -50,21 +53,26 @@ public class ScriptUtils {
     }
   }
 
-  public static void genWorkload(String appName, String tag, boolean modifySelectItem) {
-    List<Statement> stmt = Statement.findByApp(appName);
-    if ("index".equals(tag)) stmt = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmt);
+  public static void genWorkload(String appName, String tag) {
+    List<Statement> stmts = Statement.findByApp(appName);
+    if ("index".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmts);
     if ("opt".equals(tag))
-      stmt = listMap(it -> coalesce(it.alt(TAG_OPT), it.alt(TAG_INDEX), it), stmt);
-    genWorkload(stmt, appName, tag, modifySelectItem);
+      stmts = listMap(it -> coalesce(it.alt(TAG_OPT), it.alt(TAG_INDEX), it), stmts);
+    for (Statement stmt : stmts) {
+      stmt.retrofitStandard();
+      stmt.mutate(SelectItemNormalizer.class);
+      stmt.resolve(ColumnResolver.class, true);
+    }
+    genWorkload(stmts, appName, tag);
+  }
+
+  public static void genWorkload(List<Statement> stmts, String appName, String tag) {
+    stmts.forEach(it -> it.resolve(ParamResolver.class));
+    genWorkload(stmts, Setup.current().outputDir(), appName, tag);
   }
 
   public static void genWorkload(
-      List<Statement> stmts, String appName, String tag, boolean modifySelectItem) {
-    genWorkload(stmts, Setup.current().outputDir(), appName, tag, modifySelectItem);
-  }
-
-  public static void genWorkload(
-      List<Statement> stmts, Path outputDir, String appName, String tag, boolean modifySelectItem) {
+      List<Statement> stmts, Path outputDir, String appName, String tag) {
     final Path directory = outputDir.resolve(appName);
     directory.toFile().mkdir();
 
@@ -72,7 +80,7 @@ public class ScriptUtils {
         new PrintWriter(
             Files.newBufferedWriter(
                 directory.resolve(tag + "_workload.lua"), CREATE, TRUNCATE_EXISTING))) {
-      new OutputImpl(writer).accept(new WorkloadGen(stmts, modifySelectItem));
+      new OutputImpl(writer).accept(new WorkloadGen(stmts));
       writer.flush();
 
     } catch (IOException e) {

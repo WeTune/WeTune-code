@@ -11,9 +11,9 @@ public class GenScript implements Task {
       System.out.println("[Script] generate script for " + appName);
       ScriptUtils.genSchema(appName, "base");
       ScriptUtils.genSchema(appName, "opt");
-      ScriptUtils.genWorkload(appName, "base", true);
-      ScriptUtils.genWorkload(appName, "index", true);
-      ScriptUtils.genWorkload(appName, "opt", true);
+      ScriptUtils.genWorkload(appName, "base");
+      ScriptUtils.genWorkload(appName, "index");
+      ScriptUtils.genWorkload(appName, "opt");
     }
   }
 }

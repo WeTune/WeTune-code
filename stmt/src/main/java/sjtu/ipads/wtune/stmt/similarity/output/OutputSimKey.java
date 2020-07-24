@@ -9,6 +9,11 @@ public class OutputSimKey {
     this.columnHashes = columnHashes;
   }
 
+  public boolean isEmpty() {
+    for (int hash : columnHashes) if (hash != 0) return false;
+    return true;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

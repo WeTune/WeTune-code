@@ -23,15 +23,15 @@ local function flush(stmts, start, stop)
 end
 
 local function sampleStmtAtPoint(stmt, point, wtune)
-    local status, _, res = Exec(stmt, point, wtune)
+    local args = wtune.paramGen:produce(stmt, point)
+    local status, _, res = Exec(stmt, args, wtune)
 
     if not status then
-        Util.log(('[Sample] error in %s-%s (point = %s)\n'):format(wtune.app, stmt.stmtId, point), 0)
-        Util.log(Inspect(res) .. '\n', 0)
+        Util.log(('\n[Sample] error: %s-%s @ %s %s\n'):format(wtune.app, stmt.stmtId, point, Inspect(res)), 1)
         error(res)
     end
 
-    local numRows, strRes = Util.processResultSet(res)
+    local numRows, strRes = Util.stringifyResultSet(res)
     stmt.samples[point] = { rows = numRows, res = strRes }
 
     return numRows
@@ -64,6 +64,7 @@ local function sampleStmts(stmts, wtune)
 
     for i, stmt in ipairs(stmts) do
         local curMarker = math.floor((i / totalStmts) * 10)
+        -- progress bar
         if curMarker ~= waterMarker then
             Util.log('.', 1)
             waterMarker = curMarker
@@ -72,6 +73,7 @@ local function sampleStmts(stmts, wtune)
         if not filter or filter(stmt) then
             numRows = numRows + sampleStmt(stmt, wtune)
             if numRows >= 1000000 then
+                -- flush if too large
                 flush(stmts, next, i)
                 numRows = 0
                 next = i + 1
@@ -82,6 +84,7 @@ local function sampleStmts(stmts, wtune)
     Util.log('\n', 1)
 
     flush(stmts, next, #stmts)
+    -- reset output
     io.output():flush()
     io.output():close()
     io.output(io.stdout)

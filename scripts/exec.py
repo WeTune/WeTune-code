@@ -66,7 +66,7 @@ profile_compare = {
     'schema': 'opt',
     'workload': 'verify',
     'rows': '10000',
-    'times': '30',
+    'times': '100',
     'dist': 'uniform',
     'seq': 'typed',
 }
@@ -150,6 +150,7 @@ def invoke_sysbench(args):
                '--rows=' + args['rows'], '--times=' + args['times'],
                '--randDist=' + args['dist'], '--randSeq=' + args['seq']]
 
+  if args['verbosity'] == '0': real_args.append('--mysql-ignore-errors=all')
   if 'continue' in args: real_args.append('--continue=' + args['continue'])
   if 'targets' in args: real_args.append('--targets=' + args['targets'])
   if 'lines' in args: real_args.append('--lines=' + args['lines'])
@@ -170,7 +171,6 @@ def invoke_sysbench(args):
 
   return subprocess.run(real_args).returncode
 
-
 def invoke_mysql(args, cmd, inFile=None):
   real_args = ['mysql', '-u', args['user'], '-p' + args['password'], '-h', args['host'], '-P3307']
   real_args += cmd
@@ -182,7 +182,6 @@ def invoke_pgsql(args, cmd):
   real_args += cmd
   print("[Exec] " + " ".join(real_args), flush=True)
   subprocess.run(real_args)
-
 
 def recreate_mysql(args):
   app = args['app']
@@ -206,7 +205,6 @@ def recreate_pgsql(args):
   invoke_pgsql(conn_param, ['-c', 'drop database if exists "{}"'.format(db_name)])
   invoke_pgsql(conn_param, ['-c', 'create database "{}"'.format(db_name)])
   invoke_pgsql(conn_param, ['-d', db_name, '-f', schema_sql])
-
 
 def recreate(args):
   if args['db_type'] == 'mysql':

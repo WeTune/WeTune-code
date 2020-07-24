@@ -24,22 +24,44 @@ local function flush(stmts, start, stop)
     end
 end
 
-local function workaroundHang(stmt, wtune)
-    -- shopizer-60 hangs after several runs, don't know why, workaround for now
+local function markSlow(stmt, elapsed)
+    if elapsed >= 100000000 then
+        -- 0.1s
+        stmt.isSlow = math.max(1, stmt.isSlow or 0)
+    elseif elapsed >= 1000000000 then
+        -- 1s
+        stmt.isSlow = math.max(2, stmt.isSlow or 0)
+    elseif elapsed >= 10000000000 then
+        -- 10s
+        stmt.isSlow = math.max(3, stmt.isSlow or 0)
+    end
+end
+
+local function throttleSlow(stmt)
+    return (stmt.isSlow == 1 and stmt.runs >= 20)
+            or (stmt.isSlow == 2 and stmt.runs >= 3)
+            or (stmt.isSlow == 3 and stmt.runs >= 1)
+end
+
+local function throttleHang(stmt, wtune)
+    -- shopizer-3,39,60,104 hangs after several runs, don't know why, workaround for now
     if wtune.app ~= 'shopizer' then
-        return true
+        return false
     end
 
     if stmt.stmtId ~= 60 and stmt.stmtId ~= 104
             and stmt.stmtId ~= 3 and stmt.stmtId ~= 39 then
-        return true
+        return false
     end
 
-    return not stmt.runs or stmt.runs < 1
+    return stmt.runs and stmt.runs >= 1
 end
 
 local function evalStmt(stmt, wtune)
-    local status, elapsed, value = Exec(stmt, wtune.paramGen:randomLine(), wtune)
+    local paramGen = wtune.paramGen
+    local args = paramGen:produce(stmt, paramGen:randomLine())
+    local status, elapsed, value = Exec(stmt, args, wtune)
+
     if not status then
         error(value)
     end
@@ -51,16 +73,7 @@ local function evalStmt(stmt, wtune)
     stmt.latencies = stmt.latencies or {}
     table.insert(stmt.latencies, elapsed)
 
-    if elapsed >= 100000000 then
-        -- 0.1s
-        stmt.isSlow = math.max(1, stmt.isSlow or 0)
-    elseif elapsed >= 1000000000 then
-        -- 1s
-        stmt.isSlow = math.max(2, stmt.isSlow or 0)
-    elseif elapsed >= 10000000000 then
-        -- 10s
-        stmt.isSlow = math.max(3, stmt.isSlow or 0)
-    end
+    markSlow(stmt, elapsed)
 end
 
 local function evalStmts(stmts, wtune)
@@ -80,6 +93,7 @@ local function evalStmts(stmts, wtune)
 
     for pass = 1, totalTimes do
         local curMarker = math.floor((pass / totalTimes) * 10)
+        -- progress bar
         if curMarker ~= waterMarker then
             Util.log('.', 1)
             waterMarker = curMarker
@@ -90,16 +104,13 @@ local function evalStmts(stmts, wtune)
         for _, i in ipairs(seq) do
             local stmt = stmts[i]
 
-            if (not filter or filter(stmt)) and (not stmt.isSlow
-                    or (stmt.isSlow == 1 and stmt.runs <= 20)
-                    or (stmt.isSlow == 2 and stmt.runs <= 3)
-                    or (stmt.isSlow == 3 and stmt.runs <= 1))
-                    and workaroundHang(stmt, wtune) then
+            if (not filter or filter(stmt))
+                    and not throttleSlow(stmt)
+                    and not throttleHang(stmt, wtune) then
                 local status, value = pcall(evalStmt, stmt, wtune)
 
                 if not status then
-                    Util.log(('error when eval %s-%s (pass=%d)\n'):format(wtune.app, stmt.stmtId, pass), 0)
-                    Util.log(Inspect(value) .. '\n', 0)
+                    Util.log(('\n[Eval] error: %s-%s @ %d %s\n'):format(wtune.app, stmt.stmtId, pass, Inspect(value)), 1)
                     error(value)
                 end
 
@@ -110,6 +121,7 @@ local function evalStmts(stmts, wtune)
     Util.log('\n', 1)
 
     flush(stmts)
+    -- reset output
     io.output():flush()
     io.output():close()
     io.output(io.stdout)

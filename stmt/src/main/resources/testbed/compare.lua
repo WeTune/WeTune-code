@@ -1,7 +1,7 @@
 local Util = require('testbed.util')
 local Exec = require('testbed.exec')
 
-local function fastStop(stmt, wtune)
+local function shouldEarlyStop(stmt, wtune)
     -- shopizer-60 hangs after several runs, don't know why, workaround for now
     if wtune.app ~= 'shopizer' then
         return false
@@ -28,17 +28,23 @@ local function throttleSlowStmt(elapsed)
     end
 end
 
-local function evalStmt(stmt, wtune, times, timeout)
+local function evalStmt(stmt, wtune, times)
+    local paramGen = wtune.paramGen
+    local args = paramGen:produce(stmt, paramGen:randomLine())
+
     local timing = {}
-    local status, elapsed = Exec(stmt, wtune.paramGen:randomLine(), wtune, timeout)
+
+    local status, elapsed = Exec(stmt, args, wtune)
     if not status then
         return nil
     end
+
     times = (throttleSlowStmt(elapsed) or times) - 1
     table.insert(timing, elapsed)
 
     for _ = 1, times do
-        status, elapsed = Exec(stmt, wtune.paramGen:randomLine(), wtune, timeout)
+        args = paramGen:produce(stmt, paramGen:randomLine())
+        status, elapsed = Exec(stmt, args, wtune)
         if not status then
             return nil
         end
@@ -52,7 +58,7 @@ local function doCompare(stmts, wtune)
     local times = wtune.times
     local filter = wtune.indexFilter
 
-    if fastStop(baseStmt, wtune) then
+    if shouldEarlyStop(baseStmt, wtune) then
         times = 1
     end
 
@@ -60,6 +66,8 @@ local function doCompare(stmts, wtune)
 
     table.sort(timing)
     local timeout = math.ceil((timing[#timing] / 1000000) * 1.1)
+    Util.setTimeout(timeout, wtune.con, wtune.dbType)
+
     local baseP50 = Util.percentile(timing, 0.5)
 
     local optimized = {}
@@ -72,6 +80,8 @@ local function doCompare(stmts, wtune)
                 local p50 = Util.percentile(timing, 0.5)
                 if p50 < baseP50 then
                     table.insert(optimized, { index = stmt.index, p50 = p50 })
+                else
+                    Util.log(('[Compare] slow %d: %d\n'):format(stmt.index, p50), 5)
                 end
             end
         end
@@ -86,10 +96,10 @@ local function doCompare(stmts, wtune)
     for i = 1, #optimized do
         local opt = optimized[i]
         Util.log(("%d %d %d\n"):format(i, opt.index, opt.p50), 3)
-        optimized[i] = opt.index
+        optimized[i] = opt.index .. ';' .. opt.p50
     end
 
-    print('>' .. table.concat(optimized, ',') .. ',')
+    print(('>0;%d,%s'):format(baseP50, table.concat(optimized, ',')))
 end
 
 return doCompare

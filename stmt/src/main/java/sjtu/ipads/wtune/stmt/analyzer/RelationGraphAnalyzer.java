@@ -174,6 +174,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
         //        LOG.log(WARNING, "unresolved join condition: {0}", condNode);
         continue;
       }
+      if (cond.left() == cond.right()) continue;
       graph.putEdgeValue(cond.left(), cond.right(), cond);
     }
 

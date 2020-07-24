@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.tautology;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.exprKind;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.DERIVED_SUBQUERY;
@@ -96,8 +97,8 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
     return "_primary_" + ordinal;
   }
 
-  private static String genMandatoryAlias(int ordinal) {
-    return "_mandatory_" + ordinal;
+  private static String genMandatoryAlias(String clause, int index, int ordinal) {
+    return String.format("_%s_%d_%d", clause, index, ordinal);
   }
 
   private static boolean selectInputColumns(
@@ -135,45 +136,54 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
       if (cRef == null) continue;
 
       if (cRef.refItem() != null) {
-        if (cRef.refItem().isPrimary())
-          item.setPrimary(true);
+        if (cRef.refItem().isPrimary()) item.setPrimary(true);
 
       } else {
         final Column column = cRef.resolveAsColumn();
-        if (column.primaryKeyPart() || column.uniquePart())
-          item.setPrimary(true);
+        if (column.primaryKeyPart() || column.uniquePart()) item.setPrimary(true);
       }
     }
   }
 
   private static Set<SelectItem> collectMandatory(QueryScope scope) {
     final Set<SelectItem> ret = new HashSet<>();
-    collectRefItems(scope, scope.specNode().get(QUERY_SPEC_GROUP_BY), ret);
-    collectRefItems(scope, scope.queryNode().get(QUERY_ORDER_BY), ret);
+    collectRefItems(scope, "groupby", scope.specNode().get(QUERY_SPEC_GROUP_BY), ret);
+    collectRefItems(scope, "orderby", scope.queryNode().get(QUERY_ORDER_BY), ret);
 
     return ret;
   }
 
-  private static void collectRefItems(QueryScope scope, List<SQLNode> nodes, Collection<SelectItem> dest) {
+  private static void collectRefItems(
+      QueryScope scope, String clause, List<SQLNode> nodes, Collection<SelectItem> dest) {
     if (nodes == null) return;
 
-    for (SQLNode node : nodes)
+    for (int i = 0; i < nodes.size(); i++) {
+      final SQLNode node = nodes.get(i);
+
       for (SQLNode refNode : ColumnRefCollector.collect(node)) {
         final ColumnRef cRef = refNode.get(RESOLVED_COLUMN_REF);
         if (cRef.node().get(RESOLVED_QUERY_SCOPE) != scope) continue;
 
+        final String alias = genMandatoryAlias(clause, i, dest.size());
         if (cRef.refColumn() != null) {
-          final SelectItem item = selectInputColumn(cRef.source(), cRef.refColumn(), genMandatoryAlias(dest.size()));
+          final SelectItem item = selectInputColumn(cRef.source(), cRef.refColumn(), alias);
           dest.add(item);
         }
         if (cRef.refItem() != null) {
           SelectItem item = cRef.refItem();
           if (item.node().get(RESOLVED_QUERY_SCOPE) != scope)
-            item = selectOutputColumn(cRef.source(), item, genMandatoryAlias(dest.size()));
+            item = selectOutputColumn(cRef.source(), item, alias);
+          else if (item.alias() == null) {
+            item.setAlias(alias);
+            item.node().put(SELECT_ITEM_ALIAS, alias);
+            final SQLNode columnName = refNode.get(COLUMN_REF_COLUMN);
+            columnName.remove(COLUMN_NAME_TABLE);
+            columnName.put(COLUMN_NAME_COLUMN, alias);
+          }
           dest.add(item);
         }
       }
-
+    }
   }
 
   private static void addSelectItems(QueryScope scope, Collection<SelectItem> items) {

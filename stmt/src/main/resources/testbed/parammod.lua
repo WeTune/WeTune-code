@@ -104,6 +104,10 @@ end
 function Modifiers.like(wildcardPrefix, wildcardSuffix)
     return function(_, _, stack)
         local value = stack:pop()
+        if value == 'NULL' then
+            stack:push(value)
+            return
+        end
         if wildcardPrefix then
             value = "'%" .. value:sub(2)
         end
@@ -117,6 +121,10 @@ end
 function Modifiers.regex()
     return function(_, _, stack)
         local value = stack:pop()
+        if value == 'NULL' then
+            stack:push(value)
+            return
+        end
         stack:push(value:sub(1, #value - 1) .. ".*'")
     end
 end
@@ -284,9 +292,10 @@ function Funcs.now(values)
 end
 
 function Funcs.datediff(values)
-    local left = Util.timeParse(values[1])
-    local right = values[2] -- cheat based on current workload
-    return date.diff(left, right):spandays()
+    --local left = Util.timeParse(values[1])
+    --local right = values[2] -- cheat based on current workload
+    --return date.diff(left, right):spandays()
+    return 0
 end
 
 function Funcs.year(values)

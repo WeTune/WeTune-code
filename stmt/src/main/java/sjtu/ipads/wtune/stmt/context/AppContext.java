@@ -24,8 +24,8 @@ public class AppContext implements Attrs<AppContext> {
   private String name;
   private String dbType;
   private Schema schema;
-  private Map<String, Schema> alternativeSchemas = new HashMap<>();
-  private Map<Integer, Statement> statements = new HashMap<>();
+  private final Map<String, Schema> alternativeSchemas = new HashMap<>();
+  private final Map<Integer, Statement> statements = new HashMap<>();
   public int maxIdSeen = -1;
 
   public static AppContext of(String name) {

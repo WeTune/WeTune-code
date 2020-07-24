@@ -4,7 +4,10 @@ import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.resolver.IdResolver;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.statement.Statement;
+
+import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.QUERY_SPEC_HAVING;
@@ -48,13 +51,13 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
       final SQLNode node = binary(expr.copy(), literal(LiteralType.BOOL, true), BinaryOp.IS);
       expr.replaceThis(node);
       expr.relinkAll();
-      IdResolver.resolve(node);
+      IdResolver.resolve(expr);
 
     } else if (kind == Kind.BINARY && expr.get(BINARY_OP) == BinaryOp.IS) {
       final SQLNode right = expr.get(BINARY_RIGHT);
       if (exprKind(right) == Kind.LITERAL
           && right.get(LITERAL_TYPE) == LiteralType.BOOL
-          && right.get(LITERAL_VALUE).equals(false)) {
+          && right.get(LITERAL_VALUE).equals(Boolean.FALSE)) {
         handleExpr(expr.get(BINARY_LEFT));
 
         expr.replaceThis(unary(expr.get(BINARY_LEFT), UnaryOp.NOT));
@@ -76,6 +79,13 @@ public class BoolNormalizer implements SQLVisitor, Mutator {
         || kind == Kind.MATCH
         || kind == Kind.COLUMN_REF
         || kind == Kind.LITERAL;
+  }
+
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(IdResolver.class);
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOnResolver() {
+    return DEPENDENCIES;
   }
 
   @Override

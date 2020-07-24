@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.stmt.attrs.QueryScope;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
@@ -44,32 +45,13 @@ public class ReplacePredicate implements Operator {
 
   @Override
   public SQLNode apply(SQLNode root) {
-    final QueryScope scope = target.get(RESOLVED_QUERY_SCOPE);
-    final QueryScope.Clause clause = target.get(RESOLVED_CLAUSE_SCOPE);
-
-    final List<SQLNode> originalRefs = ColumnRefCollector.collect(target);
-    final List<SQLNode> repRefs = ColumnRefCollector.collect(replacement);
-    assert originalRefs.size() == repRefs.size();
-
     // inherit param index
-    final List<SQLNode> repParams = collectParams(replacement);
     final List<SQLNode> targetParams = collectParams(target);
+    final List<SQLNode> repParams = collectParams(replacement);
     for (int i = 0, bound = Math.min(repParams.size(), targetParams.size()); i < bound; i++)
       repParams.get(i).put(PARAM_INDEX, targetParams.get(i).get(PARAM_INDEX));
 
-    // replace column ref in replacement by original ones
-    for (int i = 0; i < originalRefs.size(); i++) {
-      final SQLNode originalRef = originalRefs.get(i);
-      final SQLNode repRef = repRefs.get(i);
-
-      repRef.replaceThis(originalRef);
-    }
-
-    // replace the target with replacement
-    target.replaceThis(replacement);
-
-    scope.setScope(target);
-    clause.setClause(target);
+    Operator.replaceNode(target, replacement);
 
     return root;
   }
@@ -81,17 +63,17 @@ public class ReplacePredicate implements Operator {
   }
 
   private static class CollectParam implements SQLVisitor {
-    private List<SQLNode> params = new ArrayList<>();
+    private final List<SQLNode> params = new ArrayList<>();
 
     @Override
     public boolean enterLiteral(SQLNode literal) {
-      params.add(literal);
+      if (literal.get(PARAM_INDEX) != null) params.add(literal);
       return false;
     }
 
     @Override
     public boolean enterParamMarker(SQLNode paramMarker) {
-      params.add(paramMarker);
+      if (paramMarker.get(PARAM_INDEX) != null) params.add(paramMarker);
       return false;
     }
   }

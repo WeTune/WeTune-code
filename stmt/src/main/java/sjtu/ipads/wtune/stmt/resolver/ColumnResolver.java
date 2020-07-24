@@ -17,8 +17,16 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 public class ColumnResolver implements Resolver, SQLVisitor {
   private static final System.Logger LOG = System.getLogger("Stmt.Resolver.Column");
 
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
+      Set.of(QueryScopeResolver.class, TableResolver.class, SelectionResolver.class);
+
   private Statement stmt;
   private boolean isAllSuccessful = true;
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
+  }
 
   @Override
   public boolean enterColumnRef(SQLNode columnRef) {
@@ -49,13 +57,5 @@ public class ColumnResolver implements Resolver, SQLVisitor {
     this.stmt = stmt;
     stmt.parsed().accept(this);
     return isAllSuccessful;
-  }
-
-  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
-      Set.of(QueryScopeResolver.class, TableResolver.class, SelectionResolver.class);
-
-  @Override
-  public Set<Class<? extends Resolver>> dependsOn() {
-    return DEPENDENCIES;
   }
 }

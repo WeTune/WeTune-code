@@ -65,21 +65,30 @@ public class ConstantTableNormalizer implements SQLVisitor, Mutator {
   private void inlineExpr(SQLNode rootQuery, SQLNode tableSource) {
     for (SQLNode columnRef : ColumnRefCollector.collect(rootQuery)) {
       final ColumnRef rootRef = columnRef.get(RESOLVED_COLUMN_REF).resolveRootRef();
+
       if (rootRef == null || rootRef.source() == null) continue;
       if (!nodeEquals(tableSource, rootRef.source().node())) continue;
+
+      // If the expr is an ORDER BY item then just remove it.
+      // Consider "SELECT .. FROM (SELECT 1 AS o) t ORDER BY t.o"
+      // "t.o" shouldn't be replaced as "1" because "ORDER BY 1"
+      // means "order by the 1st output column".
+      // It can be just removed since constant value won't affect
+      // the ordering
       if (columnRef.get(RESOLVED_CLAUSE_SCOPE) == QueryScope.Clause.ORDER_BY) {
         final SQLNode parent = columnRef.parent();
         final SQLNode grandpa = parent.parent();
         if (grandpa.type() == Type.QUERY) {
           final List<SQLNode> orderItems = grandpa.get(QUERY_ORDER_BY);
           orderItems.remove(parent);
-          grandpa.remove(QUERY_ORDER_BY);
+          if (orderItems.isEmpty()) grandpa.remove(QUERY_ORDER_BY);
           return;
         }
       }
 
       final SQLNode replacement = rootRef.refItem().node().get(SELECT_ITEM_EXPR);
 
+      // in-place substitute
       columnRef.remove(COLUMN_REF_COLUMN);
       columnRef.put(EXPR_KIND, SQLExpr.Kind.LITERAL);
       columnRef.put(LITERAL_TYPE, replacement.get(LITERAL_TYPE));
