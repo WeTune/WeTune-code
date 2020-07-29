@@ -33,8 +33,9 @@ function ParamGen:produceOne(paramDesc, lineNum)
     local value = stack:pop()
 
     if type(value) == 'table' then
+        local asTuple = value.asTuple
         value = table.concat(value, ', ')
-        if value.asTuple then
+        if asTuple then
             value = '(' .. value .. ')'
         end
     end
@@ -50,7 +51,7 @@ function ParamGen:produce(stmt, lineNum, genMap, reportError)
     for i, param in ipairs(stmt.params) do
         local value, warning = self:produceOne(param.mods, lineNum)
         if not value then
-            Util.log(('[Param] err: %s-%d [%d] %s\n'):format(self.wtune.app, stmt.stmtId, i, Inspect(value)), 1)
+            Util.log(('\n[Param] err: %s-%d [%d] %s\n'):format(self.wtune.app, stmt.stmtId, i, Inspect(warning)), 1)
             reportError(value)
             value = '<error>'
         end

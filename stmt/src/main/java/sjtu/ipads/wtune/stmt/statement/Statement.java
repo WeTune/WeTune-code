@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.statement;
 
+import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
@@ -10,17 +11,14 @@ import sjtu.ipads.wtune.stmt.context.AppContext;
 import sjtu.ipads.wtune.stmt.dao.*;
 import sjtu.ipads.wtune.stmt.mutator.Mutator;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
-import sjtu.ipads.wtune.stmt.similarity.output.OutputSimGroup;
+import sjtu.ipads.wtune.stmt.similarity.SimGroup;
 import sjtu.ipads.wtune.stmt.similarity.output.OutputSimKey;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.newInstance;
 
-public class Statement {
+public class Statement implements Attrs<Statement> {
   public static final String KEY_APP_NAME = "appName";
   public static final String KEY_STMT_ID = "stmtId";
   public static final String KEY_RAW_SQL = "rawSql";
@@ -45,7 +43,8 @@ public class Statement {
   private List<Timing> timing;
   private List<OutputFingerprint> fingerprints;
   private OutputSimKey[] keys;
-  private List<OutputSimGroup> groups;
+  private List<SimGroup> outputGroups;
+  private List<SimGroup> structGroups;
 
   public static Statement findOne(String appName, int id) {
     return StatementDao.instance().findOne(appName, id);
@@ -113,9 +112,14 @@ public class Statement {
     return keys;
   }
 
-  public List<OutputSimGroup> outputSimilarGroups() {
-    if (groups == null) groups = OutputGroupDao.instance().findByStmt(this);
-    return groups;
+  public List<SimGroup> outputSimilarGroups() {
+    if (outputGroups == null) outputGroups = OutputGroupDao.instance().findByStmt(this);
+    return outputGroups;
+  }
+
+  public List<SimGroup> structSimilarGroups() {
+    if (structGroups == null) structGroups = StructGroupDao.instance().findByStmt(this);
+    return structGroups;
   }
 
   public boolean resolve(Class<? extends Resolver> cls, boolean force) {
@@ -245,5 +249,13 @@ public class Statement {
   @Override
   public String toString() {
     return "<" + appName + ", " + stmtId + ">";
+  }
+
+  private Map<String, Object> directAttrs;
+
+  @Override
+  public Map<String, Object> directAttrs() {
+    if (directAttrs == null) directAttrs = new HashMap<>();
+    return directAttrs;
   }
 }

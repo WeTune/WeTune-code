@@ -12,6 +12,7 @@ public class UpdateDb implements Task {
   @Override
   public void doTask(String appName) {
     final AppContext app = AppContext.of(appName);
+
     TimingDao.instance().beginBatch();
 
     System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_BASE);
@@ -19,9 +20,6 @@ public class UpdateDb implements Task {
 
     System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_INDEX);
     app.timing(TAG_INDEX).forEach(Timing::save);
-
-    TimingDao.instance().endBatch();
-    TimingDao.instance().beginBatch();
 
     System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_OPT);
     app.timing(TAG_OPT).forEach(Timing::save);

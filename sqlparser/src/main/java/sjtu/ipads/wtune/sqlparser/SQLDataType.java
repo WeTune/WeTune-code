@@ -199,6 +199,88 @@ public class SQLDataType {
     return dimensions != null && dimensions.length > 0;
   }
 
+  public int storageSize() {
+    switch (name) {
+      case TINYINT:
+      case BOOLEAN:
+      case ENUM:
+      case SET:
+      case YEAR:
+        return 1;
+      case SMALLINT:
+      case SMALLSERIAL:
+        return 2;
+      case MEDIUMINT:
+      case SERIAL:
+      case INTEGER:
+      case INT:
+      case REAL:
+      case FLOAT:
+      case DATE:
+        return 4;
+      case DATETIME:
+      case DOUBLE:
+      case BIGSERIAL:
+      case BIGINT:
+      case TIMESTAMP:
+      case TIMESTAMPTZ:
+      case TIME:
+      case MACADDR:
+      case MONEY:
+        return 8;
+      case TIMETZ:
+        return 12;
+      case INTERVAL:
+      case UUID:
+        return 16;
+      case BIT:
+      case BIT_VARYING:
+        return (width - 1) / 8 + 1;
+
+      case DECIMAL:
+      case NUMERIC:
+      case FIXED:
+        final int numIntegralDigit = width - precision;
+        final int numFractionalDigit = precision;
+        return 4
+            * (numIntegralDigit / 9
+                + (numIntegralDigit % 9 == 0 ? 0 : 1)
+                + numFractionalDigit / 9
+                + (numFractionalDigit % 9 == 0 ? 0 : 1));
+
+        // string
+      case CHAR:
+      case VARCHAR:
+      case BINARY:
+      case VARBINARY:
+        return width;
+
+      case TINYTEXT:
+      case TINYBLOB:
+        return 255;
+      case TEXT:
+      case BLOB:
+        return 65535;
+      case MEDIUMTEXT:
+      case MEDIUMBLOB:
+        return 16777215;
+      case BIGTEXT:
+      case LONGBLOB:
+        return Integer.MAX_VALUE;
+
+      case JSON:
+      case XML:
+        return 1024;
+
+      case CIDR:
+      case INET:
+        return 19;
+
+      default:
+        return 128;
+    }
+  }
+
   private void formatTypeBody(StringBuilder builder, String dbType) {
     builder.append(name.toUpperCase());
 

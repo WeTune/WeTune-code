@@ -300,7 +300,7 @@ function WTune:doParam()
         if not filter or filter(stmt) then
             for _, lineNum in ipairs(self.lines) do
                 local args = self.paramGen:produce(stmt, lineNum, false, Util.dumb)
-                Util.log(('%s-%d @ %d'):format(self.app, stmt.stmtId, lineNum))
+                Util.log(('%s-%d @ %d\n'):format(self.app, stmt.stmtId, lineNum))
                 for index, value in ipairs(args) do
                     Util.log(('  [%d] %s\n'):format(index, value), 1)
                 end

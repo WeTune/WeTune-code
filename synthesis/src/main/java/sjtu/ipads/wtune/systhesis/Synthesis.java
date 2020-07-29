@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.systhesis;
 import sjtu.ipads.wtune.stmt.Setup;
 import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
 import sjtu.ipads.wtune.stmt.scriptgen.ScriptUtils;
-import sjtu.ipads.wtune.stmt.similarity.output.OutputSimGroup;
+import sjtu.ipads.wtune.stmt.similarity.SimGroup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.exprlist.ExprListMutation;
 import sjtu.ipads.wtune.systhesis.predicate.PredicateMutation;
@@ -130,7 +130,7 @@ public class Synthesis {
   private static List<Statement> collectReferences(Statement stmt) {
     final long baseTiming = stmt.timing(Statement.TAG_INDEX).p50();
     return stmt.outputSimilarGroups().stream()
-        .map(OutputSimGroup::stmts)
+        .map(SimGroup::stmts)
         .flatMap(Collection::stream)
         .distinct()
         .filter(it -> it.timing(Statement.TAG_INDEX).p50() < baseTiming)

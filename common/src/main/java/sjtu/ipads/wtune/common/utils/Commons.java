@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,5 +43,9 @@ public interface Commons {
   static <T> Optional<T> safeGet(List<T> list, int idx) {
     if (idx >= list.size()) return Optional.empty();
     return Optional.of(list.get(idx));
+  }
+
+  static boolean isEmpty(Collection<?> list) {
+    return list == null || list.isEmpty();
   }
 }

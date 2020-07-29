@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.util.Properties;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.LogManager;
 
@@ -31,6 +29,7 @@ public class DefaultSetup extends Setup {
     new DbTimingDao(supplier).registerAsGlobal();
     new DbFingerprintDao(supplier).registerAsGlobal();
     new DbOutputGroupDao(supplier).registerAsGlobal();
+    new DbStructGroupDao(supplier).registerAsGlobal();
   }
 
   @Override

@@ -70,6 +70,9 @@ public class Main {
       case "groupoutput":
         task = new GroupOutput();
         break;
+      case "groupstruct":
+        task = new GroupStruct();
+        break;
       case "synthesisall":
         task = new SynthesisAll();
         break;

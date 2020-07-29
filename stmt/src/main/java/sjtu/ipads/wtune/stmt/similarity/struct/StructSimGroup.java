@@ -1,20 +1,19 @@
-package sjtu.ipads.wtune.stmt.similarity.output;
+package sjtu.ipads.wtune.stmt.similarity.struct;
 
 import sjtu.ipads.wtune.stmt.dao.StructGroupDao;
 import sjtu.ipads.wtune.stmt.similarity.SimGroup;
-import sjtu.ipads.wtune.stmt.statement.OutputFingerprint;
+import sjtu.ipads.wtune.stmt.similarity.output.OutputSimGroup;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class OutputSimGroup extends SimGroup {
-  public OutputSimGroup() {}
-
-  public OutputSimGroup(Set<Statement> stmts) {
+public class StructSimGroup extends SimGroup {
+  public StructSimGroup(Set<Statement> stmts) {
     super(stmts);
   }
 
+  @Override
   public void save() {
     StructGroupDao.instance().save(this);
   }
@@ -23,15 +22,12 @@ public class OutputSimGroup extends SimGroup {
     return new Builder();
   }
 
-  public static class Builder extends SimGroup.Builder {
-    private final Map<OutputSimKey, Set<Statement>> groups = new HashMap<>(1024);
-
-    private Builder() {}
+  private static class Builder extends SimGroup.Builder {
+    private final Map<StructFeature, Set<Statement>> groups = new HashMap();
 
     @Override
     public void add(Statement stmt) {
-      for (OutputSimKey key : OutputFingerprint.extractKey(stmt))
-        groups.computeIfAbsent(key, ignored -> new HashSet<>()).add(stmt);
+      groups.computeIfAbsent(StructFeature.extractFrom(stmt), ignored -> new HashSet<>()).add(stmt);
     }
 
     @Override
@@ -39,8 +35,7 @@ public class OutputSimGroup extends SimGroup {
       final List<SimGroup> groups =
           this.groups.values().stream()
               .filter(it -> it.size() > 1)
-              .distinct()
-              .map(OutputSimGroup::new)
+              .map(StructSimGroup::new)
               .collect(Collectors.toList());
       for (int i = 0; i < groups.size(); i++) groups.get(i).setGroupId(i);
       return groups;

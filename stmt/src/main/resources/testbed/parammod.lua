@@ -35,7 +35,12 @@ end
 
 function Modifiers.inverse()
     return function(_, _, stack)
-        stack:push(-stack:pop())
+        local val = stack:pop()
+        if val == 'NULL' then
+            stack:push('0')
+        else
+            stack:push(-val)
+        end
     end
 end
 
@@ -43,6 +48,10 @@ function Modifiers.subtract()
     return function(_, _, stack)
         local right = stack:pop()
         local left = stack:pop()
+        if left == 'NULL' or right == 'NULL' then
+            stack:push('NULL')
+            return
+        end
         stack:push(left - right)
     end
 end
@@ -251,10 +260,17 @@ function Modifiers.invoke_func(funcName, argCount)
 end
 
 function Funcs.upper(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
+
     return values[1]:upper()
 end
 
 function Funcs.lower(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return values[1]:lower()
 end
 

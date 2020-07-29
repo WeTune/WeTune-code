@@ -20,10 +20,10 @@ public class DaoInstances {
   private static Class<? extends Dao> findDaoSubInterface(Class<?> cls) {
     for (Class<?> intf : cls.getInterfaces())
       if (intf == Dao.class) return (Class<? extends Dao>) cls;
-      else {
-        final Class<? extends Dao> res = findDaoSubInterface(intf);
-        if (res != null) return res;
-      }
+    for (Class<?> intf : cls.getInterfaces()) {
+      final Class<? extends Dao> res = findDaoSubInterface(intf);
+      if (res != null) return res;
+    }
     return null;
   }
 }
