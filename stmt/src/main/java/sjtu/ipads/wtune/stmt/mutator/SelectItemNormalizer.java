@@ -176,9 +176,12 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
           else if (item.alias() == null) {
             item.setAlias(alias);
             item.node().put(SELECT_ITEM_ALIAS, alias);
-            final SQLNode columnName = refNode.get(COLUMN_REF_COLUMN);
-            columnName.remove(COLUMN_NAME_TABLE);
-            columnName.put(COLUMN_NAME_COLUMN, alias);
+            // column name resolution policy differs in mysql and pgsql
+            if (scope.queryNode().dbType().equals(MYSQL)) {
+              final SQLNode columnName = refNode.get(COLUMN_REF_COLUMN);
+              columnName.remove(COLUMN_NAME_TABLE);
+              columnName.put(COLUMN_NAME_COLUMN, alias);
+            }
           }
           dest.add(item);
         }
