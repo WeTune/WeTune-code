@@ -14,6 +14,7 @@ public class GenScript implements Task {
       ScriptUtils.genWorkload(appName, "base");
       ScriptUtils.genWorkload(appName, "index");
       ScriptUtils.genWorkload(appName, "opt");
+      ScriptUtils.genSchemaPatch(appName);
     }
   }
 }

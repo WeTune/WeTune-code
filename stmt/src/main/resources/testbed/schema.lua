@@ -328,14 +328,16 @@ function Column:foreignIndex()
 end
 
 function Column:guessBoolean()
-    local ret = self.isBoolean or self.columnName:match("ed$") or self.columnName:match("able$")
-            or self.columnName:match("^is") or self.dataType.width == 1
+    local ret = self.isBoolean
+            or self.dataType.width == 1
+            or self.columnName:match("ed$") or self.columnName:match("able$")
+            or self.columnName:match("^is") or self.columnName:match("flag$")
     self.isBoolean = ret
     return ret
 end
 
 function Column:guessEnum()
-    local ret = self.isEnum or self.columnName:match("type$")
+    local ret = self.isEnum or self.columnName:match("type$") or self.columnName:match("level$")
     self.isEnum = ret
     return ret
 end

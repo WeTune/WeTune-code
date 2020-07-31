@@ -1,13 +1,15 @@
 package sjtu.ipads.wtune.stmt.schema;
 
+import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.SQLNode.IndexType;
 import sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection;
 
 import java.util.List;
+import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 
 public class Constraint {
   public static class Key {
@@ -31,7 +33,7 @@ public class Constraint {
     }
   }
 
-  private List<Column> columns;
+  private Set<Column> columns;
   private List<KeyDirection> directions;
   private ConstraintType type;
   private IndexType indexType;
@@ -42,8 +44,14 @@ public class Constraint {
   private Table refTable;
   private List<Column> refColumns;
 
-  public List<Column> columns() {
+  private boolean fromPatch = false;
+
+  public Set<Column> columns() {
     return columns;
+  }
+
+  public Column firstColumn() {
+    return Iterables.getFirst(columns, assertFalse());
   }
 
   public Table refTable() {
@@ -62,12 +70,20 @@ public class Constraint {
     return type;
   }
 
+  public boolean fromPatch() {
+    return fromPatch;
+  }
+
   public SQLNode refTableName() {
     return refTableName;
   }
 
   public List<SQLNode> refColNames() {
     return refColNames;
+  }
+
+  public boolean isIndex() {
+    return type != ConstraintType.NOT_NULL && type != ConstraintType.CHECK;
   }
 
   public void setRefTableName(SQLNode refTableName) {
@@ -82,7 +98,7 @@ public class Constraint {
     this.indexType = indexType;
   }
 
-  public void setColumns(List<Column> columns) {
+  public void setColumns(Set<Column> columns) {
     this.columns = columns;
   }
 
@@ -100,5 +116,9 @@ public class Constraint {
 
   public void setType(ConstraintType type) {
     this.type = type;
+  }
+
+  public void setFromPatch(boolean fromPatch) {
+    this.fromPatch = fromPatch;
   }
 }

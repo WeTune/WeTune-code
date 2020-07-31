@@ -76,6 +76,9 @@ public class Main {
       case "synthesisall":
         task = new SynthesisAll();
         break;
+      case "reconfigureall":
+        task = new ReconfigureAll();
+        break;
       default:
         assertFalse();
         return;

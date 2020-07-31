@@ -10,7 +10,10 @@ public class GroupStruct implements Task {
   @Override
   public void doTasks(String... appNames) {
     final SimGroup.Builder builder = SimGroup.structGroupBuilder();
-    Statement.findAll().forEach(builder::add);
+    for (Statement stmt : Statement.findAll()) {
+      stmt.retrofitStandard();
+      builder.add(stmt);
+    }
     final List<SimGroup> groups = builder.build();
 
     final StructGroupDao dao = StructGroupDao.instance();

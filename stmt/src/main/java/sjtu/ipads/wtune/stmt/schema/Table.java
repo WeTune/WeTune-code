@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.schema;
 
+import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.*;
@@ -45,6 +46,10 @@ public class Table {
     return constraints;
   }
 
+  public Iterable<Constraint> indexes() {
+    return Iterables.filter(constraints, Constraint::isIndex);
+  }
+
   public Column getColumn(String name) {
     return columns.get(simpleName(name));
   }
@@ -82,6 +87,11 @@ public class Table {
   @Override
   public int hashCode() {
     return Objects.hash(tableName);
+  }
+
+  @Override
+  public String toString() {
+    return schemaName == null ? tableName : (schemaName + "." + tableName);
   }
 
   Column getColumn(SQLNode columnName) {

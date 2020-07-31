@@ -18,11 +18,14 @@ public class UpdateDb implements Task {
     System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_BASE);
     app.timing(TAG_BASE).forEach(Timing::save);
 
-    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_INDEX);
-    app.timing(TAG_INDEX).forEach(Timing::save);
+    //    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_INDEX);
+    //    app.timing(TAG_INDEX).forEach(Timing::save);
 
     System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_OPT);
     app.timing(TAG_OPT).forEach(Timing::save);
+
+    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_PATCHED);
+    app.timing(TAG_PATCHED).forEach(Timing::save);
 
     TimingDao.instance().endBatch();
 

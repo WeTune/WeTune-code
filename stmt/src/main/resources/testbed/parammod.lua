@@ -277,6 +277,9 @@ end
 function Funcs.extract(values)
     local unit = values[1]
     local value = values[2]
+    if value == 'NULL' then
+        return 'NULL'
+    end
     local time = Util.timeParse(value)
     return time["get" .. unit:lower()](time)
 end
@@ -291,14 +294,40 @@ function Funcs.coalesce(values)
 end
 
 function Funcs.string_to_array(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return values[1] -- cheat based on current workload
 end
 
 function Funcs.length(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return values[1]:len()
 end
 
+local function removeNULL(list)
+    local j, n = 1, #list;
+
+    for i = 1, n do
+        if (list[i] ~= 'NULL') then
+            -- Move i's kept value to j's position, if it's not already there.
+            if (i ~= j) then
+                list[j] = list[i];
+                list[i] = nil;
+            end
+            j = j + 1; -- Increment position of where we'll place the next kept value.
+        else
+            list[i] = nil;
+        end
+    end
+
+    return list;
+end
+
 function Funcs.greatest(values)
+    values = removeNULL(values)
     table.sort(values, Util.timeCompare)
     return values[#values]
 end
@@ -315,30 +344,51 @@ function Funcs.datediff(values)
 end
 
 function Funcs.year(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getyear()
 end
 
 function Funcs.month(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getmonth()
 end
 
 function Funcs.dayofmonth(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getday()
 end
 
 function Funcs.minute(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getminutes()
 end
 
 function Funcs.weekday(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getweekday()
 end
 
 function Funcs.second(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return Util.timeParse(values[1]):getseconds()
 end
 
 function Funcs.date_format(values)
+    if values[1] == 'NULL' then
+        return 'NULL'
+    end
     return "'" .. Util.timeParse(values[1]):fmt(values[2]) .. "'"
 end
 

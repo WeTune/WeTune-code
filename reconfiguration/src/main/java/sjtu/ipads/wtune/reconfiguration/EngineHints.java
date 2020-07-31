@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.reconfiguration;
 
-import com.google.common.graph.Graph;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.Table;
 
@@ -26,8 +25,7 @@ public class EngineHints {
   public static EngineHints hint(ColumnMatching matching) {
     if (matching.matchingCount() == 0) return null;
 
-    final Map<Table, Map<Table, Long>> tableMatch =
-        matchTable(matching.slow(), matching.matching());
+    final Map<Table, Map<Table, Long>> tableMatch = matchTable(matching.slow(), matching);
 
     final EngineHints hints = new EngineHints();
     final Map<Table, String> map = hints.hints;
@@ -52,13 +50,14 @@ public class EngineHints {
     return hints;
   }
 
-  private static Map<Table, Map<Table, Long>> matchTable(Set<Column> columns, Graph<Column> match) {
+  private static Map<Table, Map<Table, Long>> matchTable(
+      Set<Column> columns, ColumnMatching match) {
     return columns.stream()
         .collect(
             groupingBy(
                 Column::table,
                 flatMapping(
-                    func(match::adjacentNodes).andThen(Collection::stream),
+                    func(match::matchOf).andThen(Collection::stream),
                     groupingBy(Column::table, counting()))));
   }
 }

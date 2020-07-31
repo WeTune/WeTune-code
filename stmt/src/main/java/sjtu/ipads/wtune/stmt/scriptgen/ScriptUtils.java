@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.stmt.mutator.SelectItemNormalizer;
 import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
 import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
 import sjtu.ipads.wtune.stmt.schema.Schema;
+import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -81,6 +83,44 @@ public class ScriptUtils {
             Files.newBufferedWriter(
                 directory.resolve(tag + "_workload.lua"), CREATE, TRUNCATE_EXISTING))) {
       new OutputImpl(writer).accept(new WorkloadGen(stmts));
+      writer.flush();
+
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
+  }
+
+  public static void genSchemaPatch(String appName) {
+    final List<SchemaPatch> patches =
+        SchemaPatch.findByApp(appName).stream()
+            .filter(it -> !"manual".equals(it.source()))
+            .collect(Collectors.toList());
+    genSchemaPatch(patches, appName);
+  }
+
+  public static void genSchemaPatch(List<SchemaPatch> patches, String appName) {
+    genSchemaPatch(patches, Setup.current().outputDir(), appName);
+  }
+
+  public static void genSchemaPatch(List<SchemaPatch> patches, Path outputDir, String appName) {
+    final Path directory = outputDir.resolve(appName);
+    directory.toFile().mkdir();
+
+    try (final PrintWriter writer =
+        new PrintWriter(
+            Files.newBufferedWriter(directory.resolve("patch.sql"), CREATE, TRUNCATE_EXISTING))) {
+      new OutputImpl(writer).accept(new PatchesGen(patches, true));
+      writer.flush();
+
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
+
+    try (final PrintWriter writer =
+        new PrintWriter(
+            Files.newBufferedWriter(
+                directory.resolve("unpatch.sql"), CREATE, TRUNCATE_EXISTING))) {
+      new OutputImpl(writer).accept(new PatchesGen(patches, false));
       writer.flush();
 
     } catch (IOException e) {

@@ -3,6 +3,7 @@ dependencies {
     implementation project(':stmt')
     implementation project(':common')
     implementation project(':synthesis')
+    implementation project(':reconfiguration')
 }
 
 application {

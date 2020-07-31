@@ -29,9 +29,10 @@ public abstract class DbGroupDao extends DbDao implements GroupDao {
             + selectItems
             + " FROM "
             + tableName
-            + " WHERE group_id IN ("
+            + "  WHERE group_id IN ("
             + "  SELECT group_id "
-            + "  FROM wtune_output_group "
+            + "  FROM "
+            + tableName
             + "  WHERE group_app_name = ? AND group_stmt_id = ?"
             + " )"
             + " ORDER BY group_id";

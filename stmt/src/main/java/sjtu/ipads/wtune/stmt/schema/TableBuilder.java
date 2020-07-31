@@ -3,12 +3,11 @@ package sjtu.ipads.wtune.stmt.schema;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
-import static java.lang.System.Logger.Level.*;
-import static java.util.Collections.singletonList;
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
+import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN;
@@ -81,7 +80,7 @@ class TableBuilder {
     for (ConstraintType cType : constraints) {
       final Constraint c = new Constraint();
       c.setType(cType);
-      c.setColumns(singletonList(column));
+      c.setColumns(singleton(column));
 
       table.addConstraint(c);
       column.addConstraint(c);
@@ -91,7 +90,7 @@ class TableBuilder {
     if (references != null) {
       final Constraint c = new Constraint();
       c.setType(ConstraintType.FOREIGN);
-      c.setColumns(singletonList(column));
+      c.setColumns(singleton(column));
       c.setRefTableName(references.get(REFERENCES_TABLE));
       c.setRefColNames(references.get(REFERENCES_COLUMNS));
 
@@ -106,7 +105,7 @@ class TableBuilder {
     c.setIndexType(constraintDef.get(INDEX_DEF_TYPE));
 
     final List<SQLNode> keys = constraintDef.get(INDEX_DEF_KEYS);
-    final List<Column> columns = new ArrayList<>(keys.size());
+    final Set<Column> columns = new LinkedHashSet<>(keys.size());
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
 
     for (SQLNode key : keys) {
@@ -128,6 +127,8 @@ class TableBuilder {
       columns.add(column);
       directions.add(FuncUtils.coalesce(key.get(KEY_PART_DIRECTION), KeyDirection.ASC));
     }
+
+    if (columns.isEmpty()) return;
 
     final SQLNode refs = constraintDef.get(INDEX_DEF_REFS);
     if (refs != null) {

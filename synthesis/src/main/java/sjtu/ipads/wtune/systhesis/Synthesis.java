@@ -128,12 +128,12 @@ public class Synthesis {
   }
 
   private static List<Statement> collectReferences(Statement stmt) {
-    final long baseTiming = stmt.timing(Statement.TAG_INDEX).p50();
+    final long baseTiming = stmt.timing(Statement.TAG_BASE).p50();
     return stmt.outputSimilarGroups().stream()
         .map(SimGroup::stmts)
         .flatMap(Collection::stream)
         .distinct()
-        .filter(it -> it.timing(Statement.TAG_INDEX).p50() < baseTiming)
+        .filter(it -> it.timing(Statement.TAG_BASE).p50() < baseTiming)
         .sorted(comparingLong(it -> it.timing(Statement.TAG_INDEX).p50()))
         .collect(Collectors.toList());
   }

@@ -26,6 +26,7 @@ public class Statement implements Attrs<Statement> {
   public static final String TAG_BASE = "base";
   public static final String TAG_OPT = "opt";
   public static final String TAG_INDEX = "index";
+  public static final String TAG_PATCHED = "patched";
 
   private String appName;
   private int stmtId;

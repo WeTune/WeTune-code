@@ -4,9 +4,12 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_BOOLEAN;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_ENUM;
 
@@ -15,18 +18,15 @@ public class SchemaPatch {
     BOOLEAN,
     ENUM,
     UNIQUE,
-    FOREIGN_KEY;
+    FOREIGN_KEY,
+    INDEX
   }
-
-  public static final String KEY_APP = "app";
-  public static final String KEY_TYPE = "type";
-  public static final String KEY_TABLE_NAME = "tableName";
-  public static final String KEY_COLUMNS = "columnNames";
 
   private String app;
   private Type type;
   private String tableName;
   private List<String> columnNames;
+  private String source;
 
   public static SchemaPatch impliedFK(String appName, Column column) {
     final SchemaPatch patch = new SchemaPatch();
@@ -61,8 +61,17 @@ public class SchemaPatch {
     return type;
   }
 
-  public void setApp(String app) {
+  public String source() {
+    return coalesce(source, "unknown");
+  }
+
+  public SchemaPatch setApp(String app) {
     this.app = app;
+    return this;
+  }
+
+  public void setSource(String source) {
+    this.source = source;
   }
 
   public void setType(Type type) {
@@ -78,13 +87,14 @@ public class SchemaPatch {
   }
 
   public void patch(Table table) {
-    final List<Column> columns = listMap(table::getColumn, columnNames);
+    final Set<Column> columns = collectionMap(table::getColumn, columnNames, LinkedHashSet::new);
     if (type == Type.BOOLEAN) columns.forEach(it -> it.flag(COLUMN_IS_BOOLEAN));
     else if (type == Type.ENUM) columns.forEach(it -> it.flag(COLUMN_IS_ENUM));
     else if (type == Type.UNIQUE) {
       final Constraint c = new Constraint();
       c.setType(SQLNode.ConstraintType.UNIQUE);
       c.setColumns(columns);
+      c.setFromPatch(true);
       table.addConstraint(c);
       columns.forEach(it -> it.addConstraint(c));
 
@@ -92,6 +102,7 @@ public class SchemaPatch {
       final Constraint c = new Constraint();
       c.setType(SQLNode.ConstraintType.FOREIGN);
       c.setColumns(columns);
+      c.setFromPatch(true);
       table.addConstraint(c);
       columns.forEach(it -> it.addConstraint(c));
     }

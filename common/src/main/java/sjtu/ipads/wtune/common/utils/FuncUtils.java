@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -14,6 +15,13 @@ public interface FuncUtils {
 
   static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
+  }
+
+  static <T, R, C extends Collection<R>> C collectionMap(
+      Function<? super T, R> func, Iterable<T> os, Supplier<C> supplier) {
+    return StreamSupport.stream(os.spliterator(), false)
+        .map(func)
+        .collect(Collectors.toCollection(supplier));
   }
 
   static <T> T find(IPredicate<T> pred, Iterable<T> os) {

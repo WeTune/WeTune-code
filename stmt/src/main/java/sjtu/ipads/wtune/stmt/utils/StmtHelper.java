@@ -10,12 +10,18 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.NODE_ID;
 
 public class StmtHelper {
   public static String simpleName(String name) {
     if (name == null) return null;
     return unquoted(unquoted(unquoted(name.toLowerCase(), '\''), '`'), '"');
+  }
+
+  public static String quoteName(String name, String dbType) {
+    if (MYSQL.equals(dbType)) return String.format("`%s`", name);
+    else return String.format("\"%s\"", name);
   }
 
   public static <T> T newInstance(Class<T> cls) {

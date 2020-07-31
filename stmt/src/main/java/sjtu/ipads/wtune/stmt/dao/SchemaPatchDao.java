@@ -10,6 +10,8 @@ public interface SchemaPatchDao extends Dao {
 
   void save(SchemaPatch patch);
 
+  void truncate();
+
   void beginBatch();
 
   void endBatch();

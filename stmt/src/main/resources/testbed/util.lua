@@ -96,6 +96,9 @@ local function timeParse(str)
 end
 
 local function timeCompare(str1, str2)
+    if str1 == str2 then
+        return false
+    end
     str1 = str1:gsub("'(.+)'", '%1')
     str2 = str2:gsub("'(.+)'", '%1')
     return str1 < str2

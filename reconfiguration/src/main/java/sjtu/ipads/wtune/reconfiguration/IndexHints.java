@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.reconfiguration;
 import com.google.common.collect.Sets;
 import com.google.common.graph.Graph;
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.Constraint;
 import sjtu.ipads.wtune.stmt.schema.Table;
@@ -24,14 +23,13 @@ public class IndexHints implements Iterable<List<Column>> {
   public static IndexHints hint(ColumnMatching matching) {
     final Set<Column> fast = matching.fast();
     final Set<Column> slow = matching.slow();
-    final Graph<Column> graph = matching.matching();
 
     if (fast.isEmpty() || slow.isEmpty() || matching.matchingCount() == 0) return null;
 
     final List<Constraint> fastIndexes = indexesOnRelatedTable(fast);
     if (isEmpty(fastIndexes)) return null;
 
-    final Set<List<Column>> candidates = suggestByMatch(fastIndexes, graph);
+    final Set<List<Column>> candidates = suggestByMatch(fastIndexes, matching);
     if (isEmpty(candidates)) return null;
 
     return new IndexHints(candidates);
@@ -41,31 +39,24 @@ public class IndexHints implements Iterable<List<Column>> {
     return fast.stream()
         .map(Column::table)
         .distinct()
-        .map(IndexHints::indexesOn)
+        .map(Table::constraints)
         .flatMap(Collection::stream)
+        .filter(Predicate.not(Constraint::fromPatch))
+        .filter(Constraint::isIndex)
         .collect(Collectors.toList());
   }
 
-  private static List<Constraint> indexesOn(Table table) {
-    final Set<Constraint> constraints = table.constraints();
-    final List<Constraint> indexes = new ArrayList<>(constraints.size());
-    for (Constraint constraint : constraints)
-      if (constraint.type() != SQLNode.ConstraintType.NOT_NULL
-          && constraint.type() != SQLNode.ConstraintType.CHECK) indexes.add(constraint);
-    return indexes;
-  }
-
-  private static Set<List<Column>> suggestByMatch(List<Constraint> base, Graph<Column> match) {
+  private static Set<List<Column>> suggestByMatch(List<Constraint> base, ColumnMatching match) {
     return base.stream()
         .map(fastIndex -> suggestByMatch(fastIndex, match))
         .reduce(Sets::union)
         .orElse(null);
   }
 
-  private static Set<List<Column>> suggestByMatch(Constraint base, Graph<Column> matching) {
+  private static Set<List<Column>> suggestByMatch(Constraint base, ColumnMatching matching) {
     final List<Set<Column>> matches =
         base.columns().stream()
-            .map(matching::adjacentNodes)
+            .map(matching::matchOf)
             .takeWhile(Predicate.not(Commons::isEmpty))
             .collect(Collectors.toList());
     return Sets.cartesianProduct(matches);
@@ -90,8 +81,7 @@ public class IndexHints implements Iterable<List<Column>> {
 
     private void advance() {
       assert currentLength != 0;
-
-      while (!advanceLength() && advanceCandidate())
+      while (!advanceLength() && (currentLength != 0 || advanceCandidate()))
         ;
     }
 

@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
 import sjtu.ipads.wtune.stmt.resolver.Resolver;
 import sjtu.ipads.wtune.stmt.similarity.struct.OpCategory;
+import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -128,5 +129,11 @@ public class OperatorScopeResolver implements Resolver, SQLVisitor {
     final OpCategory peek = currentOp.peek();
     if (peek != null) columnRef.put(RESOLVED_OPERATOR_SCOPE, peek);
     return false;
+  }
+
+  @Override
+  public boolean resolve(Statement stmt, SQLNode node) {
+    node.accept(this);
+    return true;
   }
 }
