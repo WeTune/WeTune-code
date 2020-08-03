@@ -150,8 +150,11 @@ function DataType:numUniqueValues(maxLine)
     elseif category == "fraction" then
         ret = maxLine / 80
 
-    elseif category == "string" or category == "time" then
+    elseif category == "string" then
         ret = maxLine / 50
+
+    elseif category == "time" then
+        ret = math.min(maxLine / 50, 1000)
 
     end
 

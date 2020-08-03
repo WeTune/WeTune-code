@@ -387,15 +387,20 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
     } else if (ctx.IN() != null) {
       final SQLNode left = ctx.vex(0).accept(this);
+      final SQLNode node;
       if (ctx.select_stmt_no_parens() != null)
-        return binary(
-            left, wrapAsQueryExpr(ctx.select_stmt_no_parens().accept(this)), BinaryOp.IN_SUBQUERY);
+        node =
+            binary(
+                left,
+                wrapAsQueryExpr(ctx.select_stmt_no_parens().accept(this)),
+                BinaryOp.IN_SUBQUERY);
       else {
         final var vexs = ctx.vex();
         final SQLNode tuple = newExpr(SQLExpr.Kind.TUPLE);
         tuple.put(TUPLE_EXPRS, listMap(this::visitVex, vexs.subList(1, vexs.size())));
-        return binary(left, tuple, BinaryOp.IN_LIST);
+        node = binary(left, tuple, BinaryOp.IN_LIST);
       }
+      return ctx.NOT() == null ? node : unary(node, UnaryOp.NOT);
 
     } else if (ctx.BETWEEN() != null) {
       final SQLNode node = newExpr(SQLExpr.Kind.TERNARY);
@@ -403,7 +408,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
       node.put(TERNARY_LEFT, ctx.vex(0).accept(this));
       node.put(TERNARY_MIDDLE, ctx.vex_b().accept(this));
       node.put(TERNARY_RIGHT, ctx.vex(1).accept(this));
-      return node;
+      return ctx.NOT() == null ? node : unary(node, UnaryOp.NOT);
 
     } else if (ctx.IS() != null) {
       final SQLNode left = ctx.vex(0).accept(this);

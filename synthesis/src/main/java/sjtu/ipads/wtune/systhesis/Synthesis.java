@@ -118,7 +118,9 @@ public class Synthesis {
       for (int i = 1; i < pairs.length; i++) {
         final String pair = pairs[i];
         final int sepIndex = pair.indexOf(';');
-        output.optimized.add(candidates.get(Integer.parseInt(pair.substring(0, sepIndex))));
+        final int stmtIndex = Integer.parseInt(pair.substring(0, sepIndex));
+        output.ranking.add(stmtIndex);
+        output.optimized.add(candidates.get(stmtIndex));
         output.optP50.add(Long.parseLong(pair.substring(sepIndex + 1)));
       }
 
@@ -134,7 +136,7 @@ public class Synthesis {
         .flatMap(Collection::stream)
         .distinct()
         .filter(it -> it.timing(Statement.TAG_BASE).p50() < baseTiming)
-        .sorted(comparingLong(it -> it.timing(Statement.TAG_INDEX).p50()))
+        .sorted(comparingLong(it -> it.timing(Statement.TAG_BASE).p50()))
         .collect(Collectors.toList());
   }
 

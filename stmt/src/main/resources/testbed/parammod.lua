@@ -4,22 +4,44 @@ local date = require("date")
 local Modifiers = {}
 local Funcs = {}
 
-local function shiftValue(value, shift)
-    shift = shift or 2
+local function determineShift(lineNum, shift)
+    if shift then
+        return shift
+    end
+    math.randomseed(lineNum)
+    shift = math.random(4) - 2 -- -1, 0, 1, 2
+    if shift == 0 then
+        return -2
+    else
+        return shift
+    end
+end
+
+local function shiftValue(value, lineNum, dbType, shift)
+    shift = determineShift(lineNum, shift)
+
+    if type(value) == 'table' then
+        return nil
+    end
     if type(value) == 'number' then
         return value + shift
-
-    elseif type(value) == 'string' then
-        if value == 'NULL' then
-            return value
+    elseif value == 'NULL' then
+        return 'NULL'
+    elseif value:len() < 19 then
+        if value:len() == 1 then
+            return value == "'0'" and "'1'" or "'0'"
+        else
+            local num = tonumber(Util.unquote(value, "'"))
+            if num then
+                return ("'%0" .. value:len() .. "d'"):format(num + shift)
+            else
+                return "'0" .. value:sub(2)
+            end
         end
-        local num = tonumber(Util.unquote(value, "'"))
-        if num then
-            return ("'%0" .. #value .. "d'"):format(num + shift)
-        end
+    else
+        shift = shift < 0 and -1 or 1
+        return Util.timeFmt(Util.timeParse(value):addhours(24 * shift), dbType)
     end
-
-    return nil
 end
 
 function Modifiers.column_value(tableName, columnName, position)
@@ -77,36 +99,16 @@ function Modifiers.times()
 end
 
 function Modifiers.decrease()
-    return function(wtune, _, stack)
-        local value = stack:pop()
-        if type(value) == 'number' then
-            stack:push(value - 10)
-        elseif value:len() < 19 then
-            if value:len() == 1 then
-                stack:push(value == "'0'" and "'1'" or "'0'")
-            else
-                stack:push(shiftValue(value, -10) or ("'0" .. value:sub(2)))
-            end
-        else
-            stack:push(Util.timeFmt(Util.timeParse(value):addhours(-24), wtune.dbType))
-        end
+    return function(wtune, lineNum, stack)
+        local shift = wtune.rows <= 100 and -1 or -10
+        stack:push(shiftValue(stack:pop(), lineNum, wtune.dbType, shift))
     end
 end
 
 function Modifiers.increase()
-    return function(wtune, _, stack)
-        local value = stack:pop()
-        if type(value) == 'number' then
-            stack:push(value + 10)
-        elseif value:len() < 19 then
-            if value:len() == 1 then
-                stack:push(value == "'0'" and "'1'" or "'0'")
-            else
-                stack:push(shiftValue(value, 10) or ("'0" .. value:sub(2)))
-            end
-        else
-            stack:push(Util.timeFmt(Util.timeParse(value):addhours(24), wtune.dbType))
-        end
+    return function(wtune, lineNum, stack)
+        local shift = wtune.rows >= 100 and 1 or 10
+        stack:push(shiftValue(stack:pop(), lineNum, wtune.dbType, shift))
     end
 end
 
@@ -183,7 +185,9 @@ function Modifiers.check_bool_not()
 end
 
 function Modifiers.neq()
-    return Modifiers.decrease()
+    return function(wtune, lineNum, stack)
+        stack:push(shiftValue(stack:pop(), lineNum, wtune.dbType))
+    end
 end
 
 function Modifiers.direct_value(value)
@@ -216,9 +220,9 @@ function Modifiers.array_element()
 end
 
 function Modifiers.tuple_element()
-    return function(_, _, stack)
+    return function(wtune, lineNum, stack)
         local value = stack:pop()
-        local shifted = shiftValue(value)
+        local shifted = shiftValue(value, lineNum, wtune.dbType)
         if shifted then
             stack:push({ value, shifted })
         else

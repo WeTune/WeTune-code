@@ -25,15 +25,15 @@ local function flush(stmts, start, stop)
 end
 
 local function markSlow(stmt, elapsed)
-    if elapsed >= 100000000 then
-        -- 0.1s
-        stmt.isSlow = math.max(1, stmt.isSlow or 0)
+    if elapsed >= 10000000000 then
+        -- 10s
+        stmt.isSlow = math.max(3, stmt.isSlow or 0)
     elseif elapsed >= 1000000000 then
         -- 1s
         stmt.isSlow = math.max(2, stmt.isSlow or 0)
-    elseif elapsed >= 10000000000 then
-        -- 10s
-        stmt.isSlow = math.max(3, stmt.isSlow or 0)
+    elseif elapsed >= 100000000 then
+        -- 0.1s
+        stmt.isSlow = math.max(1, stmt.isSlow or 0)
     end
 end
 
@@ -49,12 +49,10 @@ local function throttleHang(stmt, wtune)
         return false
     end
 
-    if stmt.stmtId ~= 60 and stmt.stmtId ~= 104
-            and stmt.stmtId ~= 3 and stmt.stmtId ~= 39 then
-        return false
+    if stmt.sql:match(".*DISTINCT.*") and stmt.sql:len() >= 3000 then
+        return stmt.runs and stmt.runs >= 1
     end
-
-    return stmt.runs and stmt.runs >= 1
+    return false
 end
 
 local function evalStmt(stmt, wtune)
@@ -62,21 +60,24 @@ local function evalStmt(stmt, wtune)
     local args = paramGen:produce(stmt, paramGen:randomLine())
     local status, elapsed, value = Exec(stmt, args, wtune)
 
+    stmt.runs = 1 + (stmt.runs or 0)
+    stmt.latencies = stmt.latencies or {}
+
     if not status then
-        error(value)
+        elapsed = 25000000000
+        --error(value)
     end
+
+    table.insert(stmt.latencies, elapsed)
+    markSlow(stmt, elapsed)
 
     value = nil
     collectgarbage()
-
-    stmt.runs = 1 + (stmt.runs or 0)
-    stmt.latencies = stmt.latencies or {}
-    table.insert(stmt.latencies, elapsed)
-
-    markSlow(stmt, elapsed)
 end
 
 local function evalStmts(stmts, wtune)
+    Util.setTimeout(25000, wtune.con, wtune.dbType)
+
     local seq = Util.iterate(#stmts)
     local totalTimes = wtune.times
     local waterMarker = 0

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.systhesis.relation;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
 import sjtu.ipads.wtune.stmt.analyzer.NodeFinder;
-import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
+import sjtu.ipads.wtune.stmt.analyzer.ColumnAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.operators.DropTableSource;
@@ -66,7 +66,7 @@ public class ReduceTableSource implements RelationMutator {
     final QueryScope scope = targetNode.get(RESOLVED_QUERY_SCOPE);
     final TableSource source = targetNode.get(RESOLVED_TABLE_SOURCE);
     // recursive table source resolution is unnecessary
-    final Set<ColumnRef> columnRef = TableAccessAnalyzer.analyze(scope.queryNode(), source, false);
+    final Set<ColumnRef> columnRef = ColumnAccessAnalyzer.analyze(scope.queryNode(), source, false);
     final long usedColumnCount = columnRef.stream().map(ColumnRef::identity).distinct().count();
 
     // Condition 3: the number of used columns is 1
@@ -195,7 +195,7 @@ public class ReduceTableSource implements RelationMutator {
     final QueryScope scope = targetNode.get(RESOLVED_QUERY_SCOPE);
     final SQLNode queryNode = scope.queryNode();
     final TableSource source = targetNode.get(RESOLVED_TABLE_SOURCE);
-    final Set<ColumnRef> columnRefs = TableAccessAnalyzer.analyze(queryNode, source, false);
+    final Set<ColumnRef> columnRefs = ColumnAccessAnalyzer.analyze(queryNode, source, false);
     // assert 1 == columnRef.stream().map(ColumnRef::identity).distinct().count();
     final ColumnRef columnRef = columnRefs.iterator().next();
 

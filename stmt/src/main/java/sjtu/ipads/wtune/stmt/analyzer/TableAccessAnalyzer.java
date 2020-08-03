@@ -2,52 +2,35 @@ package sjtu.ipads.wtune.stmt.analyzer;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
-import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
-import sjtu.ipads.wtune.stmt.attrs.TableSource;
+import sjtu.ipads.wtune.stmt.resolver.Resolver;
+import sjtu.ipads.wtune.stmt.resolver.TableResolver;
+import sjtu.ipads.wtune.stmt.schema.Table;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
+import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE_SOURCE;
 
-public class TableAccessAnalyzer implements Analyzer<Set<ColumnRef>>, SQLVisitor {
-  private TableSource source;
-  private boolean recursive;
-  private Set<ColumnRef> refs;
+public class TableAccessAnalyzer implements SQLVisitor, Analyzer<Set<Table>> {
+  private final Set<Table> tables = new HashSet<>();
 
   @Override
-  public void setParam(Object... args) {
-    source = (TableSource) args[0];
-    recursive = args.length >= 2 && (boolean) args[1];
-  }
-
-  @Override
-  public boolean enterColumnRef(SQLNode columnRef) {
-    final ColumnRef cRef = columnRef.get(RESOLVED_COLUMN_REF);
-    if (cRef == null) return false;
-    if ((recursive && cRef.isFrom(source)) || (!recursive && source.equals(cRef.source())))
-      refs.add(cRef);
+  public boolean enterSimpleTableSource(SQLNode simpleTableSource) {
+    final Table table = simpleTableSource.get(RESOLVED_TABLE_SOURCE).table();
+    if (table != null) tables.add(table);
     return false;
   }
 
   @Override
-  public Set<ColumnRef> analyze(SQLNode node) {
-    if (source == null) return Collections.emptySet();
-    refs = new HashSet<>();
+  public Set<Table> analyze(SQLNode node) {
     node.accept(this);
-    return refs;
+    return tables;
   }
 
-  /**
-   * Find column refs points to the given source.
-   *
-   * @param recursive: whether to recursively resolve the table source of column ref
-   */
-  public static Set<ColumnRef> analyze(SQLNode node, TableSource source, boolean recursive) {
-    final TableAccessAnalyzer analyzer = new TableAccessAnalyzer();
-    analyzer.source = source;
-    analyzer.recursive = recursive;
-    return analyzer.analyze(node);
+  private static final Set<Class<? extends Resolver>> DEPENDENCIES = Set.of(TableResolver.class);
+
+  @Override
+  public Set<Class<? extends Resolver>> dependsOn() {
+    return DEPENDENCIES;
   }
 }

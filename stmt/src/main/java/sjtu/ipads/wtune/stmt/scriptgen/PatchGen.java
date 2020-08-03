@@ -5,6 +5,8 @@ import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.utils.StmtHelper;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.SQLNode.POSTGRESQL;
 
 public class PatchGen implements ScriptNode {
   private final SchemaPatch patch;
@@ -25,8 +27,9 @@ public class PatchGen implements ScriptNode {
           quoteName(genName(patch)),
           quoteName(patch.tableName()),
           String.join(", ", listMap(this::quoteName, patch.columnNames())));
-    else
+    else if (MYSQL.equals(dbType))
       out.printf("DROP INDEX %s ON %s;", quoteName(genName(patch)), quoteName(patch.tableName()));
+    else if (POSTGRESQL.equals(dbType)) out.printf("DROP INDEX %s IF EXISTS;", quoteName(genName(patch)));
   }
 
   private String quoteName(String name) {

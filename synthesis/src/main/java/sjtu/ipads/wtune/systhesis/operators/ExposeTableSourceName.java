@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.systhesis.operators;
 
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
-import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
+import sjtu.ipads.wtune.stmt.analyzer.ColumnAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.attrs.TableSource;
 
@@ -33,7 +33,7 @@ public class ExposeTableSourceName implements Operator, SQLVisitor {
 
   @Override
   public SQLNode apply(SQLNode sqlNode) {
-    final Set<ColumnRef> cRefs = TableAccessAnalyzer.analyze(sqlNode, source, false);
+    final Set<ColumnRef> cRefs = ColumnAccessAnalyzer.analyze(sqlNode, source, false);
 
     for (ColumnRef cRef : cRefs) {
       assert source.equals(cRef.source());

@@ -30,6 +30,7 @@ public class DefaultSetup extends Setup {
     new DbFingerprintDao(supplier).registerAsGlobal();
     new DbOutputGroupDao(supplier).registerAsGlobal();
     new DbStructGroupDao(supplier).registerAsGlobal();
+    new DbIssueDao(supplier).registerAsGlobal();
   }
 
   @Override

@@ -2,17 +2,16 @@ package sjtu.ipads.wtune.systhesis.relation;
 
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.stmt.analyzer.TableAccessAnalyzer;
+import sjtu.ipads.wtune.stmt.analyzer.ColumnAccessAnalyzer;
 import sjtu.ipads.wtune.stmt.attrs.*;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.operators.*;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
+import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.BinaryOp.AND;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.exprKind;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
 import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.SIMPLE;
@@ -60,7 +59,7 @@ public class ExposeDerivedTableSource implements RelationMutator {
     final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
     final TableSource source = node.get(RESOLVED_TABLE_SOURCE);
 
-    final Set<ColumnRef> usedColumn = TableAccessAnalyzer.analyze(scope.queryNode(), source, false);
+    final Set<ColumnRef> usedColumn = ColumnAccessAnalyzer.analyze(scope.queryNode(), source, false);
     for (ColumnRef columnRef : usedColumn) {
       assert source.equals(columnRef.source()) && columnRef.refItem() != null;
       if (exprKind(columnRef.refItem().expr()) != SQLExpr.Kind.COLUMN_REF) return false;
@@ -120,15 +119,18 @@ public class ExposeDerivedTableSource implements RelationMutator {
   public SQLNode modifyAST(Statement stmt, SQLNode root) {
     final SQLNode targetNode = target.locateNodeIn(root);
     final TableSource targetSource = targetNode.get(RESOLVED_TABLE_SOURCE);
-    final SQLNode innerQuery = targetNode.get(DERIVED_SUBQUERY).get(QUERY_BODY); // QUERY_SPEC
-    final QueryScope innerScope = innerQuery.get(RESOLVED_QUERY_SCOPE);
+    final SQLNode innerQuery = targetNode.get(DERIVED_SUBQUERY);
+    final SQLNode innerQuerySpec = innerQuery.get(QUERY_BODY); // QUERY_SPEC
+    final QueryScope innerScope = innerQuerySpec.get(RESOLVED_QUERY_SCOPE);
     final QueryScope outerScope = targetNode.get(RESOLVED_QUERY_SCOPE);
     final SQLNode outerQuery = outerScope.queryNode();
     final SQLNode parent = targetNode.parent();
     final SQLNode condNode = isJoined(parent) ? parent.get(JOINED_ON) : null;
     final JoinType joinType = isJoined(parent) ? parent.get(JOINED_TYPE) : null;
-    final SQLNode fromNode = innerQuery.get(QUERY_SPEC_FROM);
-    final SQLNode whereNode = innerQuery.get(QUERY_SPEC_WHERE);
+    final SQLNode fromNode = innerQuerySpec.get(QUERY_SPEC_FROM);
+    final SQLNode whereNode = innerQuerySpec.get(QUERY_SPEC_WHERE);
+
+    final boolean isOnlyTable = targetNode.parent().type() == Type.QUERY_SPEC;
 
     // e.g. select * from (select a.i as x from a where a.j = 1) b where b.x = 3
 
@@ -162,6 +164,8 @@ public class ExposeDerivedTableSource implements RelationMutator {
     // again, all names must be already corrected
     if (whereNode != null) AppendPredicateToClause.build(whereNode, WHERE, AND).apply(outerQuery);
 
+    if (isOnlyTable) mergeOrderAndLimit(outerQuery, innerQuery);
+
     Resolve.build().apply(stmt);
     return root;
   }
@@ -194,6 +198,52 @@ public class ExposeDerivedTableSource implements RelationMutator {
 
     return JoinCondition.of(
         cond.node(), newThisRelation, otherRelation, newThisColumn, otherColumn);
+  }
+
+  private void mergeOrderAndLimit(SQLNode outer, SQLNode inner) {
+    final SQLNode innerLimit = inner.get(QUERY_LIMIT);
+    final SQLNode outerLimit = outer.get(QUERY_LIMIT);
+
+    final SQLNode innerOffset = inner.get(QUERY_OFFSET);
+    final SQLNode outerOffset = outer.get(QUERY_OFFSET);
+
+    final List<SQLNode> innerOrderBy = inner.get(QUERY_ORDER_BY);
+    final List<SQLNode> outerOrderBy = outer.get(QUERY_ORDER_BY);
+
+    if (innerLimit == null) return;
+
+    outer.put(QUERY_ORDER_BY, mergeOrderBy(outerOrderBy, innerOrderBy));
+    outer.put(QUERY_LIMIT, mergeLimit(outerLimit, innerLimit));
+    outer.put(QUERY_OFFSET, mergeOffset(outerOffset, innerOffset));
+  }
+
+  private SQLNode mergeLimit(SQLNode outerLimit, SQLNode innerLimit) {
+    if (outerLimit == null) return innerLimit;
+
+    final Object outerValue = outerLimit.get(LITERAL_VALUE);
+    final Object innerValue = innerLimit.get(LITERAL_VALUE);
+    if (!(outerValue instanceof Integer)) return outerLimit;
+    if (!(innerValue instanceof Integer)) return innerLimit;
+    return (int) outerValue < (int) innerValue ? outerLimit : innerLimit;
+  }
+
+  private SQLNode mergeOffset(SQLNode outerOffset, SQLNode innerOffset) {
+    if (outerOffset == null) return innerOffset;
+    if (innerOffset == null) return outerOffset;
+    final Object outerValue = outerOffset.get(LITERAL_VALUE);
+    final Object innerValue = innerOffset.get(LITERAL_VALUE);
+    if (!(outerValue instanceof Integer)) return outerOffset;
+    if (!(innerValue instanceof Integer)) return innerOffset;
+    return literal(LiteralType.INTEGER, (int) outerValue + (int) innerValue);
+  }
+
+  private List<SQLNode> mergeOrderBy(List<SQLNode> outerOrderBy, List<SQLNode> innerOrderBy) {
+    if (isEmpty(outerOrderBy)) return innerOrderBy;
+    if (isEmpty(innerOrderBy)) return outerOrderBy;
+    final List<SQLNode> orderBy = new ArrayList<>(outerOrderBy.size() + innerOrderBy.size());
+    orderBy.addAll(innerOrderBy);
+    orderBy.addAll(outerOrderBy);
+    return orderBy;
   }
 
   @Override

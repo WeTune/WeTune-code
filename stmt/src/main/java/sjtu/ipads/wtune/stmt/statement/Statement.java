@@ -23,10 +23,16 @@ public class Statement implements Attrs<Statement> {
   public static final String KEY_STMT_ID = "stmtId";
   public static final String KEY_RAW_SQL = "rawSql";
 
-  public static final String TAG_BASE = "base";
   public static final String TAG_OPT = "opt";
-  public static final String TAG_INDEX = "index";
+
+  public static final String TAG_BASE = "base";
   public static final String TAG_PATCHED = "patched";
+  public static final String TAG_BASE_B = "baseB";
+  public static final String TAG_BASE_C = "baseC";
+  public static final String TAG_BASE_D = "baseD";
+  public static final String TAG_OPT_B = "optB";
+  public static final String TAG_OPT_C = "optC";
+  public static final String TAG_OPT_D = "optD";
 
   private String appName;
   private int stmtId;

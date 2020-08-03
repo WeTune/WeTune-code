@@ -10,9 +10,9 @@ import sjtu.ipads.wtune.stmt.statement.Statement;
 import java.util.List;
 
 public class ReconfigureAll implements Task {
+
   @Override
   public void doTask(String appName) {
-
     final List<Statement> stmts = Statement.findByApp(appName);
     final ReconfigurationOutput output = Reconfiguration.reconfigure(appName, stmts);
 
@@ -20,12 +20,11 @@ public class ReconfigureAll implements Task {
 
     final SchemaPatchDao dao = SchemaPatchDao.instance();
     dao.beginBatch();
-    dao.truncate();
+    dao.truncate(appName);
     output.patches().forEach(SchemaPatch::save);
     dao.endBatch();
 
     ScriptUtils.genSchemaPatch(output.patches(), appName);
-    //    final Statement stmt = Statement.findOne("eladmin", 104);
-    //    Reconfiguration.reconfigure(null, Collections.singletonList(stmt));
+    ScriptUtils.genEngineChange(output.engineHints, appName);
   }
 }

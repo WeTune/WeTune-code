@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
 import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
+import sjtu.ipads.wtune.stmt.schema.Table;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -23,7 +25,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.stmt.statement.Statement.TAG_INDEX;
 import static sjtu.ipads.wtune.stmt.statement.Statement.TAG_OPT;
 
 public class ScriptUtils {
@@ -57,9 +58,8 @@ public class ScriptUtils {
 
   public static void genWorkload(String appName, String tag) {
     List<Statement> stmts = Statement.findByApp(appName);
-    if ("index".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmts);
-    if ("opt".equals(tag))
-      stmts = listMap(it -> coalesce(it.alt(TAG_OPT), it.alt(TAG_INDEX), it), stmts);
+    //    if ("index".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmts);
+    if ("opt".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_OPT), it), stmts);
     for (Statement stmt : stmts) {
       stmt.retrofitStandard();
       stmt.mutate(SelectItemNormalizer.class);
@@ -118,10 +118,28 @@ public class ScriptUtils {
 
     try (final PrintWriter writer =
         new PrintWriter(
-            Files.newBufferedWriter(
-                directory.resolve("unpatch.sql"), CREATE, TRUNCATE_EXISTING))) {
+            Files.newBufferedWriter(directory.resolve("unpatch.sql"), CREATE, TRUNCATE_EXISTING))) {
       new OutputImpl(writer).accept(new PatchesGen(patches, false));
       writer.flush();
+
+    } catch (IOException e) {
+      throw new StmtException(e);
+    }
+  }
+
+  public static void genEngineChange(Map<Table, String> changes, String appName) {
+    genEngineChange(changes, Setup.current().outputDir(), appName);
+  }
+
+  public static void genEngineChange(Map<Table, String> changes, Path outputDir, String appName) {
+    final Path directory = outputDir.resolve(appName);
+    directory.toFile().mkdir();
+
+    try (final PrintWriter writer =
+        new PrintWriter(
+            Files.newBufferedWriter(directory.resolve("engine.sql"), CREATE, TRUNCATE_EXISTING))) {
+      for (var pair : changes.entrySet())
+        writer.printf("%s.%s -> %s\n", appName, pair.getKey().tableName(), pair.getValue());
 
     } catch (IOException e) {
       throw new StmtException(e);

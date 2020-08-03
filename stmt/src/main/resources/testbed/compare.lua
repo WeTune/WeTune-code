@@ -16,15 +16,15 @@ local function shouldEarlyStop(stmt, wtune)
 end
 
 local function throttleSlowStmt(elapsed)
-    if elapsed >= 100000000 then
-        -- 0.1s
-        return 20
+    if elapsed >= 10000000000 then
+        -- 10s
+        return 1
     elseif elapsed >= 1000000000 then
         -- 1s
         return 3
-    elseif elapsed >= 10000000000 then
-        -- 10s
-        return 1
+    elseif elapsed >= 100000000 then
+        -- 0.1s
+        return 20
     end
 end
 

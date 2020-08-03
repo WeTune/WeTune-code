@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.bootstrap;
 
 import sjtu.ipads.wtune.stmt.Setup;
+import sjtu.ipads.wtune.stmt.statement.Issue;
 import sjtu.ipads.wtune.stmt.statement.Statement;
 import sjtu.ipads.wtune.systhesis.Synthesis;
 import sjtu.ipads.wtune.systhesis.SynthesisOutput;
@@ -12,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.bootstrap.FastRecycleStmtIterator.fastRecycleIter;
 
@@ -31,13 +33,13 @@ public class SynthesisAll implements Task {
 
   private int target = -1;
   private int continueFrom = -1;
+  private boolean checkKnown = false;
 
   private PrintWriter statOut;
   private PrintWriter optStmtOut;
 
-  private void prepareOutput(String appName) {
+  private void prepareOutput(String appName, boolean append) {
     final Path dir = Setup.current().outputDir();
-    final boolean append = target != -1 || continueFrom != -1;
     try {
       statOut =
           new PrintWriter(
@@ -72,20 +74,23 @@ public class SynthesisAll implements Task {
 
   private void outputOpt(SynthesisOutput output) {
     final List<Statement> optimized = output.optimized;
+    final List<Integer> ranking = output.ranking;
     for (int i = 0; i < optimized.size(); i++) {
       final Statement opt = optimized.get(i);
+      final Integer r = ranking.get(i);
       final long baseP50 = output.baseP50;
       final Long optP50 = output.optP50.get(i);
       final double improvement = (double) (baseP50 - optP50) / baseP50;
       optStmtOut.printf(
-          "%s,%d,%d,%d,%d,%f,\"%s\"\n",
+          "%s,%d,%d,%d,%d,%f,\"%s\",%d\n",
           output.base.appName(),
           output.base.stmtId(),
           i,
           baseP50,
           optP50,
           improvement,
-          opt.parsed().toString().replaceAll("\"", "\"\""));
+          opt.parsed().toString().replaceAll("\"", "\"\""),
+          r);
     }
   }
 
@@ -101,17 +106,14 @@ public class SynthesisAll implements Task {
         continueFrom = Integer.parseInt(arg.substring("--continue=".length()));
       else if (arg.startsWith("--target="))
         target = Integer.parseInt(arg.substring("--target=".length()));
+      else if (arg.startsWith("--checkKnown")) checkKnown = true;
   }
 
-  @Override
-  public void doTask(String appName) {
-    prepareOutput(appName);
+  public void doTask0(String appName, List<Statement> stmts, boolean appendOutput) {
+    prepareOutput(appName, appendOutput);
 
     final List<Integer> failed = new ArrayList<>();
-    for (Statement stmt : fastRecycleIter(Statement.findByApp(appName))) {
-      if (stmt.stmtId() < continueFrom) continue;
-      if (target != -1 && target != stmt.stmtId()) continue;
-
+    for (Statement stmt : fastRecycleIter(stmts)) {
       try {
         final SynthesisOutput output = Synthesis.synthesis(stmt);
         if (output.optimized.isEmpty()) continue;
@@ -127,5 +129,30 @@ public class SynthesisAll implements Task {
     closeOutput();
 
     for (Integer id : failed) System.out.printf("failed: %s-%d\n", appName, id);
+  }
+
+  @Override
+  public void doTask(String appName) {
+    if (target != -1) {
+      final List<Statement> stmt = new ArrayList<>();
+      stmt.add(Statement.findOne(appName, target));
+      doTask0(appName, stmt, true);
+    } else if (checkKnown) {
+      doTask0(
+          appName,
+          Issue.findByApp(appName).stream()
+              .dropWhile(it -> it.stmtId() < continueFrom)
+              .map(Issue::stmt)
+              .collect(Collectors.toList()),
+          false);
+
+    } else {
+      doTask0(
+          appName,
+          Statement.findByApp(appName).stream()
+              .dropWhile(it -> it.stmtId() < continueFrom)
+              .collect(Collectors.toList()),
+          continueFrom != -1);
+    }
   }
 }

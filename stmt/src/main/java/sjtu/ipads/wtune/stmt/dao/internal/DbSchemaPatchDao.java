@@ -31,7 +31,7 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
               + "WHERE patch_app = ?",
           KEY_APP, KEY_TYPE, KEY_TABLE_NAME, KEY_COLUMNS, KEY_SOURCE);
   private static final String DELETE_GENERATED =
-      "DELETE FROM wtune_schema_patches WHERE patch_source <> 'manual'";
+      "DELETE FROM wtune_schema_patches WHERE patch_source <> 'manual' AND patch_app = ?";
   private static final String INSERT =
       "INSERT OR REPLACE INTO wtune_schema_patches (patch_app, patch_type, patch_table_name, patch_columns_name, patch_source) "
           + "VALUES (?, ?, ?, ?, ?)";
@@ -56,9 +56,12 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
   }
 
   @Override
-  public void truncate() {
+  public void truncate(String appName) {
     try {
-      prepare(DELETE_GENERATED).executeUpdate();
+      final PreparedStatement ps = prepare(DELETE_GENERATED);
+      ps.setString(1, appName);
+      ps.executeUpdate();
+
     } catch (SQLException throwables) {
       throw new StmtException(throwables);
     }

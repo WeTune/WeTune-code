@@ -8,6 +8,7 @@ import java.util.List;
 public class SynthesisOutput {
   public Statement base = null;
   public List<Statement> optimized = new ArrayList<>();
+  public List<Integer> ranking = new ArrayList<>();
 
   public long baseP50 = -1;
   public List<Long> optP50 = new ArrayList<>();

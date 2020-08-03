@@ -15,17 +15,15 @@ public class UpdateDb implements Task {
 
     TimingDao.instance().beginBatch();
 
-    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_BASE);
-    app.timing(TAG_BASE).forEach(Timing::save);
-
-    //    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_INDEX);
-    //    app.timing(TAG_INDEX).forEach(Timing::save);
-
-    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_OPT);
-    app.timing(TAG_OPT).forEach(Timing::save);
-
-    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", appName, TAG_PATCHED);
-    app.timing(TAG_PATCHED).forEach(Timing::save);
+    updateTiming(app, TAG_BASE);
+//    updateTiming(app, TAG_OPT);
+    updateTiming(app, TAG_PATCHED);
+    updateTiming(app, TAG_BASE_B);
+    updateTiming(app, TAG_BASE_C);
+    updateTiming(app, TAG_BASE_D);
+    updateTiming(app, TAG_OPT_B);
+    updateTiming(app, TAG_OPT_C);
+    updateTiming(app, TAG_OPT_D);
 
     TimingDao.instance().endBatch();
 
@@ -35,5 +33,10 @@ public class UpdateDb implements Task {
     app.fingerprints().forEach(OutputFingerprint::save);
 
     FingerprintDao.instance().endBatch();
+  }
+
+  private static final void updateTiming(AppContext app, String tag) {
+    System.out.printf("[UpdateDb] updating perf from %s/eval.%s\n", app.name(), tag);
+    app.timing(tag).forEach(Timing::save);
   }
 }

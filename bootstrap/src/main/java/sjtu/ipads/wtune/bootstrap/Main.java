@@ -2,8 +2,6 @@ package sjtu.ipads.wtune.bootstrap;
 
 import sjtu.ipads.wtune.stmt.DefaultSetup;
 
-import java.util.Arrays;
-
 import static java.util.Arrays.binarySearch;
 import static java.util.Arrays.copyOfRange;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
@@ -78,6 +76,9 @@ public class Main {
         break;
       case "reconfigureall":
         task = new ReconfigureAll();
+        break;
+      case "checkissue":
+        task = new CheckSynthesisIssues();
         break;
       default:
         assertFalse();

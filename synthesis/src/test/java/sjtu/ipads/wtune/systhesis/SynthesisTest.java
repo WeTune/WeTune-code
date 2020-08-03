@@ -14,6 +14,6 @@ class SynthesisTest {
 
   @Test
   void testBroadleaf199() {
-    Synthesis.synthesis(Statement.findOne("discourse", 1761));
+    Synthesis.synthesis(Statement.findOne("broadleaf", 119));
   }
 }
