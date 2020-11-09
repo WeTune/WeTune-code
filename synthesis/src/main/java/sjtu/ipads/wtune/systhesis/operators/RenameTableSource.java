@@ -33,7 +33,7 @@ public class RenameTableSource implements Operator, SQLVisitor {
     final ColumnRef cRef = columnRef.get(RESOLVED_COLUMN_REF);
     if (cRef == null) return false;
     if ((recursive && cRef.isFrom(source)) || (!recursive && source.equals(cRef.source())))
-      cRef.node().get(COLUMN_REF_COLUMN).put(COLUMN_NAME_TABLE, name);
+      columnRef.get(COLUMN_REF_COLUMN).put(COLUMN_NAME_TABLE, name);
     return false;
   }
 

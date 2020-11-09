@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.systhesis.relation;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
@@ -40,7 +41,7 @@ class InlineSubqueryTest {
       op.modifyAST(copy, copy.parsed());
 
       assertEquals(
-          "SELECT 1 FROM `a` INNER JOIN (SELECT `x` FROM `b`) AS `_inlined_1_1` ON `a`.`i` = `_inlined_1_1`.`x`",
+          "SELECT 1 FROM `a` INNER JOIN (SELECT `x` AS `x` FROM `b`) AS `_inlined_1_1` ON `a`.`i` = `_inlined_1_1`.`x`",
           copy.parsed().toString());
       assertEquals(3, graph.graph().nodes().size());
       assertEquals(1, graph.graph().edges().size());

@@ -80,6 +80,9 @@ public class Main {
       case "checkissue":
         task = new CheckSynthesisIssues();
         break;
+      case "temp":
+        task = new TempTask();
+        break;
       default:
         assertFalse();
         return;

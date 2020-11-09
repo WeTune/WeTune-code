@@ -29,7 +29,7 @@ class DropDistinctTest {
       stmt.setRawSql("select distinct a.i from a join b");
       stmt.retrofitStandard();
       DropDistinct.build().apply(stmt);
-      assertEquals("SELECT `a`.`i` FROM `a` INNER JOIN `b`", stmt.parsed().toString());
+      assertEquals("SELECT `a`.`i` AS `i` FROM `a` INNER JOIN `b`", stmt.parsed().toString());
     }
   }
 }

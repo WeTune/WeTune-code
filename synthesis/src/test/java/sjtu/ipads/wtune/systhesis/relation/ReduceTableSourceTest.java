@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.systhesis.relation;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.SQLTableSource;
@@ -51,7 +52,7 @@ class ReduceTableSourceTest {
       op.modifyAST(copy, copy.parsed());
 
       assertEquals(
-          "SELECT `c`.`x` AS `i` FROM (SELECT `i`, `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
+          "SELECT `c`.`x` AS `i` FROM (SELECT `i` AS `i`, `x` AS `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y`) AS `c` "
               + "WHERE EXISTS (SELECT 1 FROM `b` WHERE `c`.`x` = 4)",
           copy.parsed().toString());
       assertEquals(4, graph.graph().nodes().size());
@@ -91,7 +92,7 @@ class ReduceTableSourceTest {
       op.modifyAST(copy, copy.parsed());
 
       assertEquals(
-          "SELECT `a`.`j` FROM `a` INNER JOIN `c` ON `c`.`u` = `a`.`i` WHERE `c`.`v` = '123'",
+          "SELECT `a`.`j` AS `j` FROM `a` INNER JOIN `c` ON `c`.`u` = `a`.`i` WHERE `c`.`v` = '123'",
           copy.parsed().toString());
 
       assertEquals(2, graph.graph().nodes().size());

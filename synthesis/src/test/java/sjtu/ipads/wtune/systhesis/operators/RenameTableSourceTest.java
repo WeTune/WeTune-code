@@ -40,11 +40,11 @@ class RenameTableSourceTest {
       Resolve.build().apply(stmt);
 
       assertEquals(
-          "SELECT `m`.`i`, `m`.`j` FROM `a` AS `m` "
+          "SELECT `m`.`i` AS `i`, `m`.`j` AS `j` FROM `a` AS `m` "
               + "LEFT JOIN `b` ON `m`.`i` = `b`.`x` "
               + "WHERE `m`.`j` = 1 "
               + "AND EXISTS (SELECT 1 FROM `b` WHERE `b`.`z` = `m`.`k` "
-              + "AND EXISTS (SELECT `a`.`i` FROM `a`)) "
+              + "AND EXISTS (SELECT `a`.`i` AS `i` FROM `a`)) "
               + "GROUP BY `m`.`j` "
               + "ORDER BY `m`.`j`",
           stmt.parsed().toString());
@@ -65,7 +65,7 @@ class RenameTableSourceTest {
       RenameTableSource.build(tableSource, "m", true).apply(stmt);
 
       assertEquals(
-          "SELECT `m`.`i` "
+          "SELECT `m`.`i` AS `i` "
               + "FROM (SELECT `m`.`j` AS `i` FROM `a` AS `m` WHERE `m`.`k` = 3) AS `b`",
           stmt.parsed().toString());
     }

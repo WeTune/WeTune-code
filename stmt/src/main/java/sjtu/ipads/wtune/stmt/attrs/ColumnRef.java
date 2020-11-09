@@ -110,12 +110,14 @@ public class ColumnRef {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ColumnRef other = (ColumnRef) o;
-    return nodeEquals(node, other.node);
+    return refEquals(other);
+    //    return nodeEquals(node, other.node);
   }
 
   @Override
   public int hashCode() {
-    return nodeHash(node);
+    return refHash();
+    //    return nodeHash(node);
   }
 
   @Override
@@ -138,17 +140,21 @@ public class ColumnRef {
       this.ref = ref;
     }
 
+    public ColumnRef self() {
+      return ref;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
-      Identity identity = (Identity) o;
-      return ref.refEquals(identity.ref);
+      Identity other = (Identity) o;
+      return nodeEquals(ref.node(), other.ref.node());
     }
 
     @Override
     public int hashCode() {
-      return ref.refHash();
+      return nodeHash(ref.node());
     }
   }
 }

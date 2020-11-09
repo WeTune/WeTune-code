@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.systhesis.relation;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.stmt.Setup;
@@ -79,13 +80,13 @@ class RelationMutationTest {
 
     assertEquals(3, output.size());
     assertEquals(
-        "SELECT `a`.`i`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
+        "SELECT `a`.`i` AS `i`, `b`.`x` AS `x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
         stmt.parsed().toString());
     assertEquals(
-        "SELECT `a`.`i`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
+        "SELECT `a`.`i` AS `i`, `b`.`x` AS `x` FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` WHERE `a`.`i` = 1",
         output.get(0).parsed().toString());
-    final String expect1 = "SELECT `a`.`i`, `a`.`i` AS `x` FROM `a` WHERE `a`.`i` = 1";
-    final String expect2 = "SELECT `b`.`x` AS `i`, `b`.`x` FROM `b` WHERE `b`.`x` = 1";
+    final String expect1 = "SELECT `a`.`i` AS `i`, `a`.`i` AS `x` FROM `a` WHERE `a`.`i` = 1";
+    final String expect2 = "SELECT `b`.`x` AS `i`, `b`.`x` AS `x` FROM `b` WHERE `b`.`x` = 1";
     final String output1 = output.get(1).parsed().toString();
     final String output2 = output.get(2).parsed().toString();
     System.out.println(output1);
@@ -111,17 +112,17 @@ class RelationMutationTest {
 
     assertEquals(5, output.size());
     assertEquals(
-        "SELECT 1 FROM `a` WHERE `a`.`i` IN (SELECT `b`.`x` FROM `b` WHERE `b`.`y` = 2)",
+        "SELECT 1 FROM `a` WHERE `a`.`i` IN (SELECT `b`.`x` AS `x` FROM `b` WHERE `b`.`y` = 2)",
         stmt.parsed().toString());
     final Set<String> expectations =
         new HashSet<>(
             Set.of(
-                "SELECT 1 FROM `a` WHERE `a`.`i` IN (SELECT `b`.`x` FROM `b` WHERE `b`.`y` = 2)",
-                "SELECT 1 FROM `a` INNER JOIN (SELECT `b`.`x` FROM `b` WHERE `b`.`y` = 2) AS `_inlined_1_1` ON `a`.`i` = "
+                "SELECT 1 FROM `a` WHERE `a`.`i` IN (SELECT `b`.`x` AS `x` FROM `b` WHERE `b`.`y` = 2)",
+                "SELECT 1 FROM `a` INNER JOIN (SELECT `b`.`x` AS `x` FROM `b` WHERE `b`.`y` = 2) AS `_inlined_1_1` ON `a`.`i` = "
                     + "`_inlined_1_1`.`x`",
                 "SELECT 1 FROM `a` INNER JOIN `b` AS `b_exposed_1_1` ON `a`.`i` = `b_exposed_1_1`.`x` WHERE "
                     + "`b_exposed_1_1`.`y` = 2",
-                "SELECT 1 FROM (SELECT `b`.`x` FROM `b` WHERE `b`.`y` = 2) AS `_inlined_1_1`",
+                "SELECT 1 FROM (SELECT `b`.`x` AS `x` FROM `b` WHERE `b`.`y` = 2) AS `_inlined_1_1`",
                 "SELECT 1 FROM `b` AS `b_exposed_1_1` WHERE `b_exposed_1_1`.`y` = 2"));
     for (Statement statement : output) expectations.remove(statement.parsed().toString());
     assertTrue(expectations.isEmpty());
@@ -215,7 +216,7 @@ class RelationMutationTest {
   void diaspora124() {
     doTest(
         Statement.findOne("diaspora", 124),
-        "SELECT `conversations`.`updated_at`, `conversations`.`subject`, `conversations`.`guid`, `conversations`.`created_at`, `conversations`.`id`, `conversations`.`author_id` FROM `conversations` INNER JOIN `conversation_visibilities` ON `conversations`.`id` = `conversation_visibilities`.`conversation_id` INNER JOIN `people` ON `conversation_visibilities`.`person_id` = `people`.`id` WHERE `people`.`owner_id` = 1 AND `conversation_visibilities`.`person_id` = 1 AND `conversation_visibilities`.`conversation_id` = 202 ORDER BY `conversations`.`id` ASC LIMIT 1");
+        "SELECT `conversations`.`updated_at` AS `updated_at`, `conversations`.`subject` AS `subject`, `conversations`.`guid` AS `guid`, `conversations`.`created_at` AS `created_at`, `conversations`.`id` AS `id`, `conversations`.`author_id` AS `author_id` FROM `conversations` INNER JOIN `conversation_visibilities` ON `conversations`.`id` = `conversation_visibilities`.`conversation_id` INNER JOIN `people` ON `conversation_visibilities`.`person_id` = `people`.`id` WHERE `people`.`owner_id` = 1 AND `conversation_visibilities`.`person_id` = 1 AND `conversation_visibilities`.`conversation_id` = 202 ORDER BY `conversations`.`id` ASC LIMIT 1");
   }
 
   @Test
@@ -443,7 +444,7 @@ class RelationMutationTest {
   void guns26() {
     doTest(
         Statement.findOne("guns", 26),
-        "SELECT `r`.`role_id` AS `id`, `r`.`pid`, `r`.`name`, CASE WHEN (`r`.`pid` = 0 OR `r`.`pid` IS NULL) THEN 'true' ELSE 'false' END AS `open`, CASE WHEN (`r`.`role_id` = 0 OR `r`.`role_id` IS NULL) THEN 'false' ELSE 'true' END AS `checked` FROM `sys_role` AS `r` WHERE `r`.`role_id` IN (1) ORDER BY `pid`, `sort` ASC");
+        "SELECT `r`.`role_id` AS `id`, `r`.`pid` AS `pid`, `r`.`name` AS `name`, CASE WHEN (`r`.`pid` = 0 OR `r`.`pid` IS NULL) THEN 'true' ELSE 'false' END AS `open`, CASE WHEN (`r`.`role_id` = 0 OR `r`.`role_id` IS NULL) THEN 'false' ELSE 'true' END AS `checked` FROM `sys_role` AS `r` WHERE `r`.`role_id` IN (1) ORDER BY `pid`, `sort` ASC");
   }
 
   @Test
@@ -464,7 +465,7 @@ class RelationMutationTest {
   void lobsters92() {
     doTest(
         Statement.findOne("lobsters", 92),
-        "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND `comments`.`story_id` IN (67, 68, 69, 71)");
+        "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND `comments`.`story_id` IN (67, 68, 69, 71) AND MATCH `comment` AGAINST ('comment2 comment3' IN BOOLEAN MODE)");
   }
 
   @Test
@@ -530,7 +531,7 @@ class RelationMutationTest {
   void solidus206() {
     doTest(
         Statement.findOne("solidus", 206),
-        "SELECT `items`.`variant_id`, `items`.`count_on_hand`, `items`.`updated_at`, `items`.`stock_location_id`, `items`.`created_at`, `items`.`id`, `items`.`backorderable`, `items`.`deleted_at` FROM `spree_stock_items` AS `items` INNER JOIN `spree_stock_items` AS `i_exposed_1_1` ON `items`.`id` = `i_exposed_1_1`.`id` LEFT JOIN `spree_stock_locations` AS `spree_stock_locations_exposed_1_1` ON `spree_stock_locations_exposed_1_1`.`id` = `i_exposed_1_1`.`stock_location_id` WHERE `items`.`deleted_at` IS NULL AND `items`.`stock_location_id` = 23 AND `spree_stock_locations_exposed_1_1`.`active` = TRUE LIMIT 25 OFFSET 0");
+        "SELECT `items`.`variant_id` AS `variant_id`, `items`.`count_on_hand` AS `count_on_hand`, `items`.`updated_at` AS `updated_at`, `items`.`stock_location_id` AS `stock_location_id`, `items`.`created_at` AS `created_at`, `items`.`id` AS `id`, `items`.`backorderable` AS `backorderable`, `items`.`deleted_at` AS `deleted_at` FROM `spree_stock_items` AS `items` INNER JOIN `spree_stock_items` AS `i_exposed_1_1` ON `items`.`id` = `i_exposed_1_1`.`id` LEFT JOIN `spree_stock_locations` AS `spree_stock_locations_exposed_1_1` ON `spree_stock_locations_exposed_1_1`.`id` = `i_exposed_1_1`.`stock_location_id` WHERE `items`.`deleted_at` IS NULL AND `items`.`stock_location_id` = 23 AND `spree_stock_locations_exposed_1_1`.`active` = TRUE LIMIT 25 OFFSET 0");
   }
 
   @Test
@@ -544,6 +545,6 @@ class RelationMutationTest {
   void solidus475() {
     doTest(
         Statement.findOne("solidus", 475),
-        "SELECT `items`.`variant_id`, `items`.`count_on_hand`, `items`.`updated_at`, `items`.`stock_location_id`, `items`.`created_at`, `items`.`id`, `items`.`backorderable`, `items`.`deleted_at` FROM `spree_stock_items` AS `items` INNER JOIN `spree_stock_items` AS `i_exposed_1_1` ON `items`.`id` = `i_exposed_1_1`.`id` LEFT JOIN `spree_stock_locations` AS `spree_stock_locations_exposed_1_1` ON `spree_stock_locations_exposed_1_1`.`id` = `i_exposed_1_1`.`stock_location_id` WHERE `items`.`deleted_at` IS NULL AND `items`.`stock_location_id` = 26 AND `items`.`id` = 68 AND `spree_stock_locations_exposed_1_1`.`active` = TRUE LIMIT 1");
+        "SELECT `items`.`variant_id` AS `variant_id`, `items`.`count_on_hand` AS `count_on_hand`, `items`.`updated_at` AS `updated_at`, `items`.`stock_location_id` AS `stock_location_id`, `items`.`created_at` AS `created_at`, `items`.`id` AS `id`, `items`.`backorderable` AS `backorderable`, `items`.`deleted_at` AS `deleted_at` FROM `spree_stock_items` AS `items` INNER JOIN `spree_stock_items` AS `i_exposed_1_1` ON `items`.`id` = `i_exposed_1_1`.`id` LEFT JOIN `spree_stock_locations` AS `spree_stock_locations_exposed_1_1` ON `spree_stock_locations_exposed_1_1`.`id` = `i_exposed_1_1`.`stock_location_id` WHERE `items`.`deleted_at` IS NULL AND `items`.`stock_location_id` = 26 AND `items`.`id` = 68 AND `spree_stock_locations_exposed_1_1`.`active` = TRUE LIMIT 1");
   }
 }

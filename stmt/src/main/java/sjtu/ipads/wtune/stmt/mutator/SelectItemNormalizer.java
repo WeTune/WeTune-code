@@ -162,7 +162,7 @@ public class SelectItemNormalizer implements Mutator, SQLVisitor {
 
       for (SQLNode refNode : ColumnRefCollector.collect(node)) {
         final ColumnRef cRef = refNode.get(RESOLVED_COLUMN_REF);
-        if (cRef.node().get(RESOLVED_QUERY_SCOPE) != scope) continue;
+        if (refNode.get(RESOLVED_QUERY_SCOPE) != scope) continue;
 
         final String alias = genMandatoryAlias(clause, i, dest.size());
         if (cRef.refColumn() != null) {

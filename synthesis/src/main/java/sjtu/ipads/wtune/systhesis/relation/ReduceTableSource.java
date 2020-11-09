@@ -55,7 +55,7 @@ public class ReduceTableSource implements RelationMutator {
     // Only the relations that resides in the same FROM clause (as the target) is counted as
     // neighbours.
     // e.g. FROM a WHERE a.i IN (SELECT b.x FROM b) AND EXISTS (SELECT 1 FROM c WHERE c.u = a.j)
-    // Apparently `a` should be reduced in this statement.
+    // Apparently `a` should not be reduced in this statement.
     // Thus, although `a` is connected with two subqueries in graph, they are not counted as
     // neighbours. Then `a` is considered as isolated so won't be reduced.
     long neighboursCount =
@@ -67,7 +67,8 @@ public class ReduceTableSource implements RelationMutator {
     final TableSource source = targetNode.get(RESOLVED_TABLE_SOURCE);
     // recursive table source resolution is unnecessary
     final Set<ColumnRef> columnRef = ColumnAccessAnalyzer.analyze(scope.queryNode(), source, false);
-    final long usedColumnCount = columnRef.stream().map(ColumnRef::identity).distinct().count();
+    final long usedColumnCount = columnRef.size();
+    // columnRef.stream().map(ColumnRef::identity).distinct().count();
 
     // Condition 3: the number of used columns is 1
     // i.e. the only used column is the one in join condition
@@ -119,7 +120,7 @@ public class ReduceTableSource implements RelationMutator {
     ////   Both is okay.
     final SQLNode targetNode = NodeFinder.find(root, target.node());
     final SQLNode joinNode = targetNode.parent();
-    assert joinNode.get(TABLE_SOURCE_KIND) == SQLTableSource.Kind.JOINED;
+    assert isJoined(joinNode);
     final SQLNode onExpr = joinNode.get(JOINED_ON);
     final var graph = relationGraph.graph();
     final Set<Relation> neighbours = new HashSet<>(graph.adjacentNodes(target));

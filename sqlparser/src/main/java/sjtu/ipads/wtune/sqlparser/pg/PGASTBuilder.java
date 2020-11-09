@@ -333,7 +333,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitGrouping_element(PGParser.Grouping_elementContext ctx) {
-    if (ctx.vex() != null) return ctx.vex().accept(this);
+    if (ctx.vex() != null) return SQLNode.groupItem(ctx.vex().accept(this));
     else return null; // TODO
   }
 

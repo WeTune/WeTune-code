@@ -363,7 +363,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (groupByClause != null) {
       final OLAPOption olapOption = parseOLAPOption(groupByClause.olapOption());
       if (olapOption != null) node.put(QUERY_SPEC_OLAP_OPTION, olapOption);
-      node.put(QUERY_SPEC_GROUP_BY, toOrderItems(groupByClause.orderList()));
+      node.put(QUERY_SPEC_GROUP_BY, toGroupItems(groupByClause.orderList()));
     }
 
     final var havingClause = ctx.havingClause();
@@ -1387,6 +1387,14 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   private List<SQLNode> toOrderItems(MySQLParser.OrderListContext ctx) {
     return listMap(this::visitOrderExpression, ctx.orderExpression());
+  }
+
+  private List<SQLNode> toGroupItems(MySQLParser.OrderListContext ctx) {
+    return ctx.orderExpression().stream()
+        .map(MySQLParser.OrderExpressionContext::expr)
+        .map(it -> it.accept(this))
+        .map(SQLNode::groupItem)
+        .collect(Collectors.toList());
   }
 
   private SQLNode toExpr(MySQLParser.ExprContext expr) {

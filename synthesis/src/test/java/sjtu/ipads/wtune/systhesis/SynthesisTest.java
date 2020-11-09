@@ -12,8 +12,9 @@ class SynthesisTest {
     Setup._default().registerAsGlobal();
   }
 
-  @Test
-  void testBroadleaf199() {
-    Synthesis.synthesis(Statement.findOne("broadleaf", 119));
-  }
+//  @Test
+//  void testBroadleaf199() {
+//    Synthesis.synthesis(Statement.findOne("discourse", 449));
+//  }
+//
 }

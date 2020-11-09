@@ -1,8 +1,11 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
+import com.google.common.collect.Multimap;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.Table;
+
+import java.util.Map;
 
 public interface StmtAttrs {
   String ATTR_PREFIX = "stmt.attr.";
@@ -10,6 +13,9 @@ public interface StmtAttrs {
   private static String attrPrefix(String name) {
     return ATTR_PREFIX + name;
   }
+
+  Attrs.Key<Multimap<ColumnRef, ColumnRef>> JOIN_CONDITIONS =
+      Attrs.key2(attrPrefix("joinCond"), Multimap.class);
 
   Attrs.Key<Long> NODE_ID = Attrs.key(attrPrefix("nodeId"), Long.class);
   Attrs.Key<Table> RESOLVED_TABLE = Attrs.key(attrPrefix("resolvedTable"), Table.class);

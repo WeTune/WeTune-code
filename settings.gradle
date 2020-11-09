@@ -1,2 +1,4 @@
 rootProject.name = 'wtune'
-include 'common', 'sqlparser', 'bootstrap', 'stmt', 'synthesis', 'reconfiguration'
+include 'common', 'sqlparser', 'stmt'
+include 'bootstrap', 'synthesis', 'reconfiguration'
+include 'learning'

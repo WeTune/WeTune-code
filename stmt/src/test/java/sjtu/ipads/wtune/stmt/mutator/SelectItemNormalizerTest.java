@@ -33,7 +33,7 @@ class SelectItemNormalizerTest {
     stmt.retrofitStandard();
     stmt.mutate(SelectItemNormalizer.class);
     assertEquals(
-        "SELECT `a`.`i` AS `_primary_0`, `b`.`x` AS `_primary_1`, `c`.`u` AS `_primary_2`, `d`.`_primary_0` AS `_primary_3`, `d`.`_primary_1` AS `_primary_4`, `d`.`_primary_2` AS `_primary_5` FROM `a` INNER JOIN `b` INNER JOIN (SELECT DISTINCT `u`, `v` FROM `c`) AS `c` INNER JOIN (SELECT `p`, `d`.`p` AS `_primary_0`, `d`.`q` AS `_primary_1`, `d`.`r` AS `_primary_2` FROM `d`) AS `d` WHERE EXISTS (SELECT `q` FROM `d`)",
+        "SELECT `a`.`i` AS `_primary_0`, `b`.`x` AS `_primary_1`, `c`.`u` AS `_primary_2`, `d`.`_primary_0` AS `_primary_3`, `d`.`_primary_1` AS `_primary_4`, `d`.`_primary_2` AS `_primary_5` FROM `a` INNER JOIN `b` INNER JOIN (SELECT DISTINCT `u` AS `u`, `v` AS `v` FROM `c`) AS `c` INNER JOIN (SELECT `p` AS `p`, `d`.`p` AS `_primary_0`, `d`.`q` AS `_primary_1`, `d`.`r` AS `_primary_2` FROM `d`) AS `d` WHERE EXISTS (SELECT `q` AS `q` FROM `d`)",
         stmt.parsed().toString());
   }
 

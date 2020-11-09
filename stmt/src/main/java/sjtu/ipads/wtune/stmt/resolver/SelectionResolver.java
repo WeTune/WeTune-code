@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
 import static sjtu.ipads.wtune.stmt.attrs.SelectItem.fromNode;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
@@ -42,25 +43,41 @@ public class SelectionResolver implements Resolver, SQLVisitor {
     final QueryScope scope = querySpec.get(RESOLVED_QUERY_SCOPE);
 
     final List<SQLNode> selectItems = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
-    final List<SQLNode> modifiedSelectItems = new ArrayList<>(selectItems.size());
+    final List<SQLNode> modifiedItems = expandWildcardIfNeed(selectItems);
 
-    for (SQLNode itemNode : selectItems) {
-      final SQLNode expr = itemNode.get(SELECT_ITEM_EXPR);
-      if (exprKind(expr) == Kind.WILDCARD) modifiedSelectItems.addAll(expandWildcard(expr));
-      else modifiedSelectItems.add(itemNode);
-    }
+    if (selectItems != modifiedItems) querySpec.relink();
+    querySpec.put(QUERY_SPEC_SELECT_ITEMS, modifiedItems);
 
-    querySpec.put(QUERY_SPEC_SELECT_ITEMS, modifiedSelectItems);
-    querySpec.relinkAll();
-
-    for (SQLNode item : modifiedSelectItems) {
+    for (SQLNode item : modifiedItems) {
+      addAlias(item);
       scope.setScope(item);
       scope.addSelectItem(fromNode(item));
     }
   }
 
+  private List<SQLNode> expandWildcardIfNeed(List<SQLNode> selectItems) {
+    if (selectItems.stream().allMatch(it -> WILDCARD != exprKind(it.get(SELECT_ITEM_EXPR))))
+      return selectItems;
+
+    final List<SQLNode> modifiedSelectItems = new ArrayList<>(selectItems.size());
+
+    for (SQLNode itemNode : selectItems) {
+      final SQLNode expr = itemNode.get(SELECT_ITEM_EXPR);
+      if (exprKind(expr) == WILDCARD) modifiedSelectItems.addAll(expandWildcard(expr));
+      else modifiedSelectItems.add(itemNode);
+    }
+
+    return modifiedSelectItems;
+  }
+
+  private static void addAlias(SQLNode selectItem) {
+    final SQLNode expr = selectItem.get(SELECT_ITEM_EXPR);
+    if (exprKind(expr) == Kind.COLUMN_REF && selectItem.get(SELECT_ITEM_ALIAS) == null)
+      selectItem.put(SELECT_ITEM_ALIAS, expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
+  }
+
   private List<SQLNode> expandWildcard(SQLNode node) {
-    assert exprKind(node) == Kind.WILDCARD;
+    assert exprKind(node) == WILDCARD;
     final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
     final SQLNode tableId = node.get(WILDCARD_TABLE);
 
@@ -91,6 +108,7 @@ public class SelectionResolver implements Resolver, SQLVisitor {
     final List<SQLNode> items = new ArrayList<>(selections.size());
     for (String selection : selections)
       items.add(selectItem(columnRef(tableSource.name(), selection), null));
+    items.forEach(SQLNode::relinkAll);
     items.forEach(IdResolver::resolve);
     return items;
   }

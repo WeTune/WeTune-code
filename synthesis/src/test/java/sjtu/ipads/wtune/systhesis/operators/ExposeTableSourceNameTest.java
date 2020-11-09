@@ -30,7 +30,7 @@ class ExposeTableSourceNameTest {
       final TableSource target = stmt.parsed().get(RESOLVED_QUERY_SCOPE).tableSources().get("b");
       ExposeTableSourceName.build(target).apply(stmt.parsed());
       assertEquals(
-          "SELECT `b`.`i` FROM "
+          "SELECT `b`.`i` AS `m` FROM "
               + "(SELECT `a`.`i` AS `m`, `a`.`j` AS `n`, `a`.`k` AS `o` "
               + "FROM `a` WHERE `a`.`i` = 0) AS `b` "
               + "WHERE `b`.`j` = 3 "

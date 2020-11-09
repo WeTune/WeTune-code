@@ -36,7 +36,7 @@ class ReplaceColumnRefTest {
       final Operator op = ReplaceColumnRef.build(target, "b", "x");
       op.apply(stmt.parsed());
       assertEquals(
-          "SELECT `b`.`x` AS `i`, `b`.`x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y` "
+          "SELECT `b`.`x` AS `i`, `b`.`x` AS `x` FROM `a` INNER JOIN `b` ON `a`.`j` = `b`.`y` "
               + "WHERE `b`.`x` = 1 ORDER BY `b`.`x`",
           stmt.parsed().toString());
     }

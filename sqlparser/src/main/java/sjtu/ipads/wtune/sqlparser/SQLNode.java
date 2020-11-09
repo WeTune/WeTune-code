@@ -161,6 +161,11 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     return children == null ? emptyList() : children;
   }
 
+  List<SQLNode> children0() {
+    if (children == null) children = new ArrayList<>();
+    return children;
+  }
+
   public void setType(Type type) {
     this.type = type;
   }
@@ -178,11 +183,10 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public void replaceThis(SQLNode replacement) {
     //    dbType = replacement.dbType;
     type = replacement.type;
-    setChildren(new ArrayList<>(replacement.children()));
-
-    final var directAttrs = directAttrs();
     directAttrs.clear();
     directAttrs.putAll(replacement.directAttrs());
+    setChildren(replacement.children());
+    //    relink();
   }
 
   public boolean structChanged() {
@@ -227,7 +231,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
 
   public void setDbTypeRec(String dbType) {
     this.dbType = dbType;
-    this.children.forEach(it -> it.setDbTypeRec(dbType));
+    if (this.children != null) this.children.forEach(it -> it.setDbTypeRec(dbType));
   }
 
   public void accept(SQLVisitor visitor) {
@@ -310,6 +314,7 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     SELECT_ITEM,
     EXPR,
     ORDER_ITEM,
+    GROUP_ITEM,
     WINDOW_SPEC,
     WINDOW_FRAME,
     FRAME_BOUND,
@@ -498,6 +503,12 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
     return node;
   }
 
+  public static SQLNode groupItem(SQLNode expr) {
+    final SQLNode item = new SQLNode(GROUP_ITEM);
+    item.put(GROUP_ITEM_EXPR, expr);
+    return item;
+  }
+
   private static <T> Key<T> attr(Type nodeType, String name, Class<T> clazz) {
     final Key<T> attr =
         Attrs.key(SQL_ATTR_PREFIX + nodeType.name().toLowerCase() + "." + name, clazz);
@@ -621,6 +632,9 @@ public class SQLNode implements Attrs<SQLNode>, Cloneable {
   public static final Key<SQLNode> ORDER_ITEM_EXPR = nodeAttr(ORDER_ITEM, "expr");
   public static final Key<KeyDirection> ORDER_ITEM_DIRECTION =
       attr(ORDER_ITEM, "direction", KeyDirection.class);
+
+  //// GroupItem
+  public static final Key<SQLNode> GROUP_ITEM_EXPR = nodeAttr(GROUP_ITEM, "expr");
 
   //// WindowSpec
   public static final Key<String> WINDOW_SPEC_ALIAS = stringAttr(WINDOW_SPEC, "alias");
