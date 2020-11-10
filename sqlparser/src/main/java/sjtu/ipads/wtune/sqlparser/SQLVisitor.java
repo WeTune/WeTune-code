@@ -326,4 +326,10 @@ public interface SQLVisitor {
   }
 
   default void leaveArray(SQLNode array) {}
+
+  default boolean enterGroupItem(SQLNode groupItem) {
+    return true;
+  }
+
+  default void leaveGroupItem(SQLNode groupItem) {}
 }

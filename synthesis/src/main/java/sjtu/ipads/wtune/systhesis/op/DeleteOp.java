@@ -13,7 +13,7 @@ import sjtu.ipads.wtune.systhesis.op.impl.DeleteImpl;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
+import static sjtu.ipads.wtune.sqlparser.SQLTableSource.isJoined;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 public class DeleteOp implements Op {
@@ -23,38 +23,6 @@ public class DeleteOp implements Op {
   private DeleteOp(OpContext ctx, SQLNode node) {
     this.ctx = ctx;
     this.node = node;
-  }
-
-  public static DeleteOp build(OpContext ctx, SQLNode node) {
-    return new DeleteOp(ctx, node);
-  }
-
-  @Override
-  public OpContext apply(OpContext ctx) {
-    final SQLNode root = ctx.current().parsed();
-    final SQLNode target = NodeFinder.find(root, node);
-
-    if (target.type() == SQLNode.Type.TABLE_SOURCE)
-      replaceTableIfNeed(ctx.current().get(JOIN_CONDITIONS), target);
-
-    DeleteImpl.apply(root, target);
-
-    ctx.addOp(this);
-    ctx.current().reResolve();
-    return ctx;
-  }
-
-  private void replaceTableIfNeed(Multimap<ColumnRef, ColumnRef> joinConds, SQLNode target) {
-    final ColumnRefFixer fixer = new ColumnRefFixer(joinConds, target);
-    // only need to apply fixer within the scope
-    target.get(RESOLVED_QUERY_SCOPE).queryNode().accept(fixer);
-    if (!fixer.allFixed)
-      throw new StmtException(
-          "failed to delete table source <" + target + "> within [" + ctx.current() + "]");
-  }
-
-  Long targetId() {
-    return node.get(NODE_ID);
   }
 
   public static Set<DeleteOp> collectApplicable(OpContext ctx) {
@@ -68,29 +36,49 @@ public class DeleteOp implements Op {
     for (SQLNode candidate : collector.candidates) {
 
       if (candidate.type() == SQLNode.Type.TABLE_SOURCE) {
+        assert !isJoined(candidate);
+
         if (reducibleTables == null) reducibleTables = ReducibleTableAnalyzer.analyze(parsed);
-        if (!containsTable(reducibleTables, candidate)) continue;
+
+        if (!reducibleTables.contains(candidate)) continue;
       }
 
       if (candidate.type() == SQLNode.Type.EXPR)
         if (candidate.get(BOOL_EXPR).isJoinCondition()) continue;
 
-      operations.add(build(ctx, candidate));
+      operations.add(new DeleteOp(ctx, candidate));
     }
 
     return operations;
   }
 
-  private static boolean containsTable(Set<SQLNode> nodes, SQLNode node) {
-    if (isJoined(node))
-      return containsTable(nodes, node.get(JOINED_LEFT))
-          || containsTable(nodes, node.get(JOINED_RIGHT));
-    else return nodes.contains(node);
+  @Override
+  public OpContext apply(OpContext ctx) {
+    final SQLNode root = ctx.current().parsed();
+    final SQLNode target = NodeFinder.find(root, node);
+
+    if (target.type() == SQLNode.Type.TABLE_SOURCE)
+      fixColumnRefIfNeed(ctx.current().get(JOIN_CONDITIONS), target);
+
+    DeleteImpl.apply(root, target);
+
+    ctx.addOp(this);
+    ctx.current().reResolve();
+    return ctx;
   }
 
   @Override
   public String toString() {
     return String.format("DeleteOp(<%d: %s>)", node.get(NODE_ID), node);
+  }
+
+  private void fixColumnRefIfNeed(Multimap<ColumnRef, ColumnRef> joinConds, SQLNode target) {
+    final ColumnRefFixer fixer = new ColumnRefFixer(joinConds, target);
+    // only need to apply fixer within the scope
+    target.get(RESOLVED_QUERY_SCOPE).queryNode().accept(fixer);
+    if (!fixer.allFixed)
+      throw new StmtException(
+          "failed to delete table source <" + target + "> within [" + ctx.current() + "]");
   }
 
   private static class Collector implements SQLVisitor {

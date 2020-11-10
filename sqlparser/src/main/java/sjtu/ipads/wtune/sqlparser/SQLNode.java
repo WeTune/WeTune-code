@@ -108,7 +108,7 @@ import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
 public class SQLNode implements Attrs<SQLNode>, Cloneable {
   private static final System.Logger LOG = System.getLogger("SQL.Core");
 
-  private final Map<String, Object> directAttrs = new HashMap<>();
+  protected final Map<String, Object> directAttrs = new HashMap<>();
 
   @Override
   public Map<String, Object> directAttrs() {

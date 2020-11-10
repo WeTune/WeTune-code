@@ -99,6 +99,9 @@ abstract class VisitorController {
       case FRAME_BOUND:
         return v.enterFrameBound(n);
 
+      case GROUP_ITEM:
+        return v.enterGroupItem(n);
+
       case ORDER_ITEM:
         return v.enterOrderItem(n);
 
@@ -233,6 +236,8 @@ abstract class VisitorController {
         return safeVisitChild(FRAME_BOUND_EXPR, n, v);
       case ORDER_ITEM:
         return safeVisitChild(ORDER_ITEM_EXPR, n, v);
+      case GROUP_ITEM:
+        return safeVisitChild(GROUP_ITEM_EXPR, n, v);
       case SELECT_ITEM:
         return safeVisitChild(SELECT_ITEM_EXPR, n, v);
       case QUERY_SPEC:
@@ -407,6 +412,10 @@ abstract class VisitorController {
 
       case ORDER_ITEM:
         v.leaveOrderItem(n);
+        break;
+
+      case GROUP_ITEM:
+        v.leaveGroupItem(n);
         break;
 
       case SELECT_ITEM:
