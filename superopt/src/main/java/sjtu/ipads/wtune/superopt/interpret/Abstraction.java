@@ -9,8 +9,12 @@ public interface Abstraction<T> {
 
   String name();
 
+  default boolean interpreted(Interpretation interpretation) {
+    return interpretation.interpret(this) != null;
+  }
+
   default T get() {
-    return interpretation().interpret(this);
+    return interpretation() == null ? null : interpretation().interpret(this);
   }
 
   static <T> Abstraction<T> create(String name) {

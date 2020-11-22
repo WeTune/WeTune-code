@@ -1,6 +1,9 @@
-package sjtu.ipads.wtune.superopt;
+package sjtu.ipads.wtune.superopt.operators;
 
-import sjtu.ipads.wtune.superopt.operators.*;
+import sjtu.ipads.wtune.superopt.GraphVisitor;
+import sjtu.ipads.wtune.superopt.relational.Relation;
+import sjtu.ipads.wtune.superopt.impl.Hole;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +19,15 @@ public interface Operator {
 
   boolean setPrev(int idx, Operator prev);
 
-  Relation out();
+  int id();
 
-  Relation[] in();
+  void setId(int id);
 
   Operator copy0();
+
+  RelationSchema outSchema();
+
+  void setOutSchema(RelationSchema schema);
 
   void accept0(GraphVisitor visitor);
 

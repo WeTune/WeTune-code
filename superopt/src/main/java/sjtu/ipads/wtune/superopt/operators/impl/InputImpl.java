@@ -1,12 +1,10 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
-import sjtu.ipads.wtune.superopt.Relation;
+import sjtu.ipads.wtune.superopt.operators.Operator;
+import sjtu.ipads.wtune.superopt.relational.Relation;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.operators.Input;
-
-import java.util.Objects;
+import sjtu.ipads.wtune.superopt.operators.*;
 
 public class InputImpl extends BaseOperator implements Input {
   private final int idx;
@@ -40,6 +38,17 @@ public class InputImpl extends BaseOperator implements Input {
   @Override
   public int index() {
     return idx;
+  }
+
+  @Override
+  public boolean canBeTable() {
+    final Operator next = next();
+    if (next instanceof Agg
+        || next instanceof Join
+        || next instanceof PlainFilter
+        || next instanceof Proj) return true;
+    if (next instanceof SubqueryFilter) return next.prev()[0] == this;
+    return false;
   }
 
   @Override

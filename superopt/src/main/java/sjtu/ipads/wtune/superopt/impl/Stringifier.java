@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Input;
 
 class Stringifier implements GraphVisitor {

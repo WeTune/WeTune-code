@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 
@@ -40,6 +40,7 @@ public class InterpretationContextImpl implements InterpretationContext {
   }
 
   private Interpretation current() {
+    if (interpretations.isEmpty()) interpretations.add(Interpretation.create());
     return interpretations.get(currentIdx);
   }
 

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.interpret;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.impl.InterpretationImpl;
 
 import java.util.Set;

@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.superopt.interpret.impl;
 
+import sjtu.ipads.wtune.superopt.constraint.impl.EqRefConstraint;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 import java.util.*;
@@ -42,7 +43,7 @@ public class InterpretationImpl implements Interpretation {
     if (!addInterpretation0(abs, interpretation, idx)) return false;
     if (!assignEq(abs, interpretation, idx)) return false;
 
-    assignments.add(interpretation);
+    for (Constraint constraint : constraints) if (constraint.recheck(this)) return false;
 
     return true;
   }
@@ -87,7 +88,7 @@ public class InterpretationImpl implements Interpretation {
       if (!constraint.check(this, abs, interpretation)) return false;
 
     ensureSize(assignments, idx);
-    assignments.set(idx, abs);
+    assignments.set(idx, interpretation);
     absMap.put(abs, idx);
 
     return true;
@@ -95,8 +96,8 @@ public class InterpretationImpl implements Interpretation {
 
   private boolean assignEq(Abstraction<?> abs, Object interpretation, int idx) {
     for (Constraint constraint : constraints)
-      if (constraint instanceof EqConstraint) {
-        final EqConstraint eq = (EqConstraint) constraint;
+      if (constraint instanceof EqRefConstraint) {
+        final EqRefConstraint eq = (EqRefConstraint) constraint;
         final Abstraction<?> otherSide = eq.otherSide(abs);
         // here also need to check condition
         // assume we have constraint "c0 = c1" and "c1 is unique"

@@ -1,10 +1,19 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
+import sjtu.ipads.wtune.superopt.relational.Projections;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.operators.Proj;
 
 public class ProjImpl extends BaseOperator implements Proj {
+  private final Abstraction<Projections> projections = Abstraction.create("proj-" + id());
+
+  @Override
+  public Abstraction<Projections> projs() {
+    return projections;
+  }
+
   public static ProjImpl create() {
     return new ProjImpl();
   }

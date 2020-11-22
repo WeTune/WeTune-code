@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.operators;
 
-import sjtu.ipads.wtune.superopt.Operator;
 import sjtu.ipads.wtune.superopt.operators.impl.UnionImpl;
 
 public interface Union extends Operator {

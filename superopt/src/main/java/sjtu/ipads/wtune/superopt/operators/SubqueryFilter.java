@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.operators;
 
-import sjtu.ipads.wtune.superopt.Operator;
 import sjtu.ipads.wtune.superopt.operators.impl.SubqueryFilterImpl;
 
 public interface SubqueryFilter extends Operator {

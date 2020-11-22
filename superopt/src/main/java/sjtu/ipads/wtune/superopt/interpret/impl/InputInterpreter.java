@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.Helper;
-import sjtu.ipads.wtune.superopt.Relation;
+import sjtu.ipads.wtune.superopt.relational.Relation;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 import sjtu.ipads.wtune.superopt.operators.Input;
@@ -26,7 +26,7 @@ public class InputInterpreter {
       for (int i = 0; i < bit.length; i++)
         for (int j = i + 1; j < bit.length; j++)
           if (bit[i] == bit[j])
-            interpretation.addConstraint(Constraint.eq(inputs.get(i), inputs.get(j)));
+            interpretation.addConstraint(Constraint.refEq(inputs.get(i), inputs.get(j)));
     }
 
     graph.mergeInterpretations(interpretations);

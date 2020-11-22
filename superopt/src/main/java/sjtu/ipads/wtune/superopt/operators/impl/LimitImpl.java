@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Limit;
 
 public class LimitImpl extends BaseOperator implements Limit {

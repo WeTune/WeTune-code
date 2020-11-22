@@ -1,9 +1,9 @@
-package sjtu.ipads.wtune.superopt.impl;
+package sjtu.ipads.wtune.superopt.impl.legacy;
 
 import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
 import sjtu.ipads.wtune.superopt.operators.Agg;
+import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Join;
 import sjtu.ipads.wtune.superopt.operators.Proj;
 
@@ -13,8 +13,9 @@ public class OutputEstimator implements GraphVisitor {
   private final Stack<OutputEstimation> stack = new Stack<>();
 
   @Override
-  public void enterEmpty(Operator parent, int idx) {
+  public boolean enterInput(Input input) {
     stack.push(OutputEstimation.init());
+    return false;
   }
 
   @Override

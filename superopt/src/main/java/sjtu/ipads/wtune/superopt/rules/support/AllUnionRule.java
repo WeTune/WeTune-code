@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.rules.support;
 
 import sjtu.ipads.wtune.superopt.Graph;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Union;
 import sjtu.ipads.wtune.superopt.rules.BaseVisitorMatchingRule;

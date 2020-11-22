@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.rules.validation;
 
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Limit;
 import sjtu.ipads.wtune.superopt.rules.BaseVisitorMatchingRule;
 

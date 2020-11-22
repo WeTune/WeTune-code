@@ -1,8 +1,10 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.superopt.impl.GraphImpl;
+import sjtu.ipads.wtune.superopt.impl.Hole;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 import sjtu.ipads.wtune.superopt.operators.Input;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +20,7 @@ public interface Graph {
 
   List<Input> inputs();
 
-  void setupInputs();
+  void freeze();
 
   InterpretationContext interpretations();
 

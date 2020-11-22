@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt.impl;
 
 import sjtu.ipads.wtune.superopt.Graph;
-import sjtu.ipads.wtune.superopt.Hole;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.GraphVisitor;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
-import sjtu.ipads.wtune.superopt.operators.Input;
+import sjtu.ipads.wtune.superopt.operators.*;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class GraphImpl implements Graph {
   }
 
   @Override
-  public void setupInputs() {
+  public void freeze() {
     if (inputs != null) return;
 
     int i = 0;
@@ -46,6 +47,10 @@ public class GraphImpl implements Graph {
       hole.fill(input);
     }
     this.inputs = inputs;
+
+    acceptVisitor(new IdMarker());
+    acceptVisitor(new SchemaMarker());
+    acceptVisitor(new UnionSchemaMarker());
   }
 
   @Override
@@ -78,5 +83,41 @@ public class GraphImpl implements Graph {
   @Override
   public int hashCode() {
     return head == null ? 0 : head.structuralHash();
+  }
+
+  private static class IdMarker implements GraphVisitor {
+    private int nextId = 1;
+
+    @Override
+    public boolean enter(Operator op) {
+      op.setId(nextId++);
+      return true;
+    }
+  }
+
+  private static class SchemaMarker implements GraphVisitor {
+    @Override
+    public void leave(Operator op) {
+      final RelationSchema schema;
+
+      if (op instanceof Agg) schema = RelationSchema.create((Agg) op);
+      else if (op instanceof Input) schema = RelationSchema.create((Input) op);
+      else if (op instanceof Join) schema = RelationSchema.create((Join) op);
+      else if (op instanceof Proj) schema = RelationSchema.create((Proj) op);
+      else schema = RelationSchema.create(op);
+
+      op.setOutSchema(schema);
+    }
+  }
+
+  private class UnionSchemaMarker implements GraphVisitor {
+    @Override
+    public boolean enterUnion(Union op) {
+      final Constraint constraint =
+          Constraint.schemaEq(op.prev()[0].outSchema(), op.prev()[1].outSchema());
+      interpretations.addConstraint(constraint);
+
+      return true;
+    }
   }
 }

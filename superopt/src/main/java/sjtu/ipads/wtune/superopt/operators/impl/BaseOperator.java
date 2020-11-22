@@ -1,14 +1,15 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
-import sjtu.ipads.wtune.superopt.Operator;
-import sjtu.ipads.wtune.superopt.Relation;
+import sjtu.ipads.wtune.superopt.operators.Operator;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 public abstract class BaseOperator implements Operator {
   private Operator next;
   private final Operator[] prev;
 
-  private Relation out;
-  private Relation[] in;
+  private RelationSchema outSchema;
+
+  private int id;
 
   protected BaseOperator() {
     this(1);
@@ -44,23 +45,27 @@ public abstract class BaseOperator implements Operator {
       this.prev[idx] = null;
       if (prev != null) prev.setNext(null);
     }
-    this.in = null;
     return true;
   }
 
   @Override
-  public Relation out() {
-    return out; // TODO
+  public void setId(int id) {
+    this.id = id;
   }
 
   @Override
-  public Relation[] in() {
-    if (in == null) {
-      in = new Relation[prev.length];
-      for (int i = 0; i < prev.length; i++) in[i] = prev[i] == null ? null : prev[i].out();
-    }
+  public int id() {
+    return id;
+  }
 
-    return in;
+  @Override
+  public RelationSchema outSchema() {
+    return outSchema;
+  }
+
+  @Override
+  public void setOutSchema(RelationSchema outSchema) {
+    this.outSchema = outSchema;
   }
 
   @Override

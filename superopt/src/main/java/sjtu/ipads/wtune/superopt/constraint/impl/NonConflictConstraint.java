@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.superopt.interpret.impl;
+package sjtu.ipads.wtune.superopt.constraint.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 import java.util.Objects;

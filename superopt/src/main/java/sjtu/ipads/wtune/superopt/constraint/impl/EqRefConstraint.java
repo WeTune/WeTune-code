@@ -1,22 +1,22 @@
-package sjtu.ipads.wtune.superopt.interpret.impl;
+package sjtu.ipads.wtune.superopt.constraint.impl;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 import java.util.Objects;
 
-public class EqConstraint implements Constraint {
+public class EqRefConstraint implements Constraint {
   private final Abstraction<?> left;
   private final Abstraction<?> right;
 
-  private EqConstraint(Abstraction<?> left, Abstraction<?> right) {
+  private EqRefConstraint(Abstraction<?> left, Abstraction<?> right) {
     this.left = left;
     this.right = right;
   }
 
-  public static EqConstraint create(Abstraction<?> left, Abstraction<?> right) {
-    return new EqConstraint(left, right);
+  public static EqRefConstraint create(Abstraction<?> left, Abstraction<?> right) {
+    return new EqRefConstraint(left, right);
   }
 
   public Abstraction<?> left() {
@@ -50,12 +50,17 @@ public class EqConstraint implements Constraint {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    EqConstraint that = (EqConstraint) o;
+    EqRefConstraint that = (EqRefConstraint) o;
     return Objects.equals(left, that.left) && Objects.equals(right, that.right);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(left, right);
+  }
+
+  @Override
+  public String toString() {
+    return "<" + left + " = " + right + ">";
   }
 }

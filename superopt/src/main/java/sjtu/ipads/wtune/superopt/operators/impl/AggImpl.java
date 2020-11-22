@@ -1,10 +1,16 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Agg;
+import sjtu.ipads.wtune.superopt.relational.AggFuncs;
+import sjtu.ipads.wtune.superopt.relational.GroupKeys;
 
 public class AggImpl extends BaseOperator implements Agg {
+  private final Abstraction<GroupKeys> groupKeys = Abstraction.create("groupKeys-" + id());
+  private final Abstraction<AggFuncs> aggFuncs = Abstraction.create("aggFuncs-" + id());
+
   public AggImpl() {}
 
   public static AggImpl create() {
@@ -24,6 +30,16 @@ public class AggImpl extends BaseOperator implements Agg {
   @Override
   public void leave0(GraphVisitor visitor) {
     visitor.leaveAgg(this);
+  }
+
+  @Override
+  public Abstraction<GroupKeys> groupKeys() {
+    return groupKeys;
+  }
+
+  @Override
+  public Abstraction<AggFuncs> aggFuncs() {
+    return aggFuncs;
   }
 
   @Override

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.Operator;
+import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Sort;
 
 public class SortImpl extends BaseOperator implements Sort {

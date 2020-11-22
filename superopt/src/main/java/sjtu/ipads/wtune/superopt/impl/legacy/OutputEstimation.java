@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.impl;
+package sjtu.ipads.wtune.superopt.impl.legacy;
 
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.superopt.operators.Agg;
