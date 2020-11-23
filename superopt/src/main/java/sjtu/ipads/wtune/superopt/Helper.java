@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -90,5 +91,21 @@ public class Helper {
     return (a.isParallel() || b.isParallel())
         ? StreamSupport.stream(split, true)
         : StreamSupport.stream(split, false);
+  }
+
+  public static <A, B> Stream<Pair<A, B>> cartesianProductStream(
+      Set<? extends A> a, Set<? extends B> b) {
+    return cartesianProductStream(a, b, true);
+  }
+
+  public static <A, B> Stream<Pair<A, B>> cartesianProductStream(
+      Set<? extends A> a, Set<? extends B> b, boolean parallel) {
+    if (parallel)
+      return a.parallelStream().flatMap(it -> b.parallelStream().map(it2 -> Pair.of(it, it2)));
+    else return a.stream().flatMap(it -> b.stream().map(it2 -> Pair.of(it, it2)));
+  }
+
+  public static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
+    return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
   }
 }

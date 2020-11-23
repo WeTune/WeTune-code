@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.superopt.operators;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.relational.Relation;
-import sjtu.ipads.wtune.superopt.impl.Hole;
+import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 import java.util.ArrayList;

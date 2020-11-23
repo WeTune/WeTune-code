@@ -2,8 +2,9 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Agg;
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.relational.GroupKeys;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
+import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class AggSchema extends BaseRelationSchema<Agg> {
   protected AggSchema(Agg op) {
@@ -15,8 +16,9 @@ public class AggSchema extends BaseRelationSchema<Agg> {
   }
 
   @Override
-  public ColumnSet columns(Interpretation interpretation) {
-    return null; // TODO
+  public SymbolicColumns columns(Interpretation interpretation) {
+    final GroupKeys keys = interpretation.interpret(operator.groupKeys());
+    return keys == null ? null : keys.columns();
   }
 
   @Override

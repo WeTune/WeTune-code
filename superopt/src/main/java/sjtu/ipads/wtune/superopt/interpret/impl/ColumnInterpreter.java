@@ -11,7 +11,7 @@ import sjtu.ipads.wtune.superopt.operators.Input;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.superopt.Helper.listMap;
 
 public class ColumnInterpreter {
   public static void interpret(Graph graph) {
@@ -29,6 +29,6 @@ public class ColumnInterpreter {
             interpretation.addConstraint(Constraint.refEq(inputs.get(i), inputs.get(j)));
     }
 
-    graph.mergeInterpretations(interpretations);
+//    graph.mergeInterpretations(interpretations);
   }
 }

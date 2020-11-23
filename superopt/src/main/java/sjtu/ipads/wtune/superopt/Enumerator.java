@@ -2,32 +2,30 @@ package sjtu.ipads.wtune.superopt;
 
 import com.google.common.collect.Sets;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
-import sjtu.ipads.wtune.superopt.impl.Hole;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.interpret.Interpretation;
+import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 import sjtu.ipads.wtune.superopt.operators.Agg;
-import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Proj;
+import sjtu.ipads.wtune.superopt.operators.Sort;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
-import sjtu.ipads.wtune.superopt.relational.impl.AggSchema;
-import sjtu.ipads.wtune.superopt.relational.impl.InputSchema;
-import sjtu.ipads.wtune.superopt.relational.impl.JoinSchema;
-import sjtu.ipads.wtune.superopt.relational.impl.ProjSchema;
+import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.superopt.constraint.Constraint.constEq;
-import static sjtu.ipads.wtune.superopt.constraint.Constraint.refEq;
-import static sjtu.ipads.wtune.superopt.relational.Projections.selectAll;
+import static sjtu.ipads.wtune.superopt.constraint.Constraint.fineGrainedSchemaEqConstraint;
 
 public class Enumerator {
   public static Set<Graph> enumSkeleton() {
     return Sets.filter(enumSkeleton0(0, singleton(Graph.createEmpty())), Heuristic::pruneSkeleton)
-        .stream()
+        .parallelStream()
         .peek(Graph::freeze)
         .filter(it -> it.inputs().size() < 5)
         .collect(Collectors.toSet());
@@ -48,50 +46,50 @@ public class Enumerator {
   }
 
   public static List<Substitution> enumSubstitution(Graph source, Graph target) {
-    final Set<Constraint> globalConstraints = new HashSet<>();
-    final RelationSchema leftOut = source.head().outSchema();
-    final RelationSchema rightOut = target.head().outSchema();
-    globalConstraints.add(Constraint.schemaEq(leftOut, rightOut));
-    if (addFineGrainedSchemaEqConstraint(leftOut, rightOut, globalConstraints) == null) return null;
+    if (source == target) return null;
+
+    final Set<Constraint> globalConstraints = initGlobalConstraints(source, target);
+    if (globalConstraints == null) return null;
+
+    final InterpretationContext ctx = InterpretationContext.empty();
+    ctx.addConstraints(globalConstraints);
+    ctx.addConstraints(source.interpretation().constraints());
+    ctx.addConstraints(target.interpretation().constraints());
+
+    final List<Abstraction<?>> sAbstractions = source.abstractions();
+    final List<Abstraction<?>> tAbstractions = target.abstractions();
 
     return emptyList();
   }
 
-  private static Set<Constraint> addFineGrainedSchemaEqConstraint(
-      RelationSchema left, RelationSchema right, Set<Constraint> ret) {
-    if (ret == null) ret = new HashSet<>();
+  private static Set<Constraint> initGlobalConstraints(Graph source, Graph target) {
+    final RelationSchema leftOut = source.head().outSchema();
+    final RelationSchema rightOut = target.head().outSchema();
 
-    left = left.nonTrivialSource();
-    right = right.nonTrivialSource();
+    final Set<Constraint> constraints = fineGrainedSchemaEqConstraint(leftOut, rightOut);
+    if (constraints == null) return null;
 
-    if (left instanceof ProjSchema && right instanceof ProjSchema) {
-      ret.add(refEq(((Proj) left.op()).projs(), ((Proj) right.op()).projs()));
+    constraints.add(Constraint.schemaEq(leftOut, rightOut));
+    return constraints;
+  }
 
-    } else if (left instanceof InputSchema && right instanceof InputSchema) {
-      ret.add(refEq(((Input) left.op()).relation(), ((Input) right.op()).relation()));
+  private static class ColumnEnumerator implements GraphVisitor {
+    private final List<Interpretation> interpretations;
 
-    } else if (left instanceof ProjSchema && right instanceof InputSchema) {
-      ret.add(constEq(((Proj) left.op()).projs(), selectAll(((Input) right.op()).relation())));
-
-    } else if (left instanceof InputSchema && right instanceof ProjSchema) {
-      ret.add(constEq(((Proj) right.op()).projs(), selectAll(((Input) left.op()).relation())));
-
-    } else if (left instanceof AggSchema && right instanceof AggSchema) {
-      ret.add(refEq(((Agg) left.op()).groupKeys(), ((Agg) right.op()).groupKeys()));
-      ret.add(refEq(((Agg) left.op()).aggFuncs(), ((Agg) right.op()).aggFuncs()));
-
-    } else if (left instanceof AggSchema && right instanceof InputSchema) {
-      return null;
-
-    } else if (left instanceof InputSchema && right instanceof AggSchema) {
-      return null;
-
-    } else if (left instanceof JoinSchema && right instanceof InputSchema) {
-      return null;
-
-    } else if (left instanceof InputSchema && right instanceof JoinSchema) {
-      return null;
+    private ColumnEnumerator(Set<Constraint> constraints) {
+      interpretations = new LinkedList<>();
+      final Interpretation interpretation = Interpretation.create();
+      interpretation.addConstraints(constraints);
+      interpretations.add(interpretation);
     }
-    return ret;
+
+    @Override
+    public void leaveProj(Proj op) {}
+
+    @Override
+    public void leaveSort(Sort op) {}
+
+    @Override
+    public void leaveAgg(Agg op) {}
   }
 }

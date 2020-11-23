@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.impl.legacy;
 
 import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Agg;
 

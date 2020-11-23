@@ -2,16 +2,16 @@ package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.Helper;
-import sjtu.ipads.wtune.superopt.relational.Relation;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 import sjtu.ipads.wtune.superopt.operators.Input;
+import sjtu.ipads.wtune.superopt.relational.Relation;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.superopt.Helper.listMap;
 
 public class InputInterpreter {
   public static void interpret(Graph graph) {
@@ -29,6 +29,6 @@ public class InputInterpreter {
             interpretation.addConstraint(Constraint.refEq(inputs.get(i), inputs.get(j)));
     }
 
-    graph.mergeInterpretations(interpretations);
+    //    graph.mergeInterpretations(interpretations);
   }
 }

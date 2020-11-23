@@ -1,19 +1,19 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
-import sjtu.ipads.wtune.superopt.relational.Projections;
+import sjtu.ipads.wtune.superopt.relational.GroupKeys;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.Objects;
 
-public class ProjectionsImpl implements Projections {
+public class GroupKeysImpl implements GroupKeys {
   private final SymbolicColumns columns;
 
-  private ProjectionsImpl(SymbolicColumns columns) {
+  private GroupKeysImpl(SymbolicColumns columns) {
     this.columns = columns;
   }
 
-  public static ProjectionsImpl create(SymbolicColumns columns) {
-    return new ProjectionsImpl(columns);
+  public static GroupKeysImpl create(SymbolicColumns columns) {
+    return new GroupKeysImpl(columns);
   }
 
   @Override
@@ -25,7 +25,7 @@ public class ProjectionsImpl implements Projections {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ProjectionsImpl that = (ProjectionsImpl) o;
+    GroupKeysImpl that = (GroupKeysImpl) o;
     return Objects.equals(columns, that.columns);
   }
 

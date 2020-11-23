@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Input;
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class InputSchema extends BaseRelationSchema<Input> {
   protected InputSchema(Input op) {
@@ -14,7 +14,7 @@ public class InputSchema extends BaseRelationSchema<Input> {
   }
 
   @Override
-  public ColumnSet columns(Interpretation ignored) {
-    return null;
+  public SymbolicColumns columns(Interpretation ignored) {
+    return SymbolicColumns.fromSingle(operator.relation());
   }
 }

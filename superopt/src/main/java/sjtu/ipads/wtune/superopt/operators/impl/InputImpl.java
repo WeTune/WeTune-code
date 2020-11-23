@@ -13,7 +13,7 @@ public class InputImpl extends BaseOperator implements Input {
   private InputImpl(int idx) {
     super(0);
     this.idx = idx;
-    this.relation = Abstraction.create("t" + idx);
+    this.relation = Abstraction.create(this, "t" + idx);
   }
 
   public static InputImpl create(int idx) {

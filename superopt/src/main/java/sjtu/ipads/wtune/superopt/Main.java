@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.superopt;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.LogManager;
+import java.util.stream.Collectors;
 
+import static sjtu.ipads.wtune.superopt.Helper.cartesianProductStream;
 import static sjtu.ipads.wtune.superopt.Helper.pack;
 
 public class Main {
@@ -32,16 +32,12 @@ public class Main {
     final Set<Graph> skeletons = Enumerator.enumSkeleton();
     LOG.log(System.Logger.Level.INFO, "#skeletons = {0}", skeletons.size());
 
-    final List<Substitution> substitutions = new ArrayList<>();
-
-    final long count =
-        skeletons.parallelStream()
-            .flatMap(it -> skeletons.parallelStream().map(it2 -> Pair.of(it, it2)))
+    final List<Substitution> substitutions =
+        cartesianProductStream(skeletons, skeletons)
             .map(pack(Enumerator::enumSubstitution))
             .filter(Objects::nonNull)
-            .count();
-
-    System.out.println(count);
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
 
     LOG.log(System.Logger.Level.INFO, "#constraints = {0}", substitutions.size());
   }

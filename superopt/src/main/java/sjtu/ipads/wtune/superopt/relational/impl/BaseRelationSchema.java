@@ -2,8 +2,9 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.*;
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.impl.legacy.ColumnSet;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
+import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.Objects;
 
@@ -24,7 +25,7 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   }
 
   @Override
-  public ColumnSet columns(Interpretation interpretation) {
+  public SymbolicColumns columns(Interpretation interpretation) {
     return operator.prev()[0].outSchema().columns(interpretation);
   }
 

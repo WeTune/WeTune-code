@@ -8,8 +8,8 @@ import sjtu.ipads.wtune.superopt.relational.AggFuncs;
 import sjtu.ipads.wtune.superopt.relational.GroupKeys;
 
 public class AggImpl extends BaseOperator implements Agg {
-  private final Abstraction<GroupKeys> groupKeys = Abstraction.create("groupKeys-" + id());
-  private final Abstraction<AggFuncs> aggFuncs = Abstraction.create("aggFuncs-" + id());
+  private final Abstraction<GroupKeys> groupKeys = Abstraction.create(this, "groupKeys-" + id());
+  private final Abstraction<AggFuncs> aggFuncs = Abstraction.create(this, "aggFuncs-" + id());
 
   public AggImpl() {}
 

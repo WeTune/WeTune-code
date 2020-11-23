@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.impl;
+package sjtu.ipads.wtune.superopt.util;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.impl.legacy.ColumnSet;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 
 public class ColumnSetImpl implements ColumnSet {

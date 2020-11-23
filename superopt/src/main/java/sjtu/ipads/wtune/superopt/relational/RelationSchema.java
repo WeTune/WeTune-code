@@ -9,7 +9,7 @@ public interface RelationSchema {
 
   boolean schemaEquals(RelationSchema other, Interpretation interpretation);
 
-  ColumnSet columns(Interpretation interpretation);
+  SymbolicColumns columns(Interpretation interpretation);
 
   RelationSchema nonTrivialSource();
 

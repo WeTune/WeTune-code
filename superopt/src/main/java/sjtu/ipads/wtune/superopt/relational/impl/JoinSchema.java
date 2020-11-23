@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Join;
-import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class JoinSchema extends BaseRelationSchema<Join> {
   protected JoinSchema(Join join) {
@@ -14,7 +14,11 @@ public class JoinSchema extends BaseRelationSchema<Join> {
   }
 
   @Override
-  public ColumnSet columns(Interpretation interpretation) {
-    return null;
+  public SymbolicColumns columns(Interpretation interpretation) {
+    final SymbolicColumns left = operator.prev()[0].outSchema().columns(interpretation);
+    final SymbolicColumns right = operator.prev()[1].outSchema().columns(interpretation);
+    if (left == null || right == null) return null;
+
+    return left.concat(right);
   }
 }

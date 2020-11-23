@@ -1,18 +1,18 @@
 package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 public class AbstractionImpl<T> implements Abstraction<T> {
-  private Interpretation interpretation;
+  private final Object context;
   private final String name;
 
-  private AbstractionImpl(String name) {
+  private AbstractionImpl(Object context, String name) {
+    this.context = context;
     this.name = name;
   }
 
-  public static <T> AbstractionImpl<T> create(String name) {
-    return new AbstractionImpl<>(name == null ? "anony" : name);
+  public static <T> AbstractionImpl<T> create(Object context, String name) {
+    return new AbstractionImpl<>(context, name == null ? "anony" : name);
   }
 
   @Override
@@ -21,18 +21,12 @@ public class AbstractionImpl<T> implements Abstraction<T> {
   }
 
   @Override
-  public Abstraction<T> setInterpretation(Interpretation interpretation) {
-    this.interpretation = interpretation;
-    return this;
-  }
-
-  @Override
-  public Interpretation interpretation() {
-    return interpretation;
+  public Object context() {
+    return context;
   }
 
   @Override
   public String toString() {
-    return "Abstract<'" + name + "', " + get() + ">";
+    return "Abstract<'" + name + "'>";
   }
 }

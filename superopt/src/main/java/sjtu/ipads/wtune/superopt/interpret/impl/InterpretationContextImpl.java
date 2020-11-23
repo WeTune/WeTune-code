@@ -46,7 +46,7 @@ public class InterpretationContextImpl implements InterpretationContext {
 
   @Override
   public Set<Constraint> constraints() {
-    return null;
+    return current().constraints();
   }
 
   @Override

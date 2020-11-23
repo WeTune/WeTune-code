@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.superopt.relational;
+package sjtu.ipads.wtune.superopt.impl.legacy;
 
-import sjtu.ipads.wtune.superopt.relational.impl.ColumnSetImpl;
 import sjtu.ipads.wtune.superopt.operators.Operator;
+import sjtu.ipads.wtune.superopt.relational.impl.ColumnSetImpl;
 
 public interface ColumnSet {
   Operator operator();

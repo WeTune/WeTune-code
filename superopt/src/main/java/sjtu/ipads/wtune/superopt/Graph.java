@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.superopt.impl.GraphImpl;
-import sjtu.ipads.wtune.superopt.impl.Hole;
-import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
+import sjtu.ipads.wtune.superopt.util.Hole;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 
@@ -22,9 +23,11 @@ public interface Graph {
 
   void freeze();
 
-  InterpretationContext interpretations();
+  List<Abstraction<?>> abstractions();
 
-  InterpretationContext mergeInterpretations(InterpretationContext other);
+  Interpretation interpretation();
+
+  void setInterpretation(Interpretation interpretation);
 
   default Graph copy() {
     final Graph thisCopy = copy0();
