@@ -108,4 +108,9 @@ public class Helper {
   public static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
   }
+
+  public static <T> List<T> safeAdd(List<T> t, T obj) {
+    if (obj != null) t.add(obj);
+    return t;
+  }
 }

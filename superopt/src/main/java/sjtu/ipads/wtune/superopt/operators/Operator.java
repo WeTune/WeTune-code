@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.operators;
 
 import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.GraphVisitor;
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
@@ -10,7 +11,7 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-public interface Operator {
+public interface Operator extends Interpreter {
   Operator next();
 
   Operator[] prev();
@@ -26,6 +27,12 @@ public interface Operator {
   Operator copy0();
 
   RelationSchema outSchema();
+
+  Graph graph();
+
+  void setGraph(Graph graph);
+
+  void setInterpreter(Interpreter interpreter);
 
   void setOutSchema(RelationSchema schema);
 

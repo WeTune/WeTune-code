@@ -30,4 +30,8 @@ public interface Interpretation {
   static Interpretation create() {
     return InterpretationImpl.create();
   }
+
+  static Interpretation withConstraint(Set<Constraint> constraints) {
+    return InterpretationImpl.create(constraints);
+  }
 }

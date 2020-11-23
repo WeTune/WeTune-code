@@ -10,16 +10,24 @@ import java.util.*;
 import static sjtu.ipads.wtune.superopt.Helper.ensureSize;
 
 public class InterpretationImpl implements Interpretation {
-  private final Map<Abstraction<?>, Integer> absMap = new HashMap<>();
-  private final List<Object> assignments = new ArrayList<>();
-  private final Set<Constraint> constraints = new HashSet<>();
+  private final Map<Abstraction<?>, Integer> absMap;
+  private final List<Object> assignments;
+  private final Set<Constraint> constraints;
 
-  public static InterpretationImpl create() {
-    return new InterpretationImpl();
+  private InterpretationImpl(
+      Map<Abstraction<?>, Integer> absMap, List<Object> assignments, Set<Constraint> constraints) {
+    this.absMap = absMap != null ? absMap : new HashMap<>();
+    this.assignments = assignments != null ? assignments : new ArrayList<>();
+    this.constraints = constraints != null ? constraints : new HashSet<>();
+    this.constraints.add(Constraint.nonConflict());
   }
 
-  private InterpretationImpl() {
-    constraints.add(Constraint.nonConflict());
+  public static InterpretationImpl create() {
+    return new InterpretationImpl(null, null, null);
+  }
+
+  public static InterpretationImpl create(Set<Constraint> constraints) {
+    return new InterpretationImpl(null, null, constraints);
   }
 
   @Override
@@ -49,12 +57,12 @@ public class InterpretationImpl implements Interpretation {
   }
 
   @Override
-  public Interpretation assignNew(Abstraction<?> abs, Object interpretation) {
-    final InterpretationImpl newInterpretation = new InterpretationImpl();
+  public Interpretation assignNew(Abstraction<?> abs, Object assignment) {
+    final InterpretationImpl newInterpretation = create();
     newInterpretation.absMap.putAll(this.absMap);
     newInterpretation.assignments.addAll(this.assignments);
     newInterpretation.constraints.addAll(this.constraints);
-    return newInterpretation.assign(abs, interpretation) ? newInterpretation : null;
+    return newInterpretation.assign(abs, assignment) ? newInterpretation : null;
   }
 
   @Override

@@ -1,21 +1,23 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import com.google.common.collect.Sets;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.relational.Relation;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class MultiSourceSymbolicColumns implements SymbolicColumns {
-  private final Set<SingleSourceSymbolicColumns> singleColumns;
-  private Set<SymbolicColumns> selections;
+  private final Set<MonoSourceColumns> singleColumns;
 
   private MultiSourceSymbolicColumns() {
     singleColumns = new HashSet<>();
   }
 
-  private MultiSourceSymbolicColumns(Set<SingleSourceSymbolicColumns> columns) {
+  private MultiSourceSymbolicColumns(Set<MonoSourceColumns> columns) {
     singleColumns = columns;
   }
 
@@ -23,8 +25,19 @@ public class MultiSourceSymbolicColumns implements SymbolicColumns {
     return new MultiSourceSymbolicColumns();
   }
 
-  public static MultiSourceSymbolicColumns from(Set<SingleSourceSymbolicColumns> columns) {
-    return new MultiSourceSymbolicColumns(columns);
+  private static MultiSourceSymbolicColumns copyFrom(Set<MonoSourceColumns> columns) {
+    return new MultiSourceSymbolicColumns(
+        columns.stream().map(MonoSourceColumns::copy).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public Set<? extends SymbolicColumns> flatten() {
+    return singleColumns;
+  }
+
+  @Override
+  public SymbolicColumns copy() {
+    return copyFrom(singleColumns);
   }
 
   @Override
@@ -34,20 +47,15 @@ public class MultiSourceSymbolicColumns implements SymbolicColumns {
 
   @Override
   public Set<SymbolicColumns> selections(int max) {
-    if (selections != null) return selections;
-
     final Set<SymbolicColumns> selections = new HashSet<>();
-    for (Set<SingleSourceSymbolicColumns> columns : Sets.powerSet(singleColumns))
-      if (!columns.isEmpty() && columns.size() <= max) selections.add(from(columns));
-
-    this.selections = selections;
+    for (Set<MonoSourceColumns> columns : Sets.powerSet(singleColumns))
+      if (!columns.isEmpty() && columns.size() <= max) selections.add(copyFrom(columns));
 
     return selections;
   }
 
-  private MultiSourceSymbolicColumns concat0(SymbolicColumns other) {
-    if (other instanceof SingleSourceSymbolicColumns)
-      singleColumns.add((SingleSourceSymbolicColumns) other);
+  MultiSourceSymbolicColumns concat0(SymbolicColumns other) {
+    if (other instanceof MonoSourceColumns) singleColumns.add((MonoSourceColumns) other);
     else if (other instanceof MultiSourceSymbolicColumns)
       singleColumns.addAll(((MultiSourceSymbolicColumns) other).singleColumns);
     return this;

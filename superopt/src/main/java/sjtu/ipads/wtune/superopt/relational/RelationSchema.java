@@ -9,6 +9,8 @@ public interface RelationSchema {
 
   boolean schemaEquals(RelationSchema other, Interpretation interpretation);
 
+  boolean shapeEquals(RelationSchema other, Interpretation interpretation);
+
   SymbolicColumns columns(Interpretation interpretation);
 
   RelationSchema nonTrivialSource();
@@ -30,6 +32,10 @@ public interface RelationSchema {
 
   static RelationSchema create(Proj proj) {
     return ProjSchema.create(proj);
+  }
+
+  static RelationSchema create(Union union) {
+    return UnionSchema.create(union);
   }
 
   static RelationSchema create(Operator op) {

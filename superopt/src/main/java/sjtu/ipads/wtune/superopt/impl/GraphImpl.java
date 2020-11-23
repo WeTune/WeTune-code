@@ -6,11 +6,9 @@ import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.enumeration.EnumerationPolicy;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.operators.*;
-import sjtu.ipads.wtune.superopt.relational.GroupKeys;
-import sjtu.ipads.wtune.superopt.relational.Projections;
-import sjtu.ipads.wtune.superopt.relational.RelationSchema;
-import sjtu.ipads.wtune.superopt.relational.SortKeys;
+import sjtu.ipads.wtune.superopt.relational.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.*;
@@ -23,7 +21,9 @@ public class GraphImpl implements Graph {
   private boolean frozen = false;
 
   private List<Interpretation> interpretations;
-  private List<Constraint> constraints;
+  private Collection<Constraint> constraints;
+
+  private String name;
 
   @Override
   public Operator head() {
@@ -46,12 +46,7 @@ public class GraphImpl implements Graph {
   }
 
   @Override
-  public List<Abstraction<?>> abstractions() {
-    return abstractions;
-  }
-
-  @Override
-  public List<Constraint> constraints() {
+  public Collection<Constraint> constraints() {
     return constraints;
   }
 
@@ -74,17 +69,25 @@ public class GraphImpl implements Graph {
     }
     this.inputs = inputs;
 
-    acceptVisitor(new IdMarker());
-    acceptVisitor(new SchemaMarker());
+    acceptVisitor(new IdPlacer());
+    acceptVisitor(new GraphPlacer());
+    acceptVisitor(new SchemaPlacer());
+    acceptVisitor(new InterpreterPlacer());
 
     this.constraints = UnionSchemaMarker.collect(this);
-    if (constraints == null) {
-      return null;
-    }
-
     this.abstractions = AbstractionCollector.collect(this);
     this.interpretations = InterpretationEnumerator.enumerate(this);
     return this;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
+
+  @Override
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override
@@ -109,7 +112,7 @@ public class GraphImpl implements Graph {
     return head == null ? 0 : head.structuralHash();
   }
 
-  private static class IdMarker implements GraphVisitor {
+  private static class IdPlacer implements GraphVisitor {
     private int nextId = 1;
 
     @Override
@@ -119,7 +122,15 @@ public class GraphImpl implements Graph {
     }
   }
 
-  private static class SchemaMarker implements GraphVisitor {
+  private class GraphPlacer implements GraphVisitor {
+    @Override
+    public boolean enter(Operator op) {
+      op.setGraph(GraphImpl.this);
+      return true;
+    }
+  }
+
+  private static class SchemaPlacer implements GraphVisitor {
     @Override
     public void leave(Operator op) {
       final RelationSchema schema;
@@ -128,37 +139,41 @@ public class GraphImpl implements Graph {
       else if (op instanceof Input) schema = RelationSchema.create((Input) op);
       else if (op instanceof Join) schema = RelationSchema.create((Join) op);
       else if (op instanceof Proj) schema = RelationSchema.create((Proj) op);
+      else if (op instanceof Union) schema = RelationSchema.create((Union) op);
       else schema = RelationSchema.create(op);
 
       op.setOutSchema(schema);
     }
   }
 
+  private static class InterpreterPlacer implements GraphVisitor {
+    @Override
+    public boolean enter(Operator op) {
+      op.setInterpreter(Interpreter.global());
+      return true;
+    }
+  }
+
   private static class UnionSchemaMarker implements GraphVisitor {
-    private List<Constraint> constraints = null;
-    private boolean unfeasible = false;
+    private Set<Constraint> constraints = null;
 
     @Override
     public boolean enterUnion(Union op) {
-      final List<Constraint> constraint =
-          Constraint.schemaEq(op.prev()[0].outSchema(), op.prev()[1].outSchema());
+      final RelationSchema leftInput = op.prev()[0].outSchema();
+      final RelationSchema rightInput = op.prev()[1].outSchema();
+      final RelationSchema myOutput = op.outSchema();
 
-      if (constraint == null) {
-        unfeasible = true;
-        return false;
-      }
-
-      if (constraints == null) constraints = new ArrayList<>(4);
-      constraints.addAll(constraint);
+      if (constraints == null) constraints = new HashSet<>(4);
+      constraints.add(Constraint.schemaShapeEq(leftInput, rightInput));
+      constraints.add(Constraint.schemaShapeEq(myOutput, leftInput));
+      constraints.add(Constraint.schemaShapeEq(myOutput, rightInput));
       return true;
     }
 
-    public static List<Constraint> collect(Graph g) {
+    public static Set<Constraint> collect(Graph g) {
       final UnionSchemaMarker visitor = new UnionSchemaMarker();
       g.acceptVisitor(visitor);
-      return visitor.unfeasible
-          ? null
-          : visitor.constraints == null ? Collections.emptyList() : visitor.constraints;
+      return visitor.constraints == null ? Collections.emptySet() : visitor.constraints;
     }
   }
 
@@ -209,7 +224,7 @@ public class GraphImpl implements Graph {
     }
   }
 
-  public static class InterpretationEnumerator implements GraphVisitor {
+  private static class InterpretationEnumerator implements GraphVisitor {
     private final List<Interpretation> interpretations = new LinkedList<>();
 
     private final EnumerationPolicy<Projections> projectionPolicy =
@@ -217,6 +232,10 @@ public class GraphImpl implements Graph {
     private final EnumerationPolicy<SortKeys> sortKeysPolicy = EnumerationPolicy.sortKeysPolicy();
     private final EnumerationPolicy<GroupKeys> groupKeysPolicy =
         EnumerationPolicy.groupKeysPolicy();
+    private final EnumerationPolicy<PlainPredicate> plainPredicatePolicy =
+        EnumerationPolicy.plainPredicatePolicy();
+    private final EnumerationPolicy<SubqueryPredicate> subqueryPredicatePolicy =
+        EnumerationPolicy.subqueryPredicatePolicy();
 
     private InterpretationEnumerator(Collection<Constraint> constraints) {
       final Interpretation i = Interpretation.create();
@@ -252,6 +271,16 @@ public class GraphImpl implements Graph {
     @Override
     public void leaveAgg(Agg op) {
       enum0(op.groupKeys(), groupKeysPolicy);
+    }
+
+    @Override
+    public void leavePlainFilter(PlainFilter op) {
+      enum0(op.predicate(), plainPredicatePolicy);
+    }
+
+    @Override
+    public void leaveSubqueryFilter(SubqueryFilter op) {
+      enum0(op.predicate(), subqueryPredicatePolicy);
     }
 
     public static List<Interpretation> enumerate(Graph g) {

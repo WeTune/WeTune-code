@@ -4,11 +4,13 @@ import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.impl.GraphImpl;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
@@ -24,11 +26,13 @@ public interface Graph {
 
   Graph freeze();
 
-  List<Abstraction<?>> abstractions();
-
   List<Interpretation> interpretations();
 
-  List<Constraint> constraints();
+  Collection<Constraint> constraints();
+
+  String name();
+
+  void setName(String name);
 
   default Graph copy() {
     final Graph thisCopy = copy0();

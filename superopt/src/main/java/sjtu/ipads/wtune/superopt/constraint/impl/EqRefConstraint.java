@@ -35,15 +35,43 @@ public class EqRefConstraint implements Constraint {
 
   @Override
   public boolean check(Interpretation context, Abstraction<?> abstraction, Object newInterpret) {
-    final boolean isLeft = Objects.equals(left, abstraction);
-    final boolean isRight = Objects.equals(right, abstraction);
-    if (!isLeft && !isRight) return true; // nothing to do with this constraint
+    final Abstraction<?> otherSide = otherSide(abstraction);
+    if (otherSide == null) return true; // nothing to do with this constraint
 
-    final Object interpret0 = context.interpret(left);
-    final Object interpret1 = context.interpret(right);
+    final Object interpret = context.interpret(otherSide);
+    return interpret == null || Objects.equals(interpret, newInterpret);
+  }
 
-    return (isLeft && (interpret1 == null || Objects.equals(interpret1, newInterpret)))
-        || (isRight && (interpret0 == null || Objects.equals(interpret0, newInterpret)));
+  @Override
+  public boolean isConflict(Constraint constraint) {
+    if (!(constraint instanceof NonEqRefConstraint)) return false;
+    final Abstraction<?> otherLeft = ((NonEqRefConstraint) constraint).left();
+    final Abstraction<?> otherRight = ((NonEqRefConstraint) constraint).right();
+    return (Objects.equals(left, otherLeft) && Objects.equals(right, otherRight))
+        || (Objects.equals(left, otherRight) && Objects.equals(right, otherLeft));
+  }
+
+  @Override
+  public Constraint transitive(Constraint other) {
+    if (!(other instanceof EqRefConstraint)) return null;
+    final EqRefConstraint otherEq = (EqRefConstraint) other;
+    if (Objects.equals(left, otherEq.left)) {
+      if (!Objects.equals(right, otherEq.right)) return create(right, otherEq.right);
+      else return null;
+    }
+    if (Objects.equals(left, otherEq.right)) {
+      if (!Objects.equals(right, otherEq.left)) return create(right, otherEq.left);
+      else return null;
+
+    } else if (Objects.equals(right, otherEq.left)) {
+      if (!Objects.equals(left, otherEq.right)) return create(left, otherEq.right);
+      else return null;
+
+    } else if (Objects.equals(right, otherEq.right)) {
+      if (!Objects.equals(left, otherEq.left)) return create(left, otherEq.left);
+      else return null;
+
+    } else return null;
   }
 
   @Override
@@ -51,12 +79,13 @@ public class EqRefConstraint implements Constraint {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     EqRefConstraint that = (EqRefConstraint) o;
-    return Objects.equals(left, that.left) && Objects.equals(right, that.right);
+    return (Objects.equals(left, that.left) && Objects.equals(right, that.right))
+        || (Objects.equals(left, that.right) && Objects.equals(right, that.left));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(left, right);
+    return Objects.hash(left, right) + Objects.hash(right, left);
   }
 
   @Override

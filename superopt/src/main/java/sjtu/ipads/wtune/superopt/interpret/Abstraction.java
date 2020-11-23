@@ -5,13 +5,13 @@ import sjtu.ipads.wtune.superopt.interpret.impl.AbstractionImpl;
 public interface Abstraction<T> {
   String name();
 
-  Object context();
+  Interpreter interpreter();
 
   default boolean interpreted(Interpretation interpretation) {
     return interpretation.interpret(this) != null;
   }
 
-  static <T> Abstraction<T> create(Object context, String name) {
+  static <T> Abstraction<T> create(Interpreter context, String name) {
     return AbstractionImpl.create(context, name);
   }
 }

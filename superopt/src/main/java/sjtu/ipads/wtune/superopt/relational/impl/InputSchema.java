@@ -9,7 +9,7 @@ public class InputSchema extends BaseRelationSchema<Input> {
 
   protected InputSchema(Input op) {
     super(op);
-    this.columns = SymbolicColumns.fromSingle(operator.relation());
+    this.columns = SymbolicColumns.fromSingle(op, op.relation());
   }
 
   @Override

@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
+import sjtu.ipads.wtune.superopt.Graph;
+import sjtu.ipads.wtune.superopt.interpret.Interpretation;
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
@@ -8,6 +11,9 @@ public abstract class BaseOperator implements Operator {
   private final Operator[] prev;
 
   private RelationSchema outSchema;
+  private Interpreter delegate;
+
+  private Graph graph;
 
   private int id;
 
@@ -64,8 +70,38 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
+  public Graph graph() {
+    return graph;
+  }
+
+  @Override
+  public void setGraph(Graph graph) {
+    this.graph = graph;
+  }
+
+  @Override
   public void setOutSchema(RelationSchema outSchema) {
     this.outSchema = outSchema;
+  }
+
+  @Override
+  public void setInterpreter(Interpreter interpreter) {
+    this.delegate = interpreter;
+  }
+
+  @Override
+  public void setInterpretation(Interpretation interpretation) {
+    delegate.setInterpretation(interpretation);
+  }
+
+  @Override
+  public String interpreterName() {
+    return (graph == null ? "" : graph.name() == null ? "" : graph.name()) + "." + toString();
+  }
+
+  @Override
+  public Interpretation interpretation() {
+    return delegate.interpretation();
   }
 
   @Override

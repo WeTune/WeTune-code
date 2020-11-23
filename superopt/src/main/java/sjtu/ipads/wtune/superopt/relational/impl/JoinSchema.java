@@ -28,7 +28,7 @@ public class JoinSchema extends BaseRelationSchema<Join> {
     final SymbolicColumns right = operator.prev()[1].outSchema().columns(interpretation);
     if (left == null || right == null) return null;
 
-    final SymbolicColumns columns = left.concat(right);
+    final SymbolicColumns columns = SymbolicColumns.concat(left, right);
     if (isStable()) columnsCache = columns; // cache only if stable
 
     return columns;

@@ -34,7 +34,8 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
     if (operator instanceof Join
         || operator instanceof Input
         || operator instanceof Proj
-        || operator instanceof Agg) return this;
+        || operator instanceof Agg
+        || operator instanceof Union) return this;
     return operator.prev()[0].outSchema().nonTrivialSource();
   }
 
@@ -46,6 +47,11 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   @Override
   public boolean schemaEquals(RelationSchema other, Interpretation interpretation) {
     return Objects.equals(columns(interpretation), other.columns(interpretation));
+  }
+
+  @Override
+  public boolean shapeEquals(RelationSchema other, Interpretation interpretation) {
+    return true; // TODO
   }
 
   @Override
