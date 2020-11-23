@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.superopt;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.impl.GraphImpl;
-import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Operator;
+import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,13 +22,13 @@ public interface Graph {
 
   List<Input> inputs();
 
-  void freeze();
+  Graph freeze();
 
   List<Abstraction<?>> abstractions();
 
-  Interpretation interpretation();
+  List<Interpretation> interpretations();
 
-  void setInterpretation(Interpretation interpretation);
+  List<Constraint> constraints();
 
   default Graph copy() {
     final Graph thisCopy = copy0();

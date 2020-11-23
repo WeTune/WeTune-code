@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.Objects;
 
+// Currently this is just a wrapper of SymbolicColumn
 public class ProjectionsImpl implements Projections {
   private final SymbolicColumns columns;
 
@@ -32,5 +33,10 @@ public class ProjectionsImpl implements Projections {
   @Override
   public int hashCode() {
     return Objects.hash(columns);
+  }
+
+  @Override
+  public String toString() {
+    return "Projections(" + columns + ')';
   }
 }

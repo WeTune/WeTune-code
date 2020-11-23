@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.relational;
 
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.relational.impl.SingleSourceSymbolicColumns;
 
 import java.util.Set;
@@ -15,7 +16,11 @@ public interface SymbolicColumns {
 
   SymbolicColumns concat(SymbolicColumns other);
 
-  Set<SymbolicColumns> selections();
+  Set<SymbolicColumns> selections(int max);
+
+  default Set<SymbolicColumns> selections() {
+    return selections(Integer.MAX_VALUE);
+  }
 
   default Abstraction<ConcreteColumns> abstractions() {
 

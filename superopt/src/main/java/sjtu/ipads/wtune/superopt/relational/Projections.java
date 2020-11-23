@@ -9,4 +9,8 @@ public interface Projections {
   static Projections selectAll(Abstraction<Relation> from) {
     return ProjectionsImpl.create(SymbolicColumns.fromSingle(from));
   }
+
+  static Projections from(SymbolicColumns columns) {
+    return ProjectionsImpl.create(columns);
+  }
 }

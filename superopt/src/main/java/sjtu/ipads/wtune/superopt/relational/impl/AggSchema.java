@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Agg;
 import sjtu.ipads.wtune.superopt.relational.GroupKeys;
-import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class AggSchema extends BaseRelationSchema<Agg> {
@@ -22,7 +21,7 @@ public class AggSchema extends BaseRelationSchema<Agg> {
   }
 
   @Override
-  public boolean schemaEquals(RelationSchema other, Interpretation interpretation) {
-    return super.schemaEquals(other, interpretation);
+  public boolean isStable() {
+    return false;
   }
 }

@@ -39,6 +39,11 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   }
 
   @Override
+  public boolean isStable() {
+    return operator.prev()[0].outSchema().isStable();
+  }
+
+  @Override
   public boolean schemaEquals(RelationSchema other, Interpretation interpretation) {
     return Objects.equals(columns(interpretation), other.columns(interpretation));
   }

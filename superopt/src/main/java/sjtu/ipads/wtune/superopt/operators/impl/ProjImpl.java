@@ -7,10 +7,11 @@ import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.operators.Proj;
 
 public class ProjImpl extends BaseOperator implements Proj {
-  private final Abstraction<Projections> projections = Abstraction.create(this, "proj-" + id());
+  private Abstraction<Projections> projections;
 
   @Override
   public Abstraction<Projections> projs() {
+    if (projections == null) projections = Abstraction.create(this, "proj-" + id());
     return projections;
   }
 

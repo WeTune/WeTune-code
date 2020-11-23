@@ -1,19 +1,19 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
-import sjtu.ipads.wtune.superopt.relational.GroupKeys;
+import sjtu.ipads.wtune.superopt.relational.SortKeys;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.Objects;
 
-public class GroupKeysImpl implements GroupKeys {
+public class SortKeysImpl implements SortKeys {
   private final SymbolicColumns columns;
 
-  private GroupKeysImpl(SymbolicColumns columns) {
+  public SortKeysImpl(SymbolicColumns columns) {
     this.columns = columns;
   }
 
-  public static GroupKeysImpl create(SymbolicColumns columns) {
-    return new GroupKeysImpl(columns);
+  public static SortKeysImpl create(SymbolicColumns from) {
+    return new SortKeysImpl(from);
   }
 
   @Override
@@ -25,8 +25,8 @@ public class GroupKeysImpl implements GroupKeys {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    GroupKeysImpl that = (GroupKeysImpl) o;
-    return Objects.equals(columns, that.columns);
+    SortKeysImpl sortKeys = (SortKeysImpl) o;
+    return Objects.equals(columns, sortKeys.columns);
   }
 
   @Override
@@ -36,6 +36,6 @@ public class GroupKeysImpl implements GroupKeys {
 
   @Override
   public String toString() {
-    return "GroupKey(" + columns + ")";
+    return "SortKeys(" + columns + ')';
   }
 }

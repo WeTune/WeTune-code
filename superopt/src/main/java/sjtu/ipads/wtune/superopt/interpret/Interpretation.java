@@ -11,6 +11,8 @@ public interface Interpretation {
 
   boolean assign(Abstraction<?> abs, Object interpretation);
 
+  Interpretation assignNew(Abstraction<?> abs, Object interpretation);
+
   Set<Abstraction<?>> abstractions();
 
   Set<Constraint> constraints();

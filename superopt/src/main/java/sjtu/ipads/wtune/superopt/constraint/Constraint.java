@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
+import java.util.List;
 import java.util.Set;
 
 public interface Constraint {
@@ -29,11 +30,7 @@ public interface Constraint {
     return NonConflictConstraint.INSTANCE;
   }
 
-  static Constraint schemaEq(RelationSchema s0, RelationSchema s1) {
+  static List<Constraint> schemaEq(RelationSchema s0, RelationSchema s1) {
     return EqOutputSchemaConstraint.create(s0, s1);
-  }
-
-  static Set<Constraint> fineGrainedSchemaEqConstraint(RelationSchema left, RelationSchema right) {
-    return EqOutputSchemaConstraint.fineGrainedSchemaEqConstraint(left, right);
   }
 }

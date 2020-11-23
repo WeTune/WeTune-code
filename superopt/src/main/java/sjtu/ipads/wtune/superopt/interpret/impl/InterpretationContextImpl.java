@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.InterpretationContext;
 
@@ -32,6 +32,13 @@ public class InterpretationContextImpl implements InterpretationContext {
   @Override
   public boolean assign(Abstraction<?> abs, Object interpretation) {
     return current().assign(abs, interpretation);
+  }
+
+  @Override
+  public Interpretation assignNew(Abstraction<?> abs, Object interpretation) {
+    final Interpretation newInterpretation = current().assignNew(abs, interpretation);
+    interpretations.set(currentIdx, newInterpretation);
+    return newInterpretation;
   }
 
   @Override

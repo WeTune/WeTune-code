@@ -33,12 +33,12 @@ public class MultiSourceSymbolicColumns implements SymbolicColumns {
   }
 
   @Override
-  public Set<SymbolicColumns> selections() {
+  public Set<SymbolicColumns> selections(int max) {
     if (selections != null) return selections;
 
     final Set<SymbolicColumns> selections = new HashSet<>();
     for (Set<SingleSourceSymbolicColumns> columns : Sets.powerSet(singleColumns))
-      if (!columns.isEmpty()) selections.add(from(columns));
+      if (!columns.isEmpty() && columns.size() <= max) selections.add(from(columns));
 
     this.selections = selections;
 

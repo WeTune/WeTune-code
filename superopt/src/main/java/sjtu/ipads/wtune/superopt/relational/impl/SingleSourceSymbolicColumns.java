@@ -9,8 +9,9 @@ import java.util.Objects;
 import java.util.Set;
 
 public class SingleSourceSymbolicColumns implements SymbolicColumns {
-  private final Range range = Range.ALL; // for future?
   private final Abstraction<Relation> relation;
+  private final Range range = Range.ALL; // for future?
+  private int minNum, maxNum; // only useful when range is SPECIFIC
 
   public SingleSourceSymbolicColumns(Abstraction<Relation> source) {
     this.relation = source;
@@ -22,7 +23,7 @@ public class SingleSourceSymbolicColumns implements SymbolicColumns {
   }
 
   @Override
-  public Set<SymbolicColumns> selections() {
+  public Set<SymbolicColumns> selections(int max) {
     return Collections.singleton(this);
   }
 
@@ -45,6 +46,6 @@ public class SingleSourceSymbolicColumns implements SymbolicColumns {
 
   @Override
   public String toString() {
-    return "`" + relation + ".?`";
+    return relation + ".?";
   }
 }

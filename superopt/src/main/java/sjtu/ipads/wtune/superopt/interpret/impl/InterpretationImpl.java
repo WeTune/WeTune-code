@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.interpret.impl;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.impl.EqRefConstraint;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 import java.util.*;
@@ -43,9 +43,18 @@ public class InterpretationImpl implements Interpretation {
     if (!addInterpretation0(abs, interpretation, idx)) return false;
     if (!assignEq(abs, interpretation, idx)) return false;
 
-    for (Constraint constraint : constraints) if (constraint.recheck(this)) return false;
+    for (Constraint constraint : constraints) if (!constraint.recheck(this)) return false;
 
     return true;
+  }
+
+  @Override
+  public Interpretation assignNew(Abstraction<?> abs, Object interpretation) {
+    final InterpretationImpl newInterpretation = new InterpretationImpl();
+    newInterpretation.absMap.putAll(this.absMap);
+    newInterpretation.assignments.addAll(this.assignments);
+    newInterpretation.constraints.addAll(this.constraints);
+    return newInterpretation.assign(abs, interpretation) ? newInterpretation : null;
   }
 
   @Override
@@ -87,7 +96,7 @@ public class InterpretationImpl implements Interpretation {
     for (Constraint constraint : constraints)
       if (!constraint.check(this, abs, interpretation)) return false;
 
-    ensureSize(assignments, idx);
+    ensureSize(assignments, idx + 1);
     assignments.set(idx, interpretation);
     absMap.put(abs, idx);
 
@@ -106,5 +115,16 @@ public class InterpretationImpl implements Interpretation {
       }
 
     return true;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder builder = new StringBuilder();
+    builder.append('{');
+    for (Abstraction<?> abstraction : absMap.keySet())
+      builder.append(abstraction).append(": ").append(interpret(abstraction)).append(", ");
+    if (builder.length() > 1) builder.delete(builder.length() - 2, builder.length());
+    builder.append('}');
+    return builder.toString();
   }
 }

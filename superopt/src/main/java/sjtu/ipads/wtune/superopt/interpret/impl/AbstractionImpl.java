@@ -27,6 +27,6 @@ public class AbstractionImpl<T> implements Abstraction<T> {
 
   @Override
   public String toString() {
-    return "Abstract<'" + name + "'>";
+    return "`" + name + "`";
   }
 }

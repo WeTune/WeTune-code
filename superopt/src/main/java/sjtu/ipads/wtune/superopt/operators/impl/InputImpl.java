@@ -6,6 +6,8 @@ import sjtu.ipads.wtune.superopt.relational.Relation;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.operators.*;
 
+import java.util.Objects;
+
 public class InputImpl extends BaseOperator implements Input {
   private final int idx;
   private final Abstraction<Relation> relation;
@@ -64,11 +66,13 @@ public class InputImpl extends BaseOperator implements Input {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    return o instanceof Input;
+    if (o == null || getClass() != o.getClass()) return false;
+    InputImpl input = (InputImpl) o;
+    return idx == input.idx && Objects.equals(relation, input.relation);
   }
 
   @Override
   public int hashCode() {
-    return Input.class.hashCode();
+    return Objects.hash(relation);
   }
 }

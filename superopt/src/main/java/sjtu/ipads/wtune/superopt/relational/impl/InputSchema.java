@@ -5,8 +5,16 @@ import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class InputSchema extends BaseRelationSchema<Input> {
+  private final SymbolicColumns columns;
+
   protected InputSchema(Input op) {
     super(op);
+    this.columns = SymbolicColumns.fromSingle(operator.relation());
+  }
+
+  @Override
+  public boolean isStable() {
+    return true;
   }
 
   public static InputSchema create(Input input) {
@@ -15,6 +23,6 @@ public class InputSchema extends BaseRelationSchema<Input> {
 
   @Override
   public SymbolicColumns columns(Interpretation ignored) {
-    return SymbolicColumns.fromSingle(operator.relation());
+    return columns;
   }
 }

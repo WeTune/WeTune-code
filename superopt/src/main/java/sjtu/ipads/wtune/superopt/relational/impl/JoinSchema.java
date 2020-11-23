@@ -14,11 +14,23 @@ public class JoinSchema extends BaseRelationSchema<Join> {
   }
 
   @Override
+  public boolean isStable() {
+    return operator.prev()[0].outSchema().isStable() && operator.prev()[1].outSchema().isStable();
+  }
+
+  private SymbolicColumns columnsCache;
+
+  @Override
   public SymbolicColumns columns(Interpretation interpretation) {
+    if (columnsCache != null) return columnsCache;
+
     final SymbolicColumns left = operator.prev()[0].outSchema().columns(interpretation);
     final SymbolicColumns right = operator.prev()[1].outSchema().columns(interpretation);
     if (left == null || right == null) return null;
 
-    return left.concat(right);
+    final SymbolicColumns columns = left.concat(right);
+    if (isStable()) columnsCache = columns; // cache only if stable
+
+    return columns;
   }
 }

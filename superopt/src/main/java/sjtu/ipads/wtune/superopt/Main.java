@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.superopt.Helper.cartesianProductStream;
 import static sjtu.ipads.wtune.superopt.Helper.pack;
+import static sjtu.ipads.wtune.superopt.operators.Operator.*;
 
 public class Main {
   private static final System.Logger LOG = System.getLogger("Enumerator");
@@ -28,7 +29,7 @@ public class Main {
     }
   }
 
-  public static void main(String[] args) {
+  private static void main0() {
     final Set<Graph> skeletons = Enumerator.enumSkeleton();
     LOG.log(System.Logger.Level.INFO, "#skeletons = {0}", skeletons.size());
 
@@ -40,6 +41,15 @@ public class Main {
             .collect(Collectors.toList());
 
     LOG.log(System.Logger.Level.INFO, "#constraints = {0}", substitutions.size());
+  }
+
+  public static void test0() {
+    System.out.println(union(agg(subqueryFilter(input(1), agg(input(2)))), input(0)).toGraph());
+  }
+
+  public static void main(String[] args) {
+    main0();
+    //    test0();
   }
 
   //    final Map<OutputEstimation, List<Graph>> collect =

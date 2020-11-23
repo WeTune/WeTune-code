@@ -15,6 +15,11 @@ public class ProjSchema extends BaseRelationSchema<Proj> {
   }
 
   @Override
+  public boolean isStable() {
+    return false;
+  }
+
+  @Override
   public SymbolicColumns columns(Interpretation interpretation) {
     final Projections projs = interpretation.interpret(operator.projs());
     return projs != null ? projs.columns() : null;

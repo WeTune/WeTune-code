@@ -9,8 +9,7 @@ import sjtu.ipads.wtune.superopt.operators.SubqueryFilter;
 import sjtu.ipads.wtune.superopt.relational.SubqueryPredicate;
 
 public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
-  private final Abstraction<SubqueryPredicate> predicate =
-      Abstraction.create(this, "filter*-" + id());
+  private Abstraction<SubqueryPredicate> predicate;
 
   protected SubqueryFilterImpl() {
     super(2);
@@ -18,6 +17,7 @@ public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
 
   @Override
   public Abstraction<SubqueryPredicate> predicate() {
+    if (predicate == null) predicate = Abstraction.create(this, "filter*-" + id());
     return predicate;
   }
 

@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.superopt.operators;
 
+import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.GraphVisitor;
-import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
+import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public interface Operator {
   default int structuralHash() {
     int h = getClass().hashCode();
     for (Operator operator : prev()) {
-      if (operator == null) h = h * 31;
+      if (operator == null || operator instanceof Input) h = h * 31;
       else h = h * 31 + operator.structuralHash();
     }
     return h;
@@ -105,6 +106,12 @@ public interface Operator {
     return true;
   }
 
+  default Graph toGraph() {
+    final Graph g = Graph.createEmpty();
+    g.setHead(this);
+    return g.freeze();
+  }
+
   static List<Operator> templates() {
     return List.of(
         Agg.create(),
@@ -116,5 +123,66 @@ public interface Operator {
         Sort.create(),
         SubqueryFilter.create(),
         Union.create());
+  }
+
+  static Agg agg(Operator prev) {
+    final Agg op = Agg.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static Distinct distinct(Operator prev) {
+    final Distinct op = Distinct.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static Limit limit(Operator prev) {
+    final Limit op = Limit.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static PlainFilter plainFilter(Operator prev) {
+    final PlainFilter op = PlainFilter.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static Proj proj(Operator prev) {
+    final Proj op = Proj.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static Sort sort(Operator prev) {
+    final Sort op = Sort.create();
+    op.setPrev(0, prev);
+    return op;
+  }
+
+  static Join join(Operator left, Operator right) {
+    final Join join = Join.create();
+    join.setPrev(0, left);
+    join.setPrev(1, right);
+    return join;
+  }
+
+  static SubqueryFilter subqueryFilter(Operator left, Operator right) {
+    final SubqueryFilter subqueryFilter = SubqueryFilter.create();
+    subqueryFilter.setPrev(0, left);
+    subqueryFilter.setPrev(1, right);
+    return subqueryFilter;
+  }
+
+  static Union union(Operator left, Operator right) {
+    final Union union = Union.create();
+    union.setPrev(0, left);
+    union.setPrev(1, right);
+    return union;
+  }
+
+  static Input input(int idx) {
+    return Input.create(idx);
   }
 }

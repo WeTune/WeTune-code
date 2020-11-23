@@ -13,6 +13,9 @@ public interface RelationSchema {
 
   RelationSchema nonTrivialSource();
 
+  // true indicates the output schema is not affected by interpretation
+  boolean isStable();
+
   static RelationSchema create(Agg agg) {
     return AggSchema.create(agg);
   }
