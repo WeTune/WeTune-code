@@ -1,2 +1,5 @@
 *
+!.gitignore
 !data.version
+!schemas/
+!schemas/*
