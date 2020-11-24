@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
 import sjtu.ipads.wtune.superopt.operators.Operator;
-import sjtu.ipads.wtune.superopt.relational.Relation;
+import sjtu.ipads.wtune.superopt.relational.InputSource;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.operators.*;
 
@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class InputImpl extends BaseOperator implements Input {
   private final int idx;
-  private final Abstraction<Relation> relation;
+  private final Abstraction<InputSource> relation;
 
   private InputImpl(int idx) {
     super(0);
@@ -54,7 +54,7 @@ public class InputImpl extends BaseOperator implements Input {
   }
 
   @Override
-  public Abstraction<Relation> relation() {
+  public Abstraction<InputSource> source() {
     return relation;
   }
 

@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.relational.Relation;
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 import java.util.HashSet;
@@ -28,6 +27,11 @@ public class MultiSourceSymbolicColumns implements SymbolicColumns {
   private static MultiSourceSymbolicColumns copyFrom(Set<MonoSourceColumns> columns) {
     return new MultiSourceSymbolicColumns(
         columns.stream().map(MonoSourceColumns::copy).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public void setInterpreter(Interpreter interpreter) {
+    singleColumns.forEach(it -> it.setInterpreter(interpreter));
   }
 
   @Override

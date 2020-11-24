@@ -1,3 +1,3 @@
 package sjtu.ipads.wtune.superopt.relational;
 
-public interface Relation {}
+public interface InputSource {}

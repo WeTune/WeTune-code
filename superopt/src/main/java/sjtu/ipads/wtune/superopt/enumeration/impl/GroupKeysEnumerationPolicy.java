@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.enumeration.impl;
 
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.GroupKeys;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
@@ -14,7 +15,8 @@ public class GroupKeysEnumerationPolicy extends ColumnEnumerationPolicy<GroupKey
   }
 
   @Override
-  protected GroupKeys fromSelection(SymbolicColumns columns) {
+  protected GroupKeys fromSelection(Interpreter interpreter, SymbolicColumns columns) {
+    columns.setInterpreter(interpreter);
     return GroupKeys.from(columns);
   }
 }

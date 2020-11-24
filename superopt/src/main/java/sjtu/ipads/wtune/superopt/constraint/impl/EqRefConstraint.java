@@ -52,7 +52,12 @@ public class EqRefConstraint implements Constraint {
   }
 
   @Override
-  public Constraint transitive(Constraint other) {
+  public boolean isTautology() {
+    return Objects.equals(left, right);
+  }
+
+  @Override
+  public Constraint buildTransitive(Constraint other) {
     if (!(other instanceof EqRefConstraint)) return null;
     final EqRefConstraint otherEq = (EqRefConstraint) other;
     if (Objects.equals(left, otherEq.left)) {

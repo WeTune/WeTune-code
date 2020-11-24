@@ -5,6 +5,8 @@ import sjtu.ipads.wtune.superopt.interpret.impl.AbstractionImpl;
 public interface Abstraction<T> {
   String name();
 
+  void setName(String name);
+
   Interpreter interpreter();
 
   default boolean interpreted(Interpretation interpretation) {

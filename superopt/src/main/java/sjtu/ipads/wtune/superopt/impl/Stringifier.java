@@ -28,6 +28,7 @@ class Stringifier implements GraphVisitor {
 
   @Override
   public String toString() {
+    if (builder.charAt(builder.length() - 1) == ',') builder.deleteCharAt(builder.length() - 1);
     return builder.toString();
   }
 }

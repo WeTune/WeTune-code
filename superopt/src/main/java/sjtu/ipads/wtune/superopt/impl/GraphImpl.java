@@ -189,7 +189,7 @@ public class GraphImpl implements Graph {
 
     @Override
     public boolean enterInput(Input input) {
-      abstractions.add(input.relation());
+      abstractions.add(input.source());
       return true;
     }
 

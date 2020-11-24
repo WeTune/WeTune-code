@@ -23,7 +23,9 @@ public interface SymbolicColumns {
 
   SymbolicColumns copy();
 
-  default Abstraction<Relation> relation() {
+  void setInterpreter(Interpreter interpreter);
+
+  default Abstraction<InputSource> relation() {
     return null;
   }
 
@@ -39,7 +41,7 @@ public interface SymbolicColumns {
     return null; // TODO
   }
 
-  static SymbolicColumns fromSingle(Interpreter interpreter, Abstraction<Relation> source) {
+  static SymbolicColumns fromSingle(Interpreter interpreter, Abstraction<InputSource> source) {
     return NativeColumns.create(interpreter, source);
   }
 

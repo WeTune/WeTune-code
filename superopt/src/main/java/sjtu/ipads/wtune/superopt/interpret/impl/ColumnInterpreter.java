@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.Helper;
-import sjtu.ipads.wtune.superopt.relational.Relation;
+import sjtu.ipads.wtune.superopt.relational.InputSource;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
@@ -15,8 +15,8 @@ import static sjtu.ipads.wtune.superopt.Helper.listMap;
 
 public class ColumnInterpreter {
   public static void interpret(Graph graph) {
-    final List<Abstraction<Relation>> inputs = listMap(Input::relation, graph.inputs());
-    final int[][] bits = Helper.setPartition(inputs.size());
+    final List<Abstraction<InputSource>> inputs = listMap(Input::source, graph.inputs());
+    final int[][] bits = Helper.partitionBits(inputs.size());
 
     final InterpretationContext interpretations = InterpretationContext.empty();
     for (int[] bit : bits) {

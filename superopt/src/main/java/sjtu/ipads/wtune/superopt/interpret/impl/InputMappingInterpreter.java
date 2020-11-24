@@ -27,7 +27,7 @@ public class InputMappingInterpreter {
     }
     final Input tInput = tInputs.get(idx);
     for (Input sInput : sInputs) {
-      constraints.push(Constraint.refEq(tInput.relation(), sInput.relation()));
+      constraints.push(Constraint.refEq(tInput.source(), sInput.source()));
 
       final Set<Input> sInputsNext =
           sInput.canBeTable() ? sInputs : Sets.difference(sInputs, singleton(sInput));

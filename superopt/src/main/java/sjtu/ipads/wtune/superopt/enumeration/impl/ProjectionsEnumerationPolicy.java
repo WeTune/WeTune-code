@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.enumeration.impl;
 
+import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.Projections;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
@@ -14,7 +15,8 @@ public class ProjectionsEnumerationPolicy extends ColumnEnumerationPolicy<Projec
   }
 
   @Override
-  protected Projections fromSelection(SymbolicColumns columns) {
+  protected Projections fromSelection(Interpreter interpreter, SymbolicColumns columns) {
+    columns.setInterpreter(interpreter);
     return Projections.from(columns);
   }
 }

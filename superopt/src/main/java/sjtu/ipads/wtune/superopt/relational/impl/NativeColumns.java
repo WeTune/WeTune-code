@@ -3,24 +3,26 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.ConcreteColumns;
-import sjtu.ipads.wtune.superopt.relational.Relation;
+import sjtu.ipads.wtune.superopt.relational.InputSource;
 
 import java.util.Objects;
 
 public class NativeColumns extends MonoSourceColumns {
-  private final Abstraction<Relation> relation;
+  private Interpreter interpreter;
+  private final Abstraction<InputSource> relation;
   private final Range range = Range.ALL; // for future?
   private int minNum, maxNum; // only useful when range is SPECIFIC
 
   private final Abstraction<ConcreteColumns> concreteColumns;
 
-  public NativeColumns(Interpreter interpreter, Abstraction<Relation> source) {
+  public NativeColumns(Interpreter interpreter, Abstraction<InputSource> source) {
+    this.interpreter = interpreter;
     this.relation = source;
-    this.concreteColumns = Abstraction.create(interpreter, source.name() + ".c?");
+    this.concreteColumns = Abstraction.create(interpreter, interpreter.interpreterName() + ".c?");
   }
 
   @Override
-  public Abstraction<Relation> relation() {
+  public Abstraction<InputSource> relation() {
     return relation;
   }
 
@@ -29,7 +31,13 @@ public class NativeColumns extends MonoSourceColumns {
     return concreteColumns;
   }
 
-  public static NativeColumns create(Interpreter interpreter, Abstraction<Relation> source) {
+  @Override
+  public void setInterpreter(Interpreter interpreter) {
+    this.interpreter = interpreter;
+    this.concreteColumns.setName(interpreter.interpreterName() + ".c?");
+  }
+
+  public static NativeColumns create(Interpreter interpreter, Abstraction<InputSource> source) {
     return new NativeColumns(interpreter, source);
   }
 

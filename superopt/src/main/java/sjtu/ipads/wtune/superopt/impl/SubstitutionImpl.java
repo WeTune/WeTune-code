@@ -86,8 +86,10 @@ public class SubstitutionImpl implements Substitution {
         + source
         + "\n  target="
         + target
-        + "\n  interpretation="
+        + "\n  sParam="
         + sourceInterpretation
+        + "\n  tParam="
+        + targetInterpretation
         + "\n  constraints="
         + constraints
         + "\n}";

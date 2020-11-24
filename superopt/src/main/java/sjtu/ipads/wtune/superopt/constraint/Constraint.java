@@ -18,8 +18,12 @@ public interface Constraint {
     return false;
   }
 
-  default Constraint transitive(Constraint constraint) {
+  default Constraint buildTransitive(Constraint constraint) {
     return null;
+  }
+
+  default boolean isTautology() {
+    return false;
   }
 
   static Constraint refEq(Abstraction<?> left, Abstraction<?> right) {

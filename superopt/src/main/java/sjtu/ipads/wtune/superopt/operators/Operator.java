@@ -113,8 +113,9 @@ public interface Operator extends Interpreter {
     return true;
   }
 
-  default Graph toGraph() {
+  default Graph toGraph(String name) {
     final Graph g = Graph.createEmpty();
+    g.setName(name);
     g.setHead(this);
     return g.freeze();
   }

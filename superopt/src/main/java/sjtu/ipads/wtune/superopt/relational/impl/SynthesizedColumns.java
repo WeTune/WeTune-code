@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.relational.ConcreteColumns;
-import sjtu.ipads.wtune.superopt.relational.Relation;
 import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
 public class SynthesizedColumns extends MonoSourceColumns {
@@ -23,4 +22,7 @@ public class SynthesizedColumns extends MonoSourceColumns {
   public MonoSourceColumns copy() {
     return new SynthesizedColumns(concreteColumns.interpreter(), refSources);
   }
+
+  @Override
+  public void setInterpreter(Interpreter interpreter) {}
 }

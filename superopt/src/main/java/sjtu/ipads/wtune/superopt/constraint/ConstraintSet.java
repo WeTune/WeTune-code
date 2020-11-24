@@ -4,41 +4,66 @@ import sjtu.ipads.wtune.superopt.constraint.impl.ConstraintSetImpl;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-public abstract class ConstraintSet {
+import static java.util.function.Predicate.not;
+
+public abstract class ConstraintSet implements Iterable<Constraint> {
   public abstract Set<Constraint> constraints();
 
+  /**
+   * If not conflict with existing constraints, add the constraint as well as its transitive closure
+   * to this set. Otherwise do nothing.
+   *
+   * @return if conflict with existing constraint.
+   */
   public boolean add(Constraint constraint) {
-    if (checkNonConflict(constraint)) {
-      final Set<Constraint> existing = constraints();
-      final Set<Constraint> transitives = new HashSet<>();
-      for (Constraint c : existing) {
-        final Constraint transitive = c.transitive(constraint);
-        if (transitive != null && !existing.contains(transitive)) transitives.add(transitive);
-      }
-      if (addAll(transitives)) add0(constraint);
-      return true;
-    } else return false;
-  }
+    if (constraint.isTautology()) return true;
+    if (!checkNonConflict(constraint)) return false;
 
-  public boolean addAll(Collection<Constraint> constraints) {
-    if (constraints.stream().allMatch(this::checkNonConflict)) {
-      addAll0(constraints);
-      return true;
+    final Set<Constraint> transitiveClosure = transitiveOf(constraint);
+    // don't call addAll to avoid double computation
+    if (checkNonConflict(transitiveClosure)) {
+      add0(constraint);
+      addAll0(transitiveClosure);
     }
-    return false;
-  }
-
-  public boolean addAll(ConstraintSet set) {
-    return addAll(set.constraints());
-  }
-
-  public boolean checkNonConflict(Constraint constraint) {
-    for (Constraint c : constraints()) if (c.isConflict(constraint)) return false;
     return true;
+  }
+
+  /**
+   * Batch `add`.
+   *
+   * <p>NOTE: this is not an atomic operation: some constraints may have added to the set before an
+   * conflict is detected. BE CAREFUL when used this method.
+   */
+  public boolean addAll(Iterable<Constraint> constraints) {
+    for (Constraint constraint : constraints) if (!add(constraint)) return false;
+    return true;
+  }
+
+  /***/
+  public Set<Constraint> transitiveOf(Constraint constraint) {
+    return constraints().stream()
+        .map(constraint::buildTransitive)
+        .filter(Objects::nonNull)
+        .filter(not(constraints()::contains))
+        .collect(Collectors.toSet());
+  }
+
+  /**
+   * Check if single constraint is conflict with existing constraint.
+   *
+   * <p>NOTE: transitive constraints are not checked.
+   */
+  public boolean checkNonConflict(Constraint constraint) {
+    return constraint.isTautology() || constraints().stream().noneMatch(constraint::isConflict);
+  }
+
+  /** Batch `checkNonConflict` */
+  public boolean checkNonConflict(Iterable<Constraint> constraint) {
+    return StreamSupport.stream(constraint.spliterator(), false).allMatch(this::checkNonConflict);
   }
 
   public boolean checkInterpretation(Interpretation interpretation) {
@@ -52,7 +77,22 @@ public abstract class ConstraintSet {
   }
 
   public boolean contains(Constraint constraint) {
+    if (constraint.isTautology()) return true;
     return constraints().contains(constraint);
+  }
+
+  public int size() {
+    return constraints().size();
+  }
+
+  @Override
+  public Iterator<Constraint> iterator() {
+    return constraints().iterator();
+  }
+
+  @Override
+  public Spliterator<Constraint> spliterator() {
+    return constraints().spliterator();
   }
 
   protected abstract void add0(Constraint constraint);

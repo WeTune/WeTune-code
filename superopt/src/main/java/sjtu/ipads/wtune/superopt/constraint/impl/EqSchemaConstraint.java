@@ -37,35 +37,23 @@ public class EqSchemaConstraint implements Constraint {
       return singletonList(refEq(((Proj) left.op()).projs(), ((Proj) right.op()).projs()));
 
     } else if (left instanceof InputSchema && right instanceof InputSchema) {
-      return singletonList(refEq(((Input) left.op()).relation(), ((Input) right.op()).relation()));
+      return singletonList(refEq(((Input) left.op()).source(), ((Input) right.op()).source()));
 
     } else if (left instanceof ProjSchema && right instanceof InputSchema) {
       return singletonList(
           constEq(
-              ((Proj) left.op()).projs(), selectAll(right.op(), ((Input) right.op()).relation())));
+              ((Proj) left.op()).projs(), selectAll(right.op(), ((Input) right.op()).source())));
 
     } else if (left instanceof InputSchema && right instanceof ProjSchema) {
       return singletonList(
           constEq(
-              ((Proj) right.op()).projs(), selectAll(right.op(), ((Input) left.op()).relation())));
+              ((Proj) right.op()).projs(), selectAll(right.op(), ((Input) left.op()).source())));
 
     } else if (left instanceof AggSchema && right instanceof AggSchema) {
       return List.of(
           refEq(((Agg) left.op()).groupKeys(), ((Agg) right.op()).groupKeys()),
           refEq(((Agg) left.op()).aggFuncs(), ((Agg) right.op()).aggFuncs()));
 
-      //    } else if (left instanceof AggSchema && right instanceof InputSchema) {
-      //      return null;
-      //
-      //    } else if (left instanceof InputSchema && right instanceof AggSchema) {
-      //      return null;
-      //
-      //    } else if (left instanceof JoinSchema && right instanceof InputSchema) {
-      //      return null;
-      //
-      //    } else if (left instanceof InputSchema && right instanceof JoinSchema) {
-      //      return null;
-      //
     } else {
       return singletonList(new EqSchemaConstraint(left, right));
     }
