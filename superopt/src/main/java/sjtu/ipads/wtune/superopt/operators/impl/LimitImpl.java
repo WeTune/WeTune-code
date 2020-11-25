@@ -5,6 +5,8 @@ import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Limit;
 
 public class LimitImpl extends BaseOperator implements Limit {
+  private LimitImpl() {}
+
   public static LimitImpl create() {
     return new LimitImpl();
   }
@@ -26,6 +28,6 @@ public class LimitImpl extends BaseOperator implements Limit {
 
   @Override
   public String toString() {
-    return "Limit";
+    return "Limit" + id();
   }
 }

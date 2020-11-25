@@ -1,24 +1,24 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.relational.Projections;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 import java.util.Objects;
 
 // Currently this is just a wrapper of SymbolicColumn
 public class ProjectionsImpl implements Projections {
-  private final SymbolicColumns columns;
+  private final ColumnSet columns;
 
-  private ProjectionsImpl(SymbolicColumns columns) {
+  private ProjectionsImpl(ColumnSet columns) {
     this.columns = columns;
   }
 
-  public static ProjectionsImpl create(SymbolicColumns columns) {
+  public static ProjectionsImpl create(ColumnSet columns) {
     return new ProjectionsImpl(columns);
   }
 
   @Override
-  public SymbolicColumns columns() {
+  public ColumnSet columns() {
     return columns;
   }
 
@@ -37,6 +37,6 @@ public class ProjectionsImpl implements Projections {
 
   @Override
   public String toString() {
-    return "Projections(" + columns + ')';
+    return "\u03c0(" + columns + ')';
   }
 }

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.constraint.impl;
 
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.constraint.ConstraintSet;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
@@ -22,15 +22,8 @@ public class EqSchemaShapeConstraint implements Constraint {
   }
 
   @Override
-  public boolean check(Interpretation context, Abstraction<?> abstraction, Object interpretation) {
-    return true;
-  }
-
-  @Override
-  public boolean recheck(Interpretation context) {
-    return left.columns(context) == null
-        || right.columns(context) == null
-        || left.shapeEquals(right, context);
+  public boolean check(Interpretation context, ConstraintSet constraints) {
+    return true; // TODO
   }
 
   @Override

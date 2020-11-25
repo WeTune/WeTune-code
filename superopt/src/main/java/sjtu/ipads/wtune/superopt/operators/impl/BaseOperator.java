@@ -7,15 +7,13 @@ import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 public abstract class BaseOperator implements Operator {
+  private int id;
   private Operator next;
   private final Operator[] prev;
-
-  private RelationSchema outSchema;
-  private Interpreter delegate;
+  private final RelationSchema outSchema;
 
   private Graph graph;
-
-  private int id;
+  private Interpreter delegate;
 
   protected BaseOperator() {
     this(1);
@@ -23,6 +21,12 @@ public abstract class BaseOperator implements Operator {
 
   protected BaseOperator(int numChildren) {
     this.prev = new Operator[numChildren];
+    this.outSchema = createOutSchema();
+  }
+
+  @Override
+  public int id() {
+    return id;
   }
 
   @Override
@@ -33,6 +37,31 @@ public abstract class BaseOperator implements Operator {
   @Override
   public Operator[] prev() {
     return prev;
+  }
+
+  @Override
+  public Graph graph() {
+    return graph;
+  }
+
+  @Override
+  public RelationSchema outSchema() {
+    return outSchema;
+  }
+
+  @Override
+  public String interpreterName() {
+    return (graph == null ? "" : graph.name() == null ? "" : (graph.name() + ".")) + toString();
+  }
+
+  @Override
+  public Interpretation interpretation() {
+    return delegate.interpretation();
+  }
+
+  @Override
+  public void setId(int id) {
+    this.id = id;
   }
 
   @Override
@@ -55,33 +84,8 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
-  public void setId(int id) {
-    this.id = id;
-  }
-
-  @Override
-  public int id() {
-    return id;
-  }
-
-  @Override
-  public RelationSchema outSchema() {
-    return outSchema;
-  }
-
-  @Override
-  public Graph graph() {
-    return graph;
-  }
-
-  @Override
   public void setGraph(Graph graph) {
     this.graph = graph;
-  }
-
-  @Override
-  public void setOutSchema(RelationSchema outSchema) {
-    this.outSchema = outSchema;
   }
 
   @Override
@@ -95,16 +99,6 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
-  public String interpreterName() {
-    return (graph == null ? "" : graph.name() == null ? "" : graph.name()) + "." + toString();
-  }
-
-  @Override
-  public Interpretation interpretation() {
-    return delegate.interpretation();
-  }
-
-  @Override
   public Operator copy0() {
     final Operator newInstance = newInstance();
     copyTo(newInstance);
@@ -114,4 +108,8 @@ public abstract class BaseOperator implements Operator {
   protected abstract Operator newInstance();
 
   protected void copyTo(Operator other) {}
+
+  protected RelationSchema createOutSchema() {
+    return RelationSchema.create(this);
+  }
 }

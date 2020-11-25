@@ -9,6 +9,8 @@ import sjtu.ipads.wtune.superopt.relational.PlainPredicate;
 public class PlainFilterImpl extends BaseOperator implements PlainFilter {
   private Abstraction<PlainPredicate> predicate;
 
+  private PlainFilterImpl() {}
+
   public static PlainFilterImpl create() {
     return new PlainFilterImpl();
   }
@@ -20,7 +22,7 @@ public class PlainFilterImpl extends BaseOperator implements PlainFilter {
 
   @Override
   public Abstraction<PlainPredicate> predicate() {
-    if (predicate == null) predicate = Abstraction.create(this, "filter-" + id());
+    if (predicate == null) predicate = Abstraction.create(this, "");
     return predicate;
   }
 
@@ -36,6 +38,6 @@ public class PlainFilterImpl extends BaseOperator implements PlainFilter {
 
   @Override
   public String toString() {
-    return "Filter";
+    return "Filter" + id();
   }
 }

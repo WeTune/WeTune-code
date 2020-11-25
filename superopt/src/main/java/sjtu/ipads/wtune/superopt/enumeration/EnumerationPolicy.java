@@ -32,22 +32,22 @@ public interface EnumerationPolicy<T> {
     return SubqueryPredicateEnumerationPolicy.create();
   }
 
-  static SymbolicColumns visibleColumns(Interpretation interpretation, Operator op) {
-    final SymbolicColumns inputColumns = op.prev()[0].outSchema().columns(interpretation);
-    final SymbolicColumns correlatedColumns = findCorrelatedColumns(interpretation, op);
+  static ColumnSet visibleColumns(Interpretation interpretation, Operator op) {
+    final ColumnSet inputColumns = op.prev()[0].outSchema().symbolicColumns(interpretation);
+    final ColumnSet correlatedColumns = findCorrelatedColumns(interpretation, op);
 
     return correlatedColumns == null
         ? inputColumns
-        : SymbolicColumns.concat(inputColumns, correlatedColumns);
+        : ColumnSet.union(inputColumns, correlatedColumns);
   }
 
-  static SymbolicColumns findCorrelatedColumns(Interpretation interpretation, Operator op) {
+  static ColumnSet findCorrelatedColumns(Interpretation interpretation, Operator op) {
     final Operator next = op.next();
-    final SymbolicColumns outerCols =
+    final ColumnSet outerCols =
         next == null ? null : findCorrelatedColumns(interpretation, next);
     if (op instanceof SubqueryFilter) {
-      final SymbolicColumns cols = op.prev()[0].outSchema().columns(interpretation);
-      return outerCols == null ? cols : SymbolicColumns.concat(outerCols, cols);
+      final ColumnSet cols = op.prev()[0].outSchema().symbolicColumns(interpretation);
+      return outerCols == null ? cols : ColumnSet.union(outerCols, cols);
 
     } else return outerCols;
   }

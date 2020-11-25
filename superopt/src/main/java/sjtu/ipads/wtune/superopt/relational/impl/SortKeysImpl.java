@@ -1,23 +1,23 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.relational.SortKeys;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 import java.util.Objects;
 
 public class SortKeysImpl implements SortKeys {
-  private final SymbolicColumns columns;
+  private final ColumnSet columns;
 
-  public SortKeysImpl(SymbolicColumns columns) {
+  public SortKeysImpl(ColumnSet columns) {
     this.columns = columns;
   }
 
-  public static SortKeysImpl create(SymbolicColumns from) {
+  public static SortKeysImpl create(ColumnSet from) {
     return new SortKeysImpl(from);
   }
 
   @Override
-  public SymbolicColumns columns() {
+  public ColumnSet columns() {
     return columns;
   }
 

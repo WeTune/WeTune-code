@@ -3,9 +3,10 @@ package sjtu.ipads.wtune.superopt.operators.impl;
 import sjtu.ipads.wtune.superopt.GraphVisitor;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Union;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 public class UnionImpl extends BaseOperator implements Union {
-  protected UnionImpl() {
+  private UnionImpl() {
     super(2);
   }
 
@@ -29,7 +30,12 @@ public class UnionImpl extends BaseOperator implements Union {
   }
 
   @Override
+  protected RelationSchema createOutSchema() {
+    return RelationSchema.create(this);
+  }
+
+  @Override
   public String toString() {
-    return "Union";
+    return "Union" + id();
   }
 }

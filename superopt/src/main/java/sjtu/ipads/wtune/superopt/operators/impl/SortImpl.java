@@ -9,6 +9,8 @@ import sjtu.ipads.wtune.superopt.relational.SortKeys;
 public class SortImpl extends BaseOperator implements Sort {
   private Abstraction<SortKeys> sortKeys;
 
+  private SortImpl() {}
+
   public static SortImpl create() {
     return new SortImpl();
   }
@@ -20,7 +22,7 @@ public class SortImpl extends BaseOperator implements Sort {
 
   @Override
   public Abstraction<SortKeys> sortKeys() {
-    if (sortKeys == null) sortKeys = Abstraction.create(this, "sortKeys-" + id());
+    if (sortKeys == null) sortKeys = Abstraction.create(this, "");
     return sortKeys;
   }
 
@@ -36,6 +38,6 @@ public class SortImpl extends BaseOperator implements Sort {
 
   @Override
   public String toString() {
-    return "Sort";
+    return "Sort" + id();
   }
 }

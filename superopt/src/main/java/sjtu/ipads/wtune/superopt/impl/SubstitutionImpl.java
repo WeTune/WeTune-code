@@ -4,8 +4,11 @@ import sjtu.ipads.wtune.superopt.Graph;
 import sjtu.ipads.wtune.superopt.Substitution;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSet;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
+import sjtu.ipads.wtune.superopt.relational.MonoSourceColumnSet;
 
 import java.util.Objects;
+
+import static sjtu.ipads.wtune.superopt.interpret.Interpretation.collectColumns;
 
 public class SubstitutionImpl implements Substitution {
   private final Graph source;
@@ -60,6 +63,24 @@ public class SubstitutionImpl implements Substitution {
   @Override
   public ConstraintSet constraints() {
     return constraints;
+  }
+
+  @Override
+  public Substitution decorated() {
+    int i = 0;
+    i = setIds(i, sourceInterpretation);
+    i = setIds(i, targetInterpretation);
+
+    return this;
+  }
+
+  private static int setIds(int i, Interpretation interpretation) {
+    for (Object assignment : collectColumns(interpretation))
+      if (assignment instanceof MonoSourceColumnSet) {
+        final MonoSourceColumnSet monoColumn = (MonoSourceColumnSet) assignment;
+        if (monoColumn.id() == -1) monoColumn.setId(i++);
+      }
+    return i;
   }
 
   @Override

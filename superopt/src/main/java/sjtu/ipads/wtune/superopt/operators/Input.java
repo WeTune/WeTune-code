@@ -7,8 +7,6 @@ import sjtu.ipads.wtune.superopt.operators.impl.InputImpl;
 public interface Input extends Operator {
   int index();
 
-  boolean canBeTable();
-
   Abstraction<InputSource> source();
 
   static Input create(int idx) {

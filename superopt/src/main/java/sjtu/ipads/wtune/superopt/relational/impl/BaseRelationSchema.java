@@ -1,12 +1,16 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.*;
-import sjtu.ipads.wtune.superopt.impl.legacy.ColumnSet;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 import sjtu.ipads.wtune.superopt.relational.RelationSchema;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+
+import static java.util.Collections.singletonList;
 
 public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   protected final T operator;
@@ -25,8 +29,8 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   }
 
   @Override
-  public SymbolicColumns columns(Interpretation interpretation) {
-    return operator.prev()[0].outSchema().columns(interpretation);
+  public ColumnSet symbolicColumns(Interpretation interpretation) {
+    return operator.prev()[0].outSchema().symbolicColumns(interpretation);
   }
 
   @Override
@@ -40,13 +44,13 @@ public class BaseRelationSchema<T extends Operator> implements RelationSchema {
   }
 
   @Override
-  public boolean isStable() {
-    return operator.prev()[0].outSchema().isStable();
-  }
+  public List<List<Constraint>> enforceEq(RelationSchema other, Interpretation interpretation) {
+    final ColumnSet thisColumns = symbolicColumns(interpretation);
+    final ColumnSet otherColumns = other.symbolicColumns(interpretation);
 
-  @Override
-  public boolean schemaEquals(RelationSchema other, Interpretation interpretation) {
-    return Objects.equals(columns(interpretation), other.columns(interpretation));
+    return thisColumns == null || otherColumns == null
+        ? singletonList(singletonList(Constraint.tautology()))
+        : thisColumns.enforceEq(otherColumns, interpretation);
   }
 
   @Override

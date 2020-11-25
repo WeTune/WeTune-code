@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Join;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 public class JoinSchema extends BaseRelationSchema<Join> {
   protected JoinSchema(Join join) {
@@ -14,23 +14,11 @@ public class JoinSchema extends BaseRelationSchema<Join> {
   }
 
   @Override
-  public boolean isStable() {
-    return operator.prev()[0].outSchema().isStable() && operator.prev()[1].outSchema().isStable();
-  }
-
-  private SymbolicColumns columnsCache;
-
-  @Override
-  public SymbolicColumns columns(Interpretation interpretation) {
-    if (columnsCache != null) return columnsCache;
-
-    final SymbolicColumns left = operator.prev()[0].outSchema().columns(interpretation);
-    final SymbolicColumns right = operator.prev()[1].outSchema().columns(interpretation);
+  public ColumnSet symbolicColumns(Interpretation interpretation) {
+    final ColumnSet left = operator.prev()[0].outSchema().symbolicColumns(interpretation);
+    final ColumnSet right = operator.prev()[1].outSchema().symbolicColumns(interpretation);
     if (left == null || right == null) return null;
 
-    final SymbolicColumns columns = SymbolicColumns.concat(left, right);
-    if (isStable()) columnsCache = columns; // cache only if stable
-
-    return columns;
+    return ColumnSet.union(left, right);
   }
 }

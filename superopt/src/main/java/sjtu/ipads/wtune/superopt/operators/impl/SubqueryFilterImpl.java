@@ -11,18 +11,18 @@ import sjtu.ipads.wtune.superopt.relational.SubqueryPredicate;
 public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
   private Abstraction<SubqueryPredicate> predicate;
 
-  protected SubqueryFilterImpl() {
+  private SubqueryFilterImpl() {
     super(2);
-  }
-
-  @Override
-  public Abstraction<SubqueryPredicate> predicate() {
-    if (predicate == null) predicate = Abstraction.create(this, "filter*-" + id());
-    return predicate;
   }
 
   public static SubqueryFilterImpl create() {
     return new SubqueryFilterImpl();
+  }
+
+  @Override
+  public Abstraction<SubqueryPredicate> predicate() {
+    if (predicate == null) predicate = Abstraction.create(this, "");
+    return predicate;
   }
 
   @Override
@@ -50,6 +50,6 @@ public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
 
   @Override
   public String toString() {
-    return "Filter*";
+    return "SubFilter" + id();
   }
 }

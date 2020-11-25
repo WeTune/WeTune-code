@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.superopt.constraint.impl.ConstraintSetImpl;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
 
 public abstract class ConstraintSet implements Iterable<Constraint> {
@@ -21,6 +21,7 @@ public abstract class ConstraintSet implements Iterable<Constraint> {
    */
   public boolean add(Constraint constraint) {
     if (constraint.isTautology()) return true;
+    if (constraint.isContradiction()) return false;
     if (!checkNonConflict(constraint)) return false;
 
     final Set<Constraint> transitiveClosure = transitiveOf(constraint);
@@ -44,12 +45,26 @@ public abstract class ConstraintSet implements Iterable<Constraint> {
   }
 
   /***/
-  public Set<Constraint> transitiveOf(Constraint constraint) {
-    return constraints().stream()
-        .map(constraint::buildTransitive)
-        .filter(Objects::nonNull)
-        .filter(not(constraints()::contains))
-        .collect(Collectors.toSet());
+  public Set<Constraint> transitiveOf(Constraint c0) {
+    final Set<Constraint> checked = new HashSet<>();
+    Set<Constraint> toCheck = new HashSet<>();
+    Set<Constraint> newToCheck = new HashSet<>();
+    toCheck.add(c0);
+
+    while (!toCheck.isEmpty()) {
+      for (Constraint constraint : toCheck)
+        constraints().stream()
+            .map(constraint::buildTransitive)
+            .filter(Objects::nonNull)
+            .filter(not(checked::contains))
+            .filter(not(toCheck::contains))
+            .forEach(newToCheck::add);
+      checked.addAll(toCheck);
+      toCheck = newToCheck;
+      newToCheck = new HashSet<>();
+    }
+
+    return checked;
   }
 
   /**
@@ -58,7 +73,9 @@ public abstract class ConstraintSet implements Iterable<Constraint> {
    * <p>NOTE: transitive constraints are not checked.
    */
   public boolean checkNonConflict(Constraint constraint) {
-    return constraint.isTautology() || constraints().stream().noneMatch(constraint::isConflict);
+    return constraint.isTautology()
+        || (!constraint.isContradiction()
+            && constraints().stream().noneMatch(constraint::isConflict));
   }
 
   /** Batch `checkNonConflict` */
@@ -67,13 +84,11 @@ public abstract class ConstraintSet implements Iterable<Constraint> {
   }
 
   public boolean checkInterpretation(Interpretation interpretation) {
-    for (Abstraction<?> abstraction : interpretation.abstractions()) {
-      final Object assignment = interpretation.interpret(abstraction);
-      for (Constraint constraint : constraints())
-        if (!constraint.check(interpretation, abstraction, assignment)) return false;
+    for (Constraint constraint : constraints()) {
+      if (!constraint.check(interpretation, this)) return false;
     }
-
     return true;
+    //    return constraints().stream().allMatch(it -> it.check(interpretation));
   }
 
   public boolean contains(Constraint constraint) {
@@ -105,12 +120,18 @@ public abstract class ConstraintSet implements Iterable<Constraint> {
     return ConstraintSetImpl.create();
   }
 
+  private static ConstraintSet IMMUTABLE_EMPTY = ConstraintSetImpl.create(emptySet());
+
+  public static ConstraintSet immutableEmpty() {
+    return IMMUTABLE_EMPTY;
+  }
+
   public static ConstraintSet from(Set<Constraint> constraints) {
     return ConstraintSetImpl.create(constraints);
   }
 
   public static ConstraintSet fromCopy(ConstraintSet set) {
-    return ConstraintSetImpl.create(set.constraints());
+    return ConstraintSetImpl.create(new HashSet<>(set.constraints()));
   }
 
   @Override

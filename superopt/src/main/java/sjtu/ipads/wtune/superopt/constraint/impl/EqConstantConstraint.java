@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.constraint.impl;
 
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.ConstraintSet;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 
@@ -22,8 +23,9 @@ public class EqConstantConstraint implements Constraint {
   }
 
   @Override
-  public boolean check(Interpretation context, Abstraction<?> abstraction, Object interpretation) {
-    return !Objects.equals(target, abstraction) || Objects.equals(interpretation, constVal);
+  public boolean check(Interpretation interpretation, ConstraintSet constraints) {
+    final Object assignment = interpretation.interpret(target);
+    return assignment == null || Objects.equals(assignment, constVal);
   }
 
   @Override

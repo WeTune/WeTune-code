@@ -4,13 +4,13 @@ import sjtu.ipads.wtune.superopt.relational.impl.ExistSubqueryPredicate;
 import sjtu.ipads.wtune.superopt.relational.impl.InSubqueryPredicate;
 
 public interface SubqueryPredicate {
-  SymbolicColumns columns();
+  ColumnSet columns();
 
   static SubqueryPredicate exists() {
     return ExistSubqueryPredicate.create();
   }
 
-  static SubqueryPredicate in(SymbolicColumns columns) {
+  static SubqueryPredicate in(ColumnSet columns) {
     return InSubqueryPredicate.create(columns);
   }
 }

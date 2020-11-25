@@ -15,6 +15,9 @@ public interface Substitution {
 
   ConstraintSet constraints();
 
+  // only for display
+  Substitution decorated();
+
   static Substitution create(
       Graph source,
       Graph target,

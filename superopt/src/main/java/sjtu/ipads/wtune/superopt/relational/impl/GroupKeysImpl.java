@@ -1,23 +1,23 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.relational.GroupKeys;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 import java.util.Objects;
 
 public class GroupKeysImpl implements GroupKeys {
-  private final SymbolicColumns columns;
+  private final ColumnSet columns;
 
-  private GroupKeysImpl(SymbolicColumns columns) {
+  private GroupKeysImpl(ColumnSet columns) {
     this.columns = columns;
   }
 
-  public static GroupKeysImpl create(SymbolicColumns columns) {
+  public static GroupKeysImpl create(ColumnSet columns) {
     return new GroupKeysImpl(columns);
   }
 
   @Override
-  public SymbolicColumns columns() {
+  public ColumnSet columns() {
     return columns;
   }
 

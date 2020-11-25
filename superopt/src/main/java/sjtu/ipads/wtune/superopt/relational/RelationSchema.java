@@ -1,22 +1,23 @@
 package sjtu.ipads.wtune.superopt.relational;
 
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.*;
 import sjtu.ipads.wtune.superopt.relational.impl.*;
 
+import java.util.Collections;
+import java.util.List;
+
 public interface RelationSchema {
   Operator op();
 
-  boolean schemaEquals(RelationSchema other, Interpretation interpretation);
-
-  boolean shapeEquals(RelationSchema other, Interpretation interpretation);
-
-  SymbolicColumns columns(Interpretation interpretation);
-
   RelationSchema nonTrivialSource();
 
-  // true indicates the output schema is not affected by interpretation
-  boolean isStable();
+  ColumnSet symbolicColumns(Interpretation interpretation);
+
+  List<List<Constraint>> enforceEq(RelationSchema other, Interpretation interpretation);
+
+  boolean shapeEquals(RelationSchema other, Interpretation interpretation);
 
   static RelationSchema create(Agg agg) {
     return AggSchema.create(agg);

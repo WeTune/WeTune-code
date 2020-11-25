@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.relational.impl;
 
 import sjtu.ipads.wtune.superopt.relational.SubqueryPredicate;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 public class ExistSubqueryPredicate implements SubqueryPredicate {
   private static final ExistSubqueryPredicate INSTANCE = new ExistSubqueryPredicate();
@@ -18,7 +18,7 @@ public class ExistSubqueryPredicate implements SubqueryPredicate {
   }
 
   @Override
-  public SymbolicColumns columns() {
+  public ColumnSet columns() {
     return null;
   }
 }

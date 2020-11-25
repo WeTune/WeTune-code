@@ -1,8 +1,10 @@
 package sjtu.ipads.wtune.superopt.enumeration.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Interpreter;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 import sjtu.ipads.wtune.superopt.relational.Projections;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+
+import static sjtu.ipads.wtune.superopt.relational.ColumnSet.selectFrom;
 
 public class ProjectionsEnumerationPolicy extends ColumnEnumerationPolicy<Projections> {
   public static ProjectionsEnumerationPolicy create() {
@@ -10,12 +12,12 @@ public class ProjectionsEnumerationPolicy extends ColumnEnumerationPolicy<Projec
   }
 
   @Override
-  protected Iterable<SymbolicColumns> selections(SymbolicColumns source) {
-    return source.selections();
+  protected Iterable<ColumnSet> selections(ColumnSet source) {
+    return selectFrom(source);
   }
 
   @Override
-  protected Projections fromSelection(Interpreter interpreter, SymbolicColumns columns) {
+  protected Projections fromSelection(Interpreter interpreter, ColumnSet columns) {
     columns.setInterpreter(interpreter);
     return Projections.from(columns);
   }

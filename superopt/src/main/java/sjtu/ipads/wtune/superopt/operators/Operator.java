@@ -12,17 +12,17 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 
 public interface Operator extends Interpreter {
+  int id();
+
   Operator next();
 
   Operator[] prev();
 
+  void setId(int id);
+
   boolean setNext(Operator next);
 
   boolean setPrev(int idx, Operator prev);
-
-  int id();
-
-  void setId(int id);
 
   Operator copy0();
 
@@ -33,8 +33,6 @@ public interface Operator extends Interpreter {
   void setGraph(Graph graph);
 
   void setInterpreter(Interpreter interpreter);
-
-  void setOutSchema(RelationSchema schema);
 
   void accept0(GraphVisitor visitor);
 

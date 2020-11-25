@@ -6,12 +6,13 @@ import sjtu.ipads.wtune.superopt.operators.Agg;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.relational.AggFuncs;
 import sjtu.ipads.wtune.superopt.relational.GroupKeys;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 public class AggImpl extends BaseOperator implements Agg {
   private Abstraction<GroupKeys> groupKeys;
   private Abstraction<AggFuncs> aggFuncs;
 
-  public AggImpl() {}
+  private AggImpl() {}
 
   public static AggImpl create() {
     return new AggImpl();
@@ -34,18 +35,23 @@ public class AggImpl extends BaseOperator implements Agg {
 
   @Override
   public Abstraction<GroupKeys> groupKeys() {
-    if (groupKeys == null) groupKeys = Abstraction.create(this, "groupKeys-" + id());
+    if (groupKeys == null) groupKeys = Abstraction.create(this, "");
     return groupKeys;
   }
 
   @Override
   public Abstraction<AggFuncs> aggFuncs() {
-    if (aggFuncs == null) aggFuncs = Abstraction.create(this, "aggFuncs-" + id());
+    if (aggFuncs == null) aggFuncs = Abstraction.create(this, "");
     return aggFuncs;
   }
 
   @Override
+  protected RelationSchema createOutSchema() {
+    return RelationSchema.create(this);
+  }
+
+  @Override
   public String toString() {
-    return "Agg";
+    return "Agg" + id();
   }
 }

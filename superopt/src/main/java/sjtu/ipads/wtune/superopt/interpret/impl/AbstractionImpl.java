@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.interpret.impl;
 
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 
 public class AbstractionImpl<T> implements Abstraction<T> {
@@ -34,17 +33,14 @@ public class AbstractionImpl<T> implements Abstraction<T> {
 
   @Override
   public String toString() {
-    final Interpretation interpretation = interpreter.interpretation();
-    final T assignment = interpretation == null ? null : interpretation.interpret(this);
-
     final StringBuilder builder = new StringBuilder();
-    builder.append('`').append(name);
-    if (assignment != null) builder.append(": ").append(assignment);
-    if (interpreter.interpreterName() != null)
-      builder.append("@").append(interpreter.interpreterName());
-    builder.append('`');
+    if (interpreter.interpreterName() != null) {
+      builder.append(interpreter.interpreterName());
+      if (!name.isEmpty()) builder.append('.');
+    }
+    if (!name.isEmpty()) builder.append(name);
+    if (builder.length() == 0) return "`?`";
 
     return builder.toString();
-    //    return (interpret == null ? "`" + name + "`" : "`" + name + ": " + interpret + "`");
   }
 }

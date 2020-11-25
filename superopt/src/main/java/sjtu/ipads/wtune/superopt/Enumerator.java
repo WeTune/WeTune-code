@@ -7,19 +7,21 @@ import sjtu.ipads.wtune.superopt.constraint.ConstraintSet;
 import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.operators.Operator;
-import sjtu.ipads.wtune.superopt.relational.*;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
+import sjtu.ipads.wtune.superopt.relational.InputSource;
+import sjtu.ipads.wtune.superopt.relational.MonoSourceColumnSet;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
+import static java.util.Collections.*;
 import static sjtu.ipads.wtune.superopt.Helper.prepend;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.refEq;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.refNonEq;
+import static sjtu.ipads.wtune.superopt.interpret.Interpretation.collectColumns;
 
 public class Enumerator {
   private static final System.Logger LOG = System.getLogger("Enumerator");
@@ -67,8 +69,8 @@ public class Enumerator {
     final Logger l = new Logger(source, target);
     l.log(TRACE, "BEGIN {2} | {3}", source, target);
 
-    final List<Interpretation> sParams = source.interpretations();
-    final List<Interpretation> tParams = target.interpretations();
+    List<Interpretation> sParams = source.interpretations();
+    List<Interpretation> tParams = target.interpretations();
     l.log(TRACE, "#parameterized {2} {3}", sParams.size(), tParams.size());
 
     final ConstraintSet precondition = initGlobalConstraints(source, target);
@@ -97,6 +99,7 @@ public class Enumerator {
         for (int j = 0; j < tParams.size(); j++) {
           final Interpretation sParam = sParams.get(i);
           final Interpretation tParam = tParams.get(j);
+          final Interpretation mergedParam = Interpretation.merge(sParam, tParam);
 
           final List<ConstraintSet> sLocalColumns = sLocalColumnSets.get(i);
           final List<ConstraintSet> tLocalColumns = tLocalColumnSets.get(j);
@@ -108,8 +111,7 @@ public class Enumerator {
             if (!finalConstraint.addAll(columns.get(0))) continue;
             if (!finalConstraint.addAll(columns.get(1))) continue;
             if (!finalConstraint.addAll(columns.get(2))) continue;
-            if (!finalConstraint.checkInterpretation(sParam)) continue;
-            if (!finalConstraint.checkInterpretation(tParam)) continue;
+            if (!finalConstraint.checkInterpretation(mergedParam)) continue;
 
             final Substitution substitution =
                 Substitution.create(source, target, sParam, tParam, finalConstraint);
@@ -168,46 +170,26 @@ public class Enumerator {
         collectColumns(interpretation), (x, y, same) -> same ? columnEq(x, y) : columnNonEq(x, y));
   }
 
-  private static List<SymbolicColumns> collectColumns(Interpretation interpretation) {
-    final Set<Abstraction<?>> abstractions = interpretation.abstractions();
-    final List<SymbolicColumns> columns = new ArrayList<>();
-
-    for (Abstraction<?> abstraction : abstractions) {
-      final Object assignment = interpretation.interpret(abstraction);
-      if (assignment instanceof SubqueryPredicate)
-        addSymbolicColumns(columns, ((SubqueryPredicate) assignment).columns());
-      else if (assignment instanceof PlainPredicate)
-        addSymbolicColumns(columns, ((PlainPredicate) assignment).columns());
-      else if (assignment instanceof Projections)
-        addSymbolicColumns(columns, ((Projections) assignment).columns());
-    }
-
-    return columns;
-  }
-
-  private static void addSymbolicColumns(List<SymbolicColumns> columns, SymbolicColumns c) {
-    if (c != null) columns.addAll(c.flatten());
-  }
-
-  private static void addSymbolicColumns(
-      List<SymbolicColumns> columns, Collection<SymbolicColumns> toAdd) {
-    for (SymbolicColumns c : toAdd) addSymbolicColumns(columns, c);
-  }
-
-  private static Collection<Constraint> columnEq(SymbolicColumns c0, SymbolicColumns c1) {
-    final Abstraction<InputSource> rel0 = c0.relation();
-    final Abstraction<InputSource> rel1 = c1.relation();
+  private static Collection<Constraint> columnEq(ColumnSet c0, ColumnSet c1) {
+    assert c0 instanceof MonoSourceColumnSet && c1 instanceof MonoSourceColumnSet;
+    final MonoSourceColumnSet s0 = (MonoSourceColumnSet) c0;
+    final MonoSourceColumnSet s1 = (MonoSourceColumnSet) c1;
+    final Abstraction<InputSource> rel0 = s0.source();
+    final Abstraction<InputSource> rel1 = s1.source();
     // TODO
     if (rel0 == null || rel1 == null) return emptyList();
-    return List.of(refEq(rel0, rel1), refEq(c0.abstractions(), c1.abstractions()));
+    return List.of(refEq(rel0, rel1), refEq(s0.abstractions(), s1.abstractions()));
   }
 
-  private static Collection<Constraint> columnNonEq(SymbolicColumns c0, SymbolicColumns c1) {
-    final Abstraction<InputSource> rel0 = c0.relation();
-    final Abstraction<InputSource> rel1 = c1.relation();
+  private static Collection<Constraint> columnNonEq(ColumnSet c0, ColumnSet c1) {
+    assert c0 instanceof MonoSourceColumnSet && c1 instanceof MonoSourceColumnSet;
+    final MonoSourceColumnSet s0 = (MonoSourceColumnSet) c0;
+    final MonoSourceColumnSet s1 = (MonoSourceColumnSet) c1;
+    final Abstraction<InputSource> rel0 = s0.source();
+    final Abstraction<InputSource> rel1 = s1.source();
     // TODO
     if (rel0 == null || rel1 == null) return emptyList();
-    return List.of(refNonEq(c0.abstractions(), c1.abstractions()));
+    return List.of(refNonEq(s0.abstractions(), s1.abstractions()));
   }
 
   @FunctionalInterface
@@ -247,14 +229,16 @@ public class Enumerator {
 
     @Override
     public void endPartition() {
-      constraints.add(currentConstraint);
+      if (currentConstraint.size() != 0) constraints.add(currentConstraint);
     }
 
     public static <T> List<ConstraintSet> enumerate(List<T> ts, PartitionEnforcer<T> enforcer) {
       final PartitionConstraintEnumerator<T> enumerator =
           new PartitionConstraintEnumerator<>(enforcer);
       enumerator.enumPartitions(ts);
-      return enumerator.constraints;
+      return enumerator.constraints.isEmpty()
+          ? singletonList(ConstraintSet.immutableEmpty())
+          : enumerator.constraints;
     }
   }
 

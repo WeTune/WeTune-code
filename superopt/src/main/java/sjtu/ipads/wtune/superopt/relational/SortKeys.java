@@ -3,9 +3,9 @@ package sjtu.ipads.wtune.superopt.relational;
 import sjtu.ipads.wtune.superopt.relational.impl.SortKeysImpl;
 
 public interface SortKeys {
-  SymbolicColumns columns();
+  ColumnSet columns();
 
-  static SortKeys from(SymbolicColumns source) {
+  static SortKeys from(ColumnSet source) {
     return SortKeysImpl.create(source);
   }
 }

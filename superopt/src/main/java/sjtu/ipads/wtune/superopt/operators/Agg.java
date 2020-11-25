@@ -9,6 +9,8 @@ public interface Agg extends Operator {
   static Agg create() {
     return AggImpl.create();
   }
+
   Abstraction<GroupKeys> groupKeys();
+
   Abstraction<AggFuncs> aggFuncs();
 }

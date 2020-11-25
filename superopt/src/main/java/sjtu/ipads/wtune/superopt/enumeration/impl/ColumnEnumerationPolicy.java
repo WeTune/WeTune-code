@@ -5,34 +5,25 @@ import sjtu.ipads.wtune.superopt.interpret.Abstraction;
 import sjtu.ipads.wtune.superopt.interpret.Interpretation;
 import sjtu.ipads.wtune.superopt.interpret.Interpreter;
 import sjtu.ipads.wtune.superopt.operators.Operator;
-import sjtu.ipads.wtune.superopt.relational.SymbolicColumns;
+import sjtu.ipads.wtune.superopt.relational.ColumnSet;
 
 import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.Set;
 
 public abstract class ColumnEnumerationPolicy<T> implements EnumerationPolicy<T> {
-  //  private final Map<SymbolicColumns, Set<T>> cache = new IdentityHashMap<>();
-
-  private Set<T> getCache(Interpreter interpreter, SymbolicColumns source) {
-    final Set<T> keys = new HashSet<>();
-
-    for (SymbolicColumns selection : selections(source))
-      keys.add(fromSelection(interpreter, selection));
-
-    //    cache.put(source, keys);
-    return keys;
-  }
 
   @Override
   public Set<T> enumerate(Interpretation interpretation, Abstraction<T> target) {
     final Operator op = (Operator) target.interpreter();
-    final SymbolicColumns sourceCols = op.prev()[0].outSchema().columns(interpretation);
-    return getCache(op, sourceCols);
+    final ColumnSet sourceCols = op.prev()[0].outSchema().symbolicColumns(interpretation);
+
+    final Set<T> keys = new HashSet<>();
+    for (ColumnSet selection : selections(sourceCols)) keys.add(fromSelection(op, selection));
+
+    return keys;
   }
 
-  protected abstract Iterable<SymbolicColumns> selections(SymbolicColumns source);
+  protected abstract Iterable<ColumnSet> selections(ColumnSet source);
 
-  protected abstract T fromSelection(Interpreter interpreter, SymbolicColumns columns);
+  protected abstract T fromSelection(Interpreter interpreter, ColumnSet columns);
 }

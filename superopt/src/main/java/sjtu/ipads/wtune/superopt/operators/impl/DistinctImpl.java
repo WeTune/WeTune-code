@@ -5,6 +5,8 @@ import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.operators.Distinct;
 
 public class DistinctImpl extends BaseOperator implements Distinct {
+  private DistinctImpl() {}
+
   public static DistinctImpl create() {
     return new DistinctImpl();
   }
@@ -23,7 +25,9 @@ public class DistinctImpl extends BaseOperator implements Distinct {
   public void leave0(GraphVisitor visitor) {
     visitor.leaveDistinct(this);
   }
-  @Override public String toString() {
-    return "Distinct";
+
+  @Override
+  public String toString() {
+    return "Distinct" + id();
   }
 }

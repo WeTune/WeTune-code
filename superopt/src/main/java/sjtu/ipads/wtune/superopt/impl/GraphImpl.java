@@ -71,7 +71,6 @@ public class GraphImpl implements Graph {
 
     acceptVisitor(new IdPlacer());
     acceptVisitor(new GraphPlacer());
-    acceptVisitor(new SchemaPlacer());
     acceptVisitor(new InterpreterPlacer());
 
     this.constraints = UnionSchemaMarker.collect(this);
@@ -113,12 +112,11 @@ public class GraphImpl implements Graph {
   }
 
   private static class IdPlacer implements GraphVisitor {
-    private int nextId = 1;
+    private int nextId = 0;
 
     @Override
-    public boolean enter(Operator op) {
+    public void leave(Operator op) {
       op.setId(nextId++);
-      return true;
     }
   }
 
@@ -127,22 +125,6 @@ public class GraphImpl implements Graph {
     public boolean enter(Operator op) {
       op.setGraph(GraphImpl.this);
       return true;
-    }
-  }
-
-  private static class SchemaPlacer implements GraphVisitor {
-    @Override
-    public void leave(Operator op) {
-      final RelationSchema schema;
-
-      if (op instanceof Agg) schema = RelationSchema.create((Agg) op);
-      else if (op instanceof Input) schema = RelationSchema.create((Input) op);
-      else if (op instanceof Join) schema = RelationSchema.create((Join) op);
-      else if (op instanceof Proj) schema = RelationSchema.create((Proj) op);
-      else if (op instanceof Union) schema = RelationSchema.create((Union) op);
-      else schema = RelationSchema.create(op);
-
-      op.setOutSchema(schema);
     }
   }
 
@@ -237,10 +219,8 @@ public class GraphImpl implements Graph {
     private final EnumerationPolicy<SubqueryPredicate> subqueryPredicatePolicy =
         EnumerationPolicy.subqueryPredicatePolicy();
 
-    private InterpretationEnumerator(Collection<Constraint> constraints) {
-      final Interpretation i = Interpretation.create();
-      i.addConstraints(constraints);
-      interpretations.add(i);
+    private InterpretationEnumerator() {
+      interpretations.add(Interpretation.create());
     }
 
     private <T> void enum0(Abstraction<T> abstraction, EnumerationPolicy<T> policy) {
@@ -284,7 +264,7 @@ public class GraphImpl implements Graph {
     }
 
     public static List<Interpretation> enumerate(Graph g) {
-      final InterpretationEnumerator enumerator = new InterpretationEnumerator(g.constraints());
+      final InterpretationEnumerator enumerator = new InterpretationEnumerator();
       g.acceptVisitor(enumerator);
       return enumerator.interpretations;
     }

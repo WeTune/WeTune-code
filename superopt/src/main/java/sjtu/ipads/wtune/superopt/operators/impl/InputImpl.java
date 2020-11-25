@@ -1,21 +1,20 @@
 package sjtu.ipads.wtune.superopt.operators.impl;
 
 import sjtu.ipads.wtune.superopt.GraphVisitor;
+import sjtu.ipads.wtune.superopt.interpret.Abstraction;
+import sjtu.ipads.wtune.superopt.operators.Input;
 import sjtu.ipads.wtune.superopt.operators.Operator;
 import sjtu.ipads.wtune.superopt.relational.InputSource;
-import sjtu.ipads.wtune.superopt.interpret.Abstraction;
-import sjtu.ipads.wtune.superopt.operators.*;
-
-import java.util.Objects;
+import sjtu.ipads.wtune.superopt.relational.RelationSchema;
 
 public class InputImpl extends BaseOperator implements Input {
   private final int idx;
-  private final Abstraction<InputSource> relation;
+  private Abstraction<InputSource> source;
 
   private InputImpl(int idx) {
     super(0);
     this.idx = idx;
-    this.relation = Abstraction.create(this, "t" + idx);
+    this.source.setName("t" + idx);
   }
 
   public static InputImpl create(int idx) {
@@ -43,36 +42,23 @@ public class InputImpl extends BaseOperator implements Input {
   }
 
   @Override
-  public boolean canBeTable() {
-    final Operator next = next();
-    if (next instanceof Agg
-        || next instanceof Join
-        || next instanceof PlainFilter
-        || next instanceof Proj) return true;
-    if (next instanceof SubqueryFilter) return next.prev()[0] == this;
-    return false;
+  protected RelationSchema createOutSchema() {
+    return RelationSchema.create(this);
+  }
+
+  @Override
+  public String interpreterName() {
+    return graph().name();
   }
 
   @Override
   public Abstraction<InputSource> source() {
-    return relation;
+    if (source == null) source = Abstraction.create(this, "t" + idx);
+    return source;
   }
 
   @Override
   public String toString() {
-    return "i" + idx;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    InputImpl input = (InputImpl) o;
-    return idx == input.idx && Objects.equals(relation, input.relation);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(relation);
+    return "Input" + id();
   }
 }
