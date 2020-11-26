@@ -1,0 +1,3 @@
+[submodule "equitas"]
+	path = equitas
+	url = git@ipads.se.sjtu.edu.cn:ipads-storage/codebase/tools/equitas.git
