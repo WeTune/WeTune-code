@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -29,8 +29,20 @@ public interface FuncUtils {
     return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
   }
 
+  static <P1, P2, R> Function<P1, Function<P2, R>> curry(BiFunction<P1, P2, R> func) {
+    return p1 -> p2 -> func.apply(p1, p2);
+  }
+
+  static <P1, P2, R> Function<P2, R> parital(BiFunction<P1, P2, R> func, P1 p1) {
+    return p2 -> func.apply(p1, p2);
+  }
+
   static <P, R> Function<P, R> func(Function<P, R> func) {
     return func;
+  }
+
+  static <T> T[] asArray(T... vals) {
+    return vals;
   }
 
   static <T> T coalesce(T... vals) {
