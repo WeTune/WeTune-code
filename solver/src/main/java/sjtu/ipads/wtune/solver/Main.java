@@ -10,15 +10,16 @@ import sjtu.ipads.wtune.solver.sql.Operator;
 
 import java.util.function.Supplier;
 
+import static sjtu.ipads.wtune.solver.node.UnionNode.union;
 import static sjtu.ipads.wtune.solver.sql.expr.Expr.binary;
-import static sjtu.ipads.wtune.solver.sql.expr.Expr.subquery;
+import static sjtu.ipads.wtune.solver.sql.expr.Expr.const_;
 import static sjtu.ipads.wtune.solver.sql.expr.InputRef.ref;
 
 public class Main {
   private static final Schema schema =
       Schema.builder()
-          .table(builder -> builder.name("a").column("m", null).column("n", null).uniqueKey("m"))
-          .table(builder -> builder.name("b").column("x", null).column("y", null).uniqueKey("x"))
+          .table(builder -> builder.name("a").column("m", null).column("n", null))
+          .table(builder -> builder.name("b").column("x", null).column("y", null))
           .foreignKey("a.m", "b.x")
           .build();
 
@@ -27,7 +28,7 @@ public class Main {
   }
 
   private static void test() {
-    doTest(Main::q0, Main::q1);
+    doTest(Main::q1, Main::q0);
   }
 
   private static void doTest(Supplier<AlgNode> f0, Supplier<AlgNode> f1) {
@@ -46,28 +47,37 @@ public class Main {
     System.out.println("unique: " + unique + ", order: " + order + ", eq: " + equivalent);
   }
 
-  // a LEFT b
   private static AlgNode q0() {
     final TableNode a = TableNode.create(schema.table("a"));
-    final TableNode b = TableNode.create(schema.table("b"));
+    //    final TableNode b = TableNode.create(schema.table("b"));
     return SPJNode.builder()
         .from(a, null)
-        .join(b, null, JoinType.INNER, ref("a.m"), ref("b.x"))
-        .projections(ref("b.x"))
+        .filter(
+            binary(
+                binary(ref("a.n"), Operator.EQ, const_(2)),
+                Operator.OR,
+                binary(ref("a.n"), Operator.EQ, const_(1))))
+        .projections(ref("a.m"))
+        .forceUnique(true)
         .build();
   }
 
-  // b LEFT a
   private static AlgNode q1() {
     final TableNode a = TableNode.create(schema.table("a"));
-    final TableNode b = TableNode.create(schema.table("b"));
-    final SPJNode sub =
-        SPJNode.builder().from(b, null).projections(ref("b.x")).orderBy(ref("b.x")).build();
+    //    final TableNode b = TableNode.create(schema.table("b"));
+    final SPJNode q0 =
+        SPJNode.builder()
+            .from(a, null)
+            .filter(binary(ref("a.n"), Operator.EQ, const_(2)))
+            .projections(ref("a.m"))
+            .build();
+    final SPJNode q1 =
+        SPJNode.builder()
+            .from(a, null)
+            .filter(binary(ref("a.n"), Operator.EQ, const_(1)))
+            .projections(ref("a.m"))
+            .build();
 
-    return SPJNode.builder()
-        .from(a, null)
-        .filter(binary(ref("a.m"), Operator.IN_SUB, subquery(sub)))
-        .projections(ref("a.m"))
-        .build();
+    return union(q0, q1);
   }
 }

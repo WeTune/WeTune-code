@@ -103,12 +103,18 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    TableNodeImpl tableNode = (TableNodeImpl) o;
-    return Objects.equals(table, tableNode.table);
+    TableNodeImpl other = (TableNodeImpl) o;
+    if (this.namespace() == null || other.namespace() == null)
+      throw new IllegalArgumentException("TableNode is comparable only if namespace is specified");
+
+    return Objects.equals(table, other.table) && Objects.equals(namespace(), other.namespace());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(table);
+    if (namespace() == null)
+      throw new IllegalArgumentException("TableNode is hashable only if namespace is specified");
+
+    return Objects.hash(table, namespace());
   }
 }

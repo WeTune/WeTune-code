@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.solver.core.Variable;
 import sjtu.ipads.wtune.solver.sql.ColumnRef;
 
 public class SymbolicColumnRefImpl implements SymbolicColumnRef {
-  private final Variable variable;
+  private Variable variable;
   private Constraint notNull;
   private Constraint condition;
 
@@ -41,6 +41,12 @@ public class SymbolicColumnRefImpl implements SymbolicColumnRef {
   @Override
   public SymbolicColumnRef setColumnRef(ColumnRef ref) {
     this.ref = ref;
+    return this;
+  }
+
+  @Override
+  public SymbolicColumnRef setVariable(Variable variable) {
+    this.variable = variable;
     return this;
   }
 

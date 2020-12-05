@@ -19,6 +19,8 @@ public interface SolverContext {
 
   Variable const_(DataType dataType, Object value);
 
+  Variable ite(Constraint cond, Variable v0, Variable v1);
+
   Constraint ite(Constraint cond, Constraint v0, Constraint v1);
 
   Constraint implies(Constraint c0, Constraint c1);

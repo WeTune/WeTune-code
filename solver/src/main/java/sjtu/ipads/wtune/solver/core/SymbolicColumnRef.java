@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.solver.core.impl.SymbolicColumnRefImpl;
 import sjtu.ipads.wtune.solver.sql.ColumnRef;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public interface SymbolicColumnRef {
   Variable variable();
@@ -16,9 +17,15 @@ public interface SymbolicColumnRef {
 
   SymbolicColumnRef setColumnRef(ColumnRef ref);
 
+  SymbolicColumnRef setVariable(Variable variable);
+
   SymbolicColumnRef setNotNull(Constraint notNull);
 
   SymbolicColumnRef setCondition(Constraint condition);
+
+  default SymbolicColumnRef updateVariable(BiFunction<Constraint, Variable, Variable> combiner) {
+    return setVariable(combiner.apply(condition(), variable()));
+  }
 
   default SymbolicColumnRef updateCondition(
       Constraint newCond, BiFunction<Constraint, Constraint, Constraint> combiner) {

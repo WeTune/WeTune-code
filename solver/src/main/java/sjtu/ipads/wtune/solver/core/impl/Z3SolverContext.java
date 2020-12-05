@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.solver.core.impl;
 
+import com.google.common.collect.Sets;
 import com.microsoft.z3.*;
 import sjtu.ipads.wtune.solver.core.Constraint;
 import sjtu.ipads.wtune.solver.core.SolverContext;
@@ -35,12 +36,22 @@ public class Z3SolverContext implements SolverContext {
   @Override
   public Variable const_(DataType dataType, Object value) {
     // TODO
-    return Variable.wrap(z3.mkInt(1), value.toString());
+    if (value instanceof Integer) return Variable.wrap(z3.mkInt((Integer) value), value.toString());
+    else throw new UnsupportedOperationException();
   }
 
   @Override
   public Constraint boolConst(boolean value) {
     return value ? null : Constraint.wrap(z3.mkFalse(), "false");
+  }
+
+  @Override
+  public Variable ite(Constraint cond, Variable v0, Variable v1) {
+    if (cond == null) return v0;
+
+    return Variable.wrap(
+        z3.mkITE(unwrap(cond), unwrap(v0), unwrap(v1)),
+        "ite(" + cond.name() + "," + v0.name() + "," + v1.name());
   }
 
   @Override
@@ -261,7 +272,7 @@ public class Z3SolverContext implements SolverContext {
 
     final List<TupleSet> tupleSets = tuplesMap.get(node.namespace());
     if (tupleSets != null)
-      for (TupleSet tupleSet : tupleSets) if (tupleSet.sourceNode() == node) return tupleSet;
+      for (TupleSet tupleSet : tupleSets) if (node.equals(tupleSet.sourceNode())) return tupleSet;
 
     final TupleSet tupleSet = new TupleSet(node);
     tuplesMap.computeIfAbsent(node.namespace(), dumb(ArrayList::new)).add(tupleSet);
@@ -283,7 +294,7 @@ public class Z3SolverContext implements SolverContext {
             .simplify();
   }
 
-  private Quantifier forAll(List<Expr> exprs, BoolExpr cond, BoolExpr implication) {
+  private Quantifier forAll(Collection<Expr> exprs, BoolExpr cond, BoolExpr implication) {
     return z3.mkForall(
         exprs.toArray(Expr[]::new), z3.mkImplies(cond, implication), 1, null, null, null, null);
   }
@@ -292,7 +303,7 @@ public class Z3SolverContext implements SolverContext {
     return z3.mkForall(asArray(exprs), z3.mkImplies(cond, implication), 1, null, null, null, null);
   }
 
-  private Quantifier exists(List<Expr> exprs, BoolExpr... cond) {
+  private Quantifier exists(Collection<Expr> exprs, BoolExpr... cond) {
     return z3.mkExists(exprs.toArray(Expr[]::new), z3.mkAnd(cond), 1, null, null, null, null);
   }
 
@@ -323,11 +334,11 @@ public class Z3SolverContext implements SolverContext {
   private class TupleSet {
     private final AlgNode sourceNode;
     private final List<SymbolicColumnRef> tuple;
-    private final List<Expr> tupleExprs;
+    private final Set<Expr> tupleExprs;
 
     private Constraint constraint;
 
-    private TupleSet(AlgNode sourceNode, List<SymbolicColumnRef> tuple, List<Expr> tupleExprs) {
+    private TupleSet(AlgNode sourceNode, List<SymbolicColumnRef> tuple, Set<Expr> tupleExprs) {
       this.sourceNode = sourceNode;
       this.tuple = tuple;
       this.tupleExprs = tupleExprs;
@@ -341,24 +352,26 @@ public class Z3SolverContext implements SolverContext {
       final String namespace = columns.get(0).owner().namespace();
 
       final List<SymbolicColumnRef> refs = new ArrayList<>(columns.size());
-      final List<Expr> tupleExprs = new ArrayList<>(columns.size() << 1);
+      final Set<Expr> tupleExprs = new LinkedHashSet<>(columns.size() << 1);
+
+      BoolExpr cond = z3.mkTrue();
       for (final ColumnRef col : columns) {
         final Sort sort = sortOf(col.dataType());
         final String sourceName = nameColumnSource(col.toString());
         final String scopedColName = withNamespace(col.toString(), namespace);
         final String notNullCond = withNamespace(nameNullIndicator(scopedColName), namespace);
-        final String sourceCond = col.toString() + "!";
 
         final ArrayExpr src = setExprOf(sourceName, sort);
         final Expr v = z3.mkConst(scopedColName, sort);
-        final BoolExpr c = (BoolExpr) z3.mkSelect(src, v);
         final BoolExpr n = z3.mkBoolConst(notNullCond);
+        final BoolExpr c = (BoolExpr) z3.mkSelect(src, v);
+        cond = z3.mkAnd(cond, c);
 
         refs.add(
             SymbolicColumnRef.create(
                     Variable.wrap(v, scopedColName),
                     col.notNull() ? null : Constraint.wrap(n, notNullCond),
-                    Constraint.wrap(c, sourceCond))
+                    null)
                 .setColumnRef(col));
 
         tupleExprs.add(v);
@@ -367,6 +380,9 @@ public class Z3SolverContext implements SolverContext {
         final Expr i = z3.mkConst("i", sort);
         preconditions.add(exists(i, belongsTo(i, src)));
       }
+
+      final Constraint srcConstraint = Constraint.wrap(cond, "src!");
+      refs.forEach(it -> it.setCondition(srcConstraint));
 
       this.sourceNode = node;
       this.tuple = refs;
@@ -386,20 +402,20 @@ public class Z3SolverContext implements SolverContext {
       return tuple;
     }
 
-    public List<Expr> tupleExprs() {
+    public Set<Expr> tupleExprs() {
       return tupleExprs;
     }
 
     public Constraint constraint() {
       if (constraint != null) return constraint;
-      return and(listMap(SymbolicColumnRef::condition, tuple));
+      return constraint = and(listMap(SymbolicColumnRef::condition, tuple));
     }
 
     public TupleSet concat(TupleSet other) {
       return new TupleSet(
           null,
           listConcat(this.tuple(), other.tuple()),
-          listConcat(this.tupleExprs(), other.tupleExprs()));
+          Sets.union(this.tupleExprs(), other.tupleExprs()));
     }
 
     public BoolExpr match(TupleSet other, BoolExpr matcher) {

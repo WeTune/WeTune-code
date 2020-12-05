@@ -22,9 +22,11 @@ public interface AlgNode {
 
   Set<Set<SymbolicColumnRef>> uniqueCores();
 
-  List<SymbolicColumnRef> orderKeys();
+  boolean isForcedUnique();
 
   boolean isSingletonOutput();
+
+  List<SymbolicColumnRef> orderKeys();
 
   AlgNode setNamespace(String namespace);
 
@@ -39,6 +41,4 @@ public interface AlgNode {
   default boolean isInferredUnique() {
     return isSingletonOutput() || !uniqueCores().isEmpty();
   }
-
-  boolean isForcedUnique();
 }
