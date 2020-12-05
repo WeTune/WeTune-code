@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -14,8 +15,16 @@ public interface FuncUtils {
     return ignored -> true;
   }
 
+  static <T, R> Function<T, R> dumb(Supplier<R> supplier) {
+    return t -> supplier.get();
+  }
+
   static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
+  }
+
+  static <T, R> Set<R> setMap(Function<? super T, R> func, Iterable<T> os) {
+    return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toSet());
   }
 
   static <T, R, C extends Collection<R>> C collectionMap(

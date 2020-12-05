@@ -4,20 +4,23 @@ import sjtu.ipads.wtune.solver.core.SymbolicColumnRef;
 import sjtu.ipads.wtune.solver.node.AlgNode;
 import sjtu.ipads.wtune.solver.node.SPJNode;
 import sjtu.ipads.wtune.solver.node.TableNode;
+import sjtu.ipads.wtune.solver.schema.Column;
 import sjtu.ipads.wtune.solver.schema.Table;
 import sjtu.ipads.wtune.solver.sql.ColumnRef;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 
 public class TableNodeImpl extends BaseAlgNode implements TableNode {
   private final Table table;
 
   private List<ColumnRef> outCols;
   private List<SymbolicColumnRef> outSymCols;
+
+  // for cache
+  private Set<Set<SymbolicColumnRef>> uniqueCores;
 
   private TableNodeImpl(Table table) {
     this.table = table;
@@ -39,6 +42,11 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
   @Override
   public SPJNode parent() {
     return (SPJNode) super.parent();
+  }
+
+  @Override
+  public Table table() {
+    return table;
   }
 
   @Override
@@ -71,8 +79,28 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
   }
 
   @Override
-  public Table table() {
-    return table;
+  public Set<Set<SymbolicColumnRef>> uniqueCores() {
+    if (uniqueCores != null) return uniqueCores;
+
+    final Set<Set<SymbolicColumnRef>> uniqueCores = new HashSet<>();
+    for (Set<Column> uniqueKey : table().uniqueKeys())
+      uniqueCores.add(setMap(this::getSymbolicColumn, uniqueKey));
+
+    return this.uniqueCores = uniqueCores;
+  }
+
+  @Override
+  public boolean isSingletonOutput() {
+    return false;
+  }
+
+  @Override
+  public List<ColumnRef> orderKeys() {
+    return Collections.emptyList();
+  }
+
+  private SymbolicColumnRef getSymbolicColumn(Column column) {
+    return projected().get(column.index());
   }
 
   @Override

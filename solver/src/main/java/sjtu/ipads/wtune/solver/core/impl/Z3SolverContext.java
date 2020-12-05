@@ -21,6 +21,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Z3SolverContext implements SolverContext {
   private final Context z3;
+  private final Solver solver;
 
   private final Map<String, TupleSet> tuples = new HashMap<>();
   private final Map<AlgNode, List<SymbolicColumnRef>> columns = new IdentityHashMap<>();
@@ -28,6 +29,7 @@ public class Z3SolverContext implements SolverContext {
 
   private Z3SolverContext(Context z3) {
     this.z3 = z3;
+    this.solver = z3.mkSolver();
   }
 
   public static Z3SolverContext create() {
@@ -124,6 +126,18 @@ public class Z3SolverContext implements SolverContext {
   }
 
   @Override
+  public boolean checkUnique(Schema schema, AlgNode q0, AlgNode q1) {
+    if (q0.isForcedUnique() && q1.isForcedUnique()) return true;
+
+    register(schema);
+    register(q0.setNamespace("0").setSolverContext(this));
+    register(q1.setNamespace("1").setSolverContext(this));
+
+    return (q0.isForcedUnique() || q0.isInferredUnique())
+        && (q1.isForcedUnique() || q1.isInferredUnique());
+  }
+
+  @Override
   public boolean checkEquivalence(Schema schema, AlgNode q0, AlgNode q1) {
     register(schema);
     register(q0.setNamespace("0").setSolverContext(this));
@@ -132,8 +146,7 @@ public class Z3SolverContext implements SolverContext {
     final TupleSet filtered0 = tupleSetOf(q0).describe(q0.filtered());
     final TupleSet filtered1 = tupleSetOf(q1).describe(q1.filtered());
 
-    final Solver solver = z3.mkSolver();
-
+    solver.reset();
     preconditions.forEach(solver::add);
 
     final List<SymbolicColumnRef> outputs0 = q0.projected(), outputs1 = q1.projected();
@@ -153,7 +166,34 @@ public class Z3SolverContext implements SolverContext {
         && check(solver, filtered1.match(filtered0, colMatchCond));
   }
 
-  private void register(AlgNode q) {
+  @Override
+  public boolean inferFixedValue(SymbolicColumnRef col) {
+    // check whether the condition on the column implies that the column must be a fixed value
+    // method: check the proposition always hold
+    //  exists p: col.cond => col.v = p
+    final TupleSet tupleSet = tuples.get(col.columnRef().owner().namespace());
+
+    final Expr probeVar = z3.mkConst("_p", sortOf(col.columnRef().dataType()));
+    final BoolExpr probe = z3.mkEq(unwrap(col.variable()), probeVar);
+
+    solver.reset();
+    return check(
+        solver, exists(probeVar, forAll(tupleSet.tupleExprs, unwrap(col.condition()), probe)));
+  }
+
+  @Override
+  public boolean inferEq(SymbolicColumnRef c0, SymbolicColumnRef c1) {
+    final BoolExpr eqCond =
+        z3.mkAnd(
+            z3.mkEq(unwrap(c0.variable()), unwrap(c1.variable())),
+            z3.mkEq(unwrap(c0.notNull()), unwrap(c1.notNull())));
+
+    solver.reset();
+    return check(solver, z3.mkImplies(unwrap(c0.condition()), eqCond))
+        && check(solver, z3.mkImplies(unwrap(c1.condition()), eqCond));
+  }
+
+  public void register(AlgNode q) {
     final String namespace = q.namespace();
     final TupleSet tupleSet = new TupleSet(columnsOf(inputsOf(q)));
 
@@ -165,7 +205,7 @@ public class Z3SolverContext implements SolverContext {
     this.columns.putAll(columnsMap);
   }
 
-  private void register(Schema schema) {
+  public void register(Schema schema) {
     preconditions.clear();
 
     for (var fk : schema.foreignKeys().entrySet()) {

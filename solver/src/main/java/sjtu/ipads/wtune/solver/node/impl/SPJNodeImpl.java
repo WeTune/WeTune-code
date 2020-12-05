@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.solver.node.impl;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.solver.core.Constraint;
 import sjtu.ipads.wtune.solver.core.SymbolicColumnRef;
@@ -13,34 +14,43 @@ import sjtu.ipads.wtune.solver.sql.ProjectionItem;
 import sjtu.ipads.wtune.solver.sql.expr.Expr;
 import sjtu.ipads.wtune.solver.sql.expr.InputRef;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
-import static java.util.Collections.nCopies;
+import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
+  private final boolean forceDistinct;
   private final List<String> inputAliases;
   private final List<ProjectionItem> projections;
   private final Expr filters;
 
-  private final List<JoinType> joinTypes; // the length should be selections.size() - 1
+  private final List<JoinType> joinTypes; // the length must be selections.size() - 1
   private final List<Expr> joinConditions;
 
-  // for cache
-  private List<ColumnRef> columns;
-  private List<SymbolicColumnRef> filtered;
-  private List<SymbolicColumnRef> projected;
+  //// for cache
+  private List<ColumnRef> outCols;
+  private List<SymbolicColumnRef> filteredCols;
+  private List<SymbolicColumnRef> projectedCols;
+
+  // mapping that input column -> output column
+  private Map<ColumnRef, SymbolicColumnRef> projectRel;
+  private Set<Set<SymbolicColumnRef>> uniqueCores;
+  private Boolean isSingletonOutput = null;
 
   private SPJNodeImpl(
+      boolean forceDistinct,
       List<AlgNode> inputs,
       List<String> inputAliases,
       List<ProjectionItem> projections,
       List<JoinType> joinTypes,
       List<Expr> joinConditions,
       Expr filters) {
-    super(inputs);
+    super(forceDistinct, inputs);
+    this.forceDistinct = forceDistinct;
     this.inputAliases = inputAliases;
     this.projections = projections;
     this.joinTypes = joinTypes;
@@ -55,59 +65,6 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   @Override
   public List<String> inputAliases() {
     return inputAliases;
-  }
-
-  @Override
-  public List<ColumnRef> columns() {
-    if (columns != null) return columns;
-
-    columns = listMap(it -> it.projectOn(inputs(), inputAliases(), inputColumns()), projections);
-    columns.forEach(it -> it.setOwner(this));
-    return columns;
-  }
-
-  @Override
-  public List<SymbolicColumnRef> filtered() {
-    if (filtered != null) return filtered;
-
-    // first build the join conditions
-    final List<SymbolicColumnRef> refs = new ArrayList<>(inputColumns().size());
-    refs.addAll(copyCols(inputs().get(0).projected()));
-
-    for (int i = 1; i < inputs().size(); i++) {
-      final JoinType joinType = joinTypes().get(i - 1);
-      final Constraint joinCond = applyPredicate(joinConditions().get(i - 1));
-      final List<SymbolicColumnRef> rightCols = copyCols(inputs().get(i).projected());
-
-      if (joinType == JoinType.INNER) {
-        refs.forEach(it -> it.updateCondition(joinCond, ctx::and));
-        rightCols.forEach(it -> it.updateCondition(joinCond, ctx::and));
-      }
-
-      if (joinType == JoinType.LEFT)
-        rightCols.forEach(it -> it.updateNotNull(joinCond, (c, n) -> ctx.ite(c, n, null)));
-
-      refs.addAll(rightCols);
-    }
-
-    // then add filter
-    final Constraint filterCond = applyPredicate(filters());
-    refs.forEach(it -> it.updateCondition(filterCond, ctx::and));
-
-    return filtered = refs;
-  }
-
-  @Override
-  public List<SymbolicColumnRef> projected() {
-    if (projected != null) return projected;
-
-    final List<ColumnRef> cols = columns();
-    final List<SymbolicColumnRef> projected =
-        listMap(it -> it.projectOn(inputs(), inputAliases(), filtered(), ctx), projections());
-
-    for (int i = 0; i < projected.size(); i++) projected.get(i).setColumnRef(cols.get(i));
-
-    return this.projected = projected;
   }
 
   @Override
@@ -130,8 +87,156 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     return filters;
   }
 
-  private List<SymbolicColumnRef> copyCols(List<SymbolicColumnRef> refs) {
-    return listMap(SymbolicColumnRef::copy, refs);
+  @Override
+  public List<ColumnRef> columns() {
+    if (outCols != null) return outCols;
+
+    outCols = listMap(it -> it.projectOn(inputs(), inputAliases(), inputColumns()), projections);
+    outCols.forEach(it -> it.setOwner(this));
+    return outCols;
+  }
+
+  @Override
+  public List<SymbolicColumnRef> filtered() {
+    if (filteredCols != null) return filteredCols;
+
+    // first build the join conditions
+    final List<SymbolicColumnRef> refs = new ArrayList<>(inputColumns().size());
+    refs.addAll(listMap(SymbolicColumnRef::copy, inputs().get(0).projected()));
+
+    for (int i = 1; i < inputs().size(); i++) {
+      final JoinType joinType = joinTypes().get(i - 1);
+      final Constraint joinCond = applyPredicate(joinConditions().get(i - 1));
+      final List<SymbolicColumnRef> rightCols =
+          listMap(SymbolicColumnRef::copy, inputs().get(i).projected());
+
+      if (joinType == JoinType.INNER) {
+        refs.forEach(it -> it.updateCondition(joinCond, ctx::and));
+        rightCols.forEach(it -> it.updateCondition(joinCond, ctx::and));
+      }
+
+      if (joinType == JoinType.LEFT)
+        rightCols.forEach(it -> it.updateNotNull(joinCond, (c, n) -> ctx.ite(c, n, null)));
+
+      refs.addAll(rightCols);
+    }
+
+    // then add filter
+    final Constraint filterCond = applyPredicate(filters());
+    refs.forEach(it -> it.updateCondition(filterCond, ctx::and));
+
+    return filteredCols = refs;
+  }
+
+  @Override
+  public List<SymbolicColumnRef> projected() {
+    if (projectedCols != null) return projectedCols;
+
+    final List<ColumnRef> cols = columns();
+
+    final List<SymbolicColumnRef> projected =
+        listMap(it -> it.projectOn(inputs(), inputAliases(), filtered(), ctx), projections());
+
+    // record the mapping between input and output column
+    final Map<ColumnRef, SymbolicColumnRef> projectRel = new HashMap<>();
+    projected.forEach(it -> projectRel.put(it.columnRef(), it));
+    this.projectRel = projectRel;
+
+    for (int i = 0; i < projected.size(); i++) projected.get(i).setColumnRef(cols.get(i));
+    return this.projectedCols = projected;
+  }
+
+  public Map<ColumnRef, SymbolicColumnRef> projectRel() {
+    if (projectRel != null) return projectRel;
+    projected(); // trigger lazy calculation of projectRel
+    return projectRel;
+  }
+
+  @Override
+  public Set<Set<SymbolicColumnRef>> uniqueCores() {
+    if (uniqueCores != null) return uniqueCores;
+
+    final Set<Set<SymbolicColumnRef>> uniqueCores = new HashSet<>();
+    for (var subCore : Sets.cartesianProduct(listMap(AlgNode::uniqueCores, inputs()))) {
+      // after join, the new unique cores are (all possible) concatenation of both sides cores
+      //   in this step, replace the input sym ref with the internal filtered ref (findFiltered)
+      Set<SymbolicColumnRef> newCore =
+          subCore.stream().map(this::findFiltered).reduce(Sets::union).orElseThrow();
+      Set<SymbolicColumnRef> newCore2 = null;
+
+      // To handle a.uk = b.uk. the merged core <a.uk, b.uk> should be split as <a.uk>, <b.uk>
+      // for now only handle single pair (i.e. ignore a.uk_p1 = b.uk_p1 && a.uk_p2 ==b.uk_p2)
+      // TODO: support multi-keys UK
+      if (newCore.size() == 2) {
+        final Iterator<SymbolicColumnRef> iter = newCore.iterator();
+        final SymbolicColumnRef left = iter.next(), right = iter.next();
+        if (ctx.inferEq(left, right)) {
+          newCore = newHashSet(left);
+          newCore2 = newHashSet(right);
+        }
+      }
+
+      // filter out those are not projected
+      if (newCore.stream().allMatch(this::isProjected)) uniqueCores.add(newCore);
+      if (newCore2 != null && newCore2.stream().allMatch(this::isProjected))
+        uniqueCores.add(newCore2);
+    }
+
+    for (Set<SymbolicColumnRef> uniqueCore : uniqueCores) {
+      // reduce unique core, remove columns that are inferred to be fixed value
+      // e.g. we have UK <c0, c1>
+      // with predicate "c0 = 10", c1 itself is guaranteed to be unique, so remove c0
+      uniqueCore.removeIf(ctx::inferFixedValue);
+      if (uniqueCore.isEmpty()) {
+        // if all column in a unique core is inferred to be fixed value
+        // then there must be only single tuple that match the condition
+        isSingletonOutput = true;
+        break;
+      }
+    }
+
+    return this.uniqueCores = uniqueCores;
+  }
+
+  @Override
+  public boolean isSingletonOutput() {
+    if (isSingletonOutput != null) return isSingletonOutput;
+    uniqueCores(); // trigger lazy calculation
+    if (isSingletonOutput == null) isSingletonOutput = false;
+    return isSingletonOutput;
+  }
+
+  @Override
+  public List<ColumnRef> orderKeys() {
+    if (inputs().size() == 1) return inputs().get(0).orderKeys();
+    else return emptyList();
+  }
+
+  @Override
+  public boolean isForcedUnique() {
+    return forceDistinct;
+  }
+  // cache
+  private Map<ColumnRef, List<SymbolicColumnRef>> lookUp;
+
+  private Set<SymbolicColumnRef> findFiltered(Set<SymbolicColumnRef> refs) {
+    if (lookUp == null)
+      lookUp = filtered().stream().collect(Collectors.groupingBy(SymbolicColumnRef::columnRef));
+
+    final Set<SymbolicColumnRef> found = new HashSet<>();
+    for (SymbolicColumnRef ref : refs) {
+      final List<SymbolicColumnRef> matched = lookUp.get(ref.columnRef());
+      if (matched == null || matched.size() != 1)
+        throw new IllegalStateException("unexpected column matching");
+
+      found.add(matched.get(0));
+    }
+
+    return found;
+  }
+
+  private boolean isProjected(SymbolicColumnRef inputRef) {
+    return projectRel().containsKey(inputRef.columnRef());
   }
 
   private Constraint applyPredicate(Expr predicate) {
@@ -155,6 +260,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     final StringBuilder builder = new StringBuilder();
     if (indentLevel != 0) builder.append(" ".repeat(indentLevel)).append("\n(");
     builder.append("SELECT");
+    if (isForcedUnique()) builder.append(" DISTINCT");
 
     for (ColumnRef column : columns())
       builder
@@ -200,6 +306,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     final StringBuilder builder = new StringBuilder();
     if (indentLevel != 0) builder.append("\n(");
     builder.append("SELECT");
+    if (isForcedUnique()) builder.append(" DISTINCT");
 
     for (ColumnRef column : columns())
       builder.append(" ").append(column).append(" AS ").append(column.alias()).append(",");
@@ -235,6 +342,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     private final List<Pair<InputRef, InputRef>> joins = new ArrayList<>();
     private final List<Expr> projExpr = new ArrayList<>();
     private final List<String> projAliases = new ArrayList<>();
+    private boolean forceDistinct;
     private Expr filters;
 
     @Override
@@ -284,6 +392,12 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     }
 
     @Override
+    public Builder forceUnique(boolean forceDistinct) {
+      this.forceDistinct = forceDistinct;
+      return this;
+    }
+
+    @Override
     public SPJNode build() {
       return build(false);
     }
@@ -313,7 +427,8 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
 
       if (filters != null && compileExpr) filters = filters.compile(inputs, inputAliases);
 
-      return new SPJNodeImpl(inputs, inputAliases, projections, joinTypes, joinConditions, filters);
+      return new SPJNodeImpl(
+          forceDistinct, inputs, inputAliases, projections, joinTypes, joinConditions, filters);
     }
 
     private static String inferAlias(AlgNode node, String alias) {

@@ -38,5 +38,4 @@ public interface ColumnRef {
   static List<ColumnRef> from(TableNode source) {
     return listMap(it -> from(source, it), source.table().columns());
   }
-
 }

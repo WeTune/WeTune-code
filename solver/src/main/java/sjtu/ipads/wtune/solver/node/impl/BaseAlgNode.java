@@ -15,17 +15,20 @@ public abstract class BaseAlgNode implements AlgNode {
 
   private AlgNode parent;
 
-  private final List<AlgNode> inputs;
-  protected SolverContext ctx;
+  private final boolean isForcedDistinct;
 
+  private final List<AlgNode> inputs;
   private List<ColumnRef> inputCols;
   private List<SymbolicColumnRef> inputSymCols;
 
+  protected SolverContext ctx;
+
   protected BaseAlgNode() {
-    this(new ArrayList<>());
+    this(false, new ArrayList<>());
   }
 
-  protected BaseAlgNode(List<AlgNode> inputs) {
+  protected BaseAlgNode(boolean isForcedDistinct, List<AlgNode> inputs) {
+    this.isForcedDistinct = isForcedDistinct;
     this.inputs = inputs;
     this.inputs.forEach(it -> it.setParent(this));
   }
@@ -43,6 +46,11 @@ public abstract class BaseAlgNode implements AlgNode {
   @Override
   public List<AlgNode> inputs() {
     return inputs;
+  }
+
+  @Override
+  public boolean isForcedUnique() {
+    return isForcedDistinct;
   }
 
   @Override

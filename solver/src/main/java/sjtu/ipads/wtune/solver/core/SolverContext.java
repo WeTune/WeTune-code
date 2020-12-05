@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public interface SolverContext {
+  boolean checkUnique(Schema schema, AlgNode q0, AlgNode q1);
+
   boolean checkEquivalence(Schema schema, AlgNode q0, AlgNode q1);
 
   Variable const_(DataType dataType, Object value);
@@ -28,6 +30,10 @@ public interface SolverContext {
   Constraint convert(Variable variable);
 
   List<SymbolicColumnRef> tupleSourceOf(AlgNode node);
+
+  boolean inferFixedValue(SymbolicColumnRef col);
+
+  boolean inferEq(SymbolicColumnRef c0, SymbolicColumnRef c1);
 
   default Constraint and(Constraint... constraints) {
     return and(Arrays.asList(constraints));

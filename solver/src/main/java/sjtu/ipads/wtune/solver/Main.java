@@ -14,29 +14,34 @@ import static sjtu.ipads.wtune.solver.sql.expr.InputRef.ref;
 public class Main {
   private static final Schema schema =
       Schema.builder()
-          .table(builder -> builder.name("a").column("m", null))
-          .table(builder -> builder.name("b").column("x", null))
-          //          .foreignKey("a.m", "b.x")
+          .table(builder -> builder.name("a").column("m", null).column("n", null).uniqueKey("m"))
+          .table(builder -> builder.name("b").column("x", null).column("y", null).uniqueKey("x"))
+          .foreignKey("a.m", "b.x")
           .build();
 
   public static void main(String[] args) {
-    test0();
+    test();
   }
 
-  private static void test0() {
+  private static void test() {
     final Supplier<AlgNode>[] qs =
         new Supplier[] {Main::q0, Main::q1, Main::q2, Main::q3, Main::q4};
-    //    doTest(qs[0], qs[4]);
-    for (int i = 0; i < qs.length; i++)
-      for (int j = i + 1; j < qs.length; j++) doTest(qs[i], qs[j]);
+    doTest(qs[3], qs[4]);
+    //    for (int i = 0; i < qs.length; i++)
+    //      for (int j = i + 1; j < qs.length; j++) doTest(qs[i], qs[j]);
   }
 
   private static void doTest(Supplier<AlgNode> f0, Supplier<AlgNode> f1) {
     final AlgNode q0 = f0.get(), q1 = f1.get();
+
     System.out.println("==========");
     System.out.println(q0);
     System.out.println(q1);
-    System.out.println("result: " + SolverContext.z3().checkEquivalence(schema, q0, q1));
+
+    final SolverContext ctx = SolverContext.z3();
+    final boolean unique = ctx.checkUnique(schema, q0, q1);
+    final boolean equivalent = ctx.checkEquivalence(schema, q0, q1);
+    System.out.println("unique: " + unique + ", eq: " + equivalent);
   }
 
   // a LEFT b
@@ -80,6 +85,7 @@ public class Main {
         .from(t1, null)
         .join(t0, null, JoinType.INNER, ref("a.m"), ref("b.x"))
         .projections(ref("b.x"))
+//        .forceUnique(true)
         .build();
   }
 

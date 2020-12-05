@@ -57,11 +57,11 @@ public class NativeColumnRefImpl extends BaseColumnRef implements NativeColumnRe
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     NativeColumnRefImpl that = (NativeColumnRefImpl) o;
-    return Objects.equals(column, that.column);
+    return Objects.equals(column, that.column) && Objects.equals(source, that.source);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(column);
+    return Objects.hash(column, source);
   }
 }

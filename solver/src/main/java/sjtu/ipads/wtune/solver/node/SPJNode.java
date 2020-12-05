@@ -33,6 +33,8 @@ public interface SPJNode extends AlgNode {
 
     Builder filter(Expr predicate);
 
+    Builder forceUnique(boolean forceDistinct);
+
     SPJNode build();
 
     SPJNode build(boolean compileExpr);
