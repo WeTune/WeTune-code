@@ -35,6 +35,8 @@ public interface SPJNode extends AlgNode {
 
     Builder forceUnique(boolean forceDistinct);
 
+    Builder orderBy(Expr... orderKeys);
+
     SPJNode build();
 
     SPJNode build(boolean compileExpr);

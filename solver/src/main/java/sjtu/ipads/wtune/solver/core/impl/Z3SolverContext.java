@@ -25,7 +25,7 @@ public class Z3SolverContext implements SolverContext {
 
   private final Map<String, TupleSet> tuples = new HashMap<>();
   private final Map<AlgNode, List<SymbolicColumnRef>> columns = new IdentityHashMap<>();
-  private final List<BoolExpr> preconditions = new ArrayList<>();
+  private final Set<BoolExpr> preconditions = new HashSet<>();
 
   private Z3SolverContext(Context z3) {
     this.z3 = z3;
@@ -138,10 +138,32 @@ public class Z3SolverContext implements SolverContext {
   }
 
   @Override
+  public boolean checkOrder(Schema schema, AlgNode q0, AlgNode q1) {
+    register(schema);
+    register(q0.setNamespace("0").setSolverContext(this));
+    register(q1.setNamespace("1").setSolverContext(this));
+
+    final List<SymbolicColumnRef> keys0 = q0.orderKeys(), keys1 = q1.orderKeys();
+    keys0.removeIf(this::inferFixedValue);
+    keys1.removeIf(this::inferFixedValue);
+
+    return checkColumnsMatch(q0, q1, keys0, keys1);
+  }
+
+  @Override
   public boolean checkEquivalence(Schema schema, AlgNode q0, AlgNode q1) {
     register(schema);
     register(q0.setNamespace("0").setSolverContext(this));
     register(q1.setNamespace("1").setSolverContext(this));
+
+    return checkColumnsMatch(q0, q1, q0.projected(), q1.projected());
+  }
+
+  private boolean checkColumnsMatch(
+      AlgNode q0, AlgNode q1, List<SymbolicColumnRef> cols0, List<SymbolicColumnRef> cols1) {
+
+    if (cols0.size() != cols1.size()) return false;
+    if (cols0.isEmpty()) return true;
 
     final TupleSet filtered0 = tupleSetOf(q0).describe(q0.filtered());
     final TupleSet filtered1 = tupleSetOf(q1).describe(q1.filtered());
@@ -149,17 +171,10 @@ public class Z3SolverContext implements SolverContext {
     solver.reset();
     preconditions.forEach(solver::add);
 
-    final List<SymbolicColumnRef> outputs0 = q0.projected(), outputs1 = q1.projected();
-
     Constraint colMatchCond = null;
-    for (int i = 0; i < outputs0.size(); i++) {
-      final SymbolicColumnRef o0 = outputs0.get(i), o1 = outputs1.get(i);
-      colMatchCond =
-          and(
-              colMatchCond,
-              or( // (n0 & n1) || (n0 = n1 & v0 = v1)
-                  and(o0.notNull(), o0.notNull()),
-                  and(eq(o0.notNull(), o1.notNull()), eq(o0.variable(), o1.variable()))));
+    for (int i = 0; i < cols0.size(); i++) {
+      final SymbolicColumnRef o0 = cols0.get(i), o1 = cols1.get(i);
+      colMatchCond = and(colMatchCond, columnEq(o0, o1));
     }
 
     return check(solver, filtered0.match(filtered1, colMatchCond))
@@ -246,6 +261,12 @@ public class Z3SolverContext implements SolverContext {
     return (BoolExpr) z3.mkSelect(set, e);
   }
 
+  private Constraint columnEq(SymbolicColumnRef c0, SymbolicColumnRef c1) {
+    return or( // (n0 & n1) || (n0 = n1 & v0 = v1)
+        and(c0.notNull(), c0.notNull()),
+        and(eq(c0.notNull(), c1.notNull()), eq(c0.variable(), c1.variable())));
+  }
+
   private Quantifier forAll(List<Expr> exprs, BoolExpr cond, BoolExpr implication) {
     return z3.mkForall(
         exprs.toArray(Expr[]::new), z3.mkImplies(cond, implication), 1, null, null, null, null);
@@ -280,7 +301,7 @@ public class Z3SolverContext implements SolverContext {
   }
 
   private static String withNamespace(String name, String namespace) {
-    return name + "." + namespace;
+    return name + "#" + namespace;
   }
 
   private static List<TableNode> inputsOf(AlgNode n) {

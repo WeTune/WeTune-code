@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.nCopies;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
@@ -31,6 +31,8 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   private final List<JoinType> joinTypes; // the length must be selections.size() - 1
   private final List<Expr> joinConditions;
 
+  private final List<Expr> orderKeyExprs;
+
   //// for cache
   private List<ColumnRef> outCols;
   private List<SymbolicColumnRef> filteredCols;
@@ -41,6 +43,8 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   private Set<Set<SymbolicColumnRef>> uniqueCores;
   private Boolean isSingletonOutput = null;
 
+  private List<SymbolicColumnRef> orderKeys;
+
   private SPJNodeImpl(
       boolean forceDistinct,
       List<AlgNode> inputs,
@@ -48,7 +52,8 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
       List<ProjectionItem> projections,
       List<JoinType> joinTypes,
       List<Expr> joinConditions,
-      Expr filters) {
+      Expr filters,
+      List<Expr> orderKeys) {
     super(forceDistinct, inputs);
     this.forceDistinct = forceDistinct;
     this.inputAliases = inputAliases;
@@ -56,6 +61,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     this.joinTypes = joinTypes;
     this.joinConditions = joinConditions;
     this.filters = filters;
+    this.orderKeyExprs = orderKeys;
   }
 
   public static Builder builder() {
@@ -207,9 +213,12 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   }
 
   @Override
-  public List<ColumnRef> orderKeys() {
-    if (inputs().size() == 1) return inputs().get(0).orderKeys();
-    else return emptyList();
+  public List<SymbolicColumnRef> orderKeys() {
+    if (orderKeys != null) return orderKeys;
+    return orderKeys =
+        listMap(
+            it -> it.asVariable(inputs(), inputAliases(), filtered(), ctx),
+            orderKeyExprs);
   }
 
   @Override
@@ -342,6 +351,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     private final List<Pair<InputRef, InputRef>> joins = new ArrayList<>();
     private final List<Expr> projExpr = new ArrayList<>();
     private final List<String> projAliases = new ArrayList<>();
+    private final List<Expr> orderKeys = new ArrayList<>();
     private boolean forceDistinct;
     private Expr filters;
 
@@ -398,6 +408,12 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     }
 
     @Override
+    public Builder orderBy(Expr... orderKeys) {
+      this.orderKeys.addAll(Arrays.asList(orderKeys));
+      return this;
+    }
+
+    @Override
     public SPJNode build() {
       return build(false);
     }
@@ -428,7 +444,14 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
       if (filters != null && compileExpr) filters = filters.compile(inputs, inputAliases);
 
       return new SPJNodeImpl(
-          forceDistinct, inputs, inputAliases, projections, joinTypes, joinConditions, filters);
+          forceDistinct,
+          inputs,
+          inputAliases,
+          projections,
+          joinTypes,
+          joinConditions,
+          filters,
+          orderKeys);
     }
 
     private static String inferAlias(AlgNode node, String alias) {

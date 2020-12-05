@@ -30,7 +30,7 @@ public interface AlgNode {
 
   Set<Set<SymbolicColumnRef>> uniqueCores();
 
-  List<ColumnRef> orderKeys();
+  List<SymbolicColumnRef> orderKeys();
 
   boolean isSingletonOutput();
 
@@ -39,5 +39,6 @@ public interface AlgNode {
   default boolean isInferredUnique() {
     return isSingletonOutput() || !uniqueCores().isEmpty();
   }
+
   boolean isForcedUnique();
 }

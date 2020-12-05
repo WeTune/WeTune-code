@@ -95,7 +95,7 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
   }
 
   @Override
-  public List<ColumnRef> orderKeys() {
+  public List<SymbolicColumnRef> orderKeys() {
     return Collections.emptyList();
   }
 

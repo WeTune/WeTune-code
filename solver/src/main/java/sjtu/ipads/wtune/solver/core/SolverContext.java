@@ -11,6 +11,8 @@ import java.util.List;
 public interface SolverContext {
   boolean checkUnique(Schema schema, AlgNode q0, AlgNode q1);
 
+  boolean checkOrder(Schema schema, AlgNode q0, AlgNode q1);
+
   boolean checkEquivalence(Schema schema, AlgNode q0, AlgNode q1);
 
   Variable const_(DataType dataType, Object value);
