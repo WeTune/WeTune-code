@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.solver.sql.ColumnRef;
 import sjtu.ipads.wtune.solver.sql.Operator;
 import sjtu.ipads.wtune.solver.sql.expr.BinaryExpr;
 import sjtu.ipads.wtune.solver.sql.expr.Expr;
+import sjtu.ipads.wtune.solver.sql.expr.ExprVisitor;
 
 import java.util.List;
 
@@ -49,6 +50,7 @@ public class BinaryExprImpl implements BinaryExpr {
         return SymbolicColumnRef.create(
             ctx.or(ctx.convert(leftVar.variable()), ctx.convert(rightVar.variable())), notNull);
       case EQ:
+      case IN_SUB:
         return SymbolicColumnRef.create(ctx.eq(leftVar.variable(), rightVar.variable()), notNull);
       default:
         throw new IllegalStateException("should not reach here");
@@ -97,6 +99,13 @@ public class BinaryExprImpl implements BinaryExpr {
   @Override
   public Operator operator() {
     return operator;
+  }
+
+  @Override
+  public void acceptVisitor(ExprVisitor visitor) {
+    visitor.visit(this);
+    left.acceptVisitor(visitor);
+    right.acceptVisitor(visitor);
   }
 
   @Override

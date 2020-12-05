@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.solver.sql.impl;
 
 import sjtu.ipads.wtune.solver.schema.DataType;
 import sjtu.ipads.wtune.solver.sql.expr.ConstExpr;
+import sjtu.ipads.wtune.solver.sql.expr.ExprVisitor;
 
 public class ConstExprImpl implements ConstExpr {
   private final DataType dataType;
@@ -35,6 +36,11 @@ public class ConstExprImpl implements ConstExpr {
   @Override
   public Object value() {
     return value;
+  }
+
+  @Override
+  public void acceptVisitor(ExprVisitor visitor) {
+    visitor.visit(this);
   }
 
   @Override

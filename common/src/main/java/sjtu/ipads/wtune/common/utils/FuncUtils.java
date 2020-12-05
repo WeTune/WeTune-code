@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public interface FuncUtils {
@@ -48,6 +50,17 @@ public interface FuncUtils {
 
   static <P, R> Function<P, R> func(Function<P, R> func) {
     return func;
+  }
+
+  static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {
+    final List<T> ts = new ArrayList<>(ts0.size() + ts1.size());
+    ts.addAll(ts0);
+    ts.addAll(ts1);
+    return ts;
+  }
+
+  static <T> Stream<T> stream(Iterable<T> iterable) {
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   static <T> T[] asArray(T... vals) {

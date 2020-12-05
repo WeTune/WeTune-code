@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 public abstract class BaseAlgNode implements AlgNode {
   private String namespace;
 
-  private AlgNode parent;
-
   private final boolean isForcedDistinct;
 
   private final List<AlgNode> inputs;
@@ -30,17 +28,11 @@ public abstract class BaseAlgNode implements AlgNode {
   protected BaseAlgNode(boolean isForcedDistinct, List<AlgNode> inputs) {
     this.isForcedDistinct = isForcedDistinct;
     this.inputs = inputs;
-    this.inputs.forEach(it -> it.setParent(this));
   }
 
   @Override
   public String namespace() {
     return namespace;
-  }
-
-  @Override
-  public AlgNode parent() {
-    return parent;
   }
 
   @Override
@@ -56,20 +48,14 @@ public abstract class BaseAlgNode implements AlgNode {
   @Override
   public AlgNode setNamespace(String namespace) {
     this.namespace = namespace;
-    inputs().forEach(it -> it.setNamespace(namespace));
-    return this;
-  }
-
-  @Override
-  public AlgNode setParent(AlgNode parent) {
-    this.parent = parent;
+    inputsAndSubquery().forEach(it -> it.setNamespace(namespace));
     return this;
   }
 
   @Override
   public AlgNode setSolverContext(SolverContext context) {
     ctx = context;
-    inputs().forEach(it -> it.setSolverContext(context));
+    inputsAndSubquery().forEach(it -> it.setSolverContext(context));
     return this;
   }
 

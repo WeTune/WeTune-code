@@ -12,8 +12,6 @@ public interface AlgNode {
 
   String namespace();
 
-  AlgNode parent();
-
   List<AlgNode> inputs();
 
   List<ColumnRef> columns();
@@ -22,19 +20,21 @@ public interface AlgNode {
 
   List<SymbolicColumnRef> projected();
 
-  AlgNode setNamespace(String namespace);
-
-  AlgNode setParent(AlgNode parent);
-
-  AlgNode setSolverContext(SolverContext context);
-
   Set<Set<SymbolicColumnRef>> uniqueCores();
 
   List<SymbolicColumnRef> orderKeys();
 
   boolean isSingletonOutput();
 
+  AlgNode setNamespace(String namespace);
+
+  AlgNode setSolverContext(SolverContext context);
+
   String toString(int indentLevel);
+
+  default Iterable<AlgNode> inputsAndSubquery() {
+    return inputs();
+  }
 
   default boolean isInferredUnique() {
     return isSingletonOutput() || !uniqueCores().isEmpty();

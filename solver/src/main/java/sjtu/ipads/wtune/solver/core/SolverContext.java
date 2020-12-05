@@ -9,15 +9,19 @@ import java.util.Arrays;
 import java.util.List;
 
 public interface SolverContext {
-  boolean checkUnique(Schema schema, AlgNode q0, AlgNode q1);
+  SolverContext register(Schema schema);
 
-  boolean checkOrder(Schema schema, AlgNode q0, AlgNode q1);
+  boolean checkUnique(AlgNode q0, AlgNode q1);
 
-  boolean checkEquivalence(Schema schema, AlgNode q0, AlgNode q1);
+  boolean checkOrder(AlgNode q0, AlgNode q1);
+
+  boolean checkEquivalence(AlgNode q0, AlgNode q1);
 
   Variable const_(DataType dataType, Object value);
 
   Constraint ite(Constraint cond, Constraint v0, Constraint v1);
+
+  Constraint implies(Constraint c0, Constraint c1);
 
   Constraint boolConst(boolean value);
 
@@ -31,11 +35,11 @@ public interface SolverContext {
 
   Constraint convert(Variable variable);
 
-  List<SymbolicColumnRef> tupleSourceOf(AlgNode node);
+  List<SymbolicColumnRef> symbolicColumnsOf(AlgNode node);
 
   boolean inferFixedValue(SymbolicColumnRef col);
 
-  boolean inferEq(SymbolicColumnRef c0, SymbolicColumnRef c1);
+  boolean inferColumnEqs(SymbolicColumnRef c0, SymbolicColumnRef c1);
 
   default Constraint and(Constraint... constraints) {
     return and(Arrays.asList(constraints));

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.solver.sql.impl;
 
+import sjtu.ipads.wtune.solver.sql.expr.ExprVisitor;
 import sjtu.ipads.wtune.solver.sql.expr.IndexInputRef;
 
 public class IndexInputRefImpl implements IndexInputRef {
@@ -16,5 +17,10 @@ public class IndexInputRefImpl implements IndexInputRef {
   @Override
   public int index() {
     return index;
+  }
+
+  @Override
+  public void acceptVisitor(ExprVisitor visitor) {
+    visitor.visit(this);
   }
 }

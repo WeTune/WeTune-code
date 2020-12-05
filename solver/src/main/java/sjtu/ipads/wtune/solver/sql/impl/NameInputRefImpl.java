@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.solver.sql.impl;
 
+import sjtu.ipads.wtune.solver.sql.expr.ExprVisitor;
 import sjtu.ipads.wtune.solver.sql.expr.NameInputRef;
 
 public class NameInputRefImpl implements NameInputRef {
@@ -21,5 +22,10 @@ public class NameInputRefImpl implements NameInputRef {
   @Override
   public String toString() {
     return name;
+  }
+
+  @Override
+  public void acceptVisitor(ExprVisitor visitor) {
+    visitor.visit(this);
   }
 }

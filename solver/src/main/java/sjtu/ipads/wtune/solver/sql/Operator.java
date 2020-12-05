@@ -4,7 +4,7 @@ public enum Operator {
   EQ("=", 1),
   AND("AND", 0),
   OR("OR", 0),
-  ;
+  IN_SUB("IN", 1);
   private static final int LOGIC = 0, CMP = 1;
 
   private final String literal;

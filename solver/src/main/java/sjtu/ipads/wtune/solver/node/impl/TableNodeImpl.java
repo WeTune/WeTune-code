@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.solver.node.impl;
 
 import sjtu.ipads.wtune.solver.core.SymbolicColumnRef;
 import sjtu.ipads.wtune.solver.node.AlgNode;
-import sjtu.ipads.wtune.solver.node.SPJNode;
 import sjtu.ipads.wtune.solver.node.TableNode;
 import sjtu.ipads.wtune.solver.schema.Column;
 import sjtu.ipads.wtune.solver.schema.Table;
@@ -31,20 +30,6 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
   }
 
   @Override
-  public TableNode setParent(AlgNode parent) {
-    if (!(parent instanceof SPJNode))
-      throw new IllegalArgumentException("parent of TableNode must be SPJNode");
-
-    super.setParent(parent);
-    return this;
-  }
-
-  @Override
-  public SPJNode parent() {
-    return (SPJNode) super.parent();
-  }
-
-  @Override
   public Table table() {
     return table;
   }
@@ -66,7 +51,7 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
 
     final List<ColumnRef> cols = columns();
     final List<SymbolicColumnRef> symCols =
-        listMap(SymbolicColumnRef::copy, ctx.tupleSourceOf(this));
+        listMap(SymbolicColumnRef::copy, ctx.symbolicColumnsOf(this));
 
     for (int i = 0; i < symCols.size(); i++) symCols.get(i).copy().setColumnRef(cols.get(i));
 
@@ -84,7 +69,8 @@ public class TableNodeImpl extends BaseAlgNode implements TableNode {
 
     final Set<Set<SymbolicColumnRef>> uniqueCores = new HashSet<>();
     for (Set<Column> uniqueKey : table().uniqueKeys())
-      uniqueCores.add(setMap(this::getSymbolicColumn, uniqueKey));
+      if (uniqueKey.stream().allMatch(Column::notNull))
+        uniqueCores.add(setMap(this::getSymbolicColumn, uniqueKey));
 
     return this.uniqueCores = uniqueCores;
   }

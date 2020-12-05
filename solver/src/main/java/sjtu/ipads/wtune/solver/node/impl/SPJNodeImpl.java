@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.solver.node.impl;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.solver.core.Constraint;
@@ -13,6 +14,7 @@ import sjtu.ipads.wtune.solver.sql.Operator;
 import sjtu.ipads.wtune.solver.sql.ProjectionItem;
 import sjtu.ipads.wtune.solver.sql.expr.Expr;
 import sjtu.ipads.wtune.solver.sql.expr.InputRef;
+import sjtu.ipads.wtune.solver.sql.expr.QueryExpr;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +23,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.nCopies;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.solver.sql.expr.ExprVisitor.seeker;
 
 public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   private final boolean forceDistinct;
@@ -34,6 +37,8 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   private final List<Expr> orderKeyExprs;
 
   //// for cache
+  private List<AlgNode> subquery;
+
   private List<ColumnRef> outCols;
   private List<SymbolicColumnRef> filteredCols;
   private List<SymbolicColumnRef> projectedCols;
@@ -152,12 +157,6 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     return this.projectedCols = projected;
   }
 
-  public Map<ColumnRef, SymbolicColumnRef> projectRel() {
-    if (projectRel != null) return projectRel;
-    projected(); // trigger lazy calculation of projectRel
-    return projectRel;
-  }
-
   @Override
   public Set<Set<SymbolicColumnRef>> uniqueCores() {
     if (uniqueCores != null) return uniqueCores;
@@ -176,7 +175,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
       if (newCore.size() == 2) {
         final Iterator<SymbolicColumnRef> iter = newCore.iterator();
         final SymbolicColumnRef left = iter.next(), right = iter.next();
-        if (ctx.inferEq(left, right)) {
+        if (ctx.inferColumnEqs(left, right)) {
           newCore = newHashSet(left);
           newCore2 = newHashSet(right);
         }
@@ -216,15 +215,30 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
   public List<SymbolicColumnRef> orderKeys() {
     if (orderKeys != null) return orderKeys;
     return orderKeys =
-        listMap(
-            it -> it.asVariable(inputs(), inputAliases(), filtered(), ctx),
-            orderKeyExprs);
+        listMap(it -> it.asVariable(inputs(), inputAliases(), filtered(), ctx), orderKeyExprs);
   }
 
   @Override
   public boolean isForcedUnique() {
     return forceDistinct;
   }
+
+  @Override
+  public Iterable<AlgNode> inputsAndSubquery() {
+    if (subquery != null) return Iterables.concat(inputs(), subquery);
+    final List<AlgNode> subquery = new ArrayList<>();
+    if (filters != null)
+      filters.acceptVisitor(seeker(QueryExpr.class, it -> subquery.add(it.query())));
+    this.subquery = subquery;
+    return Iterables.concat(inputs(), subquery);
+  }
+
+  private Map<ColumnRef, SymbolicColumnRef> projectRel() {
+    if (projectRel != null) return projectRel;
+    projected(); // trigger lazy calculation of projectRel
+    return projectRel;
+  }
+
   // cache
   private Map<ColumnRef, List<SymbolicColumnRef>> lookUp;
 
@@ -306,6 +320,13 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     if (filters() != null)
       builder.append('\n').append(" ".repeat(indentLevel)).append("WHERE ").append(filters());
 
+    if (!orderKeyExprs.isEmpty())
+      builder
+          .append('\n')
+          .append(" ".repeat(indentLevel))
+          .append("ORDER BY ")
+          .append(String.join(", ", listMap(Objects::toString, orderKeyExprs)));
+
     if (indentLevel != 0) builder.append(')');
 
     return builder.toString();
@@ -313,7 +334,7 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
 
   private String toString1(int indentLevel) {
     final StringBuilder builder = new StringBuilder();
-    if (indentLevel != 0) builder.append("\n(");
+    if (indentLevel != 0) builder.append("(");
     builder.append("SELECT");
     if (isForcedUnique()) builder.append(" DISTINCT");
 
@@ -338,6 +359,11 @@ public class SPJNodeImpl extends BaseAlgNode implements SPJNode {
     }
 
     if (filters() != null) builder.append(" WHERE ").append(filters());
+
+    if (!orderKeyExprs.isEmpty())
+      builder
+          .append(" ORDER BY ")
+          .append(String.join(", ", listMap(Objects::toString, orderKeyExprs)));
 
     if (indentLevel != 0) builder.append(')');
 
