@@ -1,9 +1,10 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Reactor;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.search.Reactor;
 
 import java.util.Objects;
 
@@ -33,6 +34,11 @@ public class ReferenceImpl implements Constraint {
   @Override
   public void decide(Reactor reactor) {
     reactor.reference(this, tx, px, ty, py);
+  }
+
+  @Override
+  public Sym[] targets() {
+    return new Sym[] {tx, px, ty, py};
   }
 
   @Override

@@ -1,4 +1,8 @@
-package sjtu.ipads.wtune.symsolver.core;
+package sjtu.ipads.wtune.symsolver.search;
+
+import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.TableSym;
 
 import java.util.Collection;
 
@@ -11,7 +15,5 @@ public interface Reactor {
 
   void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py);
 
-  default void decide(Decision[] decisions) {
-    for (Decision decision : decisions) decision.decide(this);
-  }
+  void decide(Decision[] decisions);
 }

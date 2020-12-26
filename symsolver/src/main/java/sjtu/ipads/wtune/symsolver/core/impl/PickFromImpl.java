@@ -1,9 +1,10 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Reactor;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.search.Reactor;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -30,6 +31,17 @@ public class PickFromImpl implements Constraint {
   @Override
   public void decide(Reactor reactor) {
     reactor.pickFrom(this, p, ts);
+  }
+
+  @Override
+  public Sym[] targets() {
+    final Sym[] syms = new Sym[1 + ts.size()];
+    syms[0] = p;
+
+    int i = 1;
+    for (TableSym t : ts) syms[i++] = t;
+
+    return syms;
   }
 
   @Override

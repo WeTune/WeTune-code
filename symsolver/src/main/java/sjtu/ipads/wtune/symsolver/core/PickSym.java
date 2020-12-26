@@ -4,14 +4,9 @@ import sjtu.ipads.wtune.symsolver.core.impl.PickSymImpl;
 import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.Collection;
+import java.util.List;
 
-public interface PickSym extends Indexed {
-  Collection<TableSym> visibleTables();
-
-  void setVisibleTables(Collection<TableSym> visibleTables);
-
-  <T> T unwrap(Class<T> unwrap);
-
+public interface PickSym extends Indexed, Sym {
   static PickSym from(Object obj) {
     return PickSymImpl.build(obj);
   }
@@ -21,4 +16,16 @@ public interface PickSym extends Indexed {
     p.setIndex(i);
     return p;
   }
+
+  List<TableSym> visibleSources();
+
+  Collection<? extends Collection<TableSym>> viableSources();
+
+  PickSym joined();
+
+  void setVisibleSources(List<TableSym> visibleSources);
+
+  void setViableSources(Collection<? extends Collection<TableSym>> viableSources);
+
+  void setJoined(PickSym joined);
 }

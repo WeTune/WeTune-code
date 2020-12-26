@@ -1,6 +1,11 @@
-package sjtu.ipads.wtune.symsolver.core.impl;
+package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.*;
+import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.search.Decision;
+import sjtu.ipads.wtune.symsolver.search.Summary;
+import sjtu.ipads.wtune.symsolver.search.Tracer;
 import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
 import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
@@ -9,7 +14,7 @@ import java.util.*;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
-public class TracerImpl implements ResettableTracer {
+public class TracerImpl implements Tracer {
   private static final Comparator<Indexed> INDEX_CMP = Comparator.comparingInt(Indexed::index);
 
   private final TableSym[] tables;
@@ -44,28 +49,27 @@ public class TracerImpl implements ResettableTracer {
     useFastPickIndex = checkFastIndex(picks);
   }
 
-  public static ResettableTracer build(TableSym[] tables, PickSym[] picks) {
+  public static Tracer build(TableSym[] tables, PickSym[] picks) {
     if (tables == null || picks == null) throw new IllegalArgumentException();
     return new TracerImpl(tables, picks);
+  }
+
+  private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
+    final List<T>[] groups = new List[xs.length];
+    for (int i = 0; i < grouping.length; i++) {
+      final int groupId = grouping[i];
+
+      List<T> group = groups[groupId];
+      if (group == null) group = groups[groupId] = new ArrayList<>();
+      group.add(xs[i]);
+    }
+
+    return Arrays.stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
   private boolean checkFastIndex(Indexed[] xs) {
     for (int i = 0, bound = xs.length; i < bound; i++) if (i != xs[i].index()) return false;
     return true;
-  }
-
-  @Override
-  public void reset() {
-    constraints.clear();
-    eqTables.reset();
-    eqPicks.reset();
-    refs.clear();
-    Arrays.fill(srcs, null);
-    summary = null;
-  }
-
-  private void addConstraint(Constraint constraint) {
-    if (constraints.get(constraints.size() - 1) != constraint) addConstraint(constraint);
   }
 
   @Override
@@ -94,11 +98,24 @@ public class TracerImpl implements ResettableTracer {
     refs.put(px, py);
   }
 
-  private boolean isMismatchedSource(Collection<TableSym> xs, Collection<TableSym> ys) {
-    return xs.stream().allMatch(tx -> ys.stream().anyMatch(ty -> eqTables.isConnected(tx, ty)))
-        && ys.stream().allMatch(ty -> xs.stream().anyMatch(tx -> eqTables.isConnected(tx, ty)));
+  private void addConstraint(Constraint constraint) {
+    if (constraints.get(constraints.size() - 1) != constraint) addConstraint(constraint);
   }
 
+  @Override
+  public void decide(Decision[] decisions) {
+    reset();
+    for (Decision decision : decisions) decision.decide(this);
+  }
+
+  private void reset() {
+    constraints.clear();
+    eqTables.reset();
+    eqPicks.reset();
+    refs.clear();
+    Arrays.fill(srcs, null);
+    summary = null;
+  }
   /**
    * Check if there are two picks px, py such that: px == py && px.src != py.src
    *
@@ -117,6 +134,10 @@ public class TracerImpl implements ResettableTracer {
     return false;
   }
 
+  private boolean isMismatchedSource(Collection<TableSym> xs, Collection<TableSym> ys) {
+    return xs.stream().allMatch(tx -> ys.stream().anyMatch(ty -> eqTables.isConnected(tx, ty)))
+        && ys.stream().allMatch(ty -> xs.stream().anyMatch(tx -> eqTables.isConnected(tx, ty)));
+  }
   /**
    * Check if there is a pick p such that <br>
    * (exists t in p.src && forAll t' in p.visibleTables, t != t')
@@ -129,42 +150,11 @@ public class TracerImpl implements ResettableTracer {
       final Collection<TableSym> src = srcs[indexOf(pick)];
       if (src == null) continue;
 
-      final Collection<TableSym> vs = pick.visibleTables();
+      final Collection<TableSym> vs = pick.visibleSources();
       if (src.stream().anyMatch(st -> vs.stream().noneMatch(vt -> eqTables.isConnected(st, vt))))
         return true;
     }
     return false;
-  }
-
-  private void inferSrc() {
-    for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++) {
-        final PickSym px = picks[i], py = picks[j];
-        final Collection<TableSym> srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
-        if (srcX == null && srcY != null) pickFrom(Constraint.pickFrom(px, srcY), px, srcY);
-        else if (srcX != null && srcY == null) pickFrom(Constraint.pickFrom(py, srcX), py, srcX);
-      }
-  }
-
-  private int indexOf(PickSym p) {
-    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, INDEX_CMP);
-  }
-
-  private int indexOf(TableSym t) {
-    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, INDEX_CMP);
-  }
-
-  private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
-    final List<T>[] groups = new List[xs.length];
-    for (int i = 0; i < grouping.length; i++) {
-      final int groupId = grouping[i];
-
-      List<T> group = groups[groupId];
-      if (group == null) group = groups[groupId] = new ArrayList<>();
-      group.add(xs[i]);
-    }
-
-    return Arrays.stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
   @Override
@@ -187,17 +177,22 @@ public class TracerImpl implements ResettableTracer {
         new ArrayList<>(constraints), eqTables, eqPicks, srcPivot, new HashMap<>(refs));
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    TracerImpl trace = (TracerImpl) o;
-    return Objects.equals(summary(), trace.summary());
+  private void inferSrc() {
+    for (int i = 0, bound = picks.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) {
+        final PickSym px = picks[i], py = picks[j];
+        final Collection<TableSym> srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
+        if (srcX == null && srcY != null) pickFrom(Constraint.pickFrom(px, srcY), px, srcY);
+        else if (srcX != null && srcY == null) pickFrom(Constraint.pickFrom(py, srcX), py, srcX);
+      }
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(summary());
+  private int indexOf(PickSym p) {
+    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, INDEX_CMP);
+  }
+
+  private int indexOf(TableSym t) {
+    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, INDEX_CMP);
   }
 
   private static final class SummaryImpl implements Summary {
@@ -218,6 +213,17 @@ public class TracerImpl implements ResettableTracer {
       this.eqPicks = eqPicks;
       this.srcs = srcs;
       this.refs = refs;
+    }
+
+    private static <T> boolean impliesEq(
+        Collection<Collection<T>> xs, Collection<Collection<T>> ys) {
+      return ys.stream().allMatch(y -> xs.stream().anyMatch(x -> x.containsAll(y)));
+    }
+
+    private static boolean impliesRef(Map<PickSym, PickSym> refsX, Map<PickSym, PickSym> refsY) {
+      for (var refY : refsY.entrySet())
+        if (refsX.get(refY.getKey()) != refY.getValue()) return false;
+      return true;
     }
 
     @Override
@@ -243,17 +249,6 @@ public class TracerImpl implements ResettableTracer {
     @Override
     public Map<PickSym, PickSym> refs() {
       return refs;
-    }
-
-    private static <T> boolean impliesEq(
-        Collection<Collection<T>> xs, Collection<Collection<T>> ys) {
-      return ys.stream().allMatch(y -> xs.stream().anyMatch(x -> x.containsAll(y)));
-    }
-
-    private static boolean impliesRef(Map<PickSym, PickSym> refsX, Map<PickSym, PickSym> refsY) {
-      for (var refY : refsY.entrySet())
-        if (refsX.get(refY.getKey()) != refY.getValue()) return false;
-      return true;
     }
 
     @Override

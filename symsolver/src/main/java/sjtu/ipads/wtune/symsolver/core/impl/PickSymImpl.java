@@ -4,10 +4,13 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
 import java.util.Collection;
+import java.util.List;
 
 public class PickSymImpl implements PickSym {
   private final Object wrapped;
-  private Collection<TableSym> visibleTables;
+  private List<TableSym> visibleSources;
+  private Collection<? extends Collection<TableSym>> viableSources;
+  private PickSym joined;
 
   private int index;
 
@@ -20,13 +23,33 @@ public class PickSymImpl implements PickSym {
   }
 
   @Override
-  public Collection<TableSym> visibleTables() {
-    return visibleTables;
+  public List<TableSym> visibleSources() {
+    return visibleSources;
   }
 
   @Override
-  public void setVisibleTables(Collection<TableSym> visibleTables) {
-    this.visibleTables = visibleTables;
+  public Collection<? extends Collection<TableSym>> viableSources() {
+    return viableSources;
+  }
+
+  @Override
+  public PickSym joined() {
+    return null;
+  }
+
+  @Override
+  public void setVisibleSources(List<TableSym> visibleSources) {
+    this.visibleSources = visibleSources;
+  }
+
+  @Override
+  public void setViableSources(Collection<? extends Collection<TableSym>> viableSources) {
+    this.viableSources = viableSources;
+  }
+
+  @Override
+  public void setJoined(PickSym joined) {
+    this.joined = joined;
   }
 
   @Override

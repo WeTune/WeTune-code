@@ -54,26 +54,27 @@ public class RegressionTest {
         };
     final List<TestCase> tests =
         List.of(
-            t(0, 1, SCM_NO_FK, false),
-            t(0, 2, SCM_NO_FK, false),
-            t(0, 3, SCM_NO_FK, false),
-            t(0, 4, SCM_NO_FK, true),
-            t(1, 2, SCM_NO_FK, false),
-            t(1, 3, SCM_NO_FK, false),
-            t(1, 4, SCM_NO_FK, false),
-            t(2, 3, SCM_NO_FK, true),
-            t(2, 4, SCM_NO_FK, false),
-            t(3, 4, SCM_NO_FK, false),
-            t(0, 1, SCM_FK, false),
-            t(0, 2, SCM_FK, true),
-            t(0, 3, SCM_FK, true),
-            t(0, 4, SCM_FK, true),
-            t(1, 2, SCM_FK, false),
-            t(1, 3, SCM_FK, false),
-            t(1, 4, SCM_FK, false),
-            t(2, 3, SCM_FK, true),
-            t(2, 4, SCM_FK, true),
-            t(3, 4, SCM_FK, true));
+//            t(0, 1, SCM_NO_FK, false),
+//            t(0, 2, SCM_NO_FK, false),
+//            t(0, 3, SCM_NO_FK, false),
+            t(0, 4, SCM_NO_FK, true) //,
+//            t(1, 2, SCM_NO_FK, false),
+//            t(1, 3, SCM_NO_FK, false),
+//            t(1, 4, SCM_NO_FK, false),
+//            t(2, 3, SCM_NO_FK, true),
+//            t(2, 4, SCM_NO_FK, false),
+//            t(3, 4, SCM_NO_FK, false),
+//            t(0, 1, SCM_FK, false),
+//            t(0, 2, SCM_FK, true),
+//            t(0, 3, SCM_FK, true),
+//            t(0, 4, SCM_FK, true),
+//            t(1, 2, SCM_FK, false),
+//            t(1, 3, SCM_FK, false),
+//            t(1, 4, SCM_FK, false),
+//            t(2, 3, SCM_FK, true),
+//            t(2, 4, SCM_FK, true),
+//            t(3, 4, SCM_FK, true)
+        );
 
     //    doTest(SCM_FK, qs[0], qs[4]);
     boolean allSucceed = true;

@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.symsolver.core.impl;
+package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Decision;
-import sjtu.ipads.wtune.symsolver.core.DecisionTree;
+import sjtu.ipads.wtune.symsolver.search.Decision;
+import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
 import static java.util.Objects.requireNonNull;
 

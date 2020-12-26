@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Reactor;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.search.Reactor;
 
 import java.util.Objects;
 
@@ -27,6 +28,11 @@ public class TableEqImpl implements Constraint {
   @Override
   public void decide(Reactor reactor) {
     reactor.tableEq(this, tx, ty);
+  }
+
+  @Override
+  public Sym[] targets() {
+    return new Sym[] {tx, ty};
   }
 
   @Override

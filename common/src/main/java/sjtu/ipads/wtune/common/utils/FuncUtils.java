@@ -1,9 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,6 +22,12 @@ public interface FuncUtils {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
   }
 
+  static <T, R> R[] arrayMap(T[] ts, Function<T, R> func) {
+    final Object[] rs = new Object[ts.length];
+    for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
+    return (R[]) rs;
+  }
+
   static <T, R> Set<R> setMap(Function<? super T, R> func, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toSet());
   }
@@ -38,10 +41,6 @@ public interface FuncUtils {
 
   static <T> T find(IPredicate<T> pred, Iterable<T> os) {
     return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
-  }
-
-  static <P1, P2, R> Function<P1, Function<P2, R>> curry(BiFunction<P1, P2, R> func) {
-    return p1 -> p2 -> func.apply(p1, p2);
   }
 
   static <P1, P2, R> Function<P2, R> parital(BiFunction<P1, P2, R> func, P1 p1) {
@@ -63,8 +62,21 @@ public interface FuncUtils {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
+  static <T> T[] repeat(int times, T value) {
+    final Object[] arr = new Object[times];
+    Arrays.fill(arr, value);
+    return (T[]) arr;
+  }
+
   static <T> T[] asArray(T... vals) {
     return vals;
+  }
+
+  static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
+    final Object[] arr = new Object[arr1.length + arr2.length];
+    System.arraycopy(arr1, 0, arr, 0, arr1.length);
+    System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
+    return (T[]) arr;
   }
 
   static <T> T coalesce(T... vals) {

@@ -2,7 +2,8 @@ package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Reactor;
+import sjtu.ipads.wtune.symsolver.core.Sym;
+import sjtu.ipads.wtune.symsolver.search.Reactor;
 
 import java.util.Objects;
 
@@ -14,19 +15,24 @@ public class PickEqImpl implements Constraint {
     py = y;
   }
 
-  @Override
-  public Constraint.Kind kind() {
-    return Constraint.Kind.PickEq;
-  }
-
   public static Constraint build(PickSym x, PickSym y) {
     if (x == null || y == null || x == y) throw new IllegalArgumentException();
     return new PickEqImpl(x, y);
   }
 
   @Override
+  public Constraint.Kind kind() {
+    return Constraint.Kind.PickEq;
+  }
+
+  @Override
   public void decide(Reactor reactor) {
     reactor.pickEq(this, px, py);
+  }
+
+  @Override
+  public Sym[] targets() {
+    return new Sym[] {px, py};
   }
 
   @Override
