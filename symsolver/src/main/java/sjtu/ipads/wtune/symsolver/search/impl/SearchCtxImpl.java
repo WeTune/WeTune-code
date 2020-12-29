@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.*;
 import sjtu.ipads.wtune.symsolver.smt.Proposition;
@@ -17,22 +18,20 @@ public class SearchCtxImpl implements SearchCtx {
   private final Searcher searcher;
 
   // states
-  private final Map<Summary, Boolean> knownResults;
+  private final Map<Summary, Result> knownResults;
   private final List<Summary> survivors;
 
-  private final Map<String, Object> statistics;
-  private final SearchCtxStat stat;
+  private final Statistics stat;
 
   private SearchCtxImpl(
       TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Proposition... problems) {
-    prover = Prover.combine(arrayMap(problems, problem -> Prover.incremental(smtCtx, problem)));
+    prover = Prover.combine(arrayMap(p -> Prover.incremental(smtCtx, p), Prover.class, problems));
     tracer = Tracer.bindTo(tables, picks);
     searcher = Searcher.bindTo(this);
 
     knownResults = new HashMap<>();
     survivors = new LinkedList<>();
-    statistics = new HashMap<>();
-    stat = new SearchCtxStat();
+    stat = new Statistics();
   }
 
   public static SearchCtx build(
@@ -76,26 +75,35 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
-  public List<Summary> search(Iterable<DecisionTree> trees) {
-    for (DecisionTree tree : trees) searcher.search(tree);
+  public List<Summary> search(DecisionTree tree) {
+    final long t0 = System.currentTimeMillis();
+    searcher.search(tree);
+    final long t1 = System.currentTimeMillis();
 
-    statistic().compute("context", (k, v) -> stat.merge((SearchCtxStat) v));
+    stat.numSearched = searcher.numSearched();
+    stat.numSkipped = searcher.numSkipped();
+    stat.timeTotal += t1 - t0;
+
+    System.out.println(stat);
     return survivors;
   }
 
   @Override
-  public boolean prove() {
+  public Result prove() {
     final Summary summary = tracer.summary();
-    Boolean res = knownResults.get(summary);
+    Result res = knownResults.get(summary);
     if (res != null) {
       ++stat.numCacheHit;
       return res;
     }
 
-    ++stat.numProveCall;
+    final long t0 = System.currentTimeMillis();
     res = prover.prove();
+    final long t1 = System.currentTimeMillis();
 
-    knownResults.put(summary, res);
+    updateProveStatistic(res, t1 - t0);
+
+    if (res != Result.UNKNOWN) knownResults.put(summary, res);
     return res;
   }
 
@@ -107,7 +115,10 @@ public class SearchCtxImpl implements SearchCtx {
     final ListIterator<Summary> iter = survivors.listIterator();
     while (iter.hasNext()) {
       final Summary survivor = iter.next();
-      if (summary.implies(survivor)) return;
+      if (summary.equals(survivor) || summary.implies(survivor)) {
+        ++stat.numDuplicate;
+        return;
+      }
 
       if (survivor.implies(summary)) {
         ++stat.numRelax;
@@ -119,12 +130,16 @@ public class SearchCtxImpl implements SearchCtx {
 
   @Override
   public boolean isConflict() {
-    return tracer.isConflict();
+    final boolean ret;
+    if (ret = (tracer.isConflict())) ++stat.numConflict;
+    return ret;
   }
 
   @Override
   public boolean isIncomplete() {
-    return tracer.isIncomplete();
+    final boolean ret;
+    if (ret = (tracer.isIncomplete())) ++stat.numIncomplete;
+    return ret;
   }
 
   @Override
@@ -132,38 +147,72 @@ public class SearchCtxImpl implements SearchCtx {
     return tracer.summary();
   }
 
-  @Override
-  public Map<String, Object> statistic() {
-    return statistics;
+  private void updateProveStatistic(Result result, long spent) {
+    ++stat.numProveCall;
+    if (result == Result.NON_EQUIVALENT) {
+      ++stat.numNonEq;
+      stat.timeForNonEq += spent;
+    } else if (result == Result.EQUIVALENT) {
+      ++stat.numEq;
+      stat.timeForEq += spent;
+    } else {
+      ++stat.numUnknown;
+      stat.timeForUnknown += spent;
+    }
   }
 
-  private static class SearchCtxStat {
+  private static class Statistics {
+    private int numSearched = 0;
+    private int numSkipped = 0;
+    private int numConflict = 0;
+    private int numIncomplete = 0;
     private int numProveCall = 0;
     private int numCacheHit = 0;
+    private int numUnknown = 0;
+    private int numNonEq = 0;
+    private int numEq = 0;
     private int numRecordCall = 0;
+    private int numDuplicate = 0;
     private int numRelax = 0;
-
-    private SearchCtxStat merge(SearchCtxStat other) {
-      if (other != null) {
-        numProveCall += other.numProveCall;
-        numCacheHit += other.numCacheHit;
-        numRecordCall += other.numRecordCall;
-        numRelax += other.numRelax;
-      }
-
-      return this;
-    }
+    private long timeForNonEq = 0;
+    private long timeForEq = 0;
+    private long timeForUnknown = 0;
+    private long timeTotal = 0;
 
     @Override
     public String toString() {
-      return "#ProveCall="
+      return "#Searched="
+          + numSearched
+          + "\n#Skipped="
+          + numSkipped
+          + "\n#Conflict="
+          + numConflict
+          + "\n#Incomplete="
+          + numIncomplete
+          + "\n#ProveCall="
           + numProveCall
-          + " #CacheHit="
+          + "\n#CacheHit="
           + numCacheHit
-          + " #RecordCall="
+          + "\n#NonEq="
+          + numNonEq
+          + "\n#Eq="
+          + numEq
+          + "\n#Unknown="
+          + numUnknown
+          + "\n#RecordCall="
           + numRecordCall
-          + " #Relax="
-          + numRelax;
+          + "\n#Duplicate="
+          + numDuplicate
+          + "\n#Relax="
+          + numRelax
+          + "\nTimeForNonEq="
+          + timeForNonEq
+          + "\nTimeForEq="
+          + timeForEq
+          + "\nTimeForUnknown="
+          + timeForUnknown
+          + "\nTimeTotal="
+          + timeTotal;
     }
   }
 }

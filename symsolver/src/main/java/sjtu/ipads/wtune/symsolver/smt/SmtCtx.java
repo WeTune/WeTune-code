@@ -14,6 +14,8 @@ public interface SmtCtx {
 
   Proposition makeEq(Func f0, Func f1);
 
+  Proposition makeNot(Proposition p);
+
   Proposition makeImplies(Proposition p0, Proposition p1);
 
   Proposition makeAnd(Proposition p0, Proposition p1);
@@ -24,11 +26,11 @@ public interface SmtCtx {
 
   Func makeFunc(PickSym t);
 
-  Func makeCombine(int n);
+  Value makeTuple(String name);
 
   Value makeApply(Func func, Value... args);
 
-  Value makeTuple(String name);
+  Value makeCombine(Value... values);
 
   Proposition makeForAll(Value[] args, Proposition assertions);
 
@@ -36,14 +38,21 @@ public interface SmtCtx {
 
   SmtSolver makeSolver();
 
-  SmtSolver makeSolver(Map<String, Object> option);
-
   Collection<Func> declaredFuncs();
 
   default Value[] makeTuples(int n, String prefix) {
     final Value[] tuples = new Value[n];
     for (int i = 0; i < n; i++) tuples[i] = makeTuple(prefix + i);
     return tuples;
+  }
+
+  default Proposition makeEqs(Value... vs) {
+    Proposition p = Proposition.tautology();
+    if (vs.length == 1) return p;
+
+    final Value pivot = vs[0];
+    for (int i = 1; i < vs.length; i++) p = p.and(makeEq(pivot, vs[i]));
+    return p;
   }
 
   default Proposition makeForAll(Value arg, Proposition assertions) {
@@ -61,19 +70,15 @@ public interface SmtCtx {
   default Proposition tuplesFrom(Value[] tuples, Collection<TableSym> tables) {
     if (tuples.length != tables.size()) throw new IllegalArgumentException();
 
-    Proposition proposition = null;
+    Proposition proposition = Proposition.tautology();
     int i = 0;
-    for (TableSym table : tables) proposition = tupleFrom(tuples[i], table).and(proposition);
+    for (TableSym table : tables) proposition = tupleFrom(tuples[i++], table).and(proposition);
 
     return proposition;
   }
 
-  default Value combine(Value... values) {
-    return makeCombine(values.length).apply(values);
-  }
-
   default Value pick(PickSym pick, Value... values) {
-    return makeFunc(pick).apply(combine(values));
+    return makeFunc(pick).apply(makeCombine(values));
   }
 
   static SmtCtx z3() {

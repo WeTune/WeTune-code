@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
@@ -30,9 +31,13 @@ public class CombinedProver implements Prover {
   }
 
   @Override
-  public boolean prove() {
-    for (Prover prover : provers) if (!prover.prove()) return false;
-    return true;
+  public Result prove() {
+    for (Prover prover : provers) {
+      final Result result = prover.prove();
+      if (result == Result.UNKNOWN) return Result.UNKNOWN;
+      else if (result == Result.NON_EQUIVALENT) return Result.NON_EQUIVALENT;
+    }
+    return Result.EQUIVALENT;
   }
 
   @Override

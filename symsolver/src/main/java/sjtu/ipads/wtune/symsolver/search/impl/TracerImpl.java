@@ -11,12 +11,12 @@ import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static sjtu.ipads.wtune.symsolver.utils.Indexed.isCanonicalIndexed;
 
 public class TracerImpl implements Tracer {
-  private static final Comparator<Indexed> INDEX_CMP = Comparator.comparingInt(Indexed::index);
-
   private final TableSym[] tables;
   private final PickSym[] picks;
 
@@ -30,11 +30,13 @@ public class TracerImpl implements Tracer {
   private final boolean useFastTableIndex;
   private final boolean useFastPickIndex;
 
+  private boolean srcDiverged; // indicate if two different source is assigned to a single pick
+  private boolean srcInferred; // indicate if `inferSrc` has been called since last `reset`
   private Summary summary;
 
   private TracerImpl(TableSym[] tables, PickSym[] picks) {
-    Arrays.sort(tables, INDEX_CMP);
-    Arrays.sort(picks, INDEX_CMP);
+    tables = Arrays.copyOf(tables, tables.length);
+    picks = Arrays.copyOf(picks, picks.length);
 
     this.tables = tables;
     this.picks = picks;
@@ -45,8 +47,8 @@ public class TracerImpl implements Tracer {
     refs = new HashMap<>();
     srcs = new Collection[picks.length];
 
-    useFastTableIndex = checkFastIndex(tables);
-    useFastPickIndex = checkFastIndex(picks);
+    useFastTableIndex = isCanonicalIndexed(tables);
+    useFastPickIndex = isCanonicalIndexed(picks);
   }
 
   public static Tracer build(TableSym[] tables, PickSym[] picks) {
@@ -67,11 +69,6 @@ public class TracerImpl implements Tracer {
     return Arrays.stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
-  private boolean checkFastIndex(Indexed[] xs) {
-    for (int i = 0, bound = xs.length; i < bound; i++) if (i != xs[i].index()) return false;
-    return true;
-  }
-
   @Override
   public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
     addConstraint(constraint);
@@ -87,7 +84,11 @@ public class TracerImpl implements Tracer {
   @Override
   public void pickFrom(Constraint constraint, PickSym p, Collection<TableSym> ts) {
     addConstraint(constraint);
-    srcs[indexOf(p)] = ts;
+    final int pIdx = indexOf(p);
+    final Collection<TableSym> existing = srcs[pIdx];
+
+    if (existing != null && !existing.equals(ts)) srcDiverged = true;
+    else srcs[pIdx] = ts;
   }
 
   @Override
@@ -99,7 +100,8 @@ public class TracerImpl implements Tracer {
   }
 
   private void addConstraint(Constraint constraint) {
-    if (constraints.get(constraints.size() - 1) != constraint) addConstraint(constraint);
+    if (constraints.isEmpty() || constraints.get(constraints.size() - 1) != constraint)
+      constraints.add(constraint);
   }
 
   @Override
@@ -114,15 +116,27 @@ public class TracerImpl implements Tracer {
     eqPicks.reset();
     refs.clear();
     Arrays.fill(srcs, null);
+    srcDiverged = false;
+    srcInferred = false;
     summary = null;
   }
+
   /**
-   * Check if there are two picks px, py such that: px == py && px.src != py.src
+   * Check if there are
    *
-   * <p>Note: This method should be invoked after all constraints are added.
+   * <ul>
+   *   <li>two picks px, py such that: px == py && px.src != py.src
+   *   <li>two different sources being assigned to a single pick
+   * </ul>
+   *
+   * <p>Note: This method MUST be invoked after all constraints being added.
    */
   @Override
   public boolean isConflict() {
+    inferSrc();
+
+    if (srcDiverged) return true;
+
     for (int i = 0, bound = picks.length; i < bound; i++)
       for (int j = i + 1; j < bound; j++) {
         final PickSym px = picks[i], py = picks[j];
@@ -135,17 +149,20 @@ public class TracerImpl implements Tracer {
   }
 
   private boolean isMismatchedSource(Collection<TableSym> xs, Collection<TableSym> ys) {
-    return xs.stream().allMatch(tx -> ys.stream().anyMatch(ty -> eqTables.isConnected(tx, ty)))
-        && ys.stream().allMatch(ty -> xs.stream().anyMatch(tx -> eqTables.isConnected(tx, ty)));
+    return xs.size() != ys.size()
+        || xs.stream().anyMatch(tx -> ys.stream().noneMatch(ty -> eqTables.isConnected(tx, ty)))
+        || ys.stream().anyMatch(ty -> xs.stream().noneMatch(tx -> eqTables.isConnected(tx, ty)));
   }
+
   /**
    * Check if there is a pick p such that <br>
    * (exists t in p.src && forAll t' in p.visibleTables, t != t')
    *
-   * <p>Note: This method should be invoked after all constraints are added.
+   * <p>Note: This method MUST be invoked after all constraints being added.
    */
   @Override
   public boolean isIncomplete() {
+    inferSrc();
     for (PickSym pick : picks) {
       final Collection<TableSym> src = srcs[indexOf(pick)];
       if (src == null) continue;
@@ -171,28 +188,33 @@ public class TracerImpl implements Tracer {
 
     final Collection<TableSym>[] srcPivot = new Collection[srcs.length];
     for (int i = 0; i < srcs.length; i++)
-      srcPivot[i] = srcs[i].stream().map(src -> tables[tGrouping[indexOf(src)]]).collect(toList());
+      if (srcs[i] != null)
+        srcPivot[i] = srcs[i].stream().map(t -> tables[tGrouping[indexOf(t)]]).collect(toList());
 
     return new SummaryImpl(
         new ArrayList<>(constraints), eqTables, eqPicks, srcPivot, new HashMap<>(refs));
   }
 
   private void inferSrc() {
+    if (srcInferred) return;
     for (int i = 0, bound = picks.length; i < bound; i++)
       for (int j = i + 1; j < bound; j++) {
         final PickSym px = picks[i], py = picks[j];
+        if (!eqPicks.isConnected(px, py)) continue;
+
         final Collection<TableSym> srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
         if (srcX == null && srcY != null) pickFrom(Constraint.pickFrom(px, srcY), px, srcY);
         else if (srcX != null && srcY == null) pickFrom(Constraint.pickFrom(py, srcX), py, srcX);
       }
+    srcInferred = true;
   }
 
   private int indexOf(PickSym p) {
-    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, INDEX_CMP);
+    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, Indexed.INDEX_CMP);
   }
 
   private int indexOf(TableSym t) {
-    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, INDEX_CMP);
+    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, Indexed.INDEX_CMP);
   }
 
   private static final class SummaryImpl implements Summary {
@@ -271,7 +293,7 @@ public class TracerImpl implements Tracer {
 
     @Override
     public int hashCode() {
-      return Objects.hash(eqTables, eqPicks, srcs, refs);
+      return Objects.hash(eqTables, eqPicks, refs) + Arrays.hashCode(srcs);
     }
 
     @Override
@@ -285,5 +307,10 @@ public class TracerImpl implements Tracer {
           + ", srcs: "
           + Arrays.toString(srcs);
     }
+  }
+
+  public static void main(String[] args) {
+    List<Integer> xs = emptyList(), ys = singletonList(1);
+    System.out.println(ys.stream().anyMatch(y -> xs.stream().noneMatch(x -> x.equals(y))));
   }
 }

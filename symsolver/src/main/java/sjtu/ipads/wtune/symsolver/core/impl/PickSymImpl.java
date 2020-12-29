@@ -34,7 +34,7 @@ public class PickSymImpl implements PickSym {
 
   @Override
   public PickSym joined() {
-    return null;
+    return joined;
   }
 
   @Override

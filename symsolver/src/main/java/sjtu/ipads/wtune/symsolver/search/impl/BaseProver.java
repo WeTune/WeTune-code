@@ -6,10 +6,7 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
-import sjtu.ipads.wtune.symsolver.smt.Func;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
-import sjtu.ipads.wtune.symsolver.smt.Value;
+import sjtu.ipads.wtune.symsolver.smt.*;
 
 import java.util.*;
 
@@ -18,14 +15,16 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
 
 public abstract class BaseProver implements Prover {
   protected final SmtCtx ctx;
+  protected final SmtSolver smtSolver;
   protected final Proposition problem;
   protected final Map<Decision, Collection<Proposition>> assertions;
   protected Proposition[] baseAssertions;
   protected Decision[] decisions;
 
-  protected BaseProver(SmtCtx ctx, Proposition problem) {
+  protected BaseProver(SmtCtx ctx, Proposition eqProposition) {
     this.ctx = ctx;
-    this.problem = problem;
+    this.smtSolver = ctx.makeSolver();
+    this.problem = eqProposition.not();
     this.assertions = new HashMap<>();
   }
 
@@ -75,7 +74,7 @@ public abstract class BaseProver implements Prover {
     final Value[] maskedTuples = new Value[mask.size()];
 
     for (int i = 0, j = 0, bound = sources.size(); i < bound; i++)
-      if (mask.contains(sources.get(i))) maskedTuples[j] = tuples[i];
+      if (mask.contains(sources.get(i))) maskedTuples[j++] = tuples[i];
 
     return maskedTuples;
   }
@@ -98,15 +97,15 @@ public abstract class BaseProver implements Prover {
 
   private Proposition assertPositionAgnostic(Func combine) {
     final int arity = combine.arity();
-    if (arity == 1) return null;
+    if (arity == 1) return Proposition.tautology();
 
     final Value[] tuples = ctx.makeTuples(arity, "x");
 
-    final Proposition eqAssertion =
+    final Value[] applications =
         Collections2.permutations(Arrays.asList(tuples)).stream()
             .map(combine::apply)
-            .reduce(Proposition.tautology(), Value::equalsTo, Proposition::and);
+            .toArray(Value[]::new);
 
-    return ctx.makeForAll(tuples, eqAssertion);
+    return ctx.makeForAll(tuples, ctx.makeEqs(applications));
   }
 }

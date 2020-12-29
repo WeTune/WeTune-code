@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface SearchCtx extends Tracer, Prover {
-  List<Summary> search(Iterable<DecisionTree> trees);
-
-  Map<String, Object> statistic();
+  List<Summary> search(DecisionTree trees);
 
   void record();
 

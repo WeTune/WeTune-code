@@ -8,4 +8,8 @@ public interface Searcher {
   }
 
   void search(DecisionTree tree);
+
+  int numSearched();
+
+  int numSkipped();
 }

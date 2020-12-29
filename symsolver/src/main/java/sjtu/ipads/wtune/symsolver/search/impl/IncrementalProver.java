@@ -1,22 +1,20 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
 import sjtu.ipads.wtune.symsolver.smt.Proposition;
 import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
-import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class IncrementalProver extends BaseProver {
-  private final SmtSolver smtSolver;
   private final Map<Decision, Proposition> trackers;
 
   public IncrementalProver(SmtCtx ctx, Proposition problem) {
     super(ctx, problem);
-    this.smtSolver = ctx.makeSolver();
     this.trackers = new HashMap<>();
   }
 
@@ -45,13 +43,14 @@ public class IncrementalProver extends BaseProver {
     smtSolver.add(baseAssertions);
     for (Decision choice : choices) {
       final Proposition tracker = trackers.get(choice);
-      for (Proposition assertion : assertions.get(choice)) smtSolver.add(tracker.implies(assertion));
+      for (Proposition assertion : assertions.get(choice))
+        smtSolver.add(tracker.implies(assertion));
     }
   }
 
   @Override
-  public boolean prove() {
+  public Result prove() {
     final Proposition[] assumptions = toAssumptions(decisions, trackers);
-    return smtSolver.checkAssumption(assumptions) == SmtSolver.Result.UNSAT;
+    return smtSolver.checkAssumption(assumptions);
   }
 }

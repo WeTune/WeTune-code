@@ -6,15 +6,22 @@ import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
 import sjtu.ipads.wtune.symsolver.smt.Value;
 
 public class FuncImpl extends ValueImpl implements Func {
+  private final String name;
   private final int arity;
 
   private FuncImpl(SmtCtx ctx, String name, int arity, Object underlying) {
-    super(ctx, name, underlying);
+    super(ctx, underlying);
     this.arity = arity;
+    this.name = name;
   }
 
   public static Func build(SmtCtx ctx, String name, int arity, Object underlying) {
     return new FuncImpl(ctx, name, arity, underlying);
+  }
+
+  @Override
+  public String name() {
+    return name;
   }
 
   @Override

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.search.Decision;
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import sjtu.ipads.wtune.symsolver.search.SearchCtx;
 import sjtu.ipads.wtune.symsolver.search.Searcher;
@@ -10,12 +10,13 @@ import java.util.Arrays;
 public class SearcherImpl implements Searcher {
   private final SearchCtx ctx;
   private final IntList guards;
-  private final SearchStat stat;
+
+  private int numSearched;
+  private int numNotSkipped;
 
   private SearcherImpl(SearchCtx ctx) {
     this.ctx = ctx;
     this.guards = new IntList(64);
-    this.stat = new SearchStat();
   }
 
   public static Searcher build(SearchCtx ctx) {
@@ -28,33 +29,29 @@ public class SearcherImpl implements Searcher {
     ctx.prepare(tree.choices());
 
     while (tree.forward()) {
+      ++numSearched;
       final int seed = tree.seed();
-      if (canSkip(seed)) {
-        ++stat.numSkipped;
-        continue;
+      if (canSkip(seed)) continue;
+
+      ++numNotSkipped;
+      ctx.decide(tree.decisions());
+
+      if (!ctx.isConflict()) {
+        final Result res;
+        if (ctx.isIncomplete() || (res = ctx.prove()) == Result.NON_EQUIVALENT) guards.add(seed);
+        else if (res == Result.EQUIVALENT) ctx.record();
       }
-
-      final Decision[] decisions = tree.decisions();
-      ctx.decide(decisions);
-
-      if (ctx.isConflict()) {
-        ++stat.numConflict;
-
-      } else if (ctx.isIncomplete()) {
-        ++stat.numIncomplete;
-        guards.add(seed);
-
-      } else if (ctx.prove()) {
-        ++stat.numNonEq;
-        guards.add(seed);
-
-      } else {
-        ++stat.numEq;
-        ctx.record();
-      }
-
-      ctx.statistic().compute("searcher", (k, v) -> stat.merge((SearchStat) v));
     }
+  }
+
+  @Override
+  public int numSearched() {
+    return numSearched;
+  }
+
+  @Override
+  public int numSkipped() {
+    return numSearched - numNotSkipped;
   }
 
   private boolean canSkip(int seed) {
@@ -87,44 +84,6 @@ public class SearcherImpl implements Searcher {
 
     private void clear() {
       cursor = 0;
-    }
-  }
-
-  private static class SearchStat {
-    private int numSearched = 0;
-    private int numSkipped = 0;
-    private int numConflict = 0;
-    private int numIncomplete = 0;
-    private int numNonEq = 0;
-    private int numEq = 0;
-
-    private SearchStat merge(SearchStat other) {
-      if (other != null) {
-        numSearched += other.numSearched;
-        numSkipped += other.numSkipped;
-        numConflict += other.numConflict;
-        numIncomplete += other.numIncomplete;
-        numNonEq += other.numNonEq;
-        numEq += other.numEq;
-      }
-
-      return this;
-    }
-
-    @Override
-    public String toString() {
-      return "#Searched="
-          + numSearched
-          + " #Skipped="
-          + numSkipped
-          + " #Conflict="
-          + numConflict
-          + " #Incomplete="
-          + numIncomplete
-          + " #NonEq="
-          + numNonEq
-          + " #Eq="
-          + numEq;
     }
   }
 }

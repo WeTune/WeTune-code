@@ -1,28 +1,33 @@
 package sjtu.ipads.wtune.symsolver.utils.impl;
 
 import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
+import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.NoSuchElementException;
 
-public class BoundedDisjointSet<T> implements DisjointSet<T> {
-  private static final Comparator<Object> HASH_CMP =
-      Comparator.comparingInt(System::identityHashCode);
+import static java.util.Arrays.binarySearch;
+import static sjtu.ipads.wtune.symsolver.utils.Indexed.INDEX_CMP;
+import static sjtu.ipads.wtune.symsolver.utils.Indexed.isCanonicalIndexed;
+
+public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
 
   private final T[] objs;
   private final int[] data;
+  private final boolean useFastIndex;
 
   private BoundedDisjointSet(T[] objs) {
-    Arrays.sort(objs, HASH_CMP);
+    objs = Arrays.copyOf(objs, objs.length);
+    Arrays.sort(objs, INDEX_CMP);
 
     this.objs = objs;
     this.data = new int[objs.length];
+    this.useFastIndex = isCanonicalIndexed(objs);
 
     reset();
   }
 
-  public static <T> BoundedDisjointSet<T> build(T[] objs) {
+  public static <T extends Indexed> BoundedDisjointSet<T> build(T[] objs) {
     return new BoundedDisjointSet<>(objs);
   }
 
@@ -38,8 +43,8 @@ public class BoundedDisjointSet<T> implements DisjointSet<T> {
     data[find(i)] = find(j);
   }
 
-  private int indexOf(Object obj) {
-    final int idx = Arrays.binarySearch(objs, obj, HASH_CMP);
+  private int indexOf(T obj) {
+    final int idx = useFastIndex ? obj.index() : binarySearch(objs, obj, INDEX_CMP);
 
     if (idx < 0 || objs[idx] != obj)
       throw new NoSuchElementException(obj + " not in the predefined set of members");
@@ -60,10 +65,11 @@ public class BoundedDisjointSet<T> implements DisjointSet<T> {
   @Override
   public int[] grouping() {
     final int[] assigns = new int[objs.length];
+    Arrays.fill(assigns, -1);
     for (int i = 0, bound = objs.length; i < bound; i++) {
-      if (assigns[i] != 0) continue;
-      final int assign = assigns[i] = i + 1;
-      for (int j = i + 1; j < bound; j++) if (isConnected0(i, j)) assigns[j] = assign;
+      if (assigns[i] != -1) continue;
+      assigns[i] = i;
+      for (int j = i + 1; j < bound; j++) if (isConnected0(i, j)) assigns[j] = i;
     }
     return assigns;
   }

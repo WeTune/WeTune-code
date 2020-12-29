@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.symsolver.search;
 
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.impl.CombinedProver;
 import sjtu.ipads.wtune.symsolver.search.impl.IncrementalProver;
 import sjtu.ipads.wtune.symsolver.search.impl.OneShotProver;
@@ -21,5 +22,5 @@ public interface Prover extends Reactor {
 
   void prepare(Decision[] choices);
 
-  boolean prove();
+  Result prove();
 }

@@ -2,10 +2,7 @@ package sjtu.ipads.wtune.symsolver.core.impl;
 
 import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.search.Decision;
-import sjtu.ipads.wtune.symsolver.search.DecisionTree;
-import sjtu.ipads.wtune.symsolver.search.SearchCtx;
-import sjtu.ipads.wtune.symsolver.search.Summary;
+import sjtu.ipads.wtune.symsolver.search.*;
 import sjtu.ipads.wtune.symsolver.smt.Proposition;
 import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
 import sjtu.ipads.wtune.symsolver.smt.Value;
@@ -29,7 +26,7 @@ public class SolverImpl implements Solver {
 
   private SolverImpl(Query q0, Query q1) {
     this.tables = arrayConcat(q0.tables(), q1.tables());
-    this.picks = arrayConcat(q1.picks(), q1.picks());
+    this.picks = arrayConcat(q0.picks(), q1.picks());
 
     final SmtCtx smtCtx = SmtCtx.z3();
     final Proposition problem0 = makeProblem(smtCtx, q0, q1);
@@ -51,23 +48,31 @@ public class SolverImpl implements Solver {
   }
 
   @Override
-  public Collection<Collection<Constraint>> solve() {
-    final Iterable<DecisionTree> trees = makeDecisionTrees(tables, picks);
-    final List<Summary> summary = searchCtx.search(trees);
-    return listMap(Summary::constraints, summary);
+  public TableSym[] tables() {
+    return tables;
   }
 
   @Override
-  public Collection<Collection<Constraint>> solve(DecisionTree tree) {
-    final List<Summary> summary = searchCtx.search(singletonList(tree));
-    return listMap(Summary::constraints, summary);
+  public PickSym[] picks() {
+    return picks;
   }
 
   @Override
-  public boolean check(Decision... decisions) {
+  public Collection<Summary> solve() {
+    return solve(makeDecisionTree(tables, picks));
+  }
+
+  @Override
+  public Collection<Summary> solve(DecisionTree tree) {
+    return searchCtx.search(tree);
+  }
+
+  @Override
+  public Result check(Decision... decisions) {
     searchCtx.prepare(decisions);
     searchCtx.decide(decisions);
-    return searchCtx.prove();
+    if (searchCtx.isConflict() || searchCtx.isIncomplete()) return Result.NON_EQUIVALENT;
+    else return searchCtx.prove();
   }
 
   private static void number(Indexed[] indexes, int start) {
@@ -98,10 +103,10 @@ public class SolverImpl implements Solver {
     final List<List<Constraint>> choices = new ArrayList<>(32);
 
     for (int i = 0, bound = tables.length; i < bound; i++)
-      for (int j = i; j < bound; j++) choices.add(singletonList(tableEq(tables[i], tables[j])));
+      for (int j = i + 1; j < bound; j++) choices.add(singletonList(tableEq(tables[i], tables[j])));
 
     for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i; j < bound; j++) choices.add(singletonList(pickEq(picks[i], picks[j])));
+      for (int j = i + 1; j < bound; j++) choices.add(singletonList(pickEq(picks[i], picks[j])));
 
     for (PickSym pick : picks) {
       choices.add(listMap(src -> pickFrom(pick, src), pick.viableSources()));
@@ -120,6 +125,34 @@ public class SolverImpl implements Solver {
     }
 
     return listMap(DecisionTree::from, Lists.cartesianProduct(choices));
+  }
+
+  private static DecisionTree makeDecisionTree(TableSym[] tables, PickSym[] picks) {
+    final List<Constraint> choices = new ArrayList<>(32);
+
+    for (int i = 0, bound = tables.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) choices.add(tableEq(tables[i], tables[j]));
+
+    for (int i = 0, bound = picks.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) choices.add(pickEq(picks[i], picks[j]));
+
+    for (PickSym pick : picks) {
+      choices.addAll(listMap(src -> pickFrom(pick, src), pick.viableSources()));
+
+      final PickSym joined = pick.joined();
+      if (joined == null) continue;
+
+      if (!checkValidJoinKey(pick, joined))
+        throw new IllegalArgumentException("invalid join key " + pick + " " + joined);
+
+      final TableSym joinedSrc = getOnlyElement(getOnlyElement(joined.viableSources()));
+      choices.addAll(
+          listMap(
+              src -> reference(getOnlyElement(src), pick, joinedSrc, joined),
+              pick.viableSources()));
+    }
+
+    return DecisionTree.from(choices);
   }
 
   private static boolean checkValidJoinKey(PickSym x, PickSym y) {

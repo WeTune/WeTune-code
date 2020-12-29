@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.symsolver.smt.impl.z3;
 
+import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.smt.Proposition;
 import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
 
@@ -8,14 +11,14 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 import static sjtu.ipads.wtune.symsolver.smt.impl.z3.Z3SmtCtx.unwrap;
 
 public class Z3SmtSolver implements SmtSolver {
-  private final com.microsoft.z3.Solver z3;
+  private final Solver z3Solver;
 
-  private Z3SmtSolver(com.microsoft.z3.Solver z3) {
-    this.z3 = z3;
+  private Z3SmtSolver(Solver z3Solver) {
+    this.z3Solver = z3Solver;
   }
 
-  public static SmtSolver build(com.microsoft.z3.Solver z3) {
-    return new Z3SmtSolver(z3);
+  public static SmtSolver build(Solver z3Solver) {
+    return new Z3SmtSolver(z3Solver);
   }
 
   private static Result convertResult(Status status) {
@@ -23,9 +26,9 @@ public class Z3SmtSolver implements SmtSolver {
       case UNKNOWN:
         return Result.UNKNOWN;
       case SATISFIABLE:
-        return Result.SAT;
+        return Result.NON_EQUIVALENT;
       case UNSATISFIABLE:
-        return Result.UNSAT;
+        return Result.EQUIVALENT;
       default:
         throw new IllegalStateException();
     }
@@ -33,21 +36,25 @@ public class Z3SmtSolver implements SmtSolver {
 
   @Override
   public void add(Proposition... assertions) {
-    for (Proposition assertion : assertions) z3.add(unwrap(assertion));
+    for (Proposition assertion : assertions) z3Solver.add(unwrap(assertion));
   }
 
   @Override
   public void reset() {
-    z3.reset();
+    z3Solver.reset();
   }
 
   @Override
   public Result check() {
-    return convertResult(z3.check());
+    //    try (final var timer = new SimpleTimer()) {
+    return convertResult(z3Solver.check());
+    //    }
   }
 
   @Override
   public Result checkAssumption(Proposition[] assumptions) {
-    return convertResult(z3.check(arrayMap(assumptions, Z3SmtCtx::unwrap)));
+    //    try (final var timer = new SimpleTimer()) {
+    return convertResult(z3Solver.check(arrayMap(Z3SmtCtx::unwrap, BoolExpr.class, assumptions)));
+    //    }
   }
 }

@@ -12,6 +12,8 @@ public interface Func extends Value {
 
   Value apply(Value... v);
 
+  String name();
+
   int arity();
 
   default Value apply(Iterable<Value> v) {

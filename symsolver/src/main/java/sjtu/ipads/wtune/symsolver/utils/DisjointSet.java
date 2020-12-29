@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.symsolver.utils;
 import sjtu.ipads.wtune.symsolver.utils.impl.BoundedDisjointSet;
 
 public interface DisjointSet<T> {
-  static <T> DisjointSet<T> fromBoundedMembers(T[] objs) {
+  static <T extends Indexed> DisjointSet<T> fromBoundedMembers(T[] objs) {
     return BoundedDisjointSet.build(objs);
   }
 
