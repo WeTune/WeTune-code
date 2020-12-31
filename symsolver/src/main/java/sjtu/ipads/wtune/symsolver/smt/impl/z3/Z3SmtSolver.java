@@ -1,13 +1,11 @@
 package sjtu.ipads.wtune.symsolver.smt.impl.z3;
 
-import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.smt.Proposition;
 import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 import static sjtu.ipads.wtune.symsolver.smt.impl.z3.Z3SmtCtx.unwrap;
 
 public class Z3SmtSolver implements SmtSolver {
@@ -54,7 +52,7 @@ public class Z3SmtSolver implements SmtSolver {
   @Override
   public Result checkAssumption(Proposition[] assumptions) {
     //    try (final var timer = new SimpleTimer()) {
-    return convertResult(z3Solver.check(arrayMap(Z3SmtCtx::unwrap, BoolExpr.class, assumptions)));
+    return convertResult(z3Solver.check(unwrap(assumptions)));
     //    }
   }
 }

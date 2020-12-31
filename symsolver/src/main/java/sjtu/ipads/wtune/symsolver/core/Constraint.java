@@ -6,9 +6,7 @@ import sjtu.ipads.wtune.symsolver.core.impl.ReferenceImpl;
 import sjtu.ipads.wtune.symsolver.core.impl.TableEqImpl;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 
-import java.util.Collection;
-
-public interface Constraint extends Decision {
+public interface Constraint extends Decision, Comparable<Constraint> {
   static Constraint tableEq(TableSym tx, TableSym ty) {
     return TableEqImpl.build(tx, ty);
   }
@@ -17,7 +15,7 @@ public interface Constraint extends Decision {
     return PickEqImpl.build(px, py);
   }
 
-  static Constraint pickFrom(PickSym p, Collection<TableSym> ts) {
+  static Constraint pickFrom(PickSym p, TableSym... ts) {
     return PickFromImpl.build(p, ts);
   }
 

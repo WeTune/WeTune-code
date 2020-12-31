@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import static java.util.Arrays.binarySearch;
-import static sjtu.ipads.wtune.symsolver.utils.Indexed.INDEX_CMP;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
 import static sjtu.ipads.wtune.symsolver.utils.Indexed.isCanonicalIndexed;
 
 public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
@@ -17,8 +17,7 @@ public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
   private final boolean useFastIndex;
 
   private BoundedDisjointSet(T[] objs) {
-    objs = Arrays.copyOf(objs, objs.length);
-    Arrays.sort(objs, INDEX_CMP);
+    objs = sorted(Arrays.copyOf(objs, objs.length), Indexed::compareTo);
 
     this.objs = objs;
     this.data = new int[objs.length];
@@ -44,7 +43,7 @@ public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
   }
 
   private int indexOf(T obj) {
-    final int idx = useFastIndex ? obj.index() : binarySearch(objs, obj, INDEX_CMP);
+    final int idx = useFastIndex ? obj.index() : binarySearch(objs, obj, Indexed::compareTo);
 
     if (idx < 0 || objs[idx] != obj)
       throw new NoSuchElementException(obj + " not in the predefined set of members");
@@ -59,7 +58,7 @@ public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
 
   @Override
   public boolean isConnected(T x, T y) {
-    return isConnected0(indexOf(x), indexOf(y));
+    return x == y || isConnected0(indexOf(x), indexOf(y));
   }
 
   @Override

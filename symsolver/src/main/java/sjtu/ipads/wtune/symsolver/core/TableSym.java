@@ -1,16 +1,11 @@
 package sjtu.ipads.wtune.symsolver.core;
 
 import sjtu.ipads.wtune.symsolver.core.impl.TableSymImpl;
+import sjtu.ipads.wtune.symsolver.smt.Value;
 import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
-public interface TableSym extends Indexed, Sym {
-  static TableSym from(Object obj) {
-    return TableSymImpl.build(obj);
-  }
-
-  static TableSym from(Object obj, int i) {
-    final TableSym t = from(obj);
-    t.setIndex(i);
-    return t;
+public interface TableSym extends Sym {
+  static TableSym from(Query owner, Object obj) {
+    return TableSymImpl.build(owner, obj);
   }
 }

@@ -5,21 +5,30 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Reactor;
+import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Objects;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public class PickFromImpl implements Constraint {
   private final PickSym p;
-  private final Collection<TableSym> ts;
+  private final TableSym[] ts;
 
-  private PickFromImpl(PickSym p, Collection<TableSym> ts) {
+  private PickFromImpl(PickSym p, TableSym[] ts) {
     this.p = p;
-    this.ts = ts;
+    this.ts = sorted(ts, Indexed::compareTo);
   }
 
-  public static Constraint build(PickSym p, Collection<TableSym> ts) {
-    if (p == null || ts == null) throw new IllegalArgumentException();
+  public static Constraint build(PickSym p, TableSym[] ts) {
+    if (p == null
+        || ts == null
+        || p.index() == Indexed.UNKNOWN_INDEX
+        || stream(ts).anyMatch(it -> it.index() == Indexed.UNKNOWN_INDEX))
+      throw new IllegalArgumentException();
+
     return new PickFromImpl(p, ts);
   }
 
@@ -35,13 +44,26 @@ public class PickFromImpl implements Constraint {
 
   @Override
   public Sym[] targets() {
-    final Sym[] syms = new Sym[1 + ts.size()];
+    final Sym[] syms = new Sym[1 + ts.length];
     syms[0] = p;
 
-    int i = 1;
-    for (TableSym t : ts) syms[i++] = t;
-
+    System.arraycopy(ts, 0, syms, 1, ts.length);
     return syms;
+  }
+
+  @Override
+  public boolean ignorable() {
+    return ts.length == p.visibleSources().length;
+  }
+
+  @Override
+  public int compareTo(Constraint o) {
+    int res = kind().compareTo(o.kind());
+    if (res != 0) return res;
+
+    final PickFromImpl other = (PickFromImpl) o;
+    res = p.compareTo(other.p);
+    return res != 0 ? res : Arrays.compare(ts, other.ts);
   }
 
   @Override
@@ -49,16 +71,16 @@ public class PickFromImpl implements Constraint {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     PickFromImpl pickFrom = (PickFromImpl) o;
-    return Objects.equals(p, pickFrom.p) && Objects.equals(ts, pickFrom.ts);
+    return Objects.equals(p, pickFrom.p) && Arrays.equals(ts, pickFrom.ts);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(p, ts);
+    return Objects.hash(p) + Arrays.hashCode(ts);
   }
 
   @Override
   public String toString() {
-    return "PickFrom(" + p + "," + ts + ")";
+    return "PickFrom(" + p + "," + Arrays.toString(ts) + ")";
   }
 }

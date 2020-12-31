@@ -1,34 +1,29 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
-import java.util.Collection;
-import java.util.List;
-
-public class PickSymImpl implements PickSym {
-  private final Object wrapped;
-  private List<TableSym> visibleSources;
-  private Collection<? extends Collection<TableSym>> viableSources;
+public class PickSymImpl extends BaseSym implements PickSym {
+  private TableSym[] visibleSources;
+  private TableSym[][] viableSources;
   private PickSym joined;
 
-  private int index;
-
-  private PickSymImpl(Object wrapped) {
-    this.wrapped = wrapped;
+  private PickSymImpl(Query owner, Object wrapped) {
+    super(owner, wrapped);
   }
 
-  public static PickSym build(Object wrapped) {
-    return new PickSymImpl(wrapped);
+  public static PickSym build(Query owner, Object wrapped) {
+    return new PickSymImpl(owner, wrapped);
   }
 
   @Override
-  public List<TableSym> visibleSources() {
+  public TableSym[] visibleSources() {
     return visibleSources;
   }
 
   @Override
-  public Collection<? extends Collection<TableSym>> viableSources() {
+  public TableSym[][] viableSources() {
     return viableSources;
   }
 
@@ -38,12 +33,12 @@ public class PickSymImpl implements PickSym {
   }
 
   @Override
-  public void setVisibleSources(List<TableSym> visibleSources) {
+  public void setVisibleSources(TableSym[] visibleSources) {
     this.visibleSources = visibleSources;
   }
 
   @Override
-  public void setViableSources(Collection<? extends Collection<TableSym>> viableSources) {
+  public void setViableSources(TableSym[][] viableSources) {
     this.viableSources = viableSources;
   }
 
@@ -53,23 +48,7 @@ public class PickSymImpl implements PickSym {
   }
 
   @Override
-  public int index() {
-    return index;
-  }
-
-  @Override
-  public void setIndex(int index) {
-    this.index = index;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T unwrap(Class<T> unwrap) {
-    return (T) wrapped;
-  }
-
-  @Override
   public String toString() {
-    return "p" + index;
+    return "p" + index();
   }
 }

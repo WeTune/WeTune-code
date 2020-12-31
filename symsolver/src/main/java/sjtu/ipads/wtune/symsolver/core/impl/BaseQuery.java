@@ -15,22 +15,21 @@ public abstract class BaseQuery implements Query {
     picks = makePickSyms(nPicks);
   }
 
-  private static TableSym[] makeTableSyms(int n) {
+  private TableSym[] makeTableSyms(int n) {
     final TableSym[] tables = new TableSym[n];
-    for (int i = 0; i < n; i++) tables[i] = TableSym.from(i);
+    for (int i = 0; i < n; i++) tables[i] = TableSym.from(this, i);
     return tables;
   }
 
-  private static PickSym[] makePickSyms(int n) {
+  private PickSym[] makePickSyms(int n) {
     final PickSym[] picks = new PickSym[n];
-    for (int i = 0; i < n; i++) picks[i] = PickSym.from(i);
+    for (int i = 0; i < n; i++) picks[i] = PickSym.from(this, i);
     return picks;
   }
 
   @Override
-  public Query setName(String name) {
+  public void setName(String name) {
     this.name = name;
-    return this;
   }
 
   @Override

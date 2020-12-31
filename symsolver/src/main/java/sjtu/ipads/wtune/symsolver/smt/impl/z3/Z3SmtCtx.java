@@ -2,19 +2,17 @@ package sjtu.ipads.wtune.symsolver.smt.impl.z3;
 
 import com.microsoft.z3.*;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.smt.*;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.repeat;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 
 public class Z3SmtCtx implements SmtCtx {
   static {
-    Global.setParameter("timeout", "30");
+    Global.setParameter("timeout", "10");
     Global.setParameter("pp.max_depth", "100");
   }
 
@@ -42,22 +40,34 @@ public class Z3SmtCtx implements SmtCtx {
     return p.unwrap(BoolExpr.class);
   }
 
+  static BoolExpr[] unwrap(Proposition... ps) {
+    return arrayMap(Z3SmtCtx::unwrap, BoolExpr.class, ps);
+  }
+
   static FuncDecl unwrap(Func f) {
     return f.unwrap(FuncDecl.class);
   }
 
   @Override
+  public Proposition makeConst(boolean bool) {
+    return wrap(z3.mkBool(bool));
+  }
+
+  @Override
   public Proposition makeEq(Value v0, Value v1) {
-    return wrap(z3.mkEq(unwrap(v0), unwrap(v1)));
+    if (v0 instanceof Func && v1 instanceof Func) return makeEq((Func) v0, (Func) v1);
+    else return wrap(z3.mkEq(unwrap(v0), unwrap(v1)));
   }
 
   @Override
   public Proposition makeEq(Func f0, Func f1) {
     final FuncDecl fd0 = unwrap(f0), fd1 = unwrap(f1);
-    if (fd0.getArity() != fd1.getArity()) throw new IllegalArgumentException();
 
-    final Value[] args = makeTuples(fd0.getArity(), "x");
-    return makeForAll(args, f0.apply(args).equalsTo(f1.apply(args)));
+    final Value arg = makeTuple("x");
+    final Value ret0 = f0.apply(repeat(arg, fd0.getArity()));
+    final Value ret1 = f1.apply(repeat(arg, fd1.getArity()));
+
+    return makeForAll(asArray(arg), ret0.equalsTo(ret1));
   }
 
   @Override
@@ -76,18 +86,15 @@ public class Z3SmtCtx implements SmtCtx {
   }
 
   @Override
-  public Proposition makeBool(String name) {
+  public Proposition makeTracker(String name) {
     return wrap(z3.mkBoolConst(name));
   }
 
   @Override
-  public Func makeFunc(TableSym t) {
-    return makeFunc0("t" + t.index(), z3.getBoolSort(), tupleSort());
-  }
-
-  @Override
-  public Func makeFunc(PickSym p) {
-    return makeFunc0("p" + p.index(), tupleSort(), tupleSort());
+  public Func makeFunc(Sym t) {
+    if (t instanceof TableSym) return makeTableFunc((TableSym) t);
+    if (t instanceof PickSym) return makePickFunc((PickSym) t);
+    throw new IllegalArgumentException("unknown symbol " + t);
   }
 
   @Override
@@ -104,18 +111,6 @@ public class Z3SmtCtx implements SmtCtx {
   }
 
   @Override
-  public Value makeCombine(Value... values) {
-    switch (values.length) {
-      case 0:
-        return wrap(z3.mkInt(1));
-      case 1:
-        return values[0];
-      default:
-        return makeCombine0(values.length).apply(values);
-    }
-  }
-
-  @Override
   public Proposition makeForAll(Value[] args, Proposition assertions) {
     return wrap(z3.mkForall(unwrap(args), unwrap(assertions), 1, null, null, null, null));
   }
@@ -127,30 +122,11 @@ public class Z3SmtCtx implements SmtCtx {
 
   @Override
   public SmtSolver makeSolver() {
-    final Solver solver = z3.mkSolver();
-    final Params params = z3.mkParams();
-
-    //    params.add("timeout", 100);
-    //    solver.setParameters(params);
-
-    return SmtSolver.z3(solver);
-  }
-
-  @Override
-  public Collection<Func> declaredFuncs() {
-    return funcCache.values();
+    return SmtSolver.z3(z3.mkSolver());
   }
 
   private Sort tupleSort() {
     return z3.getIntSort();
-  }
-
-  private Func makeCombine0(int n) {
-    return makeFunc0("combine" + n, tupleSort(), repeat(tupleSort(), n));
-  }
-
-  private Func makeFunc0(String name, Sort retSort, Sort... argSorts) {
-    return funcCache.computeIfAbsent(name, n -> wrap(z3.mkFuncDecl(n, argSorts, retSort)));
   }
 
   private Value wrap(Expr expr) {
@@ -164,5 +140,25 @@ public class Z3SmtCtx implements SmtCtx {
 
   private Func wrap(FuncDecl decl) {
     return Func.wrap(this, decl.getName().toString(), decl.getArity(), decl);
+  }
+
+  private Func makeTableFunc(TableSym t) {
+    return makeFunc0(tableFuncName(t), z3.getBoolSort(), tupleSort());
+  }
+
+  private Func makePickFunc(PickSym p) {
+    return makeFunc0(pickFuncName(p), tupleSort(), repeat(tupleSort(), p.visibleSources().length));
+  }
+
+  private Func makeFunc0(String name, Sort retSort, Sort... argSorts) {
+    return funcCache.computeIfAbsent(name, n -> wrap(z3.mkFuncDecl(n, argSorts, retSort)));
+  }
+
+  private String tableFuncName(TableSym table) {
+    return "t" + table.index();
+  }
+
+  private String pickFuncName(PickSym pick) {
+    return "p" + pick.index();
   }
 }

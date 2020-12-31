@@ -1,93 +1,101 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import com.google.common.collect.Collections2;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
-import sjtu.ipads.wtune.symsolver.smt.*;
+import sjtu.ipads.wtune.symsolver.smt.Proposition;
+import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
+import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
+import sjtu.ipads.wtune.symsolver.smt.Value;
 
 import java.util.*;
+import java.util.function.IntFunction;
 
-import static java.util.Collections.singleton;
+import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
 
 public abstract class BaseProver implements Prover {
   protected final SmtCtx ctx;
   protected final SmtSolver smtSolver;
-  protected final Proposition problem;
+  protected final Proposition[] targetProperties;
   protected final Map<Decision, Collection<Proposition>> assertions;
-  protected Proposition[] baseAssertions;
+
   protected Decision[] decisions;
 
-  protected BaseProver(SmtCtx ctx, Proposition eqProposition) {
+  protected BaseProver(SmtCtx ctx, Query q0, Query q1) {
     this.ctx = ctx;
     this.smtSolver = ctx.makeSolver();
-    this.problem = eqProposition.not();
+    this.targetProperties = makeNonEqProperties(ctx, q0, q1);
     this.assertions = new HashMap<>();
+  }
+
+  private static Proposition[] makeNonEqProperties(SmtCtx ctx, Query q0, Query q1) {
+    final TableSym[] tables0 = q0.tables(), tables1 = q1.tables();
+    final Value[] tuples0 = ctx.makeTuples(tables0.length, "a");
+    final Value[] tuples1 = ctx.makeTuples(tables1.length, "b");
+
+    final Proposition cond0 = ctx.tuplesFrom(tuples0, tables0).and(q0.condition(ctx, tuples0));
+    final Proposition cond1 = ctx.tuplesFrom(tuples1, tables1).and(q1.condition(ctx, tuples1));
+
+    final Value output0 = q0.output(ctx, tuples0), output1 = q1.output(ctx, tuples1);
+
+    final Proposition[] properties = new Proposition[2];
+    properties[0] = cond0;
+    properties[1] = ctx.makeForAll(tuples1, cond1.implies(output0.equalsTo(output1).not()));
+    return properties;
   }
 
   @Override
   public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
-    final Proposition assertion = ctx.makeFunc(tx).equalsTo(ctx.makeFunc(ty));
-    addAssertion(constraint, assertion);
+    addAssertion(constraint, tx.func().equalsTo(ty.func()));
   }
 
   @Override
   public void pickEq(Constraint constraint, PickSym px, PickSym py) {
-    final Proposition assertion = ctx.makeFunc(px).equalsTo(ctx.makeFunc(py));
-    addAssertion(constraint, assertion);
+    addAssertion(constraint, px.func().equalsTo(py.func()));
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, Collection<TableSym> tables) {
-    final Value[] tuples = ctx.makeTuples(p.visibleSources().size(), "x");
-    final Value[] masked = pickTuples(tuples, p.visibleSources(), tables);
-    final Proposition condition = ctx.tuplesFrom(masked, tables);
-    final Proposition eqAssertion = ctx.pick(p, tuples).equalsTo(ctx.pick(p, masked));
+  public void pickFrom(Constraint constraint, PickSym p, TableSym... mask) {
+    final TableSym[] vs = p.visibleSources();
 
-    final Proposition assertion = ctx.makeForAll(tuples, condition.implies(eqAssertion));
-    addAssertion(constraint, assertion);
+    final Value[] tuples = ctx.makeTuples((vs.length << 1) - mask.length, "x");
+    final Value[] boundedTuples = pickTuples(tuples, vs, mask);
+
+    final Value[] args0 = Arrays.copyOf(tuples, vs.length);
+    final Value[] args1 = maskTuples(vs, mask, i -> boundedTuples[i], i -> tuples[i + vs.length]);
+
+    addAssertion(constraint, ctx.makeForAll(tuples, p.apply(args0).equalsTo(p.apply(args1))));
   }
 
   @Override
   public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
-    pickFrom(constraint, px, singleton(tx));
-    pickFrom(constraint, py, singleton(ty));
+    pickFrom(constraint, px, tx);
+    pickFrom(constraint, py, ty);
 
-    final Value x = ctx.makeTuple("x"), y = ctx.makeTuple("y");
-    final Proposition eqAssertion = ctx.pick(px, x).equalsTo(ctx.pick(py, y));
+    final TableSym[] visibleX = px.visibleSources(), visibleY = py.visibleSources();
+    final Value[] argsX = ctx.makeTuples(visibleX.length, "x");
+    final Value[] argsY = ctx.makeTuples(visibleY.length, "y");
+
+    final Proposition eqAssertion = px.apply(argsX).equalsTo(py.apply(argsY));
+
+    final Value boundedTupleX = argsX[asList(visibleX).indexOf(tx)];
+    final Value boundedTupleY = argsY[asList(visibleY).indexOf(ty)];
 
     final Proposition assertion =
         ctx.makeForAll(
-            x,
-            ctx.tupleFrom(x, tx).implies(ctx.makeExists(y, ctx.tupleFrom(y, ty).and(eqAssertion))));
+            argsX,
+            ctx.tupleFrom(boundedTupleX, tx)
+                .implies(ctx.makeExists(argsY, ctx.tupleFrom(boundedTupleY, ty).and(eqAssertion))));
     addAssertion(constraint, assertion);
-  }
-
-  protected void addAssertion(Constraint constraint, Proposition assertion) {
-    assertions.computeIfAbsent(constraint, dumb(ArrayList::new)).add(assertion);
-  }
-
-  private Value[] pickTuples(Value[] tuples, List<TableSym> sources, Collection<TableSym> mask) {
-    final Value[] maskedTuples = new Value[mask.size()];
-
-    for (int i = 0, j = 0, bound = sources.size(); i < bound; i++)
-      if (mask.contains(sources.get(i))) maskedTuples[j++] = tuples[i];
-
-    return maskedTuples;
   }
 
   @Override
   public void prepare(Decision[] choices) {
     for (Decision choice : choices) choice.decide(this);
-
-    baseAssertions =
-        ctx.declaredFuncs().stream()
-            .filter(it -> it.name().startsWith("combine"))
-            .map(this::assertPositionAgnostic)
-            .toArray(Proposition[]::new);
   }
 
   @Override
@@ -95,17 +103,28 @@ public abstract class BaseProver implements Prover {
     this.decisions = decisions;
   }
 
-  private Proposition assertPositionAgnostic(Func combine) {
-    final int arity = combine.arity();
-    if (arity == 1) return Proposition.tautology();
+  protected void addAssertion(Constraint constraint, Proposition assertion) {
+    assertions.computeIfAbsent(constraint, dumb(ArrayList::new)).add(assertion);
+  }
 
-    final Value[] tuples = ctx.makeTuples(arity, "x");
+  private static Value[] pickTuples(Value[] tuples, TableSym[] sources, TableSym[] mask) {
+    final Value[] maskedTuples = new Value[mask.length];
 
-    final Value[] applications =
-        Collections2.permutations(Arrays.asList(tuples)).stream()
-            .map(combine::apply)
-            .toArray(Value[]::new);
+    for (int i = 0, j = 0; i < sources.length && j < mask.length; i++)
+      if (mask[j] == sources[i]) maskedTuples[j++] = tuples[i];
 
-    return ctx.makeForAll(tuples, ctx.makeEqs(applications));
+    return maskedTuples;
+  }
+
+  private static Value[] maskTuples(
+      TableSym[] tables,
+      TableSym[] mask,
+      IntFunction<Value> makeBoundedTuple,
+      IntFunction<Value> makeFreeTuple) {
+    final Value[] tuples = new Value[tables.length];
+    for (int i = 0, j = 0, k = 0, bound = tuples.length; i < bound; i++)
+      if (j < mask.length && tables[i] == mask[j]) tuples[i] = makeBoundedTuple.apply(j++);
+      else tuples[i] = makeFreeTuple.apply(k++);
+    return tuples;
   }
 }

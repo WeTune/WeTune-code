@@ -1,16 +1,10 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Result;
-import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.search.*;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
 import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
 
 import java.util.*;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 
 public class SearchCtxImpl implements SearchCtx {
   private final Prover prover;
@@ -23,9 +17,8 @@ public class SearchCtxImpl implements SearchCtx {
 
   private final Statistics stat;
 
-  private SearchCtxImpl(
-      TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Proposition... problems) {
-    prover = Prover.combine(arrayMap(p -> Prover.incremental(smtCtx, p), Prover.class, problems));
+  private SearchCtxImpl(TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Query q0, Query q1) {
+    prover = Prover.combine(Prover.incremental(smtCtx, q0, q1), Prover.incremental(smtCtx, q1, q0));
     tracer = Tracer.bindTo(tables, picks);
     searcher = Searcher.bindTo(this);
 
@@ -35,8 +28,8 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   public static SearchCtx build(
-      TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Proposition... problems) {
-    return new SearchCtxImpl(tables, picks, smtCtx, problems);
+      TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Query q0, Query q1) {
+    return new SearchCtxImpl(tables, picks, smtCtx, q0, q1);
   }
 
   @Override
@@ -52,9 +45,9 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, Collection<TableSym> ts) {
-    tracer.pickFrom(constraint, p, ts);
-    prover.pickFrom(constraint, p, ts);
+  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+    tracer.pickFrom(constraint, p, src);
+    prover.pickFrom(constraint, p, src);
   }
 
   @Override
@@ -97,6 +90,7 @@ public class SearchCtxImpl implements SearchCtx {
       return res;
     }
 
+    //    prover.decide(summary.constraints());
     final long t0 = System.currentTimeMillis();
     res = prover.prove();
     final long t1 = System.currentTimeMillis();

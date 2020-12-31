@@ -11,9 +11,8 @@ import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.*;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.symsolver.utils.Indexed.isCanonicalIndexed;
 
 public class TracerImpl implements Tracer {
@@ -25,13 +24,14 @@ public class TracerImpl implements Tracer {
   private final DisjointSet<TableSym> eqTables;
   private final DisjointSet<PickSym> eqPicks;
   private final Map<PickSym, PickSym> refs;
-  private final Collection<TableSym>[] srcs;
+  private final TableSym[][] srcs;
 
   private final boolean useFastTableIndex;
   private final boolean useFastPickIndex;
 
-  private boolean srcDiverged; // indicate if two different source is assigned to a single pick
   private boolean srcInferred; // indicate if `inferSrc` has been called since last `reset`
+  private boolean isConflict;
+  private boolean isIncomplete;
   private Summary summary;
 
   private TracerImpl(TableSym[] tables, PickSym[] picks) {
@@ -45,7 +45,7 @@ public class TracerImpl implements Tracer {
     eqTables = DisjointSet.fromBoundedMembers(tables);
     eqPicks = DisjointSet.fromBoundedMembers(picks);
     refs = new HashMap<>();
-    srcs = new Collection[picks.length];
+    srcs = new TableSym[picks.length][];
 
     useFastTableIndex = isCanonicalIndexed(tables);
     useFastPickIndex = isCanonicalIndexed(picks);
@@ -54,19 +54,6 @@ public class TracerImpl implements Tracer {
   public static Tracer build(TableSym[] tables, PickSym[] picks) {
     if (tables == null || picks == null) throw new IllegalArgumentException();
     return new TracerImpl(tables, picks);
-  }
-
-  private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
-    final List<T>[] groups = new List[xs.length];
-    for (int i = 0; i < grouping.length; i++) {
-      final int groupId = grouping[i];
-
-      List<T> group = groups[groupId];
-      if (group == null) group = groups[groupId] = new ArrayList<>();
-      group.add(xs[i]);
-    }
-
-    return Arrays.stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
   @Override
@@ -82,26 +69,27 @@ public class TracerImpl implements Tracer {
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, Collection<TableSym> ts) {
-    addConstraint(constraint);
-    final int pIdx = indexOf(p);
-    final Collection<TableSym> existing = srcs[pIdx];
+  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+    if (!isConsistent(src)) throw new IllegalArgumentException();
 
-    if (existing != null && !existing.equals(ts)) srcDiverged = true;
-    else srcs[pIdx] = ts;
+    addConstraint(constraint);
+    // sort the array for the convenience of following process
+    // according to doc, if `ts` is sorted beforehand, the overhead is only |ts| comparisons.
+    Arrays.sort(src, Indexed::compareTo);
+
+    // Check if there is an existing but different assignment
+    final int pIdx = indexOf(p);
+    final TableSym[] existing = srcs[pIdx];
+    if (existing != null && !isMatched(existing, src)) isConflict = true;
+    else srcs[pIdx] = src;
   }
 
   @Override
   public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     addConstraint(constraint);
-    pickFrom(constraint, px, singletonList(tx));
-    pickFrom(constraint, py, singletonList(ty));
+    pickFrom(constraint, px, tx);
+    pickFrom(constraint, py, ty);
     refs.put(px, py);
-  }
-
-  private void addConstraint(Constraint constraint) {
-    if (constraints.isEmpty() || constraints.get(constraints.size() - 1) != constraint)
-      constraints.add(constraint);
   }
 
   @Override
@@ -110,68 +98,42 @@ public class TracerImpl implements Tracer {
     for (Decision decision : decisions) decision.decide(this);
   }
 
-  private void reset() {
-    constraints.clear();
-    eqTables.reset();
-    eqPicks.reset();
-    refs.clear();
-    Arrays.fill(srcs, null);
-    srcDiverged = false;
-    srcInferred = false;
-    summary = null;
-  }
-
   /**
-   * Check if there are
+   * Check if conflict condition is satisfied: <br>
+   * &nbsp;&nbsp;{@code (exists px,py. isEq(px,py) && isMismatch(px.src,py.src)) ||} <br>
+   * &nbsp;&nbsp;{@code (exists p. forAll ts in p.viableSources. isMismatch(p.src,ts))} <br>
    *
-   * <ul>
-   *   <li>two picks px, py such that: px == py && px.src != py.src
-   *   <li>two different sources being assigned to a single pick
-   * </ul>
+   * <p>Note that (px === py) => isEq(px,py). So the first branch also rules out the situation that
+   * two mismatched sources are assigned to a single pick.
    *
    * <p>Note: This method MUST be invoked after all constraints being added.
+   *
+   * @see #pickFrom(Constraint, PickSym, TableSym...)
+   * @see #isMatched(TableSym[], TableSym[])
    */
   @Override
   public boolean isConflict() {
     inferSrc();
-
-    if (srcDiverged) return true;
-
-    for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++) {
-        final PickSym px = picks[i], py = picks[j];
-        if (!eqPicks.isConnected(px, py)) continue;
-
-        final Collection<TableSym> srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
-        if (srcX != null && srcY != null && isMismatchedSource(srcX, srcY)) return true;
-      }
-    return false;
-  }
-
-  private boolean isMismatchedSource(Collection<TableSym> xs, Collection<TableSym> ys) {
-    return xs.size() != ys.size()
-        || xs.stream().anyMatch(tx -> ys.stream().noneMatch(ty -> eqTables.isConnected(tx, ty)))
-        || ys.stream().anyMatch(ty -> xs.stream().noneMatch(tx -> eqTables.isConnected(tx, ty)));
+    return isConflict;
   }
 
   /**
-   * Check if there is a pick p such that <br>
-   * (exists t in p.src && forAll t' in p.visibleTables, t != t')
+   * Check if incomplete condition is satisfied: <br>
+   * &nbsp;&nbsp;{@code exists p, t. t in p.src && forAll t' in p.visibleTables. !isEq(t,t')}.
+   *
+   * <p>This situation happens when exists two picks px,py, they are assigned to be eq, but no
+   * constraint are forced (or inferred) on their sources. e.g. <br>
+   * &nbsp&nbsp;{@code q0: SELECT p0 FROM t0 JOIN t1} <br>
+   * &nbsp&nbsp;{@code q1: SELECT p1 FROM t2} <br>
+   * Assume we have constraint PickEq(p0,p1) but NO TableEq(t0,t2) and NO TableEq(t1,t2), then
+   * PickEq(p0,p1) is actually meaningless.
    *
    * <p>Note: This method MUST be invoked after all constraints being added.
    */
   @Override
   public boolean isIncomplete() {
     inferSrc();
-    for (PickSym pick : picks) {
-      final Collection<TableSym> src = srcs[indexOf(pick)];
-      if (src == null) continue;
-
-      final Collection<TableSym> vs = pick.visibleSources();
-      if (src.stream().anyMatch(st -> vs.stream().noneMatch(vt -> eqTables.isConnected(st, vt))))
-        return true;
-    }
-    return false;
+    return isIncomplete;
   }
 
   @Override
@@ -186,49 +148,165 @@ public class TracerImpl implements Tracer {
     final Collection<Collection<TableSym>> eqTables = group(tables, tGrouping);
     final Collection<Collection<PickSym>> eqPicks = group(picks, pGrouping);
 
-    final Collection<TableSym>[] srcPivot = new Collection[srcs.length];
+    final TableSym[][] pivotedSrcs = new TableSym[srcs.length][];
     for (int i = 0; i < srcs.length; i++)
       if (srcs[i] != null)
-        srcPivot[i] = srcs[i].stream().map(t -> tables[tGrouping[indexOf(t)]]).collect(toList());
+        pivotedSrcs[i] = arrayMap(t -> tables[tGrouping[indexOf(t)]], TableSym.class, srcs[i]);
 
     return new SummaryImpl(
-        new ArrayList<>(constraints), eqTables, eqPicks, srcPivot, new HashMap<>(refs));
+        sorted(constraints.toArray(Constraint[]::new), Constraint::compareTo),
+        eqTables,
+        eqPicks,
+        pivotedSrcs,
+        new HashMap<>(refs));
   }
 
-  private void inferSrc() {
-    if (srcInferred) return;
-    for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++) {
-        final PickSym px = picks[i], py = picks[j];
-        if (!eqPicks.isConnected(px, py)) continue;
+  private void reset() {
+    constraints.clear();
+    eqTables.reset();
+    eqPicks.reset();
+    refs.clear();
+    Arrays.fill(srcs, null);
 
-        final Collection<TableSym> srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
-        if (srcX == null && srcY != null) pickFrom(Constraint.pickFrom(px, srcY), px, srcY);
-        else if (srcX != null && srcY == null) pickFrom(Constraint.pickFrom(py, srcX), py, srcX);
-      }
-    srcInferred = true;
+    srcInferred = false;
+    isConflict = false;
+    isIncomplete = false;
+    summary = null;
+  }
+
+  private boolean isEq(PickSym px, PickSym py) {
+    return eqPicks.isConnected(px, py);
+  }
+
+  private boolean isEq(TableSym tx, TableSym ty) {
+    return eqTables.isConnected(tx, ty);
   }
 
   private int indexOf(PickSym p) {
-    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, Indexed.INDEX_CMP);
+    return useFastPickIndex ? p.index() : Arrays.binarySearch(picks, p, Indexed::compareTo);
   }
 
   private int indexOf(TableSym t) {
-    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, Indexed.INDEX_CMP);
+    return useFastTableIndex ? t.index() : Arrays.binarySearch(tables, t, Indexed::compareTo);
+  }
+
+  private void inferSrc() {
+    // infer a pick's src by the equal ones
+    // forAll pick px, py
+    //  if is_eq(px, py) && px.src == undefined && py.src == ts
+    //   set px.src = ts
+    // meanwhile, detect incomplete and conflict property
+    if (srcInferred) return;
+
+    for (int i = 0, bound = picks.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) {
+        final PickSym px = picks[i], py = picks[j];
+        if (!isEq(px, py)) continue;
+
+        TableSym[] srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
+
+        if (srcX != null && srcY != null) isConflict = isConflict || !isMatched(srcX, srcY);
+        else if (srcX == null && srcY == null) isIncomplete = true;
+        else if (srcX != null /* && srcY == null */) tryAssignSource(py, srcX);
+        else /* if (srcX == null && srcY != null) */ tryAssignSource(px, srcY);
+      }
+
+    // check viable and set canonical source
+    for (int i = 0, bound = picks.length; i < bound && !isConflict && !isIncomplete; i++) {
+      final PickSym p = picks[i];
+      final int index = indexOf(p);
+      final TableSym[] src = srcs[index];
+      if (src == null) continue;
+
+      final TableSym[] canonicalSrc = find(v -> isMatched(v, src), p.viableSources());
+      if (!(isConflict = (canonicalSrc == null))) srcs[index] = canonicalSrc;
+    }
+
+    srcInferred = true;
+  }
+
+  private void tryAssignSource(PickSym p, TableSym[] assigned) {
+    final TableSym[] src = find(v -> isMatched(v, assigned), p.viableSources());
+
+    isConflict = isConflict || src == null;
+    isIncomplete = isIncomplete || (src != null && !isSufficient(p.visibleSources(), src));
+
+    if (!isConflict && !isIncomplete) pickFrom(Constraint.pickFrom(p, src), p, src);
+  }
+
+  private void addConstraint(Constraint constraint) {
+    if (!constraint.ignorable()
+        && (constraints.isEmpty() || constraints.get(constraints.size() - 1) != constraint))
+      constraints.add(constraint);
+  }
+
+  private boolean isConsistent(TableSym... source) {
+    // tables in source must come from the same query
+    if (source.length <= 1) return true;
+
+    final Object pivot = source[0].scope();
+    for (int i = 1, bound = source.length; i < bound; i++)
+      if (source[i].scope() != pivot) return false;
+    return true;
+  }
+
+  private boolean isMatched(TableSym[] xs, TableSym[] ys) {
+    // Check if two sources are mismatched under current constraints.
+    // Matched sources produce the same set of tuples, namely "matching property"
+    //
+    // Two sources are matched iff:
+    //  1. both are of the same length
+    //  2. if come from same scope (i.e. from same query), then they must be identical
+    //     else, then the following condition must be satisfied:
+    //      forAll x in xs, exists y in ys. isEq(x, y) &&
+    //      forAll y in ys, exists x in xs. isEq(y, x)
+    // Memo: Why we care about the scope?
+    //  1. For the same scope, "table sources" are never equivalent, even if the tables are equal.
+    //     Put it differently, they always have different "identity". e.g.
+    //       q: SELECT * FROM t AS t0 JOIN t AS t1 ON t0.id = t1.child_id
+    //    `t0` and `t1` are both `t`. But for q, they play different roles.
+    //    Thus, in the case, sources are required to be identical to enforce matching property.
+    //  2. For different scope, identity doesn't matter.
+    //     Surjection is enough to enforce matching property. (Re-think: is injection necessary?)
+    if (xs == ys) return true;
+    if (xs.length != ys.length) return false;
+    if (xs.length == 0) return true;
+
+    return xs[0].scope() == ys[0].scope()
+        ? Arrays.equals(xs, ys) // xs, ys must be sorted, see `pickFrom`.
+        : (stream(xs).allMatch(tx -> stream(ys).anyMatch(ty -> isEq(tx, ty)))
+            && stream(ys).allMatch(ty -> stream(xs).anyMatch(tx -> isEq(tx, ty))));
+  }
+
+  private boolean isSufficient(TableSym[] visible, TableSym[] source) {
+    return stream(source).allMatch(t -> stream(visible).anyMatch(v -> isEq(v, t)));
+  }
+
+  private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
+    final List<T>[] groups = new List[xs.length];
+    for (int i = 0; i < grouping.length; i++) {
+      final int groupId = grouping[i];
+
+      List<T> group = groups[groupId];
+      if (group == null) group = groups[groupId] = new ArrayList<>();
+      group.add(xs[i]);
+    }
+
+    return stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
   private static final class SummaryImpl implements Summary {
-    private final Collection<Constraint> constraints;
+    private final Constraint[] constraints;
     private final Collection<Collection<TableSym>> eqTables;
     private final Collection<Collection<PickSym>> eqPicks;
-    private final Collection<TableSym>[] srcs;
+    private final TableSym[][] srcs;
     private final Map<PickSym, PickSym> refs;
 
     private SummaryImpl(
-        Collection<Constraint> constraints,
+        Constraint[] constraints,
         Collection<Collection<TableSym>> eqTables,
         Collection<Collection<PickSym>> eqPicks,
-        Collection<TableSym>[] srcs,
+        TableSym[][] srcs,
         Map<PickSym, PickSym> refs) {
       this.constraints = constraints;
       this.eqTables = eqTables;
@@ -249,7 +327,7 @@ public class TracerImpl implements Tracer {
     }
 
     @Override
-    public Collection<Constraint> constraints() {
+    public Constraint[] constraints() {
       return constraints;
     }
 
@@ -264,7 +342,7 @@ public class TracerImpl implements Tracer {
     }
 
     @Override
-    public Collection<TableSym>[] srcs() {
+    public TableSym[][] srcs() {
       return srcs;
     }
 
@@ -287,13 +365,13 @@ public class TracerImpl implements Tracer {
       SummaryImpl summary = (SummaryImpl) o;
       return Objects.equals(eqTables, summary.eqTables)
           && Objects.equals(eqPicks, summary.eqPicks)
-          && Arrays.equals(srcs, summary.srcs)
+          && Arrays.deepEquals(srcs, summary.srcs)
           && Objects.equals(refs, summary.refs);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(eqTables, eqPicks, refs) + Arrays.hashCode(srcs);
+      return Objects.hash(eqTables, eqPicks, refs) + Arrays.deepHashCode(srcs);
     }
 
     @Override
@@ -305,12 +383,7 @@ public class TracerImpl implements Tracer {
           + ", refs: "
           + refs
           + ", srcs: "
-          + Arrays.toString(srcs);
+          + Arrays.deepToString(srcs);
     }
-  }
-
-  public static void main(String[] args) {
-    List<Integer> xs = emptyList(), ys = singletonList(1);
-    System.out.println(ys.stream().anyMatch(y -> xs.stream().noneMatch(x -> x.equals(y))));
   }
 }

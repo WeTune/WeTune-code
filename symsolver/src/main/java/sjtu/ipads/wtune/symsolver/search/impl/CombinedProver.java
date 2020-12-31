@@ -7,8 +7,6 @@ import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
 
-import java.util.Collection;
-
 public class CombinedProver implements Prover {
   private final Prover[] provers;
 
@@ -51,8 +49,8 @@ public class CombinedProver implements Prover {
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, Collection<TableSym> ts) {
-    for (Prover prover : provers) prover.pickFrom(constraint, p, ts);
+  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+    for (Prover prover : provers) prover.pickFrom(constraint, p, src);
   }
 
   @Override

@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.common.utils;
 
+import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -19,13 +17,12 @@ public interface FuncUtils {
   }
 
   static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
-    return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toList());
+    return stream(os).map(func).collect(Collectors.toList());
   }
 
-  static <T, R> R[] arrayMap(T[] ts, Function<T, R> func) {
-    final Object[] rs = new Object[ts.length];
-    for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
-    return (R[]) rs;
+  @SafeVarargs
+  static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
+    return stream(os).map(func).collect(Collectors.toList());
   }
 
   static <T, R> Set<R> setMap(Function<? super T, R> func, Iterable<T> os) {
@@ -39,16 +36,26 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
-  static <T> T find(IPredicate<T> pred, Iterable<T> os) {
-    return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
+  @SafeVarargs
+  @SuppressWarnings("unchecked")
+  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, T... ts) {
+    final R[] rs = (R[]) Array.newInstance(retType, ts.length);
+    for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
+    return rs;
   }
 
-  static <P1, P2, R> Function<P2, R> parital(BiFunction<P1, P2, R> func, P1 p1) {
-    return p2 -> func.apply(p1, p2);
+  @SuppressWarnings("unchecked")
+  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, Collection<T> ts) {
+    final R[] rs = (R[]) Array.newInstance(retType, ts.size());
+    int i = 0;
+    for (T t : ts) rs[i++] = func.apply(t);
+    return rs;
   }
 
-  static <P, R> Function<P, R> func(Function<P, R> func) {
-    return func;
+  static <T> T[] arrayFilter(Predicate<T> test, T... arr) {
+    return stream(arr)
+        .filter(test)
+        .toArray(n -> (T[]) Array.newInstance(arr.getClass().getComponentType(), n));
   }
 
   static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {
@@ -58,27 +65,56 @@ public interface FuncUtils {
     return ts;
   }
 
+  static <T> T find(IPredicate<T> pred, Iterable<T> os) {
+    return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
+  }
+
+  static <T> T find(Predicate<T> pred, T... ts) {
+    for (T t : ts) if (pred.test(t)) return t;
+    return null;
+  }
+
+  static <P1, P2, R> Function<P2, R> partial(BiFunction<P1, P2, R> func, P1 p1) {
+    return p2 -> func.apply(p1, p2);
+  }
+
+  static <P, R> Function<P, R> func(Function<P, R> func) {
+    return func;
+  }
+
   static <T> Stream<T> stream(Iterable<T> iterable) {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
-  static <T> T[] repeat(int times, T value) {
-    final Object[] arr = new Object[times];
-    Arrays.fill(arr, value);
-    return (T[]) arr;
+  static <T> Stream<T> stream(T[] array) {
+    return Arrays.stream(array);
   }
 
+  @SafeVarargs
   static <T> T[] asArray(T... vals) {
     return vals;
   }
 
-  static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
-    final Object[] arr = new Object[arr1.length + arr2.length];
-    System.arraycopy(arr1, 0, arr, 0, arr1.length);
-    System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
-    return (T[]) arr;
+  static <T> T[] repeat(T value, int times) {
+    final T[] arr = (T[]) Array.newInstance(value.getClass(), times);
+    Arrays.fill(arr, value);
+    return arr;
   }
 
+  static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
+    final T[] arr =
+        (T[]) Array.newInstance(arr1.getClass().getComponentType(), arr1.length + arr2.length);
+    System.arraycopy(arr1, 0, arr, 0, arr1.length);
+    System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
+    return arr;
+  }
+
+  static <T> T[] sorted(T[] arr, Comparator<? super T> comparator) {
+    Arrays.sort(arr, comparator);
+    return arr;
+  }
+
+  @SafeVarargs
   static <T> T coalesce(T... vals) {
     for (T val : vals) if (val != null) return val;
     return null;
@@ -90,5 +126,10 @@ public interface FuncUtils {
 
   static <T> T coalesce(T val, Supplier<T> other) {
     return val == null ? other.get() : val;
+  }
+
+  static <T> T echo(T t) {
+    System.out.println(t);
+    return t;
   }
 }

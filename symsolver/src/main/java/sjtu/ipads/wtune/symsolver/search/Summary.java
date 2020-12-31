@@ -8,13 +8,13 @@ import java.util.Collection;
 import java.util.Map;
 
 public interface Summary {
-  Collection<Constraint> constraints();
+  Constraint[] constraints();
 
   Collection<Collection<TableSym>> eqTables();
 
   Collection<Collection<PickSym>> eqPicks();
 
-  Collection<TableSym>[] srcs();
+  TableSym[][] srcs();
 
   Map<PickSym, PickSym> refs();
 

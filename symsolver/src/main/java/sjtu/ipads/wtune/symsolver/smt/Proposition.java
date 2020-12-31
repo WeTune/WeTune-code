@@ -7,10 +7,6 @@ public interface Proposition extends Value {
     return PropositionImpl.build(ctx, underlying);
   }
 
-  static Proposition tautology() {
-    return PropositionImpl.tautology();
-  }
-
   Proposition not();
 
   Proposition implies(Proposition other);

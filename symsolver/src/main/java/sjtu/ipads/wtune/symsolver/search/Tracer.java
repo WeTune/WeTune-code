@@ -14,5 +14,4 @@ public interface Tracer extends Reactor {
   boolean isIncomplete();
 
   Summary summary();
-
 }

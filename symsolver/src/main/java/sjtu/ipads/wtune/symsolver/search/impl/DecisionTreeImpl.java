@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
 
 public class DecisionTreeImpl implements DecisionTree {
   private final Decision[] choices;
@@ -12,8 +14,8 @@ public class DecisionTreeImpl implements DecisionTree {
   private Decision[] decisions;
 
   private DecisionTreeImpl(Decision[] choices) {
-    this.choices = choices;
-    this.seed = 1 << choices.length;
+    this.choices = arrayFilter(not(Decision::ignorable), choices);
+    this.seed = 1 << this.choices.length;
   }
 
   public static DecisionTree build(Decision[] choices) {

@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.symsolver.smt.Value;
 public interface Query {
   String name();
 
-  Query setName(String name);
+  void setName(String name);
 
   TableSym[] tables();
 
