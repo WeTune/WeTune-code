@@ -63,13 +63,12 @@ public class PickEqImpl implements Constraint {
 
     final PickEqImpl pickEq = (PickEqImpl) o;
 
-    return (Objects.equals(px, pickEq.px) && Objects.equals(py, pickEq.py))
-        || (Objects.equals(px, pickEq.py) && Objects.equals(py, pickEq.px));
+    return (Objects.equals(px, pickEq.px) && Objects.equals(py, pickEq.py));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(px, py) + Objects.hash(py, px);
+    return Objects.hash(px, py);
   }
 
   @Override

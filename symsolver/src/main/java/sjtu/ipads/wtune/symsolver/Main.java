@@ -33,31 +33,29 @@ public class Main {
 
     final DecisionTree tree =
         DecisionTree.from(
-            //            tableEq(tables[0], tables[1]),
+            tableEq(tables[0], tables[1]),
             tableEq(tables[0], tables[2]),
-            //            tableEq(tables[1], tables[2]),
-            //            pickEq(picks[0], picks[1]),
+            tableEq(tables[1], tables[2]),
+            pickEq(picks[0], picks[1]),
             //            pickEq(picks[0], picks[2]),
             pickEq(picks[0], picks[3]),
-            pickEq(picks[1], picks[2]),
-            //            pickEq(picks[1], picks[3]),
+            //            pickEq(picks[1], picks[2]),
+            pickEq(picks[1], picks[3]),
             //            pickEq(picks[2], picks[3]),
             pickFrom(picks[0], tables[0]),
-            pickFrom(picks[3], tables[0]),
+            //            pickFrom(picks[0], tables[1]),
+            //            pickFrom(picks[3], tables[0]),
             //            pickFrom(picks[0], tables[1]),
             //            pickFrom(picks[0], tables[0], tables[1]),
-            pickFrom(picks[1], tables[0]),
-            pickFrom(picks[2], tables[0])
-            //            reference(tables[0], picks[1], tables[1], picks[2])
-            );
+            //            pickFrom(picks[1], tables[0]),
+            //            pickFrom(picks[2], tables[0]),
+            reference(tables[0], picks[1], tables[1], picks[2]));
 
     //    System.out.println(solver.check(tree.choices()));
-    //    final Collection<Summary> summaries = solver.solve(tree);
+    //                final Collection<Summary> summaries = solver.solve(tree);
     final Collection<Summary> summaries = solver.solve();
 
-    // TODO: take pick source into consideration when check implication
     // TODO: add explicit cache hit check to avoid unnecessary `record` invocation
-    // TODO: also send inferred constraint to solver to ensure consistent
     for (Summary summary : summaries) {
       System.out.println(summary);
       System.out.println(Arrays.toString(summary.constraints()));

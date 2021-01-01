@@ -2,7 +2,10 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -131,5 +134,18 @@ public interface FuncUtils {
   static <T> T echo(T t) {
     System.out.println(t);
     return t;
+  }
+
+  static boolean isSubSequence(Object[] container, Object[] contained) {
+    if (contained.length > container.length) return false;
+    if (contained.length == 0) return true;
+
+    for (int i = 0, j = 0; i < container.length; i++)
+      if (Objects.equals(container[i], contained[j])) {
+        j++;
+        if (j >= contained.length) return true;
+      }
+
+    return false;
   }
 }

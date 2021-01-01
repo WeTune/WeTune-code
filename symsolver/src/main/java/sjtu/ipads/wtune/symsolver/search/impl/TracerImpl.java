@@ -29,6 +29,7 @@ public class TracerImpl implements Tracer {
   private final boolean useFastTableIndex;
   private final boolean useFastPickIndex;
 
+  private int modCount;
   private boolean srcInferred; // indicate if `inferSrc` has been called since last `reset`
   private boolean isConflict;
   private boolean isIncomplete;
@@ -72,7 +73,6 @@ public class TracerImpl implements Tracer {
   public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
     if (!isConsistent(src)) throw new IllegalArgumentException();
 
-    addConstraint(constraint);
     // sort the array for the convenience of following process
     // according to doc, if `ts` is sorted beforehand, the overhead is only |ts| comparisons.
     Arrays.sort(src, Indexed::compareTo);
@@ -80,16 +80,19 @@ public class TracerImpl implements Tracer {
     // Check if there is an existing but different assignment
     final int pIdx = indexOf(p);
     final TableSym[] existing = srcs[pIdx];
-    if (existing != null && !isMatched(existing, src)) isConflict = true;
-    else srcs[pIdx] = src;
+    if (existing != null) isConflict = isConflict || !isMatched(existing, src);
+    else {
+      srcs[pIdx] = src;
+      addConstraint(constraint);
+    }
   }
 
   @Override
   public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
-    addConstraint(constraint);
-    pickFrom(constraint, px, tx);
-    pickFrom(constraint, py, ty);
+    pickFrom(Constraint.pickFrom(px, tx), px, tx);
+    pickFrom(Constraint.pickFrom(py, ty), py, ty);
     refs.put(px, py);
+    addConstraint(constraint);
   }
 
   @Override
@@ -142,26 +145,53 @@ public class TracerImpl implements Tracer {
 
     inferSrc();
 
+    final List<Constraint> constraints = new ArrayList<>(this.constraints.size() << 1);
+    for (int i = 0, bound = tables.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) {
+        final TableSym tx = tables[i], ty = tables[j];
+        if (isEq(tx, ty)) constraints.add(Constraint.tableEq(tx, ty));
+      }
+
+    for (int i = 0, bound = picks.length; i < bound; i++) {
+      final PickSym px = picks[i];
+      for (int j = i + 1; j < bound; j++) {
+        final PickSym py = picks[j];
+        if (isEq(px, py)) constraints.add(Constraint.pickEq(px, py));
+      }
+
+      final TableSym[] srcX = srcs[i];
+      if (srcX != null) constraints.add(Constraint.pickFrom(px, srcX));
+
+      final Constraint refConstraint = refConstraintOf(px);
+      if (refConstraint != null) constraints.add(refConstraint);
+    }
+
+    return new SummaryImpl(tables, picks, constraints.toArray(Constraint[]::new), this);
+  }
+
+  int modCount() {
+    return modCount;
+  }
+
+  void inflateSummary(SummaryImpl summary) {
     final int[] tGrouping = eqTables.grouping();
     final int[] pGrouping = eqPicks.grouping();
 
-    final Collection<Collection<TableSym>> eqTables = group(tables, tGrouping);
-    final Collection<Collection<PickSym>> eqPicks = group(picks, pGrouping);
+    summary.tableGroups = group(tables, tGrouping);
+    summary.pickGroups = group(picks, pGrouping);
 
     final TableSym[][] pivotedSrcs = new TableSym[srcs.length][];
     for (int i = 0; i < srcs.length; i++)
       if (srcs[i] != null)
         pivotedSrcs[i] = arrayMap(t -> tables[tGrouping[indexOf(t)]], TableSym.class, srcs[i]);
+    summary.pivotedSources = pivotedSrcs;
 
-    return new SummaryImpl(
-        sorted(constraints.toArray(Constraint[]::new), Constraint::compareTo),
-        eqTables,
-        eqPicks,
-        pivotedSrcs,
-        new HashMap<>(refs));
+    summary.references = refs;
   }
 
   private void reset() {
+    ++modCount;
+
     constraints.clear();
     eqTables.reset();
     eqPicks.reset();
@@ -210,17 +240,6 @@ public class TracerImpl implements Tracer {
         else if (srcX != null /* && srcY == null */) tryAssignSource(py, srcX);
         else /* if (srcX == null && srcY != null) */ tryAssignSource(px, srcY);
       }
-
-    // check viable and set canonical source
-    for (int i = 0, bound = picks.length; i < bound && !isConflict && !isIncomplete; i++) {
-      final PickSym p = picks[i];
-      final int index = indexOf(p);
-      final TableSym[] src = srcs[index];
-      if (src == null) continue;
-
-      final TableSym[] canonicalSrc = find(v -> isMatched(v, src), p.viableSources());
-      if (!(isConflict = (canonicalSrc == null))) srcs[index] = canonicalSrc;
-    }
 
     srcInferred = true;
   }
@@ -282,6 +301,13 @@ public class TracerImpl implements Tracer {
     return stream(source).allMatch(t -> stream(visible).anyMatch(v -> isEq(v, t)));
   }
 
+  private Constraint refConstraintOf(PickSym px) {
+    final TableSym[] srcX = srcs[indexOf(px)];
+    if (srcX == null || srcX.length != 1) return null;
+    final PickSym py = refs.get(px);
+    return py == null ? null : Constraint.reference(srcX[0], px, srcs[indexOf(py)][0], py);
+  }
+
   private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
     final List<T>[] groups = new List[xs.length];
     for (int i = 0; i < grouping.length; i++) {
@@ -293,97 +319,5 @@ public class TracerImpl implements Tracer {
     }
 
     return stream(groups).filter(Objects::nonNull).collect(toList());
-  }
-
-  private static final class SummaryImpl implements Summary {
-    private final Constraint[] constraints;
-    private final Collection<Collection<TableSym>> eqTables;
-    private final Collection<Collection<PickSym>> eqPicks;
-    private final TableSym[][] srcs;
-    private final Map<PickSym, PickSym> refs;
-
-    private SummaryImpl(
-        Constraint[] constraints,
-        Collection<Collection<TableSym>> eqTables,
-        Collection<Collection<PickSym>> eqPicks,
-        TableSym[][] srcs,
-        Map<PickSym, PickSym> refs) {
-      this.constraints = constraints;
-      this.eqTables = eqTables;
-      this.eqPicks = eqPicks;
-      this.srcs = srcs;
-      this.refs = refs;
-    }
-
-    private static <T> boolean impliesEq(
-        Collection<Collection<T>> xs, Collection<Collection<T>> ys) {
-      return ys.stream().allMatch(y -> xs.stream().anyMatch(x -> x.containsAll(y)));
-    }
-
-    private static boolean impliesRef(Map<PickSym, PickSym> refsX, Map<PickSym, PickSym> refsY) {
-      for (var refY : refsY.entrySet())
-        if (refsX.get(refY.getKey()) != refY.getValue()) return false;
-      return true;
-    }
-
-    @Override
-    public Constraint[] constraints() {
-      return constraints;
-    }
-
-    @Override
-    public Collection<Collection<TableSym>> eqTables() {
-      return eqTables;
-    }
-
-    @Override
-    public Collection<Collection<PickSym>> eqPicks() {
-      return eqPicks;
-    }
-
-    @Override
-    public TableSym[][] srcs() {
-      return srcs;
-    }
-
-    @Override
-    public Map<PickSym, PickSym> refs() {
-      return refs;
-    }
-
-    @Override
-    public boolean implies(Summary other) {
-      return impliesEq(eqTables(), other.eqTables())
-          && impliesEq(eqPicks(), other.eqPicks())
-          && impliesRef(refs(), other.refs());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      SummaryImpl summary = (SummaryImpl) o;
-      return Objects.equals(eqTables, summary.eqTables)
-          && Objects.equals(eqPicks, summary.eqPicks)
-          && Arrays.deepEquals(srcs, summary.srcs)
-          && Objects.equals(refs, summary.refs);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(eqTables, eqPicks, refs) + Arrays.deepHashCode(srcs);
-    }
-
-    @Override
-    public String toString() {
-      return "eqTables: "
-          + eqTables
-          + ", eqPicks: "
-          + eqPicks
-          + ", refs: "
-          + refs
-          + ", srcs: "
-          + Arrays.deepToString(srcs);
-    }
   }
 }

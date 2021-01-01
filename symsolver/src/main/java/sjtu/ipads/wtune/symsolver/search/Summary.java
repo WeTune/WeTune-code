@@ -10,13 +10,13 @@ import java.util.Map;
 public interface Summary {
   Constraint[] constraints();
 
-  Collection<Collection<TableSym>> eqTables();
+  Collection<Collection<TableSym>> tableGroups();
 
-  Collection<Collection<PickSym>> eqPicks();
+  Collection<Collection<PickSym>> pickGroups();
 
-  TableSym[][] srcs();
+  TableSym[][] pivotedSources();
 
-  Map<PickSym, PickSym> refs();
+  Map<PickSym, PickSym> references();
 
   boolean implies(Summary other);
 }

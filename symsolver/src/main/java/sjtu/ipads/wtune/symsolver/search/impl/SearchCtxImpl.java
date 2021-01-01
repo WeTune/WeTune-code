@@ -109,7 +109,7 @@ public class SearchCtxImpl implements SearchCtx {
     final ListIterator<Summary> iter = survivors.listIterator();
     while (iter.hasNext()) {
       final Summary survivor = iter.next();
-      if (summary.equals(survivor) || summary.implies(survivor)) {
+      if (summary.equals(survivor)) {
         ++stat.numDuplicate;
         return;
       }
