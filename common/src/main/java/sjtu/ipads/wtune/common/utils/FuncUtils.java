@@ -47,14 +47,8 @@ public interface FuncUtils {
     return rs;
   }
 
+  @SafeVarargs
   @SuppressWarnings("unchecked")
-  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, Collection<T> ts) {
-    final R[] rs = (R[]) Array.newInstance(retType, ts.size());
-    int i = 0;
-    for (T t : ts) rs[i++] = func.apply(t);
-    return rs;
-  }
-
   static <T> T[] arrayFilter(Predicate<T> test, T... arr) {
     return stream(arr)
         .filter(test)
@@ -72,6 +66,7 @@ public interface FuncUtils {
     return StreamSupport.stream(os.spliterator(), false).filter(pred).findFirst().orElse(null);
   }
 
+  @SafeVarargs
   static <T> T find(Predicate<T> pred, T... ts) {
     for (T t : ts) if (pred.test(t)) return t;
     return null;
