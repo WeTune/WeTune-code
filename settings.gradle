@@ -1,4 +1,4 @@
 rootProject.name = 'wtune'
 include 'common', 'sqlparser', 'stmt'
 include 'superopt'
-include 'solver', 'symsolver'
+include 'symsolver'

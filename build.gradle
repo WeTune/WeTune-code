@@ -17,6 +17,7 @@ subprojects {
     }
 
     repositories {
+        flatDir { dirs('lib') }
         mavenLocal()
         mavenCentral()
     }

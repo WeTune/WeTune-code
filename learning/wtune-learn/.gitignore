@@ -1,8 +1,0 @@
-*
-
-!*.py
-!.gitignore
-!features.csv
-!operations.csv
-!features-0.csv
-!operations-0.csv

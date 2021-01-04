@@ -28,10 +28,6 @@ public interface FuncUtils {
     return stream(os).map(func).collect(Collectors.toList());
   }
 
-  static <T, R> Set<R> setMap(Function<? super T, R> func, Iterable<T> os) {
-    return StreamSupport.stream(os.spliterator(), false).map(func).collect(Collectors.toSet());
-  }
-
   static <T, R, C extends Collection<R>> C collectionMap(
       Function<? super T, R> func, Iterable<T> os, Supplier<C> supplier) {
     return StreamSupport.stream(os.spliterator(), false)
@@ -93,12 +89,14 @@ public interface FuncUtils {
     return vals;
   }
 
+  @SuppressWarnings("unchecked")
   static <T> T[] repeat(T value, int times) {
     final T[] arr = (T[]) Array.newInstance(value.getClass(), times);
     Arrays.fill(arr, value);
     return arr;
   }
 
+  @SuppressWarnings("unchecked")
   static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
     final T[] arr =
         (T[]) Array.newInstance(arr1.getClass().getComponentType(), arr1.length + arr2.length);
