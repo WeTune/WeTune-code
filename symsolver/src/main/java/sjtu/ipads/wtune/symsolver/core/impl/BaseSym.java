@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.Sym;
-import sjtu.ipads.wtune.symsolver.smt.Func;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
+import sjtu.ipads.wtune.symsolver.logic.Func;
 
 public abstract class BaseSym implements Sym {
   private final Query owner;

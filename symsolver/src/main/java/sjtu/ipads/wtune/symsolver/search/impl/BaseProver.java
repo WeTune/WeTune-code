@@ -6,10 +6,10 @@ import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
-import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
-import sjtu.ipads.wtune.symsolver.smt.Value;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.SmtSolver;
+import sjtu.ipads.wtune.symsolver.logic.Value;
 
 import java.util.*;
 import java.util.function.IntFunction;

@@ -1,6 +1,6 @@
-package sjtu.ipads.wtune.symsolver.smt;
+package sjtu.ipads.wtune.symsolver.logic;
 
-import sjtu.ipads.wtune.symsolver.smt.impl.PropositionImpl;
+import sjtu.ipads.wtune.symsolver.logic.impl.PropositionImpl;
 
 public interface Proposition extends Value {
   static Proposition wrap(SmtCtx ctx, Object underlying) {

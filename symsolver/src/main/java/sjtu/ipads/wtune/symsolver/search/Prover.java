@@ -5,8 +5,7 @@ import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.impl.CombinedProver;
 import sjtu.ipads.wtune.symsolver.search.impl.IncrementalProver;
 import sjtu.ipads.wtune.symsolver.search.impl.OneShotProver;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 
 public interface Prover extends Reactor {
   static Prover oneShot(SmtCtx ctx, Query q0, Query q1) {

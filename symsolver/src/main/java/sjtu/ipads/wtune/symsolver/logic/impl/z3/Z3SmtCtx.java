@@ -1,10 +1,10 @@
-package sjtu.ipads.wtune.symsolver.smt.impl.z3;
+package sjtu.ipads.wtune.symsolver.logic.impl.z3;
 
 import com.microsoft.z3.*;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.smt.*;
+import sjtu.ipads.wtune.symsolver.logic.*;
 
 import java.util.*;
 

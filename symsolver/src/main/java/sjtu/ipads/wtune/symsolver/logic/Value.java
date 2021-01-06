@@ -1,6 +1,6 @@
-package sjtu.ipads.wtune.symsolver.smt;
+package sjtu.ipads.wtune.symsolver.logic;
 
-import sjtu.ipads.wtune.symsolver.smt.impl.ValueImpl;
+import sjtu.ipads.wtune.symsolver.logic.impl.ValueImpl;
 
 public interface Value {
   static Value wrap(SmtCtx ctx, Object underlying) {

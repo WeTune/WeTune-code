@@ -1,12 +1,12 @@
-package sjtu.ipads.wtune.symsolver.smt.impl.z3;
+package sjtu.ipads.wtune.symsolver.logic.impl.z3;
 
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 import sjtu.ipads.wtune.symsolver.core.Result;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtSolver;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
+import sjtu.ipads.wtune.symsolver.logic.SmtSolver;
 
-import static sjtu.ipads.wtune.symsolver.smt.impl.z3.Z3SmtCtx.unwrap;
+import static sjtu.ipads.wtune.symsolver.logic.impl.z3.Z3SmtCtx.unwrap;
 
 public class Z3SmtSolver implements SmtSolver {
   private final Solver z3Solver;

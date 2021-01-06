@@ -5,8 +5,7 @@ import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import sjtu.ipads.wtune.symsolver.search.SearchCtx;
 import sjtu.ipads.wtune.symsolver.search.Summary;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
-import sjtu.ipads.wtune.symsolver.smt.Value;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.ArrayList;

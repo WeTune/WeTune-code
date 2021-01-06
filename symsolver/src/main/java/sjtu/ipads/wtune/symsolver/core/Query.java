@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.symsolver.core;
 
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
-import sjtu.ipads.wtune.symsolver.smt.Value;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public interface Query {
   String name();

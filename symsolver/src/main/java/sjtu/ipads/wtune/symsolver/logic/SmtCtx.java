@@ -1,8 +1,8 @@
-package sjtu.ipads.wtune.symsolver.smt;
+package sjtu.ipads.wtune.symsolver.logic;
 
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.smt.impl.z3.Z3SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.impl.z3.Z3SmtCtx;
 
 public interface SmtCtx {
   Proposition makeConst(boolean bool);

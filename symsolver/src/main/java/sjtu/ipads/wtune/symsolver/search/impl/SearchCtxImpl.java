@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.search.*;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 
 import java.util.*;
 

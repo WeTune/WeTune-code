@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.symsolver.core;
 
-import sjtu.ipads.wtune.symsolver.smt.Func;
-import sjtu.ipads.wtune.symsolver.smt.Value;
+import sjtu.ipads.wtune.symsolver.logic.Func;
+import sjtu.ipads.wtune.symsolver.logic.Value;
 import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 public interface Sym extends Indexed {

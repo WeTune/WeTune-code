@@ -4,11 +4,9 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.impl.SearchCtxImpl;
-import sjtu.ipads.wtune.symsolver.smt.Proposition;
-import sjtu.ipads.wtune.symsolver.smt.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 
 import java.util.List;
-import java.util.Map;
 
 public interface SearchCtx extends Tracer, Prover {
   List<Summary> search(DecisionTree trees);
