@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
+
 public abstract class BaseQuery implements Query {
   private String name;
 
@@ -11,20 +13,8 @@ public abstract class BaseQuery implements Query {
   protected final PickSym[] picks;
 
   protected BaseQuery(int nTbls, int nPicks) {
-    tables = makeTableSyms(nTbls);
-    picks = makePickSyms(nPicks);
-  }
-
-  private TableSym[] makeTableSyms(int n) {
-    final TableSym[] tables = new TableSym[n];
-    for (int i = 0; i < n; i++) tables[i] = TableSym.from(this, i);
-    return tables;
-  }
-
-  private PickSym[] makePickSyms(int n) {
-    final PickSym[] picks = new PickSym[n];
-    for (int i = 0; i < n; i++) picks[i] = PickSym.from(this, i);
-    return picks;
+    tables = generate(nTbls, TableSym.class, i -> TableSym.from(this, i));
+    picks = generate(nPicks, PickSym.class, i -> PickSym.from(this, i));
   }
 
   @Override

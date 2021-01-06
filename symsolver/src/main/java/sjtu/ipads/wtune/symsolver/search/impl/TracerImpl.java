@@ -71,7 +71,7 @@ public class TracerImpl implements Tracer {
 
   @Override
   public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
-    if (!isConsistent(src)) throw new IllegalArgumentException();
+    if (!isSameScoped(p, src)) throw new IllegalArgumentException();
 
     // sort the array for the convenience of following process
     // according to doc, if `ts` is sorted beforehand, the overhead is only |ts| comparisons.
@@ -80,7 +80,7 @@ public class TracerImpl implements Tracer {
     // Check if there is an existing but different assignment
     final int pIdx = indexOf(p);
     final TableSym[] existing = srcs[pIdx];
-    if (existing != null) isConflict = isConflict || !isMatched(existing, src);
+    if (existing != null) isConflict = isConflict || !Arrays.equals(existing, src);
     else {
       srcs[pIdx] = src;
       addConstraint(constraint);
@@ -96,7 +96,7 @@ public class TracerImpl implements Tracer {
   }
 
   @Override
-  public void decide(Decision[] decisions) {
+  public void decide(Decision... decisions) {
     reset();
     for (Decision decision : decisions) decision.decide(this);
   }
@@ -122,13 +122,14 @@ public class TracerImpl implements Tracer {
 
   /**
    * Check if incomplete condition is satisfied: <br>
-   * &nbsp;&nbsp;{@code exists p, t. t in p.src && forAll t' in p.visibleTables. !isEq(t,t')}.
+   * &nbsp;&nbsp;{@code exists p,p' isEq(p,p') && (not exists t. pickFrom(t,p)) && (not exists t.
+   * pickFrom(t,p'))}.
    *
-   * <p>This situation happens when exists two picks px,py, they are assigned to be eq, but no
-   * constraint are forced (or inferred) on their sources. e.g. <br>
+   * <p>This situation happens when exists two picks px,py, they are assigned to be eq, both are not
+   * assigned with a source.<br>
    * &nbsp&nbsp;{@code q0: SELECT p0 FROM t0 JOIN t1} <br>
    * &nbsp&nbsp;{@code q1: SELECT p1 FROM t2} <br>
-   * Assume we have constraint PickEq(p0,p1) but NO TableEq(t0,t2) and NO TableEq(t1,t2), then
+   * Assume we have constraint PickEq(p0,p1) but NO PickFrom(p0,xx) and NO PickFrom(p1,yy), then
    * PickEq(p0,p1) is actually meaningless.
    *
    * <p>Note: This method MUST be invoked after all constraints being added.
@@ -235,22 +236,38 @@ public class TracerImpl implements Tracer {
 
         TableSym[] srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
 
-        if (srcX != null && srcY != null) isConflict = isConflict || !isMatched(srcX, srcY);
-        else if (srcX == null && srcY == null) isIncomplete = true;
-        else if (srcX != null /* && srcY == null */) tryAssignSource(py, srcX);
-        else /* if (srcX == null && srcY != null) */ tryAssignSource(px, srcY);
+        if (srcX != null && srcY == null) tryPickFrom(py, srcX);
+        else if (srcX == null && srcY != null) tryPickFrom(px, srcY);
+        //
+        //        if (srcX == null && srcY == null) isIncomplete = true;
+        //        else if (srcX != null && srcY != null) isConflict = isConflict || !isMatched(srcX,
+        // srcY);
+        //        else if (srcX != null /* && srcY == null */) tryPickFrom(py, srcX);
+        //        else /* if (srcX == null && srcY != null) */ tryPickFrom(px, srcY);
+      }
+
+    for (int i = 0, bound = picks.length; i < bound; i++)
+      for (int j = i; j < bound; j++) {
+        final PickSym px = picks[i], py = picks[j];
+        if (!isEq(px, py)) continue;
+
+        TableSym[] srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
+
+        if (srcX == null && srcY == null) isIncomplete = true;
+        else if (srcX != null && srcY != null)
+          isConflict =
+              isConflict || !isViable(px, srcX) || !isViable(py, srcY) || !isMatched(srcX, srcY);
+        else assert isConflict;
       }
 
     srcInferred = true;
   }
 
-  private void tryAssignSource(PickSym p, TableSym[] assigned) {
-    final TableSym[] src = find(v -> isMatched(v, assigned), p.viableSources());
-
-    isConflict = isConflict || src == null;
-    isIncomplete = isIncomplete || (src != null && !isSufficient(p.visibleSources(), src));
-
-    if (!isConflict && !isIncomplete) pickFrom(Constraint.pickFrom(p, src), p, src);
+  private void tryPickFrom(PickSym p, TableSym[] assign) {
+    // not a viable source
+    final TableSym[] src = find(v -> isMatched(v, assign), p.viableSources());
+    if (src == null) isConflict = true;
+    else pickFrom(Constraint.pickFrom(p, src), p, src);
   }
 
   private void addConstraint(Constraint constraint) {
@@ -259,13 +276,11 @@ public class TracerImpl implements Tracer {
       constraints.add(constraint);
   }
 
-  private boolean isConsistent(TableSym... source) {
-    // tables in source must come from the same query
-    if (source.length <= 1) return true;
+  private boolean isSameScoped(PickSym p, TableSym... source) {
+    if (source.length == 0) return true;
 
-    final Object pivot = source[0].scope();
-    for (int i = 1, bound = source.length; i < bound; i++)
-      if (source[i].scope() != pivot) return false;
+    final Object pickScope = p.scope();
+    for (TableSym t : source) if (t.scope() != pickScope) return false;
     return true;
   }
 
@@ -297,8 +312,8 @@ public class TracerImpl implements Tracer {
             && stream(ys).allMatch(ty -> stream(xs).anyMatch(tx -> isEq(tx, ty))));
   }
 
-  private boolean isSufficient(TableSym[] visible, TableSym[] source) {
-    return stream(source).allMatch(t -> stream(visible).anyMatch(v -> isEq(v, t)));
+  private boolean isViable(PickSym p, TableSym... source) {
+    return stream(p.viableSources()).anyMatch(it -> Arrays.equals(it, source));
   }
 
   private Constraint refConstraintOf(PickSym px) {

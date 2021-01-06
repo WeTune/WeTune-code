@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.symsolver.utils.Indexed;
 import java.util.Arrays;
 import java.util.Objects;
 
+import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
@@ -23,10 +24,7 @@ public class PickFromImpl implements Constraint {
   }
 
   public static Constraint build(PickSym p, TableSym[] ts) {
-    if (p == null
-        || ts == null
-        || p.index() == Indexed.UNKNOWN_INDEX
-        || stream(ts).anyMatch(it -> it.index() == Indexed.UNKNOWN_INDEX))
+    if (p == null || ts == null || !p.isIndexed() || stream(ts).anyMatch(not(Indexed::isIndexed)))
       throw new IllegalArgumentException();
 
     return new PickFromImpl(p, ts);

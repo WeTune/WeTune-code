@@ -13,7 +13,7 @@ public abstract class BaseSym implements Sym {
   protected BaseSym(Query owner, Object wrapped) {
     this.owner = owner;
     this.wrapped = wrapped;
-    this.index = UNKNOWN_INDEX;
+    this.index = -1;
   }
 
   @Override
@@ -23,7 +23,7 @@ public abstract class BaseSym implements Sym {
 
   @Override
   public void setIndex(int index) {
-    if (this.index != UNKNOWN_INDEX) throw new IllegalStateException("index should be changed");
+    if (isIndexed()) throw new IllegalStateException("index shouldn't be changed");
     this.index = index;
   }
 

@@ -55,7 +55,6 @@ public class Main {
     //                final Collection<Summary> summaries = solver.solve(tree);
     final Collection<Summary> summaries = solver.solve();
 
-    // TODO: add explicit cache hit check to avoid unnecessary `record` invocation
     for (Summary summary : summaries) {
       System.out.println(summary);
       System.out.println(Arrays.toString(summary.constraints()));

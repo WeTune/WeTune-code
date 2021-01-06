@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.Collections;

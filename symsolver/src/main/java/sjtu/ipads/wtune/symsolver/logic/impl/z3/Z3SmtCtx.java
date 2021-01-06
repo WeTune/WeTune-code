@@ -6,13 +6,15 @@ import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.logic.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 
 public class Z3SmtCtx implements SmtCtx {
   static {
-    Global.setParameter("timeout", "10");
+    final String timeout = System.getProperty("smt_timeout", "10");
+    Global.setParameter("timeout", timeout);
     Global.setParameter("pp.max_depth", "100");
   }
 

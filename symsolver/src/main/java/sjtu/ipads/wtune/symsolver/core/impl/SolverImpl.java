@@ -1,12 +1,8 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.search.Decision;
-import sjtu.ipads.wtune.symsolver.search.DecisionTree;
-import sjtu.ipads.wtune.symsolver.search.SearchCtx;
-import sjtu.ipads.wtune.symsolver.search.Summary;
 import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
+import sjtu.ipads.wtune.symsolver.search.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +10,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.symsolver.core.Constraint.*;
+import static sjtu.ipads.wtune.symsolver.utils.Indexed.number;
 
 public class SolverImpl implements Solver {
   private final TableSym[] tables;
@@ -60,6 +57,16 @@ public class SolverImpl implements Solver {
   }
 
   @Override
+  public Tracer tracer() {
+    return searchCtx;
+  }
+
+  @Override
+  public Prover prover() {
+    return searchCtx;
+  }
+
+  @Override
   public Collection<Summary> solve() {
     return solve(makeDecisionTree(tables, picks));
   }
@@ -75,10 +82,6 @@ public class SolverImpl implements Solver {
     searchCtx.decide(decisions);
     if (searchCtx.isConflict() || searchCtx.isIncomplete()) return Result.NON_EQUIVALENT;
     else return searchCtx.prove();
-  }
-
-  private static void number(Indexed[] indexes, int start) {
-    for (Indexed index : indexes) index.setIndex(start++);
   }
 
   private static DecisionTree makeDecisionTree(TableSym[] tables, PickSym[] picks) {

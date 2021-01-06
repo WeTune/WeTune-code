@@ -26,8 +26,8 @@ public class TableEqImpl implements Constraint {
     if (x == null
         || y == null
         || x == y
-        || x.index() == Indexed.UNKNOWN_INDEX
-        || y.index() == Indexed.UNKNOWN_INDEX
+        || !x.isIndexed()
+        || !y.isIndexed()
         || x.index() == y.index()) throw new IllegalArgumentException();
     return new TableEqImpl(x, y);
   }

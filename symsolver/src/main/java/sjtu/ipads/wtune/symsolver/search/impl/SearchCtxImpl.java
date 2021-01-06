@@ -62,7 +62,7 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
-  public void decide(Decision[] decisions) {
+  public void decide(Decision... decisions) {
     tracer.decide(decisions);
     prover.decide(decisions);
   }

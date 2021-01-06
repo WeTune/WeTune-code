@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.antlr.v4.runtime.Token;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLExpr.IntervalUnit;
 import sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType;

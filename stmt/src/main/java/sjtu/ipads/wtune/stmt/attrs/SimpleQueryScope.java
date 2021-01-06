@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.common.utils.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 
 import java.util.ArrayList;
@@ -53,12 +53,12 @@ public class SimpleQueryScope extends QueryScope {
     if (!recursive || tableSource != null) return Pair.of(tableSource, true);
     if (parent() == null) return Pair.of(null, true);
     final Pair<TableSource, Boolean> parentResult = parent().resolveTable(tableName, true);
-    return Pair.of(parentResult.left(), parentResult.left() == null);
+    return Pair.of(parentResult.getLeft(), parentResult.getLeft() == null);
   }
 
   @Override
   public TableSource resolveTable(String tableName) {
-    return resolveTable(tableName, false).left();
+    return resolveTable(tableName, false).getLeft();
   }
 
   @Override
@@ -82,9 +82,9 @@ public class SimpleQueryScope extends QueryScope {
     // (might be either a column or a select item)
     if (tableName != null) {
       final Pair<TableSource, Boolean> pair = resolveTable(tableName, shouldRecurse);
-      final TableSource tableSource = pair.left();
+      final TableSource tableSource = pair.getLeft();
       if (tableSource != null && tableSource.resolveRef(columnName, ref)) {
-        ref.setDependent(!pair.right()); // non-local == is-dependent
+        ref.setDependent(!pair.getRight()); // non-local == is-dependent
         return ref;
       }
       return null;

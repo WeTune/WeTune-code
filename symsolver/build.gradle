@@ -5,3 +5,6 @@ dependencies {
     implementation(name: 'z3-4.8.9')
 }
 
+test {
+    systemProperty("smt_timeout", "1000")
+}

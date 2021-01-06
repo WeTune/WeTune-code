@@ -99,7 +99,7 @@ public abstract class BaseProver implements Prover {
   }
 
   @Override
-  public void decide(Decision[] decisions) {
+  public void decide(Decision... decisions) {
     this.decisions = decisions;
   }
 

@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.stmt.analyzer;
 
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLExpr;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
@@ -194,8 +194,8 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     assert op == BinaryOp.EQUAL || op == BinaryOp.IN_SUBQUERY;
 
     final Pair<SQLNode, SQLNode> pair = sidesOf(condition);
-    final SQLNode columnSide = pair.left();
-    final SQLNode otherSide = pair.right();
+    final SQLNode columnSide = pair.getLeft();
+    final SQLNode otherSide = pair.getRight();
 
     final Relation columnRel = relationOfColumnRef(columnSide);
     final String leftColumn = columnSide.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);

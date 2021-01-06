@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.common.utils.Pair;
 import sjtu.ipads.wtune.sqlparser.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLVisitor;
@@ -85,7 +85,7 @@ public class ParamResolver implements SQLVisitor, Resolver {
   private static void resolveParam(SQLNode startPoint) {
     final Pair<SQLNode, SQLNode> pair = boolContext(startPoint);
     if (pair == null) return;
-    final SQLNode ctx = pair.left();
+    final SQLNode ctx = pair.getLeft();
 
     boolean not = false;
     SQLNode parent = ctx.parent();

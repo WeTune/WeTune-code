@@ -4,7 +4,6 @@ import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.search.Reactor;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import java.util.Objects;
 
@@ -25,8 +24,8 @@ public class PickEqImpl implements Constraint {
     if (x == null
         || y == null
         || x == y
-        || x.index() == Indexed.UNKNOWN_INDEX
-        || y.index() == Indexed.UNKNOWN_INDEX
+        || !x.isIndexed()
+        || !y.isIndexed()
         || x.index() == y.index()) throw new IllegalArgumentException();
     return new PickEqImpl(x, y);
   }

@@ -13,5 +13,5 @@ public interface Reactor {
 
   void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py);
 
-  void decide(Decision[] decisions);
+  void decide(Decision... decisions);
 }

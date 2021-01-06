@@ -1,18 +1,17 @@
 package sjtu.ipads.wtune.common.attrs;
 
-import sjtu.ipads.wtune.common.utils.IPredicate;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public interface Attrs<A extends Attrs<A>> {
   class Key<T> {
     private final String name;
     private final Class<T> type;
-    private IPredicate<Attrs<?>> check;
+    private Predicate<Attrs<?>> check;
 
     private Key(String name, Class<T> type) {
       this.name = name;
@@ -29,25 +28,25 @@ public interface Attrs<A extends Attrs<A>> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <A extends Attrs<A>> IPredicate<Attrs<?>> checkAgainst(
-        Class<A> cls, IPredicate<A> check) {
+    public static <A extends Attrs<A>> Predicate<Attrs<?>> checkAgainst(
+        Class<A> cls, Predicate<A> check) {
       return it -> cls.isInstance(it) && check.test((A) it);
     }
 
-    public static IPredicate<Attrs<?>> checkEquals(Key<?> conditionKey, Object conditionVal) {
+    public static Predicate<Attrs<?>> checkEquals(Key<?> conditionKey, Object conditionVal) {
       return it -> Objects.equals(it.get(conditionKey), conditionVal);
     }
 
-    public void setCheck(IPredicate<Attrs<?>> check) {
+    public void setCheck(Predicate<Attrs<?>> check) {
       this.check = check;
     }
 
-    public void addCheck(IPredicate<Attrs<?>> check) {
+    public void addCheck(Predicate<Attrs<?>> check) {
       if (this.check == null) this.check = check;
       else this.check = this.check.and(check);
     }
 
-    public IPredicate<? extends Attrs<?>> check() {
+    public Predicate<? extends Attrs<?>> check() {
       return check;
     }
 

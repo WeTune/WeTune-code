@@ -1,9 +1,7 @@
 package sjtu.ipads.wtune.symsolver.core;
 
 import sjtu.ipads.wtune.symsolver.core.impl.SolverImpl;
-import sjtu.ipads.wtune.symsolver.search.Decision;
-import sjtu.ipads.wtune.symsolver.search.DecisionTree;
-import sjtu.ipads.wtune.symsolver.search.Summary;
+import sjtu.ipads.wtune.symsolver.search.*;
 
 import java.util.Collection;
 
@@ -11,6 +9,10 @@ public interface Solver {
   TableSym[] tables();
 
   PickSym[] picks();
+
+  Tracer tracer();
+
+  Prover prover();
 
   Collection<Summary> solve();
 

@@ -24,7 +24,7 @@ public class CombinedProver implements Prover {
   }
 
   @Override
-  public void decide(Decision[] decisions) {
+  public void decide(Decision... decisions) {
     for (Prover prover : provers) prover.decide(decisions);
   }
 

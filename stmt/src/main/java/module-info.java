@@ -19,4 +19,5 @@ module sjtu.ipads.wtune.stmt {
   requires sqlite.jdbc;
   requires java.sql;
   requires com.google.common;
+  requires org.apache.commons.lang3;
 }

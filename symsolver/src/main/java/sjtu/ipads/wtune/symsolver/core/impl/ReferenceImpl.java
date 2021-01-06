@@ -27,10 +27,10 @@ public class ReferenceImpl implements Constraint {
         || py == null
         || tx == ty
         || px == py
-        || tx.index() == Indexed.UNKNOWN_INDEX
-        || px.index() == Indexed.UNKNOWN_INDEX
-        || ty.index() == Indexed.UNKNOWN_INDEX
-        || py.index() == Indexed.UNKNOWN_INDEX) throw new IllegalArgumentException();
+        || !tx.isIndexed()
+        || !px.isIndexed()
+        || !ty.isIndexed()
+        || !py.isIndexed()) throw new IllegalArgumentException();
 
     return new ReferenceImpl(tx, px, ty, py);
   }
