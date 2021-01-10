@@ -1,11 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
-import sjtu.ipads.wtune.sqlparser.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.SQLExpr;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLTableSource;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
+import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
+import sjtu.ipads.wtune.sqlparser.ast.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,12 +12,10 @@ import java.util.stream.Collectors;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.INTEGER;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLDataType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType.INTEGER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType.*;
 
 interface PGASTHelper {
   static String stringifyIdentifier(PGParser.Id_tokenContext ctx) {
@@ -93,19 +90,19 @@ interface PGASTHelper {
     else return assertFalse();
   }
 
-  static SQLNode tableName(String[] triple) {
-    final SQLNode node = new SQLNode(SQLNode.Type.TABLE_NAME);
-    node.put(TABLE_NAME_SCHEMA, triple[1]);
-    node.put(TABLE_NAME_TABLE, triple[2]);
+  static SQLNode tableName(SQLNodeFactory factory, String[] triple) {
+    final SQLNode node = factory.newNode(NodeType.TABLE_NAME);
+    node.put(NodeAttrs.TABLE_NAME_SCHEMA, triple[1]);
+    node.put(NodeAttrs.TABLE_NAME_TABLE, triple[2]);
 
     return node;
   }
 
-  static SQLNode columnName(String[] triple) {
-    final SQLNode node = new SQLNode(Type.COLUMN_NAME);
-    node.put(COLUMN_NAME_SCHEMA, triple[0]);
-    node.put(COLUMN_NAME_TABLE, triple[1]);
-    node.put(COLUMN_NAME_COLUMN, triple[2]);
+  static SQLNode columnName(SQLNodeFactory factory, String[] triple) {
+    final SQLNode node = factory.newNode(NodeType.COLUMN_NAME);
+    node.put(NodeAttrs.COLUMN_NAME_SCHEMA, triple[0]);
+    node.put(NodeAttrs.COLUMN_NAME_TABLE, triple[1]);
+    node.put(NodeAttrs.COLUMN_NAME_COLUMN, triple[2]);
     return node;
   }
 
@@ -130,20 +127,20 @@ interface PGASTHelper {
     }
   }
 
-  static List<SQLNode> columnNames(PGParser.Names_referencesContext ctx) {
+  static List<SQLNode> columnNames(SQLNodeFactory factory, PGParser.Names_referencesContext ctx) {
     return ctx.schema_qualified_name().stream()
         .map(PGASTHelper::stringifyIdentifier)
-        .map(PGASTHelper::columnName)
+        .map(it -> columnName(factory, it))
         .collect(Collectors.toList());
   }
 
-  static List<SQLNode> keyParts(PGParser.Names_referencesContext ctx) {
+  static List<SQLNode> keyParts(SQLNodeFactory factory, PGParser.Names_referencesContext ctx) {
     final var idContexts = ctx.schema_qualified_name();
     final List<SQLNode> keyParts = new ArrayList<>(idContexts.size());
 
     for (var idContext : idContexts) {
-      final SQLNode keyPart = new SQLNode(Type.KEY_PART);
-      keyPart.put(KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
+      final SQLNode keyPart = factory.newNode(NodeType.KEY_PART);
+      keyPart.put(NodeAttrs.KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
 
       keyParts.add(keyPart);
     }
@@ -331,112 +328,120 @@ interface PGASTHelper {
     else return assertFalse();
   }
 
-  static SQLNode parseUnsignedLiteral(PGParser.Unsigned_value_specificationContext ctx) {
+  static SQLNode parseUnsignedLiteral(
+      SQLNodeFactory factory, PGParser.Unsigned_value_specificationContext ctx) {
     final Object value = parseUnsignedValue(ctx);
-    if (value instanceof Boolean) return literal(BOOL, value);
-    else if (value instanceof Double) return literal(FRACTIONAL, value);
+    if (value instanceof Boolean) return factory.literal(BOOL, value);
+    else if (value instanceof Double) return factory.literal(FRACTIONAL, value);
     else if (value instanceof Long)
-      return (Long) value <= Integer.MAX_VALUE ? literal(INTEGER, value) : literal(LONG, value);
-    else if (value instanceof String) return literal(SQLExpr.LiteralType.TEXT, value);
+      return (Long) value <= Integer.MAX_VALUE
+          ? factory.literal(INTEGER, value)
+          : factory.literal(LONG, value);
+    else if (value instanceof String) return factory.literal(LiteralType.TEXT, value);
     else return assertFalse();
   }
 
-  static SQLNode parseParam(PGParser.Dollar_numberContext ctx) {
-    return paramMarker(Integer.parseInt(ctx.getText().substring(1)));
+  static SQLNode parseParam(SQLNodeFactory factory, PGParser.Dollar_numberContext ctx) {
+    return factory.paramMarker(Integer.parseInt(ctx.getText().substring(1)));
   }
 
-  static SQLNode buildIndirection(String id, List<SQLNode> indirections) {
+  static SQLNode buildIndirection(SQLNodeFactory factory, String id, List<SQLNode> indirections) {
     assert indirections.size() > 0;
 
     final SQLNode _0 = indirections.get(0);
 
-    if (indirections.size() == 1) return buildIndirection1(id, _0);
+    if (indirections.size() == 1) return buildIndirection1(factory, id, _0);
 
     final SQLNode _1 = indirections.get(1);
-    final SQLNode header = buildIndirection2(id, _0, _1);
+    final SQLNode header = buildIndirection2(factory, id, _0, _1);
 
     if (indirections.size() == 2) return header;
 
-    final Kind headerKind = exprKind(header);
-    assert headerKind == Kind.COLUMN_REF || headerKind == Kind.INDIRECTION;
+    assert ExprType.COLUMN_REF.isInstance(header) || ExprType.INDIRECTION.isInstance(header);
 
-    return headerKind == Kind.COLUMN_REF
-        ? indirection(header, indirections.subList(2, indirections.size()))
-        : indirection(
-            header.get(INDIRECTION_EXPR),
-            header.get(INDIRECTION_COMPS).size() == 2
+    return ExprType.COLUMN_REF.isInstance(header)
+        ? factory.indirection(header, indirections.subList(2, indirections.size()))
+        : factory.indirection(
+            header.get(ExprAttrs.INDIRECTION_EXPR),
+            header.get(ExprAttrs.INDIRECTION_COMPS).size() == 2
                 ? indirections
                 : indirections.subList(1, indirections.size()));
   }
 
-  private static SQLNode buildIndirection1(String id, SQLNode indirection) {
-    if (!indirection.isFlagged(INDIRECTION_COMP_SUBSCRIPT)) {
-      final SQLNode indirectionExpr = indirection.get(INDIRECTION_COMP_START);
-      final Kind kind = exprKind(indirectionExpr);
-      if (kind == Kind.SYMBOL) return columnRef(id, indirectionExpr.get(SYMBOL_TEXT));
-      else if (kind == Kind.WILDCARD) return wildcard(SQLNode.tableName(id));
+  private static SQLNode buildIndirection1(SQLNodeFactory factory, String id, SQLNode indirection) {
+    if (!indirection.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT)) {
+      final SQLNode indirectionExpr = indirection.get(ExprAttrs.INDIRECTION_COMP_START);
+      if (ExprType.SYMBOL.isInstance(indirectionExpr))
+        return factory.columnRef(id, indirectionExpr.get(ExprAttrs.SYMBOL_TEXT));
+      else if (ExprType.WILDCARD.isInstance(indirectionExpr))
+        return factory.wildcard(factory.tableName(id));
     }
 
-    return indirection(columnRef(null, id), Collections.singletonList(indirection));
+    return factory.indirection(factory.columnRef(null, id), Collections.singletonList(indirection));
   }
 
-  private static SQLNode buildIndirection2(String id, SQLNode _0, SQLNode _1) {
-    if (_0.isFlagged(INDIRECTION_COMP_SUBSCRIPT))
-      return indirection(columnRef(null, id), Arrays.asList(_0, _1));
+  private static SQLNode buildIndirection2(
+      SQLNodeFactory factory, String id, SQLNode _0, SQLNode _1) {
+    if (_0.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+      return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    final SQLNode expr0 = _0.get(INDIRECTION_COMP_START);
-    final Kind kind0 = exprKind(expr0);
-    if (kind0 != Kind.SYMBOL) return indirection(columnRef(null, id), Arrays.asList(_0, _1));
+    final SQLNode expr0 = _0.get(ExprAttrs.INDIRECTION_COMP_START);
+    if (!ExprType.SYMBOL.isInstance(expr0))
+      return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    if (_1.isFlagged(INDIRECTION_COMP_SUBSCRIPT))
-      return indirection(buildIndirection1(id, expr0), Collections.singletonList(_1));
+    if (_1.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+      return factory.indirection(
+          buildIndirection1(factory, id, expr0), Collections.singletonList(_1));
 
-    final SQLNode expr1 = _1.get(INDIRECTION_COMP_START);
-    final Kind kind1 = exprKind(expr1);
+    final SQLNode expr1 = _1.get(ExprAttrs.INDIRECTION_COMP_START);
 
-    if (kind1 == Kind.SYMBOL) return columnRef(id, expr0.get(SYMBOL_TEXT), expr1.get(SYMBOL_TEXT));
-    else if (kind1 == Kind.WILDCARD) return wildcard(SQLNode.tableName(expr0.get(SYMBOL_TEXT)));
-    else return indirection(columnRef(id, expr0.get(SYMBOL_TEXT)), Collections.singletonList(_1));
+    if (ExprType.SYMBOL.isInstance(expr1))
+      return factory.columnRef(id, expr0.get(ExprAttrs.SYMBOL_TEXT), expr1.get(ExprAttrs.SYMBOL_TEXT));
+    else if (ExprType.WILDCARD.isInstance(expr1))
+      return factory.wildcard(factory.tableName(expr0.get(ExprAttrs.SYMBOL_TEXT)));
+    else
+      return factory.indirection(
+          factory.columnRef(id, expr0.get(ExprAttrs.SYMBOL_TEXT)), Collections.singletonList(_1));
   }
 
   static String parseAlias(PGParser.Alias_clauseContext ctx) {
     return stringifyIdentifier(ctx.alias);
   }
 
-  static SQLTableSource.JoinType parseJoinType(PGParser.From_itemContext ctx) {
+  static JoinType parseJoinType(PGParser.From_itemContext ctx) {
     if (ctx == null) return null;
     if (ctx.NATURAL() != null) {
-      if (ctx.LEFT() != null) return SQLTableSource.JoinType.NATURAL_LEFT_JOIN;
-      else if (ctx.RIGHT() != null) return SQLTableSource.JoinType.NATURAL_RIGHT_JOIN;
-      else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
+      if (ctx.LEFT() != null) return JoinType.NATURAL_LEFT_JOIN;
+      else if (ctx.RIGHT() != null) return JoinType.NATURAL_RIGHT_JOIN;
+      else return JoinType.NATURAL_INNER_JOIN;
     }
 
-    if (ctx.CROSS() != null) return SQLTableSource.JoinType.CROSS_JOIN;
-    if (ctx.INNER() != null) return SQLTableSource.JoinType.INNER_JOIN;
-    if (ctx.LEFT() != null) return SQLTableSource.JoinType.LEFT_JOIN;
-    if (ctx.RIGHT() != null) return SQLTableSource.JoinType.RIGHT_JOIN;
-    if (ctx.FULL() != null) return SQLTableSource.JoinType.FULL_JOIN;
+    if (ctx.CROSS() != null) return JoinType.CROSS_JOIN;
+    if (ctx.INNER() != null) return JoinType.INNER_JOIN;
+    if (ctx.LEFT() != null) return JoinType.LEFT_JOIN;
+    if (ctx.RIGHT() != null) return JoinType.RIGHT_JOIN;
+    if (ctx.FULL() != null) return JoinType.FULL_JOIN;
 
-    return SQLTableSource.JoinType.INNER_JOIN;
+    return JoinType.INNER_JOIN;
   }
 
   static int typeLength2Int(PGParser.Type_lengthContext ctx) {
     return Integer.parseInt(ctx.NUMBER_LITERAL().getText());
   }
 
-  static SQLNode warpAsQuery(SQLNode node) {
-    if (node.type() == Type.QUERY_SPEC || node.type() == Type.SET_OP) {
-      final SQLNode query = new SQLNode(Type.QUERY);
-      query.put(QUERY_BODY, node);
+  static SQLNode warpAsQuery(SQLNodeFactory factory, SQLNode node) {
+    if (NodeType.QUERY_SPEC.isInstance(node) || NodeType.SET_OP.isInstance(node)) {
+      final SQLNode query = factory.newNode(NodeType.QUERY);
+      query.put(NodeAttrs.QUERY_BODY, node);
       return query;
     }
     return node;
   }
 
-  static SQLNode wrapAsQueryExpr(SQLNode node) {
-    assert node.type() == Type.QUERY;
-    final SQLNode exprNode = newExpr(QUERY_EXPR);
-    exprNode.put(QUERY_EXPR_QUERY, node);
+  static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
+    assert node.nodeType() == NodeType.QUERY;
+    final SQLNode exprNode = factory.newNode(QUERY_EXPR);
+    exprNode.put(ExprAttrs.QUERY_EXPR_QUERY, node);
     return exprNode;
   }
 

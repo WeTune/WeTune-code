@@ -5,8 +5,6 @@ import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.stmt.schema.Column;
 import sjtu.ipads.wtune.stmt.schema.Table;
 
-import java.util.Map;
-
 public interface StmtAttrs {
   String ATTR_PREFIX = "stmt.attr.";
 
@@ -30,6 +28,6 @@ public interface StmtAttrs {
       Attrs.key(attrPrefix("resolvedColumnRef"), ColumnRef.class);
   Attrs.Key<QueryScope> RESOLVED_QUERY_SCOPE =
       Attrs.key(attrPrefix("resolvedQueryScope"), QueryScope.class);
-  Attrs.Key<SimpleQueryScope.Clause> RESOLVED_CLAUSE_SCOPE =
-      Attrs.key(attrPrefix("resolvedClauseScope"), SimpleQueryScope.Clause.class);
+  Attrs.Key<QueryScope.Clause> RESOLVED_CLAUSE_SCOPE =
+      Attrs.key(attrPrefix("resolvedClauseScope"), QueryScope.Clause.class);
 }

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.stmt.dao.internal;
 
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
-import sjtu.ipads.wtune.stmt.statement.Statement;
+import sjtu.ipads.wtune.stmt.Statement;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,17 +12,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sjtu.ipads.wtune.stmt.statement.Statement.*;
-
 public class DbStatementDao extends DbDao implements StatementDao {
   public DbStatementDao(Supplier<Connection> connectionSupplier) {
     super(connectionSupplier);
   }
 
+  static final String KEY_APP_NAME = "appName";
+  static final String KEY_STMT_ID = "stmtId";
+  static final String KEY_RAW_SQL = "rawSql";
+  static final String KEY_STACK_TRACE = "stackTrace";
+
+  private static final String INSERT =
+      "INSERT INTO wtune_stmts (stmt_app_name, stmt_id, stmt_raw_sql, stmt_trace) "
+          + "VALUES (%s, %s, %s, %s)";
+
   private static final String SELECT_ITEMS =
       String.format(
-          "stmt_app_name AS %s, stmt_id AS %s, stmt_raw_sql AS %s ",
-          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
+          "stmt_app_name AS %s, stmt_id AS %s, stmt_raw_sql AS %s, stmt_trace AS %s ",
+          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL, KEY_STACK_TRACE);
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM wtune_stmts ";
   private static final String FIND_ONE = FIND_ALL + "WHERE stmt_app_name = ? AND stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE stmt_app_name = ?";
@@ -32,16 +39,12 @@ public class DbStatementDao extends DbDao implements StatementDao {
       "INSERT INTO wtune_deleted_stmts (stmt_app_name, stmt_id, stmt_raw_sql, cause) "
           + "VALUES (?, ?, ?, ?)";
 
-  private static Statement inflate(Statement stmt, ResultSet rs) throws SQLException {
-    final String appName = rs.getString(KEY_APP_NAME);
-    final int stmtId = rs.getInt(KEY_STMT_ID);
-    final String rawSql = rs.getString(KEY_RAW_SQL);
-
-    stmt.setAppName(appName);
-    stmt.setStmtId(stmtId);
-    stmt.setRawSql(rawSql);
-
-    return stmt;
+  private static Statement toStatement(ResultSet rs) throws SQLException {
+    return Statement.build(
+        rs.getString(KEY_APP_NAME),
+        rs.getInt(KEY_STMT_ID),
+        rs.getString(KEY_RAW_SQL),
+        rs.getString(KEY_STACK_TRACE));
   }
 
   @Override
@@ -53,7 +56,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
       final ResultSet rs = ps.executeQuery();
 
-      if (rs.next()) return inflate(new Statement(), rs);
+      if (rs.next()) return toStatement(rs);
       else return null;
 
     } catch (SQLException throwables) {
@@ -70,7 +73,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Statement> stmts = new ArrayList<>(250);
-      while (rs.next()) stmts.add(inflate(new Statement(), rs));
+      while (rs.next()) stmts.add(toStatement(rs));
 
       return stmts;
 
@@ -86,7 +89,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Statement> stmts = new ArrayList<>(10000);
-      while (rs.next()) stmts.add(inflate(new Statement(), rs));
+      while (rs.next()) stmts.add(toStatement(rs));
 
       return stmts;
 
@@ -109,6 +112,23 @@ public class DbStatementDao extends DbDao implements StatementDao {
       delete.setString(1, stmt.appName());
       delete.setInt(2, stmt.stmtId());
       delete.executeUpdate();
+
+    } catch (SQLException throwables) {
+      throw new StmtException(throwables);
+    }
+  }
+
+  @Override
+  public void save(Statement stmt) {
+    if (stmt.stmtId() <= 0) throw new IllegalArgumentException("stmt id not set");
+
+    try {
+      final PreparedStatement insert = prepare(INSERT);
+      insert.setString(1, stmt.appName());
+      insert.setInt(2, stmt.stmtId());
+      insert.setString(3, stmt.rawSql());
+      insert.setString(4, stmt.stackTrace());
+      insert.executeUpdate();
 
     } catch (SQLException throwables) {
       throw new StmtException(throwables);

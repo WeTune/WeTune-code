@@ -3,7 +3,7 @@
 [bfcba3f97d48ad0ca0c525079ebb82cfe3d51775] remove Chinese character in sql
 [dc24a47acc5e4f8cdb96827a2ef5ed463642a09c] correct invalid statements
 [342ae364af1e19ab46bf464a499eb0e14084299c] add schema patch
-[7f29b8faa55d26ed870f6fef735ccb0924e4350d] modify malformed statement
+[7f29b8faa55d26ed870f6fef735ccb0924e4350d] modify malformed stmtImpl
 [14fab8406ecb44bd1764f427ccb1faf92cb2347d] add alt statements
 [df1184b31e064f1cbb4f9d1f64a291126df62b2e] remove invalid and duplicated
 [bc57ee3249eb19be0b3c047bd0d8bf47e19e5f41] add output group

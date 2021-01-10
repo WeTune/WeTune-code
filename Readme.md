@@ -8,7 +8,7 @@ optimizes inefficient database access in Web-application.
 /bootstrap: entry of executable
 /common: common utils used in other modules.
 /sqlparser: AST parser
-/stmt: statement resolver
+/stmt: stmtImpl resolver
 ```
 
 ## Build

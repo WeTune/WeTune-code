@@ -968,17 +968,17 @@ selectStatement:
 
   MySQL has a syntax extension that allows into clauses in any one of two
   places. They may appear either before the from clause or at the end. All in
-  a top-level select statement. This extends the standard syntax in two
+  a top-level select stmtImpl. This extends the standard syntax in two
   ways. First, we don't have the restriction that the result can contain only
   one row: the into clause might be INTO OUTFILE/DUMPFILE in which case any
   number of rows is allowed. Hence MySQL does not have any special case for
-  the standard's <select statement: single row>. Secondly, and this has more
+  the standard's <select stmtImpl: single row>. Secondly, and this has more
   severe implications for the parser, it makes the grammar ambiguous, because
-  in a from-clause-less select statement with an into clause, it is not clear
+  in a from-clause-less select stmtImpl with an into clause, it is not clear
   whether the into clause is the leading or the trailing one.
 
   While it's possible to write an unambiguous grammar, it would force us to
-  duplicate the entire <select statement> syntax all the way down to the <into
+  duplicate the entire <select stmtImpl> syntax all the way down to the <into
   clause>. So instead we solve it by writing an ambiguous grammar and use
   precedence rules to sort out the shift/reduce conflict.
 
@@ -1661,7 +1661,7 @@ ssl:
 
 //----------------------------------------------------------------------------------------------------------------------
 
-// Note: SET PASSWORD is part of the SET statement.
+// Note: SET PASSWORD is part of the SET stmtImpl.
 accountManagementStatement:
     {serverVersion() >= 50606}? alterUser
     | createUser
@@ -3971,7 +3971,7 @@ setVarIdentType:
 
 // Non-reserved keywords are allowed as unquoted identifiers in general.
 //
-// OTOH, in a few particular cases statement-specific rules are used
+// OTOH, in a few particular cases stmtImpl-specific rules are used
 // instead of `ident_keyword` to avoid grammar ambiguities:
 //
 //  * `label_keyword` for SP label names
@@ -4046,7 +4046,7 @@ identifierKeywordsAmbiguous2Labels:
 ;
 
 // Keywords that we allow for labels in SPs in the unquoted form.
-// Any keyword that is allowed to begin a statement or routine characteristics
+// Any keyword that is allowed to begin a stmtImpl or routine characteristics
 // must be in `ident_keywords_ambiguous_2_labels` above, otherwise
 // we get (harmful) shift/reduce conflicts.
 //

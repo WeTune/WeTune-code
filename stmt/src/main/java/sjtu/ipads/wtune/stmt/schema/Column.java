@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.stmt.schema;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 
 import java.util.*;
 
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 /**
@@ -58,11 +58,11 @@ public class Column implements Attrs<Column> {
     return table;
   }
 
-  private final int[] consCachedFlags = new int[SQLNode.ConstraintType.values().length + 1];
+  private final int[] consCachedFlags = new int[ConstraintType.values().length + 1];
 
-  private boolean consFlag(SQLNode.ConstraintType type) {
+  private boolean consFlag(ConstraintType type) {
     if (constraints == null) return false;
-    final int ordinal = type == null ? SQLNode.ConstraintType.values().length : type.ordinal();
+    final int ordinal = type == null ? ConstraintType.values().length : type.ordinal();
 
     if (consCachedFlags[ordinal] != 0) return consCachedFlags[ordinal] == 1;
 

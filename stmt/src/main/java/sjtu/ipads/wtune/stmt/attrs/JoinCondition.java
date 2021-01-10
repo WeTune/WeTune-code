@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 public class JoinCondition {
   private final Relation left;

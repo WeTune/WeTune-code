@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.stmt.schema;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.SQLNode.IndexType;
-import sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 
 import java.util.List;
 import java.util.Set;

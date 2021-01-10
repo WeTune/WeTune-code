@@ -3,14 +3,17 @@ package sjtu.ipads.wtune.sqlparser.pg;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.SQLParserException;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.internal.InternalSQLContext;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGLexer;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.Properties;
 import java.util.function.Function;
+
+import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
 
 public class PGASTParser implements SQLParser {
 
@@ -25,18 +28,12 @@ public class PGASTParser implements SQLParser {
   }
 
   public SQLNode parse(String str, Function<PGParser, ParserRuleContext> rule) {
-    final SQLNode node;
     try {
-      node = parse0(str, rule).accept(new PGASTBuilder());
+      return InternalSQLContext.ofDbType(POSTGRESQL)
+          .manage(parse0(str, rule).accept(new PGASTBuilder()));
     } catch (SQLParserException ex) {
       return null;
     }
-
-    if (node != null) {
-      node.relinkAll();
-      node.setDbTypeRec(SQLNode.POSTGRESQL);
-    }
-    return node;
   }
 
   @Override

@@ -4,7 +4,7 @@ import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import sjtu.ipads.wtune.common.utils.Func3;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.stmt.schema.Column;
 
 import java.util.HashMap;
@@ -13,8 +13,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.isDerived;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.isSimple;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 public class RelationGraph {
@@ -26,24 +27,6 @@ public class RelationGraph {
 
   public static RelationGraph build(MutableValueGraph<Relation, JoinCondition> graph) {
     return new RelationGraph(graph);
-  }
-
-  public MutableValueGraph<Relation, JoinCondition> graph() {
-    return graph;
-  }
-
-  public Set<Relation> independentNeighbours(SQLNode root, Relation relation) {
-    final Set<Relation> neighbours = graph.adjacentNodes(relation);
-    final SQLNode thisNode = relation.locateNodeIn(root);
-    final Set<Relation> ret = new HashSet<>(neighbours.size());
-    for (Relation neighbour : neighbours)
-      if (scopeOf(thisNode) == scopeOf(neighbour.locateNodeIn(root))) ret.add(neighbour);
-    return ret;
-  }
-
-  private static QueryScope scopeOf(SQLNode node) {
-    final QueryScope scope = node.get(RESOLVED_QUERY_SCOPE);
-    return node.type() == SQLNode.Type.QUERY ? scope.parent() : scope;
   }
 
   public RelationGraph expanded() {
@@ -67,17 +50,17 @@ public class RelationGraph {
   private JoinCondition expandEdge(JoinCondition edge) {
     final Relation left = edge.left();
     final Relation right = edge.right();
-    if (isSimple(left.node()) && isSimple(right.node())) return edge;
+    if (SIMPLE.isInstance(left.node()) && SIMPLE.isInstance(right.node())) return edge;
     return expandEdge(expandEdge(edge, left), right);
   }
 
   private JoinCondition expandEdge(JoinCondition edge, Relation targetSide) {
     final SQLNode targetNode = targetSide.node();
-    if (isSimple(targetNode)) return edge;
-    if (isDerived(targetNode)) {
+    if (SIMPLE.isInstance(targetNode)) return edge;
+    if (DERIVED.isInstance(targetNode)) {
       return expandDerived(edge, targetSide);
 
-    } else if (targetNode.type() == SQLNode.Type.QUERY) {
+    } else if (QUERY.isInstance(targetNode)) {
       return expandSubquery(edge, targetSide);
 
     } else return assertFalse();
@@ -243,7 +226,7 @@ public class RelationGraph {
       if (!rel.node().get(RESOLVED_TABLE_SOURCE).resolveRef(column, ref)) return null;
       else return ref;
 
-    } else if (rel.node().type() == SQLNode.Type.QUERY) {
+    } else if (QUERY.isInstance(rel.node())) {
       return rel.node()
           .get(RESOLVED_QUERY_SCOPE)
           .resolveSelection(column)

@@ -2,10 +2,9 @@ package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.function.Function;
 

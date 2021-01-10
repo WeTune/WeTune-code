@@ -1,15 +1,9 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.Setup;
-import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.context.AppContext;
-import sjtu.ipads.wtune.stmt.mutator.SelectItemNormalizer;
-import sjtu.ipads.wtune.stmt.resolver.ColumnResolver;
-import sjtu.ipads.wtune.stmt.resolver.ParamResolver;
+import sjtu.ipads.wtune.stmt.*;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.schema.Table;
-import sjtu.ipads.wtune.stmt.statement.Statement;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,13 +19,12 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.stmt.statement.Statement.TAG_OPT;
+import static sjtu.ipads.wtune.stmt.Statement.TAG_OPT;
 
 public class ScriptUtils {
   public static void genSchema(String appName, String tag) {
-    final AppContext ctx = AppContext.of(appName);
-    if ("base".equals(tag)) genSchema(ctx.schema(), ctx.name(), tag);
-    else genSchema(ctx.alternativeSchema(tag), ctx.name(), tag);
+    final App ctx = App.find(appName);
+    genSchema(ctx.schema(tag), ctx.name(), tag);
   }
 
   public static void genSchema(Schema schema, String appName, String tag) {
@@ -58,18 +51,8 @@ public class ScriptUtils {
 
   public static void genWorkload(String appName, String tag) {
     List<Statement> stmts = Statement.findByApp(appName);
-    //    if ("index".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_INDEX), it), stmts);
-    if ("opt".equals(tag)) stmts = listMap(it -> coalesce(it.alt(TAG_OPT), it), stmts);
-    for (Statement stmt : stmts) {
-      stmt.retrofitStandard();
-      stmt.mutate(SelectItemNormalizer.class);
-      stmt.resolve(ColumnResolver.class, true);
-    }
-    genWorkload(stmts, appName, tag);
-  }
-
-  public static void genWorkload(List<Statement> stmts, String appName, String tag) {
-    stmts.forEach(it -> it.resolve(ParamResolver.class));
+    if ("opt".equals(tag)) stmts = listMap(it -> coalesce(it.alternative(TAG_OPT), it), stmts);
+    stmts.forEach(Workflow::retrofit);
     genWorkload(stmts, Setup.current().outputDir(), appName, tag);
   }
 

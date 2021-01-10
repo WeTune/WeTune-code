@@ -1,15 +1,13 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.stmt.schema.Column;
 
 import java.util.Objects;
 
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public class ColumnRef {
   private SQLNode node;
@@ -117,7 +115,6 @@ public class ColumnRef {
   @Override
   public int hashCode() {
     return refHash();
-    //    return nodeHash(node);
   }
 
   @Override
@@ -125,36 +122,5 @@ public class ColumnRef {
     final ColumnRef rootRef = resolveRootRef();
     if (rootRef == this) return String.format("{%s | %s}", node, source);
     else return String.format("{%s < %s}", node, rootRef);
-  }
-
-  private Identity identity;
-
-  public Identity identity() {
-    return identity != null ? identity : (identity = new Identity(this));
-  }
-
-  public static class Identity {
-    private final ColumnRef ref;
-
-    private Identity(ColumnRef ref) {
-      this.ref = ref;
-    }
-
-    public ColumnRef self() {
-      return ref;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      Identity other = (Identity) o;
-      return nodeEquals(ref.node(), other.ref.node());
-    }
-
-    @Override
-    public int hashCode() {
-      return nodeHash(ref.node());
-    }
   }
 }

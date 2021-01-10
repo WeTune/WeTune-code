@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.statement.Statement;
+import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.ArrayList;
 import java.util.List;

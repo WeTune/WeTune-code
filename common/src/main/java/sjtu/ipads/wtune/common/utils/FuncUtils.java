@@ -85,6 +85,10 @@ public interface FuncUtils {
     return func;
   }
 
+  static <P> Predicate<P> pred(Predicate<P> pred) {
+    return pred;
+  }
+
   static <T, R, C extends Collection<R>> C collectionMap(
       Function<? super T, R> func, Iterable<T> os, Supplier<C> supplier) {
     return stream(os).map(func).collect(Collectors.toCollection(supplier));

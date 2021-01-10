@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.stmt.schema;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 
 import java.util.List;
@@ -13,7 +12,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SchemaTest {
   @Test
-  @DisplayName("[stmt.schema] from CREATE TABLE")
+  @DisplayName("[Stmt.Schema] from CREATE TABLE")
   void test() {
     final String createTable =
         "create table `public`.t ("

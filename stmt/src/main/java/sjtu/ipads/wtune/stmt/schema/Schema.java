@@ -1,14 +1,15 @@
 package sjtu.ipads.wtune.stmt.schema;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
 import java.lang.System.Logger;
 import java.nio.file.Path;
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.FOREIGN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_AUTOINCREMENT;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
@@ -29,7 +30,7 @@ public class Schema {
   public Schema addDefinition(SQLNode node) {
     if (node == null) return this;
 
-    final SQLNode.Type type = node.type();
+    final NodeType type = node.nodeType();
     if (type == CREATE_TABLE) addCreateTable(node);
     else if (type == ALTER_SEQUENCE) addAlterSequence(node);
     else if (type == ALTER_TABLE) addAlterTable(node);
@@ -137,7 +138,7 @@ public class Schema {
   }
 
   private Table getTable(SQLNode tableName) {
-    assert tableName.type() == TABLE_NAME;
+    assert tableName.nodeType() == TABLE_NAME;
     return getTable(tableName.get(TABLE_NAME_TABLE));
   }
 }

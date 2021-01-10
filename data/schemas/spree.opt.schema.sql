@@ -1988,10 +1988,10 @@ CREATE TABLE `spree_zones` (
   `zone_members_count` int(11) DEFAULT '0',
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  `kind` varchar(255) DEFAULT NULL,
+  `exprKind` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `index_spree_zones_on_default_tax` (`default_tax`),
-  KEY `index_spree_zones_on_kind` (`kind`)
+  KEY `index_spree_zones_on_kind` (`exprKind`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

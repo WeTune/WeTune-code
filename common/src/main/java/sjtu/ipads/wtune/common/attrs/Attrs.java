@@ -37,6 +37,10 @@ public interface Attrs<A extends Attrs<A>> {
       return it -> Objects.equals(it.get(conditionKey), conditionVal);
     }
 
+    public T getFrom(Attrs<?> attrs) {
+      return attrs.get(this);
+    }
+
     public void setCheck(Predicate<Attrs<?>> check) {
       this.check = check;
     }

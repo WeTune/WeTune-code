@@ -4,11 +4,12 @@ import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.SQLExpr;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.stmt.attrs.*;
-import sjtu.ipads.wtune.stmt.resolver.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -16,9 +17,11 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.attrs.Attrs.key;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 /**
@@ -33,7 +36,7 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
  *
  * <p>We assume such query is not present for now.
  */
-public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
+public class RelationGraphAnalyzer {
   private static final Attrs.Key<Relation> RELATION_KEY =
       key(ATTR_PREFIX + ".analyzer.relation", Relation.class);
 
@@ -43,10 +46,8 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     @Override
     public boolean enterQueryExpr(SQLNode queryExpr) {
       final SQLNode parent = queryExpr.parent();
-      if (!isExpr(parent)) return true;
 
-      final Kind paretKind = exprKind(parent);
-      if (paretKind != Kind.BINARY) return true;
+      if (!BINARY.isInstance(parent)) return true;
 
       final BinaryOp op = parent.get(BINARY_OP);
       if (op.isLogic()) return true;
@@ -58,14 +59,13 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
 
       // check path to expr root
       SQLNode ascent = parent.parent();
-      while (ascent != null && isExpr(ascent)) {
-        final SQLExpr.Kind ascentKind = exprKind(ascent);
+      while (EXPR.isInstance(ascent)) {
+        final ExprType ascentExprType = ascent.get(EXPR_KIND);
 
-        if (ascentKind == SQLExpr.Kind.BINARY) {
+        if (ascentExprType == BINARY) {
           final BinaryOp ascentOp = ascent.get(BINARY_OP);
           if (ascentOp == BinaryOp.XOR_SYMBOL || ascentOp == BinaryOp.OR) return true;
-        } else if (ascentKind == SQLExpr.Kind.UNARY)
-          if (ascent.get(UNARY_OP) == UnaryOp.NOT) return true;
+        } else if (ascentExprType == UNARY) if (ascent.get(UNARY_OP) == UnaryOp.NOT) return true;
 
         ascent = ascent.parent();
       }
@@ -121,7 +121,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     }
 
     private boolean isJoinCondition(SQLNode binary) {
-      assert exprKind(binary) == Kind.BINARY;
+      assert BINARY.isInstance(binary);
 
       final BoolExpr boolExpr = binary.get(BOOL_EXPR);
       if (boolExpr == null) return false;
@@ -184,12 +184,12 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
   private static Pair<SQLNode, SQLNode> sidesOf(SQLNode condition) {
     final SQLNode left = condition.get(BINARY_LEFT);
     final SQLNode right = condition.get(BINARY_RIGHT);
-    if (exprKind(left) == Kind.COLUMN_REF) return Pair.of(left, right);
+    if (COLUMN_REF.isInstance(left)) return Pair.of(left, right);
     else return Pair.of(right, left);
   }
 
   private static JoinCondition buildJoinCondition(Set<Relation> relations, SQLNode condition) {
-    assert exprKind(condition) == Kind.BINARY;
+    assert BINARY.isInstance(condition);
     final BinaryOp op = condition.get(BINARY_OP);
     assert op == BinaryOp.EQUAL || op == BinaryOp.IN_SUBQUERY;
 
@@ -204,11 +204,11 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     final Relation rightRelation;
     final String rightColumn;
 
-    if (exprKind(otherSide) == Kind.COLUMN_REF) {
+    if (COLUMN_REF.isInstance(otherSide)) {
       rightRelation = relationOfColumnRef(otherSide);
       rightColumn = otherSide.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
 
-    } else if (exprKind(otherSide) == QUERY_EXPR) {
+    } else if (QUERY_EXPR.isInstance(otherSide)) {
       final SQLNode subquery = otherSide.get(QUERY_EXPR_QUERY);
       rightRelation = subquery.get(RELATION_KEY);
       rightColumn = singularSelectItemOf(subquery);
@@ -233,21 +233,7 @@ public class RelationGraphAnalyzer implements Analyzer<RelationGraph> {
     return item.alias() != null ? item.alias() : item.simpleName();
   }
 
-  @Override
-  public RelationGraph analyze(SQLNode node) {
+  public static RelationGraph analyze(SQLNode node) {
     return buildGraph(node);
-  }
-
-  private static final Set<Class<? extends Resolver>> DEPENDENCIES =
-      Set.of(
-          QueryScopeResolver.class,
-          BoolExprResolver.class,
-          ColumnResolver.class,
-          JoinConditionResolver.class,
-          SelectionResolver.class);
-
-  @Override
-  public Set<Class<? extends Resolver>> dependsOn() {
-    return DEPENDENCIES;
   }
 }

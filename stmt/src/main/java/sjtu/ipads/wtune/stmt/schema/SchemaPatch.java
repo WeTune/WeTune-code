@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.schema;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 
 import java.util.Collections;
@@ -92,7 +92,7 @@ public class SchemaPatch {
     else if (type == Type.ENUM) columns.forEach(it -> it.flag(COLUMN_IS_ENUM));
     else if (type == Type.UNIQUE) {
       final Constraint c = new Constraint();
-      c.setType(SQLNode.ConstraintType.UNIQUE);
+      c.setType(ConstraintType.UNIQUE);
       c.setColumns(columns);
       c.setFromPatch(true);
       table.addConstraint(c);
@@ -100,7 +100,7 @@ public class SchemaPatch {
 
     } else if (type == Type.FOREIGN_KEY) {
       final Constraint c = new Constraint();
-      c.setType(SQLNode.ConstraintType.FOREIGN);
+      c.setType(ConstraintType.FOREIGN);
       c.setColumns(columns);
       c.setFromPatch(true);
       table.addConstraint(c);

@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.List;
 

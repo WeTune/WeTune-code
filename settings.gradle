@@ -1,4 +1,6 @@
-rootProject.name = 'wtune'
-include 'common', 'sqlparser', 'stmt'
+rootProject.name = 'wetune'
+include 'common', 'sqlparser'
+include 'stmt'
+include 'rawlog'
 include 'superopt'
 include 'symsolver'

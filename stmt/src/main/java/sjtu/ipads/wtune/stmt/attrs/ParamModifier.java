@@ -1,12 +1,15 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLExpr;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 
 import java.util.Arrays;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
 import static sjtu.ipads.wtune.stmt.attrs.ParamModifier.Type.*;
 
 public class ParamModifier {
@@ -59,7 +62,7 @@ public class ParamModifier {
   }
 
   private static ParamModifier fromLike(SQLNode param) {
-    if (exprKind(param) == SQLExpr.Kind.LITERAL) {
+    if (LITERAL.isInstance(param)) {
       final String value = param.get(LITERAL_VALUE).toString();
       return ParamModifier.of(LIKE, value.startsWith("%"), value.endsWith("%"));
     }
@@ -67,7 +70,7 @@ public class ParamModifier {
   }
 
   private static ParamModifier fromIs(SQLNode param, boolean not) {
-    if (exprKind(param) == SQLExpr.Kind.LITERAL) {
+    if (LITERAL.isInstance(param)) {
       if (param.get(LITERAL_TYPE) == LiteralType.NULL)
         return not ? of(CHECK_NULL_NOT) : of(CHECK_NULL);
       else if (param.get(LITERAL_TYPE) == LiteralType.BOOL)
@@ -80,31 +83,29 @@ public class ParamModifier {
   private static final ParamModifier KEEP_STILL = of(KEEP);
 
   public static ParamModifier fromBinaryOp(
-      SQLExpr.BinaryOp op, SQLNode target, boolean inverse, boolean not) {
-    if (op == SQLExpr.BinaryOp.EQUAL
-        || op == SQLExpr.BinaryOp.IN_LIST
-        || op == SQLExpr.BinaryOp.ARRAY_CONTAINS) return not ? of(NEQ) : KEEP_STILL;
+      BinaryOp op, SQLNode target, boolean inverse, boolean not) {
+    if (op == BinaryOp.EQUAL || op == BinaryOp.IN_LIST || op == BinaryOp.ARRAY_CONTAINS)
+      return not ? of(NEQ) : KEEP_STILL;
 
-    if (op == SQLExpr.BinaryOp.NOT_EQUAL) return not ? KEEP_STILL : of(NEQ);
+    if (op == BinaryOp.NOT_EQUAL) return not ? KEEP_STILL : of(NEQ);
 
-    if (op == SQLExpr.BinaryOp.GREATER_OR_EQUAL || op == SQLExpr.BinaryOp.GREATER_THAN)
+    if (op == BinaryOp.GREATER_OR_EQUAL || op == BinaryOp.GREATER_THAN)
       return of(inverse ^ not ? DECREASE : INCREASE);
 
-    if (op == SQLExpr.BinaryOp.LESS_OR_EQUAL || op == SQLExpr.BinaryOp.LESS_THAN)
+    if (op == BinaryOp.LESS_OR_EQUAL || op == BinaryOp.LESS_THAN)
       return of(inverse ^ not ? INCREASE : DECREASE);
 
-    if (op == SQLExpr.BinaryOp.LIKE
-        || op == SQLExpr.BinaryOp.ILIKE
-        || op == SQLExpr.BinaryOp.SIMILAR_TO) return not ? of(NEQ) : fromLike(target);
+    if (op == BinaryOp.LIKE || op == BinaryOp.ILIKE || op == BinaryOp.SIMILAR_TO)
+      return not ? of(NEQ) : fromLike(target);
 
-    if (op == SQLExpr.BinaryOp.IS) return fromIs(target, not);
+    if (op == BinaryOp.IS) return fromIs(target, not);
 
-    if (op.standard() == SQLExpr.BinaryOp.REGEXP) return not ? of(NEQ) : of(REGEX);
+    if (op.standard() == BinaryOp.REGEXP) return not ? of(NEQ) : of(REGEX);
 
-    if (op == SQLExpr.BinaryOp.PLUS) return of(SUBTRACT);
-    if (op == SQLExpr.BinaryOp.MINUS) return of(ADD);
-    if (op == SQLExpr.BinaryOp.MULT) return of(DIVIDE);
-    if (op == SQLExpr.BinaryOp.DIV) return of(TIMES);
+    if (op == BinaryOp.PLUS) return of(SUBTRACT);
+    if (op == BinaryOp.MINUS) return of(ADD);
+    if (op == BinaryOp.MULT) return of(DIVIDE);
+    if (op == BinaryOp.DIV) return of(TIMES);
 
     // omit others since not encountered
     return null;

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.dao;
 
 import sjtu.ipads.wtune.stmt.dao.internal.DaoInstances;
-import sjtu.ipads.wtune.stmt.statement.Issue;
+import sjtu.ipads.wtune.stmt.Issue;
 
 import java.util.List;
 

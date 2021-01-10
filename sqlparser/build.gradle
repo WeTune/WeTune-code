@@ -3,6 +3,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 dependencies {
     implementation project(':common')
     implementation('org.antlr:antlr4-runtime:4.8-1')
+    implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')
 }
 

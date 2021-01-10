@@ -2,13 +2,14 @@ package sjtu.ipads.wtune.sqlparser;
 
 import sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser;
 import sjtu.ipads.wtune.sqlparser.pg.PGASTParser;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
 
 public interface SQLParser {
   SQLNode parse(String string);

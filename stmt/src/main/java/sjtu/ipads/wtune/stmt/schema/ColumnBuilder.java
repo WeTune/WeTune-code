@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.schema;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN;
 import static sjtu.ipads.wtune.stmt.schema.Column.*;
 

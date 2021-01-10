@@ -1,40 +1,35 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.sqlparser.SQLFormatter;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.Formatter;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.stmt.attrs.Param;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_PARAM;
 
-public class ParameterizedSQLFormatter extends SQLFormatter {
+public class ParameterizedSQLFormatter extends Formatter {
   private final List<Param> params = new ArrayList<>();
 
   public ParameterizedSQLFormatter() {
-    super();
-  }
-
-  public ParameterizedSQLFormatter(boolean oneLine) {
-    super(oneLine);
+    super(true);
   }
 
   @Override
-  protected SQLFormatter append(String s) {
+  protected Formatter append(String s) {
     builder.append(s.replace("%", "%%"));
     return this;
   }
 
   @Override
-  protected SQLFormatter append(Object obj) {
+  protected Formatter append(Object obj) {
     builder.append(String.valueOf(obj).replace("%", "%%"));
     return this;
   }
 
   @Override
-  protected SQLFormatter append(char c) {
+  protected Formatter append(char c) {
     if (c == '%') builder.append("%%");
     else builder.append(c);
     return this;

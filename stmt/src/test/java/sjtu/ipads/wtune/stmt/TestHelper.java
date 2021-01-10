@@ -1,20 +1,18 @@
 package sjtu.ipads.wtune.stmt;
 
-import sjtu.ipads.wtune.stmt.statement.Statement;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
 public class TestHelper {
-  public static Iterable<Statement> fastRecycleIter(List<Statement> stmt) {
-    return () -> new FastRecycleStmtIterator(stmt);
+  public static <T> Iterable<T> fastRecycleIter(List<T> stmt) {
+    return () -> new FastRecycleStmtIterator<>(stmt);
   }
 
-  private static class FastRecycleStmtIterator implements Iterator<Statement> {
-    private final ListIterator<Statement> listIter;
+  private static class FastRecycleStmtIterator<T> implements Iterator<T> {
+    private final ListIterator<T> listIter;
 
-    private FastRecycleStmtIterator(List<Statement> stmts) {
+    private FastRecycleStmtIterator(List<T> stmts) {
       listIter = stmts.listIterator();
     }
 
@@ -24,8 +22,8 @@ public class TestHelper {
     }
 
     @Override
-    public Statement next() {
-      final Statement next = listIter.next();
+    public T next() {
+      final T next = listIter.next();
       listIter.remove();
       return next;
     }

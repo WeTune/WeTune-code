@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.stmt.dao.internal;
 
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.TimingDao;
-import sjtu.ipads.wtune.stmt.statement.Statement;
-import sjtu.ipads.wtune.stmt.statement.Timing;
+import sjtu.ipads.wtune.stmt.Timing;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sjtu.ipads.wtune.stmt.statement.Timing.*;
+import static sjtu.ipads.wtune.stmt.Timing.*;
 
 public class DbTimingDao extends DbDao implements TimingDao {
   public DbTimingDao(Supplier<Connection> connectionSupplier) {
@@ -62,11 +61,11 @@ public class DbTimingDao extends DbDao implements TimingDao {
   }
 
   @Override
-  public List<Timing> findByStmt(Statement stmt) {
+  public List<Timing> findByStmt(String appName, int stmtId) {
     try {
       final PreparedStatement ps = prepare(FIND_BY_STMT);
-      ps.setString(1, stmt.appName());
-      ps.setInt(2, stmt.stmtId());
+      ps.setString(1, appName);
+      ps.setInt(2, stmtId);
       final ResultSet rs = ps.executeQuery();
 
       final List<Timing> timings = new ArrayList<>(3);

@@ -2,18 +2,16 @@ package sjtu.ipads.wtune.stmt.attrs;
 
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.JOINED_ON;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
 
 public abstract class QueryScope {
   public enum Clause {
@@ -35,14 +33,8 @@ public abstract class QueryScope {
       this.attr = attr;
     }
 
-    public Key<?> key() {
+    public Attrs.Key<?> key() {
       return attr;
-    }
-
-    public void setClause(SQLNode node) {
-      if (node == null) return;
-      node.put(RESOLVED_CLAUSE_SCOPE, this);
-      if (node.type() != Type.QUERY) node.children().forEach(this::setClause);
     }
   }
 
@@ -105,9 +97,7 @@ public abstract class QueryScope {
   public void addSelectItem(SelectItem item) {}
 
   public void setScope(SQLNode node) {
-    if (node == null || node.type() == Type.QUERY) return;
-    node.put(RESOLVED_QUERY_SCOPE, this);
-    node.children().forEach(this::setScope);
+    if (node != null) node.put(RESOLVED_QUERY_SCOPE, this);
   }
 
   /** @return table-source, is-local */
@@ -132,11 +122,11 @@ public abstract class QueryScope {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     QueryScope scope = (QueryScope) o;
-    return nodeEquals(queryNode, scope.queryNode);
+    return queryNode == scope.queryNode;
   }
 
   @Override
   public int hashCode() {
-    return nodeHash(queryNode);
+    return System.identityHashCode(queryNode);
   }
 }

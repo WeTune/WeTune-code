@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.sqlparser.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 
 import java.util.List;
 

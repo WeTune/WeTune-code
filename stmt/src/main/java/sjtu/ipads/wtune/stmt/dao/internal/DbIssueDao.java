@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.stmt.dao.internal;
 
 import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.IssueDao;
-import sjtu.ipads.wtune.stmt.statement.Issue;
+import sjtu.ipads.wtune.stmt.Issue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

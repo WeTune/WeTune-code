@@ -3,14 +3,17 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
+import sjtu.ipads.wtune.sqlparser.SQLParserException;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.internal.InternalSQLContext;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.Properties;
 import java.util.function.Function;
 
+import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.NoMode;
 
 public class MySQLASTParser implements SQLParser {
@@ -34,19 +37,17 @@ public class MySQLASTParser implements SQLParser {
     parser.setServerVersion(serverVersion);
     parser.setSqlMode(sqlMode);
 
-    final T ret = rule.apply(parser);
-    //    lexer.getInterpreter().clearDFA();
-    //    parser.getInterpreter().clearDFA();
-    return ret;
+    return rule.apply(parser);
   }
 
   public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
-    final SQLNode node = parse0(str, rule).accept(new MySQLASTBuilder());
-    if (node != null) {
-      node.relinkAll();
-      node.setDbTypeRec(SQLNode.MYSQL);
+    try {
+      return InternalSQLContext.ofDbType(MYSQL)
+          .manage(parse0(str, rule).accept(new MySQLASTBuilder()));
+
+    } catch (SQLParserException exception) {
+      return null;
     }
-    return node;
   }
 
   @Override

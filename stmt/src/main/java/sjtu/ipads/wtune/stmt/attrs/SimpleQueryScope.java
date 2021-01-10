@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +16,7 @@ public class SimpleQueryScope extends QueryScope {
   private final Map<String, TableSource> tableSources = new HashMap<>();
   private final List<SelectItem> selectItems = new ArrayList<>();
 
+  @Override
   public SQLNode specNode() {
     return specNode;
   }

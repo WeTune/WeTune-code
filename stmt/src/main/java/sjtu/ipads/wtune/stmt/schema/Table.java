@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.stmt.schema;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.SQLNode.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.COLUMN_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.COLUMN_NAME;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 
 /**
@@ -19,8 +19,8 @@ public class Table {
   private String tableName;
   private String engine;
 
-  private Map<String, Column> columns = new HashMap<>();
-  private Set<Constraint> constraints = new HashSet<>();
+  private final Map<String, Column> columns = new HashMap<>();
+  private final Set<Constraint> constraints = new HashSet<>();
 
   public Table fromCreateTable(SQLNode createTable) {
     return new TableBuilder(this).fromCreateTable(createTable);
@@ -95,7 +95,7 @@ public class Table {
   }
 
   Column getColumn(SQLNode columnName) {
-    assert columnName.type() == COLUMN_NAME;
+    assert columnName.nodeType() == COLUMN_NAME;
     return getColumn(columnName.get(COLUMN_NAME_COLUMN));
   }
 }

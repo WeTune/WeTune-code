@@ -3,10 +3,11 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
-import sjtu.ipads.wtune.sqlparser.SQLExpr;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParserBaseVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.*;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,19 +19,15 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.ConstraintType.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.FULLTEXT;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.IndexType.SPATIAL;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.Type.*;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.*;
-import static sjtu.ipads.wtune.sqlparser.SQLTableSource.Kind.*;
-import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.tableName;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.IndexType.FULLTEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.IndexType.SPATIAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
 
-public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
+public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements SQLNodeFactory {
   @Override
   protected SQLNode aggregateResult(SQLNode aggregate, SQLNode nextResult) {
     return coalesce(aggregate, nextResult);
@@ -38,17 +35,19 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitTableName(MySQLParser.TableNameContext tableName) {
-    return tableName(tableName.qualifiedIdentifier(), tableName.dotIdentifier());
+    return MySQLASTHelper.tableName(
+        this, tableName.qualifiedIdentifier(), tableName.dotIdentifier());
   }
 
   @Override
   public SQLNode visitTableRef(MySQLParser.TableRefContext tableName) {
-    return tableName(tableName.qualifiedIdentifier(), tableName.dotIdentifier());
+    return MySQLASTHelper.tableName(
+        this, tableName.qualifiedIdentifier(), tableName.dotIdentifier());
   }
 
   @Override
   public SQLNode visitColumnName(MySQLParser.ColumnNameContext ctx) {
-    final var node = newNode(SQLNode.Type.COLUMN_NAME);
+    final SQLNode node = newNode(NodeType.COLUMN_NAME);
     final String schema, table, column;
 
     if (ctx.identifier() != null) {
@@ -57,7 +56,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       column = stringifyIdentifier(ctx.identifier());
 
     } else if (ctx.fieldIdentifier() != null) {
-      final var triple = stringifyIdentifier(ctx.fieldIdentifier());
+      final String[] triple = stringifyIdentifier(ctx.fieldIdentifier());
       schema = triple[0];
       table = triple[1];
       column = triple[2];
@@ -66,9 +65,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       return assertFalse();
     }
 
-    node.put(COLUMN_NAME_SCHEMA, schema);
-    node.put(COLUMN_NAME_TABLE, table);
-    node.put(COLUMN_NAME_COLUMN, column);
+    node.put(NodeAttrs.COLUMN_NAME_SCHEMA, schema);
+    node.put(NodeAttrs.COLUMN_NAME_TABLE, table);
+    node.put(NodeAttrs.COLUMN_NAME_COLUMN, column);
 
     return node;
   }
@@ -78,7 +77,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.tableElementList() == null) return null;
 
     final SQLNode node = newNode(CREATE_TABLE);
-    node.put(CREATE_TABLE_NAME, visitTableName(ctx.tableName()));
+    node.put(NodeAttrs.CREATE_TABLE_NAME, visitTableName(ctx.tableName()));
 
     final List<SQLNode> columnDefs = new ArrayList<>();
     final List<SQLNode> contraintDefs = new ArrayList<>();
@@ -92,14 +91,15 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       else return assertFalse();
     }
 
-    node.put(CREATE_TABLE_COLUMNS, columnDefs);
-    node.put(CREATE_TABLE_CONSTRAINTS, contraintDefs);
+    node.put(NodeAttrs.CREATE_TABLE_COLUMNS, columnDefs);
+    node.put(NodeAttrs.CREATE_TABLE_CONSTRAINTS, contraintDefs);
 
     final var tableOptions = ctx.createTableOptions();
     if (tableOptions != null)
       for (var option : tableOptions.createTableOption())
         if (option.ENGINE_SYMBOL() != null) {
-          node.put(CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
+          node.put(
+              NodeAttrs.CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
           break;
         }
 
@@ -108,32 +108,32 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitColumnDefinition(MySQLParser.ColumnDefinitionContext ctx) {
-    final var node = newNode(Type.COLUMN_DEF);
-    node.put(COLUMN_DEF_NAME, visitColumnName(ctx.columnName()));
+    final SQLNode node = newNode(NodeType.COLUMN_DEF);
+    node.put(NodeAttrs.COLUMN_DEF_NAME, visitColumnName(ctx.columnName()));
 
     final var fieldDef = ctx.fieldDefinition();
-    node.put(COLUMN_DEF_DATATYPE_RAW, fieldDef.dataType().getText().toLowerCase());
-    node.put(COLUMN_DEF_DATATYPE, parseDataType(fieldDef.dataType()));
+    node.put(NodeAttrs.COLUMN_DEF_DATATYPE_RAW, fieldDef.dataType().getText().toLowerCase());
+    node.put(NodeAttrs.COLUMN_DEF_DATATYPE, parseDataType(fieldDef.dataType()));
 
     collectColumnAttrs(fieldDef.columnAttribute(), node);
     collectGColumnAttrs(fieldDef.gcolAttribute(), node);
 
-    if (fieldDef.AS_SYMBOL() != null) node.flag(COLUMN_DEF_GENERATED);
+    if (fieldDef.AS_SYMBOL() != null) node.flag(NodeAttrs.COLUMN_DEF_GENERATED);
 
     final var checkOrRef = ctx.checkOrReferences();
     if (checkOrRef != null)
       if (checkOrRef.references() != null)
-        node.put(COLUMN_DEF_REF, visitReferences(checkOrRef.references()));
-      else if (checkOrRef.checkConstraint() != null) node.flag(COLUMN_DEF_CONS, CHECK);
+        node.put(NodeAttrs.COLUMN_DEF_REF, visitReferences(checkOrRef.references()));
+      else if (checkOrRef.checkConstraint() != null) node.flag(NodeAttrs.COLUMN_DEF_CONS, CHECK);
 
     return node;
   }
 
   @Override
   public SQLNode visitReferences(MySQLParser.ReferencesContext ctx) {
-    final var node = newNode(Type.REFERENCES);
+    final SQLNode node = newNode(NodeType.REFERENCES);
 
-    node.put(REFERENCES_TABLE, visitTableRef(ctx.tableRef()));
+    node.put(NodeAttrs.REFERENCES_TABLE, visitTableRef(ctx.tableRef()));
 
     final var idList = ctx.identifierListWithParentheses();
     if (idList != null) {
@@ -141,11 +141,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       final List<SQLNode> columns = new ArrayList<>(ids.size());
 
       for (var id : ids) {
-        final var columnRef = newNode(Type.COLUMN_NAME);
-        columnRef.put(COLUMN_NAME_COLUMN, stringifyIdentifier(id));
+        final SQLNode columnRef = newNode(NodeType.COLUMN_NAME);
+        columnRef.put(NodeAttrs.COLUMN_NAME_COLUMN, stringifyIdentifier(id));
         columns.add(columnRef);
       }
-      node.put(REFERENCES_COLUMNS, columns);
+      node.put(NodeAttrs.REFERENCES_COLUMNS, columns);
     }
 
     return node;
@@ -153,8 +153,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitTableConstraintDef(MySQLParser.TableConstraintDefContext ctx) {
-    final var node = newNode(Type.INDEX_DEF);
-    final var type = ctx.type;
+    final SQLNode node = newNode(NodeType.INDEX_DEF);
+    final Token type = ctx.type;
     if (type == null) return null;
 
     final var indexNameAndType = ctx.indexNameAndType();
@@ -206,9 +206,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         return assertFalse();
     }
 
-    node.put(INDEX_DEF_CONS, c);
-    node.put(INDEX_DEF_TYPE, t);
-    node.put(INDEX_DEF_NAME, name);
+    node.put(NodeAttrs.INDEX_DEF_CONS, c);
+    node.put(NodeAttrs.INDEX_DEF_TYPE, t);
+    node.put(NodeAttrs.INDEX_DEF_NAME, name);
 
     final var keyListVariants = ctx.keyListVariants();
     final var keyList = keyListVariants != null ? keyListVariants.keyList() : ctx.keyList();
@@ -225,20 +225,21 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       return assertFalse();
     }
 
-    node.put(INDEX_DEF_KEYS, keys);
+    node.put(NodeAttrs.INDEX_DEF_KEYS, keys);
 
     final var references = ctx.references();
-    if (references != null) node.put(INDEX_DEF_REFS, visitReferences(references));
+    if (references != null) node.put(NodeAttrs.INDEX_DEF_REFS, visitReferences(references));
 
     return node;
   }
 
   @Override
   public SQLNode visitKeyPart(MySQLParser.KeyPartContext ctx) {
-    final var node = newNode(Type.KEY_PART);
-    node.put(KEY_PART_COLUMN, stringifyIdentifier(ctx.identifier()));
-    node.put(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
-    if (ctx.fieldLength() != null) node.put(KEY_PART_LEN, fieldLength2Int(ctx.fieldLength()));
+    final SQLNode node = newNode(NodeType.KEY_PART);
+    node.put(NodeAttrs.KEY_PART_COLUMN, stringifyIdentifier(ctx.identifier()));
+    node.put(NodeAttrs.KEY_PART_DIRECTION, parseDirection(ctx.direction()));
+    if (ctx.fieldLength() != null)
+      node.put(NodeAttrs.KEY_PART_LEN, fieldLength2Int(ctx.fieldLength()));
     return node;
   }
 
@@ -248,8 +249,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     else if (ctx.exprWithParentheses() != null) {
       final SQLNode node = newNode(KEY_PART);
 
-      node.put(KEY_PART_EXPR, toExpr(ctx.exprWithParentheses().expr()));
-      if (ctx.direction() != null) node.put(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
+      node.put(NodeAttrs.KEY_PART_EXPR, toExpr(ctx.exprWithParentheses().expr()));
+      if (ctx.direction() != null)
+        node.put(NodeAttrs.KEY_PART_DIRECTION, parseDirection(ctx.direction()));
 
       return node;
     } else return null;
@@ -262,27 +264,27 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.withClause() != null) return null;
 
     if (ctx.queryExpressionBody() != null) {
-      query.put(QUERY_BODY, ctx.queryExpressionBody().accept(this));
+      query.put(NodeAttrs.QUERY_BODY, ctx.queryExpressionBody().accept(this));
     } else if (ctx.queryExpressionParens() != null) {
-      query.put(QUERY_BODY, ctx.queryExpressionParens().accept(this));
+      query.put(NodeAttrs.QUERY_BODY, ctx.queryExpressionParens().accept(this));
     }
 
     final var orderByClause = ctx.orderClause();
-    if (orderByClause != null) query.put(QUERY_ORDER_BY, toOrderItems(orderByClause));
+    if (orderByClause != null) query.put(NodeAttrs.QUERY_ORDER_BY, toOrderItems(orderByClause));
 
     final var limitClause = ctx.limitClause();
     if (limitClause != null) {
       final var limitOptions = limitClause.limitOptions().limitOption();
       if (limitOptions.size() == 1) {
-        query.put(QUERY_LIMIT, limitOptions.get(0).accept(this));
+        query.put(NodeAttrs.QUERY_LIMIT, limitOptions.get(0).accept(this));
 
       } else if (limitOptions.size() == 2) {
         if (limitClause.limitOptions().OFFSET_SYMBOL() != null) {
-          query.put(QUERY_OFFSET, limitOptions.get(1).accept(this));
-          query.put(QUERY_LIMIT, limitOptions.get(0).accept(this));
+          query.put(NodeAttrs.QUERY_OFFSET, limitOptions.get(1).accept(this));
+          query.put(NodeAttrs.QUERY_LIMIT, limitOptions.get(0).accept(this));
         } else {
-          query.put(QUERY_OFFSET, limitOptions.get(0).accept(this));
-          query.put(QUERY_LIMIT, limitOptions.get(1).accept(this));
+          query.put(NodeAttrs.QUERY_OFFSET, limitOptions.get(0).accept(this));
+          query.put(NodeAttrs.QUERY_LIMIT, limitOptions.get(1).accept(this));
         }
       }
     }
@@ -292,7 +294,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitLimitOption(MySQLParser.LimitOptionContext ctx) {
-    if (ctx.PARAM_MARKER() != null) return paramMarker();
+    if (ctx.PARAM_MARKER() != null) return SQLNode.simple(ExprType.PARAM_MARKER);
     if (ctx.ULONGLONG_NUMBER() != null)
       return literal(LiteralType.LONG, Long.parseLong(ctx.ULONGLONG_NUMBER().getText()));
     if (ctx.LONG_NUMBER() != null)
@@ -300,8 +302,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.INT_NUMBER() != null)
       return literal(LiteralType.INTEGER, Integer.parseInt(ctx.INT_NUMBER().getText()));
     if (ctx.identifier() != null) {
-      final SQLNode variable = newExpr(VARIABLE);
-      variable.put(VARIABLE_NAME, stringifyIdentifier(ctx.identifier()));
+      final SQLNode variable = newNode(VARIABLE);
+      variable.put(ExprAttrs.VARIABLE_NAME, stringifyIdentifier(ctx.identifier()));
     }
     return null;
   }
@@ -327,11 +329,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
             ? null
             : SetOperationOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
-    final SQLNode node = new SQLNode(SET_OP);
-    node.put(SET_OP_TYPE, SetOperation.UNION);
-    node.put(SET_OP_LEFT, wrapAsQuery(left));
-    node.put(SET_OP_RIGHT, wrapAsQuery(right));
-    node.put(SET_OP_OPTION, option);
+    final SQLNode node = newNode(SET_OP);
+    node.put(NodeAttrs.SET_OP_TYPE, SetOperation.UNION);
+    node.put(NodeAttrs.SET_OP_LEFT, wrapAsQuery(this, left));
+    node.put(NodeAttrs.SET_OP_RIGHT, wrapAsQuery(this, right));
+    node.put(NodeAttrs.SET_OP_OPTION, option);
 
     return node;
   }
@@ -342,37 +344,37 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     if (ctx.selectOption() != null
         && find(it -> "DISTINCT".equalsIgnoreCase(it.getText()), ctx.selectOption()) != null)
-      node.flag(QUERY_SPEC_DISTINCT);
+      node.flag(NodeAttrs.QUERY_SPEC_DISTINCT);
 
     final var selectItemList = ctx.selectItemList();
     final List<SQLNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
-    if (selectItemList.MULT_OPERATOR() != null) items.add(selectItem(wildcard(), null));
+    if (selectItemList.MULT_OPERATOR() != null) items.add(selectItem(newNode(WILDCARD), null));
     items.addAll(listMap(this::visitSelectItem, selectItemList.selectItem()));
-    node.put(QUERY_SPEC_SELECT_ITEMS, items);
+    node.put(NodeAttrs.QUERY_SPEC_SELECT_ITEMS, items);
 
     final var fromClause = ctx.fromClause();
     if (fromClause != null) {
       final SQLNode from = visitFromClause(fromClause);
-      if (from != null) node.put(QUERY_SPEC_FROM, from);
+      if (from != null) node.put(NodeAttrs.QUERY_SPEC_FROM, from);
     }
 
     final var whereClause = ctx.whereClause();
-    if (whereClause != null) node.put(QUERY_SPEC_WHERE, toExpr(whereClause.expr()));
+    if (whereClause != null) node.put(NodeAttrs.QUERY_SPEC_WHERE, toExpr(whereClause.expr()));
 
     final var groupByClause = ctx.groupByClause();
     if (groupByClause != null) {
       final OLAPOption olapOption = parseOLAPOption(groupByClause.olapOption());
-      if (olapOption != null) node.put(QUERY_SPEC_OLAP_OPTION, olapOption);
-      node.put(QUERY_SPEC_GROUP_BY, toGroupItems(groupByClause.orderList()));
+      if (olapOption != null) node.put(NodeAttrs.QUERY_SPEC_OLAP_OPTION, olapOption);
+      node.put(NodeAttrs.QUERY_SPEC_GROUP_BY, toGroupItems(groupByClause.orderList()));
     }
 
     final var havingClause = ctx.havingClause();
-    if (havingClause != null) node.put(QUERY_SPEC_HAVING, toExpr(havingClause.expr()));
+    if (havingClause != null) node.put(NodeAttrs.QUERY_SPEC_HAVING, toExpr(havingClause.expr()));
 
     final var windowClause = ctx.windowClause();
     if (windowClause != null)
       node.put(
-          QUERY_SPEC_WINDOWS,
+          NodeAttrs.QUERY_SPEC_WINDOWS,
           listMap(this::visitWindowDefinition, windowClause.windowDefinition()));
 
     return node;
@@ -390,34 +392,34 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSingleTable(MySQLParser.SingleTableContext ctx) {
-    final SQLNode node = newTableSource(SIMPLE);
-    node.put(SIMPLE_TABLE, visitTableRef(ctx.tableRef()));
+    final SQLNode node = newNode(SIMPLE);
+    node.put(TableSourceAttrs.SIMPLE_TABLE, visitTableRef(ctx.tableRef()));
 
     if (ctx.usePartition() != null) {
       final var identifiers =
           ctx.usePartition().identifierListWithParentheses().identifierList().identifier();
-      node.put(SIMPLE_PARTITIONS, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+      node.put(TableSourceAttrs.SIMPLE_PARTITIONS, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
     }
 
     if (ctx.tableAlias() != null)
-      node.put(SIMPLE_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
+      node.put(TableSourceAttrs.SIMPLE_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
 
     if (ctx.indexHintList() != null)
-      node.put(SIMPLE_HINTS, listMap(this::visitIndexHint, ctx.indexHintList().indexHint()));
+      node.put(TableSourceAttrs.SIMPLE_HINTS, listMap(this::visitIndexHint, ctx.indexHintList().indexHint()));
 
     return node;
   }
 
   @Override
   public SQLNode visitDerivedTable(MySQLParser.DerivedTableContext ctx) {
-    final SQLNode node = newTableSource(DERIVED);
+    final SQLNode node = newNode(DERIVED);
 
-    if (ctx.LATERAL_SYMBOL() != null) node.flag(DERIVED_LATERAL);
+    if (ctx.LATERAL_SYMBOL() != null) node.flag(TableSourceAttrs.DERIVED_LATERAL);
 
-    node.put(DERIVED_SUBQUERY, visitSubquery(ctx.subquery()));
+    node.put(TableSourceAttrs.DERIVED_SUBQUERY, visitSubquery(ctx.subquery()));
 
     if (ctx.tableAlias() != null)
-      node.put(DERIVED_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
+      node.put(TableSourceAttrs.DERIVED_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
 
     if (ctx.columnInternalRefList() != null) {
       final List<String> internalRefs =
@@ -425,7 +427,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
               .map(MySQLParser.ColumnInternalRefContext::identifier)
               .map(MySQLASTHelper::stringifyIdentifier)
               .collect(Collectors.toList());
-      node.put(DERIVED_INTERNAL_REFS, internalRefs);
+      node.put(TableSourceAttrs.DERIVED_INTERNAL_REFS, internalRefs);
     }
 
     return node;
@@ -449,14 +451,14 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         .reduce(
             left,
             (l, r) -> {
-              r.put(JOINED_LEFT, l);
+              r.put(TableSourceAttrs.JOINED_LEFT, l);
               return r;
             });
   }
 
   @Override
   public SQLNode visitJoinedTable(MySQLParser.JoinedTableContext ctx) {
-    final SQLNode node = newTableSource(JOINED);
+    final SQLNode node = newNode(JOINED);
     final JoinType joinType =
         coalesce(
             parseJoinType(ctx.innerJoinType()),
@@ -465,12 +467,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     assert joinType != null;
 
-    node.put(JOINED_TYPE, joinType);
+    node.put(TableSourceAttrs.JOINED_TYPE, joinType);
 
-    if (ctx.expr() != null) node.put(JOINED_ON, toExpr(ctx.expr()));
+    if (ctx.expr() != null) node.put(TableSourceAttrs.JOINED_ON, toExpr(ctx.expr()));
     if (ctx.identifierListWithParentheses() != null) {
       final var identifiers = ctx.identifierListWithParentheses().identifierList().identifier();
-      node.put(JOINED_USING, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+      node.put(TableSourceAttrs.JOINED_USING, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
     }
 
     final SQLNode right;
@@ -478,23 +480,23 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     else if (ctx.tableFactor() != null) right = ctx.tableFactor().accept(this);
     else return assertFalse();
 
-    node.put(JOINED_RIGHT, right);
+    node.put(TableSourceAttrs.JOINED_RIGHT, right);
 
     return node;
   }
 
   @Override
   public SQLNode visitIndexHint(MySQLParser.IndexHintContext ctx) {
-    final SQLNode node = new SQLNode(INDEX_HINT);
-    node.put(INDEX_HINT_TYPE, parseIndexHintType(ctx));
+    final SQLNode node = newNode(INDEX_HINT);
+    node.put(NodeAttrs.INDEX_HINT_TYPE, parseIndexHintType(ctx));
 
     final IndexHintTarget target = parseIndexHintTarget(ctx.indexHintClause());
-    if (target != null) node.put(INDEX_HINT_TARGET, target);
+    if (target != null) node.put(NodeAttrs.INDEX_HINT_TARGET, target);
 
     final var indexList = ctx.indexList();
     if (indexList != null) {
       node.put(
-          INDEX_HINT_NAMES,
+          NodeAttrs.INDEX_HINT_NAMES,
           listMap(MySQLASTHelper::parseIndexListElement, indexList.indexListElement()));
     }
 
@@ -504,9 +506,10 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   @Override
   public SQLNode visitSelectItem(MySQLParser.SelectItemContext ctx) {
     final SQLNode item = newNode(SELECT_ITEM);
-    if (ctx.tableWild() != null) item.put(SELECT_ITEM_EXPR, visitTableWild(ctx.tableWild()));
+    if (ctx.tableWild() != null)
+      item.put(NodeAttrs.SELECT_ITEM_EXPR, visitTableWild(ctx.tableWild()));
 
-    if (ctx.expr() != null) item.put(SELECT_ITEM_EXPR, toExpr(ctx.expr()));
+    if (ctx.expr() != null) item.put(NodeAttrs.SELECT_ITEM_EXPR, toExpr(ctx.expr()));
 
     if (ctx.selectAlias() != null) {
       final var selectAlias = ctx.selectAlias();
@@ -514,7 +517,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
           selectAlias.identifier() != null
               ? stringifyIdentifier(selectAlias.identifier())
               : stringifyText(selectAlias.textStringLiteral());
-      item.put(SELECT_ITEM_ALIAS, alias);
+      item.put(NodeAttrs.SELECT_ITEM_ALIAS, alias);
     }
 
     return item;
@@ -522,7 +525,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitTableWild(MySQLParser.TableWildContext ctx) {
-    final SQLNode table = new SQLNode(TABLE_NAME);
+    final SQLNode table = newNode(TABLE_NAME);
 
     final List<MySQLParser.IdentifierContext> ids = ctx.identifier();
     final String id0 = stringifyIdentifier(ids.get(0));
@@ -531,8 +534,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final String schemaName = id1 != null ? id0 : null;
     final String tableName = id1 != null ? id1 : id0;
 
-    table.put(TABLE_NAME_SCHEMA, schemaName);
-    table.put(TABLE_NAME_TABLE, tableName);
+    table.put(NodeAttrs.TABLE_NAME_SCHEMA, schemaName);
+    table.put(NodeAttrs.TABLE_NAME_TABLE, tableName);
 
     return wildcard(table);
   }
@@ -556,9 +559,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitExprNot(MySQLParser.ExprNotContext ctx) {
-    final SQLNode node = newExpr(UNARY);
-    node.put(UNARY_OP, UnaryOp.NOT);
-    node.put(UNARY_EXPR, ctx.expr().accept(this));
+    final SQLNode node = newNode(UNARY);
+    node.put(ExprAttrs.UNARY_OP, UnaryOp.NOT);
+    node.put(ExprAttrs.UNARY_EXPR, ctx.expr().accept(this));
     return node;
   }
 
@@ -584,9 +587,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     if (ctx.notRule() == null) return node;
     else {
-      final SQLNode not = newExpr(UNARY);
-      not.put(UNARY_OP, UnaryOp.NOT);
-      not.put(UNARY_EXPR, node);
+      final SQLNode not = newNode(UNARY);
+      not.put(ExprAttrs.UNARY_OP, UnaryOp.NOT);
+      not.put(ExprAttrs.UNARY_EXPR, node);
       return not;
     }
   }
@@ -604,11 +607,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node =
         binary(
             ctx.boolPri().accept(this),
-            wrapAsQueryExpr(ctx.subquery().accept(this)),
+            wrapAsQueryExpr(this, ctx.subquery().accept(this)),
             BinaryOp.ofOp(ctx.compOp().getText()));
 
-    if (ctx.ALL_SYMBOL() != null) node.put(BINARY_SUBQUERY_OPTION, SubqueryOption.ALL);
-    else if (ctx.ANY_SYMBOL() != null) node.put(BINARY_SUBQUERY_OPTION, SubqueryOption.ANY);
+    if (ctx.ALL_SYMBOL() != null) node.put(ExprAttrs.BINARY_SUBQUERY_OPTION, SubqueryOption.ALL);
+    else if (ctx.ANY_SYMBOL() != null)
+      node.put(ExprAttrs.BINARY_SUBQUERY_OPTION, SubqueryOption.ANY);
 
     return node;
   }
@@ -628,11 +632,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         final SQLNode right;
         if (subquery != null) {
           op = BinaryOp.IN_SUBQUERY;
-          right = wrapAsQueryExpr(subquery.accept(this));
+          right = wrapAsQueryExpr(this, subquery.accept(this));
 
         } else {
-          final SQLNode tuple = newExpr(TUPLE);
-          tuple.put(TUPLE_EXPRS, toExprs(inExpr.exprList()));
+          final SQLNode tuple = newNode(TUPLE);
+          tuple.put(ExprAttrs.TUPLE_EXPRS, toExprs(inExpr.exprList()));
           op = BinaryOp.IN_LIST;
           right = tuple;
         }
@@ -641,13 +645,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       }
 
       if (predicateOp instanceof MySQLParser.PredicateExprBetweenContext) {
-        node = newExpr(TERNARY);
+        node = newNode(TERNARY);
         final var betweenExpr = (MySQLParser.PredicateExprBetweenContext) predicateOp;
 
-        node.put(TERNARY_OP, TernaryOp.BETWEEN_AND);
-        node.put(TERNARY_LEFT, bitExpr);
-        node.put(TERNARY_MIDDLE, betweenExpr.bitExpr().accept(this));
-        node.put(TERNARY_RIGHT, betweenExpr.predicate().accept(this));
+        node.put(ExprAttrs.TERNARY_OP, TernaryOp.BETWEEN_AND);
+        node.put(ExprAttrs.TERNARY_LEFT, bitExpr);
+        node.put(ExprAttrs.TERNARY_MIDDLE, betweenExpr.bitExpr().accept(this));
+        node.put(ExprAttrs.TERNARY_RIGHT, betweenExpr.predicate().accept(this));
       }
 
       if (predicateOp instanceof MySQLParser.PredicateExprLikeContext)
@@ -686,9 +690,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
     final SQLNode right;
     if (ctx.interval() != null) {
-      right = newExpr(INTERVAL);
-      right.put(INTERVAL_EXPR, toExpr(ctx.expr()));
-      right.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
+      right = newNode(INTERVAL);
+      right.put(ExprAttrs.INTERVAL_EXPR, toExpr(ctx.expr()));
+      right.put(ExprAttrs.INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
 
     } else right = ctx.bitExpr(1).accept(this);
 
@@ -704,38 +708,41 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitWindowDefinition(MySQLParser.WindowDefinitionContext ctx) {
     final SQLNode node = ctx.windowSpec().accept(this);
     if (ctx.windowName() != null)
-      node.put(WINDOW_SPEC_ALIAS, stringifyIdentifier(ctx.windowName().identifier()));
+      node.put(NodeAttrs.WINDOW_SPEC_ALIAS, stringifyIdentifier(ctx.windowName().identifier()));
     return node;
   }
 
   @Override
   public SQLNode visitWindowSpecDetails(MySQLParser.WindowSpecDetailsContext ctx) {
-    final SQLNode node = new SQLNode(WINDOW_SPEC);
+    final SQLNode node = newNode(WINDOW_SPEC);
     if (ctx.windowName() != null)
-      node.put(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.windowName().identifier()));
+      node.put(NodeAttrs.WINDOW_SPEC_NAME, stringifyIdentifier(ctx.windowName().identifier()));
     // partition by
     // in .g4 partition by clause is defined as an orderList
     // but it should be just a expression list
     if (ctx.orderList() != null)
       node.put(
-          WINDOW_SPEC_PARTITION,
+          NodeAttrs.WINDOW_SPEC_PARTITION,
           ctx.orderList().orderExpression().stream()
               .map(MySQLParser.OrderExpressionContext::expr)
               .map(it -> it.accept(this))
               .collect(Collectors.toList()));
     // order by
-    if (ctx.orderClause() != null) node.put(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderClause()));
+    if (ctx.orderClause() != null)
+      node.put(NodeAttrs.WINDOW_SPEC_ORDER, toOrderItems(ctx.orderClause()));
     if (ctx.windowFrameClause() != null)
-      node.put(WINDOW_SPEC_FRAME, visitWindowFrameClause(ctx.windowFrameClause()));
+      node.put(NodeAttrs.WINDOW_SPEC_FRAME, visitWindowFrameClause(ctx.windowFrameClause()));
 
     return node;
   }
 
   @Override
   public SQLNode visitWindowFrameClause(MySQLParser.WindowFrameClauseContext ctx) {
-    final SQLNode node = new SQLNode(WINDOW_FRAME);
+    final SQLNode node = newNode(WINDOW_FRAME);
 
-    node.put(WINDOW_FRAME_UNIT, WindowUnit.valueOf(ctx.windowFrameUnits().getText().toUpperCase()));
+    node.put(
+        NodeAttrs.WINDOW_FRAME_UNIT,
+        WindowUnit.valueOf(ctx.windowFrameUnits().getText().toUpperCase()));
 
     final var frameExclusion = ctx.windowFrameExclusion();
     if (frameExclusion != null) {
@@ -745,17 +752,18 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       else if (frameExclusion.TIES_SYMBOL() != null) exclusion = WindowExclusion.TIES;
       else if (frameExclusion.OTHERS_SYMBOL() != null) exclusion = WindowExclusion.NO_OTHERS;
       else return assertFalse();
-      node.put(WINDOW_FRAME_EXCLUSION, exclusion);
+      node.put(NodeAttrs.WINDOW_FRAME_EXCLUSION, exclusion);
     }
 
     final var frameExtent = ctx.windowFrameExtent();
     if (frameExtent.windowFrameStart() != null) {
-      node.put(WINDOW_FRAME_START, visitWindowFrameStart(frameExtent.windowFrameStart()));
+      node.put(NodeAttrs.WINDOW_FRAME_START, visitWindowFrameStart(frameExtent.windowFrameStart()));
 
     } else if (frameExtent.windowFrameBetween() != null) {
       final var frameBetween = frameExtent.windowFrameBetween();
-      node.put(WINDOW_FRAME_START, visitWindowFrameBound(frameBetween.windowFrameBound(0)));
-      node.put(WINDOW_FRAME_END, visitWindowFrameBound(frameBetween.windowFrameBound(1)));
+      node.put(
+          NodeAttrs.WINDOW_FRAME_START, visitWindowFrameBound(frameBetween.windowFrameBound(0)));
+      node.put(NodeAttrs.WINDOW_FRAME_END, visitWindowFrameBound(frameBetween.windowFrameBound(1)));
 
     } else return assertFalse();
 
@@ -764,22 +772,22 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitWindowFrameStart(MySQLParser.WindowFrameStartContext ctx) {
-    final SQLNode node = new SQLNode(FRAME_BOUND);
+    final SQLNode node = newNode(FRAME_BOUND);
     if (ctx.PRECEDING_SYMBOL() != null) {
-      node.put(FRAME_BOUND_DIRECTION, FrameBoundDirection.PRECEDING);
+      node.put(NodeAttrs.FRAME_BOUND_DIRECTION, FrameBoundDirection.PRECEDING);
 
-      if (ctx.UNBOUNDED_SYMBOL() != null) node.put(FRAME_BOUND_EXPR, symbol("unbounded"));
-      else if (ctx.PARAM_MARKER() != null) node.put(FRAME_BOUND_EXPR, paramMarker());
+      if (ctx.UNBOUNDED_SYMBOL() != null) node.put(NodeAttrs.FRAME_BOUND_EXPR, symbol("unbounded"));
+      else if (ctx.PARAM_MARKER() != null) node.put(NodeAttrs.FRAME_BOUND_EXPR, paramMarker());
       else if (ctx.ulonglong_number() != null)
-        node.put(FRAME_BOUND_EXPR, visitUlonglong_number(ctx.ulonglong_number()));
+        node.put(NodeAttrs.FRAME_BOUND_EXPR, visitUlonglong_number(ctx.ulonglong_number()));
       else if (ctx.INTERVAL_SYMBOL() != null) {
-        final SQLNode interval = newExpr(INTERVAL);
-        interval.put(INTERVAL_EXPR, toExpr(ctx.expr()));
-        interval.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
-        node.put(FRAME_BOUND_EXPR, interval);
+        final SQLNode interval = newNode(INTERVAL);
+        interval.put(ExprAttrs.INTERVAL_EXPR, toExpr(ctx.expr()));
+        interval.put(ExprAttrs.INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
+        node.put(NodeAttrs.FRAME_BOUND_EXPR, interval);
       }
 
-    } else node.put(FRAME_BOUND_EXPR, symbol("current row"));
+    } else node.put(NodeAttrs.FRAME_BOUND_EXPR, symbol("current row"));
 
     return node;
   }
@@ -788,17 +796,17 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   public SQLNode visitWindowFrameBound(MySQLParser.WindowFrameBoundContext ctx) {
     if (ctx.windowFrameStart() != null) return visitWindowFrameStart(ctx.windowFrameStart());
 
-    final SQLNode node = new SQLNode(FRAME_BOUND);
-    node.put(FRAME_BOUND_DIRECTION, FrameBoundDirection.FOLLOWING);
+    final SQLNode node = newNode(FRAME_BOUND);
+    node.put(NodeAttrs.FRAME_BOUND_DIRECTION, FrameBoundDirection.FOLLOWING);
 
-    if (ctx.UNBOUNDED_SYMBOL() != null) node.put(FRAME_BOUND_EXPR, symbol("unbounded"));
-    else if (ctx.PARAM_MARKER() != null) node.put(FRAME_BOUND_EXPR, paramMarker());
+    if (ctx.UNBOUNDED_SYMBOL() != null) node.put(NodeAttrs.FRAME_BOUND_EXPR, symbol("unbounded"));
+    else if (ctx.PARAM_MARKER() != null) node.put(NodeAttrs.FRAME_BOUND_EXPR, paramMarker());
     else if (ctx.ulonglong_number() != null)
-      node.put(FRAME_BOUND_EXPR, visitUlonglong_number(ctx.ulonglong_number()));
+      node.put(NodeAttrs.FRAME_BOUND_EXPR, visitUlonglong_number(ctx.ulonglong_number()));
     else if (ctx.INTERVAL_SYMBOL() != null) {
-      final SQLNode interval = newExpr(INTERVAL);
-      interval.put(INTERVAL_EXPR, toExpr(ctx.expr()));
-      interval.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
+      final SQLNode interval = newNode(INTERVAL);
+      interval.put(ExprAttrs.INTERVAL_EXPR, toExpr(ctx.expr()));
+      interval.put(ExprAttrs.INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
     }
 
     return node;
@@ -806,7 +814,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitUlonglong_number(MySQLParser.Ulonglong_numberContext ctx) {
-    final SQLNode node = newExpr(LITERAL);
+    final SQLNode node = newNode(LITERAL);
 
     final Token token =
         coalesce(
@@ -820,8 +828,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final Pair<LiteralType, Number> pair = parseNumericLiteral(token);
     assert pair != null;
 
-    node.put(LITERAL_TYPE, pair.getLeft());
-    node.put(LITERAL_VALUE, pair.getRight());
+    node.put(ExprAttrs.LITERAL_TYPE, pair.getLeft());
+    node.put(ExprAttrs.LITERAL_VALUE, pair.getRight());
 
     return node;
   }
@@ -832,22 +840,22 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     if (ctx.jsonOperator() == null) {
       return columnRef;
     } else {
-      final SQLNode node = newExpr(FUNC_CALL);
+      final SQLNode node = newNode(FUNC_CALL);
       final var jsonOperator = ctx.jsonOperator();
 
-      node.put(FUNC_CALL_NAME, name2(null, "json_extract"));
+      node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, "json_extract"));
       node.put(
-          FUNC_CALL_ARGS,
+          ExprAttrs.FUNC_CALL_ARGS,
           Arrays.asList(
               columnRef,
               literal(LiteralType.TEXT, stringifyText(jsonOperator.textStringLiteral()))));
 
       if (jsonOperator.JSON_UNQUOTED_SEPARATOR_SYMBOL() == null) return node;
       else {
-        final SQLNode unquoteCall = newExpr(FUNC_CALL);
+        final SQLNode unquoteCall = newNode(FUNC_CALL);
 
-        unquoteCall.put(FUNC_CALL_NAME, name2(null, "json_unquote"));
-        unquoteCall.put(FUNC_CALL_ARGS, singletonList(node));
+        unquoteCall.put(ExprAttrs.FUNC_CALL_NAME, name2(null, "json_unquote"));
+        unquoteCall.put(ExprAttrs.FUNC_CALL_ARGS, singletonList(node));
 
         return unquoteCall;
       }
@@ -856,22 +864,22 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitColumnRef(MySQLParser.ColumnRefContext ctx) {
-    final SQLNode node = newExpr(COLUMN_REF);
+    final SQLNode node = newNode(COLUMN_REF);
 
     final SQLNode column = newNode(COLUMN_NAME);
     final String[] triple = stringifyIdentifier(ctx.fieldIdentifier());
-    column.put(COLUMN_NAME_SCHEMA, triple[0]);
-    column.put(COLUMN_NAME_TABLE, triple[1]);
-    column.put(COLUMN_NAME_COLUMN, triple[2]);
+    column.put(NodeAttrs.COLUMN_NAME_SCHEMA, triple[0]);
+    column.put(NodeAttrs.COLUMN_NAME_TABLE, triple[1]);
+    column.put(NodeAttrs.COLUMN_NAME_COLUMN, triple[2]);
 
-    node.put(COLUMN_REF_COLUMN, column);
+    node.put(ExprAttrs.COLUMN_REF_COLUMN, column);
 
     return node;
   }
 
   @Override
   public SQLNode visitVariable(MySQLParser.VariableContext ctx) {
-    final SQLNode node = newExpr(VARIABLE);
+    final SQLNode node = newNode(VARIABLE);
     if (ctx.userVariable() != null) {
       final var userVariable = ctx.userVariable();
       final String name;
@@ -881,9 +889,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         name = userVariable.AT_SIGN_SYMBOL().getText().substring(1);
       else return assertFalse();
 
-      node.put(VARIABLE_NAME, name);
-      node.put(VARIABLE_SCOPE, VariableScope.USER);
-      if (ctx.expr() != null) node.put(VARIABLE_ASSIGNMENT, toExpr(ctx.expr()));
+      node.put(ExprAttrs.VARIABLE_NAME, name);
+      node.put(ExprAttrs.VARIABLE_SCOPE, VariableScope.USER);
+      if (ctx.expr() != null) node.put(ExprAttrs.VARIABLE_ASSIGNMENT, toExpr(ctx.expr()));
 
     } else if (ctx.systemVariable() != null) {
       final var systemVariable = ctx.systemVariable();
@@ -903,8 +911,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         builder.append('.').append(stringifyIdentifier(systemVariable.dotIdentifier()));
       final String name = builder.toString().toLowerCase();
 
-      node.put(VARIABLE_SCOPE, scope);
-      node.put(VARIABLE_NAME, name);
+      node.put(ExprAttrs.VARIABLE_SCOPE, scope);
+      node.put(ExprAttrs.VARIABLE_NAME, name);
 
     } else return assertFalse();
 
@@ -913,12 +921,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitRuntimeFunctionCall(MySQLParser.RuntimeFunctionCallContext ctx) {
-    final SQLNode node = newExpr(FUNC_CALL);
+    final SQLNode node = newNode(FUNC_CALL);
 
     final List<SQLNode> args;
 
     if (ctx.name != null) {
-      node.put(FUNC_CALL_NAME, name2(null, ctx.name.getText().toLowerCase()));
+      node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, ctx.name.getText().toLowerCase()));
 
       if (ctx.parentheses() != null) {
         // no-arg
@@ -937,9 +945,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
       } else if (ctx.INTERVAL_SYMBOL() != null) {
         // ADDDATE/SUBDATE/DATE_ADD/DATE_SUB with INTERVAL expr
-        final SQLNode interval = newExpr(INTERVAL);
-        interval.put(INTERVAL_EXPR, toExpr(ctx.expr(1)));
-        interval.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
+        final SQLNode interval = newNode(INTERVAL);
+        interval.put(ExprAttrs.INTERVAL_EXPR, toExpr(ctx.expr(1)));
+        interval.put(ExprAttrs.INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
         args = Arrays.asList(toExpr(ctx.expr(0)), interval);
 
       } else if (ctx.interval() != null) {
@@ -983,7 +991,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         args = emptyList();
       }
     } else if (ctx.trimFunction() != null) {
-      node.put(FUNC_CALL_NAME, name2(null, "trim"));
+      node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, "trim"));
       args = new ArrayList<>(3);
 
       final var trimFunc = ctx.trimFunction();
@@ -1008,13 +1016,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       }
 
     } else if (ctx.substringFunction() != null) {
-      node.put(FUNC_CALL_NAME, name2(null, "substring"));
+      node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, "substring"));
       final var substringFunc = ctx.substringFunction();
       args = listMap(this::toExpr, substringFunc.expr());
 
     } else if (ctx.geometryFunction() != null) {
       final var geoFunc = ctx.geometryFunction();
-      node.put(FUNC_CALL_NAME, name2(null, geoFunc.name.getText().toLowerCase()));
+      node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, geoFunc.name.getText().toLowerCase()));
 
       if (geoFunc.exprListWithParentheses() != null) {
         // var-arg
@@ -1033,39 +1041,40 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       args = emptyList();
     }
 
-    node.put(FUNC_CALL_ARGS, args);
+    node.put(ExprAttrs.FUNC_CALL_ARGS, args);
 
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprCollate(MySQLParser.SimpleExprCollateContext ctx) {
-    final SQLNode node = newExpr(COLLATE);
+    final SQLNode node = newNode(COLLATE);
 
-    node.put(COLLATE_EXPR, ctx.simpleExpr().accept(this));
-    node.put(COLLATE_COLLATION, symbol(stringifyText(ctx.textOrIdentifier())));
+    node.put(ExprAttrs.COLLATE_EXPR, ctx.simpleExpr().accept(this));
+    node.put(ExprAttrs.COLLATE_COLLATION, symbol(stringifyText(ctx.textOrIdentifier())));
 
     return node;
   }
 
   @Override
   public SQLNode visitFunctionCall(MySQLParser.FunctionCallContext ctx) {
-    final SQLNode node = newExpr(FUNC_CALL);
+    final SQLNode node = newNode(FUNC_CALL);
 
     if (ctx.pureIdentifier() != null) {
       node.put(
-          FUNC_CALL_NAME, name2(null, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase()));
+          ExprAttrs.FUNC_CALL_NAME,
+          name2(null, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase()));
 
-      if (ctx.udfExprList() != null) node.put(FUNC_CALL_ARGS, toExprs(ctx.udfExprList()));
-      else node.put(FUNC_CALL_ARGS, emptyList());
+      if (ctx.udfExprList() != null) node.put(ExprAttrs.FUNC_CALL_ARGS, toExprs(ctx.udfExprList()));
+      else node.put(ExprAttrs.FUNC_CALL_ARGS, emptyList());
 
     } else if (ctx.qualifiedIdentifier() != null) {
       node.put(
-          FUNC_CALL_NAME,
+          ExprAttrs.FUNC_CALL_NAME,
           name2(null, stringifyIdentifier(ctx.qualifiedIdentifier())[1].toLowerCase()));
 
-      if (ctx.exprList() != null) node.put(FUNC_CALL_ARGS, toExprs((ctx.exprList())));
-      else node.put(FUNC_CALL_ARGS, emptyList());
+      if (ctx.exprList() != null) node.put(ExprAttrs.FUNC_CALL_ARGS, toExprs((ctx.exprList())));
+      else node.put(ExprAttrs.FUNC_CALL_ARGS, emptyList());
 
     } else {
       return assertFalse();
@@ -1076,7 +1085,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitLiteral(MySQLParser.LiteralContext ctx) {
-    final SQLNode node = newExpr(LITERAL);
+    final SQLNode node = newNode(LITERAL);
 
     final LiteralType type;
     final Object value;
@@ -1124,9 +1133,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       value = ctx.HEX_NUMBER() == null ? ctx.HEX_NUMBER().getText() : ctx.BIN_NUMBER().getText();
     }
 
-    node.put(LITERAL_TYPE, type);
-    node.put(LITERAL_VALUE, value);
-    node.put(LITERAL_UNIT, unit);
+    node.put(ExprAttrs.LITERAL_TYPE, type);
+    node.put(ExprAttrs.LITERAL_VALUE, value);
+    node.put(ExprAttrs.LITERAL_UNIT, unit);
 
     return node;
   }
@@ -1138,11 +1147,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSumExpr(MySQLParser.SumExprContext ctx) {
-    final SQLNode node = newExpr(AGGREGATE);
+    final SQLNode node = newNode(AGGREGATE);
 
-    node.put(AGGREGATE_NAME, ctx.name.getText().toLowerCase());
+    node.put(ExprAttrs.AGGREGATE_NAME, ctx.name.getText().toLowerCase());
 
-    if (ctx.DISTINCT_SYMBOL() != null) node.flag(AGGREGATE_DISTINCT);
+    if (ctx.DISTINCT_SYMBOL() != null) node.flag(ExprAttrs.AGGREGATE_DISTINCT);
 
     final List<SQLNode> args;
     if (ctx.inSumExpr() != null) args = singletonList(visitInSumExpr(ctx.inSumExpr()));
@@ -1150,31 +1159,34 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     else if (ctx.MULT_OPERATOR() != null) args = singletonList(wildcard());
     else args = emptyList();
 
-    node.put(AGGREGATE_ARGS, args);
+    node.put(ExprAttrs.AGGREGATE_ARGS, args);
 
     if (ctx.windowingClause() != null) {
       final var windowingClause = ctx.windowingClause();
       if (windowingClause.windowName() != null) {
         node.put(
-            AGGREGATE_WINDOW_NAME, stringifyIdentifier(windowingClause.windowName().identifier()));
+            ExprAttrs.AGGREGATE_WINDOW_NAME,
+            stringifyIdentifier(windowingClause.windowName().identifier()));
 
       } else if (windowingClause.windowSpec() != null) {
         node.put(
-            AGGREGATE_WINDOW_SPEC,
+            ExprAttrs.AGGREGATE_WINDOW_SPEC,
             visitWindowSpecDetails(windowingClause.windowSpec().windowSpecDetails()));
 
       } else return assertFalse();
     }
-    if (ctx.orderClause() != null) node.put(AGGREGATE_ORDER, toOrderItems(ctx.orderClause()));
-    if (ctx.textString() != null) node.put(AGGREGATE_SEP, stringifyText(ctx.textString()));
+    if (ctx.orderClause() != null)
+      node.put(ExprAttrs.AGGREGATE_ORDER, toOrderItems(ctx.orderClause()));
+    if (ctx.textString() != null)
+      node.put(ExprAttrs.AGGREGATE_SEP, stringifyText(ctx.textString()));
 
     return node;
   }
 
   @Override
   public SQLNode visitGroupingOperation(MySQLParser.GroupingOperationContext ctx) {
-    final SQLNode node = newExpr(GROUPING_OP);
-    node.put(GROUPING_OP_EXPRS, toExprs(ctx.exprList()));
+    final SQLNode node = newNode(GROUPING_OP);
+    node.put(ExprAttrs.GROUPING_OP_EXPRS, toExprs(ctx.exprList()));
     return node;
   }
 
@@ -1186,25 +1198,25 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSimpleExprConcat(MySQLParser.SimpleExprConcatContext ctx) {
-    final SQLNode node = newExpr(FUNC_CALL);
-    node.put(FUNC_CALL_NAME, name2(null, "concat"));
-    node.put(FUNC_CALL_ARGS, listMap(arg -> arg.accept(this), ctx.simpleExpr()));
+    final SQLNode node = newNode(FUNC_CALL);
+    node.put(ExprAttrs.FUNC_CALL_NAME, name2(null, "concat"));
+    node.put(ExprAttrs.FUNC_CALL_ARGS, listMap(arg -> arg.accept(this), ctx.simpleExpr()));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprUnary(MySQLParser.SimpleExprUnaryContext ctx) {
-    final SQLNode node = newExpr(UNARY);
-    node.put(UNARY_OP, UnaryOp.ofOp(ctx.op.getText()));
-    node.put(UNARY_EXPR, ctx.simpleExpr().accept(this));
+    final SQLNode node = newNode(UNARY);
+    node.put(ExprAttrs.UNARY_OP, UnaryOp.ofOp(ctx.op.getText()));
+    node.put(ExprAttrs.UNARY_EXPR, ctx.simpleExpr().accept(this));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprNot(MySQLParser.SimpleExprNotContext ctx) {
-    final SQLNode node = newExpr(UNARY);
-    node.put(UNARY_OP, UnaryOp.NOT);
-    node.put(UNARY_EXPR, ctx.simpleExpr().accept(this));
+    final SQLNode node = newNode(UNARY);
+    node.put(ExprAttrs.UNARY_OP, UnaryOp.NOT);
+    node.put(ExprAttrs.UNARY_EXPR, ctx.simpleExpr().accept(this));
     return node;
   }
 
@@ -1214,33 +1226,33 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final boolean asRow = ctx.ROW_SYMBOL() != null;
     if (!asRow && exprs.size() == 1) return exprs.get(0);
 
-    final SQLNode node = newExpr(TUPLE);
-    node.put(TUPLE_EXPRS, exprs);
-    if (asRow) node.flag(TUPLE_AS_ROW);
+    final SQLNode node = newNode(TUPLE);
+    node.put(ExprAttrs.TUPLE_EXPRS, exprs);
+    if (asRow) node.flag(ExprAttrs.TUPLE_AS_ROW);
 
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprSubQuery(MySQLParser.SimpleExprSubQueryContext ctx) {
-    final SQLNode subquery = wrapAsQueryExpr(visitSubquery(ctx.subquery()));
+    final SQLNode subquery = wrapAsQueryExpr(this, visitSubquery(ctx.subquery()));
 
     if (ctx.EXISTS_SYMBOL() == null) return subquery;
 
-    final SQLNode node = newExpr(EXISTS);
-    node.put(EXISTS_SUBQUERY_EXPR, subquery);
+    final SQLNode node = newNode(EXISTS);
+    node.put(ExprAttrs.EXISTS_SUBQUERY_EXPR, subquery);
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprMatch(MySQLParser.SimpleExprMatchContext ctx) {
-    final SQLNode node = newExpr(MATCH);
+    final SQLNode node = newNode(MATCH);
     node.put(
-        MATCH_COLS,
+        ExprAttrs.MATCH_COLS,
         listMap(
-            func(this::visitSimpleIdentifier).andThen(SQLExpr::columnRef),
+            func(this::visitSimpleIdentifier).andThen(this::columnRef),
             ctx.identListArg().identList().simpleIdentifier()));
-    node.put(MATCH_EXPR, ctx.bitExpr().accept(this));
+    node.put(ExprAttrs.MATCH_EXPR, ctx.bitExpr().accept(this));
 
     final var fullTextOption = ctx.fulltextOptions();
     if (fullTextOption != null) {
@@ -1255,7 +1267,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
       } else {
         option = null;
       }
-      node.put(MATCH_OPTION, option);
+      node.put(ExprAttrs.MATCH_OPTION, option);
     }
 
     return node;
@@ -1263,34 +1275,35 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSimpleExprBinary(MySQLParser.SimpleExprBinaryContext ctx) {
-    final SQLNode node = newExpr(UNARY);
-    node.put(UNARY_OP, UnaryOp.BINARY);
-    node.put(UNARY_EXPR, ctx.simpleExpr().accept(this));
+    final SQLNode node = newNode(UNARY);
+    node.put(ExprAttrs.UNARY_OP, UnaryOp.BINARY);
+    node.put(ExprAttrs.UNARY_EXPR, ctx.simpleExpr().accept(this));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprCast(MySQLParser.SimpleExprCastContext ctx) {
-    final SQLNode node = newExpr(CAST);
-    node.put(CAST_EXPR, toExpr(ctx.expr()));
-    node.put(CAST_TYPE, parseDataType(ctx.castType()));
-    node.put(CAST_IS_ARRAY, ctx.arrayCast() != null);
+    final SQLNode node = newNode(CAST);
+    node.put(ExprAttrs.CAST_EXPR, toExpr(ctx.expr()));
+    node.put(ExprAttrs.CAST_TYPE, parseDataType(ctx.castType()));
+    node.put(ExprAttrs.CAST_IS_ARRAY, ctx.arrayCast() != null);
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprConvert(MySQLParser.SimpleExprConvertContext ctx) {
-    final SQLNode node = newExpr(CAST);
-    node.put(CAST_EXPR, toExpr(ctx.expr()));
-    node.put(CAST_TYPE, parseDataType(ctx.castType()));
+    final SQLNode node = newNode(CAST);
+    node.put(ExprAttrs.CAST_EXPR, toExpr(ctx.expr()));
+    node.put(ExprAttrs.CAST_TYPE, parseDataType(ctx.castType()));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprCase(MySQLParser.SimpleExprCaseContext ctx) {
-    final SQLNode node = newExpr(CASE);
-    if (ctx.expr() != null) node.put(CASE_COND, toExpr(ctx.expr()));
-    if (ctx.elseExpression() != null) node.put(CASE_ELSE, toExpr(ctx.elseExpression().expr()));
+    final SQLNode node = newNode(CASE);
+    if (ctx.expr() != null) node.put(ExprAttrs.CASE_COND, toExpr(ctx.expr()));
+    if (ctx.elseExpression() != null)
+      node.put(ExprAttrs.CASE_ELSE, toExpr(ctx.elseExpression().expr()));
     if (ctx.whenExpression() != null) {
       final var whenExprs = ctx.whenExpression();
       final var thenExprs = ctx.thenExpression();
@@ -1300,13 +1313,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
         final var whenExpr = whenExprs.get(i);
         final var thenExpr = thenExprs.get(i);
 
-        final SQLNode when = newExpr(WHEN);
-        when.put(WHEN_COND, toExpr(whenExpr.expr()));
-        when.put(WHEN_EXPR, toExpr(thenExpr.expr()));
+        final SQLNode when = newNode(WHEN);
+        when.put(ExprAttrs.WHEN_COND, toExpr(whenExpr.expr()));
+        when.put(ExprAttrs.WHEN_EXPR, toExpr(thenExpr.expr()));
         whens.add(when);
       }
 
-      node.put(CASE_WHENS, whens);
+      node.put(ExprAttrs.CASE_WHENS, whens);
     }
 
     return node;
@@ -1314,31 +1327,31 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitSimpleExprConvertUsing(MySQLParser.SimpleExprConvertUsingContext ctx) {
-    final SQLNode node = newExpr(CONVERT_USING);
-    node.put(CONVERT_USING_EXPR, toExpr(ctx.expr()));
-    node.put(CONVERT_USING_CHARSET, visitCharsetName(ctx.charsetName()));
+    final SQLNode node = newNode(CONVERT_USING);
+    node.put(ExprAttrs.CONVERT_USING_EXPR, toExpr(ctx.expr()));
+    node.put(ExprAttrs.CONVERT_USING_CHARSET, visitCharsetName(ctx.charsetName()));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprDefault(MySQLParser.SimpleExprDefaultContext ctx) {
-    final SQLNode node = newExpr(DEFAULT);
-    node.put(DEFAULT_COL, visitSimpleIdentifier(ctx.simpleIdentifier()));
+    final SQLNode node = newNode(DEFAULT);
+    node.put(ExprAttrs.DEFAULT_COL, visitSimpleIdentifier(ctx.simpleIdentifier()));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprValues(MySQLParser.SimpleExprValuesContext ctx) {
-    final SQLNode node = newExpr(VALUES);
-    node.put(VALUES_EXPR, visitSimpleIdentifier(ctx.simpleIdentifier()));
+    final SQLNode node = newNode(VALUES);
+    node.put(ExprAttrs.VALUES_EXPR, visitSimpleIdentifier(ctx.simpleIdentifier()));
     return node;
   }
 
   @Override
   public SQLNode visitSimpleExprInterval(MySQLParser.SimpleExprIntervalContext ctx) {
-    final SQLNode interval = newExpr(INTERVAL);
-    interval.put(INTERVAL_EXPR, toExpr(ctx.expr(0)));
-    interval.put(INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
+    final SQLNode interval = newNode(INTERVAL);
+    interval.put(ExprAttrs.INTERVAL_EXPR, toExpr(ctx.expr(0)));
+    interval.put(ExprAttrs.INTERVAL_UNIT, parseIntervalUnit(ctx.interval()));
 
     return binary(interval, toExpr(ctx.expr(1)), BinaryOp.PLUS);
   }
@@ -1348,9 +1361,9 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     final SQLNode node = newNode(COLUMN_NAME);
     final String[] triple = stringifyIdentifier(ctx);
     assert triple != null;
-    node.put(COLUMN_NAME_SCHEMA, triple[0]);
-    node.put(COLUMN_NAME_TABLE, triple[1]);
-    node.put(COLUMN_NAME_COLUMN, triple[2]);
+    node.put(NodeAttrs.COLUMN_NAME_SCHEMA, triple[0]);
+    node.put(NodeAttrs.COLUMN_NAME_TABLE, triple[1]);
+    node.put(NodeAttrs.COLUMN_NAME_COLUMN, triple[2]);
     return node;
   }
 
@@ -1371,12 +1384,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
 
   @Override
   public SQLNode visitOrderExpression(MySQLParser.OrderExpressionContext ctx) {
-    final SQLNode node = new SQLNode(ORDER_ITEM);
+    final SQLNode node = newNode(ORDER_ITEM);
 
     final SQLNode expr = ctx.expr().accept(this);
     final KeyDirection direction = parseDirection(ctx.direction());
-    node.put(ORDER_ITEM_EXPR, expr);
-    node.put(ORDER_ITEM_DIRECTION, direction);
+    node.put(NodeAttrs.ORDER_ITEM_EXPR, expr);
+    node.put(NodeAttrs.ORDER_ITEM_DIRECTION, direction);
 
     return node;
   }
@@ -1385,15 +1398,11 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
     return listMap(this::visitOrderExpression, ctx.orderList().orderExpression());
   }
 
-  private List<SQLNode> toOrderItems(MySQLParser.OrderListContext ctx) {
-    return listMap(this::visitOrderExpression, ctx.orderExpression());
-  }
-
   private List<SQLNode> toGroupItems(MySQLParser.OrderListContext ctx) {
     return ctx.orderExpression().stream()
         .map(MySQLParser.OrderExpressionContext::expr)
         .map(it -> it.accept(this))
-        .map(SQLNode::groupItem)
+        .map(this::groupItem)
         .collect(Collectors.toList());
   }
 
@@ -1408,4 +1417,5 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> {
   private List<SQLNode> toExprs(MySQLParser.UdfExprListContext udfExprList) {
     return listMap(udfExpr -> toExpr(udfExpr.expr()), udfExprList.udfExpr());
   }
+
 }

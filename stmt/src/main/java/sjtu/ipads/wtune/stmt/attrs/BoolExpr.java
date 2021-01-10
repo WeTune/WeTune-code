@@ -1,9 +1,6 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeEquals;
-import static sjtu.ipads.wtune.stmt.utils.StmtHelper.nodeHash;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 public class BoolExpr {
   private boolean isPrimitive;
@@ -39,11 +36,11 @@ public class BoolExpr {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     BoolExpr boolExpr = (BoolExpr) o;
-    return nodeEquals(node, boolExpr.node);
+    return node == boolExpr.node;
   }
 
   @Override
   public int hashCode() {
-    return nodeHash(node);
+    return System.identityHashCode(node);
   }
 }

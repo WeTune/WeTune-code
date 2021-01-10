@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.statement.Statement;
+import sjtu.ipads.wtune.stmt.Statement;
 
 public class StmtGen implements ScriptNode {
   private final Statement stmt;

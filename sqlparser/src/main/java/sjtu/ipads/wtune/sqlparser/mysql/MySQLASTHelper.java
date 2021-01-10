@@ -3,13 +3,11 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.SQLExpr.IntervalUnit;
-import sjtu.ipads.wtune.sqlparser.SQLExpr.LiteralType;
-import sjtu.ipads.wtune.sqlparser.SQLNode;
-import sjtu.ipads.wtune.sqlparser.SQLTableSource;
+import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
+import sjtu.ipads.wtune.sqlparser.ast.*;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 
 import java.util.List;
 
@@ -17,19 +15,14 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.SQLDataType.*;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.Kind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.SQLExpr.newExpr;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.*;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.ASC;
-import static sjtu.ipads.wtune.sqlparser.SQLNode.KeyDirection.DESC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLDataType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
 
 public interface MySQLASTHelper {
-  static SQLNode newNode(Type type) {
-    return new SQLNode(MYSQL, type);
-  }
-
   static String stringifyText(MySQLParser.TextStringContext text) {
     if (text.textStringLiteral() != null) return stringifyText(text.textStringLiteral());
     else if (text.HEX_NUMBER() != null) return text.HEX_NUMBER().getText();
@@ -138,12 +131,13 @@ public interface MySQLASTHelper {
   }
 
   static SQLNode tableName(
-      MySQLParser.QualifiedIdentifierContext qualifiedId, MySQLParser.DotIdentifierContext dotId) {
-    final var node = new SQLNode(Type.TABLE_NAME);
+      SQLNodeFactory factory,
+      MySQLParser.QualifiedIdentifierContext qualifiedId,
+      MySQLParser.DotIdentifierContext dotId) {
     final String schema, table;
 
     if (qualifiedId != null) {
-      final var pair = stringifyIdentifier(qualifiedId);
+      final String[] pair = stringifyIdentifier(qualifiedId);
       schema = pair[0];
       table = pair[1];
 
@@ -156,8 +150,9 @@ public interface MySQLASTHelper {
       return null;
     }
 
-    node.put(SQLNode.TABLE_NAME_SCHEMA, schema);
-    node.put(SQLNode.TABLE_NAME_TABLE, table);
+    final SQLNode node = factory.newNode(TABLE_NAME);
+    node.put(NodeAttrs.TABLE_NAME_SCHEMA, schema);
+    node.put(NodeAttrs.TABLE_NAME_TABLE, table);
 
     return node;
   }
@@ -174,18 +169,18 @@ public interface MySQLASTHelper {
 
   static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs out) {
     if (attrs.NOT_SYMBOL() != null && attrs.nullLiteral() != null)
-      out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
-    if (attrs.checkConstraint() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.CHECK);
-    if (attrs.DEFAULT_SYMBOL() != null) out.flag(COLUMN_DEF_DEFAULT);
-    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(COLUMN_DEF_AUTOINCREMENT);
+      out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+    if (attrs.checkConstraint() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.CHECK);
+    if (attrs.DEFAULT_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_DEFAULT);
+    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT);
   }
 
   static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs out) {
-    if (attrs.notRule() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+    if (attrs.notRule() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
   }
 
   static IndexType parseIndexType(MySQLParser.IndexTypeContext indexType) {
@@ -467,40 +462,40 @@ public interface MySQLASTHelper {
     else return null;
   }
 
-  static SQLTableSource.JoinType parseJoinType(MySQLParser.InnerJoinTypeContext ctx) {
+  static JoinType parseJoinType(MySQLParser.InnerJoinTypeContext ctx) {
     if (ctx == null) return null;
-    else if (ctx.CROSS_SYMBOL() != null) return SQLTableSource.JoinType.CROSS_JOIN;
-    else if (ctx.INNER_SYMBOL() != null) return SQLTableSource.JoinType.INNER_JOIN;
-    else if (ctx.STRAIGHT_JOIN_SYMBOL() != null) return SQLTableSource.JoinType.STRAIGHT_JOIN;
-    else return SQLTableSource.JoinType.INNER_JOIN;
+    else if (ctx.CROSS_SYMBOL() != null) return JoinType.CROSS_JOIN;
+    else if (ctx.INNER_SYMBOL() != null) return JoinType.INNER_JOIN;
+    else if (ctx.STRAIGHT_JOIN_SYMBOL() != null) return JoinType.STRAIGHT_JOIN;
+    else return JoinType.INNER_JOIN;
   }
 
-  static SQLTableSource.JoinType parseJoinType(MySQLParser.OuterJoinTypeContext ctx) {
+  static JoinType parseJoinType(MySQLParser.OuterJoinTypeContext ctx) {
     if (ctx == null) return null;
-    else if (ctx.LEFT_SYMBOL() != null) return SQLTableSource.JoinType.LEFT_JOIN;
-    else if (ctx.RIGHT_SYMBOL() != null) return SQLTableSource.JoinType.RIGHT_JOIN;
+    else if (ctx.LEFT_SYMBOL() != null) return JoinType.LEFT_JOIN;
+    else if (ctx.RIGHT_SYMBOL() != null) return JoinType.RIGHT_JOIN;
     else return null;
   }
 
-  static SQLTableSource.JoinType parseJoinType(MySQLParser.NaturalJoinTypeContext ctx) {
+  static JoinType parseJoinType(MySQLParser.NaturalJoinTypeContext ctx) {
     if (ctx == null) return null;
-    else if (ctx.LEFT_SYMBOL() != null) return SQLTableSource.JoinType.NATURAL_LEFT_JOIN;
-    else if (ctx.RIGHT_SYMBOL() != null) return SQLTableSource.JoinType.NATURAL_RIGHT_JOIN;
-    else return SQLTableSource.JoinType.NATURAL_INNER_JOIN;
+    else if (ctx.LEFT_SYMBOL() != null) return JoinType.NATURAL_LEFT_JOIN;
+    else if (ctx.RIGHT_SYMBOL() != null) return JoinType.NATURAL_RIGHT_JOIN;
+    else return JoinType.NATURAL_INNER_JOIN;
   }
 
-  static SQLNode wrapAsQuery(SQLNode node) {
-    if (node.type() == Type.QUERY_SPEC || node.type() == Type.SET_OP) {
-      final SQLNode query = new SQLNode(Type.QUERY);
-      query.put(QUERY_BODY, node);
+  static SQLNode wrapAsQuery(SQLNodeFactory factory, SQLNode node) {
+    if (node.nodeType() == NodeType.QUERY_SPEC || node.nodeType() == NodeType.SET_OP) {
+      final SQLNode query = factory.newNode(NodeType.QUERY);
+      query.put(NodeAttrs.QUERY_BODY, node);
       return query;
     }
     return node;
   }
 
-  static SQLNode wrapAsQueryExpr(SQLNode node) {
-    assert node.type() == Type.QUERY;
-    final SQLNode exprNode = newExpr(QUERY_EXPR);
+  static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
+    assert node.nodeType() == NodeType.QUERY;
+    final SQLNode exprNode = factory.newNode(QUERY_EXPR);
     exprNode.put(QUERY_EXPR_QUERY, node);
     return exprNode;
   }
