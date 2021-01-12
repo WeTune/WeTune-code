@@ -2,13 +2,12 @@ package sjtu.ipads.wtune.symsolver.core;
 
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.symsolver.core.impl.PickSymImpl;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface PickSym extends Sym {
-  static PickSym from(Query owner, Object obj) {
-    return PickSymImpl.build(owner, obj);
+  static PickSym of(Scoped scoped) {
+    return PickSymImpl.build(scoped);
   }
 
   TableSym[] visibleSources();

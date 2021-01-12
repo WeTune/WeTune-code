@@ -1,9 +1,12 @@
 .gradle/
 .idea/
 build/
+legacy/
 */build/
 out/
 */out/
 *.un~
 *.swp
 stale_outputs_checked
+hs_err*
+*/hs_err*

@@ -11,16 +11,23 @@ public class SearcherImpl implements Searcher {
   private final SearchCtx ctx;
   private final IntList guards;
 
+  private final long timeout;
+
   private int numSearched;
   private int numNotSkipped;
 
-  private SearcherImpl(SearchCtx ctx) {
+  private SearcherImpl(SearchCtx ctx, long timeout) {
     this.ctx = ctx;
     this.guards = new IntList(64);
+    this.timeout = timeout;
   }
 
   public static Searcher build(SearchCtx ctx) {
-    return new SearcherImpl(ctx);
+    return new SearcherImpl(ctx, -1);
+  }
+
+  public static Searcher build(SearchCtx ctx, long timeout) {
+    return new SearcherImpl(ctx, timeout);
   }
 
   @Override
@@ -28,9 +35,12 @@ public class SearcherImpl implements Searcher {
     guards.clear();
     ctx.prepare(tree.choices());
 
+    final long start = System.currentTimeMillis();
     while (tree.forward()) {
+      if (timeout >= 0 && System.currentTimeMillis() - start > timeout) return;
+
       ++numSearched;
-      final int seed = tree.seed();
+      final long seed = tree.seed();
       if (canSkip(seed)) continue;
 
       ++numNotSkipped;
@@ -54,18 +64,18 @@ public class SearcherImpl implements Searcher {
     return numSearched - numNotSkipped;
   }
 
-  private boolean canSkip(int seed) {
+  private boolean canSkip(long seed) {
     for (int i = 0, bound = guards.length(); i < bound; i++)
       if ((guards.at(i) & seed) == seed) return true;
     return false;
   }
 
   private static class IntList {
-    private int[] data;
+    private long[] data;
     private int cursor;
 
     private IntList(int initSize) {
-      data = new int[initSize];
+      data = new long[initSize];
       cursor = 0;
     }
 
@@ -73,11 +83,11 @@ public class SearcherImpl implements Searcher {
       return cursor;
     }
 
-    private int at(int idx) {
+    private long at(int idx) {
       return data[idx];
     }
 
-    private void add(int i) {
+    private void add(long i) {
       if (cursor == data.length) data = Arrays.copyOf(data, data.length << 1);
       data[cursor++] = i;
     }

@@ -1,19 +1,24 @@
 package sjtu.ipads.wtune.symsolver.core;
 
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public interface Query {
-  String name();
-
-  void setName(String name);
-
   TableSym[] tables();
 
   PickSym[] picks();
 
-  Value output(SmtCtx ctx, Value[] tuples);
+  PredicateSym[] preds();
 
-  Proposition condition(SmtCtx ctx, Value[] tuples);
+  Value[] tuples();
+
+  Value[] output();
+
+  Proposition condition();
+
+  // for test
+  static Query buildFrom(QueryBuilder builder) {
+    return builder.build(LogicCtx.z3(), "x", 0, 0, 0);
+  }
 }

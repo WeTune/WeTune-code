@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.search.*;
 
 import java.util.ArrayList;
@@ -9,41 +10,33 @@ import java.util.Collection;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.symsolver.core.Constraint.*;
-import static sjtu.ipads.wtune.symsolver.utils.Indexed.number;
 
 public class SolverImpl implements Solver {
   private final TableSym[] tables;
   private final PickSym[] picks;
+  private final PredicateSym[] preds;
+  private final LogicCtx logicCtx;
   private final SearchCtx searchCtx;
 
-  private SolverImpl(Query q0, Query q1) {
-    this.tables = arrayConcat(q0.tables(), q1.tables());
-    this.picks = arrayConcat(q0.picks(), q1.picks());
+  private SolverImpl(QueryBuilder b0, QueryBuilder b1, long timeout) {
+    logicCtx = LogicCtx.z3();
 
-    final SmtCtx smtCtx = SmtCtx.z3();
+    final Query q0 = b0.build(logicCtx, "a", 0, 0, 0);
+    final Query q1 = b1.build(logicCtx, "b", b0.numTables(), b0.numPicks(), b0.numPreds());
 
-    bindFuncs(tables, smtCtx);
-    bindFuncs(picks, smtCtx);
+    tables = arrayConcat(q0.tables(), q1.tables());
+    picks = arrayConcat(q0.picks(), q1.picks());
+    preds = arrayConcat(q0.preds(), q1.preds());
 
-    this.searchCtx = SearchCtx.make(tables, picks, smtCtx, q0, q1);
+    searchCtx = SearchCtx.make(tables, picks, preds, logicCtx, q0, q1, timeout);
   }
 
-  public static Solver build(Query q0, Query q1) {
-    q0.setName("x");
-    q1.setName("y");
-
-    number(q0.tables(), 0);
-    number(q1.tables(), q0.tables().length);
-
-    number(q0.picks(), 0);
-    number(q1.picks(), q0.picks().length);
-
-    return new SolverImpl(q0, q1);
+  public static Solver build(QueryBuilder q0, QueryBuilder q1) {
+    return new SolverImpl(q0, q1, -1);
   }
 
-  private static void bindFuncs(Sym[] syms, SmtCtx ctx) {
-    for (Sym sym : syms) sym.setFunc(ctx.makeFunc(sym));
+  public static Solver build(QueryBuilder q0, QueryBuilder q1, long timeout) {
+    return new SolverImpl(q0, q1, timeout);
   }
 
   @Override
@@ -54,6 +47,11 @@ public class SolverImpl implements Solver {
   @Override
   public PickSym[] picks() {
     return picks;
+  }
+
+  @Override
+  public PredicateSym[] predicates() {
+    return preds;
   }
 
   @Override
@@ -68,7 +66,7 @@ public class SolverImpl implements Solver {
 
   @Override
   public Collection<Summary> solve() {
-    return solve(makeDecisionTree(tables, picks));
+    return solve(makeDecisionTree(tables, picks, preds));
   }
 
   @Override
@@ -84,17 +82,26 @@ public class SolverImpl implements Solver {
     else return searchCtx.prove();
   }
 
-  private static DecisionTree makeDecisionTree(TableSym[] tables, PickSym[] picks) {
-    final List<Constraint> choices = new ArrayList<>(32);
+  @Override
+  public void close() {
+    logicCtx.close();
+  }
+
+  private static DecisionTree makeDecisionTree(
+      TableSym[] tables, PickSym[] picks, PredicateSym[] preds) {
+    final List<DecidableConstraint> choices = new ArrayList<>(32);
 
     for (int i = 0, bound = tables.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++) choices.add(tableEq(tables[i], tables[j]));
+      for (int j = i + 1; j < bound; j++) choices.add(DecidableConstraint.tableEq(tables[i], tables[j]));
 
     for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++) choices.add(pickEq(picks[i], picks[j]));
+      for (int j = i + 1; j < bound; j++) choices.add(DecidableConstraint.pickEq(picks[i], picks[j]));
+
+    for (int i = 0, bound = preds.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) choices.add(DecidableConstraint.predicateEq(preds[i], preds[j]));
 
     for (PickSym pick : picks) {
-      choices.addAll(listMap(src -> pickFrom(pick, src), pick.viableSources()));
+      choices.addAll(listMap(src -> DecidableConstraint.pickFrom(pick, src), pick.viableSources()));
 
       final PickSym joined = pick.joined();
       if (joined == null) continue;
@@ -104,7 +111,7 @@ public class SolverImpl implements Solver {
 
       final TableSym joinedSrc = joined.viableSources()[0][0];
       choices.addAll(
-          listMap(src -> reference(src[0], pick, joinedSrc, joined), pick.viableSources()));
+          listMap(src -> DecidableConstraint.reference(src[0], pick, joinedSrc, joined), pick.viableSources()));
     }
 
     return DecisionTree.from(choices);

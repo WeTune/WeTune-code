@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.search.Decision;
-import sjtu.ipads.wtune.symsolver.search.Prover;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 import sjtu.ipads.wtune.symsolver.logic.SmtSolver;
 import sjtu.ipads.wtune.symsolver.logic.Value;
+import sjtu.ipads.wtune.symsolver.search.Decision;
+import sjtu.ipads.wtune.symsolver.search.Prover;
 
 import java.util.*;
 import java.util.function.IntFunction;
@@ -18,48 +19,58 @@ import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
 
 public abstract class BaseProver implements Prover {
-  protected final SmtCtx ctx;
+  protected final LogicCtx ctx;
   protected final SmtSolver smtSolver;
   protected final Proposition[] targetProperties;
   protected final Map<Decision, Collection<Proposition>> assertions;
 
   protected Decision[] decisions;
 
-  protected BaseProver(SmtCtx ctx, Query q0, Query q1) {
+  protected BaseProver(LogicCtx ctx, Query q0, Query q1) {
     this.ctx = ctx;
     this.smtSolver = ctx.makeSolver();
     this.targetProperties = makeNonEqProperties(ctx, q0, q1);
     this.assertions = new HashMap<>();
   }
 
-  private static Proposition[] makeNonEqProperties(SmtCtx ctx, Query q0, Query q1) {
+  private static Proposition[] makeNonEqProperties(LogicCtx ctx, Query q0, Query q1) {
+    final Value[] output0 = q0.output(), output1 = q1.output();
+    if (output0.length != output1.length || output0.length == 0)
+      return new Proposition[] {ctx.makeTautology()};
+
+    Proposition outputEq = null;
+    for (int i = 0, bound = output0.length; i < bound; i++)
+      outputEq = output0[i].equalsTo(output1[i]).and(outputEq);
+
     final TableSym[] tables0 = q0.tables(), tables1 = q1.tables();
-    final Value[] tuples0 = ctx.makeTuples(tables0.length, "a");
-    final Value[] tuples1 = ctx.makeTuples(tables1.length, "b");
+    final Value[] tuples0 = q0.tuples(), tuples1 = q1.tuples();
 
-    final Proposition cond0 = ctx.tuplesFrom(tuples0, tables0).and(q0.condition(ctx, tuples0));
-    final Proposition cond1 = ctx.tuplesFrom(tuples1, tables1).and(q1.condition(ctx, tuples1));
-
-    final Value output0 = q0.output(ctx, tuples0), output1 = q1.output(ctx, tuples1);
+    final Proposition cond0 = ctx.tuplesFrom(tuples0, tables0).and(q0.condition());
+    final Proposition cond1 = ctx.tuplesFrom(tuples1, tables1).and(q1.condition());
 
     final Proposition[] properties = new Proposition[2];
     properties[0] = cond0;
-    properties[1] = ctx.makeForAll(tuples1, cond1.implies(output0.equalsTo(output1).not()));
+    properties[1] = ctx.makeForAll(tuples1, cond1.implies(outputEq.not()));
     return properties;
   }
 
   @Override
-  public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
+  public void tableEq(DecidableConstraint constraint, TableSym tx, TableSym ty) {
     addAssertion(constraint, tx.func().equalsTo(ty.func()));
   }
 
   @Override
-  public void pickEq(Constraint constraint, PickSym px, PickSym py) {
+  public void pickEq(DecidableConstraint constraint, PickSym px, PickSym py) {
     addAssertion(constraint, px.func().equalsTo(py.func()));
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, TableSym... mask) {
+  public void predicateEq(DecidableConstraint constraint, PredicateSym px, PredicateSym py) {
+    addAssertion(constraint, px.func().equalsTo(py.func()));
+  }
+
+  @Override
+  public void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... mask) {
     final TableSym[] vs = p.visibleSources();
 
     final Value[] tuples = ctx.makeTuples((vs.length << 1) - mask.length, "x");
@@ -72,7 +83,7 @@ public abstract class BaseProver implements Prover {
   }
 
   @Override
-  public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     pickFrom(constraint, px, tx);
     pickFrom(constraint, py, ty);
 
@@ -103,7 +114,7 @@ public abstract class BaseProver implements Prover {
     this.decisions = decisions;
   }
 
-  protected void addAssertion(Constraint constraint, Proposition assertion) {
+  protected void addAssertion(DecidableConstraint constraint, Proposition assertion) {
     assertions.computeIfAbsent(constraint, dumb(ArrayList::new)).add(assertion);
   }
 

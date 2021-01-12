@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Query;
+import sjtu.ipads.wtune.symsolver.core.Scoped;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
 public class PickSymImpl extends BaseSym implements PickSym {
@@ -9,12 +9,12 @@ public class PickSymImpl extends BaseSym implements PickSym {
   private TableSym[][] viableSources;
   private PickSym joined;
 
-  private PickSymImpl(Query owner, Object wrapped) {
-    super(owner, wrapped);
+  private PickSymImpl(Scoped scoped) {
+    super(scoped);
   }
 
-  public static PickSym build(Query owner, Object wrapped) {
-    return new PickSymImpl(owner, wrapped);
+  public static PickSym build(Scoped scoped) {
+    return new PickSymImpl(scoped);
   }
 
   @Override
@@ -49,6 +49,6 @@ public class PickSymImpl extends BaseSym implements PickSym {
 
   @Override
   public String toString() {
-    return "p" + index();
+    return "c" + index();
   }
 }

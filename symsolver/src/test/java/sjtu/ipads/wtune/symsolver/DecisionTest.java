@@ -1,12 +1,8 @@
 package sjtu.ipads.wtune.symsolver;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Solver;
-import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.core.impl.BaseQuery;
+import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
@@ -16,12 +12,27 @@ import java.util.Set;
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.symsolver.core.Constraint.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.asArray;
 
 public class DecisionTest {
-  private static class Query0 extends BaseQuery {
-    private Query0() {
-      super(2, 3);
+  private static class Query0 extends BaseQueryBuilder {
+    @Override
+    public int numTables() {
+      return 2;
+    }
+
+    @Override
+    public int numPicks() {
+      return 3;
+    }
+
+    @Override
+    public int numPreds() {
+      return 0;
+    }
+
+    @Override
+    protected void prepare() {
       for (PickSym pick : picks) pick.setVisibleSources(tables);
       picks[0].setViableSources(powerSet(Set.of(tables)));
       picks[1].setViableSources(singleton(singleton(tables[0])));
@@ -30,31 +41,46 @@ public class DecisionTest {
     }
 
     @Override
-    public Value output(SmtCtx ctx, Value[] tuples) {
-      return picks[0].apply(tuples);
+    public Value[] output() {
+      return asArray(picks[0].apply(tuples));
     }
 
     @Override
-    public Proposition condition(SmtCtx ctx, Value[] tuples) {
+    public Proposition condition() {
       return picks[1].apply(tuples).equalsTo(picks[2].apply(tuples));
     }
   }
 
-  private static class Query1 extends BaseQuery {
-    private Query1() {
-      super(1, 1);
+  private static class Query1 extends BaseQueryBuilder {
+    @Override
+    public int numTables() {
+      return 1;
+    }
+
+    @Override
+    public int numPicks() {
+      return 1;
+    }
+
+    @Override
+    public int numPreds() {
+      return 0;
+    }
+
+    @Override
+    protected void prepare() {
       picks[0].setVisibleSources(tables);
       picks[0].setViableSources(singleton(singleton(tables[0])));
     }
 
     @Override
-    public Value output(SmtCtx ctx, Value[] tuples) {
-      return picks[0].apply(tuples);
+    public Value[] output() {
+      return asArray(picks[0].apply(tuples));
     }
 
     @Override
-    public Proposition condition(SmtCtx ctx, Value[] tuples) {
-      return ctx.makeTautology();
+    public Proposition condition() {
+      return ctx().makeTautology();
     }
   }
 
@@ -67,11 +93,11 @@ public class DecisionTest {
     final TableSym[] tables = solver.tables();
     final PickSym[] picks = solver.picks();
 
-    final Decision[] decision = {
-      tableEq(tables[0], tables[1]),
-      tableEq(tables[0], tables[2]),
-      pickEq(picks[0], picks[1]),
-      pickFrom(picks[0], tables[0], tables[1])
+    final DecidableConstraint[] decision = {
+      DecidableConstraint.tableEq(tables[0], tables[1]),
+      DecidableConstraint.tableEq(tables[0], tables[2]),
+      DecidableConstraint.pickEq(picks[0], picks[1]),
+      DecidableConstraint.pickFrom(picks[0], tables[0], tables[1])
     };
 
     final DecisionTree tree = DecisionTree.from(decision);
@@ -87,5 +113,7 @@ public class DecisionTest {
 
     final boolean isSuccessful = tree.forward();
     assertFalse(isSuccessful);
+
+    solver.close();
   }
 }

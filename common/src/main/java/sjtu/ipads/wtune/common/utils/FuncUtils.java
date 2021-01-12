@@ -48,6 +48,15 @@ public interface FuncUtils {
     return arr;
   }
 
+  @SuppressWarnings("unchecked")
+  static <T> T[] subArray(T[] arr, int start) {
+    if (start < 0 || start > arr.length) throw new IndexOutOfBoundsException();
+    final T[] subArr =
+        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length - start);
+    System.arraycopy(arr, start, subArr, 0, subArr.length);
+    return subArr;
+  }
+
   static boolean isSubSequence(Object[] container, Object[] contained) {
     if (contained.length > container.length) return false;
     if (contained.length == 0) return true;
@@ -107,6 +116,13 @@ public interface FuncUtils {
   static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, T... ts) {
     final R[] rs = makeArray(retType, ts.length);
     for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
+    return rs;
+  }
+
+  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, Collection<T> ts) {
+    final R[] rs = makeArray(retType, ts.size());
+    int i = 0;
+    for (T t : ts) rs[i++] = func.apply(t);
     return rs;
   }
 

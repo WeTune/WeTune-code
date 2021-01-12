@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.*;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.search.*;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 
 import java.util.*;
 
@@ -17,10 +18,17 @@ public class SearchCtxImpl implements SearchCtx {
 
   private final Statistics stat;
 
-  private SearchCtxImpl(TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Query q0, Query q1) {
-    prover = Prover.combine(Prover.incremental(smtCtx, q0, q1), Prover.incremental(smtCtx, q1, q0));
-    tracer = Tracer.bindTo(tables, picks);
-    searcher = Searcher.bindTo(this);
+  private SearchCtxImpl(
+      TableSym[] tables,
+      PickSym[] picks,
+      PredicateSym[] preds,
+      LogicCtx ctx,
+      Query q0,
+      Query q1,
+      long timeout) {
+    prover = Prover.combine(Prover.incremental(ctx, q0, q1), Prover.incremental(ctx, q1, q0));
+    tracer = Tracer.bindTo(tables, picks, preds);
+    searcher = Searcher.bindTo(this, timeout);
 
     knownResults = new HashMap<>();
     survivors = new LinkedList<>();
@@ -28,30 +36,47 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   public static SearchCtx build(
-      TableSym[] tables, PickSym[] picks, SmtCtx smtCtx, Query q0, Query q1) {
-    return new SearchCtxImpl(tables, picks, smtCtx, q0, q1);
+      TableSym[] tables, PickSym[] picks, PredicateSym[] preds, LogicCtx ctx, Query q0, Query q1) {
+    return new SearchCtxImpl(tables, picks, preds, ctx, q0, q1, -1);
+  }
+
+  public static SearchCtx build(
+      TableSym[] tables,
+      PickSym[] picks,
+      PredicateSym[] preds,
+      LogicCtx ctx,
+      Query q0,
+      Query q1,
+      long timeout) {
+    return new SearchCtxImpl(tables, picks, preds, ctx, q0, q1, timeout);
   }
 
   @Override
-  public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
+  public void tableEq(DecidableConstraint constraint, TableSym tx, TableSym ty) {
     tracer.tableEq(constraint, tx, ty);
     prover.tableEq(constraint, tx, ty);
   }
 
   @Override
-  public void pickEq(Constraint constraint, PickSym px, PickSym py) {
+  public void pickEq(DecidableConstraint constraint, PickSym px, PickSym py) {
     tracer.pickEq(constraint, px, py);
     prover.pickEq(constraint, px, py);
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+  public void predicateEq(DecidableConstraint constraint, PredicateSym px, PredicateSym py) {
+    tracer.predicateEq(constraint, px, py);
+    prover.predicateEq(constraint, px, py);
+  }
+
+  @Override
+  public void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... src) {
     tracer.pickFrom(constraint, p, src);
     prover.pickFrom(constraint, p, src);
   }
 
   @Override
-  public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     tracer.reference(constraint, tx, px, ty, py);
     prover.reference(constraint, tx, px, ty, py);
   }
@@ -73,11 +98,12 @@ public class SearchCtxImpl implements SearchCtx {
     searcher.search(tree);
     final long t1 = System.currentTimeMillis();
 
+    stat.numFastRejection = tracer.numFastRejection();
     stat.numSearched = searcher.numSearched();
     stat.numSkipped = searcher.numSkipped();
     stat.timeTotal += t1 - t0;
 
-    System.out.println(stat);
+    //    System.out.println(stat);
     return survivors;
   }
 
@@ -155,10 +181,16 @@ public class SearchCtxImpl implements SearchCtx {
     }
   }
 
+  @Override
+  public int numFastRejection() {
+    return tracer.numFastRejection();
+  }
+
   private static class Statistics {
     private int numSearched = 0;
     private int numSkipped = 0;
     private int numConflict = 0;
+    private int numFastRejection = 0;
     private int numIncomplete = 0;
     private int numProveCall = 0;
     private int numCacheHit = 0;
@@ -181,6 +213,8 @@ public class SearchCtxImpl implements SearchCtx {
           + numSkipped
           + "\n#Conflict="
           + numConflict
+          + "\n#FastRej="
+          + numFastRejection
           + "\n#Incomplete="
           + numIncomplete
           + "\n#ProveCall="

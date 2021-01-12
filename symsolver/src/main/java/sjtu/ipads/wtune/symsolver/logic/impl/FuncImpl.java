@@ -2,20 +2,20 @@ package sjtu.ipads.wtune.symsolver.logic.impl;
 
 import sjtu.ipads.wtune.symsolver.logic.Func;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public class FuncImpl extends ValueImpl implements Func {
   private final String name;
   private final int arity;
 
-  private FuncImpl(SmtCtx ctx, String name, int arity, Object underlying) {
+  private FuncImpl(LogicCtx ctx, String name, int arity, Object underlying) {
     super(ctx, underlying);
     this.arity = arity;
     this.name = name;
   }
 
-  public static Func build(SmtCtx ctx, String name, int arity, Object underlying) {
+  public static Func build(LogicCtx ctx, String name, int arity, Object underlying) {
     return new FuncImpl(ctx, name, arity, underlying);
   }
 

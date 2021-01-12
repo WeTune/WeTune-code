@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.Result;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,12 +14,12 @@ import java.util.Map;
 public class IncrementalProver extends BaseProver {
   private final Map<Decision, Proposition> trackers;
 
-  public IncrementalProver(SmtCtx ctx, Query q0, Query q1) {
+  public IncrementalProver(LogicCtx ctx, Query q0, Query q1) {
     super(ctx, q0, q1);
     this.trackers = new HashMap<>();
   }
 
-  public static Prover build(SmtCtx ctx, Query q0, Query q1) {
+  public static Prover build(LogicCtx ctx, Query q0, Query q1) {
     return new IncrementalProver(ctx, q0, q1);
   }
 
@@ -32,7 +32,7 @@ public class IncrementalProver extends BaseProver {
   }
 
   @Override
-  protected void addAssertion(Constraint constraint, Proposition assertion) {
+  protected void addAssertion(DecidableConstraint constraint, Proposition assertion) {
     super.addAssertion(constraint, assertion);
     trackers.computeIfAbsent(constraint, k -> ctx.makeTracker(k.toString()));
   }

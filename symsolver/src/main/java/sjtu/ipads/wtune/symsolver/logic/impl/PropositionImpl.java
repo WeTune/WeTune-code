@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.symsolver.logic.impl;
 
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 import static java.util.Objects.requireNonNull;
 
 public class PropositionImpl extends ValueImpl implements Proposition {
-  private PropositionImpl(SmtCtx ctx, Object underlying) {
+  private PropositionImpl(LogicCtx ctx, Object underlying) {
     super(ctx, underlying);
   }
 
-  public static Proposition build(SmtCtx ctx, Object underlying) {
+  public static Proposition build(LogicCtx ctx, Object underlying) {
     requireNonNull(ctx);
     requireNonNull(underlying);
 
@@ -32,6 +32,12 @@ public class PropositionImpl extends ValueImpl implements Proposition {
   public Proposition and(Proposition other) {
     if (other == null) return this;
     return ctx.makeAnd(this, other);
+  }
+
+  @Override
+  public Proposition or(Proposition other) {
+    if (other == null) return ctx.makeTautology();
+    return ctx.makeOr(this, other);
   }
 
   @Override

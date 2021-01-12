@@ -1,9 +1,7 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.search.Summary;
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
+import sjtu.ipads.wtune.symsolver.core.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,19 +13,27 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
 final class SummaryImpl implements Summary {
   private final TableSym[] tables;
   private final PickSym[] picks;
-  private final Constraint[] constraints;
+  private final PredicateSym[] preds;
+  private final DecidableConstraint[] constraints;
 
   private final TracerImpl tracer;
   private final int expectedModCount;
 
   Collection<Collection<TableSym>> tableGroups;
   Collection<Collection<PickSym>> pickGroups;
+  Collection<Collection<PredicateSym>> predGroups;
   TableSym[][] pivotedSources;
   Map<PickSym, PickSym> references;
 
-  SummaryImpl(TableSym[] tables, PickSym[] picks, Constraint[] constraints, TracerImpl tracer) {
+  SummaryImpl(
+      TableSym[] tables,
+      PickSym[] picks,
+      PredicateSym[] preds,
+      DecidableConstraint[] constraints,
+      TracerImpl tracer) {
     this.tables = tables;
     this.picks = picks;
+    this.preds = preds;
     this.constraints = sorted(constraints, Constraint::compareTo);
     this.tracer = tracer;
     this.expectedModCount = tracer.modCount();
@@ -48,6 +54,11 @@ final class SummaryImpl implements Summary {
   public Collection<Collection<PickSym>> pickGroups() {
     inflate();
     return pickGroups;
+  }
+
+  @Override
+  public Collection<Collection<PredicateSym>> predicateGroups() {
+    return predGroups;
   }
 
   @Override
@@ -73,7 +84,7 @@ final class SummaryImpl implements Summary {
     final TracerImpl helper;
     if (tracer.modCount() == expectedModCount) helper = tracer;
     else {
-      helper = (TracerImpl) TracerImpl.build(tables, picks);
+      helper = (TracerImpl) TracerImpl.build(tables, picks, preds);
       helper.decide(constraints);
     }
 
@@ -99,6 +110,8 @@ final class SummaryImpl implements Summary {
         + tableGroups()
         + " picks: "
         + pickGroups()
+        + " predicates: "
+        + predicateGroups()
         + " srcs: "
         + Arrays.deepToString(pivotedSources())
         + " refs: "

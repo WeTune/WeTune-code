@@ -1,26 +1,26 @@
 package sjtu.ipads.wtune.symsolver.logic.impl;
 
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 import java.util.Objects;
 
 public class ValueImpl implements Value {
-  protected final SmtCtx ctx;
+  protected final LogicCtx ctx;
   private final Object underlying;
 
-  protected ValueImpl(SmtCtx ctx, Object underlying) {
+  protected ValueImpl(LogicCtx ctx, Object underlying) {
     this.ctx = ctx;
     this.underlying = underlying;
   }
 
-  public static Value build(SmtCtx ctx, Object underlying) {
+  public static Value build(LogicCtx ctx, Object underlying) {
     return new ValueImpl(ctx, underlying);
   }
 
   @Override
-  public SmtCtx ctx() {
+  public LogicCtx ctx() {
     return ctx;
   }
 

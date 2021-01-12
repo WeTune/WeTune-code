@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.symsolver.utils;
 
+import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.utils.impl.BoundedDisjointSet;
 
 public interface DisjointSet<T> {

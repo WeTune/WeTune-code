@@ -1,15 +1,12 @@
 package sjtu.ipads.wtune.superopt.rules.validation;
 
-import sjtu.ipads.wtune.superopt.operators.Operator;
-import sjtu.ipads.wtune.superopt.operators.Join;
-import sjtu.ipads.wtune.superopt.operators.PlainFilter;
-import sjtu.ipads.wtune.superopt.operators.SubqueryFilter;
-import sjtu.ipads.wtune.superopt.rules.BaseVisitorMatchingRule;
+import sjtu.ipads.wtune.superopt.operator.*;
+import sjtu.ipads.wtune.superopt.rules.BaseMatchingRule;
 
-public class MalformedJoin extends BaseVisitorMatchingRule {
+public class MalformedJoin extends BaseMatchingRule {
   @Override
-  public boolean enterJoin(Join op) {
-    final Operator[] in = op.prev();
+  public boolean enterInnerJoin(InnerJoin op) {
+    final Operator[] in = op.predecessors();
     if (isInvalidInput(in[0]) || isInvalidInput(in[1])) {
       matched = true;
       return false;

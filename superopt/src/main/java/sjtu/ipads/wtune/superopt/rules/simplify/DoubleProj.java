@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.rules.simplify;
 
-import sjtu.ipads.wtune.superopt.operators.Proj;
-import sjtu.ipads.wtune.superopt.rules.BaseVisitorMatchingRule;
+import sjtu.ipads.wtune.superopt.operator.Proj;
+import sjtu.ipads.wtune.superopt.rules.BaseMatchingRule;
 
-public class DoubleProj extends BaseVisitorMatchingRule {
+public class DoubleProj extends BaseMatchingRule {
   @Override
   public boolean enterProj(Proj op) {
-    if (op.next() instanceof Proj) {
+    if (op.predecessors()[0] instanceof Proj) {
       matched = true;
       return false;
     }

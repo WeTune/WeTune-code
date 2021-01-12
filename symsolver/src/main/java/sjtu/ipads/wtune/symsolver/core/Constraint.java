@@ -1,36 +1,41 @@
 package sjtu.ipads.wtune.symsolver.core;
 
-import sjtu.ipads.wtune.symsolver.core.impl.PickEqImpl;
-import sjtu.ipads.wtune.symsolver.core.impl.PickFromImpl;
-import sjtu.ipads.wtune.symsolver.core.impl.ReferenceImpl;
-import sjtu.ipads.wtune.symsolver.core.impl.TableEqImpl;
-import sjtu.ipads.wtune.symsolver.search.Decision;
+import sjtu.ipads.wtune.symsolver.core.impl.*;
 
-public interface Constraint extends Decision, Comparable<Constraint> {
-  static Constraint tableEq(TableSym tx, TableSym ty) {
-    return TableEqImpl.build(tx, ty);
-  }
-
-  static Constraint pickEq(PickSym px, PickSym py) {
-    return PickEqImpl.build(px, py);
-  }
-
-  static Constraint pickFrom(PickSym p, TableSym... ts) {
-    return PickFromImpl.build(p, ts);
-  }
-
-  static Constraint reference(TableSym tx, PickSym px, TableSym ty, PickSym py) {
-    return ReferenceImpl.build(tx, px, ty, py);
-  }
-
+public interface Constraint extends Comparable<Constraint> {
   Kind kind();
 
-  Sym[] targets();
+  Indexed[] targets();
+
+  default <T extends Indexed> Constraint unwrap(Class<T> cls) {
+    return this;
+  }
 
   enum Kind {
     TableEq,
     PickEq,
+    PredicateEq,
     PickFrom,
     Reference
+  }
+
+  static Constraint tableEq(Indexed tx, Indexed ty) {
+    return BaseTableEq.build(tx, ty);
+  }
+
+  static Constraint pickEq(Indexed px, Indexed py) {
+    return BasePickEq.build(px, py);
+  }
+
+  static Constraint predicateEq(Indexed px, Indexed py) {
+    return BasePredicateEq.build(px, py);
+  }
+
+  static Constraint pickFrom(Indexed p, Indexed... ts) {
+    return BasePickFrom.build(p, ts);
+  }
+
+  static Constraint reference(Indexed tx, Indexed px, Indexed ty, Indexed py) {
+    return BaseReference.build(tx, px, ty, py);
   }
 }

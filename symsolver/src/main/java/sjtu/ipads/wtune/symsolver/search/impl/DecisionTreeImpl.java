@@ -1,34 +1,37 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
+import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
 
 public class DecisionTreeImpl implements DecisionTree {
-  private final Decision[] choices;
+  private final DecidableConstraint[] choices;
 
-  private int seed;
-  private Decision[] decisions;
+  private long seed;
+  private DecidableConstraint[] decisions;
 
-  private DecisionTreeImpl(Decision[] choices) {
-    this.choices = arrayFilter(not(Decision::ignorable), choices);
-    this.seed = 1 << this.choices.length;
+  private DecisionTreeImpl(DecidableConstraint[] choices) {
+    this.choices = arrayFilter(not(Decision::ignorable), sorted(choices, Constraint::compareTo));
+    this.seed = 1L << this.choices.length;
   }
 
-  public static DecisionTree build(Decision[] choices) {
+  public static DecisionTree build(DecidableConstraint[] choices) {
     requireNonNull(choices);
     return new DecisionTreeImpl(choices);
   }
 
-  private static Decision[] toDecision(Decision[] choices, int seed) {
-    final Decision[] decisions = new Decision[Integer.bitCount(seed)];
+  private static DecidableConstraint[] toDecision(DecidableConstraint[] choices, long seed) {
+    final DecidableConstraint[] decisions = new DecidableConstraint[Long.bitCount(seed)];
 
     final int wall = choices.length - 1;
     for (int i = 0, j = 0, bound = choices.length; i < bound; i++)
-      if ((seed & (1 << (wall - i))) != 0) decisions[j++] = choices[i];
+      if ((seed & (1L << (wall - i))) != 0) decisions[j++] = choices[i];
 
     return decisions;
   }
@@ -43,12 +46,12 @@ public class DecisionTreeImpl implements DecisionTree {
   }
 
   @Override
-  public int seed() {
+  public long seed() {
     return seed;
   }
 
   @Override
-  public Decision[] decisions() {
+  public DecidableConstraint[] decisions() {
     return decisions != null ? decisions : (decisions = toDecision(choices, seed));
   }
 

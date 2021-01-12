@@ -1,18 +1,16 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Query;
+import sjtu.ipads.wtune.symsolver.core.Scoped;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.logic.Func;
 
 public abstract class BaseSym implements Sym {
-  private final Query owner;
-  private final Object wrapped;
+  private final Scoped scoped;
   private int index;
   private Func func;
 
-  protected BaseSym(Query owner, Object wrapped) {
-    this.owner = owner;
-    this.wrapped = wrapped;
+  protected BaseSym(Scoped scoped) {
+    this.scoped = scoped;
     this.index = -1;
   }
 
@@ -39,11 +37,11 @@ public abstract class BaseSym implements Sym {
 
   @Override
   public Object scope() {
-    return owner;
+    return scoped.scope();
   }
 
   @Override
   public <T> T unwrap(Class<T> cls) {
-    return (T) wrapped;
+    return (T) scoped;
   }
 }

@@ -4,14 +4,14 @@ import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
-import sjtu.ipads.wtune.symsolver.logic.SmtCtx;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 
 public class OneShotProver extends BaseProver {
-  private OneShotProver(SmtCtx ctx, Query q0, Query q1) {
+  private OneShotProver(LogicCtx ctx, Query q0, Query q1) {
     super(ctx, q0, q1);
   }
 
-  public static Prover build(SmtCtx ctx, Query q0, Query q1) {
+  public static Prover build(LogicCtx ctx, Query q0, Query q1) {
     return new OneShotProver(ctx, q0, q1);
   }
 

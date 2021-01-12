@@ -2,12 +2,9 @@ package sjtu.ipads.wtune.symsolver.core;
 
 import sjtu.ipads.wtune.symsolver.logic.Func;
 import sjtu.ipads.wtune.symsolver.logic.Value;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
 
-public interface Sym extends Indexed {
+public interface Sym extends Indexed, Scoped {
   <T> T unwrap(Class<T> cls);
-
-  Object scope();
 
   Func func();
 

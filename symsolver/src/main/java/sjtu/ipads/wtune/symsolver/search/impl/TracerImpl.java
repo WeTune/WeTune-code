@@ -1,33 +1,35 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
+import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
-import sjtu.ipads.wtune.symsolver.search.Summary;
 import sjtu.ipads.wtune.symsolver.search.Tracer;
 import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
-import sjtu.ipads.wtune.symsolver.utils.Indexed;
+import sjtu.ipads.wtune.symsolver.core.Indexed;
 
 import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.symsolver.utils.Indexed.isCanonicalIndexed;
+import static sjtu.ipads.wtune.symsolver.core.Indexed.isCanonicalIndexed;
 
 public class TracerImpl implements Tracer {
   private final TableSym[] tables;
   private final PickSym[] picks;
+  private final PredicateSym[] preds;
 
-  private final List<Constraint> constraints;
+  private final List<DecidableConstraint> constraints;
 
   private final DisjointSet<TableSym> eqTables;
   private final DisjointSet<PickSym> eqPicks;
+  private final DisjointSet<PredicateSym> eqPreds;
   private final Map<PickSym, PickSym> refs;
   private final TableSym[][] srcs;
 
   private final boolean useFastTableIndex;
   private final boolean useFastPickIndex;
+
+  private int fastRejection;
 
   private int modCount;
   private boolean srcInferred; // indicate if `inferSrc` has been called since last `reset`
@@ -35,16 +37,20 @@ public class TracerImpl implements Tracer {
   private boolean isIncomplete;
   private Summary summary;
 
-  private TracerImpl(TableSym[] tables, PickSym[] picks) {
+  private TracerImpl(TableSym[] tables, PickSym[] picks, PredicateSym[] preds) {
     tables = Arrays.copyOf(tables, tables.length);
     picks = Arrays.copyOf(picks, picks.length);
 
     this.tables = tables;
     this.picks = picks;
+    this.preds = preds;
 
     constraints = new ArrayList<>();
+
     eqTables = DisjointSet.fromBoundedMembers(tables);
     eqPicks = DisjointSet.fromBoundedMembers(picks);
+    eqPreds = DisjointSet.fromBoundedMembers(preds);
+
     refs = new HashMap<>();
     srcs = new TableSym[picks.length][];
 
@@ -52,25 +58,31 @@ public class TracerImpl implements Tracer {
     useFastPickIndex = isCanonicalIndexed(picks);
   }
 
-  public static Tracer build(TableSym[] tables, PickSym[] picks) {
-    if (tables == null || picks == null) throw new IllegalArgumentException();
-    return new TracerImpl(tables, picks);
+  public static Tracer build(TableSym[] tables, PickSym[] picks, PredicateSym[] preds) {
+    if (tables == null || picks == null || preds == null) throw new IllegalArgumentException();
+    return new TracerImpl(tables, picks, preds);
   }
 
   @Override
-  public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
+  public void tableEq(DecidableConstraint constraint, TableSym tx, TableSym ty) {
     addConstraint(constraint);
     eqTables.connect(tx, ty);
   }
 
   @Override
-  public void pickEq(Constraint constraint, PickSym px, PickSym py) {
+  public void pickEq(DecidableConstraint constraint, PickSym px, PickSym py) {
     addConstraint(constraint);
     eqPicks.connect(px, py);
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+  public void predicateEq(DecidableConstraint constraint, PredicateSym px, PredicateSym py) {
+    addConstraint(constraint);
+    eqPreds.connect(px, py);
+  }
+
+  @Override
+  public void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... src) {
     if (!isSameScoped(p, src)) throw new IllegalArgumentException();
 
     // sort the array for the convenience of following process
@@ -88,15 +100,21 @@ public class TracerImpl implements Tracer {
   }
 
   @Override
-  public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
-    pickFrom(Constraint.pickFrom(px, tx), px, tx);
-    pickFrom(Constraint.pickFrom(py, ty), py, ty);
+  public void reference(
+      DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+    pickFrom(DecidableConstraint.pickFrom(px, tx), px, tx);
+    pickFrom(DecidableConstraint.pickFrom(py, ty), py, ty);
     refs.put(px, py);
     addConstraint(constraint);
   }
 
   @Override
   public void decide(Decision... decisions) {
+    if (fastCheckConflict(decisions)) {
+      fastRejection++;
+      isConflict = true;
+      return;
+    }
     reset();
     for (Decision decision : decisions) decision.decide(this);
   }
@@ -111,11 +129,14 @@ public class TracerImpl implements Tracer {
    *
    * <p>Note: This method MUST be invoked after all constraints being added.
    *
-   * @see #pickFrom(Constraint, PickSym, TableSym...)
+   * @see sjtu.ipads.wtune.symsolver.search.Reactor#pickFrom(DecidableConstraint, PickSym,
+   *     TableSym...)
    * @see #isMatched(TableSym[], TableSym[])
    */
   @Override
   public boolean isConflict() {
+    if (isConflict) return true;
+
     inferSrc();
     return isConflict;
   }
@@ -136,6 +157,8 @@ public class TracerImpl implements Tracer {
    */
   @Override
   public boolean isIncomplete() {
+    if (isIncomplete) return true;
+
     inferSrc();
     return isIncomplete;
   }
@@ -146,28 +169,36 @@ public class TracerImpl implements Tracer {
 
     inferSrc();
 
-    final List<Constraint> constraints = new ArrayList<>(this.constraints.size() << 1);
+    final List<DecidableConstraint> constraints = new ArrayList<>(this.constraints.size() << 1);
+
     for (int i = 0, bound = tables.length; i < bound; i++)
       for (int j = i + 1; j < bound; j++) {
         final TableSym tx = tables[i], ty = tables[j];
-        if (isEq(tx, ty)) constraints.add(Constraint.tableEq(tx, ty));
+        if (isEq(tx, ty)) constraints.add(DecidableConstraint.tableEq(tx, ty));
+      }
+
+    for (int i = 0, bound = preds.length; i < bound; i++)
+      for (int j = i + 1; j < bound; j++) {
+        final PredicateSym px = preds[i], py = preds[j];
+        if (isEq(px, py)) constraints.add(DecidableConstraint.predicateEq(px, py));
       }
 
     for (int i = 0, bound = picks.length; i < bound; i++) {
       final PickSym px = picks[i];
       for (int j = i + 1; j < bound; j++) {
         final PickSym py = picks[j];
-        if (isEq(px, py)) constraints.add(Constraint.pickEq(px, py));
+        if (isEq(px, py)) constraints.add(DecidableConstraint.pickEq(px, py));
       }
 
       final TableSym[] srcX = srcs[i];
-      if (srcX != null) constraints.add(Constraint.pickFrom(px, srcX));
+      if (srcX != null) constraints.add(DecidableConstraint.pickFrom(px, srcX));
 
-      final Constraint refConstraint = refConstraintOf(px);
+      final DecidableConstraint refConstraint = refConstraintOf(px);
       if (refConstraint != null) constraints.add(refConstraint);
     }
 
-    return new SummaryImpl(tables, picks, constraints.toArray(Constraint[]::new), this);
+    return new SummaryImpl(
+        tables, picks, preds, constraints.toArray(DecidableConstraint[]::new), this);
   }
 
   int modCount() {
@@ -176,10 +207,12 @@ public class TracerImpl implements Tracer {
 
   void inflateSummary(SummaryImpl summary) {
     final int[] tGrouping = eqTables.grouping();
-    final int[] pGrouping = eqPicks.grouping();
+    final int[] cGrouping = eqPicks.grouping();
+    final int[] pGrouping = eqPreds.grouping();
 
     summary.tableGroups = group(tables, tGrouping);
-    summary.pickGroups = group(picks, pGrouping);
+    summary.pickGroups = group(picks, cGrouping);
+    summary.predGroups = group(preds, pGrouping);
 
     final TableSym[][] pivotedSrcs = new TableSym[srcs.length][];
     for (int i = 0; i < srcs.length; i++)
@@ -188,6 +221,11 @@ public class TracerImpl implements Tracer {
     summary.pivotedSources = pivotedSrcs;
 
     summary.references = refs;
+  }
+
+  @Override
+  public int numFastRejection() {
+    return fastRejection;
   }
 
   private void reset() {
@@ -203,6 +241,10 @@ public class TracerImpl implements Tracer {
     isConflict = false;
     isIncomplete = false;
     summary = null;
+  }
+
+  private boolean isEq(PredicateSym px, PredicateSym py) {
+    return eqPreds.isConnected(px, py);
   }
 
   private boolean isEq(PickSym px, PickSym py) {
@@ -267,10 +309,10 @@ public class TracerImpl implements Tracer {
     // not a viable source
     final TableSym[] src = find(v -> isMatched(v, assign), p.viableSources());
     if (src == null) isConflict = true;
-    else pickFrom(Constraint.pickFrom(p, src), p, src);
+    else pickFrom(DecidableConstraint.pickFrom(p, src), p, src);
   }
 
-  private void addConstraint(Constraint constraint) {
+  private void addConstraint(DecidableConstraint constraint) {
     if (!constraint.ignorable()
         && (constraints.isEmpty() || constraints.get(constraints.size() - 1) != constraint))
       constraints.add(constraint);
@@ -316,11 +358,11 @@ public class TracerImpl implements Tracer {
     return stream(p.viableSources()).anyMatch(it -> Arrays.equals(it, source));
   }
 
-  private Constraint refConstraintOf(PickSym px) {
+  private DecidableConstraint refConstraintOf(PickSym px) {
     final TableSym[] srcX = srcs[indexOf(px)];
     if (srcX == null || srcX.length != 1) return null;
     final PickSym py = refs.get(px);
-    return py == null ? null : Constraint.reference(srcX[0], px, srcs[indexOf(py)][0], py);
+    return py == null ? null : DecidableConstraint.reference(srcX[0], px, srcs[indexOf(py)][0], py);
   }
 
   private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
@@ -334,5 +376,34 @@ public class TracerImpl implements Tracer {
     }
 
     return stream(groups).filter(Objects::nonNull).collect(toList());
+  }
+
+  private static boolean fastCheckConflict(Decision... constraints) {
+    int pickEqStart = -1, pickEqEnd = -1, pickFromStart = -1, pickFromEnd = -1;
+    for (int i = 0; i < constraints.length - 1; i++) {
+      final Decision c0 = constraints[i], c1 = constraints[i + 1];
+      if (c0 instanceof PickFrom
+          && c1 instanceof PickFrom
+          && ((PickFrom<?, ?>) c0).p() == ((PickFrom<?, ?>) c1).p()) return true;
+      if (pickEqStart == -1 && c0 instanceof PickEq) pickEqStart = i;
+      if (pickEqEnd == -1 && !(c1 instanceof PickEq)) pickEqEnd = i + 1;
+      if (pickFromStart == -1 && c0 instanceof PickFrom) pickFromStart = i;
+      if (pickFromEnd == -1 && !(c1 instanceof PickFrom)) pickFromEnd = i + 1;
+    }
+
+    if (pickEqStart < 0 || pickFromStart < 0) return false;
+
+    for (int i = pickFromStart; i < pickFromEnd - 1; ++i) {
+      final PickFrom<?, ?> fromX = (PickFrom<?, ?>) constraints[i];
+      final PickFrom<?, ?> fromY = (PickFrom<?, ?>) constraints[i + 1];
+
+      if (fromX.ts().length != fromY.ts().length)
+        for (int j = pickEqStart; j < pickEqEnd; ++j) {
+          final PickEq<?> pickEq = (PickEq<?>) constraints[j];
+          if (pickEq.px() == fromX.p() && pickEq.py() == fromY.p()) return true;
+        }
+    }
+
+    return false;
   }
 }

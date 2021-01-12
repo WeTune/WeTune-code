@@ -1,9 +1,7 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Result;
-import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.DecidableConstraint;
+import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
 
@@ -39,22 +37,27 @@ public class CombinedProver implements Prover {
   }
 
   @Override
-  public void tableEq(Constraint constraint, TableSym tx, TableSym ty) {
+  public void tableEq(DecidableConstraint constraint, TableSym tx, TableSym ty) {
     for (Prover prover : provers) prover.tableEq(constraint, tx, ty);
   }
 
   @Override
-  public void pickEq(Constraint constraint, PickSym px, PickSym py) {
+  public void pickEq(DecidableConstraint constraint, PickSym px, PickSym py) {
     for (Prover prover : provers) prover.pickEq(constraint, px, py);
   }
 
   @Override
-  public void pickFrom(Constraint constraint, PickSym p, TableSym... src) {
+  public void predicateEq(DecidableConstraint constraint, PredicateSym px, PredicateSym py) {
+    for (Prover prover : provers) prover.predicateEq(constraint, px, py);
+  }
+
+  @Override
+  public void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... src) {
     for (Prover prover : provers) prover.pickFrom(constraint, p, src);
   }
 
   @Override
-  public void reference(Constraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     for (Prover prover : provers) prover.reference(constraint, tx, px, ty, py);
   }
 }

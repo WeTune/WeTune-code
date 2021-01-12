@@ -1,5 +1,8 @@
 dependencies {
+    implementation project(":common")
+    implementation project(":symsolver")
     implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')
+    implementation(name: 'z3-4.8.9')
 }
 

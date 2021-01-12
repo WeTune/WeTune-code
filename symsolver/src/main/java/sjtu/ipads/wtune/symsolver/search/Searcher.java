@@ -7,6 +7,10 @@ public interface Searcher {
     return SearcherImpl.build(ctx);
   }
 
+  static Searcher bindTo(SearchCtx ctx, long timeout) {
+    return SearcherImpl.build(ctx, timeout);
+  }
+
   void search(DecisionTree tree);
 
   int numSearched();
