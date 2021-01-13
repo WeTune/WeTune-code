@@ -39,13 +39,13 @@ public interface GraphVisitor {
     return true;
   }
 
-  default void leaveInnerJoin(Join op) {}
+  default void leaveInnerJoin(InnerJoin op) {}
 
   default boolean enterLeftJoin(LeftJoin op) {
     return true;
   }
 
-  default void leaveLeftJoin(Join op) {}
+  default void leaveLeftJoin(LeftJoin op) {}
 
   default boolean enterLimit(Limit op) {
     return true;

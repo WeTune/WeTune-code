@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.symsolver.core.Indexed;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
@@ -54,6 +55,21 @@ public class SubstitutionImpl implements Substitution {
   @Override
   public List<Constraint> constraints() {
     return constraints;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SubstitutionImpl that = (SubstitutionImpl) o;
+    return Objects.equals(g0, that.g0)
+        && Objects.equals(g1, that.g1)
+        && Objects.equals(constraints, that.constraints);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(g0, g1, constraints);
   }
 
   @Override

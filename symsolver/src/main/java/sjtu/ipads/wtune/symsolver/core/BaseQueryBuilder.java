@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 import sjtu.ipads.wtune.symsolver.utils.SimpleScoped;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -25,9 +25,9 @@ public abstract class BaseQueryBuilder implements QueryBuilder {
   protected Value[] tuples;
 
   protected BaseQueryBuilder() {
-    this.tableSyms = new LinkedHashMap<>();
-    this.pickSyms = new LinkedHashMap<>();
-    this.predSyms = new LinkedHashMap<>();
+    this.tableSyms = new HashMap<>();
+    this.pickSyms = new HashMap<>();
+    this.predSyms = new HashMap<>();
   }
 
   @Override

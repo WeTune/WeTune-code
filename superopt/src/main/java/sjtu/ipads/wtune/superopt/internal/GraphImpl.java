@@ -16,8 +16,9 @@ import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public class GraphImpl implements Graph {
   public Operator head;
-  public List<? extends Input> inputs;
+  public List<Input> inputs;
 
+  private boolean alreadySetup;
   private Semantic semantic;
 
   private GraphImpl() {}
@@ -46,21 +47,22 @@ public class GraphImpl implements Graph {
   }
 
   @Override
-  public List<? extends Input> inputs() {
-    if (this.inputs == null) {
-      final List<Hole<Operator>> holes = holes();
-      final List<Input> inputs = new ArrayList<>(5);
-      for (int i = 0, bound = holes.size(); i < bound; i++) {
-        final Hole<Operator> hole = holes.get(i);
-        final Input input = Input.create();
-        input.setIndex(i);
-        inputs.add(input);
-        hole.fill(input);
-      }
-      this.inputs = inputs;
+  public Graph setup() {
+    if (alreadySetup) return this;
+
+    inputs = new ArrayList<>(5);
+    int i = 0;
+    for (Hole<Operator> hole : holes()) {
+      final Input input = Input.create();
+      input.setIndex(i);
+      hole.fill(input);
+      inputs.add(input);
     }
 
-    return this.inputs;
+    acceptVisitor(GraphVisitor.traverse(it -> it.setGraph(this)));
+
+    alreadySetup = true;
+    return this;
   }
 
   @Override
@@ -78,7 +80,10 @@ public class GraphImpl implements Graph {
     if (semantic != null) return semantic;
 
     synchronized (this) {
-      if (semantic == null) semantic = Semantic.build(this);
+      if (semantic == null) {
+        setup();
+        semantic = Semantic.build(this);
+      }
       return semantic;
     }
   }

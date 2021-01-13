@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.core;
 
 import sjtu.ipads.wtune.superopt.internal.GraphImpl;
 import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
-import sjtu.ipads.wtune.superopt.operator.Input;
 import sjtu.ipads.wtune.superopt.operator.Operator;
 import sjtu.ipads.wtune.superopt.solving.Semantic;
 import sjtu.ipads.wtune.superopt.util.Hole;
@@ -16,9 +15,9 @@ import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 public interface Graph extends Comparable<Graph> {
   Operator head();
 
-  List<? extends Input> inputs();
-
   void setHead(Operator head);
+
+  Graph setup();
 
   Semantic semantic();
 
@@ -34,12 +33,6 @@ public interface Graph extends Comparable<Graph> {
 
   default String toInformativeString() {
     return stringify(this, true);
-  }
-
-  default Graph setup() {
-    inputs();
-    acceptVisitor(GraphVisitor.traverse(it -> it.setGraph(this)));
-    return this;
   }
 
   default Graph copy() {

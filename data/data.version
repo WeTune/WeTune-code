@@ -9,3 +9,4 @@
 [bc57ee3249eb19be0b3c047bd0d8bf47e19e5f41] add output group
 [eeaa0dedc720b5eeeb2bf0cd683b98d274c97ea8] add struct group
 [e3b7b505c07bf0afaaeee62a59ea33698509d6c7] update numbers
+[19c4894f3e43f6293f80bfee6369055c9962f469] add column wtune_stmt.stmt_trace

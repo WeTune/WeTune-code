@@ -56,7 +56,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   }
 
   @Override
-  public void leaveInnerJoin(Join op) {
+  public void leaveInnerJoin(InnerJoin op) {
     final Relation right = stack.pop(), left = stack.pop();
     final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
     final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
@@ -190,7 +190,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     }
 
     @Override
-    public void leaveInnerJoin(Join op) {
+    public void leaveInnerJoin(InnerJoin op) {
       final Set<Placeholder> rightTbls = stack.pop(), leftTbls = stack.pop();
       final Placeholder leftFields = op.leftFields(), rightFields = op.rightFields();
       viable.put(leftFields, collectionMap(Collections::singleton, leftTbls, HashSet::new));

@@ -57,18 +57,7 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    final Substitution substitution =
-        Substitution.rebuild(
-            "Proj(InnerJoin(Input,Input))|Proj(Input)|TableEq(t0,t2);PickEq(c0,c2);PickEq(c1,c3);PickFrom(c0,[t1]);"
-                + "PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);Reference(t0,c1,t1,c2)");
-    System.out.println(substitution.g0().toInformativeString());
-    System.out.println(substitution.g1().toInformativeString());
-    substitution.constraints().forEach(System.out::println);
-    //    test2();
-    //    final Graph q0 = proj(join(null, null)).toGraph("x");
-    //    final Graph q1 = proj(null).toGraph("y");
-    //    prove(q0, q1);
-    //    test0();
+    test2();
   }
 
   private static void test0() {
