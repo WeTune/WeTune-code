@@ -11,7 +11,6 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.function.Function;
 
@@ -966,8 +965,7 @@ public class MySQLASTBuilderTest {
     }
     {
       final SQLNode node = helper.sql("a IS FALSE");
-
-      SQLNode left = node.get(BINARY_LEFT);
+      final SQLNode left = node.get(BINARY_LEFT);
 
       final SQLNode trueLiteral = SQLNode.simple(LITERAL);
       trueLiteral.put(LITERAL_TYPE, LiteralType.BOOL);

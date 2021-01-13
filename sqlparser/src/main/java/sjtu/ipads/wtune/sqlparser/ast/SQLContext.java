@@ -1,13 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeMapping;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeMgr;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
 
 public interface SQLContext {
   interface Snapshot {
-    int version();
-
-    NodeMapping key();
+    NodeMgr key();
   }
 
   String dbType();
@@ -18,7 +16,7 @@ public interface SQLContext {
 
   void setSnapshot(Snapshot snapshot);
 
-  static SQLContext ofDbType(String dbType) {
-    return SQLContextImpl.build(dbType);
+  static SQLNode manage(String dbType, SQLNode node) {
+    return SQLContextImpl.build(dbType).manage(node);
   }
 }

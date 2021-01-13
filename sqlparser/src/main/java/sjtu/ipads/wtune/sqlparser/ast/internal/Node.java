@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.sqlparser.ast.Formatter;
 import sjtu.ipads.wtune.sqlparser.ast.*;
 
-public abstract class BaseNode implements SQLNode {
+public abstract class Node implements SQLNode {
   @Override
   public SQLContext context() {
     return null;

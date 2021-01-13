@@ -6,25 +6,25 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleNode extends BaseNode implements SQLNode {
+public class Root extends Node implements SQLNode {
   private NodeType type;
   private Map<String, Object> directAttrs;
 
-  private SimpleNode(NodeType type) {
+  private Root(NodeType type) {
     this(type, null);
   }
 
-  private SimpleNode(NodeType type, Map<String, Object> directAttrs) {
+  private Root(NodeType type, Map<String, Object> directAttrs) {
     this.type = type;
     this.directAttrs = directAttrs;
   }
 
   public static SQLNode build(NodeType nodeType) {
-    return new SimpleNode(nodeType);
+    return new Root(nodeType);
   }
 
   public static SQLNode build(SQLNode other) {
-    return new SimpleNode(other.nodeType(), other.directAttrs());
+    return new Root(other.nodeType(), other.directAttrs());
   }
 
   @Override

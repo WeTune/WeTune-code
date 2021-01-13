@@ -5,8 +5,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.SQLParserException;
+import sjtu.ipads.wtune.sqlparser.ast.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.InternalSQLContext;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
@@ -42,8 +42,7 @@ public class MySQLASTParser implements SQLParser {
 
   public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
     try {
-      return InternalSQLContext.ofDbType(MYSQL)
-          .manage(parse0(str, rule).accept(new MySQLASTBuilder()));
+      return SQLContext.manage(MYSQL, parse0(str, rule).accept(new MySQLASTBuilder()));
 
     } catch (SQLParserException exception) {
       return null;

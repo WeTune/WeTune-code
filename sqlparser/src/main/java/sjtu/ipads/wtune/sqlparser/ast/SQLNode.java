@@ -4,9 +4,7 @@ import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
-import sjtu.ipads.wtune.sqlparser.ast.internal.SimpleNode;
-
-import java.util.stream.StreamSupport;
+import sjtu.ipads.wtune.sqlparser.ast.internal.Root;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_SOURCE_KIND;
@@ -25,7 +23,10 @@ public interface SQLNode extends Attrs<SQLNode> {
 
   void setNodeType(NodeType type);
 
-  void update(SQLNode other);
+  // inplace update
+  // Note: cycle-free is not checked internally, please take extra care to ensure that
+  // the descendant of `replacement` does not contains `this`
+  void update(SQLNode replacement);
 
   void accept(SQLVisitor visitor);
 
@@ -35,24 +36,12 @@ public interface SQLNode extends Attrs<SQLNode> {
     return context() == null ? MYSQL : context().dbType();
   }
 
-  static boolean isNode(Object obj) {
-    return obj instanceof SQLNode;
-  }
-
-  static boolean isNodes(Object obj) {
-    if (!(obj instanceof Iterable)) return false;
-    for (Object o : ((Iterable<?>) obj)) {
-      if (o != null && !isNode(o)) return false;
-    }
-    return true;
-  }
-
   static SQLNode simple(SQLNode other) {
-    return SimpleNode.build(other);
+    return Root.build(other);
   }
 
   static SQLNode simple(NodeType nodeType) {
-    return SimpleNode.build(nodeType);
+    return Root.build(nodeType);
   }
 
   static SQLNode simple(ExprType exprKind) {
