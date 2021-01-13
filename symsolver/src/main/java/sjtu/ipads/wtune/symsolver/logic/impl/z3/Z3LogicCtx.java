@@ -59,7 +59,14 @@ public class Z3LogicCtx implements LogicCtx {
   @Override
   public Proposition makeEq(Value v0, Value v1) {
     if (v0 instanceof Func && v1 instanceof Func) return makeEq((Func) v0, (Func) v1);
+    else if (v0 instanceof Proposition && v1 instanceof Proposition)
+      return makeEq(((Proposition) v0), ((Proposition) v1));
     else return wrap(z3.mkEq(unwrap(v0), unwrap(v1)));
+  }
+
+  @Override
+  public Proposition makeEq(Proposition v0, Proposition v1) {
+    return wrap(z3.mkIff(unwrap(v0), unwrap(v1)));
   }
 
   @Override

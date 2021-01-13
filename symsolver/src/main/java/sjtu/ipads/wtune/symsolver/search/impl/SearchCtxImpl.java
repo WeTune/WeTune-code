@@ -76,7 +76,8 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
-  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(
+      DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     tracer.reference(constraint, tx, px, ty, py);
     prover.reference(constraint, tx, px, ty, py);
   }
@@ -103,7 +104,7 @@ public class SearchCtxImpl implements SearchCtx {
     stat.numSkipped = searcher.numSkipped();
     stat.timeTotal += t1 - t0;
 
-    //    System.out.println(stat);
+    System.out.println(stat);
     return survivors;
   }
 

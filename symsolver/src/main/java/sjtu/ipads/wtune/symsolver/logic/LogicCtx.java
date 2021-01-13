@@ -9,6 +9,8 @@ public interface LogicCtx {
 
   Proposition makeEq(Value v0, Value v1);
 
+  Proposition makeEq(Proposition v0, Proposition v1);
+
   Proposition makeEq(Func f0, Func f1);
 
   Proposition makeNot(Proposition p);
