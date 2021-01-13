@@ -10,7 +10,7 @@ options {
 /******* Start symbols *******/
 
 sql
-    : BOM? SEMI_COLON* (stmtImpl (SEMI_COLON+ | EOF))* EOF
+    : BOM? SEMI_COLON* (statement (SEMI_COLON+ | EOF))* EOF
     ;
 
 qname_parser
@@ -35,7 +35,7 @@ plpgsql_function_test_list
 
 /******* END Start symbols *******/
 
-stmtImpl
+statement
     : data_statement
     | schema_statement
     | script_statement
