@@ -1,5 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 dependencies {
     implementation project(":common")
     implementation project(":sqlparser")
@@ -13,37 +11,10 @@ application {
     mainClassName = "${moduleName}.scriptgen.ScriptUtils"
 }
 
-def dataDir = "../data"
 def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
-def proxy = "http://ipads:ipads123!2020@202.120.40.85:11235"
 
-task downloadDb(type: Exec) {
-    if (!file("$dataDir/wtune.db").exists()) {
-        workingDir dataDir
-        println "downloading wtune.db"
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
-                    '-Proxy', "\"$proxy\"",
-                    '-OutFile', 'wtune.db'
-        } else {
-            commandLine 'wget', '-e', 'use_proxy=yes',
-                    '-e', "http_proxy=$proxy",
-                    '-e', "https_proxy=$proxy",
-                    '--no-check-certificate',
-                    "$url",
-                    '-O', 'wtune.db'
-        }
-        println "downloaded wtune.db"
-    } else {
-        if (Os.isFamily(Os.FAMILY_WINDOWS))
-            commandLine 'powershell', 'echo', '\'use cached wtune.db\''
-        else
-            commandLine 'echo', '\'use cached wtune.db\''
-    }
+task downloadDb {
+    download(url, rootDir.toPath().resolve("data").resolve("wtune.db"))
 }
-
-//test {
-//    maxHeapSize = "2g"
-//}
 
 test.dependsOn(downloadDb)

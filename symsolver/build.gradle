@@ -8,3 +8,14 @@ dependencies {
 test {
     systemProperty("smt_timeout", "1000")
 }
+
+def libz3Url = "https://drive.google.com/uc?export=download&id=1_qJX15kK0_XEW7vzn4PK8BUzgjRq2dDO"
+def libz3javaUrl = "https://drive.google.com/uc?export=download&id=1_lkOFD_xcd687MksXoV9hhVEls5uJWtm"
+
+task downloadLib {
+    download(libz3Url, rootDir.toPath().resolve("lib").resolve("libz3.so"), "644")
+    download(libz3javaUrl, rootDir.toPath().resolve("lib").resolve("libz3java.so"), "644")
+}
+
+classes.dependsOn(downloadLib)
+

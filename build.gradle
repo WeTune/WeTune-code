@@ -1,3 +1,6 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+
 plugins {
     id 'org.javamodularity.moduleplugin' version '1.7.0' apply false
 }
@@ -23,6 +26,8 @@ subprojects {
     }
 
     test {
+        systemProperty('java.library.path', "$rootDir/lib/")
+        environment('LD_LIBRARY_PATH', "$rootDir/lib/")
         useJUnitPlatform()
     }
 
@@ -35,6 +40,41 @@ subprojects {
 
     task("cleanAll") {
         dependsOn clean
+    }
+
+    ext.download = { String url, java.nio.file.Path path, String mod = null ->
+        def proxy = "http://ipads:ipads123!2020@202.120.40.85:11235"
+        def wd = path.getParent().toAbsolutePath().toString()
+        def fileName = path.getFileName().toString()
+
+        if (!path.toFile().exists()) {
+            exec {
+                workingDir(wd)
+
+                println("downloading $fileName to $wd")
+                if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                    commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
+                            '-Proxy', "\"$proxy\"",
+                            '-OutFile', "$fileName"
+                } else {
+                    commandLine 'wget', '-e', 'use_proxy=yes',
+                            '-e', "http_proxy=$proxy",
+                            '-e', "https_proxy=$proxy",
+                            '--no-check-certificate',
+                            "$url",
+                            '-O', "$fileName"
+                }
+            }
+
+            if (mod != null)
+                exec {
+                    workingDir(wd)
+                    commandLine 'chmod', "$mod", "$fileName"
+                }
+
+        } else {
+            println("use cached $fileName found in $wd")
+        }
     }
 }
 
