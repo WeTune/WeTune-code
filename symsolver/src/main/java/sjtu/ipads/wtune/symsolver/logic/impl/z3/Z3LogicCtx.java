@@ -114,6 +114,16 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   @Override
+  public Value makeConst(int i) {
+    return wrap(z3.mkInt(i));
+  }
+
+  @Override
+  public Value makeIte(Proposition cond, Value v0, Value v1) {
+    return wrap(z3.mkITE(unwrap(cond), unwrap(v0), unwrap(v1)));
+  }
+
+  @Override
   public Value makeTuple(String name) {
     return wrap(z3.mkConst(name, tupleSort()));
   }

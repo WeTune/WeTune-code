@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 
-public class Enumerator {
+public class Enumerate {
   public static final int SKELETON_MAX_OPS = 4;
 
   public static List<Graph> enumFragments() {
     return enumerate(0, singleton(Graph.empty())).parallelStream()
-        .filter(Enumerator::prune)
+        .filter(Enumerate::prune)
         .peek(Graph::setup)
         .collect(Collectors.toList());
   }

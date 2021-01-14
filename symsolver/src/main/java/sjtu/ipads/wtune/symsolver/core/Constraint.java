@@ -3,6 +3,10 @@ package sjtu.ipads.wtune.symsolver.core;
 import sjtu.ipads.wtune.symsolver.core.impl.*;
 
 public interface Constraint extends Comparable<Constraint> {
+  // !!! Impl Note !!!
+  // Don't change the impl of compareTo,
+  // some optimization depends on the current behaviour.
+  // see TraceImpl::fastCheckConflict.
   Kind kind();
 
   Indexed[] targets();

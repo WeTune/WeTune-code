@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.symsolver.utils.impl;
 
-import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
 import sjtu.ipads.wtune.symsolver.core.Indexed;
+import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
 
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -49,6 +49,14 @@ public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {
       throw new NoSuchElementException(obj + " not in the predefined set of members");
 
     return idx;
+  }
+
+  @Override
+  public boolean contains(T x) {
+    final int i = indexOf(x);
+    if (data[i] != i) return true;
+    for (int j = 0; j < data.length; j++) if (j != i && data[j] == i) return true;
+    return false;
   }
 
   @Override

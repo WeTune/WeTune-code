@@ -2,9 +2,8 @@ package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
-import sjtu.ipads.wtune.superopt.internal.Enumerator;
-import sjtu.ipads.wtune.symsolver.core.Solver;
-import sjtu.ipads.wtune.symsolver.core.Summary;
+import sjtu.ipads.wtune.superopt.internal.Enumerate;
+import sjtu.ipads.wtune.superopt.internal.Prove;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -12,13 +11,11 @@ import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.LogManager;
 
 import static java.lang.System.Logger.Level.INFO;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
 import static sjtu.ipads.wtune.superopt.operator.Operator.*;
 
@@ -57,24 +54,32 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test2();
+    test0();
+    //    for (int i = 0; i < 10; i++) {
+    //      test2();
+    //    }
+    //    final Graph q0 = proj(join(null, null)).toGraph("x");
+    //    final Graph q1 = proj(null).toGraph("y");
+    //    prove(q0, q1);
+    //    test0();
   }
 
   private static void test0() {
-    final List<Graph> fragments = Enumerator.enumFragments();
+    final List<Graph> fragments = Enumerate.enumFragments();
     LOG.log(INFO, "#fragments: {0}", fragments.size());
 
     fragments.sort(Graph::compareTo);
 
-    //    for (int i = 0; i < 50; i++)
-    //      for (int j = i + 1, bound = fragments.size(); j < bound; ++j)
-    //        prove(fragments.get(i), fragments.get(j));
-  }
-
-  private static Collection<Substitution> doTest(Graph g0, Graph g1, long timeout) {
-    try (final Solver solver = Solver.make(g0.semantic(), g1.semantic(), timeout)) {
-      final Collection<Summary> summary = solver.solve();
-      return listMap(it -> Substitution.build(g0, g1, Arrays.asList(it.constraints())), summary);
+    for (int i = 1; i < fragments.size(); i++) {
+      if (i % 10 == 0) System.out.println(i);
+      final Graph g0 = fragments.get(0);
+      final Graph g1 = fragments.get(i);
+      try {
+        final Collection<Substitution> results = Prove.prove(g0, g1, 300000);
+        logResult(results);
+      } catch (Throwable ex) {
+        logError(ex, g0, g1);
+      }
     }
   }
 
@@ -82,7 +87,7 @@ public class Main {
     final Graph q0 = wrap(proj(plainFilter(innerJoin(null, null)))).setup();
     final Graph q1 = wrap(proj(plainFilter(null))).setup();
 
-    final Collection<Substitution> constraints = doTest(q0, q1, -1);
+    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 
@@ -90,39 +95,25 @@ public class Main {
     final Graph q0 = wrap(proj(innerJoin(null, null))).setup();
     final Graph q1 = wrap(proj(null)).setup();
 
-    final Collection<Substitution> constraints = doTest(q0, q1, -1);
+    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 
-  private static void prove(Graph g0, Graph g1) {
-    if (g0 == g1 || System.identityHashCode(g0) > System.identityHashCode(g1)) return;
+  private static void logResult(Collection<Substitution> substitutions) {
+    synchronized (out) {
+      out.println("====");
+      substitutions.forEach(out::println);
+      out.flush();
+    }
+  }
 
-    try {
-      final Collection<Substitution> results;
-      synchronized (g0) {
-        synchronized (g1) {
-          results = doTest(g0, g1, 300000);
-        }
-      }
-
-      if (!results.isEmpty()) {
-        synchronized (out) {
-          out.println("====");
-          out.println(g0);
-          out.println(g1);
-          results.forEach(out::println);
-          out.flush();
-        }
-      }
-
-    } catch (Throwable ex) {
-      synchronized (err) {
-        err.println("====");
-        err.println(g0);
-        err.println(g1);
-        ex.printStackTrace(err);
-        err.flush();
-      }
+  private static void logError(Throwable ex, Graph g0, Graph g1) {
+    synchronized (err) {
+      err.println("====");
+      err.println(g0);
+      err.println(g1);
+      ex.printStackTrace(err);
+      err.flush();
     }
   }
 }

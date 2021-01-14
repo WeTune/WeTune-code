@@ -8,6 +8,8 @@ public interface DisjointSet<T> {
     return BoundedDisjointSet.build(objs);
   }
 
+  boolean contains(T x);
+
   void connect(T x, T y);
 
   boolean isConnected(T x, T y);

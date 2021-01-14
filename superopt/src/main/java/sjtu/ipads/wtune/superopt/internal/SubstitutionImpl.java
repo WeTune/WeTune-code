@@ -20,6 +20,7 @@ public class SubstitutionImpl implements Substitution {
   private SubstitutionImpl(Graph g0, Graph g1, List<Constraint> constraints) {
     this.g0 = g0;
     this.g1 = g1;
+    constraints.sort(Constraint::compareTo);
     this.constraints = constraints;
   }
 

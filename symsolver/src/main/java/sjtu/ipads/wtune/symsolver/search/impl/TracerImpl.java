@@ -5,7 +5,6 @@ import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Tracer;
 import sjtu.ipads.wtune.symsolver.utils.DisjointSet;
-import sjtu.ipads.wtune.symsolver.core.Indexed;
 
 import java.util.*;
 
@@ -18,6 +17,8 @@ public class TracerImpl implements Tracer {
   private final PickSym[] picks;
   private final PredicateSym[] preds;
 
+  private final int tableSeq, pickSeq, predSeq;
+
   private final List<DecidableConstraint> constraints;
 
   private final DisjointSet<TableSym> eqTables;
@@ -29,7 +30,8 @@ public class TracerImpl implements Tracer {
   private final boolean useFastTableIndex;
   private final boolean useFastPickIndex;
 
-  private int fastRejection;
+  private int fastConflict;
+  private int fastIncomplete;
 
   private int modCount;
   private boolean srcInferred; // indicate if `inferSrc` has been called since last `reset`
@@ -40,10 +42,15 @@ public class TracerImpl implements Tracer {
   private TracerImpl(TableSym[] tables, PickSym[] picks, PredicateSym[] preds) {
     tables = Arrays.copyOf(tables, tables.length);
     picks = Arrays.copyOf(picks, picks.length);
+    preds = Arrays.copyOf(preds, preds.length);
 
     this.tables = tables;
     this.picks = picks;
     this.preds = preds;
+
+    this.tableSeq = markSeq(tables);
+    this.pickSeq = markSeq(picks);
+    this.predSeq = markSeq(preds);
 
     constraints = new ArrayList<>();
 
@@ -111,7 +118,7 @@ public class TracerImpl implements Tracer {
   @Override
   public void decide(Decision... decisions) {
     if (fastCheckConflict(decisions)) {
-      fastRejection++;
+      fastConflict++;
       isConflict = true;
       return;
     }
@@ -158,6 +165,10 @@ public class TracerImpl implements Tracer {
   @Override
   public boolean isIncomplete() {
     if (isIncomplete) return true;
+    if (fastCheckIncomplete()) {
+      ++fastIncomplete;
+      return isIncomplete = true;
+    }
 
     inferSrc();
     return isIncomplete;
@@ -224,8 +235,13 @@ public class TracerImpl implements Tracer {
   }
 
   @Override
-  public int numFastRejection() {
-    return fastRejection;
+  public int numFastConflict() {
+    return fastConflict;
+  }
+
+  @Override
+  public int numFastIncomplete() {
+    return fastIncomplete;
   }
 
   private void reset() {
@@ -365,6 +381,77 @@ public class TracerImpl implements Tracer {
     return py == null ? null : DecidableConstraint.reference(srcX[0], px, srcs[indexOf(py)][0], py);
   }
 
+  private boolean fastCheckConflict(Decision... constraints) {
+    // !!! Impl Note !!!
+    // this method assume specific property of `constraints`:
+    // 1. each element in `constraints` is unique
+    // 2. `constraints` is sorted.
+    // 3. The order satisfies:
+    //    1. PickEq is ordered before PickFrom
+    //    2. within PickFrom, sorted by `p()`
+
+    // 1. find the "segment" of PickEq and PickFrom
+    final DisjointSet<PickSym> eqPicks = DisjointSet.fromBoundedMembers(picks);
+
+    int pickFromStart = -1, pickFromEnd = -1;
+    for (int i = 0, bound = constraints.length; i < bound; i++) {
+      final Decision c0 = constraints[i];
+      if (c0 instanceof PickFrom) {
+        if (pickFromStart == -1) pickFromStart = i; // mark start
+        else if (((PickFrom<?, ?>) c0).p() == ((PickFrom<?, ?>) constraints[i - 1]).p())
+          return true; // different sources of the same pick
+
+      } else {
+        if (pickFromStart != -1) {
+          pickFromEnd = i;
+          break;
+        }
+        if (c0 instanceof PickEq) {
+          final PickEq<PickSym> pickEq = (PickEq<PickSym>) c0;
+          eqPicks.connect(pickEq.px(), pickEq.py());
+        }
+      }
+    }
+
+    if (pickFromStart < 0) return false;
+    if (pickFromEnd < 0) pickFromEnd = constraints.length;
+
+    // 2. for each PickFrom(px,[tx]), PickFrom(py,[ty]),
+    //    if PickEq(px,py), check if |[tx]| == |[ty]|
+    for (int i = pickFromStart, bound = pickFromEnd - 1; i < bound; ++i) {
+      final PickFrom<?, PickSym> fromX = (PickFrom<?, PickSym>) constraints[i];
+      for (int j = i + 1; j <= bound; ++j) {
+        final PickFrom<?, PickSym> fromY = (PickFrom<?, PickSym>) constraints[j];
+
+        if (eqPicks.isConnected(fromX.p(), fromY.p()) && fromX.ts().length != fromY.ts().length)
+          return true;
+      }
+    }
+
+    return false;
+  }
+
+  private boolean fastCheckIncomplete() {
+    return fastCheckIncomplete0(true) && fastCheckIncomplete0(false);
+  }
+
+  private boolean fastCheckIncomplete0(boolean firstHalf) {
+    if (firstHalf) {
+      for (int i = 0; i < tableSeq; i++) if (!eqTables.contains(tables[i])) return true;
+      for (int i = 0; i < pickSeq; i++) if (!eqPicks.contains(picks[i])) return true;
+      for (int i = 0; i < predSeq; i++) if (!eqPreds.contains(preds[i])) return true;
+
+    } else {
+      for (int i = tableSeq, bound = tables.length; i < bound; i++)
+        if (!eqTables.contains(tables[i])) return true;
+      for (int i = pickSeq, bound = picks.length; i < bound; i++)
+        if (!eqPicks.contains(picks[i])) return true;
+      for (int i = predSeq, bound = preds.length; i < bound; i++)
+        if (!eqPreds.contains(preds[i])) return true;
+    }
+    return false;
+  }
+
   private static <T> Collection<Collection<T>> group(T[] xs, int[] grouping) {
     final List<T>[] groups = new List[xs.length];
     for (int i = 0; i < grouping.length; i++) {
@@ -378,32 +465,9 @@ public class TracerImpl implements Tracer {
     return stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
-  private static boolean fastCheckConflict(Decision... constraints) {
-    int pickEqStart = -1, pickEqEnd = -1, pickFromStart = -1, pickFromEnd = -1;
-    for (int i = 0; i < constraints.length - 1; i++) {
-      final Decision c0 = constraints[i], c1 = constraints[i + 1];
-      if (c0 instanceof PickFrom
-          && c1 instanceof PickFrom
-          && ((PickFrom<?, ?>) c0).p() == ((PickFrom<?, ?>) c1).p()) return true;
-      if (pickEqStart == -1 && c0 instanceof PickEq) pickEqStart = i;
-      if (pickEqEnd == -1 && !(c1 instanceof PickEq)) pickEqEnd = i + 1;
-      if (pickFromStart == -1 && c0 instanceof PickFrom) pickFromStart = i;
-      if (pickFromEnd == -1 && !(c1 instanceof PickFrom)) pickFromEnd = i + 1;
-    }
-
-    if (pickEqStart < 0 || pickFromStart < 0) return false;
-
-    for (int i = pickFromStart; i < pickFromEnd - 1; ++i) {
-      final PickFrom<?, ?> fromX = (PickFrom<?, ?>) constraints[i];
-      final PickFrom<?, ?> fromY = (PickFrom<?, ?>) constraints[i + 1];
-
-      if (fromX.ts().length != fromY.ts().length)
-        for (int j = pickEqStart; j < pickEqEnd; ++j) {
-          final PickEq<?> pickEq = (PickEq<?>) constraints[j];
-          if (pickEq.px() == fromX.p() && pickEq.py() == fromY.p()) return true;
-        }
-    }
-
-    return false;
+  private static int markSeq(Scoped... scoped) {
+    for (int i = 1, bound = scoped.length; i < bound; i++)
+      if (scoped[i - 1].scope() != scoped[i].scope()) return i;
+    return 0;
   }
 }

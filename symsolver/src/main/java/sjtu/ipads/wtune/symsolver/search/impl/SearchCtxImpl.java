@@ -99,12 +99,13 @@ public class SearchCtxImpl implements SearchCtx {
     searcher.search(tree);
     final long t1 = System.currentTimeMillis();
 
-    stat.numFastRejection = tracer.numFastRejection();
+    stat.numFastConflict = tracer.numFastConflict();
+    stat.numFastIncomplete = tracer.numFastIncomplete();
     stat.numSearched = searcher.numSearched();
     stat.numSkipped = searcher.numSkipped();
     stat.timeTotal += t1 - t0;
 
-    System.out.println(stat);
+    //    System.out.println(stat);
     return survivors;
   }
 
@@ -183,15 +184,21 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
-  public int numFastRejection() {
-    return tracer.numFastRejection();
+  public int numFastConflict() {
+    return tracer.numFastConflict();
+  }
+
+  @Override
+  public int numFastIncomplete() {
+    return tracer.numFastIncomplete();
   }
 
   private static class Statistics {
     private int numSearched = 0;
     private int numSkipped = 0;
     private int numConflict = 0;
-    private int numFastRejection = 0;
+    private int numFastConflict = 0;
+    private int numFastIncomplete = 0;
     private int numIncomplete = 0;
     private int numProveCall = 0;
     private int numCacheHit = 0;
@@ -214,10 +221,12 @@ public class SearchCtxImpl implements SearchCtx {
           + numSkipped
           + "\n#Conflict="
           + numConflict
-          + "\n#FastRej="
-          + numFastRejection
+          + "\n#FastConflict="
+          + numFastConflict
           + "\n#Incomplete="
           + numIncomplete
+          + "\n#FastIncomplete="
+          + numFastIncomplete
           + "\n#ProveCall="
           + numProveCall
           + "\n#CacheHit="

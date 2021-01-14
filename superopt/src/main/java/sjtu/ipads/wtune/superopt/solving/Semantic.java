@@ -69,6 +69,21 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   }
 
   @Override
+  public void leaveLeftJoin(LeftJoin op) {
+    final Relation right = stack.pop(), left = stack.pop();
+    final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
+    final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
+    final Proposition nonNullCond = right.condition().and(joinCond);
+    final Value nullTuple = ctx().makeNullTuple();
+    final Value[] rightTuples =
+        arrayMap(it -> ctx().makeIte(nonNullCond, it, nullTuple), Value.class, right.output());
+
+    leftPick.setJoined(rightPick);
+
+    push(left.condition(), arrayConcat(left.output(), rightTuples));
+  }
+
+  @Override
   public void leavePlainFilter(PlainFilter op) {
     final Relation in = stack.pop();
     final Proposition cond =
@@ -161,6 +176,13 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     }
 
     @Override
+    public boolean enterLeftJoin(LeftJoin op) {
+      picks.add(op.leftFields());
+      picks.add(op.rightFields());
+      return true;
+    }
+
+    @Override
     public boolean enterPlainFilter(PlainFilter op) {
       picks.add(op.fields());
       preds.add(op.predicate());
@@ -191,11 +213,12 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
     @Override
     public void leaveInnerJoin(InnerJoin op) {
-      final Set<Placeholder> rightTbls = stack.pop(), leftTbls = stack.pop();
-      final Placeholder leftFields = op.leftFields(), rightFields = op.rightFields();
-      viable.put(leftFields, collectionMap(Collections::singleton, leftTbls, HashSet::new));
-      viable.put(rightFields, collectionMap(Collections::singleton, rightTbls, HashSet::new));
-      stack.push(union(leftTbls, rightTbls));
+      setJoinKeySource(op);
+    }
+
+    @Override
+    public void leaveLeftJoin(LeftJoin op) {
+      setJoinKeySource(op);
     }
 
     @Override
@@ -216,6 +239,14 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     @Override
     public void leaveUnion(Union op) {
       stack.pop(); // drop tables from right
+    }
+
+    private void setJoinKeySource(Join op) {
+      final Placeholder leftFields = op.leftFields(), rightFields = op.rightFields();
+      final Set<Placeholder> rightTbls = stack.pop(), leftTbls = stack.pop();
+      viable.put(leftFields, collectionMap(Collections::singleton, leftTbls, HashSet::new));
+      viable.put(rightFields, collectionMap(Collections::singleton, rightTbls, HashSet::new));
+      stack.push(union(leftTbls, rightTbls));
     }
   }
 }

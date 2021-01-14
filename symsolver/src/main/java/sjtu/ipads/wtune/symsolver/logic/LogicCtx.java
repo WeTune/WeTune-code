@@ -29,6 +29,10 @@ public interface LogicCtx {
 
   Func makeFunc(Sym t);
 
+  Value makeConst(int i);
+
+  Value makeIte(Proposition cond, Value v0, Value v1);
+
   Value makeTuple(String name);
 
   Value makeApply(Func func, Value... args);
@@ -39,6 +43,10 @@ public interface LogicCtx {
 
   default Proposition makeTautology() {
     return makeConst(true);
+  }
+
+  default Value makeNullTuple() {
+    return makeConst(0);
   }
 
   default Value[] makeTuples(int n, String prefix) {

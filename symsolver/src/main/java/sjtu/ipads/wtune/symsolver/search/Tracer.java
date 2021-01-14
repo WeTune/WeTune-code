@@ -17,5 +17,7 @@ public interface Tracer extends Reactor {
 
   Summary summary();
 
-  int numFastRejection();
+  int numFastConflict();
+
+  int numFastIncomplete();
 }
