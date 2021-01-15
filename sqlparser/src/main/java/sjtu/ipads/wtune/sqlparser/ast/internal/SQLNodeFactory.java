@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 
 public interface SQLNodeFactory {
   default SQLNode newNode(NodeType type) {
@@ -160,7 +160,7 @@ public interface SQLNodeFactory {
   }
 
   default SQLNode simple(String name, String alias) {
-    final SQLNode node = newNode(SIMPLE);
+    final SQLNode node = newNode(SIMPLE_SOURCE);
     node.put(TableSourceAttrs.SIMPLE_TABLE, tableName(name));
     node.put(TableSourceAttrs.SIMPLE_ALIAS, alias);
     return node;

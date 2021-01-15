@@ -4,8 +4,8 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 
 /** Represent a relation, e.g. either a table source or a subquery. */
 public class Relation {
@@ -64,7 +64,7 @@ public class Relation {
     if (node == null) return false;
     if (node.nodeType() == NodeType.QUERY) return true;
     if (node.nodeType() == NodeType.TABLE_SOURCE)
-      return SIMPLE.isInstance(node) || DERIVED.isInstance(node);
+      return SIMPLE_SOURCE.isInstance(node) || DERIVED_SOURCE.isInstance(node);
     return false;
   }
 }

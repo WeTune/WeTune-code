@@ -11,16 +11,16 @@ import sjtu.ipads.wtune.stmt.schema.Table;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_TABLE_SOURCE;
 
 class ResolveTable {
   public static void resolve(Statement stmt) {
     final Schema schema = App.find(stmt.appName()).schema("base");
-    Collector.collect(stmt.parsed(), SIMPLE::isInstance).forEach(it -> resolveSimple(schema, it));
-    Collector.collect(stmt.parsed(), DERIVED::isInstance).forEach(ResolveTable::resolveDerived);
+    Collector.collect(stmt.parsed(), SIMPLE_SOURCE::isInstance).forEach(it -> resolveSimple(schema, it));
+    Collector.collect(stmt.parsed(), DERIVED_SOURCE::isInstance).forEach(ResolveTable::resolveDerived);
   }
 
   private static void resolveSimple(Schema schema, SQLNode node) {

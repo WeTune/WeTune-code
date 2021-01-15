@@ -2,10 +2,12 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.rel.Schema;
 
 public class SQLContextImpl implements SQLContext, NodeMgr {
   private final String dbType;
   private NodeMgr mgr = NodeMgr.empty(this);
+  private Schema schema;
 
   private SQLContextImpl(String dbType) {
     this.dbType = dbType;
@@ -63,6 +65,16 @@ public class SQLContextImpl implements SQLContext, NodeMgr {
   @Override
   public void setSnapshot(Snapshot snapshot) {
     this.mgr = snapshot.key();
+  }
+
+  @Override
+  public Schema schema() {
+    return schema;
+  }
+
+  @Override
+  public void setSchema(Schema schema) {
+    this.schema = schema;
   }
 
   public SQLNode manage(SQLNode node) {

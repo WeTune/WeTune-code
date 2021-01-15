@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import sjtu.ipads.wtune.sqlparser.ast.*;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
-import sjtu.ipads.wtune.sqlparser.ast.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,9 +12,7 @@ import java.util.stream.Collectors;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLDataType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType.INTEGER;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType.*;
 
 interface PGASTHelper {
@@ -158,26 +156,29 @@ interface PGASTHelper {
                 .toLowerCase();
 
     final String name;
-    final SQLDataType.Category category;
-    if (typeString.endsWith("int") || typeString.equals(SQLDataType.INTEGER)) {
-      category = SQLDataType.Category.INTEGRAL;
-      name = typeString.equals("int") ? SQLDataType.INTEGER : typeString;
+    final Category category;
+    if (typeString.endsWith("int") || typeString.equals(DataTypeName.INTEGER)) {
+      category = Category.INTEGRAL;
+      name = typeString.equals("int") ? DataTypeName.INTEGER : typeString;
 
     } else if (typeString.contains("bit")) {
       category = Category.BIT_STRING;
-      name = (predefinedCtx.VARYING() != null || typeString.contains("var")) ? BIT_VARYING : BIT;
+      name =
+          (predefinedCtx.VARYING() != null || typeString.contains("var"))
+              ? DataTypeName.BIT_VARYING
+              : DataTypeName.BIT;
 
     } else if (typeString.startsWith("int") && !typeString.equals("interval")) {
-      category = SQLDataType.Category.INTEGRAL;
+      category = Category.INTEGRAL;
       switch (typeString) {
         case "int2":
-          name = SMALLINT;
+          name = DataTypeName.SMALLINT;
           break;
         case "int4":
-          name = SQLDataType.INTEGER;
+          name = DataTypeName.INTEGER;
           break;
         case "int8":
-          name = BIGINT;
+          name = DataTypeName.BIGINT;
           break;
         default:
           return assertFalse();
@@ -188,33 +189,33 @@ interface PGASTHelper {
       name = typeString;
 
     } else if (typeString.startsWith("serial")) {
-      category = SQLDataType.Category.INTEGRAL;
+      category = Category.INTEGRAL;
       switch (typeString) {
         case "serial2":
-          name = SMALLSERIAL;
+          name = DataTypeName.SMALLSERIAL;
           break;
         case "serial4":
-          name = SERIAL;
+          name = DataTypeName.SERIAL;
           break;
         case "serial8":
-          name = BIGSERIAL;
+          name = DataTypeName.BIGSERIAL;
           break;
         default:
           return assertFalse();
       }
 
-    } else if (FRACTION_TYPES.contains(typeString) || "dec".equals(typeString)) {
+    } else if (DataTypeName.FRACTION_TYPES.contains(typeString) || "dec".equals(typeString)) {
       category = Category.FRACTION;
-      name = "dec".equals(typeString) ? DECIMAL : typeString;
+      name = "dec".equals(typeString) ? DataTypeName.DECIMAL : typeString;
 
     } else if (typeString.startsWith("float")) {
       category = Category.FRACTION;
       switch (typeString) {
         case "float4":
-          name = FLOAT;
+          name = DataTypeName.FLOAT;
           break;
         case "float8":
-          name = DOUBLE;
+          name = DataTypeName.DOUBLE;
           break;
         default:
           return assertFalse();
@@ -224,43 +225,46 @@ interface PGASTHelper {
       category = Category.STRING;
       name = typeString;
 
-    } else if (TIME_TYPE.contains(typeString)) {
+    } else if (DataTypeName.TIME_TYPE.contains(typeString)) {
       category = Category.TIME;
       name = predefinedCtx.WITH() != null ? (typeString + "tz") : typeString;
 
     } else if (typeString.contains("char")) {
       category = Category.STRING;
-      name = (typeString.contains("var") || predefinedCtx.VARYING() != null) ? VARCHAR : CHAR;
+      name =
+          (typeString.contains("var") || predefinedCtx.VARYING() != null)
+              ? DataTypeName.VARCHAR
+              : DataTypeName.CHAR;
 
     } else if (typeString.equals("interval")) {
       category = Category.INTERVAL;
-      name = INTERVAL;
+      name = DataTypeName.INTERVAL;
 
     } else if (typeString.contains("bool")) {
       category = Category.BOOLEAN;
-      name = BOOLEAN;
+      name = DataTypeName.BOOLEAN;
 
     } else if (typeString.contains("json")) {
       category = Category.JSON;
       name = typeString;
 
-    } else if (GEOMETRY_TYPES.contains(typeString)) {
+    } else if (DataTypeName.GEOMETRY_TYPES.contains(typeString)) {
       category = Category.GEO;
       name = typeString;
 
-    } else if (NET_TYPES.contains(typeString)) {
+    } else if (DataTypeName.NET_TYPES.contains(typeString)) {
       category = Category.NET;
       name = typeString;
 
-    } else if (MONEY.equals(typeString)) {
+    } else if (DataTypeName.MONEY.equals(typeString)) {
       category = Category.MONETARY;
       name = typeString;
 
-    } else if (UUID.equals(typeString)) {
+    } else if (DataTypeName.UUID.equals(typeString)) {
       category = Category.UUID;
       name = typeString;
 
-    } else if (XML.equals(typeString)) {
+    } else if (DataTypeName.XML.equals(typeString)) {
       category = Category.XML;
       name = typeString;
 
@@ -303,7 +307,7 @@ interface PGASTHelper {
               : Integer.parseInt(arrayDimCtx.NUMBER_LITERAL().getText());
     }
 
-    return new SQLDataType(category, name, w, p)
+    return SQLDataType.make(category, name, w, p)
         .setIntervalField(interval)
         .setDimensions(arrayDims);
   }
@@ -396,7 +400,8 @@ interface PGASTHelper {
     final SQLNode expr1 = _1.get(ExprAttrs.INDIRECTION_COMP_START);
 
     if (ExprType.SYMBOL.isInstance(expr1))
-      return factory.columnRef(id, expr0.get(ExprAttrs.SYMBOL_TEXT), expr1.get(ExprAttrs.SYMBOL_TEXT));
+      return factory.columnRef(
+          id, expr0.get(ExprAttrs.SYMBOL_TEXT), expr1.get(ExprAttrs.SYMBOL_TEXT));
     else if (ExprType.WILDCARD.isInstance(expr1))
       return factory.wildcard(factory.tableName(expr0.get(ExprAttrs.SYMBOL_TEXT)));
     else

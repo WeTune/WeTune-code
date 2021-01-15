@@ -3,11 +3,13 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
-import sjtu.ipads.wtune.sqlparser.ast.*;
-import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 
 import java.util.List;
 
@@ -15,12 +17,11 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLDataType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 
 public interface MySQLASTHelper {
   static String stringifyText(MySQLParser.TextStringContext text) {
@@ -157,17 +158,17 @@ public interface MySQLASTHelper {
     return node;
   }
 
-  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Attrs out) {
+  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Attrs<?> out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectColumnAttr(attr, out));
   }
 
-  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Attrs out) {
+  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Attrs<?> out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectGColumnAttr(attr, out));
   }
 
-  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs out) {
+  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs<?> out) {
     if (attrs.NOT_SYMBOL() != null && attrs.nullLiteral() != null)
       out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
     if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
@@ -177,7 +178,7 @@ public interface MySQLASTHelper {
     if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT);
   }
 
-  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs out) {
+  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs<?> out) {
     if (attrs.notRule() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
     if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
     if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
@@ -253,63 +254,65 @@ public interface MySQLASTHelper {
   static SQLDataType parseDataType(MySQLParser.DataTypeContext ctx) {
     final String typeString = ctx.type != null ? ctx.type.getText().toLowerCase() : "national";
 
-    final SQLDataType.Category category;
+    final Category category;
     final String name;
-    if (typeString.endsWith("int") || typeString.equals(INTEGER) || typeString.equals(SERIAL)) {
-      category = SQLDataType.Category.INTEGRAL;
-      name = "int".equals(typeString) ? INTEGER : typeString;
+    if (typeString.endsWith("int")
+        || typeString.equals(DataTypeName.INTEGER)
+        || typeString.equals(DataTypeName.SERIAL)) {
+      category = Category.INTEGRAL;
+      name = "int".equals(typeString) ? DataTypeName.INTEGER : typeString;
 
-    } else if (typeString.equals(BIT)) {
+    } else if (typeString.equals(DataTypeName.BIT)) {
       category = Category.BIT_STRING;
       name = typeString;
 
-    } else if (FRACTION_TYPES.contains(typeString)) {
-      category = SQLDataType.Category.FRACTION;
+    } else if (DataTypeName.FRACTION_TYPES.contains(typeString)) {
+      category = Category.FRACTION;
       name = typeString;
 
-    } else if (TIME_TYPE.contains(typeString)) {
-      category = SQLDataType.Category.TIME;
+    } else if (DataTypeName.TIME_TYPE.contains(typeString)) {
+      category = Category.TIME;
       name = typeString;
 
     } else if (typeString.contains("bool")) {
-      category = SQLDataType.Category.BOOLEAN;
-      name = BOOLEAN;
+      category = Category.BOOLEAN;
+      name = DataTypeName.BOOLEAN;
 
     } else if (typeString.contains("blob")) {
-      category = SQLDataType.Category.BLOB;
+      category = Category.BLOB;
       name = typeString;
 
-    } else if (SET.equals(typeString) || ENUM.equals(typeString)) {
-      category = SQLDataType.Category.ENUM;
+    } else if (DataTypeName.SET.equals(typeString) || DataTypeName.ENUM.equals(typeString)) {
+      category = Category.ENUM;
       name = typeString;
 
-    } else if (JSON.equals(typeString)) {
-      category = SQLDataType.Category.JSON;
+    } else if (DataTypeName.JSON.equals(typeString)) {
+      category = Category.JSON;
       name = typeString;
 
-    } else if (typeString.endsWith(CHAR) || typeString.equals("national")) {
+    } else if (typeString.endsWith(DataTypeName.CHAR) || typeString.equals("national")) {
       category = Category.STRING;
       name =
           (typeString.contains("var")
                   || ctx.VARYING_SYMBOL() != null
                   || ctx.VARCHAR_SYMBOL() != null)
-              ? VARCHAR
-              : CHAR;
+              ? DataTypeName.VARCHAR
+              : DataTypeName.CHAR;
 
-    } else if (typeString.contains(TEXT)) {
+    } else if (typeString.contains(DataTypeName.TEXT)) {
       category = Category.STRING;
       name = typeString;
 
-    } else if (typeString.endsWith(BINARY)) {
-      category = SQLDataType.Category.STRING;
-      name = typeString.contains("var") ? VARBINARY : BINARY;
+    } else if (typeString.endsWith(DataTypeName.BINARY)) {
+      category = Category.STRING;
+      name = typeString.contains("var") ? DataTypeName.VARBINARY : DataTypeName.BINARY;
 
     } else if (typeString.equals("long")) {
       category = Category.STRING;
-      name = ctx.VARBINARY_SYMBOL() != null ? VARBINARY : VARCHAR;
+      name = ctx.VARBINARY_SYMBOL() != null ? DataTypeName.VARBINARY : DataTypeName.VARCHAR;
 
     } else {
-      category = SQLDataType.Category.GEO;
+      category = Category.GEO;
       name = typeString;
     }
 
@@ -339,7 +342,8 @@ public interface MySQLASTHelper {
 
     final var fieldOptions = ctx.fieldOptions();
     final boolean unsigned =
-        SERIAL.equals(name) || fieldOptions != null && fieldOptions.UNSIGNED_SYMBOL() != null;
+        DataTypeName.SERIAL.equals(name)
+            || fieldOptions != null && fieldOptions.UNSIGNED_SYMBOL() != null;
 
     final var stringList = ctx.stringList();
     final List<String> valuesList =
@@ -347,7 +351,7 @@ public interface MySQLASTHelper {
             ? emptyList()
             : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
 
-    return new SQLDataType(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
+    return SQLDataType.make(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
   }
 
   static SQLDataType parseDataType(MySQLParser.CastTypeContext ctx) {
@@ -356,31 +360,31 @@ public interface MySQLASTHelper {
             ? ctx.type.getText().toLowerCase()
             : ctx.realType() != null ? ctx.realType().type.getText().toLowerCase() : "national";
 
-    final SQLDataType.Category category;
+    final Category category;
     final String name;
-    if (INT.equals(typeString) || typeString.endsWith("signed")) {
-      category = SQLDataType.Category.INTEGRAL;
-      name = INT;
+    if (DataTypeName.INT.equals(typeString) || typeString.endsWith("signed")) {
+      category = Category.INTEGRAL;
+      name = DataTypeName.INT;
 
-    } else if (FRACTION_TYPES.contains(typeString)) {
-      category = SQLDataType.Category.FRACTION;
+    } else if (DataTypeName.FRACTION_TYPES.contains(typeString)) {
+      category = Category.FRACTION;
       name = typeString;
 
-    } else if (TIME_TYPE.contains(typeString)) {
-      category = SQLDataType.Category.TIME;
+    } else if (DataTypeName.TIME_TYPE.contains(typeString)) {
+      category = Category.TIME;
       name = typeString;
 
-    } else if (typeString.endsWith(CHAR) || typeString.equals("national")) {
+    } else if (typeString.endsWith(DataTypeName.CHAR) || typeString.equals("national")) {
       category = Category.STRING;
-      name = CHAR;
+      name = DataTypeName.CHAR;
 
-    } else if (typeString.endsWith(BINARY)) {
+    } else if (typeString.endsWith(DataTypeName.BINARY)) {
       category = Category.STRING;
-      name = BINARY;
+      name = DataTypeName.BINARY;
 
-    } else if (JSON.equals(typeString)) {
+    } else if (DataTypeName.JSON.equals(typeString)) {
       category = Category.JSON;
-      name = JSON;
+      name = DataTypeName.JSON;
 
     } else return assertFalse();
 
@@ -410,7 +414,7 @@ public interface MySQLASTHelper {
 
     final boolean unsigned = ctx.UNSIGNED_SYMBOL() != null;
 
-    return new SQLDataType(category, name, w, p).setUnsigned(unsigned);
+    return SQLDataType.make(category, name, w, p).setUnsigned(unsigned);
   }
 
   static Pair<LiteralType, Number> parseNumericLiteral(Token token) {

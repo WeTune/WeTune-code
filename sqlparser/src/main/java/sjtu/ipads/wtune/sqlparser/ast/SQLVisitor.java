@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.ast;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface SQLVisitor {
   default boolean enter(SQLNode node) {
@@ -328,4 +329,14 @@ public interface SQLVisitor {
   }
 
   default void leaveGroupItem(SQLNode groupItem) {}
+
+  static SQLVisitor traversal(Consumer<SQLNode> func) {
+    return new SQLVisitor() {
+      @Override
+      public boolean enter(SQLNode node) {
+        func.accept(node);
+        return true;
+      }
+    };
+  }
 }

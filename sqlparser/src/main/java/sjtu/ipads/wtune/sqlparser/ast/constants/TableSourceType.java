@@ -7,9 +7,9 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.TABLE_SOURCE_ATTR_PREFIX;
 
 public enum TableSourceType implements AttrDomain {
-  SIMPLE,
+  SIMPLE_SOURCE,
   JOINED,
-  DERIVED;
+  DERIVED_SOURCE;
 
   @Override
   public String attrPrefix() {
@@ -26,10 +26,10 @@ public enum TableSourceType implements AttrDomain {
   }
 
   public boolean isSimple() {
-    return this == SIMPLE;
+    return this == SIMPLE_SOURCE;
   }
 
   public boolean isDerived() {
-    return this == DERIVED;
+    return this == DERIVED_SOURCE;
   }
 }

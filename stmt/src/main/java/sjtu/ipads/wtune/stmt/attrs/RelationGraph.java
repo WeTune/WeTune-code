@@ -14,8 +14,8 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 
 public class RelationGraph {
@@ -50,14 +50,14 @@ public class RelationGraph {
   private JoinCondition expandEdge(JoinCondition edge) {
     final Relation left = edge.left();
     final Relation right = edge.right();
-    if (SIMPLE.isInstance(left.node()) && SIMPLE.isInstance(right.node())) return edge;
+    if (SIMPLE_SOURCE.isInstance(left.node()) && SIMPLE_SOURCE.isInstance(right.node())) return edge;
     return expandEdge(expandEdge(edge, left), right);
   }
 
   private JoinCondition expandEdge(JoinCondition edge, Relation targetSide) {
     final SQLNode targetNode = targetSide.node();
-    if (SIMPLE.isInstance(targetNode)) return edge;
-    if (DERIVED.isInstance(targetNode)) {
+    if (SIMPLE_SOURCE.isInstance(targetNode)) return edge;
+    if (DERIVED_SOURCE.isInstance(targetNode)) {
       return expandDerived(edge, targetSide);
 
     } else if (QUERY.isInstance(targetNode)) {

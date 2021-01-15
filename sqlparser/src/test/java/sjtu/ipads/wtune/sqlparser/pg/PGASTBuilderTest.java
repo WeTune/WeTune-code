@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.function.Function;
 
@@ -30,8 +30,8 @@ class PGASTBuilderTest {
   @Test
   void testCharacterString() {
     final TestHelper helper = new TestHelper(PGParser::data_type);
-    final PGParser.Data_typeContext ctx = new PGASTParser()
-            .parse0("character varying [][]", PGParser::data_type);
+    final PGParser.Data_typeContext ctx =
+        new PGASTParser().parse0("character varying [][]", PGParser::data_type);
 
     final SQLDataType dataType = PGASTHelper.parseDataType(ctx);
     final SQLNode node = helper.sql("character varying[]");

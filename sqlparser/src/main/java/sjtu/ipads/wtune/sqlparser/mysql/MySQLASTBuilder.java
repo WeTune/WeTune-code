@@ -392,7 +392,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
   @Override
   public SQLNode visitSingleTable(MySQLParser.SingleTableContext ctx) {
-    final SQLNode node = newNode(SIMPLE);
+    final SQLNode node = newNode(SIMPLE_SOURCE);
     node.put(TableSourceAttrs.SIMPLE_TABLE, visitTableRef(ctx.tableRef()));
 
     if (ctx.usePartition() != null) {
@@ -412,7 +412,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
   @Override
   public SQLNode visitDerivedTable(MySQLParser.DerivedTableContext ctx) {
-    final SQLNode node = newNode(DERIVED);
+    final SQLNode node = newNode(DERIVED_SOURCE);
 
     if (ctx.LATERAL_SYMBOL() != null) node.flag(TableSourceAttrs.DERIVED_LATERAL);
 

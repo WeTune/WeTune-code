@@ -3,13 +3,9 @@ package sjtu.ipads.wtune.stmt.resolver;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.attrs.Param;
 import sjtu.ipads.wtune.stmt.attrs.ParamModifier;
@@ -224,7 +220,7 @@ class ResolveParamFull implements SQLVisitor {
       stack.add(ParamModifier.of(INVOKE_AGG, target.get(AGGREGATE_NAME)));
 
     } else if (exprKind == CAST) {
-      if (target.get(CAST_TYPE).category() == SQLDataType.Category.INTERVAL) return false;
+      if (target.get(CAST_TYPE).category() == Category.INTERVAL) return false;
 
       resolveModifier(target.get(CAST_EXPR), stack);
 

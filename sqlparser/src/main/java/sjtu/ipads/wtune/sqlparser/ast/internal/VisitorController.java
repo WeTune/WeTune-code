@@ -330,11 +330,11 @@ public interface VisitorController {
     assert n.nodeType() == TABLE_SOURCE;
 
     switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
-      case SIMPLE:
+      case SIMPLE_SOURCE:
         return v.enterSimpleTableSource(n);
       case JOINED:
         return v.enterJoinedTableSource(n);
-      case DERIVED:
+      case DERIVED_SOURCE:
         return v.enterDerivedTableSource(n);
     }
 
@@ -431,7 +431,7 @@ public interface VisitorController {
   private static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
     switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
-      case SIMPLE:
+      case SIMPLE_SOURCE:
         safeVisitChild(TableSourceAttrs.SIMPLE_TABLE, n, v);
         safeVisitList(TableSourceAttrs.SIMPLE_HINTS, n, v);
         break;
@@ -440,7 +440,7 @@ public interface VisitorController {
         safeVisitChild(TableSourceAttrs.JOINED_RIGHT, n, v);
         safeVisitChild(TableSourceAttrs.JOINED_ON, n, v);
         break;
-      case DERIVED:
+      case DERIVED_SOURCE:
         safeVisitChild(TableSourceAttrs.DERIVED_SUBQUERY, n, v);
     }
   }
@@ -564,13 +564,13 @@ public interface VisitorController {
     assert n.nodeType() == TABLE_SOURCE;
 
     switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
-      case SIMPLE:
+      case SIMPLE_SOURCE:
         v.leaveSimpleTableSource(n);
         return;
       case JOINED:
         v.leaveJoinedTableSource(n);
         return;
-      case DERIVED:
+      case DERIVED_SOURCE:
         v.leaveDerivedTableSource(n);
     }
   }

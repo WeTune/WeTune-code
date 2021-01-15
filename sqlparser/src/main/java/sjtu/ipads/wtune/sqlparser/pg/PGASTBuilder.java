@@ -302,7 +302,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   @Override
   public SQLNode visitFrom_primary(PGParser.From_primaryContext ctx) {
     if (ctx.schema_qualified_name() != null) {
-      final SQLNode node = newNode(TableSourceType.SIMPLE);
+      final SQLNode node = newNode(TableSourceType.SIMPLE_SOURCE);
       node.put(
           TableSourceAttrs.SIMPLE_TABLE,
           PGASTHelper.tableName(this, stringifyIdentifier(ctx.schema_qualified_name())));
@@ -310,7 +310,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
       return node;
 
     } else if (ctx.table_subquery() != null) {
-      final SQLNode node = newNode(TableSourceType.DERIVED);
+      final SQLNode node = newNode(TableSourceType.DERIVED_SOURCE);
       final SQLNode subquery = ctx.table_subquery().accept(this);
       if (subquery == null) throw new SQLParserException("unsupported table source");
 
