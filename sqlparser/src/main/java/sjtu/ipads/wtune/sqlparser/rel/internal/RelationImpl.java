@@ -3,15 +3,18 @@ package sjtu.ipads.wtune.sqlparser.rel.internal;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
-import sjtu.ipads.wtune.sqlparser.rel.Schema;
-import sjtu.ipads.wtune.sqlparser.rel.Table;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.tableSourceName;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
@@ -28,19 +31,23 @@ public class RelationImpl implements Relation {
     this.node = node;
     this.alias = tableSourceName(node);
     this.parent = parent;
-    this.inputs = new ArrayList<>(expectedNumInputs);
+    this.inputs = expectedNumInputs == 0 ? emptyList() : new ArrayList<>(expectedNumInputs);
   }
 
   public static Relation build(SQLNode node) {
+    final Relation relation = Relation.of(node);
+    if (relation != null) return relation;
+
     final SQLNode parentNode = node.parent();
-    final Relation parent = parentNode == null ? null : parentNode.get(RELATION);
-    if (QUERY.isInstance(node) && DERIVED_SOURCE.isInstance(parentNode)) return parent;
+    final Relation parent = parentNode == null ? null : Relation.of(parentNode);
+
+    if (DERIVED_SOURCE.isInstance(parentNode) && QUERY.isInstance(node)) return parent;
 
     final int expectedNumInputs = SIMPLE_SOURCE.isInstance(node) ? 0 : 4;
     final Relation rel = new RelationImpl(node, parent, expectedNumInputs);
 
     if (parent != null && (TABLE_SOURCE.isInstance(node) || SET_OP.isInstance(parentNode)))
-      parent.addInput(rel);
+      parent.inputs().add(rel);
 
     return rel;
   }
@@ -68,25 +75,19 @@ public class RelationImpl implements Relation {
   @Override
   public List<Attribute> attributes() {
     if (attributes != null) return attributes;
-
-    final Schema schema = node.context().schema();
-    if (SIMPLE_SOURCE.isInstance(node)) {
-      final Table table = schema.table(node.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE));
-      attributes = listMap(Attribute::fromColumn, table.columns());
-
-    } else if (DERIVED_SOURCE.isInstance(node)) {
-      attributes = outputAttributesOf(node.get(DERIVED_SUBQUERY));
-
-    } else if (QUERY.isInstance(node)) {
-      attributes = outputAttributesOf(node);
-    }
-
-    return attributes;
+    return attributes = outputAttributesOf(node);
   }
 
   private List<Attribute> outputAttributesOf(SQLNode node) {
-    if (QUERY_SPEC.isInstance(node)) {
-      return listMap(Attribute::fromProjection, node.get(QUERY_SPEC_SELECT_ITEMS));
+    if (SIMPLE_SOURCE.isInstance(node)) {
+      return Attribute.fromTable(node);
+
+    } else if (QUERY_SPEC.isInstance(node)) {
+      normalizeProjection(node);
+      return Attribute.fromProjection(node);
+
+    } else if (DERIVED_SOURCE.isInstance(node)) {
+      return outputAttributesOf(node.get(DERIVED_SUBQUERY));
 
     } else if (QUERY.isInstance(node)) {
       return outputAttributesOf(node.get(QUERY_BODY));
@@ -97,8 +98,44 @@ public class RelationImpl implements Relation {
     } else throw new AssertionError();
   }
 
-  @Override
-  public void addInput(Relation relation) {
-    inputs.add(relation);
+  private static void normalizeProjection(SQLNode querySpec) {
+    final List<SQLNode> items = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
+    if (items.stream().noneMatch(it -> WILDCARD.isInstance(it.get(SELECT_ITEM_EXPR)))) return;
+
+    final Relation rel = Relation.of(querySpec);
+    final List<SQLNode> newItems = new ArrayList<>(16);
+    for (SQLNode item : items)
+      if (!WILDCARD.isInstance(item.get(SELECT_ITEM_EXPR))) newItems.add(qualifyItem(rel, item));
+      else expandWildcard(rel, item, newItems);
+
+    querySpec.put(QUERY_SPEC_SELECT_ITEMS, newItems);
+  }
+
+  private static SQLNode qualifyItem(Relation relation, SQLNode item) {
+    final SQLNode column = item.get(SELECT_ITEM_EXPR).get(COLUMN_REF_COLUMN);
+
+    final String columnName = column.get(COLUMN_NAME_COLUMN);
+    item.putIfAbsent(SELECT_ITEM_ALIAS, columnName);
+
+    if (column.get(COLUMN_NAME_TABLE) != null) return item;
+
+    for (Relation input : relation.inputs())
+      if (input.attribute(columnName) != null) {
+        column.put(COLUMN_NAME_TABLE, input.alias());
+        break;
+      }
+
+    return item;
+  }
+
+  private static void expandWildcard(Relation relation, SQLNode item, List<SQLNode> dest) {
+    final SQLNode name = item.get(SELECT_ITEM_EXPR).get(WILDCARD_TABLE);
+    final List<Relation> inputs =
+        name == null
+            ? relation.inputs()
+            : singletonList(relation.input(name.get(TABLE_NAME_TABLE)));
+
+    for (Relation input : inputs)
+      for (Attribute attribute : input.attributes()) dest.add(attribute.toSelectItem());
   }
 }

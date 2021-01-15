@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static java.util.function.Predicate.not;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
+import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public class BasePickFrom<T extends Indexed, P extends Indexed> implements PickFrom<T, P> {

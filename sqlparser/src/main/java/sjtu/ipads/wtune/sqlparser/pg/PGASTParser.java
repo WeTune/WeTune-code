@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.SQLParserException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLContext;
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGLexer;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;

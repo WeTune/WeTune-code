@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.common.attrs;
 
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -96,8 +95,9 @@ public interface Attrs<A extends Attrs<A>> {
 
   Map<String, Object> directAttrs();
 
-  default void remove(String attrName) {
-    directAttrs().remove(attrName);
+  @SuppressWarnings("unchecked")
+  default <T> T remove(String attrName) {
+    return (T) directAttrs().remove(attrName);
   }
 
   default <T> T put(String attrName, T obj) {
@@ -136,31 +136,6 @@ public interface Attrs<A extends Attrs<A>> {
     return val == null ? defaultVal : val;
   }
 
-  @SuppressWarnings("unchecked")
-  default <T> Map<String, T> ofPrefix(String prefix, Class<T> expected) {
-    final Map<String, T> ret = new HashMap<>();
-
-    for (var e : directAttrs().entrySet()) {
-      final String k = e.getKey();
-      final Object v = e.getValue();
-
-      if (k.startsWith(prefix) && expected.isInstance(v)) ret.put(k, (T) v);
-    }
-
-    return ret;
-  }
-
-  default Map<String, Object> ofPrefix(String prefix) {
-    final Map<String, Object> ret = new HashMap<>();
-
-    for (var e : directAttrs().entrySet()) {
-      final String k = e.getKey();
-      if (k.startsWith(prefix)) ret.put(k, e.getValue());
-    }
-
-    return ret;
-  }
-
   default void flag(String attrName) {
     put(attrName, true);
   }
@@ -169,7 +144,7 @@ public interface Attrs<A extends Attrs<A>> {
     put(attrName, false);
   }
 
-  default boolean isFlagged(String attrName) {
+  default boolean isFlag(String attrName) {
     final Object o = directAttrs().get(attrName);
     return (o instanceof Boolean) && ((Boolean) o);
   }
@@ -178,8 +153,8 @@ public interface Attrs<A extends Attrs<A>> {
     return null;
   }
 
-  default void remove(Key<?> key) {
-    remove(key.name());
+  default <T> T remove(Key<T> key) {
+    return remove(key.name());
   }
 
   default <T> T put(Key<T> key, T obj) {
@@ -228,11 +203,11 @@ public interface Attrs<A extends Attrs<A>> {
     }
   }
 
-  default boolean isFlagged(Key<?> attrName) {
-    return isFlagged(attrName.name());
+  default boolean isFlag(Key<?> attrName) {
+    return isFlag(attrName.name());
   }
 
-  default <E extends Enum<E>> boolean isFlagged(Key<EnumSet<E>> enumSetKey, E element) {
+  default <E extends Enum<E>> boolean isFlag(Key<EnumSet<E>> enumSetKey, E element) {
     final var enumSet = get(enumSetKey);
     return enumSet != null && enumSet.contains(element);
   }
@@ -252,13 +227,5 @@ public interface Attrs<A extends Attrs<A>> {
     if (singleLine) builder.delete(builder.length() - 2, Integer.MAX_VALUE).append(" }");
 
     return builder.toString();
-  }
-
-  static Attrs<?> build() {
-    return new AttrsImpl(new HashMap<>());
-  }
-
-  static Attrs<?> build(Map<String, Object> map) {
-    return new AttrsImpl(map);
   }
 }

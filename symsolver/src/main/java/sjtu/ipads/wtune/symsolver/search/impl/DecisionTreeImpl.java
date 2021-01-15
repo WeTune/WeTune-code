@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
+import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 
 public class DecisionTreeImpl implements DecisionTree {
   private final DecidableConstraint[] choices;

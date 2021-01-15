@@ -8,7 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_BOOLEAN;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_IS_ENUM;

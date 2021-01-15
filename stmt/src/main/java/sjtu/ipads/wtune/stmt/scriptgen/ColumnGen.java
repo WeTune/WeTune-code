@@ -19,7 +19,7 @@ public class ColumnGen implements ScriptNode {
     out.print("{ ")
         .printf(
             "columnName = '%s', isBoolean = %s, isEnum = %s, ",
-            column.columnName(), column.isFlagged(COLUMN_IS_BOOLEAN), column.isFlagged(COLUMN_IS_ENUM))
+            column.columnName(), column.isFlag(COLUMN_IS_BOOLEAN), column.isFlag(COLUMN_IS_ENUM))
         .print("dataType = ")
         .accept(dataTypeGen)
         .print(" }");

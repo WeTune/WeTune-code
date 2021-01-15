@@ -34,7 +34,5 @@ class PGASTBuilderTest {
         new PGASTParser().parse0("character varying [][]", PGParser::data_type);
 
     final SQLDataType dataType = PGASTHelper.parseDataType(ctx);
-    final SQLNode node = helper.sql("character varying[]");
-    System.out.println();
   }
 }

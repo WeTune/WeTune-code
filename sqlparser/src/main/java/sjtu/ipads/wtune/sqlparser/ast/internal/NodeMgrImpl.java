@@ -8,14 +8,14 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 public class NodeMgrImpl implements NodeMgr {
-  private final NodeMgr ctx;
+  private final SQLContextImpl ctx;
 
   private final NodeMgr base;
   private final Map<Tree, Root> treeToRoot;
   private final Map<Root, Tree> rootToTree;
   private final Map<Tree, Root> parents;
 
-  private NodeMgrImpl(NodeMgr ctx, NodeMgr base) {
+  private NodeMgrImpl(SQLContextImpl ctx, NodeMgr base) {
     this.ctx = ctx;
     this.base = base;
     this.treeToRoot = new IdentityHashMap<>();
@@ -23,12 +23,12 @@ public class NodeMgrImpl implements NodeMgr {
     this.parents = new IdentityHashMap<>();
   }
 
-  public static NodeMgr build(NodeMgr supervisor) {
-    return new NodeMgrImpl(supervisor, EmptyNodeMgr.INSTANCE);
+  public static NodeMgr build(SQLContextImpl context) {
+    return new NodeMgrImpl(context, EmptyNodeMgr.INSTANCE);
   }
 
-  public static NodeMgr build(NodeMgr supervisor, NodeMgr base) {
-    return new NodeMgrImpl(supervisor, base);
+  public static NodeMgr build(SQLContextImpl context, NodeMgr base) {
+    return new NodeMgrImpl(context, base);
   }
 
   @Override

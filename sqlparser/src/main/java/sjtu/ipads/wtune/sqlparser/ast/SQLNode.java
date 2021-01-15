@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;

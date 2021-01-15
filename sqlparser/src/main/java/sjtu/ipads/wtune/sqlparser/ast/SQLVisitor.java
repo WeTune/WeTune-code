@@ -330,12 +330,40 @@ public interface SQLVisitor {
 
   default void leaveGroupItem(SQLNode groupItem) {}
 
-  static SQLVisitor traversal(Consumer<SQLNode> func) {
+  static SQLVisitor topDownVisit(Consumer<SQLNode> func) {
     return new SQLVisitor() {
       @Override
       public boolean enter(SQLNode node) {
         func.accept(node);
         return true;
+      }
+    };
+  }
+
+  static SQLVisitor bottomUpVisit(Consumer<SQLNode> func) {
+    return new SQLVisitor() {
+      @Override
+      public void leave(SQLNode node) {
+        func.accept(node);
+      }
+    };
+  }
+
+  static SQLVisitor topDownVisit(AttrDomain type, Consumer<SQLNode> func) {
+    return new SQLVisitor() {
+      @Override
+      public boolean enter(SQLNode node) {
+        if (type.isInstance(node)) func.accept(node);
+        return true;
+      }
+    };
+  }
+
+  static SQLVisitor bottomUpVisit(AttrDomain type, Consumer<SQLNode> func) {
+    return new SQLVisitor() {
+      @Override
+      public void leave(SQLNode node) {
+        if (type.isInstance(node)) func.accept(node);
       }
     };
   }

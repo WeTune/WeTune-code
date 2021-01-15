@@ -36,9 +36,6 @@ public class AttrsTest {
 
     assertEquals(1, foo.putIfAbsent(ATTR_SECOND, 1));
 
-    assertEquals("{ \"wtune.first\" = 123, \"wtune.second\" = 1 }", foo.stringify(true));
-    assertEquals(2, foo.ofPrefix("wtune").size());
-
     final Map<String, Object> oldAttrs = foo.directAttrs();
 
     foo = new Foo();

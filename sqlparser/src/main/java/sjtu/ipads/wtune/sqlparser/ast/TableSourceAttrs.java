@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
@@ -39,5 +39,9 @@ public interface TableSourceAttrs {
     else if (DERIVED_SOURCE.isInstance(node)) return node.get(DERIVED_ALIAS);
 
     return null;
+  }
+
+  static String tableNameOf(SQLNode node) {
+    return !SIMPLE_SOURCE.isInstance(node) ? null : node.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE);
   }
 }

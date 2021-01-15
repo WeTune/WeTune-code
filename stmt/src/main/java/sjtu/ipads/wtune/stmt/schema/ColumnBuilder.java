@@ -16,9 +16,9 @@ class ColumnBuilder {
     column.setRawDataType(colDef.get(COLUMN_DEF_DATATYPE_RAW));
     column.setDataType(colDef.get(COLUMN_DEF_DATATYPE));
 
-    if (colDef.isFlagged(COLUMN_DEF_GENERATED)) column.flag(COLUMN_GENERATED);
-    if (colDef.isFlagged(COLUMN_DEF_DEFAULT)) column.flag(COLUMN_HAS_DEFAULT);
-    if (colDef.isFlagged(COLUMN_DEF_AUTOINCREMENT)) column.flag(COLUMN_AUTOINCREMENT);
+    if (colDef.isFlag(COLUMN_DEF_GENERATED)) column.flag(COLUMN_GENERATED);
+    if (colDef.isFlag(COLUMN_DEF_DEFAULT)) column.flag(COLUMN_HAS_DEFAULT);
+    if (colDef.isFlag(COLUMN_DEF_AUTOINCREMENT)) column.flag(COLUMN_AUTOINCREMENT);
 
     return column;
   }

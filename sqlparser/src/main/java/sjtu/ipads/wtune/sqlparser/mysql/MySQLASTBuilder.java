@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParserBaseVisitor;
@@ -30,7 +30,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements SQLNodeFactory {
   @Override
   protected SQLNode aggregateResult(SQLNode aggregate, SQLNode nextResult) {
-    return coalesce(aggregate, nextResult);
+    return Commons.coalesce(aggregate, nextResult);
   }
 
   @Override
@@ -168,7 +168,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
       case "key":
       case "index":
         c = null;
-        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
@@ -186,13 +186,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
       case "primary":
         c = PRIMARY;
-        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
       case "unique":
         c = UNIQUE;
-        t = FuncUtils.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
@@ -460,7 +460,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
   public SQLNode visitJoinedTable(MySQLParser.JoinedTableContext ctx) {
     final SQLNode node = newNode(JOINED);
     final JoinType joinType =
-        coalesce(
+        Commons.coalesce(
             parseJoinType(ctx.innerJoinType()),
             parseJoinType(ctx.outerJoinType()),
             parseJoinType(ctx.naturalJoinType()));
@@ -817,13 +817,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
     final SQLNode node = newNode(LITERAL);
 
     final Token token =
-        coalesce(
+        Commons.coalesce(
                 ctx.INT_NUMBER(),
                 ctx.LONG_NUMBER(),
                 ctx.ULONGLONG_NUMBER(),
                 ctx.DECIMAL_NUMBER(),
                 ctx.FLOAT_NUMBER())
-            .getSymbol();
+               .getSymbol();
 
     final Pair<LiteralType, Number> pair = parseNumericLiteral(token);
     assert pair != null;

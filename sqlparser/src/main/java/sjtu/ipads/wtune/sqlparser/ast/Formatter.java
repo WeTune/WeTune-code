@@ -148,10 +148,10 @@ public class Formatter implements SQLVisitor {
     safeVisit(colDef.get(NodeAttrs.COLUMN_DEF_NAME));
     append(' ').append(colDef.get(NodeAttrs.COLUMN_DEF_DATATYPE_RAW));
 
-    if (colDef.isFlagged(NodeAttrs.COLUMN_DEF_CONS, UNIQUE)) append(" UNIQUE");
-    if (colDef.isFlagged(NodeAttrs.COLUMN_DEF_CONS, PRIMARY)) append(" PRIMARY KEY");
-    if (colDef.isFlagged(NodeAttrs.COLUMN_DEF_CONS, NOT_NULL)) append(" NOT NULL");
-    if (colDef.isFlagged(NodeAttrs.COLUMN_DEF_AUTOINCREMENT)) append(" AUTO_INCREMENT");
+    if (colDef.isFlag(NodeAttrs.COLUMN_DEF_CONS, UNIQUE)) append(" UNIQUE");
+    if (colDef.isFlag(NodeAttrs.COLUMN_DEF_CONS, PRIMARY)) append(" PRIMARY KEY");
+    if (colDef.isFlag(NodeAttrs.COLUMN_DEF_CONS, NOT_NULL)) append(" NOT NULL");
+    if (colDef.isFlag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT)) append(" AUTO_INCREMENT");
 
     final var references = colDef.get(NodeAttrs.COLUMN_DEF_REF);
     if (references != null) safeVisit(references);
@@ -486,7 +486,7 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterTuple(SQLNode tuple) {
-    if (tuple.isFlagged(TUPLE_AS_ROW)) append("ROW");
+    if (tuple.isFlag(TUPLE_AS_ROW)) append("ROW");
     appendNodes(tuple.getOr(TUPLE_EXPRS, emptyList()), true, true);
     return false;
   }
@@ -522,7 +522,7 @@ public class Formatter implements SQLVisitor {
       final SQLDataType castType = cast.get(CAST_TYPE);
       castType.formatAsCastType(builder, cast.dbType());
 
-      if (SQLNode.MYSQL.equals(cast.dbType())) if (cast.isFlagged(CAST_IS_ARRAY)) append(" ARRAY");
+      if (SQLNode.MYSQL.equals(cast.dbType())) if (cast.isFlag(CAST_IS_ARRAY)) append(" ARRAY");
       append(')');
     }
     return false;
@@ -576,7 +576,7 @@ public class Formatter implements SQLVisitor {
   @Override
   public boolean enterAggregate(SQLNode aggregate) {
     append(aggregate.get(AGGREGATE_NAME).toUpperCase()).append('(');
-    if (aggregate.isFlagged(AGGREGATE_DISTINCT)) append("DISTINCT ");
+    if (aggregate.isFlag(AGGREGATE_DISTINCT)) append("DISTINCT ");
 
     appendNodes(aggregate.get(AGGREGATE_ARGS), false, true);
     final List<SQLNode> order = aggregate.get(AGGREGATE_ORDER);
@@ -952,7 +952,7 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterQuerySpec(SQLNode querySpec) {
-    final boolean distinct = querySpec.isFlagged(NodeAttrs.QUERY_SPEC_DISTINCT);
+    final boolean distinct = querySpec.isFlag(NodeAttrs.QUERY_SPEC_DISTINCT);
     final List<SQLNode> selectItems = querySpec.get(NodeAttrs.QUERY_SPEC_SELECT_ITEMS);
     final SQLNode from = querySpec.get(NodeAttrs.QUERY_SPEC_FROM);
     final SQLNode where = querySpec.get(NodeAttrs.QUERY_SPEC_WHERE);
@@ -1061,7 +1061,7 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
-    if (derivedTableSource.isFlagged(DERIVED_LATERAL)) append("LATERAL ");
+    if (derivedTableSource.isFlag(DERIVED_LATERAL)) append("LATERAL ");
     try (final var ignored = withParen(true)) {
       increaseIndent();
       breakLine(false);

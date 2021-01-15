@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.Formatter;
 import sjtu.ipads.wtune.sqlparser.ast.*;
 

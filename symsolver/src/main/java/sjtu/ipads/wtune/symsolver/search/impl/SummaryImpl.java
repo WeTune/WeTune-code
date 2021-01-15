@@ -7,8 +7,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.isSubSequence;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
+import static sjtu.ipads.wtune.common.utils.Commons.isSubSequence;
+import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 
 final class SummaryImpl implements Summary {
   private final TableSym[] tables;

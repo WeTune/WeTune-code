@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.rel.Table;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
 
@@ -28,7 +28,7 @@ public class TableImpl implements Table {
   public static TableImpl build(SQLNode tableDef) {
     final SQLNode tableName = tableDef.get(CREATE_TABLE_NAME);
     final String schema = tableName.get(TABLE_NAME_SCHEMA);
-    final String name = tableDef.get(TABLE_NAME_TABLE);
+    final String name = tableName.get(TABLE_NAME_TABLE);
     final String engine =
         POSTGRESQL.equals(tableDef.dbType())
             ? POSTGRESQL

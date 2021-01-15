@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.pg.PGASTHelper.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;

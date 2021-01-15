@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.function.Supplier;
 
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
@@ -35,17 +35,78 @@ public interface Commons {
     return quota + str + quota;
   }
 
-  static <T> Optional<T> safeGet(T[] arr, int idx) {
-    if (idx >= arr.length) return Optional.empty();
-    return Optional.of(arr[idx]);
+  @SafeVarargs
+  static <T> T coalesce(T... vals) {
+    for (T val : vals) if (val != null) return val;
+    return null;
   }
 
-  static <T> Optional<T> safeGet(List<T> list, int idx) {
-    if (idx >= list.size()) return Optional.empty();
-    return Optional.of(list.get(idx));
+  static <T> T coalesce(T val, Supplier<T> other) {
+    return val == null ? other.get() : val;
   }
 
-  static boolean isEmpty(Collection<?> list) {
-    return list == null || list.isEmpty();
+  @SuppressWarnings("unchecked")
+  static <T> T[] makeArray(Class<T> cls, int n) {
+    return (T[]) Array.newInstance(cls, n);
+  }
+
+  @SafeVarargs
+  static <T> T[] asArray(T... vals) {
+    return vals;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] repeat(T value, int times) {
+    final T[] arr = (T[]) Array.newInstance(value.getClass(), times);
+    Arrays.fill(arr, value);
+    return arr;
+  }
+
+  static <T> T[] sorted(T[] arr, Comparator<? super T> comparator) {
+    Arrays.sort(arr, comparator);
+    return arr;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] subArray(T[] arr, int start) {
+    if (start < 0 || start > arr.length) throw new IndexOutOfBoundsException();
+    final T[] subArr =
+        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length - start);
+    System.arraycopy(arr, start, subArr, 0, subArr.length);
+    return subArr;
+  }
+
+  static boolean isSubSequence(Object[] container, Object[] contained) {
+    if (contained.length > container.length) return false;
+    if (contained.length == 0) return true;
+
+    for (int i = 0, j = 0; i < container.length; i++)
+      if (Objects.equals(container[i], contained[j])) {
+        j++;
+        if (j >= contained.length) return true;
+      }
+
+    return false;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
+    final T[] arr =
+        (T[]) Array.newInstance(arr1.getClass().getComponentType(), arr1.length + arr2.length);
+    System.arraycopy(arr1, 0, arr, 0, arr1.length);
+    System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
+    return arr;
+  }
+
+  static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {
+    final List<T> ts = new ArrayList<>(ts0.size() + ts1.size());
+    ts.addAll(ts0);
+    ts.addAll(ts1);
+    return ts;
+  }
+
+  static <T> T echo(T t) {
+    System.out.println(t);
+    return t;
   }
 }

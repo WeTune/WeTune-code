@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.asArray;
+import static sjtu.ipads.wtune.common.utils.Commons.asArray;
 
 public class Main {
   public static void main(String[] args) {

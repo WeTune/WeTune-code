@@ -13,11 +13,11 @@ public interface NodeMgr {
 
   Root getParent(Tree child);
 
-  static NodeMgr empty(NodeMgr ctx) {
+  static NodeMgr empty(SQLContextImpl ctx) {
     return NodeMgrImpl.build(ctx);
   }
 
-  static NodeMgr basedOn(NodeMgr ctx, NodeMgr base) {
+  static NodeMgr basedOn(SQLContextImpl ctx, NodeMgr base) {
     return NodeMgrImpl.build(ctx, base);
   }
 }

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
@@ -93,7 +94,7 @@ public class SubstitutionImpl implements Substitution {
         return Constraint.predicateEq(lookup.get(split[1]), lookup.get(split[2]));
       case PickFrom:
         return Constraint.pickFrom(
-            lookup.get(split[1]), arrayMap(lookup::get, Indexed.class, subArray(split, 2)));
+            lookup.get(split[1]), arrayMap(lookup::get, Indexed.class, Commons.subArray(split, 2)));
       case Reference:
         return Constraint.reference(
             lookup.get(split[1]), lookup.get(split[2]), lookup.get(split[3]), lookup.get(split[4]));

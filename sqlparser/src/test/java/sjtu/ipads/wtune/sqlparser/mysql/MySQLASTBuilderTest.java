@@ -113,9 +113,9 @@ public class MySQLASTBuilderTest {
 
         {
           assertEquals("int(10)", col0.get(NodeAttrs.COLUMN_DEF_DATATYPE_RAW));
-          assertFalse(col0.isFlagged(NodeAttrs.COLUMN_DEF_AUTOINCREMENT));
-          assertFalse(col0.isFlagged(NodeAttrs.COLUMN_DEF_DEFAULT));
-          assertFalse(col0.isFlagged(NodeAttrs.COLUMN_DEF_GENERATED));
+          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT));
+          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_DEFAULT));
+          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_GENERATED));
         }
 
         {
@@ -557,7 +557,7 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::sumExpr);
     {
       final SQLNode node = helper.sql("count(distinct a)");
-      assertTrue(node.isFlagged(AGGREGATE_DISTINCT));
+      assertTrue(node.isFlag(AGGREGATE_DISTINCT));
       assertEquals("COUNT(DISTINCT `a`)", node.toString());
     }
     {

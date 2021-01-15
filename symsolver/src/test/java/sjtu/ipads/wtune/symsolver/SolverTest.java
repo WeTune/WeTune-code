@@ -12,7 +12,7 @@ import java.util.Set;
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.asArray;
+import static sjtu.ipads.wtune.common.utils.Commons.asArray;
 
 public class SolverTest {
 

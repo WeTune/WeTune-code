@@ -1,8 +1,10 @@
-package sjtu.ipads.wtune.sqlparser.ast;
+package sjtu.ipads.wtune.sqlparser;
 
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeMgr;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
+import sjtu.ipads.wtune.sqlparser.rel.internal.ResolveRelation;
 
 public interface SQLContext {
   interface Snapshot {
@@ -23,5 +25,16 @@ public interface SQLContext {
 
   static SQLNode manage(String dbType, SQLNode node) {
     return SQLContextImpl.build(dbType).manage(node);
+  }
+
+  static SQLNode resolveRelation(SQLNode node) {
+    return resolveRelation(node, node.context().schema());
+  }
+
+  static SQLNode resolveRelation(SQLNode node, Schema schema) {
+    if (schema == null) throw new IllegalArgumentException("schema not set");
+    node.context().setSchema(schema);
+    ResolveRelation.resolve(node);
+    return node;
   }
 }

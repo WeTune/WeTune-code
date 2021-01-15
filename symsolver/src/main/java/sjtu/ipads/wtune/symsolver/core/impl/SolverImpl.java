@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
@@ -24,9 +25,9 @@ public class SolverImpl implements Solver {
     final Query q0 = b0.build(logicCtx, "a", 0, 0, 0);
     final Query q1 = b1.build(logicCtx, "b", b0.numTables(), b0.numPicks(), b0.numPreds());
 
-    tables = arrayConcat(q0.tables(), q1.tables());
-    picks = arrayConcat(q0.picks(), q1.picks());
-    preds = arrayConcat(q0.preds(), q1.preds());
+    tables = Commons.arrayConcat(q0.tables(), q1.tables());
+    picks = Commons.arrayConcat(q0.picks(), q1.picks());
+    preds = Commons.arrayConcat(q0.preds(), q1.preds());
 
     searchCtx = SearchCtx.make(tables, picks, preds, logicCtx, q0, q1, timeout);
   }

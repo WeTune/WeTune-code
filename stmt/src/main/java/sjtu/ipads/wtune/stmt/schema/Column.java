@@ -101,15 +101,15 @@ public class Column implements Attrs<Column> {
   }
 
   public boolean generated() {
-    return isFlagged(COLUMN_AUTOINCREMENT);
+    return isFlag(COLUMN_AUTOINCREMENT);
   }
 
   public boolean hasDefault() {
-    return isFlagged(COLUMN_HAS_DEFAULT);
+    return isFlag(COLUMN_HAS_DEFAULT);
   }
 
   public boolean autoIncrement() {
-    return isFlagged(COLUMN_AUTOINCREMENT);
+    return isFlag(COLUMN_AUTOINCREMENT);
   }
 
   public Set<Constraint> constraints() {

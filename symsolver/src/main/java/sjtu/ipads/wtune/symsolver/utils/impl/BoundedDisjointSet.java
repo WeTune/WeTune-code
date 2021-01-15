@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import static java.util.Arrays.binarySearch;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.sorted;
+import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 import static sjtu.ipads.wtune.symsolver.core.Indexed.isCanonicalIndexed;
 
 public class BoundedDisjointSet<T extends Indexed> implements DisjointSet<T> {

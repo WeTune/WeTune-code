@@ -373,7 +373,7 @@ interface PGASTHelper {
   }
 
   private static SQLNode buildIndirection1(SQLNodeFactory factory, String id, SQLNode indirection) {
-    if (!indirection.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT)) {
+    if (!indirection.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT)) {
       final SQLNode indirectionExpr = indirection.get(ExprAttrs.INDIRECTION_COMP_START);
       if (ExprType.SYMBOL.isInstance(indirectionExpr))
         return factory.columnRef(id, indirectionExpr.get(ExprAttrs.SYMBOL_TEXT));
@@ -386,14 +386,14 @@ interface PGASTHelper {
 
   private static SQLNode buildIndirection2(
       SQLNodeFactory factory, String id, SQLNode _0, SQLNode _1) {
-    if (_0.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+    if (_0.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
     final SQLNode expr0 = _0.get(ExprAttrs.INDIRECTION_COMP_START);
     if (!ExprType.SYMBOL.isInstance(expr0))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    if (_1.isFlagged(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+    if (_1.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
       return factory.indirection(
           buildIndirection1(factory, id, expr0), Collections.singletonList(_1));
 

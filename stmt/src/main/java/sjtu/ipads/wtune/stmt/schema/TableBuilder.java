@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.schema;
 
-import sjtu.ipads.wtune.common.utils.FuncUtils;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
@@ -36,7 +36,7 @@ class TableBuilder {
     if (SQLNode.POSTGRESQL.equals(createTable.dbType())) {
       table.setEngine(SQLNode.POSTGRESQL);
     } else {
-      table.setEngine(FuncUtils.coalesce(createTable.get(NodeAttrs.CREATE_TABLE_ENGINE), "innodb"));
+      table.setEngine(Commons.coalesce(createTable.get(NodeAttrs.CREATE_TABLE_ENGINE), "innodb"));
     }
 
     setName(createTable.get(NodeAttrs.CREATE_TABLE_NAME));
@@ -128,7 +128,7 @@ class TableBuilder {
       }
 
       columns.add(column);
-      directions.add(FuncUtils.coalesce(key.get(NodeAttrs.KEY_PART_DIRECTION), KeyDirection.ASC));
+      directions.add(Commons.coalesce(key.get(NodeAttrs.KEY_PART_DIRECTION), KeyDirection.ASC));
     }
 
     if (columns.isEmpty()) return;

@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.symsolver.logic.impl.z3;
 
 import com.microsoft.z3.*;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.Sym;
@@ -74,10 +75,10 @@ public class Z3LogicCtx implements LogicCtx {
     final FuncDecl fd0 = unwrap(f0), fd1 = unwrap(f1);
 
     final Value arg = makeTuple("x");
-    final Value ret0 = f0.apply(repeat(arg, fd0.getArity()));
-    final Value ret1 = f1.apply(repeat(arg, fd1.getArity()));
+    final Value ret0 = f0.apply(Commons.repeat(arg, fd0.getArity()));
+    final Value ret1 = f1.apply(Commons.repeat(arg, fd1.getArity()));
 
-    return makeForAll(asArray(arg), ret0.equalsTo(ret1));
+    return makeForAll(Commons.asArray(arg), ret0.equalsTo(ret1));
   }
 
   @Override
@@ -176,7 +177,7 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   private Func makePickFunc(PickSym p) {
-    return makeFunc0(pickFuncName(p), tupleSort(), repeat(tupleSort(), p.visibleSources().length));
+    return makeFunc0(pickFuncName(p), tupleSort(), Commons.repeat(tupleSort(), p.visibleSources().length));
   }
 
   private Func makePredicateFunc(PredicateSym p) {

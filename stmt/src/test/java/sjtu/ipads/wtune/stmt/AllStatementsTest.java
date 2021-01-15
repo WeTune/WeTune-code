@@ -46,7 +46,7 @@ public class AllStatementsTest {
     }
   }
 
-  @Test
+  //  @Test
   @DisplayName("[Stmt] mutate all statements")
   void testMutate() {
     final List<Statement> stmts = Statement.findAll();
@@ -67,7 +67,7 @@ public class AllStatementsTest {
     }
   }
 
-  @Test
+  //  @Test
   @DisplayName("[Stmt] resolve all statements")
   void testResolve() {
     final List<Statement> stmts = Statement.findAll();

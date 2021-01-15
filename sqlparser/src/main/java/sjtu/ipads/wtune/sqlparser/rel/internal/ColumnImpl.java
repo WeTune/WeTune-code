@@ -33,9 +33,9 @@ public class ColumnImpl implements Column {
 
     final ColumnImpl column = new ColumnImpl(table, colName, rawDataType, dataType);
 
-    if (colDef.isFlagged(COLUMN_DEF_GENERATED)) column.flag(GENERATED);
-    if (colDef.isFlagged(COLUMN_DEF_DEFAULT)) column.flag(HAS_DEFAULT);
-    if (colDef.isFlagged(COLUMN_DEF_AUTOINCREMENT)) column.flag(AUTO_INCREMENT);
+    if (colDef.isFlag(COLUMN_DEF_GENERATED)) column.flag(GENERATED);
+    if (colDef.isFlag(COLUMN_DEF_DEFAULT)) column.flag(HAS_DEFAULT);
+    if (colDef.isFlag(COLUMN_DEF_AUTOINCREMENT)) column.flag(AUTO_INCREMENT);
 
     return column;
   }

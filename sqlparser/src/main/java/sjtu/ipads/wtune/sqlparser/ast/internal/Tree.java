@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
@@ -9,14 +10,14 @@ import java.util.Map;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Tree extends Node {
-  private final NodeMgr ctx;
+  private final SQLContextImpl ctx;
   private Root root;
 
-  private Tree(NodeMgr ctx) {
+  private Tree(SQLContextImpl ctx) {
     this.ctx = ctx;
   }
 
-  static Tree build(NodeMgr ctx) {
+  static Tree build(SQLContextImpl ctx) {
     return new Tree(ctx);
   }
 
@@ -38,6 +39,11 @@ public class Tree extends Node {
   @Override
   public NodeType nodeType() {
     return root().nodeType();
+  }
+
+  @Override
+  public SQLContext context() {
+    return ctx;
   }
 
   @Override

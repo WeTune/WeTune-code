@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.solving;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
 import sjtu.ipads.wtune.superopt.internal.Placeholder;
@@ -67,7 +68,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
   @Override
   public void leaveInput(Input input) {
-    push(ctx().makeTautology(), asArray(tuples[input.index()]), input.index(), tuples);
+    push(ctx().makeTautology(), Commons.asArray(tuples[input.index()]), input.index(), tuples);
   }
 
   @Override
@@ -81,7 +82,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
     push(
         left.condition().and(right.condition()).and(joinCond),
-        arrayConcat(left.output(), right.output()),
+        Commons.arrayConcat(left.output(), right.output()),
         left.offset(),
         tuples);
   }
@@ -102,7 +103,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     final Value[] modTuples = tuples == this.tuples ? Arrays.copyOf(tuples, tuples.length) : tuples;
     System.arraycopy(rightTuples, 0, modTuples, right.offset(), rightTuples.length);
 
-    push(left.condition(), arrayConcat(left.output(), rightTuples), left.offset(), modTuples);
+    push(left.condition(), Commons.arrayConcat(left.output(), rightTuples), left.offset(), modTuples);
   }
 
   @Override
@@ -119,7 +120,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   public void leaveProj(Proj op) {
     final Relation in = stack.pop();
     final Value[] tuples = in.tuples();
-    push(in.condition(), asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
+    push(in.condition(), Commons.asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
   }
 
   @Override
