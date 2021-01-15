@@ -54,7 +54,7 @@ public class GraphImpl implements Graph {
     int i = 0;
     for (Hole<Operator> hole : holes()) {
       final Input input = Input.create();
-      input.setIndex(i);
+      input.setIndex(i++);
       hole.fill(input);
       inputs.add(input);
     }

@@ -39,8 +39,23 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     return new Semantic(q);
   }
 
-  private void push(Proposition condition, Value... output) {
-    stack.push(new Relation(condition, output));
+  private void push(Proposition condition, Value[] output, int offset, Value[] tuples) {
+    stack.push(new Relation(condition, output, offset, tuples));
+  }
+
+  private Value[] mergeTuples(Value[] tuples0, Value[] tuples1) {
+    if (tuples0 == tuples) return tuples1;
+    if (tuples1 == tuples) return tuples0;
+
+    assert tuples0.length == tuples1.length && tuples0.length == tuples.length;
+
+    final Value[] newTuples = Arrays.copyOf(tuples, tuples.length);
+    for (int i = 0, bound = newTuples.length; i < bound; i++) {
+      if (newTuples[i] != tuples0[i]) newTuples[i] = tuples0[i];
+      else if (newTuples[i] != tuples1[i]) newTuples[i] = tuples1[i];
+    }
+
+    return newTuples;
   }
 
   @Override
@@ -52,12 +67,13 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
   @Override
   public void leaveInput(Input input) {
-    push(ctx().makeTautology(), tuples[input.index()]);
+    push(ctx().makeTautology(), asArray(tuples[input.index()]), input.index(), tuples);
   }
 
   @Override
   public void leaveInnerJoin(InnerJoin op) {
     final Relation right = stack.pop(), left = stack.pop();
+    final Value[] tuples = mergeTuples(left.tuples(), right.tuples());
     final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
     final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
 
@@ -65,12 +81,15 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
     push(
         left.condition().and(right.condition()).and(joinCond),
-        arrayConcat(left.output(), right.output()));
+        arrayConcat(left.output(), right.output()),
+        left.offset(),
+        tuples);
   }
 
   @Override
   public void leaveLeftJoin(LeftJoin op) {
     final Relation right = stack.pop(), left = stack.pop();
+    final Value[] tuples = mergeTuples(left.tuples(), right.tuples());
     final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
     final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
     final Proposition nonNullCond = right.condition().and(joinCond);
@@ -80,36 +99,41 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
     leftPick.setJoined(rightPick);
 
-    push(left.condition(), arrayConcat(left.output(), rightTuples));
+    final Value[] modTuples = tuples == this.tuples ? Arrays.copyOf(tuples, tuples.length) : tuples;
+    System.arraycopy(rightTuples, 0, modTuples, right.offset(), rightTuples.length);
+
+    push(left.condition(), arrayConcat(left.output(), rightTuples), left.offset(), modTuples);
   }
 
   @Override
   public void leavePlainFilter(PlainFilter op) {
     final Relation in = stack.pop();
+    final Value[] tuples = in.tuples();
     final Proposition cond =
         (Proposition) predSym(op.predicate()).apply(pickSym(op.fields()).apply(tuples));
 
-    push(in.condition().and(cond), in.output());
+    push(in.condition().and(cond), in.output(), in.offset(), tuples);
   }
 
   @Override
   public void leaveProj(Proj op) {
     final Relation in = stack.pop();
-    push(in.condition(), pickSym(op.fields()).apply(tuples));
+    final Value[] tuples = in.tuples();
+    push(in.condition(), asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
   }
 
   @Override
   public void leaveSubqueryFilter(SubqueryFilter op) {
     final Relation sub = stack.pop(), in = stack.pop();
-    final Proposition cond = pickSym(op.fields()).apply(tuples).equalsTo(sub.output()[0]);
+    final Proposition cond = pickSym(op.fields()).apply(in.tuples()).equalsTo(sub.output()[0]);
     // actually multiple-output subquery should be rule out earlier. See Heuristic::prune
-    push(in.condition().and(cond), in.output());
+    push(in.condition().and(cond), in.output(), in.offset(), in.tuples());
   }
 
   @Override
   public void leaveUnion(Union op) {
     final Relation right = stack.pop(), left = stack.pop();
-    push(left.condition().or(right.condition()), left.output());
+    push(left.condition().or(right.condition()), left.output(), left.offset(), left.tuples());
   }
 
   @Override

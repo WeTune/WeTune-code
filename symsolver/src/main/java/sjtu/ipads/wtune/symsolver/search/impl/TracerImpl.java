@@ -305,7 +305,7 @@ public class TracerImpl implements Tracer {
       }
 
     for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i; j < bound; j++) {
+      for (int j = i + 1; j < bound; j++) {
         final PickSym px = picks[i], py = picks[j];
         if (!isEq(px, py)) continue;
 
