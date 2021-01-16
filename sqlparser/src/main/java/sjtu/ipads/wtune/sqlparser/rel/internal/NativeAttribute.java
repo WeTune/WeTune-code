@@ -23,7 +23,7 @@ public class NativeAttribute extends BaseAttribute {
   public static List<Attribute> tableAttributesOf(SQLNode node) {
     if (!SIMPLE_SOURCE.isInstance(node)) throw new IllegalArgumentException();
 
-    final Relation rel = Relation.of(node);
+    final Relation rel = node.relation();
     final Table table = node.context().schema().table(tableNameOf(node));
     return listMap(it -> new NativeAttribute(rel, it), table.columns());
   }

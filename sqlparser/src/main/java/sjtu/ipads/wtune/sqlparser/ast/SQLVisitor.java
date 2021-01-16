@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public interface SQLVisitor {
+
   default boolean enter(SQLNode node) {
     return true;
   }
@@ -349,21 +350,29 @@ public interface SQLVisitor {
     };
   }
 
-  static SQLVisitor topDownVisit(AttrDomain type, Consumer<SQLNode> func) {
+  static SQLVisitor topDownVisit(Consumer<SQLNode> func, AttrDomain... types) {
     return new SQLVisitor() {
       @Override
       public boolean enter(SQLNode node) {
-        if (type.isInstance(node)) func.accept(node);
+        for (AttrDomain type : types)
+          if (type.isInstance(node)) {
+            func.accept(node);
+            break;
+          }
         return true;
       }
     };
   }
 
-  static SQLVisitor bottomUpVisit(AttrDomain type, Consumer<SQLNode> func) {
+  static SQLVisitor bottomUpVisit(Consumer<SQLNode> func, AttrDomain... types) {
     return new SQLVisitor() {
       @Override
       public void leave(SQLNode node) {
-        if (type.isInstance(node)) func.accept(node);
+        for (AttrDomain type : types)
+          if (type.isInstance(node)) {
+            func.accept(node);
+            break;
+          }
       }
     };
   }

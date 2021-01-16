@@ -3,14 +3,13 @@ package sjtu.ipads.wtune.sqlparser.pg;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.SQLParserException;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGLexer;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
-import java.util.Properties;
 import java.util.function.Function;
 
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
@@ -28,20 +27,20 @@ public class PGASTParser implements SQLParser {
   }
 
   public SQLNode parse(String str, Function<PGParser, ParserRuleContext> rule) {
+    return parse(str, true, rule);
+  }
+
+  public SQLNode parse(String str, boolean managed, Function<PGParser, ParserRuleContext> rule) {
     try {
-      return SQLContext.manage(POSTGRESQL, parse0(str, rule).accept(new PGASTBuilder()));
+      final SQLNode raw = parse0(str, rule).accept(new PGASTBuilder());
+      return raw == null ? null : managed ? SQLContext.manage(POSTGRESQL, raw) : raw;
     } catch (SQLParserException ex) {
       return null;
     }
   }
 
   @Override
-  public SQLNode parse(String string) {
-    return parse(string, PGParser::statement);
-  }
-
-  @Override
-  public SQLNode parse(String string, Properties props) {
-    return parse(string, PGParser::statement);
+  public SQLNode parse(String string, boolean managed) {
+    return parse(string, managed, PGParser::statement);
   }
 }

@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.SQLParser.splitSql;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.rel.Column.Flag.AUTO_INCREMENT;
@@ -25,6 +26,7 @@ public class SchemaImpl implements Schema {
   public static Schema build(Iterable<SQLNode> defs) {
     final Map<String, TableBuilder> builders = new HashMap<>();
     for (SQLNode def : defs) {
+      if (def == null) continue; // skip comment
       final NodeType type = def.nodeType();
       if (type == CREATE_TABLE) addCreateTable(def, builders);
       else if (type == ALTER_SEQUENCE) addAlterSequence(def, builders);
@@ -37,7 +39,7 @@ public class SchemaImpl implements Schema {
   }
 
   public static Schema build(String dbType, String str) {
-    return build(listMap(SQLParser.ofDb(dbType)::parse, SQLParser.splitSql(str)));
+    return build(listMap(SQLParser.ofDb(dbType)::parseRaw, splitSql(str)));
   }
 
   private static void addCreateTable(SQLNode node, Map<String, TableBuilder> builders) {

@@ -11,7 +11,6 @@ import java.util.List;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public interface Attribute {
   Attrs.Key<Attribute> ATTRIBUTE = Attrs.key("sql.rel.attribute", Attribute.class);
@@ -45,17 +44,13 @@ public interface Attribute {
     selectItem.put(SELECT_ITEM_ALIAS, name());
     selectItem.put(SELECT_ITEM_EXPR, columnRef);
 
-    final Relation scope = owner.parent();
-    columnName.put(RELATION, scope);
-    columnRef.put(RELATION, scope);
-    selectItem.put(RELATION, scope);
     return selectItem;
   }
 
-  static void resolve(SQLNode node) {
+  static Attribute resolve(SQLNode node) {
     if (!COLUMN_REF.isInstance(node)) throw new IllegalArgumentException();
 
-    final Relation relation = Relation.of(node);
+    final Relation relation = node.relation();
     final SQLNode column = node.get(COLUMN_REF_COLUMN);
     final String tableName = column.get(COLUMN_NAME_TABLE);
     final String columnName = column.get(COLUMN_NAME_COLUMN);
@@ -66,7 +61,7 @@ public interface Attribute {
       for (Relation input : relation.inputs())
         if ((attribute = input.attribute(columnName)) != null) break;
 
-    node.put(ATTRIBUTE, attribute);
+    return attribute;
   }
 
   static List<Attribute> fromTable(SQLNode simpleTableSource) {

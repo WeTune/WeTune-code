@@ -56,7 +56,7 @@ public class ResolveRelationTest {
             + " `c`.`p` AS `p`"
             + " FROM `c`)",
         ast.toString());
-    ast.accept(topDownVisit(func(Relation::of).then(Assertions::assertNotNull)));
-    ast.accept(topDownVisit(COLUMN_REF, func(Attribute::of).then(Assertions::assertNotNull)));
+    ast.accept(topDownVisit(func(SQLNode::relation).then(Assertions::assertNotNull)));
+    ast.accept(topDownVisit(func(Attribute::of).then(Assertions::assertNotNull), COLUMN_REF));
   }
 }

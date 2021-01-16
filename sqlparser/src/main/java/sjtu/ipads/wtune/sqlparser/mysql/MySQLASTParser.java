@@ -3,9 +3,9 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.SQLParserException;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
@@ -41,8 +41,13 @@ public class MySQLASTParser implements SQLParser {
   }
 
   public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
+    return parse(str, true, rule);
+  }
+
+  public SQLNode parse(String str, boolean managed, Function<MySQLParser, ParserRuleContext> rule) {
     try {
-      return SQLContext.manage(MYSQL, parse0(str, rule).accept(new MySQLASTBuilder()));
+      final SQLNode raw = parse0(str, rule).accept(new MySQLASTBuilder());
+      return raw == null ? null : managed ? SQLContext.manage(MYSQL, raw) : raw;
 
     } catch (SQLParserException exception) {
       return null;
@@ -50,15 +55,13 @@ public class MySQLASTParser implements SQLParser {
   }
 
   @Override
-  public SQLNode parse(String str) {
-    return parse(str, MySQLParser::query);
+  public void setProperties(Properties props) {
+    setServerVersion((int) props.getOrDefault("serverVersion", this.serverVersion));
+    setSqlMode((int) props.getOrDefault("sqlMode", this.sqlMode));
   }
 
   @Override
-  public SQLNode parse(String string, Properties props) {
-    setServerVersion((int) props.getOrDefault("serverVersion", this.serverVersion));
-    setSqlMode((int) props.getOrDefault("sqlMode", this.sqlMode));
-
-    return parse(string);
+  public SQLNode parse(String string, boolean managed) {
+    return parse(string, managed, MySQLParser::query);
   }
 }

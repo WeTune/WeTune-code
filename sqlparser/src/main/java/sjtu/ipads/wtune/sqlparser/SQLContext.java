@@ -3,10 +3,12 @@ package sjtu.ipads.wtune.sqlparser;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeMgr;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
+import sjtu.ipads.wtune.sqlparser.rel.Relation;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
-import sjtu.ipads.wtune.sqlparser.rel.internal.ResolveRelation;
 
 public interface SQLContext {
+  System.Logger LOG = System.getLogger("wetune.sqlparser");
+
   interface Snapshot {
     NodeMgr key();
   }
@@ -34,7 +36,7 @@ public interface SQLContext {
   static SQLNode resolveRelation(SQLNode node, Schema schema) {
     if (schema == null) throw new IllegalArgumentException("schema not set");
     node.context().setSchema(schema);
-    ResolveRelation.resolve(node);
+    Relation.resolve(node);
     return node;
   }
 }

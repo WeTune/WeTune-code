@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
 import sjtu.ipads.wtune.sqlparser.ast.internal.Root;
+import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_SOURCE_KIND;
@@ -16,11 +17,15 @@ public interface SQLNode extends Attrs<SQLNode> {
 
   SQLContext context();
 
+  Relation relation();
+
   SQLNode parent();
 
   NodeType nodeType();
 
   void setParent(SQLNode parent);
+
+  void setRelation(Relation relation);
 
   void setNodeType(NodeType type);
 

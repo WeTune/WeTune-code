@@ -22,32 +22,25 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SO
 public class RelationImpl implements Relation {
   private final SQLNode node;
   private final String alias;
-  private final Relation parent;
   private final List<Relation> inputs;
 
   private List<Attribute> attributes;
 
-  private RelationImpl(SQLNode node, Relation parent, int expectedNumInputs) {
+  private RelationImpl(SQLNode node) {
     this.node = node;
     this.alias = tableSourceName(node);
-    this.parent = parent;
-    this.inputs = expectedNumInputs == 0 ? emptyList() : new ArrayList<>(expectedNumInputs);
+    this.inputs = SIMPLE_SOURCE.isInstance(node) ? emptyList() : new ArrayList<>(4);
   }
 
-  public static Relation build(SQLNode node) {
-    final Relation relation = Relation.of(node);
-    if (relation != null) return relation;
+  public static Relation rootedBy(SQLNode node) {
+    final SQLNode parent = node.parent();
+    if (DERIVED_SOURCE.isInstance(parent) && QUERY.isInstance(node)) return parent.relation();
 
-    final SQLNode parentNode = node.parent();
-    final Relation parent = parentNode == null ? null : Relation.of(parentNode);
+    final Relation rel = new RelationImpl(node);
 
-    if (DERIVED_SOURCE.isInstance(parentNode) && QUERY.isInstance(node)) return parent;
-
-    final int expectedNumInputs = SIMPLE_SOURCE.isInstance(node) ? 0 : 4;
-    final Relation rel = new RelationImpl(node, parent, expectedNumInputs);
-
-    if (parent != null && (TABLE_SOURCE.isInstance(node) || SET_OP.isInstance(parentNode)))
-      parent.inputs().add(rel);
+    if ((TABLE_SOURCE.isInstance(node) || SET_OP.isInstance(parent)))
+      // assert parent != null;
+      parent.relation().inputs().add(rel);
 
     return rel;
   }
@@ -60,11 +53,6 @@ public class RelationImpl implements Relation {
   @Override
   public String alias() {
     return alias;
-  }
-
-  @Override
-  public Relation parent() {
-    return parent;
   }
 
   @Override
@@ -102,7 +90,7 @@ public class RelationImpl implements Relation {
     final List<SQLNode> items = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
     if (items.stream().noneMatch(it -> WILDCARD.isInstance(it.get(SELECT_ITEM_EXPR)))) return;
 
-    final Relation rel = Relation.of(querySpec);
+    final Relation rel = querySpec.relation();
     final List<SQLNode> newItems = new ArrayList<>(16);
     for (SQLNode item : items)
       if (!WILDCARD.isInstance(item.get(SELECT_ITEM_EXPR))) newItems.add(qualifyItem(rel, item));

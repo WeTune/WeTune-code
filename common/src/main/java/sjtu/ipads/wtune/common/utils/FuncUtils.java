@@ -1,7 +1,10 @@
 package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -18,6 +21,10 @@ public interface FuncUtils {
 
   static <P, R> IFunction<P, R> func(IFunction<P, R> func) {
     return func;
+  }
+
+  static <P0, P1, R> IBiFunction<P0, P1, R> func2(IBiFunction<P0, P1, R> func2) {
+    return func2;
   }
 
   static <P> Predicate<P> pred(Predicate<P> pred) {

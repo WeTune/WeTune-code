@@ -28,6 +28,11 @@ public class Root extends Node implements SQLNode {
   }
 
   @Override
+  public <T> T put(String attrName, T obj) {
+    return super.put(attrName, obj);
+  }
+
+  @Override
   public Map<String, Object> directAttrs() {
     if (directAttrs == null) directAttrs = new HashMap<>();
     return directAttrs;

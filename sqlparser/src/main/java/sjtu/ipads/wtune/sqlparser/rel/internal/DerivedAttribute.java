@@ -17,7 +17,7 @@ public class DerivedAttribute extends BaseAttribute {
   private final SQLNode node;
 
   private DerivedAttribute(SQLNode node) {
-    super(Relation.of(node), node.get(SELECT_ITEM_ALIAS));
+    super(node.relation(), node.get(SELECT_ITEM_ALIAS));
     this.node = node;
   }
 

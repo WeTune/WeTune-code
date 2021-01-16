@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser;
 
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser;
 import sjtu.ipads.wtune.sqlparser.pg.PGASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +12,18 @@ import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
 
 public interface SQLParser {
-  SQLNode parse(String string);
 
-  SQLNode parse(String string, Properties props);
+  SQLNode parse(String string, boolean managed);
+
+  default void setProperties(Properties props) {}
+
+  default SQLNode parseRaw(String string) {
+    return parse(string, false);
+  }
+
+  default SQLNode parse(String string) {
+    return parse(string, true);
+  }
 
   static SQLParser ofDb(String dbType) {
     if (MYSQL.equals(dbType)) return new MySQLASTParser();
