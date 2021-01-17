@@ -13,6 +13,7 @@ import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
 
 public class SolverTest {
 
@@ -48,7 +49,9 @@ public class SolverTest {
 
     @Override
     public Proposition condition() {
-      return picks[1].apply(tuples).equalsTo(picks[2].apply(tuples));
+      return ctx()
+          .tuplesFrom(tuples, tables)
+          .and(picks[1].apply(tuples).equalsTo(picks[2].apply(tuples)));
     }
   }
 
@@ -81,7 +84,7 @@ public class SolverTest {
 
     @Override
     public Proposition condition() {
-      return ctx().makeTautology();
+      return ctx().tuplesFrom(tuples, tables);
     }
   }
 
@@ -134,25 +137,25 @@ public class SolverTest {
 
     final Decision[] constraints0 =
         asArray(
-            DecidableConstraint.tableEq(tables[0], tables[2]),
-            DecidableConstraint.pickEq(picks[0], picks[3]),
-            DecidableConstraint.pickFrom(picks[0], tables[0]),
-            DecidableConstraint.reference(tables[0], picks[1], tables[1], picks[2]));
-    assertSame(solver.check(constraints0), Result.EQUIVALENT);
+            tableEq(tables[0], tables[2]),
+            pickEq(picks[0], picks[3]),
+            pickFrom(picks[0], tables[0]),
+            reference(tables[0], picks[1], tables[1], picks[2]));
+    assertSame(Result.EQUIVALENT, solver.check(constraints0));
 
     final Decision[] constraints1 =
         asArray(
-            DecidableConstraint.tableEq(tables[0], tables[2]),
-            DecidableConstraint.pickEq(picks[0], picks[2]),
-            DecidableConstraint.pickEq(picks[1], picks[3]),
-            DecidableConstraint.pickFrom(picks[0], tables[1]),
+            tableEq(tables[0], tables[2]),
+            pickEq(picks[0], picks[2]),
+            pickEq(picks[1], picks[3]),
+            pickFrom(picks[0], tables[1]),
             DecidableConstraint.reference(tables[0], picks[1], tables[1], picks[2]));
     assertSame(solver.check(constraints1), Result.EQUIVALENT);
 
     solver.close();
   }
 
-  @Test
+  //  @Test
   void testProof1() {
     final QueryBuilder q0 = new Query2();
     final QueryBuilder q1 = new Query1();
@@ -163,10 +166,10 @@ public class SolverTest {
 
     final Decision[] constraints0 =
         asArray(
-            DecidableConstraint.tableEq(tables[0], tables[2]),
-            DecidableConstraint.pickEq(picks[0], picks[3]),
-            DecidableConstraint.pickFrom(picks[0], tables[0]),
-            DecidableConstraint.pickFrom(picks[3], tables[2]));
+            tableEq(tables[0], tables[2]),
+            pickEq(picks[0], picks[3]),
+            pickFrom(picks[0], tables[0]),
+            pickFrom(picks[3], tables[2]));
     assertSame(solver.check(constraints0), Result.EQUIVALENT);
 
     solver.close();
@@ -182,44 +185,33 @@ public class SolverTest {
     final TableSym[] tables = solver.tables();
     final PickSym[] picks = solver.picks();
 
-    tracer.decide(DecidableConstraint.pickFrom(picks[1], tables[1]));
+    tracer.decide(pickFrom(picks[0], tables[0]), pickFrom(picks[0], tables[1]));
     assertTrue(tracer.isConflict());
 
     tracer.decide(
-        DecidableConstraint.pickFrom(picks[0], tables[0]),
-        DecidableConstraint.pickFrom(picks[0], tables[1]));
+        pickEq(picks[0], picks[1]), pickFrom(picks[1], tables[0]), pickFrom(picks[0], tables[1]));
     assertTrue(tracer.isConflict());
 
     tracer.decide(
-        DecidableConstraint.pickEq(picks[0], picks[1]),
-        DecidableConstraint.pickFrom(picks[1], tables[0]),
-        DecidableConstraint.pickFrom(picks[0], tables[1]));
+        tableEq(tables[0], tables[1]),
+        pickEq(picks[0], picks[1]),
+        pickFrom(picks[1], tables[0]),
+        pickFrom(picks[0], tables[1]));
     assertTrue(tracer.isConflict());
 
     tracer.decide(
-        DecidableConstraint.tableEq(tables[0], tables[1]),
-        DecidableConstraint.pickEq(picks[0], picks[1]),
-        DecidableConstraint.pickFrom(picks[1], tables[0]),
-        DecidableConstraint.pickFrom(picks[0], tables[1]));
+        pickEq(picks[0], picks[3]), pickFrom(picks[0], tables[0]), pickFrom(picks[3], tables[2]));
     assertTrue(tracer.isConflict());
 
     tracer.decide(
-        DecidableConstraint.pickEq(picks[0], picks[3]),
-        DecidableConstraint.pickFrom(picks[0], tables[0]),
-        DecidableConstraint.pickFrom(picks[3], tables[2]));
-    assertTrue(tracer.isConflict());
-
-    tracer.decide(
-        DecidableConstraint.pickEq(picks[0], picks[1]),
-        DecidableConstraint.pickFrom(picks[1], tables[0]),
-        DecidableConstraint.pickFrom(picks[0], tables[0]));
+        pickEq(picks[0], picks[1]), pickFrom(picks[1], tables[0]), pickFrom(picks[0], tables[0]));
     assertFalse(tracer.isConflict());
 
     tracer.decide(
-        DecidableConstraint.tableEq(tables[0], tables[2]),
-        DecidableConstraint.pickEq(picks[0], picks[3]),
-        DecidableConstraint.pickFrom(picks[0], tables[0]),
-        DecidableConstraint.pickFrom(picks[3], tables[2]));
+        tableEq(tables[0], tables[2]),
+        pickEq(picks[0], picks[3]),
+        pickFrom(picks[0], tables[0]),
+        pickFrom(picks[3], tables[2]));
     assertFalse(tracer.isConflict());
   }
 
@@ -233,12 +225,10 @@ public class SolverTest {
     final TableSym[] tables = solver.tables();
     final PickSym[] picks = solver.picks();
 
-    tracer.decide(DecidableConstraint.pickEq(picks[0], picks[1]));
+    tracer.decide(pickEq(picks[0], picks[1]));
     assertTrue(tracer.isIncomplete());
 
-    tracer.decide(
-        DecidableConstraint.pickEq(picks[0], picks[1]),
-        DecidableConstraint.pickFrom(picks[3], tables[2]));
+    tracer.decide(pickEq(picks[0], picks[1]), pickFrom(picks[3], tables[2]));
     assertTrue(tracer.isIncomplete());
 
     solver.close();

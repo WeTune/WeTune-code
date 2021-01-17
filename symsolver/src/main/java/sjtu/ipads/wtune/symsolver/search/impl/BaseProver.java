@@ -33,42 +33,24 @@ public abstract class BaseProver implements Prover {
   }
 
   private static Proposition[] makeNonEqProperties(LogicCtx ctx, Query q0, Query q1) {
-//    final Value[] output0 = q0.output(), output1 = q1.output();
-//    if (output0.length != output1.length || output0.length != 1)
-//      return new Proposition[] {ctx.makeTautology()};
-//
-//    final Value out = ctx.makeTuple("out");
-//    Proposition o0 = q0.condition().and(out.equalsTo(q0.output()[0]));
-//    Proposition o1 = q1.condition().and(out.equalsTo(q1.output()[0]));
-//
-//    final Func func0 = ctx.makeQuery("q0"), func1 = ctx.makeQuery("q1");
-//    o0 = func0.apply(out).equalsTo(ctx.makeExists(q0.tuples(), o0));
-//    o1 = func1.apply(out).equalsTo(ctx.makeExists(q1.tuples(), o1));
-//
-//    final Proposition nonEq = func0.apply(out).equalsTo(func1.apply(out)).not();
-//
-//    final Proposition[] properties = new Proposition[3];
-//    properties[0] = o0;
-//    properties[1] = o1;
-//    properties[2] = nonEq;
-//    return properties;
     final Value[] output0 = q0.output(), output1 = q1.output();
-    if (output0.length != output1.length || output0.length == 0)
+    if (output0.length != output1.length || output0.length != 1)
       return new Proposition[] {ctx.makeTautology()};
 
-    Proposition outputEq = null;
-    for (int i = 0, bound = output0.length; i < bound; i++)
-      outputEq = output0[i].equalsTo(output1[i]).and(outputEq);
+    final Value out = ctx.makeTuple("out");
+    Proposition o0 = q0.condition().and(out.equalsTo(q0.output()[0]));
+    Proposition o1 = q1.condition().and(out.equalsTo(q1.output()[0]));
 
-    final TableSym[] tables0 = q0.tables(), tables1 = q1.tables();
-    final Value[] tuples0 = q0.tuples(), tuples1 = q1.tuples();
+    final Func func0 = ctx.makeQuery("q0"), func1 = ctx.makeQuery("q1");
+    o0 = func0.apply(out).equalsTo(ctx.makeExists(q0.tuples(), o0));
+    o1 = func1.apply(out).equalsTo(ctx.makeExists(q1.tuples(), o1));
 
-    final Proposition cond0 = ctx.tuplesFrom(tuples0, tables0).and(q0.condition());
-    final Proposition cond1 = ctx.tuplesFrom(tuples1, tables1).and(q1.condition());
+    final Proposition nonEq = func0.apply(out).equalsTo(func1.apply(out)).not();
 
-    final Proposition[] properties = new Proposition[2];
-    properties[0] = cond0;
-    properties[1] = ctx.makeForAll(tuples1, cond1.implies(outputEq.not()));
+    final Proposition[] properties = new Proposition[3];
+    properties[0] = o0;
+    properties[1] = o1;
+    properties[2] = nonEq;
     return properties;
   }
 
