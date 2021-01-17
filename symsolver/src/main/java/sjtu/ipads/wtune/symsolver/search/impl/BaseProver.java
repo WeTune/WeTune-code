@@ -5,17 +5,16 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.SmtSolver;
-import sjtu.ipads.wtune.symsolver.logic.Value;
+import sjtu.ipads.wtune.symsolver.logic.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.IntFunction;
 
-import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
 
 public abstract class BaseProver implements Prover {
@@ -34,6 +33,25 @@ public abstract class BaseProver implements Prover {
   }
 
   private static Proposition[] makeNonEqProperties(LogicCtx ctx, Query q0, Query q1) {
+//    final Value[] output0 = q0.output(), output1 = q1.output();
+//    if (output0.length != output1.length || output0.length != 1)
+//      return new Proposition[] {ctx.makeTautology()};
+//
+//    final Value out = ctx.makeTuple("out");
+//    Proposition o0 = q0.condition().and(out.equalsTo(q0.output()[0]));
+//    Proposition o1 = q1.condition().and(out.equalsTo(q1.output()[0]));
+//
+//    final Func func0 = ctx.makeQuery("q0"), func1 = ctx.makeQuery("q1");
+//    o0 = func0.apply(out).equalsTo(ctx.makeExists(q0.tuples(), o0));
+//    o1 = func1.apply(out).equalsTo(ctx.makeExists(q1.tuples(), o1));
+//
+//    final Proposition nonEq = func0.apply(out).equalsTo(func1.apply(out)).not();
+//
+//    final Proposition[] properties = new Proposition[3];
+//    properties[0] = o0;
+//    properties[1] = o1;
+//    properties[2] = nonEq;
+//    return properties;
     final Value[] output0 = q0.output(), output1 = q1.output();
     if (output0.length != output1.length || output0.length == 0)
       return new Proposition[] {ctx.makeTautology()};
@@ -73,34 +91,25 @@ public abstract class BaseProver implements Prover {
   public void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... mask) {
     final TableSym[] vs = p.visibleSources();
 
-    final Value[] tuples = ctx.makeTuples((vs.length << 1) - mask.length, "x");
-    final Value[] boundedTuples = pickTuples(tuples, vs, mask);
+    final Value[] args0 = ctx.makeTuples(vs.length, "x");
+    final Value[] args1 = pickTuples(args0, vs, mask);
 
-    final Value[] args0 = Arrays.copyOf(tuples, vs.length);
-    final Value[] args1 = maskTuples(vs, mask, i -> boundedTuples[i], i -> tuples[i + vs.length]);
-
-    addAssertion(constraint, ctx.makeForAll(tuples, p.apply(args0).equalsTo(p.apply(args1))));
+    addAssertion(constraint, ctx.makeForAll(args0, p.apply(args0).equalsTo(p.apply(args1))));
+    addAssertion(constraint, ctx.makeForAll(args0, p.apply(args0).equalsTo(p.apply(args1))));
   }
 
   @Override
-  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(
+      DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     pickFrom(constraint, px, tx);
     pickFrom(constraint, py, ty);
 
-    final TableSym[] visibleX = px.visibleSources(), visibleY = py.visibleSources();
-    final Value[] argsX = ctx.makeTuples(visibleX.length, "x");
-    final Value[] argsY = ctx.makeTuples(visibleY.length, "y");
-
-    final Proposition eqAssertion = px.apply(argsX).equalsTo(py.apply(argsY));
-
-    final Value boundedTupleX = argsX[asList(visibleX).indexOf(tx)];
-    final Value boundedTupleY = argsY[asList(visibleY).indexOf(ty)];
+    final Value x = ctx.makeTuple("x"), y = ctx.makeTuple("y");
+    final Proposition ref = px.apply(x).equalsTo(py.apply(y));
 
     final Proposition assertion =
         ctx.makeForAll(
-            argsX,
-            ctx.tupleFrom(boundedTupleX, tx)
-                .implies(ctx.makeExists(argsY, ctx.tupleFrom(boundedTupleY, ty).and(eqAssertion))));
+            x, ctx.tupleFrom(x, tx).implies(ctx.makeExists(y, ctx.tupleFrom(y, ty).and(ref))));
     addAssertion(constraint, assertion);
   }
 

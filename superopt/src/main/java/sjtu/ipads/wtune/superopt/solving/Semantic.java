@@ -17,7 +17,9 @@ import java.util.*;
 import static com.google.common.collect.Sets.powerSet;
 import static com.google.common.collect.Sets.union;
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
 
 public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   private final Graph q;
@@ -68,7 +70,8 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
   @Override
   public void leaveInput(Input input) {
-    push(ctx().makeTautology(), Commons.asArray(tuples[input.index()]), input.index(), tuples);
+    final Value tuple = tuples[input.index()];
+    push((Proposition) tableSym(input.table()).apply(tuple), asArray(tuple), input.index(), tuples);
   }
 
   @Override
@@ -103,7 +106,11 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     final Value[] modTuples = tuples == this.tuples ? Arrays.copyOf(tuples, tuples.length) : tuples;
     System.arraycopy(rightTuples, 0, modTuples, right.offset(), rightTuples.length);
 
-    push(left.condition(), Commons.arrayConcat(left.output(), rightTuples), left.offset(), modTuples);
+    push(
+        left.condition(),
+        Commons.arrayConcat(left.output(), rightTuples),
+        left.offset(),
+        modTuples);
   }
 
   @Override
@@ -120,7 +127,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   public void leaveProj(Proj op) {
     final Relation in = stack.pop();
     final Value[] tuples = in.tuples();
-    push(in.condition(), Commons.asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
+    push(in.condition(), asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
   }
 
   @Override

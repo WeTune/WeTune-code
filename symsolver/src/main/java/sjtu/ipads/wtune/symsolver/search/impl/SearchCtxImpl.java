@@ -26,7 +26,7 @@ public class SearchCtxImpl implements SearchCtx {
       Query q0,
       Query q1,
       long timeout) {
-    prover = Prover.combine(Prover.incremental(ctx, q0, q1), Prover.incremental(ctx, q1, q0));
+    prover = Prover.incremental(ctx, q0, q1);
     tracer = Tracer.bindTo(tables, picks, preds);
     searcher = Searcher.bindTo(this, timeout);
 
@@ -105,7 +105,7 @@ public class SearchCtxImpl implements SearchCtx {
     stat.numSkipped = searcher.numSkipped();
     stat.timeTotal += t1 - t0;
 
-    //    System.out.println(stat);
+    System.out.println(stat);
     return survivors;
   }
 

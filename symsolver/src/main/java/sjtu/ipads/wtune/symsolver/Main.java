@@ -12,6 +12,7 @@ import java.util.Set;
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
 
 public class Main {
   public static void main(String[] args) {
@@ -30,16 +31,17 @@ public class Main {
     final DecisionTree tree =
         DecisionTree.from(
             //            tableEq(tables[0], tables[1]),
-            DecidableConstraint.tableEq(tables[0], tables[2]),
+            tableEq(tables[0], tables[2]),
             //            tableEq(tables[1], tables[2]),
             //            pickEq(picks[0], picks[1]),
             //            pickEq(picks[0], picks[2]),
+            pickEq(picks[0], picks[3]),
             //            pickEq(picks[0], picks[4]),
             //            pickEq(picks[1], picks[2]),
             //            pickEq(picks[3], picks[5]),
             //            pickEq(picks[2], picks[3]),
-            DecidableConstraint.pickFrom(picks[0], tables[0]),
-            DecidableConstraint.pickFrom(picks[3], tables[0]),
+            pickFrom(picks[0], tables[0]),
+            //            DecidableConstraint.pickFrom(picks[3], tables[0]),
             //            pickFrom(picks[0], tables[1]),
             //            pickFrom(picks[3], tables[0]),
             //            pickFrom(picks[0], tables[1]),
@@ -47,7 +49,7 @@ public class Main {
             //            pickFrom(picks[1], tables[0]),
             //            pickFrom(picks[2], tables[0]),
             //            predicateEq(preds[0], preds[1]),
-            DecidableConstraint.reference(tables[0], picks[1], tables[1], picks[2]));
+            reference(tables[0], picks[1], tables[1], picks[2]));
 
     //    System.out.println(solver.check(tree.choices()));
     //    final Collection<Summary> summaries = solver.solve(tree);
@@ -93,7 +95,9 @@ public class Main {
 
     @Override
     public Proposition condition() {
-      return picks[1].apply(tuples).equalsTo(picks[2].apply(tuples));
+      return ctx()
+          .tuplesFrom(tuples, tables)
+          .and(picks[1].apply(tuples).equalsTo(picks[2].apply(tuples)));
     }
   }
 
@@ -126,7 +130,7 @@ public class Main {
 
     @Override
     public Proposition condition() {
-      return ctx().makeTautology();
+      return ctx().tuplesFrom(tuples, tables);
     }
   }
 

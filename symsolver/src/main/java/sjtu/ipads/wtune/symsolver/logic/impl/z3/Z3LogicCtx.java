@@ -11,12 +11,16 @@ import sjtu.ipads.wtune.symsolver.logic.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.Commons.repeat;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 
 public class Z3LogicCtx implements LogicCtx {
   static {
-    final String timeout = System.getProperty("smt_timeout", "10");
-    Global.setParameter("timeout", timeout);
+    Global.setParameter("smt.auto_config", "false");
+    Global.setParameter("smt.random_seed", "11235");
+    Global.setParameter("smt.qi.quick_checker", "2");
+    Global.setParameter("smt.qi.max_multi_patterns", "1024");
+    Global.setParameter("smt.mbqi.max_iterations", "1");
     Global.setParameter("pp.max_depth", "100");
   }
 
@@ -75,8 +79,8 @@ public class Z3LogicCtx implements LogicCtx {
     final FuncDecl fd0 = unwrap(f0), fd1 = unwrap(f1);
 
     final Value arg = makeTuple("x");
-    final Value ret0 = f0.apply(Commons.repeat(arg, fd0.getArity()));
-    final Value ret1 = f1.apply(Commons.repeat(arg, fd1.getArity()));
+    final Value ret0 = f0.apply(repeat(arg, fd0.getArity()));
+    final Value ret1 = f1.apply(repeat(arg, fd1.getArity()));
 
     return makeForAll(Commons.asArray(arg), ret0.equalsTo(ret1));
   }
@@ -115,6 +119,18 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   @Override
+  public Value makeCombine(Value... args) {
+    if (args.length == 0) return wrap(z3.mkInt(1));
+    if (args.length == 1) return args[0];
+    return makeCombineFunc(args.length).apply(args);
+  }
+
+  @Override
+  public Func makeQuery(String name) {
+    return makeFunc0(name, z3.getBoolSort(), tupleSort());
+  }
+
+  @Override
   public Value makeConst(int i) {
     return wrap(z3.mkInt(i));
   }
@@ -131,8 +147,11 @@ public class Z3LogicCtx implements LogicCtx {
 
   @Override
   public Value makeApply(Func func, Value... args) {
-    if (func.arity() != args.length) throw new IllegalArgumentException("mismatched # of args");
-    return wrap(unwrap(func).apply(unwrap(args)));
+    if (func.name().startsWith("combine")) return wrap(unwrap(func).apply(unwrap(args)));
+
+    assert func.arity() == 1;
+    if (args.length != 1) return func.apply(makeCombine(args));
+    else return wrap(unwrap(func).apply(unwrap(args[0])));
   }
 
   @Override
@@ -169,7 +188,13 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   private Func wrap(FuncDecl decl) {
+    if (!decl.getName().toString().startsWith("combine") && decl.getArity() != 1)
+      throw new IllegalArgumentException("too much params");
     return Func.wrap(this, decl.getName().toString(), decl.getArity(), decl);
+  }
+
+  private Func makeCombineFunc(int arity) {
+    return makeFunc0("combine" + arity, tupleSort(), repeat(tupleSort(), arity));
   }
 
   private Func makeTableFunc(TableSym t) {
@@ -177,7 +202,7 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   private Func makePickFunc(PickSym p) {
-    return makeFunc0(pickFuncName(p), tupleSort(), Commons.repeat(tupleSort(), p.visibleSources().length));
+    return makeFunc0(pickFuncName(p), tupleSort(), tupleSort());
   }
 
   private Func makePredicateFunc(PredicateSym p) {

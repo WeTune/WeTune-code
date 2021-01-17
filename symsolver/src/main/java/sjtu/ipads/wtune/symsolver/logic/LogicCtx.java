@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.logic.impl.z3.Z3LogicCtx;
 
+import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+
 public interface LogicCtx {
   Proposition makeConst(boolean bool);
 
@@ -29,11 +31,15 @@ public interface LogicCtx {
 
   Func makeFunc(Sym t);
 
+  Func makeQuery(String name);
+
   Value makeConst(int i);
 
   Value makeIte(Proposition cond, Value v0, Value v1);
 
   Value makeTuple(String name);
+
+  Value makeCombine(Value... args);
 
   Value makeApply(Func func, Value... args);
 
@@ -69,6 +75,14 @@ public interface LogicCtx {
     for (TableSym table : tables) proposition = tupleFrom(tuples[i++], table).and(proposition);
 
     return proposition == null ? makeTautology() : proposition;
+  }
+
+  default Proposition makeForAll(Value args, Proposition assertions) {
+    return makeForAll(asArray(args), assertions);
+  }
+
+  default Proposition makeExists(Value args, Proposition assertions) {
+    return makeExists(asArray(args), assertions);
   }
 
   static LogicCtx z3() {
