@@ -57,6 +57,8 @@ public class IncrementalProver extends BaseProver {
 
   @Override
   public Result prove() {
+    if (nonEq) return Result.NON_EQUIVALENT;
+
     final Proposition[] assumptions = toAssumptions(decisions, trackers);
     return smtSolver.checkAssumption(assumptions);
   }

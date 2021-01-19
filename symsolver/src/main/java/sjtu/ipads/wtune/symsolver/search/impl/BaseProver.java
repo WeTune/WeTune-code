@@ -22,6 +22,7 @@ public abstract class BaseProver implements Prover {
   protected final SmtSolver smtSolver;
   protected final Proposition[] targetProperties;
   protected final Map<Decision, Collection<Proposition>> assertions;
+  protected final boolean nonEq;
 
   protected Decision[] decisions;
 
@@ -29,13 +30,13 @@ public abstract class BaseProver implements Prover {
     this.ctx = ctx;
     this.smtSolver = ctx.makeSolver();
     this.targetProperties = makeNonEqProperties(ctx, q0, q1);
+    this.nonEq = targetProperties == null;
     this.assertions = new HashMap<>();
   }
 
   private static Proposition[] makeNonEqProperties(LogicCtx ctx, Query q0, Query q1) {
     final Value[] output0 = q0.output(), output1 = q1.output();
-    if (output0.length != output1.length || output0.length != 1)
-      return new Proposition[] {ctx.makeTautology()};
+    if (output0.length != output1.length || output0.length != 1) return null;
 
     final Value out = ctx.makeTuple("out");
     Proposition o0 = q0.condition().and(out.equalsTo(q0.output()[0]));
