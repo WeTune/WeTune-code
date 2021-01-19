@@ -20,7 +20,7 @@ public class Z3LogicCtx implements LogicCtx {
     Global.setParameter("smt.random_seed", "11235");
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
-    Global.setParameter("smt.mbqi.max_iterations", "1");
+    Global.setParameter("smt.mbqi.max_iterations", "4");
     Global.setParameter("pp.max_depth", "100");
   }
 

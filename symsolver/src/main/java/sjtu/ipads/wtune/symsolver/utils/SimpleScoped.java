@@ -9,6 +9,10 @@ public class SimpleScoped implements Scoped {
     this.scope = scope;
   }
 
+  public SimpleScoped() {
+    this.scope = new Object();
+  }
+
   @Override
   public Object scope() {
     return scope;

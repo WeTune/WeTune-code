@@ -54,7 +54,8 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test2();
+    test0();
+    //    test2();
     //    for (int i = 0; i < 10; i++) {
     //      test2();
     //    }
@@ -70,15 +71,15 @@ public class Main {
 
     fragments.sort(Graph::compareTo);
 
-    for (int i = 1; i < fragments.size(); i++) {
-      if (i % 10 == 0) System.out.println(i);
-      final Graph g0 = fragments.get(0);
-      final Graph g1 = fragments.get(i);
-      try {
-        final Collection<Substitution> results = Prove.prove(g0, g1, 300000);
-        logResult(results);
-      } catch (Throwable ex) {
-        logError(ex, g0, g1);
+    for (int i = 0; i < fragments.size() - 1; i++) {
+      for (int j = i + 1; j < fragments.size(); j++) {
+        final Graph g0 = fragments.get(i), g1 = fragments.get(j);
+        try {
+          final Collection<Substitution> results = Prove.prove(g0, g1, 10000);
+          logResult(results);
+        } catch (Throwable ex) {
+          logError(ex, g0, g1);
+        }
       }
     }
   }

@@ -1,86 +1,76 @@
 package sjtu.ipads.wtune.symsolver;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.common.utils.ISupplier;
 import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
+import sjtu.ipads.wtune.symsolver.utils.SimpleScoped;
 
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
 
 public class DecisionTest {
   private static class Query0 extends BaseQueryBuilder {
     @Override
-    public int numTables() {
-      return 2;
-    }
+    protected Function<Value, Proposition> semantic() {
+      final Object scope = new Object();
+      final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
 
-    @Override
-    public int numPicks() {
-      return 3;
-    }
+      final TableSym[] tables = arrayMap(this::tableSym, TableSym.class, supplier.repeat(2));
+      final PickSym[] picks = arrayMap(this::pickSym, PickSym.class, supplier.repeat(3));
 
-    @Override
-    public int numPreds() {
-      return 0;
-    }
+      final TableSym t0 = tables[0];
+      final TableSym t1 = tables[1];
+      final PickSym p0 = picks[0];
+      final PickSym p1 = picks[1];
+      final PickSym p2 = picks[2];
 
-    @Override
-    protected void prepare() {
-      for (PickSym pick : picks) pick.setVisibleSources(tables);
-      picks[0].setViableSources(powerSet(Set.of(tables)));
-      picks[1].setViableSources(singleton(singleton(tables[0])));
-      picks[2].setViableSources(singleton(singleton(tables[1])));
-      picks[1].setJoined(picks[2]);
-    }
+      p0.setVisibleSources(asArray(t0, t1));
+      p1.setVisibleSources(asArray(t0));
+      p2.setVisibleSources(asArray(t1));
+      p0.setViableSources(powerSet(Set.of(tables)));
+      p1.setViableSources(singleton(singleton(t0)));
+      p2.setViableSources(singleton(singleton(t1)));
 
-    @Override
-    public Value[] output() {
-      return asArray(picks[0].apply(tuples));
-    }
+      p1.setJoined(p2);
 
-    @Override
-    public Proposition condition() {
-      return picks[1].apply(tuples).equalsTo(picks[2].apply(tuples));
+      final Value a = newTuple(), b = newTuple(), c = newTuple();
+      final Proposition from = ctx().tupleFrom(b, t0).and(ctx().tupleFrom(c, t1));
+      final Proposition join = p1.apply(b).equalsTo(p2.apply(c));
+      final Proposition combine = a.equalsTo(ctx().makeCombine(b, c));
+      final Proposition body = ctx().makeExists(asArray(b, c), from.and(join).and(combine));
+
+      return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(body));
     }
   }
 
   private static class Query1 extends BaseQueryBuilder {
-    @Override
-    public int numTables() {
-      return 1;
-    }
 
     @Override
-    public int numPicks() {
-      return 1;
-    }
+    protected Function<Value, Proposition> semantic() {
+      final Object scope = new Object();
+      final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
 
-    @Override
-    public int numPreds() {
-      return 0;
-    }
+      final TableSym table = tableSym(supplier.get());
+      final PickSym p0 = pickSym(supplier.get());
 
-    @Override
-    protected void prepare() {
-      picks[0].setVisibleSources(tables);
-      picks[0].setViableSources(singleton(singleton(tables[0])));
-    }
+      p0.setVisibleSources(asArray(table));
+      p0.setViableSources(powerSet(Set.of(table)));
 
-    @Override
-    public Value[] output() {
-      return asArray(picks[0].apply(tuples));
-    }
+      final Value a = newTuple();
+      final Proposition from = ctx().tupleFrom(a, table);
 
-    @Override
-    public Proposition condition() {
-      return ctx().makeTautology();
+      return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));
     }
   }
 

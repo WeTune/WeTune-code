@@ -27,6 +27,10 @@ public interface FuncUtils {
     return func2;
   }
 
+  static <R> ISupplier<R> supplier(ISupplier<R> supplier) {
+    return supplier;
+  }
+
   static <P> Predicate<P> pred(Predicate<P> pred) {
     return pred;
   }

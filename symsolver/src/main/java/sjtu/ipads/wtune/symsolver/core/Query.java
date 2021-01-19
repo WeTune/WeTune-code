@@ -11,14 +11,10 @@ public interface Query {
 
   PredicateSym[] preds();
 
-  Value[] tuples();
-
-  Value[] output();
-
-  Proposition condition();
+  Proposition contains(Value v);
 
   // for test
   static Query buildFrom(QueryBuilder builder) {
-    return builder.build(LogicCtx.z3(), "x", 0, 0, 0);
+    return builder.build(LogicCtx.z3(), 0, 0, 0);
   }
 }

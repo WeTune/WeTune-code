@@ -34,8 +34,9 @@ public enum OperatorType {
         PlainFilter.create(),
         Proj.create(),
         //        Sort.create(),
-        SubqueryFilter.create(),
-        Union.create());
+        SubqueryFilter.create()
+        //        Union.create()
+        );
   }
 
   public int numPredecessors() {

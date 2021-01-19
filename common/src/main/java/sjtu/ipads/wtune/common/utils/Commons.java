@@ -76,6 +76,29 @@ public interface Commons {
     return subArr;
   }
 
+  @SuppressWarnings("unchecked")
+  static <T> T[] maskArray(T[] arr, int seed) {
+    final T[] ret =
+        (T[]) Array.newInstance(arr.getClass().getComponentType(), Integer.bitCount(seed));
+
+    final int wall = arr.length - 1;
+    for (int i = 0, j = 0, bound = arr.length; i < bound; i++)
+      if ((seed & (1 << (wall - i))) != 0) ret[j++] = arr[i];
+
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] maskArray(T[] arr, long seed) {
+    final T[] ret = (T[]) Array.newInstance(arr.getClass().getComponentType(), Long.bitCount(seed));
+
+    final int wall = arr.length - 1;
+    for (int i = 0, j = 0, bound = arr.length; i < bound; i++)
+      if ((seed & (1L << (wall - i))) != 0) ret[j++] = arr[i];
+
+    return ret;
+  }
+
   static boolean isSubSequence(Object[] container, Object[] contained) {
     if (contained.length > container.length) return false;
     if (contained.length == 0) return true;
@@ -90,11 +113,14 @@ public interface Commons {
   }
 
   @SuppressWarnings("unchecked")
-  static <T> T[] arrayConcat(T[] arr1, T[] arr2) {
+  static <T> T[] arrayConcat(T[] arr1, T[] arr2, T... vs) {
     final T[] arr =
-        (T[]) Array.newInstance(arr1.getClass().getComponentType(), arr1.length + arr2.length);
+        (T[])
+            Array.newInstance(
+                arr1.getClass().getComponentType(), arr1.length + arr2.length + vs.length);
     System.arraycopy(arr1, 0, arr, 0, arr1.length);
     System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
+    System.arraycopy(vs, 0, arr, arr1.length + arr2.length, vs.length);
     return arr;
   }
 

@@ -1,8 +1,6 @@
 package sjtu.ipads.wtune.symsolver.core;
 
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public interface QueryBuilder {
   LogicCtx ctx();
@@ -13,15 +11,5 @@ public interface QueryBuilder {
 
   PredicateSym predSym(Scoped owner);
 
-  int numTables();
-
-  int numPicks();
-
-  int numPreds();
-
-  Value[] output();
-
-  Proposition condition();
-
-  Query build(LogicCtx ctx, String name, int tableIdxStart, int pickIdxStart, int predIdxStart);
+  Query build(LogicCtx ctx, int tableIdxStart, int pickIdxStart, int predIdxStart);
 }

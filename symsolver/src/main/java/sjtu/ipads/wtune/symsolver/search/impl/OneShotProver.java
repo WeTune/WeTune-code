@@ -17,8 +17,6 @@ public class OneShotProver extends BaseProver {
 
   @Override
   public Result prove() {
-    if (nonEq) return Result.NON_EQUIVALENT;
-
     smtSolver.add(targetProperties);
     for (Decision decision : decisions) assertions.get(decision).forEach(smtSolver::add);
 

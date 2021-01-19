@@ -1,284 +1,158 @@
 package sjtu.ipads.wtune.superopt.solving;
 
-import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
-import sjtu.ipads.wtune.superopt.internal.Placeholder;
 import sjtu.ipads.wtune.superopt.operator.*;
 import sjtu.ipads.wtune.symsolver.core.BaseQueryBuilder;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Scoped;
+import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.function.Function;
 
-import static com.google.common.collect.Sets.powerSet;
-import static com.google.common.collect.Sets.union;
-import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.common.utils.Commons.asArray;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 
 public class Semantic extends BaseQueryBuilder implements GraphVisitor {
   private final Graph q;
-  private final Placeholders placeholders;
-  private final Sources sources;
   private final Deque<Relation> stack;
-  private boolean produced;
 
   private Semantic(Graph q) {
     this.q = q;
-    this.placeholders = new Placeholders();
-    this.sources = new Sources();
     this.stack = new LinkedList<>();
-
-    q.acceptVisitor(placeholders);
-    q.acceptVisitor(sources);
   }
 
   public static Semantic build(Graph q) {
     return new Semantic(q);
   }
 
-  private void push(Proposition condition, Value[] output, int offset, Value[] tuples) {
-    stack.push(new Relation(condition, output, offset, tuples));
-  }
-
-  private Value[] mergeTuples(Value[] tuples0, Value[] tuples1) {
-    if (tuples0 == tuples) return tuples1;
-    if (tuples1 == tuples) return tuples0;
-
-    assert tuples0.length == tuples1.length && tuples0.length == tuples.length;
-
-    final Value[] newTuples = Arrays.copyOf(tuples, tuples.length);
-    for (int i = 0, bound = newTuples.length; i < bound; i++) {
-      if (newTuples[i] != tuples0[i]) newTuples[i] = tuples0[i];
-      else if (newTuples[i] != tuples1[i]) newTuples[i] = tuples1[i];
+  private TableSym[][] makeViableSources(TableSym[] visible, boolean isJoinKey) {
+    if (isJoinKey) {
+      final TableSym[][] viable = new TableSym[visible.length][1];
+      for (int i = 0; i < visible.length; i++) viable[i][0] = visible[i];
+      return viable;
+    } else {
+      final int count = 1 << visible.length;
+      final TableSym[][] viable = new TableSym[count][];
+      for (int i = count - 1; i >= 0; --i) viable[i] = maskArray(visible, i);
+      return viable;
     }
-
-    return newTuples;
-  }
-
-  @Override
-  protected void prepare() {
-    stack.clear();
-    produced = false;
-    for (PickSym p : picks) setupSources(p);
   }
 
   @Override
   public void leaveInput(Input input) {
-    final Value tuple = tuples[input.index()];
-    push((Proposition) tableSym(input.table()).apply(tuple), asArray(tuple), input.index(), tuples);
+    stack.push(new Relation(tableSym(input.table())));
   }
 
   @Override
   public void leaveInnerJoin(InnerJoin op) {
-    final Relation right = stack.pop(), left = stack.pop();
-    final Value[] tuples = mergeTuples(left.tuples(), right.tuples());
-    final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
-    final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
+    final Relation inR = stack.pop(), inL = stack.pop();
+    final PickSym pickL = pickSym(op.leftFields()), pickR = pickSym(op.rightFields());
+    final TableSym[] visibleL = inL.visibleSources(), visibleR = inR.visibleSources();
 
-    leftPick.setJoined(rightPick);
+    pickL.setVisibleSources(visibleL);
+    pickR.setVisibleSources(visibleR);
+    pickL.setViableSources(makeViableSources(visibleL, true));
+    pickR.setViableSources(makeViableSources(visibleR, true));
+    pickL.setJoined(pickR);
 
-    push(
-        left.condition().and(right.condition()).and(joinCond),
-        Commons.arrayConcat(left.output(), right.output()),
-        left.offset(),
-        tuples);
-  }
+    final TableSym[] visible = arrayConcat(visibleL, visibleR);
+    final Value l = newTuple(), r = newTuple();
+    final Proposition inCond = inL.contains(l).and(inR.contains(r));
+    final Proposition joinCond = pickL.apply(l).equalsTo(pickR.apply(r));
+    final Value[] bound = asArray(l, r);
+    final Function<Value, Proposition> cond =
+        x -> ctx().makeExists(bound, inCond.and(joinCond).and(x.equalsTo(ctx().makeCombine(l, r))));
 
-  @Override
-  public void leaveLeftJoin(LeftJoin op) {
-    final Relation right = stack.pop(), left = stack.pop();
-    final Value[] tuples = mergeTuples(left.tuples(), right.tuples());
-    final PickSym leftPick = pickSym(op.leftFields()), rightPick = pickSym(op.rightFields());
-    final Proposition joinCond = leftPick.apply(tuples).equalsTo(rightPick.apply(tuples));
-    final Proposition nonNullCond = right.condition().and(joinCond);
-    final Value nullTuple = ctx().makeNullTuple();
-    final Value[] rightTuples =
-        arrayMap(it -> ctx().makeIte(nonNullCond, it, nullTuple), Value.class, right.output());
-
-    leftPick.setJoined(rightPick);
-
-    final Value[] modTuples = tuples == this.tuples ? Arrays.copyOf(tuples, tuples.length) : tuples;
-    System.arraycopy(rightTuples, 0, modTuples, right.offset(), rightTuples.length);
-
-    push(
-        left.condition(),
-        Commons.arrayConcat(left.output(), rightTuples),
-        left.offset(),
-        modTuples);
+    stack.push(new Relation(visible, cond));
   }
 
   @Override
   public void leavePlainFilter(PlainFilter op) {
     final Relation in = stack.pop();
-    final Value[] tuples = in.tuples();
-    final Proposition cond =
-        (Proposition) predSym(op.predicate()).apply(pickSym(op.fields()).apply(tuples));
+    final PickSym pick = pickSym(op.fields());
+    final PredicateSym pred = predSym(op.predicate());
+    final TableSym[] visible = in.visibleSources();
 
-    push(in.condition().and(cond), in.output(), in.offset(), tuples);
+    pick.setVisibleSources(visible);
+    pick.setViableSources(makeViableSources(visible, false));
+
+    final Function<Value, Proposition> predicate =
+        x -> in.contains(x).and((Proposition) pred.apply(x));
+
+    stack.push(new Relation(visible, predicate));
   }
 
   @Override
   public void leaveProj(Proj op) {
     final Relation in = stack.pop();
-    final Value[] tuples = in.tuples();
-    push(in.condition(), asArray(pickSym(op.fields()).apply(tuples)), in.offset(), tuples);
+    final PickSym pick = pickSym(op.fields());
+    final TableSym[] visible = in.visibleSources();
+
+    pick.setVisibleSources(visible);
+    pick.setViableSources(makeViableSources(visible, false));
+
+    final Value tuple = newTuple();
+    final Function<Value, Proposition> predicate =
+        x -> ctx().makeExists(tuple, in.contains(tuple).and(x.equalsTo(pick.apply(tuple))));
+
+    stack.push(new Relation(visible, predicate));
   }
 
   @Override
   public void leaveSubqueryFilter(SubqueryFilter op) {
     final Relation sub = stack.pop(), in = stack.pop();
-    final Proposition cond = pickSym(op.fields()).apply(in.tuples()).equalsTo(sub.output()[0]);
+    final PickSym pick = pickSym(op.fields());
+    final TableSym[] visible = in.visibleSources();
+
+    pick.setVisibleSources(visible);
+    pick.setViableSources(makeViableSources(visible, false));
+
+    final Function<Value, Proposition> predicate = x -> in.contains(x).and(sub.contains(x));
     // actually multiple-output subquery should be rule out earlier. See Heuristic::prune
-    push(in.condition().and(cond), in.output(), in.offset(), in.tuples());
+    stack.push(new Relation(visible, predicate));
   }
 
   @Override
   public void leaveUnion(Union op) {
     final Relation right = stack.pop(), left = stack.pop();
-    push(left.condition().or(right.condition()), left.output(), left.offset(), left.tuples());
+    final TableSym[] visible = left.visibleSources;
+
+    final Function<Value, Proposition> predicate = x -> left.contains(x).or(right.contains(x));
+
+    stack.push(new Relation(visible, predicate));
   }
 
   @Override
-  protected List<? extends Scoped> tablePlaceholders() {
-    return placeholders.tbls;
+  protected Function<Value, Proposition> semantic() {
+    stack.clear();
+    q.acceptVisitor(this);
+    return stack.peek()::contains;
   }
 
-  @Override
-  protected List<? extends Scoped> pickPlaceholders() {
-    return placeholders.picks;
-  }
+  private static final class Relation {
+    private final TableSym[] visibleSources;
+    private final Function<Value, Proposition> cond;
 
-  @Override
-  protected List<? extends Scoped> predicatePlaceholders() {
-    return placeholders.preds;
-  }
-
-  @Override
-  public Value[] output() {
-    if (!produced) {
-      q.acceptVisitor(this);
-      produced = true;
-    }
-    return stack.peek().output();
-  }
-
-  @Override
-  public Proposition condition() {
-    if (!produced) {
-      q.acceptVisitor(this);
-      produced = true;
-    }
-    return stack.peek().condition();
-  }
-
-  private void setupSources(PickSym p) {
-    final Set<Set<Placeholder>> viable = sources.viable.get(p.unwrap(Placeholder.class));
-
-    final TableSym[][] viableSources = new TableSym[viable.size()][];
-    int i = 0;
-    for (Set<Placeholder> placeholders : viable)
-      viableSources[i++] = arrayMap(this::tableSym, TableSym.class, placeholders);
-
-    p.setViableSources(viableSources);
-    p.setVisibleSources(tables);
-  }
-
-  private static class Placeholders implements GraphVisitor {
-    private List<Placeholder> tbls = new ArrayList<>(5);
-    private List<Placeholder> picks = new ArrayList<>(8);
-    private List<Placeholder> preds = new ArrayList<>(4);
-
-    @Override
-    public boolean enterInput(Input input) {
-      tbls.add(input.table());
-      return true;
+    private Relation(TableSym table) {
+      visibleSources = asArray(table);
+      cond = x -> (Proposition) table.apply(x);
     }
 
-    @Override
-    public boolean enterInnerJoin(InnerJoin op) {
-      picks.add(op.leftFields());
-      picks.add(op.rightFields());
-      return true;
+    private Relation(TableSym[] visibleSources, Function<Value, Proposition> cond) {
+      this.visibleSources = visibleSources;
+      this.cond = cond;
     }
 
-    @Override
-    public boolean enterLeftJoin(LeftJoin op) {
-      picks.add(op.leftFields());
-      picks.add(op.rightFields());
-      return true;
+    public TableSym[] visibleSources() {
+      return visibleSources;
     }
 
-    @Override
-    public boolean enterPlainFilter(PlainFilter op) {
-      picks.add(op.fields());
-      preds.add(op.predicate());
-      return true;
-    }
-
-    @Override
-    public boolean enterProj(Proj op) {
-      picks.add(op.fields());
-      return true;
-    }
-
-    @Override
-    public boolean enterSubqueryFilter(SubqueryFilter op) {
-      picks.add(op.fields());
-      return true;
-    }
-  }
-
-  private static class Sources implements GraphVisitor {
-    private final Map<Placeholder, Set<Set<Placeholder>>> viable = new HashMap<>(8);
-    private final Deque<Set<Placeholder>> stack = new LinkedList<>();
-
-    @Override
-    public void leaveInput(Input input) {
-      stack.push(singleton(input.table()));
-    }
-
-    @Override
-    public void leaveInnerJoin(InnerJoin op) {
-      setJoinKeySource(op);
-    }
-
-    @Override
-    public void leaveLeftJoin(LeftJoin op) {
-      setJoinKeySource(op);
-    }
-
-    @Override
-    public void leavePlainFilter(PlainFilter op) {
-      viable.put(op.fields(), powerSet(stack.peek()));
-    }
-
-    @Override
-    public void leaveProj(Proj op) {
-      viable.put(op.fields(), powerSet(stack.peek()));
-    }
-
-    @Override
-    public void leaveSubqueryFilter(SubqueryFilter op) {
-      viable.put(op.fields(), powerSet(stack.peek()));
-    }
-
-    @Override
-    public void leaveUnion(Union op) {
-      stack.pop(); // drop tables from right
-    }
-
-    private void setJoinKeySource(Join op) {
-      final Placeholder leftFields = op.leftFields(), rightFields = op.rightFields();
-      final Set<Placeholder> rightTbls = stack.pop(), leftTbls = stack.pop();
-      viable.put(leftFields, collectionMap(Collections::singleton, leftTbls, HashSet::new));
-      viable.put(rightFields, collectionMap(Collections::singleton, rightTbls, HashSet::new));
-      stack.push(union(leftTbls, rightTbls));
+    public Proposition contains(Value x) {
+      return cond.apply(x);
     }
   }
 }

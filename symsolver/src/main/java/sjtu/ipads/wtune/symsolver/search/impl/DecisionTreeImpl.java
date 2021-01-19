@@ -7,8 +7,9 @@ import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
+import static sjtu.ipads.wtune.common.utils.Commons.maskArray;
 import static sjtu.ipads.wtune.common.utils.Commons.sorted;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
 
 public class DecisionTreeImpl implements DecisionTree {
   private final DecidableConstraint[] choices;
@@ -24,16 +25,6 @@ public class DecisionTreeImpl implements DecisionTree {
   public static DecisionTree build(DecidableConstraint[] choices) {
     requireNonNull(choices);
     return new DecisionTreeImpl(choices);
-  }
-
-  private static DecidableConstraint[] toDecision(DecidableConstraint[] choices, long seed) {
-    final DecidableConstraint[] decisions = new DecidableConstraint[Long.bitCount(seed)];
-
-    final int wall = choices.length - 1;
-    for (int i = 0, j = 0, bound = choices.length; i < bound; i++)
-      if ((seed & (1L << (wall - i))) != 0) decisions[j++] = choices[i];
-
-    return decisions;
   }
 
   @Override
@@ -52,7 +43,7 @@ public class DecisionTreeImpl implements DecisionTree {
 
   @Override
   public DecidableConstraint[] decisions() {
-    return decisions != null ? decisions : (decisions = toDecision(choices, seed));
+    return decisions != null ? decisions : (decisions = maskArray(choices, seed));
   }
 
   @Override

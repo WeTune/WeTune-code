@@ -3,32 +3,19 @@ package sjtu.ipads.wtune.symsolver.core;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
-import sjtu.ipads.wtune.symsolver.utils.SimpleScoped;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
-import static sjtu.ipads.wtune.symsolver.core.Indexed.number;
+import java.util.function.Function;
 
 public abstract class BaseQueryBuilder implements QueryBuilder {
   private LogicCtx ctx;
-  private final Map<Scoped, TableSym> tableSyms;
-  private final Map<Scoped, PickSym> pickSyms;
-  private final Map<Scoped, PredicateSym> predSyms;
+  private SymMaker<TableSym> tables;
+  private SymMaker<PickSym> picks;
+  private SymMaker<PredicateSym> preds;
 
-  protected TableSym[] tables;
-  protected PickSym[] picks;
-  protected PredicateSym[] preds;
-  protected Value[] tuples;
-
-  protected BaseQueryBuilder() {
-    this.tableSyms = new HashMap<>();
-    this.pickSyms = new HashMap<>();
-    this.predSyms = new HashMap<>();
-  }
+  private char nextTupleName = 'a';
 
   @Override
   public LogicCtx ctx() {
@@ -37,123 +24,91 @@ public abstract class BaseQueryBuilder implements QueryBuilder {
 
   @Override
   public TableSym tableSym(Scoped owner) {
-    return tableSyms.computeIfAbsent(owner, TableSym::of);
+    return tables.make(owner);
   }
 
   @Override
   public PickSym pickSym(Scoped owner) {
-    return pickSyms.computeIfAbsent(owner, PickSym::of);
+    return picks.make(owner);
   }
 
   @Override
   public PredicateSym predSym(Scoped owner) {
-    return predSyms.computeIfAbsent(owner, PredicateSym::of);
+    return preds.make(owner);
   }
 
   @Override
-  public Query build(
-      LogicCtx ctx, String name, int tblIdxStart, int pickIdxStart, int predIdxStart) {
-    this.tableSyms.clear();
-    this.pickSyms.clear();
-    this.predSyms.clear();
+  public synchronized Query build(
+      LogicCtx ctx, int tblIdxStart, int pickIdxStart, int predIdxStart) {
+    tables = new SymMaker<>(ctx, TableSym::of, tblIdxStart);
+    picks = new SymMaker<>(ctx, PickSym::of, pickIdxStart);
+    preds = new SymMaker<>(ctx, PredicateSym::of, predIdxStart);
 
     this.ctx = ctx;
-    this.tables = number(makeTables(), tblIdxStart);
-    this.picks = number(makePicks(), pickIdxStart);
-    this.preds = number(makePredicates(), predIdxStart);
-    this.tuples = ctx.makeTuples(numTables(), name);
+    this.nextTupleName = 'a';
 
-    prepare();
+    final Function<Value, Proposition> semantic = semantic(); // don't inline this variable
 
-    bindFuncs(tables);
-    bindFuncs(picks);
-    bindFuncs(preds);
-
-    return new BaseQuery(tables, picks, preds, tuples, output(), condition());
+    return new BaseQuery(
+        tables.syms().toArray(TableSym[]::new),
+        picks.syms().toArray(PickSym[]::new),
+        preds.syms().toArray(PredicateSym[]::new),
+        semantic);
   }
 
-  private TableSym[] makeTables() {
-    final List<? extends Scoped> ts = tablePlaceholders();
-    if (ts != null) return stream(ts).map(this::tableSym).toArray(TableSym[]::new);
-    else
-      return IntStream.range(0, numTables())
-          .mapToObj(it -> new SimpleScoped(this))
-          .map(this::tableSym)
-          .toArray(TableSym[]::new);
+  protected Value newTuple() {
+    return ctx.makeTuple(String.valueOf(nextTupleName++));
   }
 
-  private PickSym[] makePicks() {
-    final List<? extends Scoped> ps = pickPlaceholders();
-    if (ps != null) return stream(ps).map(this::pickSym).toArray(PickSym[]::new);
-    return IntStream.range(0, numPicks())
-        .mapToObj(it -> new SimpleScoped(this))
-        .map(this::pickSym)
-        .toArray(PickSym[]::new);
-  }
+  protected abstract Function<Value, Proposition> semantic();
 
-  private PredicateSym[] makePredicates() {
-    final List<? extends Scoped> ps = predicatePlaceholders();
-    if (ps != null) return stream(ps).map(this::predSym).toArray(PredicateSym[]::new);
-    return IntStream.range(0, numPreds())
-        .mapToObj(it -> new SimpleScoped(this))
-        .map(this::predSym)
-        .toArray(PredicateSym[]::new);
-  }
+  private static class SymMaker<T extends Sym> {
+    private final Map<Scoped, T> syms;
+    private final Function<Scoped, T> maker;
+    private final LogicCtx ctx;
+    private int nextId;
 
-  private void bindFuncs(Sym[] syms) {
-    for (Sym sym : syms) sym.setFunc(ctx.makeFunc(sym));
-  }
+    private SymMaker(LogicCtx ctx, Function<Scoped, T> maker, int startId) {
+      this.ctx = ctx;
+      this.maker = maker;
+      this.syms = new HashMap<>();
+      this.nextId = startId;
+    }
 
-  @Override
-  public int numTables() {
-    return tablePlaceholders().size();
-  }
+    private T bindFunc(T sym) {
+      sym.setFunc(ctx.makeFunc(sym));
+      return sym;
+    }
 
-  @Override
-  public int numPicks() {
-    return pickPlaceholders().size();
-  }
+    private T setIndex(T sym) {
+      sym.setIndex(nextId++);
+      return sym;
+    }
 
-  @Override
-  public int numPreds() {
-    return predicatePlaceholders().size();
-  }
+    private T make(Scoped scoped) {
+      return syms.computeIfAbsent(scoped, maker.andThen(this::setIndex).andThen(this::bindFunc));
+    }
 
-  protected List<? extends Scoped> tablePlaceholders() {
-    return null;
+    private Collection<T> syms() {
+      return syms.values();
+    }
   }
-
-  protected List<? extends Scoped> pickPlaceholders() {
-    return null;
-  }
-
-  protected List<? extends Scoped> predicatePlaceholders() {
-    return null;
-  }
-
-  protected abstract void prepare();
 
   private static class BaseQuery implements Query {
     private final TableSym[] tables;
     private final PickSym[] picks;
     private final PredicateSym[] preds;
-    private final Value[] tuples;
-    private final Value[] output;
-    private final Proposition condition;
+    private final Function<Value, Proposition> semantic;
 
     private BaseQuery(
         TableSym[] tables,
         PickSym[] picks,
         PredicateSym[] preds,
-        Value[] tuples,
-        Value[] output,
-        Proposition condition) {
+        Function<Value, Proposition> semantic) {
       this.tables = tables;
       this.picks = picks;
       this.preds = preds;
-      this.tuples = tuples;
-      this.output = output;
-      this.condition = condition;
+      this.semantic = semantic;
     }
 
     @Override
@@ -172,18 +127,8 @@ public abstract class BaseQueryBuilder implements QueryBuilder {
     }
 
     @Override
-    public Value[] tuples() {
-      return tuples;
-    }
-
-    @Override
-    public Value[] output() {
-      return output;
-    }
-
-    @Override
-    public Proposition condition() {
-      return condition;
+    public Proposition contains(Value v) {
+      return semantic.apply(v);
     }
   }
 }
