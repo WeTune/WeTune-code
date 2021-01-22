@@ -44,7 +44,11 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
 
   @Override
   public void leaveInput(Input input) {
-    stack.push(new Relation(tableSym(input.table())));
+    final TableSym t = tableSym(input.table());
+    final Value tuple = newTuple();
+
+    stack.push(
+        new Relation(asArray(t), (Proposition) t.apply(tuple), asArray(tuple), asArray(tuple)));
   }
 
   @Override
@@ -60,14 +64,12 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     pickL.setJoined(pickR);
 
     final TableSym[] visible = arrayConcat(visibleL, visibleR);
-    final Value l = newTuple(), r = newTuple();
-    final Proposition inCond = inL.contains(l).and(inR.contains(r));
-    final Proposition joinCond = pickL.apply(l).equalsTo(pickR.apply(r));
-    final Value[] bound = asArray(l, r);
-    final Function<Value, Proposition> cond =
-        x -> ctx().makeExists(bound, inCond.and(joinCond).and(x.equalsTo(ctx().makeCombine(l, r))));
+    final Proposition joinCond = pickL.apply(inL.out).equalsTo(pickR.apply(inR.out));
+    final Proposition cond = inL.cond.and(inR.cond).and(joinCond);
+    final Value[] out = arrayConcat(inL.out, inR.out);
+    final Value[] bound = arrayConcat(inL.bound, inR.bound);
 
-    stack.push(new Relation(visible, cond));
+    stack.push(new Relation(visible, cond, out, bound));
   }
 
   @Override
@@ -80,10 +82,8 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     pick.setVisibleSources(visible);
     pick.setViableSources(makeViableSources(visible, false));
 
-    final Function<Value, Proposition> predicate =
-        x -> in.contains(x).and((Proposition) pred.apply(x));
-
-    stack.push(new Relation(visible, predicate));
+    final Proposition cond = in.cond.and((Proposition) pred.apply(pick.apply(in.out)));
+    stack.push(new Relation(visible, cond, in.out, in.bound));
   }
 
   @Override
@@ -95,11 +95,9 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     pick.setVisibleSources(visible);
     pick.setViableSources(makeViableSources(visible, false));
 
-    final Value tuple = newTuple();
-    final Function<Value, Proposition> predicate =
-        x -> ctx().makeExists(tuple, in.contains(tuple).and(x.equalsTo(pick.apply(tuple))));
+    final Value[] out = asArray(pick.apply(in.out));
 
-    stack.push(new Relation(visible, predicate));
+    stack.push(new Relation(visible, in.cond, out, in.bound));
   }
 
   @Override
@@ -111,9 +109,10 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     pick.setVisibleSources(visible);
     pick.setViableSources(makeViableSources(visible, false));
 
-    final Function<Value, Proposition> predicate = x -> in.contains(x).and(sub.contains(x));
-    // actually multiple-output subquery should be rule out earlier. See Heuristic::prune
-    stack.push(new Relation(visible, predicate));
+    final Proposition joinCond = pick.apply(in.out).equalsTo(ctx().makeCombine(sub.out));
+    final Proposition cond = in.cond.and(sub.cond).and(joinCond);
+
+    stack.push(new Relation(visible, cond, in.out, arrayConcat(in.bound, sub.bound)));
   }
 
   @Override
@@ -121,38 +120,34 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     final Relation right = stack.pop(), left = stack.pop();
     final TableSym[] visible = left.visibleSources;
 
-    final Function<Value, Proposition> predicate = x -> left.contains(x).or(right.contains(x));
-
-    stack.push(new Relation(visible, predicate));
+    final Proposition cond = left.cond.or(right.cond);
+    stack.push(new Relation(visible, cond, left.out, arrayConcat(left.bound, right.bound)));
   }
 
   @Override
   protected Function<Value, Proposition> semantic() {
     stack.clear();
     q.acceptVisitor(this);
-    return stack.peek()::contains;
+
+    final Relation rel = stack.peek();
+    return x -> ctx().makeExists(rel.bound, rel.cond.and(x.equalsTo(ctx().makeCombine(rel.out))));
   }
 
   private static final class Relation {
     private final TableSym[] visibleSources;
-    private final Function<Value, Proposition> cond;
+    private final Proposition cond;
+    private final Value[] out;
+    private final Value[] bound;
 
-    private Relation(TableSym table) {
-      visibleSources = asArray(table);
-      cond = x -> (Proposition) table.apply(x);
-    }
-
-    private Relation(TableSym[] visibleSources, Function<Value, Proposition> cond) {
+    private Relation(TableSym[] visibleSources, Proposition cond, Value[] out, Value[] bound) {
       this.visibleSources = visibleSources;
       this.cond = cond;
+      this.out = out;
+      this.bound = bound;
     }
 
     public TableSym[] visibleSources() {
       return visibleSources;
-    }
-
-    public Proposition contains(Value x) {
-      return cond.apply(x);
     }
   }
 }

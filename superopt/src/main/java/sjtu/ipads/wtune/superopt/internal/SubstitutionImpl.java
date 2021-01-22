@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.internal;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
+import sjtu.ipads.wtune.superopt.util.LockGuard;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Indexed;
 
@@ -11,8 +12,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.superopt.internal.Placeholder.numberPlaceholder;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.superopt.internal.Placeholder.numbering;
+import static sjtu.ipads.wtune.superopt.util.Lockable.compose;
 
 public class SubstitutionImpl implements Substitution {
   private final Graph g0, g1;
@@ -26,8 +29,12 @@ public class SubstitutionImpl implements Substitution {
   }
 
   public static Substitution build(Graph g0, Graph g1, List<Constraint> constraints) {
-    numberPlaceholder(g0, g1);
-    return new SubstitutionImpl(g0, g1, listMap(it -> it.unwrap(Placeholder.class), constraints));
+    try (LockGuard ignored = compose(g0, g1).guard()) {
+      // Since multiple threads may number the graphs simultaneously but differently,
+      // so we have to copy the placeholders with lock protected
+      numbering(false).number(g0, g1);
+      return new SubstitutionImpl(g0, g1, listMap(it -> it.unwrap(Placeholder::copy), constraints));
+    }
   }
 
   public static Substitution build(String str) {
@@ -36,7 +43,7 @@ public class SubstitutionImpl implements Substitution {
       throw new IllegalArgumentException("invalid serialized substitution: " + str);
 
     final Graph g0 = Graph.rebuild(split[0]), g1 = Graph.rebuild(split[1]);
-    final Map<String, Placeholder> placeholders = numberPlaceholder(g0, g1);
+    final Map<String, Placeholder> placeholders = numbering().number(g0, g1).placeholders();
 
     final List<Constraint> constraints =
         listMap(it -> rebuildConstraint(it, placeholders), split[2].split(";"));
@@ -78,8 +85,8 @@ public class SubstitutionImpl implements Substitution {
   public String toString() {
     return "%s|%s|%s"
         .formatted(
-            g0.toString(),
-            g1.toString(),
+            g0.toInformativeString(),
+            g1.toInformativeString(),
             constraints.stream().map(Object::toString).collect(Collectors.joining(";")));
   }
 

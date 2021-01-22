@@ -4,6 +4,8 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
   static String unquoted(String str) {
@@ -88,6 +90,12 @@ public interface Commons {
     return ret;
   }
 
+  /**
+   * Select elements in `arr` according to 1 bit in `seed`, and comprise a new array. <br>
+   * Note: that the lowest bit corresponds to the last element in array. The bits that higher than
+   * `arr.length` is ignored.<br>
+   * Example: given arr=[1,2,3] seed=0b011, return value is [2,3]
+   */
   @SuppressWarnings("unchecked")
   static <T> T[] maskArray(T[] arr, long seed) {
     final T[] ret = (T[]) Array.newInstance(arr.getClass().getComponentType(), Long.bitCount(seed));
@@ -122,6 +130,20 @@ public interface Commons {
     System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
     System.arraycopy(vs, 0, arr, arr1.length + arr2.length, vs.length);
     return arr;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] arrayConcat(T[]... arrs) {
+    final int length = stream(arrs).mapToInt(it -> it.length).sum();
+    final T[] ret =
+        (T[]) Array.newInstance(arrs.getClass().getComponentType().getComponentType(), length);
+
+    int base = 0;
+    for (final T[] arr : arrs) {
+      System.arraycopy(arr, 0, ret, base, arr.length);
+      base += arr.length;
+    }
+    return ret;
   }
 
   static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {

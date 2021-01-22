@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Reactor;
 
+import java.util.function.Function;
+
 public class DecidableReference extends BaseReference<TableSym, PickSym>
     implements DecidableConstraint {
 
@@ -20,9 +22,13 @@ public class DecidableReference extends BaseReference<TableSym, PickSym>
   }
 
   @Override
-  public <T extends Indexed> Constraint unwrap(Class<T> cls) {
+  @SuppressWarnings("unchecked")
+  public <T, R extends Indexed> Constraint unwrap(Function<T, R> func) {
     return BaseReference.build(
-        tx().unwrap(cls), px().unwrap(cls), ty().unwrap(cls), py().unwrap(cls));
+        func.apply((T) tx().unwrap(Object.class)),
+        func.apply((T) px().unwrap(Object.class)),
+        func.apply((T) ty().unwrap(Object.class)),
+        func.apply((T) py().unwrap(Object.class)));
   }
 
   @Override

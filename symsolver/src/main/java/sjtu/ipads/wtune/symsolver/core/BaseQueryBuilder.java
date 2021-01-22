@@ -38,11 +38,10 @@ public abstract class BaseQueryBuilder implements QueryBuilder {
   }
 
   @Override
-  public synchronized Query build(
-      LogicCtx ctx, int tblIdxStart, int pickIdxStart, int predIdxStart) {
-    tables = new SymMaker<>(ctx, TableSym::of, tblIdxStart);
-    picks = new SymMaker<>(ctx, PickSym::of, pickIdxStart);
-    preds = new SymMaker<>(ctx, PredicateSym::of, predIdxStart);
+  public synchronized Query build(LogicCtx ctx, int tblBase, int pickBase, int predBase) {
+    tables = new SymMaker<>(ctx, TableSym::of, tblBase);
+    picks = new SymMaker<>(ctx, PickSym::of, pickBase);
+    preds = new SymMaker<>(ctx, PredicateSym::of, predBase);
 
     this.ctx = ctx;
     this.nextTupleName = 'a';

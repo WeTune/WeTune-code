@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
 import sjtu.ipads.wtune.superopt.operator.Operator;
 import sjtu.ipads.wtune.superopt.solving.Semantic;
 import sjtu.ipads.wtune.superopt.util.Hole;
+import sjtu.ipads.wtune.superopt.util.Lockable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
-public interface Graph extends Comparable<Graph> {
+public interface Graph extends Comparable<Graph>, Lockable {
   Operator head();
 
   void setHead(Operator head);

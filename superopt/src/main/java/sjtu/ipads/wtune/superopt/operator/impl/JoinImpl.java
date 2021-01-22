@@ -13,6 +13,12 @@ public abstract class JoinImpl extends BaseOperator implements Join {
   }
 
   @Override
+  public void setPlaceholders(String[] str) {
+    left.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
+    right.setIndex(Integer.parseInt(str[2].substring(str[2].indexOf('c') + 1)));
+  }
+
+  @Override
   public Placeholder leftFields() {
     return left;
   }

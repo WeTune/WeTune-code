@@ -91,19 +91,11 @@ public class Main {
 
       p1.setJoined(p2);
 
-      final Value a = newTuple(), b = newTuple(), c = newTuple();
-      final Proposition from = ctx().tupleFrom(b, t0).and(ctx().tupleFrom(c, t1));
-      final Proposition join = p1.apply(b).equalsTo(p2.apply(c));
-      final Proposition combine = a.equalsTo(ctx().makeCombine(b, c));
-      //      final Proposition body = ctx().makeExists(asArray(b, c), from.and(join).and(combine));
+      final Value a = newTuple(), b = newTuple();
+      final Proposition from = ctx().tupleFrom(a, t0).and(ctx().tupleFrom(b, t1));
+      final Proposition join = p1.apply(a).equalsTo(p2.apply(b));
 
-      return x ->
-          ctx()
-              .makeExists(
-                  asArray(b, c),
-                  x.equalsTo(ctx().makeCombine(b, c)).and(from).and(join).and(combine));
-
-      //      return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(body));
+      return x -> ctx().makeExists(asArray(a, b), x.equalsTo(p0.apply(a, b)).and(from).and(join));
     }
   }
 
@@ -126,4 +118,5 @@ public class Main {
       return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));
     }
   }
+
 }

@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Reactor;
 
+import java.util.function.Function;
+
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 
 public class DecidablePickFrom extends BasePickFrom<TableSym, PickSym>
@@ -23,8 +25,11 @@ public class DecidablePickFrom extends BasePickFrom<TableSym, PickSym>
   }
 
   @Override
-  public <T extends Indexed> Constraint unwrap(Class<T> cls) {
-    return BasePickFrom.build(p().unwrap(cls), arrayMap(it -> it.unwrap(cls), Indexed.class, ts()));
+  @SuppressWarnings("unchecked")
+  public <T, R extends Indexed> Constraint unwrap(Function<T, R> func) {
+    return BasePickFrom.build(
+        func.apply((T) p().unwrap(Object.class)),
+        arrayMap(it -> func.apply((T) it.unwrap(Object.class)), Indexed.class, ts()));
   }
 
   @Override

@@ -294,14 +294,17 @@ public class TracerImpl implements Tracer {
 
         TableSym[] srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
 
-        if (srcX != null && srcY == null) tryPickFrom(py, srcX);
-        else if (srcX == null && srcY != null) tryPickFrom(px, srcY);
-        //
-        //        if (srcX == null && srcY == null) isIncomplete = true;
-        //        else if (srcX != null && srcY != null) isConflict = isConflict || !isMatched(srcX,
-        // srcY);
-        //        else if (srcX != null /* && srcY == null */) tryPickFrom(py, srcX);
-        //        else /* if (srcX == null && srcY != null) */ tryPickFrom(px, srcY);
+        if (srcX == null && srcY == null) {
+          // if the possible sources is unique, assign that
+          if (px.viableSources().length == 1) {
+            tryPickFrom(px, px.viableSources()[0]);
+            tryPickFrom(py, px.viableSources()[0]);
+          } else if (py.viableSources().length == 1) {
+            tryPickFrom(px, py.viableSources()[0]);
+            tryPickFrom(py, py.viableSources()[0]);
+          }
+        } else if (srcY == null) tryPickFrom(py, srcX);
+        else if (srcX == null) tryPickFrom(px, srcY);
       }
 
     for (int i = 0, bound = picks.length; i < bound; i++)
@@ -311,8 +314,10 @@ public class TracerImpl implements Tracer {
 
         TableSym[] srcX = srcs[indexOf(px)], srcY = srcs[indexOf(py)];
 
-        if (srcX == null && srcY == null) isIncomplete = true;
-        else if (srcX != null && srcY != null)
+        if (srcX == null && srcY == null) {
+          if (px.viableSources().length > 1 || py.viableSources().length > 1) isIncomplete = true;
+
+        } else if (srcX != null && srcY != null)
           isConflict =
               isConflict || !isViable(px, srcX) || !isViable(py, srcY) || !isMatched(srcX, srcY);
         else assert isConflict;
@@ -396,6 +401,7 @@ public class TracerImpl implements Tracer {
     int pickFromStart = -1, pickFromEnd = -1;
     for (int i = 0, bound = constraints.length; i < bound; i++) {
       final Decision c0 = constraints[i];
+      if (c0.impossible()) return true;
       if (c0 instanceof PickFrom) {
         if (pickFromStart == -1) pickFromStart = i; // mark start
         else if (((PickFrom<?, ?>) c0).p() == ((PickFrom<?, ?>) constraints[i - 1]).p())

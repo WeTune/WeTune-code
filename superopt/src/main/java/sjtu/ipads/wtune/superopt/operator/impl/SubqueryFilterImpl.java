@@ -17,6 +17,11 @@ public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
   }
 
   @Override
+  public void setPlaceholders(String[] str) {
+    fields.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
+  }
+
+  @Override
   public Placeholder fields() {
     return fields;
   }

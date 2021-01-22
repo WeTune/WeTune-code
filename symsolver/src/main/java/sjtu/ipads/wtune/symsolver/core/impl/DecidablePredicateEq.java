@@ -6,6 +6,8 @@ import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.search.Reactor;
 
+import java.util.function.Function;
+
 public class DecidablePredicateEq extends BasePredicateEq<PredicateSym>
     implements DecidableConstraint {
   private DecidablePredicateEq(PredicateSym x, PredicateSym y) {
@@ -18,8 +20,10 @@ public class DecidablePredicateEq extends BasePredicateEq<PredicateSym>
   }
 
   @Override
-  public <T extends Indexed> Constraint unwrap(Class<T> cls) {
-    return BasePredicateEq.build(px().unwrap(cls), py().unwrap(cls));
+  @SuppressWarnings("unchecked")
+  public <T, R extends Indexed> Constraint unwrap(Function<T, R> func) {
+    return BasePredicateEq.build(
+        func.apply((T) px().unwrap(Object.class)), func.apply((T) py().unwrap(Object.class)));
   }
 
   @Override

@@ -28,6 +28,16 @@ public class DecisionTreeImpl implements DecisionTree {
   }
 
   @Override
+  public long total() {
+    return 1L << choices.length;
+  }
+
+  @Override
+  public void reset() {
+    seed = 1L << choices.length;
+  }
+
+  @Override
   public boolean forward() {
     if (seed > 0) {
       --seed;

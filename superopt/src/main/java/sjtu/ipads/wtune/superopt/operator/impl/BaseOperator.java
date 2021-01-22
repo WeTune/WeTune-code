@@ -40,20 +40,27 @@ public abstract class BaseOperator implements Operator {
   protected abstract Operator newInstance();
 
   protected Placeholder newPlaceholder(String tag) {
-    return new PlaceholderImpl(tag);
+    return new PlaceholderImpl(this, tag);
   }
 
-  private class PlaceholderImpl implements Placeholder {
+  private static class PlaceholderImpl implements Placeholder {
+    private final Operator scope;
     private final String tag;
     private int index;
 
-    private PlaceholderImpl(String tag) {
+    private PlaceholderImpl(Operator scope, String tag, int index) {
+      this.scope = scope;
       this.tag = tag;
+      this.index = index;
+    }
+
+    private PlaceholderImpl(Operator scope, String tag) {
+      this(scope, tag, 0);
     }
 
     @Override
     public Object scope() {
-      return graph;
+      return scope.graph();
     }
 
     @Override
@@ -69,6 +76,11 @@ public abstract class BaseOperator implements Operator {
     @Override
     public void setIndex(int index) {
       this.index = index;
+    }
+
+    @Override
+    public Placeholder copy() {
+      return new PlaceholderImpl(scope, tag, index);
     }
 
     @Override

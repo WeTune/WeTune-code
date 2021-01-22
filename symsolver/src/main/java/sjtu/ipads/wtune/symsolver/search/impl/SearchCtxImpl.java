@@ -118,14 +118,13 @@ public class SearchCtxImpl implements SearchCtx {
       return res;
     }
 
-    //    prover.decide(summary.constraints());
     final long t0 = System.currentTimeMillis();
     res = prover.prove();
     final long t1 = System.currentTimeMillis();
 
     updateProveStatistic(res, t1 - t0);
 
-    if (res != Result.UNKNOWN) knownResults.put(summary, res);
+    knownResults.put(summary, res);
     return res;
   }
 
@@ -139,6 +138,11 @@ public class SearchCtxImpl implements SearchCtx {
       final Summary survivor = iter.next();
       if (summary.equals(survivor)) {
         ++stat.numDuplicate;
+        return;
+      }
+
+      if (summary.implies(survivor)) {
+        ++stat.numRelax;
         return;
       }
 

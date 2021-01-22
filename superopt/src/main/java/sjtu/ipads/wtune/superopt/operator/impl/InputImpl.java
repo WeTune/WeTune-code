@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.superopt.operator.Operator;
 
 public class InputImpl extends BaseOperator implements Input {
   private final Placeholder table;
-  private int idx;
 
   private InputImpl() {
     this.table = newPlaceholder("t");
@@ -18,18 +17,13 @@ public class InputImpl extends BaseOperator implements Input {
   }
 
   @Override
+  public void setPlaceholders(String[] str) {
+    table.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('t') + 1)));
+  }
+
+  @Override
   protected Operator newInstance() {
     return this;
-  }
-
-  @Override
-  public int index() {
-    return idx;
-  }
-
-  @Override
-  public void setIndex(int index) {
-    this.idx = index;
   }
 
   @Override

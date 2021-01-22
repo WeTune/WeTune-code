@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.superopt.operator.Operator.*;
 
 public class TestProof {
   private static String makeSubString(Graph g0, Graph g1, String constraintStr) {
-    return g0 + "|" + g1 + "|" + constraintStr;
+    return g0.toInformativeString() + "|" + g1.toInformativeString() + "|" + constraintStr;
   }
 
   @Test
@@ -23,6 +23,7 @@ public class TestProof {
 
     final Collection<Substitution> results = Prove.prove(g0, g1, -1);
     final Collection<String> strs = listMap(Object::toString, results);
+    strs.forEach(System.out::println);
 
     final String target0 =
         makeSubString(
@@ -42,12 +43,27 @@ public class TestProof {
     assertTrue(strs.contains(target1));
   }
 
-  @Test
+  //  @Test
   void testRemoveLeftJoin() {
     final Graph g0 = Graph.wrap(proj(leftJoin(null, null)));
     final Graph g1 = Graph.wrap(proj(null));
     final Collection<Substitution> results = Prove.prove(g0, g1, -1);
     final Collection<String> strs = listMap(Object::toString, results);
     strs.forEach(System.out::println);
+  }
+
+  @Test
+  void testSubqueryToJoin() {
+    final Graph g0 = Graph.wrap(proj(innerJoin(null, null)));
+    final Graph g1 = Graph.wrap(proj(subqueryFilter(null, proj(null))));
+    final Collection<Substitution> results = Prove.prove(g0, g1, -1);
+    final Collection<String> strs = listMap(Object::toString, results);
+
+    final String target =
+        makeSubString(
+            g0,
+            g1,
+            "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c3);PickEq(c1,c4);PickEq(c2,c5);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);PickFrom(c4,[t2]);PickFrom(c5,[t3])");
+    assertTrue(strs.contains(target));
   }
 }

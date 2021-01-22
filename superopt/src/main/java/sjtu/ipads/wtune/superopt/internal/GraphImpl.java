@@ -11,6 +11,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
@@ -21,24 +23,43 @@ public class GraphImpl implements Graph {
   private boolean alreadySetup;
   private Semantic semantic;
 
-  private GraphImpl() {}
+  private final Lock l;
+
+  private GraphImpl() {
+    l = new ReentrantLock();
+  }
 
   public static Graph build() {
     return new GraphImpl();
   }
 
   public static Graph build(String str) {
-    final String[] opNames = str.split("[(),]+");
-    final Deque<Operator> operators = new ArrayDeque<>(opNames.length);
+    final String[] opStrs = str.split("[(),]+");
+    final Deque<Operator> operators = new ArrayDeque<>(opStrs.length);
 
-    for (int i = opNames.length - 1; i >= 0; i--) {
-      final OperatorType type = OperatorType.valueOf(opNames[i]);
+    for (int i = opStrs.length - 1; i >= 0; i--) {
+      final String opStr = opStrs[i];
+      final String[] fields = opStr.split("[<> ]+");
+      final OperatorType type = OperatorType.valueOf(fields[0]);
       final Operator op = type.create();
+
+      op.setPlaceholders(fields);
       for (int j = 0; j < type.numPredecessors(); j++) op.setPredecessor(j, operators.pop());
+
       operators.push(op);
     }
 
     return Graph.wrap(operators.pop()).setup();
+  }
+
+  @Override
+  public void lock() {
+    l.lock();
+  }
+
+  @Override
+  public void unlock() {
+    l.unlock();
   }
 
   @Override
@@ -54,7 +75,6 @@ public class GraphImpl implements Graph {
     int i = 0;
     for (Hole<Operator> hole : holes()) {
       final Input input = Input.create();
-      input.setIndex(i++);
       hole.fill(input);
       inputs.add(input);
     }

@@ -1,97 +1,38 @@
 package sjtu.ipads.wtune.symsolver;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.utils.ISupplier;
-import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.Value;
+import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
-import sjtu.ipads.wtune.symsolver.utils.SimpleScoped;
 
-import java.util.Set;
-import java.util.function.Function;
-
-import static com.google.common.collect.Sets.powerSet;
-import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
+import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
+import static sjtu.ipads.wtune.symsolver.core.Indexed.number;
 
 public class DecisionTest {
-  private static class Query0 extends BaseQueryBuilder {
-    @Override
-    protected Function<Value, Proposition> semantic() {
-      final Object scope = new Object();
-      final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
-
-      final TableSym[] tables = arrayMap(this::tableSym, TableSym.class, supplier.repeat(2));
-      final PickSym[] picks = arrayMap(this::pickSym, PickSym.class, supplier.repeat(3));
-
-      final TableSym t0 = tables[0];
-      final TableSym t1 = tables[1];
-      final PickSym p0 = picks[0];
-      final PickSym p1 = picks[1];
-      final PickSym p2 = picks[2];
-
-      p0.setVisibleSources(asArray(t0, t1));
-      p1.setVisibleSources(asArray(t0));
-      p2.setVisibleSources(asArray(t1));
-      p0.setViableSources(powerSet(Set.of(tables)));
-      p1.setViableSources(singleton(singleton(t0)));
-      p2.setViableSources(singleton(singleton(t1)));
-
-      p1.setJoined(p2);
-
-      final Value a = newTuple(), b = newTuple(), c = newTuple();
-      final Proposition from = ctx().tupleFrom(b, t0).and(ctx().tupleFrom(c, t1));
-      final Proposition join = p1.apply(b).equalsTo(p2.apply(c));
-      final Proposition combine = a.equalsTo(ctx().makeCombine(b, c));
-      final Proposition body = ctx().makeExists(asArray(b, c), from.and(join).and(combine));
-
-      return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(body));
-    }
-  }
-
-  private static class Query1 extends BaseQueryBuilder {
-
-    @Override
-    protected Function<Value, Proposition> semantic() {
-      final Object scope = new Object();
-      final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
-
-      final TableSym table = tableSym(supplier.get());
-      final PickSym p0 = pickSym(supplier.get());
-
-      p0.setVisibleSources(asArray(table));
-      p0.setViableSources(powerSet(Set.of(table)));
-
-      final Value a = newTuple();
-      final Proposition from = ctx().tupleFrom(a, table);
-
-      return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));
-    }
-  }
-
   @Test
-  void test() {
-    final Query0 q0 = new Query0();
-    final Query1 q1 = new Query1();
+  void testBasic() {
+    final TableSym[] tables = supplier(func(TableSym::of).bind(null)).repeat(3, TableSym.class);
+    final PickSym[] picks = supplier(func(PickSym::of).bind(null)).repeat(4, PickSym.class);
 
-    final Solver solver = Solver.make(q0, q1);
-    final TableSym[] tables = solver.tables();
-    final PickSym[] picks = solver.picks();
+    number(tables, 0);
+    number(picks, 0);
+    picks[0].setVisibleSources(asArray(tables[0], tables[1]));
 
     final DecidableConstraint[] decision = {
-      DecidableConstraint.tableEq(tables[0], tables[1]),
-      DecidableConstraint.tableEq(tables[0], tables[2]),
-      DecidableConstraint.pickEq(picks[0], picks[1]),
-      DecidableConstraint.pickFrom(picks[0], tables[0], tables[1])
+      tableEq(tables[0], tables[1]),
+      tableEq(tables[0], tables[2]),
+      pickEq(picks[0], picks[1]),
+      pickFrom(picks[0], tables[0], tables[1])
     };
 
     final DecisionTree tree = DecisionTree.from(decision);
     assertEquals(3, tree.choices().length);
+    assertEquals(8, tree.total());
     assertArrayEquals(new Decision[] {decision[0], decision[1], decision[2]}, tree.choices());
 
     for (int i = 7; i >= 0; --i) {
@@ -103,7 +44,38 @@ public class DecisionTest {
 
     final boolean isSuccessful = tree.forward();
     assertFalse(isSuccessful);
+  }
 
-    solver.close();
+  @Test
+  void testFast() {
+    final TableSym[] tables = supplier(func(TableSym::of).bind(null)).repeat(2, TableSym.class);
+    final PickSym[] picks = supplier(func(PickSym::of).bind(null)).repeat(4, PickSym.class);
+
+    number(tables, 0);
+    number(picks, 0);
+    picks[0].setVisibleSources(asArray(tables[0], tables[1]));
+
+    final DecisionTree tree =
+        DecisionTree.fast(
+            2,
+            4,
+            0,
+            tableEq(tables[0], tables[1]),
+            pickEq(picks[0], picks[1]),
+            pickEq(picks[0], picks[2]),
+            pickEq(picks[0], picks[3]),
+            pickEq(picks[1], picks[2]),
+            pickEq(picks[1], picks[3]),
+            pickEq(picks[2], picks[3]),
+            pickFrom(picks[0], tables[0]),
+            pickFrom(picks[0], tables[0], tables[1]),
+            pickFrom(picks[0], tables[1]));
+
+    assertEquals(120, tree.total());
+
+    int i = 0;
+    while (tree.forward()) i++;
+    assertEquals(120, i);
+    assertFalse(tree.forward());
   }
 }

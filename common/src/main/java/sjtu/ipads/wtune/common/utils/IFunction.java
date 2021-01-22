@@ -9,7 +9,7 @@ public interface IFunction<T, R> extends Function<T, R> {
     return t -> consumer.accept(apply(t));
   }
 
-  default Supplier<R> bind(T t) {
+  default ISupplier<R> bind(T t) {
     return () -> apply(t);
   }
 }

@@ -19,6 +19,12 @@ public class PlainFilterImpl extends BaseOperator implements PlainFilter {
   }
 
   @Override
+  public void setPlaceholders(String[] str) {
+    fields.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
+    predicate.setIndex(Integer.parseInt(str[2].substring(str[2].indexOf('p') + 1)));
+  }
+
+  @Override
   protected Operator newInstance() {
     return create();
   }

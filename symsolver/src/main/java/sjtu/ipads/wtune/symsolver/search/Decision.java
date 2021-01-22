@@ -6,4 +6,8 @@ public interface Decision {
   default boolean ignorable() {
     return false;
   }
+
+  default boolean impossible() {
+    return false;
+  }
 }

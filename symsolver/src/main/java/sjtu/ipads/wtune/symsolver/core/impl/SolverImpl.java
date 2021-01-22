@@ -122,7 +122,7 @@ public class SolverImpl implements Solver {
               pick.viableSources()));
     }
 
-    return DecisionTree.from(choices);
+    return DecisionTree.fast(tables.length, picks.length, preds.length, choices);
   }
 
   private static boolean checkValidJoinKey(PickSym x, PickSym y) {

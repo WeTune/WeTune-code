@@ -8,10 +8,6 @@ public interface Input extends Operator {
     return InputImpl.create();
   }
 
-  int index();
-
-  void setIndex(int index);
-
   Placeholder table();
 
   @Override

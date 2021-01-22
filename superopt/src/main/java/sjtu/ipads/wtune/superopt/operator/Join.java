@@ -6,5 +6,4 @@ public interface Join extends Operator {
   Placeholder leftFields();
 
   Placeholder rightFields();
-
 }

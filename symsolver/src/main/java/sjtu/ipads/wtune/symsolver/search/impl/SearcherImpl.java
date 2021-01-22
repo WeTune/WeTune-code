@@ -35,11 +35,13 @@ public class SearcherImpl implements Searcher {
     guards.clear();
     ctx.prepare(tree.choices());
 
+    //    final long total = tree.total();
     final long start = System.currentTimeMillis();
     while (tree.forward()) {
       if (timeout >= 0 && System.currentTimeMillis() - start > timeout) return;
 
       ++numSearched;
+      //      if (numSearched % 100000 == 0) System.out.println(numSearched + " / " + total);
       final long seed = tree.seed();
       if (canSkip(seed)) continue;
 

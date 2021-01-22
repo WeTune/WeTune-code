@@ -39,6 +39,8 @@ public interface Operator extends Comparable<Operator> {
     visitor.leave(this);
   }
 
+  default void setPlaceholders(String[] str) {}
+
   default Operator copy() {
     final Operator thisCopy = type().create();
 
@@ -110,7 +112,6 @@ public interface Operator extends Comparable<Operator> {
 
     return 0;
   }
-
   /* static factory methods */
   static Agg agg(Operator prev) {
     final Agg op = Agg.create();

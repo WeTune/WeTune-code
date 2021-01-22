@@ -13,16 +13,29 @@ public class NumberPlaceholders implements GraphVisitor {
   private int nextPickId;
   private int nextTblId;
 
-  private final Map<String, Placeholder> placeholders = new HashMap<>();
+  private final boolean collect;
+  private final Map<String, Placeholder> placeholders;
 
-  public static Map<String, Placeholder> number(Graph... graphs) {
-    final NumberPlaceholders number = new NumberPlaceholders();
-    for (Graph graph : graphs) graph.acceptVisitor(number);
-    return number.placeholders;
+  private NumberPlaceholders(boolean collect) {
+    this.collect = collect;
+    this.placeholders = collect ? new HashMap<>() : null;
+  }
+
+  public static NumberPlaceholders build(boolean collect) {
+    return new NumberPlaceholders(collect);
+  }
+
+  public NumberPlaceholders number(Graph... graphs) {
+    for (Graph graph : graphs) graph.acceptVisitor(this);
+    return this;
+  }
+
+  public Map<String, Placeholder> placeholders() {
+    return placeholders;
   }
 
   private void addPlaceholder(Placeholder placeholder) {
-    placeholders.put(placeholder.toString(), placeholder);
+    if (collect) placeholders.put(placeholder.toString(), placeholder);
   }
 
   @Override

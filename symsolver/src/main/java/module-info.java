@@ -7,4 +7,5 @@ module sjtu.ipads.wtune.symsolver {
   requires java.logging;
   requires sjtu.ipads.wtune.common;
   requires z3;
+  requires trove4j;
 }

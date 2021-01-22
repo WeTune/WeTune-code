@@ -2,11 +2,12 @@ dependencies {
     implementation project(":common")
     implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')
+    implementation('net.sf.trove4j:trove4j:3.0.3')
     implementation(name: 'z3-4.8.9')
 }
 
 test {
-    systemProperty("smt_timeout", "1000")
+    systemProperty("wetune.smt_timeout", "1000")
 }
 
 def libz3Url = "https://drive.google.com/uc?export=download&id=1_qJX15kK0_XEW7vzn4PK8BUzgjRq2dDO"

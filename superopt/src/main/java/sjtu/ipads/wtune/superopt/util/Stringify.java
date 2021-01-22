@@ -54,15 +54,11 @@ public class Stringify implements GraphVisitor {
       case InnerJoin:
       case LeftJoin:
         final Join join = (Join) op;
-        builder.append(join.leftFields()).append('=').append(join.rightFields());
+        builder.append(join.leftFields()).append(' ').append(join.rightFields());
         break;
       case PlainFilter:
         final PlainFilter plainFilter = (PlainFilter) op;
-        builder
-            .append(plainFilter.predicate())
-            .append('(')
-            .append(plainFilter.fields())
-            .append(')');
+        builder.append(plainFilter.predicate()).append(' ').append(plainFilter.fields());
         break;
       case SubqueryFilter:
         builder.append(((SubqueryFilter) op).fields());
