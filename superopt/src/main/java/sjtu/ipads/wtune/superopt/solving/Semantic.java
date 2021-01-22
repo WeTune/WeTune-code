@@ -57,11 +57,7 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     final PickSym pickL = pickSym(op.leftFields()), pickR = pickSym(op.rightFields());
     final TableSym[] visibleL = inL.visibleSources(), visibleR = inR.visibleSources();
 
-    pickL.setVisibleSources(visibleL);
-    pickR.setVisibleSources(visibleR);
-    pickL.setViableSources(makeViableSources(visibleL, true));
-    pickR.setViableSources(makeViableSources(visibleR, true));
-    pickL.setJoined(pickR);
+    setJoinKeySource(pickL, visibleL, pickR, visibleR);
 
     final TableSym[] visible = arrayConcat(visibleL, visibleR);
     final Proposition joinCond = pickL.apply(inL.out).equalsTo(pickR.apply(inR.out));
@@ -70,6 +66,37 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     final Value[] bound = arrayConcat(inL.bound, inR.bound);
 
     stack.push(new Relation(visible, cond, out, bound));
+  }
+
+  @Override
+  public void leaveLeftJoin(LeftJoin op) {
+    final Relation inR = stack.pop(), inL = stack.pop();
+    final PickSym pickL = pickSym(op.leftFields()), pickR = pickSym(op.rightFields());
+    final TableSym[] visibleL = inL.visibleSources(), visibleR = inR.visibleSources();
+
+    setJoinKeySource(pickL, visibleL, pickR, visibleR);
+
+    final TableSym[] visible = arrayConcat(visibleL, visibleR);
+    final Proposition joinCond = pickL.apply(inL.out).equalsTo(pickR.apply(inR.out));
+    final Value v = newTuple();
+    final Proposition nonNullCond =
+        inR.cond.and(joinCond).and(v.equalsTo(ctx().makeCombine(inL.out)));
+    final Proposition nullCond =
+        inR.cond.and(joinCond).not().and(v.equalsTo(ctx().makeNullTuple()));
+    final Proposition cond = inL.cond.and(nonNullCond.or(nullCond));
+    final Value[] out = arrayConcat(inL.out, v);
+    final Value[] bound = arrayConcat(inL.bound, v);
+
+    stack.push(new Relation(visible, cond, out, bound));
+  }
+
+  private void setJoinKeySource(
+      PickSym pickL, TableSym[] visibleL, PickSym pickR, TableSym[] visibleR) {
+    pickL.setVisibleSources(visibleL);
+    pickR.setVisibleSources(visibleR);
+    pickL.setViableSources(makeViableSources(visibleL, true));
+    pickR.setViableSources(makeViableSources(visibleR, true));
+    pickL.setJoined(pickR);
   }
 
   @Override

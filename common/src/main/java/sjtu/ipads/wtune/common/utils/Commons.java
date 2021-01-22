@@ -121,15 +121,12 @@ public interface Commons {
   }
 
   @SuppressWarnings("unchecked")
-  static <T> T[] arrayConcat(T[] arr1, T[] arr2, T... vs) {
-    final T[] arr =
-        (T[])
-            Array.newInstance(
-                arr1.getClass().getComponentType(), arr1.length + arr2.length + vs.length);
-    System.arraycopy(arr1, 0, arr, 0, arr1.length);
-    System.arraycopy(arr2, 0, arr, arr1.length, arr2.length);
-    System.arraycopy(vs, 0, arr, arr1.length + arr2.length, vs.length);
-    return arr;
+  static <T> T[] arrayConcat(T[] arr, T... vs) {
+    final T[] ret =
+        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length + vs.length);
+    System.arraycopy(arr, 0, ret, 0, arr.length);
+    System.arraycopy(vs, 0, ret, arr.length, vs.length);
+    return ret;
   }
 
   @SuppressWarnings("unchecked")

@@ -23,7 +23,6 @@ public class TestProof {
 
     final Collection<Substitution> results = Prove.prove(g0, g1, -1);
     final Collection<String> strs = listMap(Object::toString, results);
-    strs.forEach(System.out::println);
 
     final String target0 =
         makeSubString(
@@ -43,13 +42,15 @@ public class TestProof {
     assertTrue(strs.contains(target1));
   }
 
-  //  @Test
+  @Test
   void testRemoveLeftJoin() {
     final Graph g0 = Graph.wrap(proj(leftJoin(null, null)));
     final Graph g1 = Graph.wrap(proj(null));
     final Collection<Substitution> results = Prove.prove(g0, g1, -1);
     final Collection<String> strs = listMap(Object::toString, results);
-    strs.forEach(System.out::println);
+    final String target =
+        makeSubString(g0, g1, "TableEq(t0,t2);PickEq(c0,c3);PickFrom(c0,[t0]);PickFrom(c3,[t2])");
+    assertTrue(strs.contains(target));
   }
 
   @Test
