@@ -17,6 +17,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public class GraphImpl implements Graph {
+  private int id;
+
   public Operator head;
   public List<Input> inputs;
 
@@ -50,6 +52,16 @@ public class GraphImpl implements Graph {
     }
 
     return Graph.wrap(operators.pop()).setup();
+  }
+
+  @Override
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  @Override
+  public int id() {
+    return id;
   }
 
   @Override

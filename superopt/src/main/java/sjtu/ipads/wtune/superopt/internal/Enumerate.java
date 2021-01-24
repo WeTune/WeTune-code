@@ -26,6 +26,7 @@ public class Enumerate {
     return enumerate(0, singleton(Graph.empty())).parallelStream()
         .filter(Enumerate::prune)
         .peek(Graph::setup)
+        .sorted(Graph::compareTo)
         .collect(Collectors.toList());
   }
 

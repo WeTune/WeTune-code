@@ -14,6 +14,10 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public interface Graph extends Comparable<Graph>, Lockable {
+  void setId(int i);
+
+  int id();
+
   Operator head();
 
   void setHead(Operator head);

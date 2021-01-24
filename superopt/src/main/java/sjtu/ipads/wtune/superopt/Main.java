@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
+import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
 import sjtu.ipads.wtune.superopt.internal.Enumerate;
@@ -14,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.LogManager;
+import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.INFO;
 import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
@@ -54,7 +56,7 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test1();
+    test0(false);
     //    test2();
     //    for (int i = 0; i < 10; i++) {
     //      test2();
@@ -65,22 +67,28 @@ public class Main {
     //    test0();
   }
 
-  private static void test0() {
+  private static void test0(boolean parallel) {
     final List<Graph> fragments = Enumerate.enumFragments();
     LOG.log(INFO, "#fragments: {0}", fragments.size());
 
     fragments.sort(Graph::compareTo);
+    for (int i = 0, bound = fragments.size(); i < bound; i++) fragments.get(i).setId(i);
 
-    for (int i = 0; i < fragments.size() - 1; i++) {
-      for (int j = i + 1; j < fragments.size(); j++) {
-        final Graph g0 = fragments.get(i), g1 = fragments.get(j);
-        try {
-          final Collection<Substitution> results = Prove.prove(g0, g1, 10000);
-          logResult(results);
-        } catch (Throwable ex) {
-          logError(ex, g0, g1);
-        }
-      }
+    Stream<List<Graph>> stream = Lists.cartesianProduct(fragments, fragments).stream();
+    if (parallel) stream = stream.parallel();
+    stream.forEach(xs -> doProve(xs.get(0), xs.get(1)));
+  }
+
+  private static int i = 0;
+
+  private static void doProve(Graph g0, Graph g1) {
+    if (g0.id() >= g1.id()) return;
+    System.out.println(i++);
+    try {
+      final Collection<Substitution> results = Prove.proveEq(g0, g1, 10000);
+      logResult(results);
+    } catch (Throwable ex) {
+      logError(ex, g0, g1);
     }
   }
 
@@ -88,7 +96,7 @@ public class Main {
     final Graph q0 = wrap(proj(plainFilter(innerJoin(null, null)))).setup();
     final Graph q1 = wrap(proj(plainFilter(null))).setup();
 
-    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
+    final Collection<Substitution> constraints = Prove.proveEq(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 
@@ -96,7 +104,7 @@ public class Main {
     final Graph q0 = wrap(proj(innerJoin(null, null))).setup();
     final Graph q1 = wrap(proj(null)).setup();
 
-    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
+    final Collection<Substitution> constraints = Prove.proveEq(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 

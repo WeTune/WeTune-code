@@ -26,6 +26,7 @@ public interface PickSym extends Sym {
     setViableSources(
         stream(viableSources)
             .map(it -> Iterables.toArray(it, TableSym.class))
+            .filter(it -> it.length > 0)
             .toArray(TableSym[][]::new));
   }
 }

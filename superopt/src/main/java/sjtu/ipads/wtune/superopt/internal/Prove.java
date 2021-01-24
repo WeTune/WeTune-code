@@ -11,7 +11,7 @@ import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Prove {
-  public static Collection<Substitution> prove(Graph g0, Graph g1, int timeout) {
+  public static Collection<Substitution> proveEq(Graph g0, Graph g1, int timeout) {
     try (final Solver solver = Solver.make(g0.semantic(), g1.semantic(), timeout)) {
       final Collection<Summary> summary = solver.solve();
       return listMap(it -> Substitution.build(g0, g1, asList(it.constraints())), summary);

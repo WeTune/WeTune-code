@@ -118,5 +118,4 @@ public class Main {
       return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));
     }
   }
-
 }

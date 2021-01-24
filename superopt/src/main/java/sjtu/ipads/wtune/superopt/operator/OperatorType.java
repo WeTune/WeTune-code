@@ -29,7 +29,7 @@ public enum OperatorType {
         //        Agg.create(),
         //        Distinct.create(),
         InnerJoin.create(),
-        //        LeftJoin.create(),
+        LeftJoin.create(),
         //        Limit.create(),
         PlainFilter.create(),
         Proj.create(),

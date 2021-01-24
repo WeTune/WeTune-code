@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.Scoped;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
+import java.util.Arrays;
+
 public class PickSymImpl extends BaseSym implements PickSym {
   private TableSym[] visibleSources;
   private TableSym[][] viableSources;
@@ -39,6 +41,7 @@ public class PickSymImpl extends BaseSym implements PickSym {
 
   @Override
   public void setViableSources(TableSym[][] viableSources) {
+    for (TableSym[] src : viableSources) if (src.length <= 0) throw new IllegalArgumentException();
     this.viableSources = viableSources;
   }
 

@@ -36,6 +36,7 @@ public class SearcherImpl implements Searcher {
     ctx.prepare(tree.choices());
 
     //    final long total = tree.total();
+    //    System.out.println(tree.total());
     final long start = System.currentTimeMillis();
     while (tree.forward()) {
       if (timeout >= 0 && System.currentTimeMillis() - start > timeout) return;

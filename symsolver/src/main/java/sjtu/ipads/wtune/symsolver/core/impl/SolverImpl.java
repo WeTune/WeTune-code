@@ -13,6 +13,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.arrayConcat;
 import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
 
 public class SolverImpl implements Solver {
   private final TableSym[] tables;
@@ -95,19 +96,16 @@ public class SolverImpl implements Solver {
     final List<DecidableConstraint> choices = new ArrayList<>(32);
 
     for (int i = 0, bound = tables.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++)
-        choices.add(DecidableConstraint.tableEq(tables[i], tables[j]));
+      for (int j = i + 1; j < bound; j++) choices.add(tableEq(tables[i], tables[j]));
 
     for (int i = 0, bound = picks.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++)
-        choices.add(DecidableConstraint.pickEq(picks[i], picks[j]));
+      for (int j = i + 1; j < bound; j++) choices.add(pickEq(picks[i], picks[j]));
 
     for (int i = 0, bound = preds.length; i < bound; i++)
-      for (int j = i + 1; j < bound; j++)
-        choices.add(DecidableConstraint.predicateEq(preds[i], preds[j]));
+      for (int j = i + 1; j < bound; j++) choices.add(predicateEq(preds[i], preds[j]));
 
     for (PickSym pick : picks) {
-      choices.addAll(listMap(src -> DecidableConstraint.pickFrom(pick, src), pick.viableSources()));
+      choices.addAll(listMap(src -> pickFrom(pick, src), pick.viableSources()));
 
       final PickSym joined = pick.joined();
       if (joined == null) continue;
@@ -117,9 +115,7 @@ public class SolverImpl implements Solver {
 
       final TableSym joinedSrc = joined.viableSources()[0][0];
       choices.addAll(
-          listMap(
-              src -> DecidableConstraint.reference(src[0], pick, joinedSrc, joined),
-              pick.viableSources()));
+          listMap(src -> reference(src[0], pick, joinedSrc, joined), pick.viableSources()));
     }
 
     return DecisionTree.fast(tables.length, picks.length, preds.length, choices);

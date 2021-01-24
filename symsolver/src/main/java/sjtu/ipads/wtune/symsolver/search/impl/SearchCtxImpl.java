@@ -105,7 +105,7 @@ public class SearchCtxImpl implements SearchCtx {
     stat.numSkipped = searcher.numSkipped();
     stat.timeTotal += t1 - t0;
 
-    System.out.println(stat);
+    //    System.out.println(stat);
     return survivors;
   }
 

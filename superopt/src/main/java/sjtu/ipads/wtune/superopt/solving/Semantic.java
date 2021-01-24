@@ -36,8 +36,8 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
       return viable;
     } else {
       final int count = 1 << visible.length;
-      final TableSym[][] viable = new TableSym[count][];
-      for (int i = count - 1; i >= 0; --i) viable[i] = maskArray(visible, i);
+      final TableSym[][] viable = new TableSym[count - 1][];
+      for (int i = count - 1; i > 0; --i) viable[i - 1] = maskArray(visible, i);
       return viable;
     }
   }
