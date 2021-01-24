@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import sjtu.ipads.wtune.symsolver.utils.Partitioner;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayFilter;
@@ -27,7 +28,7 @@ public class FastDecisionTree implements DecisionTree {
 
   private FastDecisionTree(
       int numTables, int numPicks, int numPreds, DecidableConstraint[] choices) {
-    this.choices = arrayFilter(not(Decision::ignorable), sorted(choices, Constraint::compareTo));
+    this.choices = sorted(choices, Constraint::compareTo);
 
     pickBase = (numTables * (numTables - 1)) >> 1;
     predBase = pickBase + ((numPicks * (numPicks - 1)) >> 1);
@@ -43,6 +44,11 @@ public class FastDecisionTree implements DecisionTree {
 
   public static DecisionTree build(
       int numTables, int numPicks, int numPreds, DecidableConstraint[] choices) {
+    requireNonNull(choices);
+    choices = arrayFilter(not(Decision::ignorable), choices);
+
+    if (choices.length > 63) return null;
+    // TODO: support arbitrary sized choices
     return new FastDecisionTree(numTables, numPicks, numPreds, choices);
   }
 

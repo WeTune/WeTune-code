@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
 import sjtu.ipads.wtune.superopt.internal.Enumerate;
 import sjtu.ipads.wtune.superopt.internal.Prove;
+import sjtu.ipads.wtune.superopt.util.LockGuard;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -14,12 +15,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.LogManager;
 import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.INFO;
 import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
 import static sjtu.ipads.wtune.superopt.operator.Operator.*;
+import static sjtu.ipads.wtune.superopt.util.Lockable.compose;
 
 public class Main {
   private static final System.Logger LOG = System.getLogger("Enumerator");
@@ -44,19 +47,19 @@ public class Main {
 
   static {
     try {
-      out = new PrintWriter(Files.newOutputStream(Paths.get("/home/cleveland/var/out")));
-      err = new PrintWriter(Files.newOutputStream(Paths.get("/home/cleveland/var/err")));
+      out = new PrintWriter(Files.newOutputStream(Paths.get("out")));
+      err = new PrintWriter(Files.newOutputStream(Paths.get("err")));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   static {
-    System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "8");
+    System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "16");
   }
 
   public static void main(String[] args) {
-    test0(false);
+    test0(true);
     //    test2();
     //    for (int i = 0; i < 10; i++) {
     //      test2();
@@ -71,19 +74,23 @@ public class Main {
     final List<Graph> fragments = Enumerate.enumFragments();
     LOG.log(INFO, "#fragments: {0}", fragments.size());
 
-    fragments.sort(Graph::compareTo);
     for (int i = 0, bound = fragments.size(); i < bound; i++) fragments.get(i).setId(i);
+    fragments.sort(Graph::compareTo); // this "sort" actually serves as shuffle
 
     Stream<List<Graph>> stream = Lists.cartesianProduct(fragments, fragments).stream();
     if (parallel) stream = stream.parallel();
+
     stream.forEach(xs -> doProve(xs.get(0), xs.get(1)));
   }
 
-  private static int i = 0;
+  private static AtomicInteger i = new AtomicInteger(0);
 
   private static void doProve(Graph g0, Graph g1) {
     if (g0.id() >= g1.id()) return;
-    System.out.println(i++);
+
+    final int current = i.getAndIncrement();
+    if (current % 10 == 0) System.out.println(current);
+
     try {
       final Collection<Substitution> results = Prove.proveEq(g0, g1, 10000);
       logResult(results);
@@ -109,6 +116,8 @@ public class Main {
   }
 
   private static void logResult(Collection<Substitution> substitutions) {
+    if (substitutions == null || substitutions.isEmpty()) return;
+
     synchronized (out) {
       out.println("====");
       substitutions.forEach(out::println);

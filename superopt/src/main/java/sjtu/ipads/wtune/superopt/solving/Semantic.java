@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.symsolver.core.BaseQueryBuilder;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
@@ -157,7 +158,8 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     q.acceptVisitor(this);
 
     final Relation rel = stack.peek();
-    return x -> ctx().makeExists(rel.bound, rel.cond.and(x.equalsTo(ctx().makeCombine(rel.out))));
+    final LogicCtx ctx = ctx(); // don't inline this variable: we don't want this-ref to be captured
+    return x -> ctx.makeExists(rel.bound, rel.cond.and(x.equalsTo(ctx.makeCombine(rel.out))));
   }
 
   private static final class Relation {

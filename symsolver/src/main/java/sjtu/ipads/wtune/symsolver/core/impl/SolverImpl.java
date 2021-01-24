@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
+import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.symsolver.DecidableConstraint;
 import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.Commons.arrayConcat;
 import static sjtu.ipads.wtune.common.utils.Commons.sorted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -70,7 +72,8 @@ public class SolverImpl implements Solver {
 
   @Override
   public Collection<Summary> solve() {
-    return solve(makeDecisionTree(tables, picks, preds));
+    final DecisionTree tree = makeDecisionTree(tables, picks, preds);
+    return tree == null ? null : solve(tree);
   }
 
   @Override
@@ -113,9 +116,9 @@ public class SolverImpl implements Solver {
       if (!checkValidJoinKey(pick, joined))
         throw new IllegalArgumentException("invalid join key " + pick + " " + joined);
 
-      final TableSym joinedSrc = joined.viableSources()[0][0];
-      choices.addAll(
-          listMap(src -> reference(src[0], pick, joinedSrc, joined), pick.viableSources()));
+      Lists.cartesianProduct(asList(pick.viableSources()), asList(joined.viableSources())).stream()
+          .map(xs -> reference(xs.get(0)[0], pick, xs.get(1)[0], joined))
+          .forEach(choices::add);
     }
 
     return DecisionTree.fast(tables.length, picks.length, preds.length, choices);
@@ -123,7 +126,6 @@ public class SolverImpl implements Solver {
 
   private static boolean checkValidJoinKey(PickSym x, PickSym y) {
     return stream(x.viableSources()).allMatch(it -> it.length == 1)
-        && y.viableSources().length == 1
-        && y.viableSources()[0].length == 1;
+        && stream(y.viableSources()).allMatch(it -> it.length == 1);
   }
 }

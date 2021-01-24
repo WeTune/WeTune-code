@@ -18,12 +18,16 @@ public class DecisionTreeImpl implements DecisionTree {
   private DecidableConstraint[] decisions;
 
   private DecisionTreeImpl(DecidableConstraint[] choices) {
-    this.choices = arrayFilter(not(Decision::ignorable), sorted(choices, Constraint::compareTo));
+    this.choices = sorted(choices, Constraint::compareTo);
     this.seed = 1L << this.choices.length;
   }
 
   public static DecisionTree build(DecidableConstraint[] choices) {
     requireNonNull(choices);
+    choices = arrayFilter(not(Decision::ignorable), choices);
+
+    if (choices.length > 63) return null;
+    // TODO: support arbitrary sized choices
     return new DecisionTreeImpl(choices);
   }
 

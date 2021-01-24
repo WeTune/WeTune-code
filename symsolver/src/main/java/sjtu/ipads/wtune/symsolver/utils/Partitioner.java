@@ -42,6 +42,7 @@ public class Partitioner {
 
   static {
     LOOKUP[0] = new int[1][0][0];
+    for (int i = 0; i < 12; i++) partitionsOf(i);
   }
 
   private static int[][][] partitionsOf(int cardinality) {
