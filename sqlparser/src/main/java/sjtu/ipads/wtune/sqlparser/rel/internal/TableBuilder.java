@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.rel.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
-import sjtu.ipads.wtune.sqlparser.rel.Constraint;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -26,8 +24,8 @@ class TableBuilder {
   static TableBuilder fromCreateTable(SQLNode tableDef) {
     final TableBuilder builder = new TableBuilder(TableImpl.build(tableDef));
 
-    tableDef.get(NodeAttrs.CREATE_TABLE_COLUMNS).forEach(builder::setColumn);
-    tableDef.get(NodeAttrs.CREATE_TABLE_CONSTRAINTS).forEach(builder::setConstraint);
+    tableDef.get(CREATE_TABLE_COLUMNS).forEach(builder::setColumn);
+    tableDef.get(CREATE_TABLE_CONSTRAINTS).forEach(builder::setConstraint);
 
     return builder;
   }
@@ -52,17 +50,17 @@ class TableBuilder {
     final ColumnImpl column = ColumnImpl.build(table.name(), colDef);
     table.addColumn(column);
 
-    final EnumSet<ConstraintType> constraints = colDef.get(NodeAttrs.COLUMN_DEF_CONS);
+    final EnumSet<ConstraintType> constraints = colDef.get(COLUMN_DEF_CONS);
     if (constraints == null) return;
 
     for (ConstraintType cType : constraints) {
-      final Constraint c = ConstraintImpl.build(cType, singletonList(column));
+      final ConstraintImpl c = ConstraintImpl.build(cType, singletonList(column));
 
       table.addConstraint(c);
       column.addConstraint(c);
     }
 
-    final SQLNode references = colDef.get(NodeAttrs.COLUMN_DEF_REF);
+    final SQLNode references = colDef.get(COLUMN_DEF_REF);
     if (references != null) {
       final ConstraintImpl c = ConstraintImpl.build(FOREIGN, singletonList(column));
       c.setRefTableName(references.get(REFERENCES_TABLE));
@@ -85,10 +83,10 @@ class TableBuilder {
     }
 
     final ConstraintImpl c = ConstraintImpl.build(constraintDef.get(INDEX_DEF_CONS), columns);
-    c.setIndexType(constraintDef.get(NodeAttrs.INDEX_DEF_TYPE));
+    c.setIndexType(constraintDef.get(INDEX_DEF_TYPE));
     c.setDirections(directions);
 
-    final SQLNode refs = constraintDef.get(NodeAttrs.INDEX_DEF_REFS);
+    final SQLNode refs = constraintDef.get(INDEX_DEF_REFS);
     if (refs != null) {
       c.setRefTableName(refs.get(REFERENCES_TABLE));
       c.setRefColNames(refs.get(REFERENCES_COLUMNS));

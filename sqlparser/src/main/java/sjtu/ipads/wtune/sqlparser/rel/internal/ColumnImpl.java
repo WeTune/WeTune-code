@@ -77,5 +77,14 @@ public class ColumnImpl implements Column {
   void addConstraint(Constraint constraint) {
     if (constraints == null) constraints = new ArrayList<>(3);
     constraints.add(constraint);
+    if (constraint.type() == null) flags.add(INDEXED);
+    else
+      switch (constraint.type()) {
+        case UNIQUE -> flags.add(UNIQUE);
+        case PRIMARY -> flags.add(PRIMARY);
+        case NOT_NULL -> flags.add(NOT_NULL);
+        case FOREIGN -> flags.add(FOREIGN_KEY);
+        case CHECK -> flags.add(HAS_CHECK);
+      }
   }
 }

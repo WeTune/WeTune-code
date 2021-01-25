@@ -49,6 +49,10 @@ public interface FuncUtils {
     return stream(os).map(func).collect(Collectors.toList());
   }
 
+  static <T> List<T> listFilter(Predicate<? super T> func, Iterable<T> os) {
+    return stream(os).filter(func).collect(Collectors.toList());
+  }
+
   @SafeVarargs
   static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, T... ts) {
     final R[] rs = Commons.makeArray(retType, ts.length);

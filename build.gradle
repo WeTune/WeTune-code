@@ -56,6 +56,7 @@ subprojects {
                     commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
                             '-Proxy', "\"$proxy\"",
                             '-OutFile', "$fileName"
+
                 } else {
                     commandLine 'wget', '-e', 'use_proxy=yes',
                             '-e', "http_proxy=$proxy",
@@ -63,14 +64,15 @@ subprojects {
                             '--no-check-certificate',
                             "$url",
                             '-O', "$fileName"
+
+                    if (mod != null)
+                        exec {
+                            workingDir(wd)
+                            commandLine 'chmod', "$mod", "$fileName"
+                        }
                 }
             }
 
-            if (mod != null)
-                exec {
-                    workingDir(wd)
-                    commandLine 'chmod', "$mod", "$fileName"
-                }
 
         } else {
             println("use cached $fileName found in $wd")

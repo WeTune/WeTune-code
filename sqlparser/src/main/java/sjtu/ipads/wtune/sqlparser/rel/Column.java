@@ -2,9 +2,12 @@ package sjtu.ipads.wtune.sqlparser.rel;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.rel.internal.ColumnImpl;
 
 import java.util.Collection;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
 public interface Column {
   enum Flag {
@@ -12,6 +15,7 @@ public interface Column {
     INDEXED,
     FOREIGN_KEY,
     PRIMARY,
+    NOT_NULL,
     GENERATED,
     HAS_DEFAULT,
     HAS_CHECK,
@@ -29,6 +33,10 @@ public interface Column {
   boolean isFlagged(Flag flag);
 
   Collection<Constraint> constraints();
+
+  default Collection<Constraint> constraints(ConstraintType type) {
+    return listFilter(it -> it.type() == type, constraints());
+  }
 
   static Column make(String table, SQLNode colDef) {
     return ColumnImpl.build(table, colDef);

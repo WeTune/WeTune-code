@@ -16,7 +16,7 @@ public class TableImpl implements Table {
   private final String name;
   private final String engine;
   private final Map<String, ColumnImpl> columns;
-  private List<Constraint> constraints;
+  private List<ConstraintImpl> constraints;
 
   public TableImpl(String schema, String name, String engine) {
     this.schema = schema;
@@ -58,7 +58,7 @@ public class TableImpl implements Table {
   }
 
   @Override
-  public Collection<Constraint> constraints() {
+  public Collection<ConstraintImpl> constraints() {
     return constraints;
   }
 
@@ -71,7 +71,7 @@ public class TableImpl implements Table {
     columns.put(column.name(), column);
   }
 
-  void addConstraint(Constraint constraint) {
+  void addConstraint(ConstraintImpl constraint) {
     if (constraints == null) constraints = new ArrayList<>();
     constraints.add(constraint);
   }

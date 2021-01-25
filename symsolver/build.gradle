@@ -18,5 +18,5 @@ task downloadLib {
     download(libz3javaUrl, rootDir.toPath().resolve("lib").resolve("libz3java.so"), "644")
 }
 
-classes.dependsOn(downloadLib)
+//classes.dependsOn(downloadLib)
 

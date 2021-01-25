@@ -13,5 +13,5 @@ public interface Table {
 
   Collection<? extends Column> columns();
 
-  Collection<Constraint> constraints();
+  Collection<? extends Constraint> constraints();
 }

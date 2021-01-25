@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 
@@ -13,9 +12,9 @@ public interface Constraint {
 
   ConstraintType type();
 
-  SQLNode refTableName();
+  Table refTable();
 
-  List<SQLNode> refColNames();
+  List<Column> refColumns();
 
   default boolean isIndex() {
     return type() != ConstraintType.NOT_NULL && type() != ConstraintType.CHECK;

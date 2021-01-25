@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 import sjtu.ipads.wtune.sqlparser.rel.Column;
 import sjtu.ipads.wtune.sqlparser.rel.Constraint;
+import sjtu.ipads.wtune.sqlparser.rel.Table;
 
 import java.util.List;
 
@@ -18,6 +19,9 @@ public class ConstraintImpl implements Constraint {
 
   private SQLNode refTableName;
   private List<SQLNode> refColNames;
+
+  private Table refTable;
+  private List<Column> refColumns;
 
   private ConstraintImpl(ConstraintType type, List<? extends Column> columns) {
     this.type = type;
@@ -44,13 +48,29 @@ public class ConstraintImpl implements Constraint {
   }
 
   @Override
-  public SQLNode refTableName() {
-    return refTableName;
+  public Table refTable() {
+    return refTable;
   }
 
   @Override
-  public List<SQLNode> refColNames() {
+  public List<Column> refColumns() {
+    return refColumns;
+  }
+
+  SQLNode refTableName() {
+    return refTableName;
+  }
+
+  List<SQLNode> refColNames() {
     return refColNames;
+  }
+
+  void setRefTable(Table refTable) {
+    this.refTable = refTable;
+  }
+
+  void setRefColumns(List<Column> refColumns) {
+    this.refColumns = refColumns;
   }
 
   void setRefTableName(SQLNode refTableName) {

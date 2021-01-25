@@ -35,6 +35,7 @@ public class SchemaImpl implements Schema {
     }
     final SchemaImpl schema = new SchemaImpl();
     builders.values().forEach(it -> schema.addTable(it.table()));
+    schema.buildRef();
     return schema;
   }
 
@@ -71,6 +72,21 @@ public class SchemaImpl implements Schema {
   private static void addIndexDef(SQLNode node, Map<String, TableBuilder> builders) {
     final TableBuilder builder = builders.get(node.get(INDEX_DEF_TABLE).get(TABLE_NAME_TABLE));
     if (builder != null) builder.fromCreateIndex(node);
+  }
+
+  private void buildRef() {
+    for (TableImpl table : tables.values())
+      if (table.constraints() != null)
+        for (ConstraintImpl constraint : table.constraints()) {
+          final SQLNode refTableName = constraint.refTableName();
+          if (refTableName != null) {
+            final Table ref = table(refTableName.get(TABLE_NAME_TABLE));
+            if (ref == null) continue;
+            constraint.setRefTable(ref);
+            constraint.setRefColumns(
+                listMap(it -> ref.column(it.get(COLUMN_NAME_COLUMN)), constraint.refColNames()));
+          }
+        }
   }
 
   @Override

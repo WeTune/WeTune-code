@@ -1,14 +1,19 @@
-package sjtu.ipads.wtune.stmt.schema;
+package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.SQLParser;
+import sjtu.ipads.wtune.sqlparser.rel.Column;
+import sjtu.ipads.wtune.sqlparser.rel.Constraint;
+import sjtu.ipads.wtune.sqlparser.rel.Schema;
+import sjtu.ipads.wtune.sqlparser.rel.Table;
 
 import java.util.List;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
 
 public class SchemaTest {
   @Test
@@ -25,31 +30,27 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final SQLParser parser = SQLParser.mysql();
-    final Schema schema = new Schema();
-
-    listMap(parser::parse, SQLParser.splitSql(createTable)).forEach(schema::addDefinition);
-    schema.buildRefs();
+    final Schema schema = Schema.parse(MYSQL, createTable);
 
     assertEquals(2, schema.tables().size());
 
-    final Table table0 = schema.getTable("t");
-    final Table table1 = schema.getTable("b");
+    final Table table0 = schema.table("t");
+    final Table table1 = schema.table("b");
     {
-      final Column col0 = table0.getColumn("i");
-      final Constraint constraint = col0.foreignKeyConstraint();
+      final Column col0 = table0.column("i");
+      final Constraint constraint = getOnlyElement(col0.constraints(FOREIGN));
       assertSame(table1, constraint.refTable());
 
       final List<Column> refCols = constraint.refColumns();
-      assertSame(table1.getColumn("x"), refCols.get(0));
+      assertSame(table1.column("x"), refCols.get(0));
     }
     {
-      final Column col0 = table0.getColumn("k");
-      final Constraint constraint = col0.foreignKeyConstraint();
+      final Column col0 = table0.column("k");
+      final Constraint constraint = getOnlyElement(col0.constraints(FOREIGN));
       assertSame(table1, constraint.refTable());
 
       final List<Column> refCols = constraint.refColumns();
-      assertSame(table1.getColumn("y"), refCols.get(0));
+      assertSame(table1.column("y"), refCols.get(0));
     }
   }
 }
