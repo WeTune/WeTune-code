@@ -1,15 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
 import java.util.EnumSet;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.isRelationBoundary;
@@ -32,21 +31,13 @@ public class Tree extends Node {
   }
 
   @Override
-  public Map<String, Object> directAttrs() {
+  public Map<AttrKey<?>, Object> directAttrs() {
     return root().directAttrs();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public <T> T get(Key<T> key) {
-    if (key == ATTRIBUTE)
-      return (T) supplyIfAbsent((Key<Attribute>) key, func(Attribute::resolve).bind(this));
-    else return super.get(key);
-  }
-
-  @Override
-  public <T> T put(String attrName, T obj) {
-    return super.put(attrName, manage(obj));
+  public <T> T set(AttrKey<T> key, T obj) {
+    return super.set(key, manage(obj));
   }
 
   @Override
@@ -82,7 +73,7 @@ public class Tree extends Node {
     ctx.setParent(this, retrieveTree(parent).root());
 
     relation = null;
-    remove(ATTRIBUTE);
+    unset(ATTRIBUTE);
   }
 
   @Override
@@ -90,7 +81,7 @@ public class Tree extends Node {
     root().setNodeType(type);
 
     relation = null;
-    remove(ATTRIBUTE);
+    unset(ATTRIBUTE);
   }
 
   @Override
@@ -98,7 +89,7 @@ public class Tree extends Node {
     ctx.setRoot(this, root = retrieveTree(other).root());
 
     relation = null;
-    remove(ATTRIBUTE);
+    unset(ATTRIBUTE);
   }
 
   @SuppressWarnings("unchecked")

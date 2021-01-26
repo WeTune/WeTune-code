@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.*;
 
 import java.util.List;
@@ -94,60 +94,60 @@ public interface VisitorController {
         visitTableSourceChildren(n, v);
         break;
       case CREATE_TABLE:
-        safeVisitChild(NodeAttrs.CREATE_TABLE_NAME, n, v);
-        safeVisitList(NodeAttrs.CREATE_TABLE_COLUMNS, n, v);
-        safeVisitList(NodeAttrs.CREATE_TABLE_CONSTRAINTS, n, v);
+        safeVisitChild(NodeAttr.CREATE_TABLE_NAME, n, v);
+        safeVisitList(NodeAttr.CREATE_TABLE_COLUMNS, n, v);
+        safeVisitList(NodeAttr.CREATE_TABLE_CONSTRAINTS, n, v);
         break;
       case COLUMN_DEF:
-        safeVisitChild(NodeAttrs.COLUMN_DEF_NAME, n, v);
-        safeVisitChild(NodeAttrs.COLUMN_DEF_REF, n, v);
+        safeVisitChild(NodeAttr.COLUMN_DEF_NAME, n, v);
+        safeVisitChild(NodeAttr.COLUMN_DEF_REF, n, v);
         break;
       case REFERENCES:
-        safeVisitChild(NodeAttrs.REFERENCES_TABLE, n, v);
-        safeVisitList(NodeAttrs.REFERENCES_COLUMNS, n, v);
+        safeVisitChild(NodeAttr.REFERENCES_TABLE, n, v);
+        safeVisitList(NodeAttr.REFERENCES_COLUMNS, n, v);
         break;
       case INDEX_DEF:
-        safeVisitList(NodeAttrs.INDEX_DEF_KEYS, n, v);
-        safeVisitList(NodeAttrs.INDEX_DEF_KEYS, n, v);
+        safeVisitList(NodeAttr.INDEX_DEF_KEYS, n, v);
+        safeVisitList(NodeAttr.INDEX_DEF_KEYS, n, v);
         break;
       case WINDOW_SPEC:
-        safeVisitList(NodeAttrs.WINDOW_SPEC_PARTITION, n, v);
-        safeVisitList(NodeAttrs.WINDOW_SPEC_ORDER, n, v);
-        safeVisitChild(NodeAttrs.WINDOW_SPEC_FRAME, n, v);
+        safeVisitList(NodeAttr.WINDOW_SPEC_PARTITION, n, v);
+        safeVisitList(NodeAttr.WINDOW_SPEC_ORDER, n, v);
+        safeVisitChild(NodeAttr.WINDOW_SPEC_FRAME, n, v);
         break;
       case WINDOW_FRAME:
-        safeVisitChild(NodeAttrs.WINDOW_FRAME_START, n, v);
-        safeVisitChild(NodeAttrs.WINDOW_FRAME_END, n, v);
+        safeVisitChild(NodeAttr.WINDOW_FRAME_START, n, v);
+        safeVisitChild(NodeAttr.WINDOW_FRAME_END, n, v);
         break;
       case FRAME_BOUND:
-        safeVisitChild(NodeAttrs.FRAME_BOUND_EXPR, n, v);
+        safeVisitChild(NodeAttr.FRAME_BOUND_EXPR, n, v);
         break;
       case ORDER_ITEM:
-        safeVisitChild(NodeAttrs.ORDER_ITEM_EXPR, n, v);
+        safeVisitChild(NodeAttr.ORDER_ITEM_EXPR, n, v);
         break;
       case GROUP_ITEM:
-        safeVisitChild(NodeAttrs.GROUP_ITEM_EXPR, n, v);
+        safeVisitChild(NodeAttr.GROUP_ITEM_EXPR, n, v);
         break;
       case SELECT_ITEM:
-        safeVisitChild(NodeAttrs.SELECT_ITEM_EXPR, n, v);
+        safeVisitChild(NodeAttr.SELECT_ITEM_EXPR, n, v);
         break;
       case QUERY_SPEC:
-        safeVisitList(NodeAttrs.QUERY_SPEC_SELECT_ITEMS, n, v);
-        safeVisitChild(NodeAttrs.QUERY_SPEC_FROM, n, v);
-        safeVisitChild(NodeAttrs.QUERY_SPEC_WHERE, n, v);
-        safeVisitList(NodeAttrs.QUERY_SPEC_GROUP_BY, n, v);
-        safeVisitChild(NodeAttrs.QUERY_SPEC_HAVING, n, v);
-        safeVisitList(NodeAttrs.QUERY_SPEC_WINDOWS, n, v);
+        safeVisitList(NodeAttr.QUERY_SPEC_SELECT_ITEMS, n, v);
+        safeVisitChild(NodeAttr.QUERY_SPEC_FROM, n, v);
+        safeVisitChild(NodeAttr.QUERY_SPEC_WHERE, n, v);
+        safeVisitList(NodeAttr.QUERY_SPEC_GROUP_BY, n, v);
+        safeVisitChild(NodeAttr.QUERY_SPEC_HAVING, n, v);
+        safeVisitList(NodeAttr.QUERY_SPEC_WINDOWS, n, v);
         break;
       case QUERY:
-        safeVisitChild(NodeAttrs.QUERY_BODY, n, v);
-        safeVisitList(NodeAttrs.QUERY_ORDER_BY, n, v);
-        safeVisitChild(NodeAttrs.QUERY_OFFSET, n, v);
-        safeVisitChild(NodeAttrs.QUERY_LIMIT, n, v);
+        safeVisitChild(NodeAttr.QUERY_BODY, n, v);
+        safeVisitList(NodeAttr.QUERY_ORDER_BY, n, v);
+        safeVisitChild(NodeAttr.QUERY_OFFSET, n, v);
+        safeVisitChild(NodeAttr.QUERY_LIMIT, n, v);
         break;
       case SET_OP:
-        safeVisitChild(NodeAttrs.SET_OP_LEFT, n, v);
-        safeVisitChild(NodeAttrs.SET_OP_RIGHT, n, v);
+        safeVisitChild(NodeAttr.SET_OP_LEFT, n, v);
+        safeVisitChild(NodeAttr.SET_OP_RIGHT, n, v);
     }
   }
 
@@ -248,13 +248,13 @@ public interface VisitorController {
     if (n != null) n.accept(v);
   }
 
-  private static void safeVisitChild(Attrs.Key<SQLNode> key, SQLNode n, SQLVisitor v) {
+  private static void safeVisitChild(AttrKey<SQLNode> key, SQLNode n, SQLVisitor v) {
     final SQLNode child = n.get(key);
     if (v.enterChild(n, key, child)) safeAccept(child, v);
     v.leaveChild(n, key, child);
   }
 
-  private static void safeVisitList(Attrs.Key<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
+  private static void safeVisitList(AttrKey<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
     final List<SQLNode> children = n.get(key);
     if (v.enterChildren(n, key, children))
       if (children != null) for (SQLNode child : children) safeAccept(child, v);
@@ -264,7 +264,7 @@ public interface VisitorController {
   private static boolean enterExpr(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
 
-    switch (n.get(NodeAttrs.EXPR_KIND)) {
+    switch (n.get(NodeAttr.EXPR_KIND)) {
       case VARIABLE:
         return v.enterVariable(n);
       case COLUMN_REF:
@@ -329,7 +329,7 @@ public interface VisitorController {
   private static boolean enterTableSource(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
-    switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
+    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
         return v.enterSimpleTableSource(n);
       case JOINED:
@@ -343,112 +343,112 @@ public interface VisitorController {
 
   private static void visitExprChildren(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
-    switch (n.get(NodeAttrs.EXPR_KIND)) {
+    switch (n.get(NodeAttr.EXPR_KIND)) {
       case VARIABLE:
-        safeVisitChild(ExprAttrs.VARIABLE_ASSIGNMENT, n, v);
+        safeVisitChild(ExprAttr.VARIABLE_ASSIGNMENT, n, v);
         break;
       case COLUMN_REF:
-        safeVisitChild(ExprAttrs.COLUMN_REF_COLUMN, n, v);
+        safeVisitChild(ExprAttr.COLUMN_REF_COLUMN, n, v);
         break;
       case FUNC_CALL:
-        safeVisitList(ExprAttrs.FUNC_CALL_ARGS, n, v);
+        safeVisitList(ExprAttr.FUNC_CALL_ARGS, n, v);
         break;
       case COLLATE:
-        safeVisitChild(ExprAttrs.COLLATE_EXPR, n, v);
+        safeVisitChild(ExprAttr.COLLATE_EXPR, n, v);
         break;
       case UNARY:
-        safeVisitChild(ExprAttrs.UNARY_EXPR, n, v);
+        safeVisitChild(ExprAttr.UNARY_EXPR, n, v);
         break;
       case GROUPING_OP:
-        safeVisitList(ExprAttrs.GROUPING_OP_EXPRS, n, v);
+        safeVisitList(ExprAttr.GROUPING_OP_EXPRS, n, v);
         break;
       case TUPLE:
-        safeVisitList(ExprAttrs.TUPLE_EXPRS, n, v);
+        safeVisitList(ExprAttr.TUPLE_EXPRS, n, v);
         break;
       case MATCH:
-        safeVisitList(ExprAttrs.MATCH_COLS, n, v);
-        safeVisitChild(ExprAttrs.MATCH_EXPR, n, v);
+        safeVisitList(ExprAttr.MATCH_COLS, n, v);
+        safeVisitChild(ExprAttr.MATCH_EXPR, n, v);
         break;
       case CAST:
-        safeVisitChild(ExprAttrs.CAST_EXPR, n, v);
+        safeVisitChild(ExprAttr.CAST_EXPR, n, v);
         break;
       case DEFAULT:
-        safeVisitChild(ExprAttrs.DEFAULT_COL, n, v);
+        safeVisitChild(ExprAttr.DEFAULT_COL, n, v);
         break;
       case VALUES:
-        safeVisitChild(ExprAttrs.VALUES_EXPR, n, v);
+        safeVisitChild(ExprAttr.VALUES_EXPR, n, v);
         break;
       case INTERVAL:
-        safeVisitChild(ExprAttrs.INTERVAL_EXPR, n, v);
+        safeVisitChild(ExprAttr.INTERVAL_EXPR, n, v);
         break;
       case EXISTS:
-        safeVisitChild(ExprAttrs.EXISTS_SUBQUERY_EXPR, n, v);
+        safeVisitChild(ExprAttr.EXISTS_SUBQUERY_EXPR, n, v);
         break;
       case QUERY_EXPR:
-        safeVisitChild(ExprAttrs.QUERY_EXPR_QUERY, n, v);
+        safeVisitChild(ExprAttr.QUERY_EXPR_QUERY, n, v);
         break;
       case AGGREGATE:
-        safeVisitList(ExprAttrs.AGGREGATE_ARGS, n, v);
-        safeVisitList(ExprAttrs.AGGREGATE_ORDER, n, v);
+        safeVisitList(ExprAttr.AGGREGATE_ARGS, n, v);
+        safeVisitList(ExprAttr.AGGREGATE_ORDER, n, v);
         break;
       case CONVERT_USING:
-        safeVisitChild(ExprAttrs.CONVERT_USING_EXPR, n, v);
+        safeVisitChild(ExprAttr.CONVERT_USING_EXPR, n, v);
         break;
       case CASE:
-        safeVisitChild(ExprAttrs.CASE_COND, n, v);
-        safeVisitList(ExprAttrs.CASE_WHENS, n, v);
-        safeVisitChild(ExprAttrs.CASE_ELSE, n, v);
+        safeVisitChild(ExprAttr.CASE_COND, n, v);
+        safeVisitList(ExprAttr.CASE_WHENS, n, v);
+        safeVisitChild(ExprAttr.CASE_ELSE, n, v);
         break;
       case WHEN:
-        safeVisitChild(ExprAttrs.WHEN_COND, n, v);
-        safeVisitChild(ExprAttrs.WHEN_EXPR, n, v);
+        safeVisitChild(ExprAttr.WHEN_COND, n, v);
+        safeVisitChild(ExprAttr.WHEN_EXPR, n, v);
         break;
       case BINARY:
-        safeVisitChild(ExprAttrs.BINARY_LEFT, n, v);
-        safeVisitChild(ExprAttrs.BINARY_RIGHT, n, v);
+        safeVisitChild(ExprAttr.BINARY_LEFT, n, v);
+        safeVisitChild(ExprAttr.BINARY_RIGHT, n, v);
         break;
       case TERNARY:
-        safeVisitChild(ExprAttrs.TERNARY_LEFT, n, v);
-        safeVisitChild(ExprAttrs.TERNARY_MIDDLE, n, v);
-        safeVisitChild(ExprAttrs.TERNARY_RIGHT, n, v);
+        safeVisitChild(ExprAttr.TERNARY_LEFT, n, v);
+        safeVisitChild(ExprAttr.TERNARY_MIDDLE, n, v);
+        safeVisitChild(ExprAttr.TERNARY_RIGHT, n, v);
         break;
       case WILDCARD:
-        safeVisitChild(ExprAttrs.WILDCARD_TABLE, n, v);
+        safeVisitChild(ExprAttr.WILDCARD_TABLE, n, v);
         break;
       case INDIRECTION:
-        safeVisitChild(ExprAttrs.INDIRECTION_EXPR, n, v);
-        safeVisitList(ExprAttrs.INDIRECTION_COMPS, n, v);
+        safeVisitChild(ExprAttr.INDIRECTION_EXPR, n, v);
+        safeVisitList(ExprAttr.INDIRECTION_COMPS, n, v);
         break;
       case INDIRECTION_COMP:
-        safeVisitChild(ExprAttrs.INDIRECTION_COMP_START, n, v);
-        safeVisitChild(ExprAttrs.INDIRECTION_COMP_END, n, v);
+        safeVisitChild(ExprAttr.INDIRECTION_COMP_START, n, v);
+        safeVisitChild(ExprAttr.INDIRECTION_COMP_END, n, v);
         break;
       case ARRAY:
-        safeVisitList(ExprAttrs.ARRAY_ELEMENTS, n, v);
+        safeVisitList(ExprAttr.ARRAY_ELEMENTS, n, v);
     }
   }
 
   private static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
-    switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
+    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
-        safeVisitChild(TableSourceAttrs.SIMPLE_TABLE, n, v);
-        safeVisitList(TableSourceAttrs.SIMPLE_HINTS, n, v);
+        safeVisitChild(TableSourceAttr.SIMPLE_TABLE, n, v);
+        safeVisitList(TableSourceAttr.SIMPLE_HINTS, n, v);
         break;
       case JOINED:
-        safeVisitChild(TableSourceAttrs.JOINED_LEFT, n, v);
-        safeVisitChild(TableSourceAttrs.JOINED_RIGHT, n, v);
-        safeVisitChild(TableSourceAttrs.JOINED_ON, n, v);
+        safeVisitChild(TableSourceAttr.JOINED_LEFT, n, v);
+        safeVisitChild(TableSourceAttr.JOINED_RIGHT, n, v);
+        safeVisitChild(TableSourceAttr.JOINED_ON, n, v);
         break;
       case DERIVED_SOURCE:
-        safeVisitChild(TableSourceAttrs.DERIVED_SUBQUERY, n, v);
+        safeVisitChild(TableSourceAttr.DERIVED_SUBQUERY, n, v);
     }
   }
 
   private static void leaveExpr(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
 
-    switch (n.get(NodeAttrs.EXPR_KIND)) {
+    switch (n.get(NodeAttr.EXPR_KIND)) {
       case VARIABLE:
         v.leaveColumnDef(n);
         return;
@@ -563,7 +563,7 @@ public interface VisitorController {
   private static void leaveTableSource(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
-    switch (n.get(NodeAttrs.TABLE_SOURCE_KIND)) {
+    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
         v.leaveSimpleTableSource(n);
         return;

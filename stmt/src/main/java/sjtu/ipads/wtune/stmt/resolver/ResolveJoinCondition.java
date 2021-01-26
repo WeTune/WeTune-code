@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
 import sjtu.ipads.wtune.stmt.Statement;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;

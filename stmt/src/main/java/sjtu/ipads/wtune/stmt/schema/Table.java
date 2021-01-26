@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.COLUMN_NAME;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 

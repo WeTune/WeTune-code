@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.QUERY_OFFSET;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.PARAM_INDEX;
 

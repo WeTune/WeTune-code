@@ -10,7 +10,7 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
 

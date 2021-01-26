@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast.internal.SQLDataTypeImpl;
 
 import java.util.List;
 

@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.sqlparser.rel.Table;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.tableNameOf;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.tableNameOf;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 
 public class NativeAttribute extends BaseAttribute {

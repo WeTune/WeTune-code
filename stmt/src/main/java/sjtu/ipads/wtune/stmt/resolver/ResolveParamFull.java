@@ -17,8 +17,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.analyzer.Analysis.buildRelationGraph;

@@ -7,7 +7,7 @@ import java.lang.System.Logger;
 import java.nio.file.Path;
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.stmt.schema.Column.COLUMN_AUTOINCREMENT;

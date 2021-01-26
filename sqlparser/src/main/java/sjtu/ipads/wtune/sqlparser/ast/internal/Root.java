@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
@@ -8,13 +9,13 @@ import java.util.Map;
 
 public class Root extends Node implements SQLNode {
   private NodeType type;
-  private Map<String, Object> directAttrs;
+  private Map<AttrKey<?>, Object> directAttrs;
 
   private Root(NodeType type) {
     this(type, null);
   }
 
-  private Root(NodeType type, Map<String, Object> directAttrs) {
+  private Root(NodeType type, Map<AttrKey<?>, Object> directAttrs) {
     this.type = type;
     this.directAttrs = directAttrs;
   }
@@ -28,12 +29,7 @@ public class Root extends Node implements SQLNode {
   }
 
   @Override
-  public <T> T put(String attrName, T obj) {
-    return super.put(attrName, obj);
-  }
-
-  @Override
-  public Map<String, Object> directAttrs() {
+  public Map<AttrKey<?>, Object> directAttrs() {
     if (directAttrs == null) directAttrs = new HashMap<>();
     return directAttrs;
   }

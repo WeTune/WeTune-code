@@ -17,9 +17,9 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.attrs.Attrs.key;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;

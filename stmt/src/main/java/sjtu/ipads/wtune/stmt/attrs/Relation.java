@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.attrs;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
@@ -30,7 +30,7 @@ public class Relation {
   }
 
   public String name() {
-    if (isTableSource()) return TableSourceAttrs.tableSourceName(originalNode);
+    if (isTableSource()) return TableSourceAttr.tableSourceName(originalNode);
     else return "(" + originalNode.toString() + ")";
   }
 

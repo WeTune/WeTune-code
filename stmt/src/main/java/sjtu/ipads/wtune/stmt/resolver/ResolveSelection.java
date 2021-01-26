@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.WILDCARD_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.WILDCARD_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.COLUMN_NAME;

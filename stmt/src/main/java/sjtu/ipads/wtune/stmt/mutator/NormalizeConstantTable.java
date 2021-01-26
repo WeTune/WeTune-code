@@ -7,9 +7,9 @@ import sjtu.ipads.wtune.stmt.collector.Collector;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;

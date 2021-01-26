@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.stmt.attrs.BoolExpr;
 import sjtu.ipads.wtune.stmt.collector.BoolCollector;
 import sjtu.ipads.wtune.stmt.Statement;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.UNARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;

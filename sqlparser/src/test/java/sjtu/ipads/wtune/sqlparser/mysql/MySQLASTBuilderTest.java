@@ -4,8 +4,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.common.attrs.AttrKey;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.NAME_2_1;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.NAME_2_1;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.PipesAsConcat;
@@ -43,13 +43,13 @@ public class MySQLASTBuilderTest {
   private static class ParentChecker implements SQLVisitor {
 
     @Override
-    public boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
+    public boolean enterChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {
       if (child != null)
         assertSame(parent, child.parent());
       return true;
     }
 
-    @Override public boolean enterChildren(SQLNode parent, Attrs.Key<List<SQLNode>> key, List<SQLNode> chidlren) {
+    @Override public boolean enterChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> chidlren) {
       for (SQLNode child : chidlren)
         if (child != null)
           assertSame(parent, child.parent());
@@ -89,14 +89,14 @@ public class MySQLASTBuilderTest {
       final SQLNode root = helper.sql(createTable);
       assertEquals(CREATE_TABLE, root.nodeType());
 
-      final var tableName = root.get(NodeAttrs.CREATE_TABLE_NAME);
-      assertEquals("public", tableName.get(NodeAttrs.TABLE_NAME_SCHEMA));
-      assertEquals("t", tableName.get(NodeAttrs.TABLE_NAME_TABLE));
+      final var tableName = root.get(NodeAttr.CREATE_TABLE_NAME);
+      assertEquals("public", tableName.get(NodeAttr.TABLE_NAME_SCHEMA));
+      assertEquals("t", tableName.get(NodeAttr.TABLE_NAME_TABLE));
 
-      assertEquals("innodb", root.get(NodeAttrs.CREATE_TABLE_ENGINE));
+      assertEquals("innodb", root.get(NodeAttr.CREATE_TABLE_ENGINE));
 
-      final var columns = root.get(NodeAttrs.CREATE_TABLE_COLUMNS);
-      final var constraints = root.get(NodeAttrs.CREATE_TABLE_CONSTRAINTS);
+      final var columns = root.get(NodeAttr.CREATE_TABLE_COLUMNS);
+      final var constraints = root.get(NodeAttr.CREATE_TABLE_CONSTRAINTS);
 
       assertEquals(3, columns.size());
       assertEquals(5, constraints.size());
@@ -105,90 +105,90 @@ public class MySQLASTBuilderTest {
         final var col0 = columns.get(0);
 
         {
-          final var col0Name = col0.get(NodeAttrs.COLUMN_DEF_NAME);
-          assertNull(col0Name.get(NodeAttrs.COLUMN_NAME_SCHEMA));
-          assertNull(col0Name.get(NodeAttrs.COLUMN_NAME_TABLE));
-          assertEquals("i", col0Name.get(NodeAttrs.COLUMN_NAME_COLUMN));
+          final var col0Name = col0.get(NodeAttr.COLUMN_DEF_NAME);
+          assertNull(col0Name.get(NodeAttr.COLUMN_NAME_SCHEMA));
+          assertNull(col0Name.get(NodeAttr.COLUMN_NAME_TABLE));
+          assertEquals("i", col0Name.get(NodeAttr.COLUMN_NAME_COLUMN));
         }
 
         {
-          assertEquals("int(10)", col0.get(NodeAttrs.COLUMN_DEF_DATATYPE_RAW));
-          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT));
-          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_DEFAULT));
-          assertFalse(col0.isFlag(NodeAttrs.COLUMN_DEF_GENERATED));
+          assertEquals("int(10)", col0.get(NodeAttr.COLUMN_DEF_DATATYPE_RAW));
+          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_AUTOINCREMENT));
+          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_DEFAULT));
+          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_GENERATED));
         }
 
         {
-          final var col0Cons = col0.get(NodeAttrs.COLUMN_DEF_CONS);
+          final var col0Cons = col0.get(NodeAttr.COLUMN_DEF_CONS);
           assertTrue(col0Cons.contains(ConstraintType.PRIMARY));
           assertFalse(col0Cons.contains(ConstraintType.UNIQUE));
           assertFalse(col0Cons.contains(ConstraintType.CHECK));
           assertFalse(col0Cons.contains(ConstraintType.NOT_NULL));
           assertFalse(col0Cons.contains(ConstraintType.FOREIGN));
 
-          final var col0Refs = col0.get(NodeAttrs.COLUMN_DEF_REF);
-          final var col0RefTable = col0Refs.get(NodeAttrs.REFERENCES_TABLE);
-          final var col0RefCols = col0Refs.get(NodeAttrs.REFERENCES_COLUMNS);
-          assertNull(col0RefTable.get(NodeAttrs.TABLE_NAME_SCHEMA));
-          assertEquals("b", col0RefTable.get(NodeAttrs.TABLE_NAME_TABLE));
+          final var col0Refs = col0.get(NodeAttr.COLUMN_DEF_REF);
+          final var col0RefTable = col0Refs.get(NodeAttr.REFERENCES_TABLE);
+          final var col0RefCols = col0Refs.get(NodeAttr.REFERENCES_COLUMNS);
+          assertNull(col0RefTable.get(NodeAttr.TABLE_NAME_SCHEMA));
+          assertEquals("b", col0RefTable.get(NodeAttr.TABLE_NAME_TABLE));
           assertEquals(1, col0RefCols.size());
           final var col0RefCol0 = col0RefCols.get(0);
-          assertNull(col0RefCol0.get(NodeAttrs.COLUMN_NAME_SCHEMA));
-          assertNull(col0RefCol0.get(NodeAttrs.COLUMN_NAME_TABLE));
-          assertEquals("x", col0RefCol0.get(NodeAttrs.COLUMN_NAME_COLUMN));
+          assertNull(col0RefCol0.get(NodeAttr.COLUMN_NAME_SCHEMA));
+          assertNull(col0RefCol0.get(NodeAttr.COLUMN_NAME_TABLE));
+          assertEquals("x", col0RefCol0.get(NodeAttr.COLUMN_NAME_COLUMN));
         }
       }
 
       {
         {
           final var cons0 = constraints.get(0);
-          assertNull(cons0.get(NodeAttrs.INDEX_DEF_NAME));
-          assertNull(cons0.get(NodeAttrs.INDEX_DEF_CONS));
-          assertNull(cons0.get(NodeAttrs.INDEX_DEF_TYPE));
-          assertNull(cons0.get(NodeAttrs.INDEX_DEF_REFS));
-          final var keys = cons0.get(NodeAttrs.INDEX_DEF_KEYS);
+          assertNull(cons0.get(NodeAttr.INDEX_DEF_NAME));
+          assertNull(cons0.get(NodeAttr.INDEX_DEF_CONS));
+          assertNull(cons0.get(NodeAttr.INDEX_DEF_TYPE));
+          assertNull(cons0.get(NodeAttr.INDEX_DEF_REFS));
+          final var keys = cons0.get(NodeAttr.INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertNull(key0.get(NodeAttrs.KEY_PART_DIRECTION));
-          assertEquals("j", key0.get(NodeAttrs.KEY_PART_COLUMN));
-          assertEquals(100, key0.get(NodeAttrs.KEY_PART_LEN));
+          assertNull(key0.get(NodeAttr.KEY_PART_DIRECTION));
+          assertEquals("j", key0.get(NodeAttr.KEY_PART_COLUMN));
+          assertEquals(100, key0.get(NodeAttr.KEY_PART_LEN));
         }
 
         {
           final var cons1 = constraints.get(1);
-          assertNull(cons1.get(NodeAttrs.INDEX_DEF_NAME));
-          assertNull(cons1.get(NodeAttrs.INDEX_DEF_REFS));
-          assertEquals(ConstraintType.UNIQUE, cons1.get(NodeAttrs.INDEX_DEF_CONS));
-          assertEquals(IndexType.RTREE, cons1.get(NodeAttrs.INDEX_DEF_TYPE));
-          final var keys = cons1.get(NodeAttrs.INDEX_DEF_KEYS);
+          assertNull(cons1.get(NodeAttr.INDEX_DEF_NAME));
+          assertNull(cons1.get(NodeAttr.INDEX_DEF_REFS));
+          assertEquals(ConstraintType.UNIQUE, cons1.get(NodeAttr.INDEX_DEF_CONS));
+          assertEquals(IndexType.RTREE, cons1.get(NodeAttr.INDEX_DEF_TYPE));
+          final var keys = cons1.get(NodeAttr.INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertEquals(KeyDirection.DESC, key0.get(NodeAttrs.KEY_PART_DIRECTION));
-          assertEquals("j", key0.get(NodeAttrs.KEY_PART_COLUMN));
-          assertNull(key0.get(NodeAttrs.KEY_PART_LEN));
+          assertEquals(KeyDirection.DESC, key0.get(NodeAttr.KEY_PART_DIRECTION));
+          assertEquals("j", key0.get(NodeAttr.KEY_PART_COLUMN));
+          assertNull(key0.get(NodeAttr.KEY_PART_LEN));
         }
 
         {
           final var cons2 = constraints.get(2);
-          assertEquals("fk", cons2.get(NodeAttrs.INDEX_DEF_NAME));
-          assertEquals(ConstraintType.FOREIGN, cons2.get(NodeAttrs.INDEX_DEF_CONS));
-          assertNull(cons2.get(NodeAttrs.INDEX_DEF_TYPE));
-          final var keys = cons2.get(NodeAttrs.INDEX_DEF_KEYS);
+          assertEquals("fk", cons2.get(NodeAttr.INDEX_DEF_NAME));
+          assertEquals(ConstraintType.FOREIGN, cons2.get(NodeAttr.INDEX_DEF_CONS));
+          assertNull(cons2.get(NodeAttr.INDEX_DEF_TYPE));
+          final var keys = cons2.get(NodeAttr.INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertNull(key0.get(NodeAttrs.KEY_PART_DIRECTION));
-          assertNull(key0.get(NodeAttrs.KEY_PART_LEN));
-          assertEquals("k", key0.get(NodeAttrs.KEY_PART_COLUMN));
+          assertNull(key0.get(NodeAttr.KEY_PART_DIRECTION));
+          assertNull(key0.get(NodeAttr.KEY_PART_LEN));
+          assertEquals("k", key0.get(NodeAttr.KEY_PART_COLUMN));
 
-          final var refs = cons2.get(NodeAttrs.INDEX_DEF_REFS);
-          final var refTable = refs.get(NodeAttrs.REFERENCES_TABLE);
-          final var refCols = refs.get(NodeAttrs.REFERENCES_COLUMNS);
-          assertEquals("b", refTable.get(NodeAttrs.TABLE_NAME_TABLE));
+          final var refs = cons2.get(NodeAttr.INDEX_DEF_REFS);
+          final var refTable = refs.get(NodeAttr.REFERENCES_TABLE);
+          final var refCols = refs.get(NodeAttr.REFERENCES_COLUMNS);
+          assertEquals("b", refTable.get(NodeAttr.TABLE_NAME_TABLE));
           assertEquals(1, refCols.size());
-          assertEquals("y", refCols.get(0).get(NodeAttrs.COLUMN_NAME_COLUMN));
+          assertEquals("y", refCols.get(0).get(NodeAttr.COLUMN_NAME_COLUMN));
         }
       }
 
@@ -939,9 +939,9 @@ public class MySQLASTBuilderTest {
     {
       final SQLNode node = helper.sql("a and b");
       final SQLNode addon = SQLNode.simple(LITERAL);
-      addon.put(LITERAL_TYPE, LiteralType.BOOL);
-      addon.put(LITERAL_VALUE, true);
-      node.put(BINARY_RIGHT, addon);
+      addon.set(LITERAL_TYPE, LiteralType.BOOL);
+      addon.set(LITERAL_VALUE, true);
+      node.set(BINARY_RIGHT, addon);
 
       assertEquals("`a` AND TRUE", node.toString());
       checkParent(node);
@@ -950,13 +950,13 @@ public class MySQLASTBuilderTest {
       final SQLNode node = helper.sql("a");
 
       final SQLNode trueLiteral = SQLNode.simple(LITERAL);
-      trueLiteral.put(LITERAL_TYPE, LiteralType.BOOL);
-      trueLiteral.put(LITERAL_VALUE, true);
+      trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
+      trueLiteral.set(LITERAL_VALUE, true);
 
       final SQLNode addon = SQLNode.simple(BINARY);
-      addon.put(BINARY_OP, BinaryOp.IS);
-      addon.put(BINARY_RIGHT, trueLiteral);
-      addon.put(BINARY_LEFT, SQLNode.simple(node));
+      addon.set(BINARY_OP, BinaryOp.IS);
+      addon.set(BINARY_RIGHT, trueLiteral);
+      addon.set(BINARY_LEFT, SQLNode.simple(node));
 
       node.update(addon);
 
@@ -968,20 +968,20 @@ public class MySQLASTBuilderTest {
       final SQLNode left = node.get(BINARY_LEFT);
 
       final SQLNode trueLiteral = SQLNode.simple(LITERAL);
-      trueLiteral.put(LITERAL_TYPE, LiteralType.BOOL);
-      trueLiteral.put(LITERAL_VALUE, true);
+      trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
+      trueLiteral.set(LITERAL_VALUE, true);
 
       final SQLNode addon = SQLNode.simple(BINARY);
-      addon.put(BINARY_OP, BinaryOp.IS);
-      addon.put(BINARY_RIGHT, trueLiteral);
-      addon.put(BINARY_LEFT, SQLNode.simple(left));
+      addon.set(BINARY_OP, BinaryOp.IS);
+      addon.set(BINARY_RIGHT, trueLiteral);
+      addon.set(BINARY_LEFT, SQLNode.simple(left));
 
       left.update(addon);
 
       node.directAttrs().clear();
-      node.put(EXPR_KIND, UNARY);
-      node.put(UNARY_OP, UnaryOp.NOT);
-      node.put(UNARY_EXPR, left);
+      node.set(EXPR_KIND, UNARY);
+      node.set(UNARY_OP, UnaryOp.NOT);
+      node.set(UNARY_EXPR, left);
 
       assertEquals("NOT `a` IS TRUE", node.toString());
       checkParent(node);

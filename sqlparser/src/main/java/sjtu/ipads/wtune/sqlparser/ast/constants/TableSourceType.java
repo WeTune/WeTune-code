@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.TABLE_SOURCE_ATTR_PREFIX;
+import sjtu.ipads.wtune.sqlparser.ast.internal.TableSourceAttrImpl;
 
 public enum TableSourceType implements AttrDomain {
   SIMPLE_SOURCE,
@@ -12,13 +12,8 @@ public enum TableSourceType implements AttrDomain {
   DERIVED_SOURCE;
 
   @Override
-  public String attrPrefix() {
-    return TABLE_SOURCE_ATTR_PREFIX;
-  }
-
-  @Override
   public boolean isInstance(SQLNode node) {
-    return node != null && node.get(NodeAttrs.TABLE_SOURCE_KIND) == this;
+    return node != null && node.get(NodeAttr.TABLE_SOURCE_KIND) == this;
   }
 
   public boolean isJoined() {
@@ -31,5 +26,10 @@ public enum TableSourceType implements AttrDomain {
 
   public boolean isDerived() {
     return this == DERIVED_SOURCE;
+  }
+
+  @Override
+  public <T, R extends T> AttrKey<R> attr(String name, Class<T> clazz) {
+    return TableSourceAttrImpl.build(this, name, clazz);
   }
 }

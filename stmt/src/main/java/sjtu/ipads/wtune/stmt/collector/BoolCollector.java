@@ -7,11 +7,11 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.CASE_COND;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.WHEN_COND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.QUERY_SPEC_HAVING;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.CASE_COND;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.WHEN_COND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.QUERY_SPEC_HAVING;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.JOINED_ON;
 
 public class BoolCollector implements SQLVisitor {
   private final List<SQLNode> boolExprs = new ArrayList<>();

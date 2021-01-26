@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
@@ -8,12 +8,12 @@ import sjtu.ipads.wtune.sqlparser.rel.internal.NativeAttribute;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 
 public interface Attribute {
-  Attrs.Key<Attribute> ATTRIBUTE = Attrs.key("sql.rel.attribute", Attribute.class);
+  AttrKey<Attribute> ATTRIBUTE = AttrKey.checked("sql.rel.attribute", Attribute.class);
 
   String name();
 
@@ -34,15 +34,15 @@ public interface Attribute {
   default SQLNode toSelectItem() {
     final SQLNode columnName = SQLNode.simple(NodeType.COLUMN_NAME);
     final Relation owner = owner();
-    columnName.put(COLUMN_NAME_TABLE, owner.alias());
-    columnName.put(COLUMN_NAME_COLUMN, name());
+    columnName.set(COLUMN_NAME_TABLE, owner.alias());
+    columnName.set(COLUMN_NAME_COLUMN, name());
 
     final SQLNode columnRef = SQLNode.simple(COLUMN_REF);
-    columnRef.put(COLUMN_REF_COLUMN, columnName);
+    columnRef.set(COLUMN_REF_COLUMN, columnName);
 
     final SQLNode selectItem = SQLNode.simple(NodeType.SELECT_ITEM);
-    selectItem.put(SELECT_ITEM_ALIAS, name());
-    selectItem.put(SELECT_ITEM_EXPR, columnRef);
+    selectItem.set(SELECT_ITEM_ALIAS, name());
+    selectItem.set(SELECT_ITEM_EXPR, columnRef);
 
     return selectItem;
   }

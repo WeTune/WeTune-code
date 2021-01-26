@@ -9,8 +9,8 @@ import sjtu.ipads.wtune.stmt.schema.Column;
 import java.util.HashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.BINARY_RIGHT;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_COLUMN_REF;
 

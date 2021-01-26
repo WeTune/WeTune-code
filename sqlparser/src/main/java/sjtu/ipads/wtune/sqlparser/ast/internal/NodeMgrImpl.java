@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.IdentityHashMap;
@@ -50,9 +51,9 @@ public class NodeMgrImpl implements NodeMgr {
     final Root childRoot = getRoot(root);
     final Tree childTree = retrieveTree0(childRoot);
 
-    final Map<String, Object> attrs = childRoot.directAttrs();
+    final Map<AttrKey<?>, Object> attrs = childRoot.directAttrs();
     for (var pair : attrs.entrySet())
-      childTree.put(pair.getKey(), pair.getValue()); // see Tree::put
+      pair.getKey().set(childTree, pair.getValue());
 
     return childTree;
   }

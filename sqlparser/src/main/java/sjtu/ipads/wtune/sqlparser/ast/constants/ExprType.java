@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ExprAttrImpl;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.EXPR_ATTR_PREFIX;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
 
 public enum ExprType implements AttrDomain {
   UNKNOWN,
@@ -41,11 +42,11 @@ public enum ExprType implements AttrDomain {
 ;
 
   public boolean isInstance(SQLNode node) {
-    return node.get(NodeAttrs.EXPR_KIND) == this;
+    return EXPR_KIND.get(node) == this;
   }
 
   @Override
-  public String attrPrefix() {
-    return EXPR_ATTR_PREFIX;
+  public <T, R extends T> AttrKey<R> attr(String name, Class<T> clazz) {
+    return ExprAttrImpl.build(this, name, clazz);
   }
 }

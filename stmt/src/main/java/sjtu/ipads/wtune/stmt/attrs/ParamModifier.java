@@ -7,8 +7,8 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import java.util.Arrays;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
 import static sjtu.ipads.wtune.stmt.attrs.ParamModifier.Type.*;
 

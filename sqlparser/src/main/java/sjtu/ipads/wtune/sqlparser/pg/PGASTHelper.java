@@ -90,17 +90,17 @@ interface PGASTHelper {
 
   static SQLNode tableName(SQLNodeFactory factory, String[] triple) {
     final SQLNode node = factory.newNode(NodeType.TABLE_NAME);
-    node.put(NodeAttrs.TABLE_NAME_SCHEMA, triple[1]);
-    node.put(NodeAttrs.TABLE_NAME_TABLE, triple[2]);
+    node.set(NodeAttr.TABLE_NAME_SCHEMA, triple[1]);
+    node.set(NodeAttr.TABLE_NAME_TABLE, triple[2]);
 
     return node;
   }
 
   static SQLNode columnName(SQLNodeFactory factory, String[] triple) {
     final SQLNode node = factory.newNode(NodeType.COLUMN_NAME);
-    node.put(NodeAttrs.COLUMN_NAME_SCHEMA, triple[0]);
-    node.put(NodeAttrs.COLUMN_NAME_TABLE, triple[1]);
-    node.put(NodeAttrs.COLUMN_NAME_COLUMN, triple[2]);
+    node.set(NodeAttr.COLUMN_NAME_SCHEMA, triple[0]);
+    node.set(NodeAttr.COLUMN_NAME_TABLE, triple[1]);
+    node.set(NodeAttr.COLUMN_NAME_COLUMN, triple[2]);
     return node;
   }
 
@@ -138,7 +138,7 @@ interface PGASTHelper {
 
     for (var idContext : idContexts) {
       final SQLNode keyPart = factory.newNode(NodeType.KEY_PART);
-      keyPart.put(NodeAttrs.KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
+      keyPart.set(NodeAttr.KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
 
       keyParts.add(keyPart);
     }
@@ -366,17 +366,17 @@ interface PGASTHelper {
     return ExprType.COLUMN_REF.isInstance(header)
         ? factory.indirection(header, indirections.subList(2, indirections.size()))
         : factory.indirection(
-            header.get(ExprAttrs.INDIRECTION_EXPR),
-            header.get(ExprAttrs.INDIRECTION_COMPS).size() == 2
+            header.get(ExprAttr.INDIRECTION_EXPR),
+            header.get(ExprAttr.INDIRECTION_COMPS).size() == 2
                 ? indirections
                 : indirections.subList(1, indirections.size()));
   }
 
   private static SQLNode buildIndirection1(SQLNodeFactory factory, String id, SQLNode indirection) {
-    if (!indirection.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT)) {
-      final SQLNode indirectionExpr = indirection.get(ExprAttrs.INDIRECTION_COMP_START);
+    if (!indirection.isFlag(ExprAttr.INDIRECTION_COMP_SUBSCRIPT)) {
+      final SQLNode indirectionExpr = indirection.get(ExprAttr.INDIRECTION_COMP_START);
       if (ExprType.SYMBOL.isInstance(indirectionExpr))
-        return factory.columnRef(id, indirectionExpr.get(ExprAttrs.SYMBOL_TEXT));
+        return factory.columnRef(id, indirectionExpr.get(ExprAttr.SYMBOL_TEXT));
       else if (ExprType.WILDCARD.isInstance(indirectionExpr))
         return factory.wildcard(factory.tableName(id));
     }
@@ -386,27 +386,27 @@ interface PGASTHelper {
 
   private static SQLNode buildIndirection2(
       SQLNodeFactory factory, String id, SQLNode _0, SQLNode _1) {
-    if (_0.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+    if (_0.isFlag(ExprAttr.INDIRECTION_COMP_SUBSCRIPT))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    final SQLNode expr0 = _0.get(ExprAttrs.INDIRECTION_COMP_START);
+    final SQLNode expr0 = _0.get(ExprAttr.INDIRECTION_COMP_START);
     if (!ExprType.SYMBOL.isInstance(expr0))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    if (_1.isFlag(ExprAttrs.INDIRECTION_COMP_SUBSCRIPT))
+    if (_1.isFlag(ExprAttr.INDIRECTION_COMP_SUBSCRIPT))
       return factory.indirection(
           buildIndirection1(factory, id, expr0), Collections.singletonList(_1));
 
-    final SQLNode expr1 = _1.get(ExprAttrs.INDIRECTION_COMP_START);
+    final SQLNode expr1 = _1.get(ExprAttr.INDIRECTION_COMP_START);
 
     if (ExprType.SYMBOL.isInstance(expr1))
       return factory.columnRef(
-          id, expr0.get(ExprAttrs.SYMBOL_TEXT), expr1.get(ExprAttrs.SYMBOL_TEXT));
+          id, expr0.get(ExprAttr.SYMBOL_TEXT), expr1.get(ExprAttr.SYMBOL_TEXT));
     else if (ExprType.WILDCARD.isInstance(expr1))
-      return factory.wildcard(factory.tableName(expr0.get(ExprAttrs.SYMBOL_TEXT)));
+      return factory.wildcard(factory.tableName(expr0.get(ExprAttr.SYMBOL_TEXT)));
     else
       return factory.indirection(
-          factory.columnRef(id, expr0.get(ExprAttrs.SYMBOL_TEXT)), Collections.singletonList(_1));
+          factory.columnRef(id, expr0.get(ExprAttr.SYMBOL_TEXT)), Collections.singletonList(_1));
   }
 
   static String parseAlias(PGParser.Alias_clauseContext ctx) {
@@ -437,7 +437,7 @@ interface PGASTHelper {
   static SQLNode warpAsQuery(SQLNodeFactory factory, SQLNode node) {
     if (NodeType.QUERY_SPEC.isInstance(node) || NodeType.SET_OP.isInstance(node)) {
       final SQLNode query = factory.newNode(NodeType.QUERY);
-      query.put(NodeAttrs.QUERY_BODY, node);
+      query.set(NodeAttr.QUERY_BODY, node);
       return query;
     }
     return node;
@@ -446,7 +446,7 @@ interface PGASTHelper {
   static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
     assert node.nodeType() == NodeType.QUERY;
     final SQLNode exprNode = factory.newNode(QUERY_EXPR);
-    exprNode.put(ExprAttrs.QUERY_EXPR_QUERY, node);
+    exprNode.set(ExprAttr.QUERY_EXPR_QUERY, node);
     return exprNode;
   }
 

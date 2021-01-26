@@ -9,8 +9,8 @@ import sjtu.ipads.wtune.stmt.collector.Collector;
 import sjtu.ipads.wtune.stmt.schema.Schema;
 import sjtu.ipads.wtune.stmt.schema.Table;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;

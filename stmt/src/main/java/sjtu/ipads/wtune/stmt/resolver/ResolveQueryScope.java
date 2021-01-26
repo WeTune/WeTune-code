@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
@@ -36,15 +36,15 @@ class ResolveQueryScope implements SQLVisitor {
 
     final QueryScope scope;
     if (type == NodeType.QUERY) {
-      final SQLNode body = node.get(NodeAttrs.QUERY_BODY);
+      final SQLNode body = node.get(NodeAttr.QUERY_BODY);
       if (body.nodeType() == NodeType.QUERY_SPEC) {
         scope = new SimpleQueryScope();
         scope.setSpecNode(body);
 
       } else if (body.nodeType() == NodeType.SET_OP) {
         scope = new UnionQueryScope();
-        scope.setLeftChild(body.get(NodeAttrs.SET_OP_LEFT));
-        scope.setRightChild(body.get(NodeAttrs.SET_OP_RIGHT));
+        scope.setLeftChild(body.get(NodeAttr.SET_OP_LEFT));
+        scope.setRightChild(body.get(NodeAttr.SET_OP_RIGHT));
 
       } else throw new StmtException("unexpected query scope");
 

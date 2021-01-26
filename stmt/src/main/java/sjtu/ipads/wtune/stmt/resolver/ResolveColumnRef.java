@@ -7,9 +7,9 @@ import sjtu.ipads.wtune.stmt.collector.Collector;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import static java.util.function.Predicate.not;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.COLUMN_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
 

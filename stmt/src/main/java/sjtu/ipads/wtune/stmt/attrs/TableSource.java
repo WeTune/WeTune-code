@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 import static sjtu.ipads.wtune.stmt.utils.StmtHelper.simpleName;
 

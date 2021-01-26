@@ -1,13 +1,14 @@
-package sjtu.ipads.wtune.sqlparser.ast;
+package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
 
 import java.util.Collections;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
 
 public class SQLDataTypeImpl implements SQLDataType {
   private final Category category;
@@ -72,45 +73,45 @@ public class SQLDataTypeImpl implements SQLDataType {
   @Override
   public int storageSize() {
     switch (name) {
-      case DataTypeName.TINYINT:
-      case DataTypeName.BOOLEAN:
-      case DataTypeName.ENUM:
-      case DataTypeName.SET:
-      case DataTypeName.YEAR:
+      case TINYINT:
+      case BOOLEAN:
+      case ENUM:
+      case SET:
+      case YEAR:
         return 1;
-      case DataTypeName.SMALLINT:
-      case DataTypeName.SMALLSERIAL:
+      case SMALLINT:
+      case SMALLSERIAL:
         return 2;
-      case DataTypeName.MEDIUMINT:
-      case DataTypeName.SERIAL:
-      case DataTypeName.INTEGER:
-      case DataTypeName.INT:
-      case DataTypeName.REAL:
-      case DataTypeName.FLOAT:
-      case DataTypeName.DATE:
+      case MEDIUMINT:
+      case SERIAL:
+      case INTEGER:
+      case INT:
+      case REAL:
+      case FLOAT:
+      case DATE:
         return 4;
-      case DataTypeName.DATETIME:
-      case DataTypeName.DOUBLE:
-      case DataTypeName.BIGSERIAL:
-      case DataTypeName.BIGINT:
-      case DataTypeName.TIMESTAMP:
-      case DataTypeName.TIMESTAMPTZ:
-      case DataTypeName.TIME:
-      case DataTypeName.MACADDR:
-      case DataTypeName.MONEY:
+      case DATETIME:
+      case DOUBLE:
+      case BIGSERIAL:
+      case BIGINT:
+      case TIMESTAMP:
+      case TIMESTAMPTZ:
+      case TIME:
+      case MACADDR:
+      case MONEY:
         return 8;
-      case DataTypeName.TIMETZ:
+      case TIMETZ:
         return 12;
-      case DataTypeName.INTERVAL:
-      case DataTypeName.UUID:
+      case INTERVAL:
+      case UUID:
         return 16;
-      case DataTypeName.BIT:
-      case DataTypeName.BIT_VARYING:
+      case BIT:
+      case BIT_VARYING:
         return (width - 1) / 8 + 1;
 
-      case DataTypeName.DECIMAL:
-      case DataTypeName.NUMERIC:
-      case DataTypeName.FIXED:
+      case DECIMAL:
+      case NUMERIC:
+      case FIXED:
         final int numIntegralDigit = width - precision;
         final int numFractionalDigit = precision;
         return 4
@@ -120,31 +121,31 @@ public class SQLDataTypeImpl implements SQLDataType {
                 + (numFractionalDigit % 9 == 0 ? 0 : 1));
 
         // string
-      case DataTypeName.CHAR:
-      case DataTypeName.VARCHAR:
-      case DataTypeName.BINARY:
-      case DataTypeName.VARBINARY:
+      case CHAR:
+      case VARCHAR:
+      case BINARY:
+      case VARBINARY:
         return width;
 
-      case DataTypeName.TINYTEXT:
-      case DataTypeName.TINYBLOB:
+      case TINYTEXT:
+      case TINYBLOB:
         return 255;
-      case DataTypeName.TEXT:
-      case DataTypeName.BLOB:
+      case TEXT:
+      case BLOB:
         return 65535;
-      case DataTypeName.MEDIUMTEXT:
-      case DataTypeName.MEDIUMBLOB:
+      case MEDIUMTEXT:
+      case MEDIUMBLOB:
         return 16777215;
-      case DataTypeName.BIGTEXT:
-      case DataTypeName.LONGBLOB:
+      case BIGTEXT:
+      case LONGBLOB:
         return Integer.MAX_VALUE;
 
-      case DataTypeName.JSON:
-      case DataTypeName.XML:
+      case JSON:
+      case XML:
         return 1024;
 
-      case DataTypeName.CIDR:
-      case DataTypeName.INET:
+      case CIDR:
+      case INET:
         return 19;
 
       default:

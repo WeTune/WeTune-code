@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.schema;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
@@ -36,23 +36,23 @@ class TableBuilder {
     if (SQLNode.POSTGRESQL.equals(createTable.dbType())) {
       table.setEngine(SQLNode.POSTGRESQL);
     } else {
-      table.setEngine(Commons.coalesce(createTable.get(NodeAttrs.CREATE_TABLE_ENGINE), "innodb"));
+      table.setEngine(Commons.coalesce(createTable.get(NodeAttr.CREATE_TABLE_ENGINE), "innodb"));
     }
 
-    setName(createTable.get(NodeAttrs.CREATE_TABLE_NAME));
+    setName(createTable.get(NodeAttr.CREATE_TABLE_NAME));
 
-    createTable.get(NodeAttrs.CREATE_TABLE_COLUMNS).forEach(this::setColumn);
-    createTable.get(NodeAttrs.CREATE_TABLE_COLUMNS).forEach(this::setConstraintFromColumnDef);
-    createTable.get(NodeAttrs.CREATE_TABLE_CONSTRAINTS).forEach(this::setConstraint);
+    createTable.get(NodeAttr.CREATE_TABLE_COLUMNS).forEach(this::setColumn);
+    createTable.get(NodeAttr.CREATE_TABLE_COLUMNS).forEach(this::setConstraintFromColumnDef);
+    createTable.get(NodeAttr.CREATE_TABLE_CONSTRAINTS).forEach(this::setConstraint);
 
     return table;
   }
 
   Table fromAlterTable(SQLNode alterTable) {
-    final List<SQLNode> actions = alterTable.get(NodeAttrs.ALTER_TABLE_ACTIONS);
+    final List<SQLNode> actions = alterTable.get(NodeAttr.ALTER_TABLE_ACTIONS);
     for (SQLNode action : actions) {
-      final String actionName = action.get(NodeAttrs.ALTER_TABLE_ACTION_NAME);
-      final Object payload = action.get(NodeAttrs.ALTER_TABLE_ACTION_PAYLOAD);
+      final String actionName = action.get(NodeAttr.ALTER_TABLE_ACTION_NAME);
+      final Object payload = action.get(NodeAttr.ALTER_TABLE_ACTION_PAYLOAD);
       if ("add_constraint".equals(actionName)) {
         final SQLNode constraint = (SQLNode) payload;
         setConstraint(constraint);
@@ -67,8 +67,8 @@ class TableBuilder {
   }
 
   private void setName(SQLNode name) {
-    table.setSchemaName(name.get(NodeAttrs.TABLE_NAME_SCHEMA));
-    table.setTableName(name.get(NodeAttrs.TABLE_NAME_TABLE));
+    table.setSchemaName(name.get(NodeAttr.TABLE_NAME_SCHEMA));
+    table.setTableName(name.get(NodeAttr.TABLE_NAME_TABLE));
   }
 
   private void setColumn(SQLNode column) {
@@ -77,7 +77,7 @@ class TableBuilder {
 
   private void setConstraintFromColumnDef(SQLNode colDef) {
     final Column column = colDef.get(RESOLVED_COLUMN);
-    final EnumSet<ConstraintType> constraints = colDef.get(NodeAttrs.COLUMN_DEF_CONS);
+    final EnumSet<ConstraintType> constraints = colDef.get(NodeAttr.COLUMN_DEF_CONS);
     if (constraints == null) return;
 
     for (ConstraintType cType : constraints) {
@@ -89,13 +89,13 @@ class TableBuilder {
       column.addConstraint(c);
     }
 
-    final SQLNode references = colDef.get(NodeAttrs.COLUMN_DEF_REF);
+    final SQLNode references = colDef.get(NodeAttr.COLUMN_DEF_REF);
     if (references != null) {
       final Constraint c = new Constraint();
       c.setType(ConstraintType.FOREIGN);
       c.setColumns(singleton(column));
-      c.setRefTableName(references.get(NodeAttrs.REFERENCES_TABLE));
-      c.setRefColNames(references.get(NodeAttrs.REFERENCES_COLUMNS));
+      c.setRefTableName(references.get(NodeAttr.REFERENCES_TABLE));
+      c.setRefColNames(references.get(NodeAttr.REFERENCES_COLUMNS));
 
       column.addConstraint(c);
       table.addConstraint(c);
@@ -104,15 +104,15 @@ class TableBuilder {
 
   private void setConstraint(SQLNode constraintDef) {
     final Constraint c = new Constraint();
-    c.setType(constraintDef.get(NodeAttrs.INDEX_DEF_CONS));
-    c.setIndexType(constraintDef.get(NodeAttrs.INDEX_DEF_TYPE));
+    c.setType(constraintDef.get(NodeAttr.INDEX_DEF_CONS));
+    c.setIndexType(constraintDef.get(NodeAttr.INDEX_DEF_TYPE));
 
-    final List<SQLNode> keys = constraintDef.get(NodeAttrs.INDEX_DEF_KEYS);
+    final List<SQLNode> keys = constraintDef.get(NodeAttr.INDEX_DEF_KEYS);
     final Set<Column> columns = new LinkedHashSet<>(keys.size());
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
 
     for (SQLNode key : keys) {
-      final String columnName = key.get(NodeAttrs.KEY_PART_COLUMN);
+      final String columnName = key.get(NodeAttr.KEY_PART_COLUMN);
       if (columnName == null) {
         LOG.log(DEBUG, "expr-based index: {0} in {1}", key, table.tableName());
         continue;
@@ -128,15 +128,15 @@ class TableBuilder {
       }
 
       columns.add(column);
-      directions.add(Commons.coalesce(key.get(NodeAttrs.KEY_PART_DIRECTION), KeyDirection.ASC));
+      directions.add(Commons.coalesce(key.get(NodeAttr.KEY_PART_DIRECTION), KeyDirection.ASC));
     }
 
     if (columns.isEmpty()) return;
 
-    final SQLNode refs = constraintDef.get(NodeAttrs.INDEX_DEF_REFS);
+    final SQLNode refs = constraintDef.get(NodeAttr.INDEX_DEF_REFS);
     if (refs != null) {
-      c.setRefTableName(refs.get(NodeAttrs.REFERENCES_TABLE));
-      c.setRefColNames(refs.get(NodeAttrs.REFERENCES_COLUMNS));
+      c.setRefTableName(refs.get(NodeAttr.REFERENCES_TABLE));
+      c.setRefColNames(refs.get(NodeAttr.REFERENCES_COLUMNS));
     }
 
     c.setColumns(columns);

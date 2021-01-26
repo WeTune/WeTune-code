@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.stmt.collector.Collector;
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.ARRAY_CONTAINS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IN_LIST;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;

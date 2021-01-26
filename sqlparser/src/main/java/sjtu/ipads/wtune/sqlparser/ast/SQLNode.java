@@ -8,10 +8,10 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
 import sjtu.ipads.wtune.sqlparser.ast.internal.Root;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.TABLE_SOURCE_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.TABLE_SOURCE_KIND;
 
-public interface SQLNode extends Attrs<SQLNode> {
+public interface SQLNode extends Attrs {
   String POSTGRESQL = "postgresql";
   String MYSQL = "mysql";
 
@@ -52,13 +52,13 @@ public interface SQLNode extends Attrs<SQLNode> {
 
   static SQLNode simple(ExprType exprKind) {
     final SQLNode node = simple(NodeType.EXPR);
-    node.put(EXPR_KIND, exprKind);
+    node.set(EXPR_KIND, exprKind);
     return node;
   }
 
   static SQLNode simple(TableSourceType tableSourceKind) {
     final SQLNode node = simple(NodeType.TABLE_SOURCE);
-    node.put(TABLE_SOURCE_KIND, tableSourceKind);
+    node.set(TABLE_SOURCE_KIND, tableSourceKind);
     return node;
   }
 }

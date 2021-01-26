@@ -8,8 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.JOINED_ON;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_CLAUSE_SCOPE;
 import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.RESOLVED_QUERY_SCOPE;
 

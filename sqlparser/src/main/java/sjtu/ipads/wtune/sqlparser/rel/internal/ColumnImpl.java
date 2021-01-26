@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.rel.Constraint;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.rel.Column.Flag.*;
 
 public class ColumnImpl implements Column {

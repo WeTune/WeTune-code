@@ -9,11 +9,11 @@ import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.WILDCARD_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.DERIVED_SUBQUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttrs.tableSourceName;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.WILDCARD_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.tableSourceName;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
@@ -96,20 +96,20 @@ public class RelationImpl implements Relation {
       if (!WILDCARD.isInstance(item.get(SELECT_ITEM_EXPR))) newItems.add(qualifyItem(rel, item));
       else expandWildcard(rel, item, newItems);
 
-    querySpec.put(QUERY_SPEC_SELECT_ITEMS, newItems);
+    querySpec.set(QUERY_SPEC_SELECT_ITEMS, newItems);
   }
 
   private static SQLNode qualifyItem(Relation relation, SQLNode item) {
     final SQLNode column = item.get(SELECT_ITEM_EXPR).get(COLUMN_REF_COLUMN);
 
     final String columnName = column.get(COLUMN_NAME_COLUMN);
-    item.putIfAbsent(SELECT_ITEM_ALIAS, columnName);
+    item.setIfAbsent(SELECT_ITEM_ALIAS, columnName);
 
     if (column.get(COLUMN_NAME_TABLE) != null) return item;
 
     for (Relation input : relation.inputs())
       if (input.attribute(columnName) != null) {
-        column.put(COLUMN_NAME_TABLE, input.alias());
+        column.set(COLUMN_NAME_TABLE, input.alias());
         break;
       }
 

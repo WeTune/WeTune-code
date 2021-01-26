@@ -3,13 +3,12 @@ package sjtu.ipads.wtune.sqlparser.rel.internal;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Column;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.QUERY_SPEC_SELECT_ITEMS;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.SELECT_ITEM_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.QUERY_SPEC_SELECT_ITEMS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.SELECT_ITEM_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 

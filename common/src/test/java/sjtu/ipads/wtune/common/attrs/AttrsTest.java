@@ -4,25 +4,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AttrsTest {
   private static class Foo implements Attrs {
-    private final Map<String, Object> directAttrs = new HashMap<>();
+    private final Map<AttrKey<?>, Object> directAttrs = new HashMap<>();
 
     @Override
-    public Map<String, Object> directAttrs() {
+    public Map<AttrKey<?>, Object> directAttrs() {
       return directAttrs;
     }
   }
 
-  private static final Attrs.Key<String> ATTR_FIRST = Attrs.Key.of("wtune.first", String.class);
-  private static final Attrs.Key<Integer> ATTR_SECOND = Attrs.Key.of("wtune.second", Integer.class);
-  private static final Attrs.Key<List<Integer>> ATTR_THIRD =
-      Attrs.Key.of2("wtune.third", List.class);
+  private static final AttrKey<String> ATTR_FIRST = AttrKey.make("wtune.first");
+  private static final AttrKey<Integer> ATTR_SECOND = AttrKey.make("wtune.second");
 
   @Test
   @DisplayName("[common.attrs] attrs")
@@ -31,12 +28,12 @@ public class AttrsTest {
 
     assertNull(foo.get(ATTR_FIRST));
 
-    foo.put(ATTR_FIRST, "123");
-    assertEquals("123", foo.putIfAbsent(ATTR_FIRST, "456"));
+    foo.set(ATTR_FIRST, "123");
+    assertEquals("123", foo.setIfAbsent(ATTR_FIRST, "456"));
 
-    assertEquals(1, foo.putIfAbsent(ATTR_SECOND, 1));
+    assertEquals(1, foo.setIfAbsent(ATTR_SECOND, 1));
 
-    final Map<String, Object> oldAttrs = foo.directAttrs();
+    final Map<AttrKey<?>, Object> oldAttrs = foo.directAttrs();
 
     foo = new Foo();
     assertNotSame(oldAttrs, foo.directAttrs());

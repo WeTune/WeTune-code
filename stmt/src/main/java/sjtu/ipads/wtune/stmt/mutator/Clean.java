@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 
 class Clean {
@@ -43,7 +43,7 @@ class Clean {
     if (exprKind == ExprType.TUPLE)
       return node.get(TUPLE_EXPRS).stream().allMatch(Clean::isConstant);
     if (exprKind == ExprType.FUNC_CALL)
-      return !node.get(FUNC_CALL_NAME).get(NodeAttrs.NAME_2_1).contains("rand")
+      return !node.get(FUNC_CALL_NAME).get(NodeAttr.NAME_2_1).contains("rand")
           && node.get(FUNC_CALL_ARGS).stream().allMatch(Clean::isConstant);
 
     if (exprKind == ExprType.MATCH)
@@ -84,7 +84,7 @@ class Clean {
     final SQLNode name = node.get(FUNC_CALL_NAME);
     if (name == null || name.get(NAME_2_0) != null) return false; // UDF
 
-    final String funcName = name.get(NodeAttrs.NAME_2_1).toLowerCase();
+    final String funcName = name.get(NodeAttr.NAME_2_1).toLowerCase();
     final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
 
     switch (funcName) {

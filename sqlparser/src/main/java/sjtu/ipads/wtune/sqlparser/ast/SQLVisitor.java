@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,17 +13,17 @@ public interface SQLVisitor {
 
   default void leave(SQLNode node) {}
 
-  default boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
+  default boolean enterChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {
     return true;
   }
 
-  default void leaveChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {}
+  default void leaveChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {}
 
-  default boolean enterChildren(SQLNode parent, Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {
+  default boolean enterChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> child) {
     return true;
   }
 
-  default void leaveChildren(SQLNode parent, Attrs.Key<List<SQLNode>> key, List<SQLNode> child) {}
+  default void leaveChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> child) {}
 
   default boolean enterCreateTable(SQLNode createTable) {
     return true;

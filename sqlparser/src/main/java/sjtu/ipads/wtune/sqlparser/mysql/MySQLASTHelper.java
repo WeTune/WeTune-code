@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttrs;
+import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
@@ -17,7 +17,7 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttrs.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
@@ -152,36 +152,36 @@ public interface MySQLASTHelper {
     }
 
     final SQLNode node = factory.newNode(TABLE_NAME);
-    node.put(NodeAttrs.TABLE_NAME_SCHEMA, schema);
-    node.put(NodeAttrs.TABLE_NAME_TABLE, table);
+    node.set(NodeAttr.TABLE_NAME_SCHEMA, schema);
+    node.set(NodeAttr.TABLE_NAME_TABLE, table);
 
     return node;
   }
 
-  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Attrs<?> out) {
+  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Attrs out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectColumnAttr(attr, out));
   }
 
-  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Attrs<?> out) {
+  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Attrs out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectGColumnAttr(attr, out));
   }
 
-  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs<?> out) {
+  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs out) {
     if (attrs.NOT_SYMBOL() != null && attrs.nullLiteral() != null)
-      out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
-    if (attrs.checkConstraint() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.CHECK);
-    if (attrs.DEFAULT_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_DEFAULT);
-    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_AUTOINCREMENT);
+      out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+    if (attrs.checkConstraint() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.CHECK);
+    if (attrs.DEFAULT_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_DEFAULT);
+    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_AUTOINCREMENT);
   }
 
-  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs<?> out) {
-    if (attrs.notRule() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttrs.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs out) {
+    if (attrs.notRule() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
   }
 
   static IndexType parseIndexType(MySQLParser.IndexTypeContext indexType) {
@@ -491,7 +491,7 @@ public interface MySQLASTHelper {
   static SQLNode wrapAsQuery(SQLNodeFactory factory, SQLNode node) {
     if (node.nodeType() == NodeType.QUERY_SPEC || node.nodeType() == NodeType.SET_OP) {
       final SQLNode query = factory.newNode(NodeType.QUERY);
-      query.put(NodeAttrs.QUERY_BODY, node);
+      query.set(NodeAttr.QUERY_BODY, node);
       return query;
     }
     return node;
@@ -500,7 +500,7 @@ public interface MySQLASTHelper {
   static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
     assert node.nodeType() == NodeType.QUERY;
     final SQLNode exprNode = factory.newNode(QUERY_EXPR);
-    exprNode.put(QUERY_EXPR_QUERY, node);
+    exprNode.set(QUERY_EXPR_QUERY, node);
     return exprNode;
   }
 
