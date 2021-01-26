@@ -45,6 +45,7 @@ public class TestProof {
     final TestHelper test = new TestHelper();
     test.g0 = wrap(proj(innerJoin(null, null)));
     test.g1 = wrap(proj(null));
+    test.print();
 
     test.check(
         "TableEq(t0,t2);PickEq(c0,c3);"
@@ -62,6 +63,7 @@ public class TestProof {
     final TestHelper test = new TestHelper();
     test.g0 = wrap(proj(leftJoin(null, null)));
     test.g1 = wrap(proj(null));
+    test.print();
     test.check("TableEq(t0,t2);PickEq(c0,c3);PickFrom(c0,[t0]);PickFrom(c3,[t2])");
   }
 
@@ -70,6 +72,7 @@ public class TestProof {
     final TestHelper test = new TestHelper();
     test.g0 = wrap(proj(innerJoin(null, null)));
     test.g1 = wrap(proj(subqueryFilter(null, proj(null))));
+    test.print();
     test.check(
         "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c3);PickEq(c1,c4);PickEq(c2,c5);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);PickFrom(c4,[t2]);PickFrom(c5,[t3])");
   }
@@ -79,17 +82,19 @@ public class TestProof {
     final TestHelper test = new TestHelper();
     test.g0 = wrap(innerJoin(null, plainFilter(null)));
     test.g1 = wrap(plainFilter(innerJoin(null, null)));
+    test.print();
     test.check(
         "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c4);PickEq(c1,c5);PickEq(c2,c3);PredicateEq(p0,p1);PickFrom(c0,[t0])"
             + ";PickFrom(c1,[t1]);PickFrom(c2,[t1]);PickFrom(c3,[t3]);PickFrom(c4,[t2]);PickFrom(c5,[t3])");
   }
 
   @Test
-  void test() {
+  void testLeftToInner() {
     final TestHelper test = new TestHelper();
-
-    test.g0 = wrap(subqueryFilter(subqueryFilter(plainFilter(null), null), null));
-    test.g1 = wrap(subqueryFilter(subqueryFilter(plainFilter(null), null), proj(null)));
+    test.g0 = wrap(innerJoin(null, null));
+    test.g1 = wrap(leftJoin(null, null));
     test.print();
+    test.check(
+        "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c2);PickEq(c1,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t2]);PickFrom(c3,[t3]);Reference(t2,c2,t3,c3)");
   }
 }

@@ -5,7 +5,6 @@ import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.core.Substitution;
 import sjtu.ipads.wtune.superopt.internal.Enumerate;
 import sjtu.ipads.wtune.superopt.internal.Prove;
-import sjtu.ipads.wtune.superopt.util.LockGuard;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.LogManager;
@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 import static java.lang.System.Logger.Level.INFO;
 import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
 import static sjtu.ipads.wtune.superopt.operator.Operator.*;
-import static sjtu.ipads.wtune.superopt.util.Lockable.compose;
 
 public class Main {
   private static final System.Logger LOG = System.getLogger("Enumerator");
@@ -59,15 +58,10 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test0(true);
+    System.out.println(Enumerate.enumFragments().size());
+//    test0(true);
     //    test2();
-    //    for (int i = 0; i < 10; i++) {
-    //      test2();
-    //    }
-    //    final Graph q0 = proj(join(null, null)).toGraph("x");
-    //    final Graph q1 = proj(null).toGraph("y");
-    //    prove(q0, q1);
-    //    test0();
+    //    test3();
   }
 
   private static void test0(boolean parallel) {
@@ -75,7 +69,7 @@ public class Main {
     LOG.log(INFO, "#fragments: {0}", fragments.size());
 
     for (int i = 0, bound = fragments.size(); i < bound; i++) fragments.get(i).setId(i);
-    fragments.sort(Graph::compareTo); // this "sort" actually serves as shuffle
+    Collections.shuffle(fragments);
 
     Stream<List<Graph>> stream = Lists.cartesianProduct(fragments, fragments).stream();
     if (parallel) stream = stream.parallel();
@@ -113,6 +107,12 @@ public class Main {
 
     final Collection<Substitution> constraints = Prove.proveEq(q0, q1, -1);
     constraints.forEach(System.out::println);
+  }
+
+  private static void test3() {
+    final List<Graph> fragments = Enumerate.enumFragments();
+    LOG.log(INFO, "#fragments: {0}", fragments.size());
+    fragments.forEach(System.out::println);
   }
 
   private static void logResult(Collection<Substitution> substitutions) {

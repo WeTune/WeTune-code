@@ -5,11 +5,9 @@ import sjtu.ipads.wtune.superopt.core.Graph;
 import sjtu.ipads.wtune.superopt.operator.Operator;
 import sjtu.ipads.wtune.superopt.operator.OperatorType;
 import sjtu.ipads.wtune.superopt.rules.Rule;
-import sjtu.ipads.wtune.superopt.rules.simplify.DoubleProj;
 import sjtu.ipads.wtune.superopt.rules.simplify.NonLeftDeepJoin;
 import sjtu.ipads.wtune.superopt.rules.support.AllJoin;
-import sjtu.ipads.wtune.superopt.rules.support.AllUnion;
-import sjtu.ipads.wtune.superopt.rules.validation.*;
+import sjtu.ipads.wtune.superopt.rules.validation.MalformedSubqueryFilter;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.HashSet;
@@ -24,8 +22,8 @@ public class Enumerate {
 
   public static List<Graph> enumFragments() {
     return enumerate(0, singleton(Graph.empty())).parallelStream()
-        .filter(Enumerate::prune)
         .peek(Graph::setup)
+        .filter(Enumerate::prune)
         .sorted(Graph::compareTo)
         .collect(Collectors.toList());
   }
@@ -45,15 +43,15 @@ public class Enumerate {
   }
 
   private static boolean prune(Graph graph) {
-    return !Rule.match(MalformedDistinct.class, graph)
-        && !Rule.match(MalformedSubqueryFilter.class, graph)
-        && !Rule.match(MalformedSort.class, graph)
-        && !Rule.match(MalformedJoin.class, graph)
-        && !Rule.match(MalformedLimit.class, graph)
-        && !Rule.match(MalformedUnion.class, graph)
-        && !Rule.match(DoubleProj.class, graph)
+    return //        !Rule.match(MalformedDistinct.class, graph) &&
+    !Rule.match(MalformedSubqueryFilter.class, graph)
+        //        && !Rule.match(MalformedSort.class, graph)
+        //        && !Rule.match(MalformedJoin.class, graph)
+        //        && !Rule.match(MalformedLimit.class, graph)
+        //        && !Rule.match(MalformedUnion.class, graph)
+        //        && !Rule.match(DoubleProj.class, graph)
         && !Rule.match(NonLeftDeepJoin.class, graph)
-        && !Rule.match(AllUnion.class, graph)
+        //                && !Rule.match(AllUnion.class, graph)
         && !Rule.match(AllJoin.class, graph);
   }
 }

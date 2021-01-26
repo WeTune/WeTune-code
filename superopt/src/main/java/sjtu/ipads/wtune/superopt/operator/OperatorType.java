@@ -75,4 +75,8 @@ public enum OperatorType {
   public boolean isValidOutput() {
     return this != InnerJoin && this != LeftJoin && this != PlainFilter && this != SubqueryFilter;
   }
+
+  public boolean isJoin() {
+    return this == LeftJoin || this == InnerJoin;
+  }
 }

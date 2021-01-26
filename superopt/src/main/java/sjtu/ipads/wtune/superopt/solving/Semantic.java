@@ -78,12 +78,12 @@ public class Semantic extends BaseQueryBuilder implements GraphVisitor {
     setJoinKeySource(pickL, visibleL, pickR, visibleR);
 
     final TableSym[] visible = arrayConcat(visibleL, visibleR);
-    final Proposition joinCond = pickL.apply(inL.out).equalsTo(pickR.apply(inR.out));
+    final Proposition joinCond = inR.cond.and(pickL.apply(inL.out).equalsTo(pickR.apply(inR.out)));
     final Value v = newTuple();
     final Proposition nonNullCond =
-        inR.cond.and(joinCond).and(v.equalsTo(ctx().makeCombine(inL.out)));
+        ctx().makeExists(inR.bound, joinCond.and(v.equalsTo(ctx().makeCombine(inR.out))));
     final Proposition nullCond =
-        inR.cond.and(joinCond).not().and(v.equalsTo(ctx().makeNullTuple()));
+        ctx().makeExists(inR.bound, joinCond).not().and(v.equalsTo(ctx().makeNullTuple()));
     final Proposition cond = inL.cond.and(nonNullCond.or(nullCond));
     final Value[] out = arrayConcat(inL.out, v);
     final Value[] bound = arrayConcat(inL.bound, v);

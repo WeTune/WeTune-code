@@ -130,6 +130,18 @@ public interface Commons {
   }
 
   @SuppressWarnings("unchecked")
+  static <T> T[] arrayConcat(T[] arr1, T[] arr2, T... vs) {
+    final T[] ret =
+        (T[])
+            Array.newInstance(
+                arr1.getClass().getComponentType(), arr1.length + arr2.length + vs.length);
+    System.arraycopy(arr1, 0, ret, 0, arr1.length);
+    System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);
+    System.arraycopy(vs, 0, ret, arr1.length + arr2.length, vs.length);
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
   static <T> T[] arrayConcat(T[]... arrs) {
     final int length = stream(arrs).mapToInt(it -> it.length).sum();
     final T[] ret =
