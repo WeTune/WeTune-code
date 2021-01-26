@@ -5,10 +5,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.attrs.AttrKey;
+import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
+import sjtu.ipads.wtune.sqlparser.ast.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.List;
@@ -44,15 +46,14 @@ public class MySQLASTBuilderTest {
 
     @Override
     public boolean enterChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {
-      if (child != null)
-        assertSame(parent, child.parent());
+      if (child != null) assertSame(parent, child.parent());
       return true;
     }
 
-    @Override public boolean enterChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> chidlren) {
-      for (SQLNode child : chidlren)
-        if (child != null)
-          assertSame(parent, child.parent());
+    @Override
+    public boolean enterChildren(
+        SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> chidlren) {
+      for (SQLNode child : chidlren) if (child != null) assertSame(parent, child.parent());
 
       return true;
     }
@@ -193,17 +194,16 @@ public class MySQLASTBuilderTest {
       }
 
       final String expected =
-          """
-              CREATE TABLE `public`.`t` (
-                `i` int(10) PRIMARY KEY REFERENCES `b`(`x`),
-                `j` varchar(512) NOT NULL,
-                `k` int AUTO_INCREMENT,
-                KEY (`j`(100)),
-                UNIQUE KEY (`j` DESC) USING RTREE ,
-                FOREIGN KEY `fk`(`k`) REFERENCES `b`(`y`),
-                FULLTEXT KEY (`j`),
-                SPATIAL KEY (`k`, `i`)
-              ) ENGINE = 'innodb'""";
+          "CREATE TABLE `public`.`t` ( "
+              + "  `i` int(10) PRIMARY KEY REFERENCES `b`(`x`), "
+              + "  `j` varchar(512) NOT NULL, "
+              + "  `k` int AUTO_INCREMENT, "
+              + "  KEY (`j`(100)), "
+              + "  UNIQUE KEY (`j` DESC) USING RTREE , "
+              + "  FOREIGN KEY `fk`(`k`) REFERENCES `b`(`y`), "
+              + "  FULLTEXT KEY (`j`), "
+              + "  SPATIAL KEY (`k`, `i`) "
+              + ") ENGINE = 'innodb'";
       assertEquals(expected, root.toString(false));
     }
     {
@@ -782,14 +782,7 @@ public class MySQLASTBuilderTest {
     {
       final SQLNode node = helper.sql("a natural left join (b join c)");
       assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString());
-      assertEquals(
-          """
-              `a`
-              NATURAL LEFT JOIN (
-                `b`
-                INNER JOIN `c`
-              )""",
-          node.toString(false));
+      assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString(false));
     }
     {
       final SQLNode node = helper.sql("a left join b on a.col = b.col inner join c using (col)");
@@ -797,12 +790,11 @@ public class MySQLASTBuilderTest {
           "`a` LEFT JOIN `b` ON `a`.`col` = `b`.`col` INNER JOIN `c` USING (`col`)",
           node.toString());
       assertEquals(
-          """
-              `a`
-              LEFT JOIN `b`
-                ON `a`.`col` = `b`.`col`
-              INNER JOIN `c`
-                USING (`col`)""",
+          "`a` "
+              + "LEFT JOIN `b` "
+              + "  ON `a`.`col` = `b`.`col` "
+              + "INNER JOIN `c` "
+              + "  USING (`col`)",
           node.toString(false));
     }
   }
@@ -878,113 +870,105 @@ public class MySQLASTBuilderTest {
           node.toString());
 
       assertEquals(
-          """
-              SELECT DISTINCT
-                `a`,
-                `b`.*,
-                COUNT(1),
-                CASE
-                  WHEN `c` = 0 THEN 1
-                  ELSE 2
-                END
-              FROM `t0` AS `tt`
-                LEFT JOIN `t1`
-                  ON `tt`.`a` = `t1`.`b`
-                INNER JOIN (
-                  SELECT
-                    `e`
-                  FROM `t2`
-                ) AS `t3`
-                  ON `t3`.`e` = `tt`.`a`
-              WHERE
-                `tt`.`f` IN (
-                  SELECT
-                    1
-                  FROM `t4`
-                )
-                AND EXISTS (
-                  (SELECT
-                    1
-                  FROM `t5`)
-                  UNION ALL
-                  (SELECT
-                    2
-                  FROM `t6`)
-                )
-              GROUP BY
-                `tt`.`g`,
-                `tt`.`h`
-              HAVING
-                SUM(`tt`.`i`) < 10
-              ORDER BY
-                `t1`.`x`,
-                `t1`.`y`
-              LIMIT ? OFFSET ?""",
+          "SELECT DISTINCT "
+              + "  `a`, "
+              + "  `b`.*, "
+              + "  COUNT(1), "
+              + "  CASE "
+              + "    WHEN `c` = 0 THEN 1 "
+              + "    ELSE 2 "
+              + "  END "
+              + "FROM `t0` AS `tt` "
+              + "  LEFT JOIN `t1` "
+              + "    ON `tt`.`a` = `t1`.`b` "
+              + "  INNER JOIN ( "
+              + "    SELECT "
+              + "      `e` "
+              + "    FROM `t2` "
+              + "  ) AS `t3` "
+              + "    ON `t3`.`e` = `tt`.`a` "
+              + "WHERE "
+              + "  `tt`.`f` IN ( "
+              + "    SELECT "
+              + "      1 "
+              + "    FROM `t4` "
+              + "  ) "
+              + "  AND EXISTS ( "
+              + "    (SELECT "
+              + "      1 "
+              + "    FROM `t5`) "
+              + "    UNION ALL "
+              + "    (SELECT "
+              + "      2 "
+              + "    FROM `t6`) "
+              + "  ) "
+              + "GROUP BY "
+              + "  `tt`.`g`, "
+              + "  `tt`.`h` "
+              + "HAVING "
+              + "  SUM(`tt`.`i`) < 10 "
+              + "ORDER BY "
+              + "  `t1`.`x`, "
+              + "  `t1`.`y` "
+              + "LIMIT ? OFFSET ?",
           node.toString(false));
     }
   }
 
   @Test
   @DisplayName("[sqlparser.mysql] modify")
-  void testModify() {
+  void testMultiVersion() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
-    {
-      final SQLNode node = helper.sql("1=1 and b and c");
-      final SQLNode target = node.get(BINARY_LEFT);
-      final SQLNode rep = target.get(BINARY_RIGHT);
-      target.update(rep);
-      assertEquals("`b` AND `c`", node.toString());
-      checkParent(node);
-    }
-    {
-      final SQLNode node = helper.sql("a and b");
-      final SQLNode addon = SQLNode.simple(LITERAL);
-      addon.set(LITERAL_TYPE, LiteralType.BOOL);
-      addon.set(LITERAL_VALUE, true);
-      node.set(BINARY_RIGHT, addon);
+    final SQLNode node = helper.sql("1=1 and b and c");
+    final SQLContext ctx = node.context();
 
-      assertEquals("`a` AND TRUE", node.toString());
-      checkParent(node);
-    }
-    {
-      final SQLNode node = helper.sql("a");
+    assertEquals("1 = 1 AND `b` AND `c`", node.toString());
+    final Snapshot snapshot0 = ctx.snapshot();
 
-      final SQLNode trueLiteral = SQLNode.simple(LITERAL);
-      trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
-      trueLiteral.set(LITERAL_VALUE, true);
+    final SQLNode oneEqOne = node.get(BINARY_LEFT).get(BINARY_LEFT);
+    ctx.derive();
+    node.get(BINARY_LEFT).update(node.get(BINARY_LEFT).get(BINARY_RIGHT));
+    assertEquals("`b` AND `c`", node.toString(true));
+    final Snapshot snapshot1 = ctx.snapshot();
 
-      final SQLNode addon = SQLNode.simple(BINARY);
-      addon.set(BINARY_OP, BinaryOp.IS);
-      addon.set(BINARY_RIGHT, trueLiteral);
-      addon.set(BINARY_LEFT, SQLNode.simple(node));
+    ctx.derive();
+    node.update(node.get(BINARY_RIGHT));
+    assertEquals("`c`", node.toString());
+    final Snapshot snapshot2 = ctx.snapshot();
 
-      node.update(addon);
+    ctx.derive();
+    final SQLNode binary = SQLNode.simple(BINARY);
+    binary.set(BINARY_OP, BinaryOp.OR);
+    binary.set(BINARY_LEFT, node.copy());
+    binary.set(BINARY_RIGHT, oneEqOne);
+    node.update(binary);
+    assertEquals("`c` OR 1 = 1", node.toString());
+    final Snapshot snapshot3 = ctx.snapshot();
 
-      assertEquals("`a` IS TRUE", node.toString());
-      checkParent(node);
-    }
-    {
-      final SQLNode node = helper.sql("a IS FALSE");
-      final SQLNode left = node.get(BINARY_LEFT);
+    ctx.derive();
+    final SQLNode literal = SQLNode.simple(LITERAL);
+    literal.set(LITERAL_TYPE, LiteralType.BOOL);
+    literal.set(LITERAL_VALUE, true);
+    node.set(BINARY_RIGHT, literal);
+    assertEquals("`c` OR TRUE", node.toString());
+    final Snapshot snapshot4 = ctx.snapshot();
 
-      final SQLNode trueLiteral = SQLNode.simple(LITERAL);
-      trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
-      trueLiteral.set(LITERAL_VALUE, true);
+    ctx.setSnapshot(snapshot1);
+    assertEquals("`b` AND `c`", node.toString());
 
-      final SQLNode addon = SQLNode.simple(BINARY);
-      addon.set(BINARY_OP, BinaryOp.IS);
-      addon.set(BINARY_RIGHT, trueLiteral);
-      addon.set(BINARY_LEFT, SQLNode.simple(left));
+    ctx.setSnapshot(snapshot2);
+    assertEquals("`c`", node.toString());
 
-      left.update(addon);
+    ctx.setSnapshot(snapshot0);
+    assertEquals("1 = 1 AND `b` AND `c`", node.toString());
 
-      node.directAttrs().clear();
-      node.set(EXPR_KIND, UNARY);
-      node.set(UNARY_OP, UnaryOp.NOT);
-      node.set(UNARY_EXPR, left);
+    ctx.setSnapshot(snapshot4);
+    assertEquals("`c` OR TRUE", node.toString());
 
-      assertEquals("NOT `a` IS TRUE", node.toString());
-      checkParent(node);
-    }
+    ctx.setSnapshot(snapshot1);
+    assertEquals("`b` AND `c`", node.toString());
+
+    ctx.setSnapshot(snapshot3);
+    assertEquals("`c` OR 1 = 1", node.toString());
   }
 }

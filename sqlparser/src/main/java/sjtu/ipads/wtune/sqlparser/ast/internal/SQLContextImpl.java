@@ -1,70 +1,33 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.AttributeManager;
+import sjtu.ipads.wtune.sqlparser.ast.multiversion.MultiVersion;
+import sjtu.ipads.wtune.sqlparser.ast.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
 
-public class SQLContextImpl implements SQLContext, NodeMgr {
+import java.util.HashMap;
+import java.util.Map;
+
+public class SQLContextImpl implements SQLContext {
   private final String dbType;
-  private NodeMgr mgr = NodeMgr.empty(this);
+  private final AttributeManager attrMgr;
+
   private Schema schema;
+  private Map<Class<?>, Object> mgrs;
 
   private SQLContextImpl(String dbType) {
     this.dbType = dbType;
+    this.attrMgr = AttributeManager.empty();
   }
 
-  public static SQLContextImpl build(String dbType) {
+  public static SQLContext build(String dbType) {
     return new SQLContextImpl(dbType);
   }
 
   @Override
   public String dbType() {
     return dbType;
-  }
-
-  @Override
-  public Tree retrieveTree(Root root) {
-    return mgr.retrieveTree(root);
-  }
-
-  @Override
-  public Root getRoot(Tree tree) {
-    return mgr.getRoot(tree);
-  }
-
-  @Override
-  public Tree getTree(Root root) {
-    return mgr.getTree(root);
-  }
-
-  @Override
-  public Root getParent(Tree child) {
-    return mgr.getParent(child);
-  }
-
-  @Override
-  public void setRoot(Tree tree, Root root) {
-    mgr.setRoot(tree, root);
-  }
-
-  @Override
-  public void setParent(Tree tree, Root root) {
-    mgr.setParent(tree, root);
-  }
-
-  @Override
-  public void derive() {
-    mgr = NodeMgr.basedOn(this, mgr);
-  }
-
-  @Override
-  public Snapshot snapshot() {
-    return new SnapshotImpl(mgr);
-  }
-
-  @Override
-  public void setSnapshot(Snapshot snapshot) {
-    this.mgr = snapshot.key();
   }
 
   @Override
@@ -77,22 +40,47 @@ public class SQLContextImpl implements SQLContext, NodeMgr {
     this.schema = schema;
   }
 
-  public SQLNode manage(SQLNode node) {
-    if (node instanceof Root) return retrieveTree((Root) node);
-    else if (node instanceof Tree) return retrieveTree(((Tree) node).root());
-    else throw new IllegalArgumentException();
+  @Override
+  @SuppressWarnings("unchecked")
+  public <M> M manager(Class<M> mgrClazz) {
+    if (mgrClazz == AttributeManager.class) return (M) attrMgr;
+    else if (mgrs == null) return null;
+    else return (M) mgrs.get(mgrClazz);
   }
 
-  private static class SnapshotImpl implements Snapshot {
-    private final NodeMgr nodeMgr;
+  @Override
+  public <M> void addManager(Class<? super M> cls, M mgr) {
+    if (mgrs == null) mgrs = new HashMap<>();
+    mgrs.put(cls, mgr);
+  }
 
-    private SnapshotImpl(NodeMgr nodeMgr) {
-      this.nodeMgr = nodeMgr;
-    }
+  @Override
+  public void derive() {
+    attrMgr.derive();
 
-    @Override
-    public NodeMgr key() {
-      return nodeMgr;
-    }
+    if (mgrs != null)
+      for (Object value : mgrs.values())
+        if (value instanceof MultiVersion) ((MultiVersion) value).derive();
+  }
+
+  @Override
+  public Snapshot snapshot() {
+    Snapshot snapshot = attrMgr.snapshot();
+
+    if (mgrs != null)
+      for (Object value : mgrs.values())
+        if (value instanceof MultiVersion)
+          snapshot = snapshot.merge(((MultiVersion) value).snapshot());
+
+    return snapshot;
+  }
+
+  @Override
+  public void setSnapshot(Snapshot snapshot) {
+    attrMgr.setSnapshot(snapshot);
+
+    if (mgrs != null)
+      for (Object value : mgrs.values())
+        if (value instanceof MultiVersion) ((MultiVersion) value).setSnapshot(snapshot);
   }
 }

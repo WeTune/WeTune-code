@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.ast;
 
 import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrBase;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.List;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 
 public interface NodeAttr {
+  AttrKey<NodeType> NODE_TYPE = NodeAttrBase.build("nodeType", NodeType.class);
+  AttrKey<SQLNode> PARENT = NodeAttrBase.build("parent", SQLNode.class);
 
   //// TableName
   AttrKey<String> TABLE_NAME_SCHEMA = TABLE_NAME.strAttr("schema");

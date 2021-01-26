@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl.SQL_ATTR_PREFIX;
 
 public class TableSourceAttrImpl<T> extends NodeAttrBase<T> {
   private final TableSourceType type;

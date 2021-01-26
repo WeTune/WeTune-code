@@ -1,10 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.sqlparser.ast.*;
+import sjtu.ipads.wtune.sqlparser.ast.ExprAttr;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 
@@ -12,7 +16,6 @@ public interface VisitorController {
   static boolean enter(SQLNode n, SQLVisitor v) {
     if (n == null) return false;
     if (!v.enter(n)) return false;
-    if (n.nodeType() == null) System.out.println();
 
     switch (n.nodeType()) {
       case INVALID:
@@ -94,60 +97,60 @@ public interface VisitorController {
         visitTableSourceChildren(n, v);
         break;
       case CREATE_TABLE:
-        safeVisitChild(NodeAttr.CREATE_TABLE_NAME, n, v);
-        safeVisitList(NodeAttr.CREATE_TABLE_COLUMNS, n, v);
-        safeVisitList(NodeAttr.CREATE_TABLE_CONSTRAINTS, n, v);
+        safeVisitChild(CREATE_TABLE_NAME, n, v);
+        safeVisitList(CREATE_TABLE_COLUMNS, n, v);
+        safeVisitList(CREATE_TABLE_CONSTRAINTS, n, v);
         break;
       case COLUMN_DEF:
-        safeVisitChild(NodeAttr.COLUMN_DEF_NAME, n, v);
-        safeVisitChild(NodeAttr.COLUMN_DEF_REF, n, v);
+        safeVisitChild(COLUMN_DEF_NAME, n, v);
+        safeVisitChild(COLUMN_DEF_REF, n, v);
         break;
       case REFERENCES:
-        safeVisitChild(NodeAttr.REFERENCES_TABLE, n, v);
-        safeVisitList(NodeAttr.REFERENCES_COLUMNS, n, v);
+        safeVisitChild(REFERENCES_TABLE, n, v);
+        safeVisitList(REFERENCES_COLUMNS, n, v);
         break;
       case INDEX_DEF:
-        safeVisitList(NodeAttr.INDEX_DEF_KEYS, n, v);
-        safeVisitList(NodeAttr.INDEX_DEF_KEYS, n, v);
+        safeVisitList(INDEX_DEF_KEYS, n, v);
+        safeVisitList(INDEX_DEF_KEYS, n, v);
         break;
       case WINDOW_SPEC:
-        safeVisitList(NodeAttr.WINDOW_SPEC_PARTITION, n, v);
-        safeVisitList(NodeAttr.WINDOW_SPEC_ORDER, n, v);
-        safeVisitChild(NodeAttr.WINDOW_SPEC_FRAME, n, v);
+        safeVisitList(WINDOW_SPEC_PARTITION, n, v);
+        safeVisitList(WINDOW_SPEC_ORDER, n, v);
+        safeVisitChild(WINDOW_SPEC_FRAME, n, v);
         break;
       case WINDOW_FRAME:
-        safeVisitChild(NodeAttr.WINDOW_FRAME_START, n, v);
-        safeVisitChild(NodeAttr.WINDOW_FRAME_END, n, v);
+        safeVisitChild(WINDOW_FRAME_START, n, v);
+        safeVisitChild(WINDOW_FRAME_END, n, v);
         break;
       case FRAME_BOUND:
-        safeVisitChild(NodeAttr.FRAME_BOUND_EXPR, n, v);
+        safeVisitChild(FRAME_BOUND_EXPR, n, v);
         break;
       case ORDER_ITEM:
-        safeVisitChild(NodeAttr.ORDER_ITEM_EXPR, n, v);
+        safeVisitChild(ORDER_ITEM_EXPR, n, v);
         break;
       case GROUP_ITEM:
-        safeVisitChild(NodeAttr.GROUP_ITEM_EXPR, n, v);
+        safeVisitChild(GROUP_ITEM_EXPR, n, v);
         break;
       case SELECT_ITEM:
-        safeVisitChild(NodeAttr.SELECT_ITEM_EXPR, n, v);
+        safeVisitChild(SELECT_ITEM_EXPR, n, v);
         break;
       case QUERY_SPEC:
-        safeVisitList(NodeAttr.QUERY_SPEC_SELECT_ITEMS, n, v);
-        safeVisitChild(NodeAttr.QUERY_SPEC_FROM, n, v);
-        safeVisitChild(NodeAttr.QUERY_SPEC_WHERE, n, v);
-        safeVisitList(NodeAttr.QUERY_SPEC_GROUP_BY, n, v);
-        safeVisitChild(NodeAttr.QUERY_SPEC_HAVING, n, v);
-        safeVisitList(NodeAttr.QUERY_SPEC_WINDOWS, n, v);
+        safeVisitList(QUERY_SPEC_SELECT_ITEMS, n, v);
+        safeVisitChild(QUERY_SPEC_FROM, n, v);
+        safeVisitChild(QUERY_SPEC_WHERE, n, v);
+        safeVisitList(QUERY_SPEC_GROUP_BY, n, v);
+        safeVisitChild(QUERY_SPEC_HAVING, n, v);
+        safeVisitList(QUERY_SPEC_WINDOWS, n, v);
         break;
       case QUERY:
-        safeVisitChild(NodeAttr.QUERY_BODY, n, v);
-        safeVisitList(NodeAttr.QUERY_ORDER_BY, n, v);
-        safeVisitChild(NodeAttr.QUERY_OFFSET, n, v);
-        safeVisitChild(NodeAttr.QUERY_LIMIT, n, v);
+        safeVisitChild(QUERY_BODY, n, v);
+        safeVisitList(QUERY_ORDER_BY, n, v);
+        safeVisitChild(QUERY_OFFSET, n, v);
+        safeVisitChild(QUERY_LIMIT, n, v);
         break;
       case SET_OP:
-        safeVisitChild(NodeAttr.SET_OP_LEFT, n, v);
-        safeVisitChild(NodeAttr.SET_OP_RIGHT, n, v);
+        safeVisitChild(SET_OP_LEFT, n, v);
+        safeVisitChild(SET_OP_RIGHT, n, v);
     }
   }
 
@@ -264,7 +267,7 @@ public interface VisitorController {
   private static boolean enterExpr(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
 
-    switch (n.get(NodeAttr.EXPR_KIND)) {
+    switch (n.get(EXPR_KIND)) {
       case VARIABLE:
         return v.enterVariable(n);
       case COLUMN_REF:
@@ -329,7 +332,7 @@ public interface VisitorController {
   private static boolean enterTableSource(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
-    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
+    switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
         return v.enterSimpleTableSource(n);
       case JOINED:
@@ -343,7 +346,7 @@ public interface VisitorController {
 
   private static void visitExprChildren(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
-    switch (n.get(NodeAttr.EXPR_KIND)) {
+    switch (n.get(EXPR_KIND)) {
       case VARIABLE:
         safeVisitChild(ExprAttr.VARIABLE_ASSIGNMENT, n, v);
         break;
@@ -430,7 +433,7 @@ public interface VisitorController {
 
   private static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
-    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
+    switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
         safeVisitChild(TableSourceAttr.SIMPLE_TABLE, n, v);
         safeVisitList(TableSourceAttr.SIMPLE_HINTS, n, v);
@@ -448,7 +451,7 @@ public interface VisitorController {
   private static void leaveExpr(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == EXPR;
 
-    switch (n.get(NodeAttr.EXPR_KIND)) {
+    switch (n.get(EXPR_KIND)) {
       case VARIABLE:
         v.leaveColumnDef(n);
         return;
@@ -563,7 +566,7 @@ public interface VisitorController {
   private static void leaveTableSource(SQLNode n, SQLVisitor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
-    switch (n.get(NodeAttr.TABLE_SOURCE_KIND)) {
+    switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE:
         v.leaveSimpleTableSource(n);
         return;

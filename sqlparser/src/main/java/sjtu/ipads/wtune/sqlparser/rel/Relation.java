@@ -1,7 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl;
 
 import java.util.List;
 
@@ -14,6 +16,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SO
 import static sjtu.ipads.wtune.sqlparser.rel.internal.RelationImpl.rootedBy;
 
 public interface Relation {
+  AttrKey<Relation> RELATION = NodeAttrImpl.build("rel.relation", Relation.class);
+
   AttrDomain[] RELATION_BOUNDARY = {QUERY, SIMPLE_SOURCE, DERIVED_SOURCE};
 
   SQLNode node();
@@ -68,7 +72,7 @@ public interface Relation {
     // cascading resolution, which is unintended:
     // ensure (node.parent() == null || node.parent().relation() != null)
 
-    node.accept(topDownVisit(it -> it.setRelation(rootedBy(it)), RELATION_BOUNDARY));
+    node.accept(topDownVisit(it -> it.set(RELATION, rootedBy(it)), RELATION_BOUNDARY));
     node.accept(bottomUpVisit(func(SQLNode::relation).then(Relation::attributes), QUERY));
 
     return node.relation();

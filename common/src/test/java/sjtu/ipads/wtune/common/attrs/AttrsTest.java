@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AttrsTest {
   private static class Foo implements Attrs {
-    private final Map<AttrKey<?>, Object> directAttrs = new HashMap<>();
+    private final Map<AttrKey, Object> directAttrs = new HashMap<>();
 
     @Override
-    public Map<AttrKey<?>, Object> directAttrs() {
+    public Map<AttrKey, Object> directAttrs() {
       return directAttrs;
     }
   }
@@ -33,7 +33,7 @@ public class AttrsTest {
 
     assertEquals(1, foo.setIfAbsent(ATTR_SECOND, 1));
 
-    final Map<AttrKey<?>, Object> oldAttrs = foo.directAttrs();
+    final Map<AttrKey, Object> oldAttrs = foo.directAttrs();
 
     foo = new Foo();
     assertNotSame(oldAttrs, foo.directAttrs());

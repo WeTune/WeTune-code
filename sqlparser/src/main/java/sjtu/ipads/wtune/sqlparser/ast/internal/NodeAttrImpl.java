@@ -8,7 +8,6 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import static java.util.Objects.requireNonNull;
 
 public class NodeAttrImpl<T> extends NodeAttrBase<T> {
-  protected static final String SQL_ATTR_PREFIX = "sql.attr.";
   private final NodeType type;
 
   private NodeAttrImpl(NodeType type, String name, Class<?> targetClass) {

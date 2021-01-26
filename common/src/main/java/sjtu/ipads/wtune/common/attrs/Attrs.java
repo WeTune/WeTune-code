@@ -5,14 +5,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public interface Attrs {
-  Map<AttrKey<?>, Object> directAttrs();
+  Map<AttrKey, Object> directAttrs();
 
   default <T> T get(AttrKey<T> key) {
     return key.get(this);
   }
 
   default <T> T getOr(AttrKey<T> key, T obj) {
-    return key.getOr(this, obj);
+    final T t = get(key);
+    return t != null ? t : obj;
   }
 
   default <T> T set(AttrKey<T> key, T obj) {
@@ -68,6 +69,6 @@ public interface Attrs {
 
   @SuppressWarnings("unchecked")
   default <T> T unwrap(Class<T> cls) {
-    return (T) this;
+    return cls.isInstance(this) ? (T) this : null;
   }
 }

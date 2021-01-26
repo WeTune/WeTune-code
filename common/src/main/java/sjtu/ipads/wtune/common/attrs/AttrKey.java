@@ -8,34 +8,29 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
 public interface AttrKey<T> {
   String name();
 
-  @SuppressWarnings("unchecked")
+  default boolean isPresent(Attrs owner) {
+    return isPresent(owner, this);
+  }
+
   default T get(Attrs owner) {
-    return (T) owner.directAttrs().get(this);
+    return get(owner, this);
   }
 
-  @SuppressWarnings("unchecked")
-  default T getOr(Attrs owner, T defaultVal) {
-    return (T) owner.directAttrs().getOrDefault(this, defaultVal);
-  }
-
-  @SuppressWarnings("unchecked")
-  default T set(Attrs owner, Object obj) {
-    if (validate(owner, obj)) return (T) owner.directAttrs().put(this, obj);
+  default T set(Attrs owner, T obj) {
+    if (validate(owner, obj)) return set(owner, this, obj);
     else return rescue(owner, obj);
   }
 
-  default void unset(Attrs owner) {
-    owner.directAttrs().remove(name());
+  default T unset(Attrs owner) {
+    return unset(owner, this);
   }
 
-  @SuppressWarnings("unchecked")
-  default T setIfAbsent(Attrs owner, Object obj) {
-    return (T) owner.directAttrs().putIfAbsent(this, obj);
+  default T setIfAbsent(Attrs owner, T obj) {
+    return setIfAbsent(owner, this, obj);
   }
 
-  @SuppressWarnings("unchecked")
   default T setIfAbsent(Attrs owner, Supplier<T> supplier) {
-    return (T) owner.directAttrs().computeIfAbsent(this, dumb(supplier));
+    return setIfAbsent(owner, this, supplier);
   }
 
   default boolean validate(Object obj) {
@@ -48,6 +43,35 @@ public interface AttrKey<T> {
 
   default T rescue(Attrs owner, Object obj) {
     return null;
+  }
+
+  static boolean isPresent(Attrs owner, AttrKey<?> key) {
+    return owner.directAttrs().containsKey(key);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T get(Attrs owner, AttrKey<T> key) {
+    return (T) owner.directAttrs().get(key);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T set(Attrs owner, AttrKey<T> key, T obj) {
+    return (T) owner.directAttrs().put(key, obj);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T unset(Attrs owner, AttrKey<T> key) {
+    return (T) owner.directAttrs().remove(key);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T setIfAbsent(Attrs owner, AttrKey<T> key, T obj) {
+    return (T) owner.directAttrs().putIfAbsent(key, obj);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T setIfAbsent(Attrs owner, AttrKey<T> key, Supplier<T> supplier) {
+    return (T) owner.directAttrs().computeIfAbsent(key, dumb(supplier));
   }
 
   static <T> AttrKey<T> make(String name) {

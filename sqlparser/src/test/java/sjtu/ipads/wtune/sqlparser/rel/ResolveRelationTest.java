@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.sqlparser.SQLContext.resolveRelation;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
@@ -20,7 +19,6 @@ public class ResolveRelationTest {
             + "CREATE TABLE a (x int, y int, z int);"
             + "CREATE TABLE b (i int, j int, k int);"
             + "CREATE TABLE c (p int, q int, r int)";
-    final Schema schema = Schema.parse(MYSQL, schemaDef);
 
     final String sql =
         ""
@@ -28,7 +26,10 @@ public class ResolveRelationTest {
             + "FROM (SELECT * FROM a) a"
             + " JOIN b ON a.x = b.i "
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
-    final SQLNode ast = resolveRelation(SQLParser.ofDb(MYSQL).parse(sql), schema);
+
+    final SQLNode node = SQLParser.ofDb(MYSQL).parse(sql);
+    node.context().readSchema(schemaDef);
+    node.relation(); // trigger resolution
 
     assertEquals(
         ""
@@ -55,8 +56,8 @@ public class ResolveRelationTest {
             + " `a`.`z` AS `z`,"
             + " `c`.`p` AS `p`"
             + " FROM `c`)",
-        ast.toString());
-    ast.accept(topDownVisit(func(SQLNode::relation).then(Assertions::assertNotNull)));
-    ast.accept(topDownVisit(func(Attribute::of).then(Assertions::assertNotNull), COLUMN_REF));
+        node.toString());
+    node.accept(topDownVisit(func(SQLNode::relation).then(Assertions::assertNotNull)));
+    node.accept(topDownVisit(func(Attribute::of).then(Assertions::assertNotNull), COLUMN_REF));
   }
 }

@@ -1,15 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
+import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.common.attrs.Attrs;
 import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
-import sjtu.ipads.wtune.sqlparser.ast.internal.Root;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeImpl;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.TABLE_SOURCE_KIND;
+import java.util.Map;
+
+import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public interface SQLNode extends Attrs {
   String POSTGRESQL = "postgresql";
@@ -17,21 +20,16 @@ public interface SQLNode extends Attrs {
 
   SQLContext context();
 
-  Relation relation();
+  void setContext(SQLContext ctx);
 
-  SQLNode parent();
-
-  NodeType nodeType();
-
-  void setParent(SQLNode parent);
-
-  void setRelation(Relation relation);
-
-  void setNodeType(NodeType type);
-
-  // inplace update
-  // Note: cycle-free is not checked internally, please take extra care to ensure that
-  // the descendant of `replacement` does not contains `this`
+  /**
+   * Copy attributes from `replacement` to this node.
+   *
+   * <p>Attributes that are incompatible with the node's type/expr kind/table source kind will not
+   * be copied.
+   *
+   * <p>Note: take extra care to ensure the resultant AST acyclic.
+   */
   void update(SQLNode replacement);
 
   void accept(SQLVisitor visitor);
@@ -42,12 +40,40 @@ public interface SQLNode extends Attrs {
     return context() == null ? MYSQL : context().dbType();
   }
 
-  static SQLNode simple(SQLNode other) {
-    return Root.build(other);
+  default NodeType nodeType() {
+    return get(NODE_TYPE);
+  }
+
+  default SQLNode parent() {
+    return get(PARENT);
+  }
+
+  default Map<AttrKey, Object> attrs() {
+    final AttributeManager mgr = attrMgr();
+    return mgr != null ? mgr.getAttrs(this) : directAttrs();
+  }
+
+  default Relation relation() {
+    return get(RELATION);
+  }
+
+  default <T> T manager(Class<T> cls) {
+    final SQLContext ctx = context();
+    return ctx != null ? ctx.manager(cls) : null;
+  }
+
+  default SQLNode copy() {
+    final SQLNode newNode = simple(nodeType());
+    newNode.update(this);
+    return newNode;
+  }
+
+  default AttributeManager attrMgr() {
+    return manager(AttributeManager.class);
   }
 
   static SQLNode simple(NodeType nodeType) {
-    return Root.build(nodeType);
+    return NodeImpl.build(nodeType);
   }
 
   static SQLNode simple(ExprType exprKind) {
@@ -60,5 +86,10 @@ public interface SQLNode extends Attrs {
     final SQLNode node = simple(NodeType.TABLE_SOURCE);
     node.set(TABLE_SOURCE_KIND, tableSourceKind);
     return node;
+  }
+
+  static void setParent(Object obj, SQLNode parent) {
+    if (obj instanceof SQLNode) ((SQLNode) obj).set(PARENT, parent);
+    else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setParent(it, parent));
   }
 }

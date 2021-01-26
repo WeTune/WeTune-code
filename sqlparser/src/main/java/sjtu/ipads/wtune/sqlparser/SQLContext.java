@@ -1,42 +1,31 @@
 package sjtu.ipads.wtune.sqlparser;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeMgr;
+import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.ast.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
 
-public interface SQLContext {
+public interface SQLContext extends MultiVersion {
   System.Logger LOG = System.getLogger("wetune.sqlparser");
 
-  interface Snapshot {
-    NodeMgr key();
-  }
-
   String dbType();
-
-  Snapshot snapshot();
-
-  void derive();
-
-  void setSnapshot(Snapshot snapshot);
 
   Schema schema();
 
   void setSchema(Schema schema);
 
-  static SQLNode manage(String dbType, SQLNode node) {
-    return SQLContextImpl.build(dbType).manage(node);
+  <M> M manager(Class<M> mgrClazz);
+
+  <M> void addManager(Class<? super M> cls, M mgr);
+
+  default void readSchema(String str) {
+    setSchema(Schema.parse(dbType(), str));
   }
 
-  static SQLNode resolveRelation(SQLNode node) {
-    return resolveRelation(node, node.context().schema());
-  }
-
-  static SQLNode resolveRelation(SQLNode node, Schema schema) {
-    if (schema == null) throw new IllegalArgumentException("schema not set");
-    node.context().setSchema(schema);
-    Relation.resolve(node);
-    return node;
+  static SQLNode manage(String dbType, SQLNode root) {
+    final SQLContext ctx = SQLContextImpl.build(dbType);
+    root.accept(SQLVisitor.topDownVisit(it -> it.setContext(ctx)));
+    return root;
   }
 }

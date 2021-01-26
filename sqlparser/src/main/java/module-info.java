@@ -3,6 +3,7 @@ module sjtu.ipads.wtune.sqlparser {
   exports sjtu.ipads.wtune.sqlparser.rel;
   exports sjtu.ipads.wtune.sqlparser.ast;
   exports sjtu.ipads.wtune.sqlparser.ast.constants;
+  exports sjtu.ipads.wtune.sqlparser.ast.multiversion;
 
   requires sjtu.ipads.wtune.common;
   requires org.antlr.antlr4.runtime;

@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl.SQL_ATTR_PREFIX;
 
 public class ExprAttrImpl<T> extends NodeAttrBase<T> {
   private final ExprType type;

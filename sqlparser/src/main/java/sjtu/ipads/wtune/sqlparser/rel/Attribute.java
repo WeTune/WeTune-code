@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.rel;
 import sjtu.ipads.wtune.common.attrs.AttrKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl;
 import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
 import sjtu.ipads.wtune.sqlparser.rel.internal.NativeAttribute;
 
@@ -13,7 +14,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 
 public interface Attribute {
-  AttrKey<Attribute> ATTRIBUTE = AttrKey.checked("sql.rel.attribute", Attribute.class);
+  AttrKey<Attribute> ATTRIBUTE = NodeAttrImpl.build("rel.attribute", Attribute.class);
 
   String name();
 
