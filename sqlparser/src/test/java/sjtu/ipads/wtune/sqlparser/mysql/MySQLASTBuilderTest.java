@@ -4,22 +4,20 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.attrs.AttrKey;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
-import sjtu.ipads.wtune.sqlparser.ast.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.NAME_2_1;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.PipesAsConcat;
@@ -45,14 +43,14 @@ public class MySQLASTBuilderTest {
   private static class ParentChecker implements SQLVisitor {
 
     @Override
-    public boolean enterChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {
+    public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
       if (child != null) assertSame(parent, child.parent());
       return true;
     }
 
     @Override
     public boolean enterChildren(
-        SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> chidlren) {
+        SQLNode parent, FieldKey<List<SQLNode>> key, List<SQLNode> chidlren) {
       for (SQLNode child : chidlren) if (child != null) assertSame(parent, child.parent());
 
       return true;
@@ -90,14 +88,14 @@ public class MySQLASTBuilderTest {
       final SQLNode root = helper.sql(createTable);
       assertEquals(CREATE_TABLE, root.nodeType());
 
-      final var tableName = root.get(NodeAttr.CREATE_TABLE_NAME);
-      assertEquals("public", tableName.get(NodeAttr.TABLE_NAME_SCHEMA));
-      assertEquals("t", tableName.get(NodeAttr.TABLE_NAME_TABLE));
+      final var tableName = root.get(CREATE_TABLE_NAME);
+      assertEquals("public", tableName.get(TABLE_NAME_SCHEMA));
+      assertEquals("t", tableName.get(TABLE_NAME_TABLE));
 
-      assertEquals("innodb", root.get(NodeAttr.CREATE_TABLE_ENGINE));
+      assertEquals("innodb", root.get(CREATE_TABLE_ENGINE));
 
-      final var columns = root.get(NodeAttr.CREATE_TABLE_COLUMNS);
-      final var constraints = root.get(NodeAttr.CREATE_TABLE_CONSTRAINTS);
+      final var columns = root.get(CREATE_TABLE_COLUMNS);
+      final var constraints = root.get(CREATE_TABLE_CONSTRAINTS);
 
       assertEquals(3, columns.size());
       assertEquals(5, constraints.size());
@@ -106,103 +104,103 @@ public class MySQLASTBuilderTest {
         final var col0 = columns.get(0);
 
         {
-          final var col0Name = col0.get(NodeAttr.COLUMN_DEF_NAME);
-          assertNull(col0Name.get(NodeAttr.COLUMN_NAME_SCHEMA));
-          assertNull(col0Name.get(NodeAttr.COLUMN_NAME_TABLE));
-          assertEquals("i", col0Name.get(NodeAttr.COLUMN_NAME_COLUMN));
+          final var col0Name = col0.get(COLUMN_DEF_NAME);
+          assertNull(col0Name.get(COLUMN_NAME_SCHEMA));
+          assertNull(col0Name.get(COLUMN_NAME_TABLE));
+          assertEquals("i", col0Name.get(COLUMN_NAME_COLUMN));
         }
 
         {
-          assertEquals("int(10)", col0.get(NodeAttr.COLUMN_DEF_DATATYPE_RAW));
-          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_AUTOINCREMENT));
-          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_DEFAULT));
-          assertFalse(col0.isFlag(NodeAttr.COLUMN_DEF_GENERATED));
+          assertEquals("int(10)", col0.get(COLUMN_DEF_DATATYPE_RAW));
+          assertFalse(col0.isFlag(COLUMN_DEF_AUTOINCREMENT));
+          assertFalse(col0.isFlag(COLUMN_DEF_DEFAULT));
+          assertFalse(col0.isFlag(COLUMN_DEF_GENERATED));
         }
 
         {
-          final var col0Cons = col0.get(NodeAttr.COLUMN_DEF_CONS);
+          final var col0Cons = col0.get(COLUMN_DEF_CONS);
           assertTrue(col0Cons.contains(ConstraintType.PRIMARY));
           assertFalse(col0Cons.contains(ConstraintType.UNIQUE));
           assertFalse(col0Cons.contains(ConstraintType.CHECK));
           assertFalse(col0Cons.contains(ConstraintType.NOT_NULL));
           assertFalse(col0Cons.contains(ConstraintType.FOREIGN));
 
-          final var col0Refs = col0.get(NodeAttr.COLUMN_DEF_REF);
-          final var col0RefTable = col0Refs.get(NodeAttr.REFERENCES_TABLE);
-          final var col0RefCols = col0Refs.get(NodeAttr.REFERENCES_COLUMNS);
-          assertNull(col0RefTable.get(NodeAttr.TABLE_NAME_SCHEMA));
-          assertEquals("b", col0RefTable.get(NodeAttr.TABLE_NAME_TABLE));
+          final var col0Refs = col0.get(COLUMN_DEF_REF);
+          final var col0RefTable = col0Refs.get(REFERENCES_TABLE);
+          final var col0RefCols = col0Refs.get(REFERENCES_COLUMNS);
+          assertNull(col0RefTable.get(TABLE_NAME_SCHEMA));
+          assertEquals("b", col0RefTable.get(TABLE_NAME_TABLE));
           assertEquals(1, col0RefCols.size());
           final var col0RefCol0 = col0RefCols.get(0);
-          assertNull(col0RefCol0.get(NodeAttr.COLUMN_NAME_SCHEMA));
-          assertNull(col0RefCol0.get(NodeAttr.COLUMN_NAME_TABLE));
-          assertEquals("x", col0RefCol0.get(NodeAttr.COLUMN_NAME_COLUMN));
+          assertNull(col0RefCol0.get(COLUMN_NAME_SCHEMA));
+          assertNull(col0RefCol0.get(COLUMN_NAME_TABLE));
+          assertEquals("x", col0RefCol0.get(COLUMN_NAME_COLUMN));
         }
       }
 
       {
         {
           final var cons0 = constraints.get(0);
-          assertNull(cons0.get(NodeAttr.INDEX_DEF_NAME));
-          assertNull(cons0.get(NodeAttr.INDEX_DEF_CONS));
-          assertNull(cons0.get(NodeAttr.INDEX_DEF_TYPE));
-          assertNull(cons0.get(NodeAttr.INDEX_DEF_REFS));
-          final var keys = cons0.get(NodeAttr.INDEX_DEF_KEYS);
+          assertNull(cons0.get(INDEX_DEF_NAME));
+          assertNull(cons0.get(INDEX_DEF_CONS));
+          assertNull(cons0.get(INDEX_DEF_TYPE));
+          assertNull(cons0.get(INDEX_DEF_REFS));
+          final var keys = cons0.get(INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertNull(key0.get(NodeAttr.KEY_PART_DIRECTION));
-          assertEquals("j", key0.get(NodeAttr.KEY_PART_COLUMN));
-          assertEquals(100, key0.get(NodeAttr.KEY_PART_LEN));
+          assertNull(key0.get(KEY_PART_DIRECTION));
+          assertEquals("j", key0.get(KEY_PART_COLUMN));
+          assertEquals(100, key0.get(KEY_PART_LEN));
         }
 
         {
           final var cons1 = constraints.get(1);
-          assertNull(cons1.get(NodeAttr.INDEX_DEF_NAME));
-          assertNull(cons1.get(NodeAttr.INDEX_DEF_REFS));
-          assertEquals(ConstraintType.UNIQUE, cons1.get(NodeAttr.INDEX_DEF_CONS));
-          assertEquals(IndexType.RTREE, cons1.get(NodeAttr.INDEX_DEF_TYPE));
-          final var keys = cons1.get(NodeAttr.INDEX_DEF_KEYS);
+          assertNull(cons1.get(INDEX_DEF_NAME));
+          assertNull(cons1.get(INDEX_DEF_REFS));
+          assertEquals(ConstraintType.UNIQUE, cons1.get(INDEX_DEF_CONS));
+          assertEquals(IndexType.RTREE, cons1.get(INDEX_DEF_TYPE));
+          final var keys = cons1.get(INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertEquals(KeyDirection.DESC, key0.get(NodeAttr.KEY_PART_DIRECTION));
-          assertEquals("j", key0.get(NodeAttr.KEY_PART_COLUMN));
-          assertNull(key0.get(NodeAttr.KEY_PART_LEN));
+          assertEquals(KeyDirection.DESC, key0.get(KEY_PART_DIRECTION));
+          assertEquals("j", key0.get(KEY_PART_COLUMN));
+          assertNull(key0.get(KEY_PART_LEN));
         }
 
         {
           final var cons2 = constraints.get(2);
-          assertEquals("fk", cons2.get(NodeAttr.INDEX_DEF_NAME));
-          assertEquals(ConstraintType.FOREIGN, cons2.get(NodeAttr.INDEX_DEF_CONS));
-          assertNull(cons2.get(NodeAttr.INDEX_DEF_TYPE));
-          final var keys = cons2.get(NodeAttr.INDEX_DEF_KEYS);
+          assertEquals("fk", cons2.get(INDEX_DEF_NAME));
+          assertEquals(ConstraintType.FOREIGN, cons2.get(INDEX_DEF_CONS));
+          assertNull(cons2.get(INDEX_DEF_TYPE));
+          final var keys = cons2.get(INDEX_DEF_KEYS);
           assertEquals(1, keys.size());
 
           final var key0 = keys.get(0);
-          assertNull(key0.get(NodeAttr.KEY_PART_DIRECTION));
-          assertNull(key0.get(NodeAttr.KEY_PART_LEN));
-          assertEquals("k", key0.get(NodeAttr.KEY_PART_COLUMN));
+          assertNull(key0.get(KEY_PART_DIRECTION));
+          assertNull(key0.get(KEY_PART_LEN));
+          assertEquals("k", key0.get(KEY_PART_COLUMN));
 
-          final var refs = cons2.get(NodeAttr.INDEX_DEF_REFS);
-          final var refTable = refs.get(NodeAttr.REFERENCES_TABLE);
-          final var refCols = refs.get(NodeAttr.REFERENCES_COLUMNS);
-          assertEquals("b", refTable.get(NodeAttr.TABLE_NAME_TABLE));
+          final var refs = cons2.get(INDEX_DEF_REFS);
+          final var refTable = refs.get(REFERENCES_TABLE);
+          final var refCols = refs.get(REFERENCES_COLUMNS);
+          assertEquals("b", refTable.get(TABLE_NAME_TABLE));
           assertEquals(1, refCols.size());
-          assertEquals("y", refCols.get(0).get(NodeAttr.COLUMN_NAME_COLUMN));
+          assertEquals("y", refCols.get(0).get(COLUMN_NAME_COLUMN));
         }
       }
 
       final String expected =
-          "CREATE TABLE `public`.`t` ( "
-              + "  `i` int(10) PRIMARY KEY REFERENCES `b`(`x`), "
-              + "  `j` varchar(512) NOT NULL, "
-              + "  `k` int AUTO_INCREMENT, "
-              + "  KEY (`j`(100)), "
-              + "  UNIQUE KEY (`j` DESC) USING RTREE , "
-              + "  FOREIGN KEY `fk`(`k`) REFERENCES `b`(`y`), "
-              + "  FULLTEXT KEY (`j`), "
-              + "  SPATIAL KEY (`k`, `i`) "
+          "CREATE TABLE `public`.`t` (\n"
+              + "  `i` int(10) PRIMARY KEY REFERENCES `b`(`x`),\n"
+              + "  `j` varchar(512) NOT NULL,\n"
+              + "  `k` int AUTO_INCREMENT,\n"
+              + "  KEY (`j`(100)),\n"
+              + "  UNIQUE KEY (`j` DESC) USING RTREE ,\n"
+              + "  FOREIGN KEY `fk`(`k`) REFERENCES `b`(`y`),\n"
+              + "  FULLTEXT KEY (`j`),\n"
+              + "  SPATIAL KEY (`k`, `i`)\n"
               + ") ENGINE = 'innodb'";
       assertEquals(expected, root.toString(false));
     }
@@ -782,7 +780,9 @@ public class MySQLASTBuilderTest {
     {
       final SQLNode node = helper.sql("a natural left join (b join c)");
       assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString());
-      assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString(false));
+      assertEquals(
+          "`a`\n" + "NATURAL LEFT JOIN (\n" + "  `b`\n" + "  INNER JOIN `c`\n)",
+          node.toString(false));
     }
     {
       final SQLNode node = helper.sql("a left join b on a.col = b.col inner join c using (col)");
@@ -790,10 +790,10 @@ public class MySQLASTBuilderTest {
           "`a` LEFT JOIN `b` ON `a`.`col` = `b`.`col` INNER JOIN `c` USING (`col`)",
           node.toString());
       assertEquals(
-          "`a` "
-              + "LEFT JOIN `b` "
-              + "  ON `a`.`col` = `b`.`col` "
-              + "INNER JOIN `c` "
+          "`a`\n"
+              + "LEFT JOIN `b`\n"
+              + "  ON `a`.`col` = `b`.`col`\n"
+              + "INNER JOIN `c`\n"
               + "  USING (`col`)",
           node.toString(false));
     }
@@ -870,46 +870,46 @@ public class MySQLASTBuilderTest {
           node.toString());
 
       assertEquals(
-          "SELECT DISTINCT "
-              + "  `a`, "
-              + "  `b`.*, "
-              + "  COUNT(1), "
-              + "  CASE "
-              + "    WHEN `c` = 0 THEN 1 "
-              + "    ELSE 2 "
-              + "  END "
-              + "FROM `t0` AS `tt` "
-              + "  LEFT JOIN `t1` "
-              + "    ON `tt`.`a` = `t1`.`b` "
-              + "  INNER JOIN ( "
-              + "    SELECT "
-              + "      `e` "
-              + "    FROM `t2` "
-              + "  ) AS `t3` "
-              + "    ON `t3`.`e` = `tt`.`a` "
-              + "WHERE "
-              + "  `tt`.`f` IN ( "
-              + "    SELECT "
-              + "      1 "
-              + "    FROM `t4` "
-              + "  ) "
-              + "  AND EXISTS ( "
-              + "    (SELECT "
-              + "      1 "
-              + "    FROM `t5`) "
-              + "    UNION ALL "
-              + "    (SELECT "
-              + "      2 "
-              + "    FROM `t6`) "
-              + "  ) "
-              + "GROUP BY "
-              + "  `tt`.`g`, "
-              + "  `tt`.`h` "
-              + "HAVING "
-              + "  SUM(`tt`.`i`) < 10 "
-              + "ORDER BY "
-              + "  `t1`.`x`, "
-              + "  `t1`.`y` "
+          "SELECT DISTINCT\n"
+              + "  `a`,\n"
+              + "  `b`.*,\n"
+              + "  COUNT(1),\n"
+              + "  CASE\n"
+              + "    WHEN `c` = 0 THEN 1\n"
+              + "    ELSE 2\n"
+              + "  END\n"
+              + "FROM `t0` AS `tt`\n"
+              + "  LEFT JOIN `t1`\n"
+              + "    ON `tt`.`a` = `t1`.`b`\n"
+              + "  INNER JOIN (\n"
+              + "    SELECT\n"
+              + "      `e`\n"
+              + "    FROM `t2`\n"
+              + "  ) AS `t3`\n"
+              + "    ON `t3`.`e` = `tt`.`a`\n"
+              + "WHERE\n"
+              + "  `tt`.`f` IN (\n"
+              + "    SELECT\n"
+              + "      1\n"
+              + "    FROM `t4`\n"
+              + "  )\n"
+              + "  AND EXISTS (\n"
+              + "    (SELECT\n"
+              + "      1\n"
+              + "    FROM `t5`)\n"
+              + "    UNION ALL\n"
+              + "    (SELECT\n"
+              + "      2\n"
+              + "    FROM `t6`)\n"
+              + "  )\n"
+              + "GROUP BY\n"
+              + "  `tt`.`g`,\n"
+              + "  `tt`.`h`\n"
+              + "HAVING\n"
+              + "  SUM(`tt`.`i`) < 10\n"
+              + "ORDER BY\n"
+              + "  `t1`.`x`,\n"
+              + "  `t1`.`y`\n"
               + "LIMIT ? OFFSET ?",
           node.toString(false));
     }
@@ -937,7 +937,7 @@ public class MySQLASTBuilderTest {
     final Snapshot snapshot2 = ctx.snapshot();
 
     ctx.derive();
-    final SQLNode binary = SQLNode.simple(BINARY);
+    final SQLNode binary = SQLNode.expr(BINARY);
     binary.set(BINARY_OP, BinaryOp.OR);
     binary.set(BINARY_LEFT, node.copy());
     binary.set(BINARY_RIGHT, oneEqOne);
@@ -946,7 +946,7 @@ public class MySQLASTBuilderTest {
     final Snapshot snapshot3 = ctx.snapshot();
 
     ctx.derive();
-    final SQLNode literal = SQLNode.simple(LITERAL);
+    final SQLNode literal = SQLNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.BOOL);
     literal.set(LITERAL_VALUE, true);
     node.set(BINARY_RIGHT, literal);

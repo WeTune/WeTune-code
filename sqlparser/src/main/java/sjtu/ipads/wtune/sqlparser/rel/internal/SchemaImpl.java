@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SQLParser.splitSql;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.rel.Column.Flag.AUTO_INCREMENT;
 

@@ -8,9 +8,11 @@ import sjtu.ipads.wtune.sqlparser.rel.Table;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.tableNameOf;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableNameOf;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public class NativeAttribute extends BaseAttribute {
   private final Column column;
@@ -23,9 +25,9 @@ public class NativeAttribute extends BaseAttribute {
   public static List<Attribute> tableAttributesOf(SQLNode node) {
     if (!SIMPLE_SOURCE.isInstance(node)) throw new IllegalArgumentException();
 
-    final Relation rel = node.relation();
+    final Relation rel = node.get(RELATION);
     final Table table = node.context().schema().table(tableNameOf(node));
-    return listMap(it -> new NativeAttribute(rel, it), table.columns());
+    return listMap(func2(NativeAttribute::new).bind0(rel), table.columns());
   }
 
   @Override
@@ -34,7 +36,7 @@ public class NativeAttribute extends BaseAttribute {
   }
 
   @Override
-  public SQLNode node() {
+  public Attribute reference() {
     return null;
   }
 

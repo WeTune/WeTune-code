@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,17 +13,17 @@ public interface SQLVisitor {
 
   default void leave(SQLNode node) {}
 
-  default boolean enterChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {
+  default boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
     return true;
   }
 
-  default void leaveChild(SQLNode parent, AttrKey<SQLNode> key, SQLNode child) {}
+  default void leaveChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {}
 
-  default boolean enterChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> child) {
+  default boolean enterChildren(SQLNode parent, FieldKey<List<SQLNode>> key, List<SQLNode> child) {
     return true;
   }
 
-  default void leaveChildren(SQLNode parent, AttrKey<List<SQLNode>> key, List<SQLNode> child) {}
+  default void leaveChildren(SQLNode parent, FieldKey<List<SQLNode>> key, List<SQLNode> child) {}
 
   default boolean enterCreateTable(SQLNode createTable) {
     return true;
@@ -341,38 +341,16 @@ public interface SQLVisitor {
     };
   }
 
-  static SQLVisitor bottomUpVisit(Consumer<SQLNode> func) {
-    return new SQLVisitor() {
-      @Override
-      public void leave(SQLNode node) {
-        func.accept(node);
-      }
-    };
-  }
-
-  static SQLVisitor topDownVisit(Consumer<SQLNode> func, AttrDomain... types) {
+  static SQLVisitor topDownVisit(Consumer<SQLNode> func, FieldDomain... types) {
     return new SQLVisitor() {
       @Override
       public boolean enter(SQLNode node) {
-        for (AttrDomain type : types)
+        for (FieldDomain type : types)
           if (type.isInstance(node)) {
             func.accept(node);
             break;
           }
         return true;
-      }
-    };
-  }
-
-  static SQLVisitor bottomUpVisit(Consumer<SQLNode> func, AttrDomain... types) {
-    return new SQLVisitor() {
-      @Override
-      public void leave(SQLNode node) {
-        for (AttrDomain type : types)
-          if (type.isInstance(node)) {
-            func.accept(node);
-            break;
-          }
       }
     };
   }

@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sqlparser.ast.multiversion;
+package sjtu.ipads.wtune.sqlparser.multiversion;
 
 import org.apache.commons.lang3.tuple.Pair;
 

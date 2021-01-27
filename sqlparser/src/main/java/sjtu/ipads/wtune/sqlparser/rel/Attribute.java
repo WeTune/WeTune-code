@@ -1,26 +1,27 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldImpl;
 import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
 import sjtu.ipads.wtune.sqlparser.rel.internal.NativeAttribute;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public interface Attribute {
-  AttrKey<Attribute> ATTRIBUTE = NodeAttrImpl.build("rel.attribute", Attribute.class);
+  FieldKey<Attribute> ATTRIBUTE = NodeFieldImpl.build("rel.attribute", Attribute.class);
 
   String name();
 
   Relation owner();
 
-  SQLNode node();
+  Attribute reference();
 
   Column column();
 
@@ -28,20 +29,20 @@ public interface Attribute {
     final Column column = column();
 
     if (!recursive || column != null) return column;
-    else if (node() != null) return node().get(ATTRIBUTE).column(true);
+    else if (reference() != null) return reference().column(true);
     else return null;
   }
 
   default SQLNode toSelectItem() {
-    final SQLNode columnName = SQLNode.simple(NodeType.COLUMN_NAME);
+    final SQLNode columnName = SQLNode.node(NodeType.COLUMN_NAME);
     final Relation owner = owner();
     columnName.set(COLUMN_NAME_TABLE, owner.alias());
     columnName.set(COLUMN_NAME_COLUMN, name());
 
-    final SQLNode columnRef = SQLNode.simple(COLUMN_REF);
+    final SQLNode columnRef = SQLNode.expr(COLUMN_REF);
     columnRef.set(COLUMN_REF_COLUMN, columnName);
 
-    final SQLNode selectItem = SQLNode.simple(NodeType.SELECT_ITEM);
+    final SQLNode selectItem = SQLNode.node(NodeType.SELECT_ITEM);
     selectItem.set(SELECT_ITEM_ALIAS, name());
     selectItem.set(SELECT_ITEM_EXPR, columnRef);
 
@@ -51,7 +52,7 @@ public interface Attribute {
   static Attribute resolve(SQLNode node) {
     if (!COLUMN_REF.isInstance(node)) throw new IllegalArgumentException();
 
-    final Relation relation = node.relation();
+    final Relation relation = node.get(RELATION);
     final SQLNode column = node.get(COLUMN_REF_COLUMN);
     final String tableName = column.get(COLUMN_NAME_TABLE);
     final String columnName = column.get(COLUMN_NAME_COLUMN);

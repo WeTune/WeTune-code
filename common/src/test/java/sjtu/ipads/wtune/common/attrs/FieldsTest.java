@@ -8,18 +8,18 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AttrsTest {
-  private static class Foo implements Attrs {
-    private final Map<AttrKey, Object> directAttrs = new HashMap<>();
+public class FieldsTest {
+  private static class Foo implements Fields {
+    private final Map<FieldKey, Object> directAttrs = new HashMap<>();
 
     @Override
-    public Map<AttrKey, Object> directAttrs() {
+    public Map<FieldKey, Object> directAttrs() {
       return directAttrs;
     }
   }
 
-  private static final AttrKey<String> ATTR_FIRST = AttrKey.make("wtune.first");
-  private static final AttrKey<Integer> ATTR_SECOND = AttrKey.make("wtune.second");
+  private static final FieldKey<String> ATTR_FIRST = FieldKey.make("wtune.first");
+  private static final FieldKey<Integer> ATTR_SECOND = FieldKey.make("wtune.second");
 
   @Test
   @DisplayName("[common.attrs] attrs")
@@ -33,7 +33,7 @@ public class AttrsTest {
 
     assertEquals(1, foo.setIfAbsent(ATTR_SECOND, 1));
 
-    final Map<AttrKey, Object> oldAttrs = foo.directAttrs();
+    final Map<FieldKey, Object> oldAttrs = foo.directAttrs();
 
     foo = new Foo();
     assertNotSame(oldAttrs, foo.directAttrs());

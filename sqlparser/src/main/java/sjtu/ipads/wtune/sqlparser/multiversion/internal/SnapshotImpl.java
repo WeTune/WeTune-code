@@ -1,6 +1,6 @@
-package sjtu.ipads.wtune.sqlparser.ast.multiversion.internal;
+package sjtu.ipads.wtune.sqlparser.multiversion.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.multiversion.Snapshot;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,6 +9,7 @@ import java.util.List;
 
 public class SnapshotImpl implements Snapshot {
   private final List<Object> keys;
+  private int versionNumber;
 
   private SnapshotImpl(List<Object> keys) {
     this.keys = keys;
@@ -24,6 +25,16 @@ public class SnapshotImpl implements Snapshot {
 
   public static Snapshot build(List<Object> keys) {
     return new SnapshotImpl(keys);
+  }
+
+  @Override
+  public int versionNumber() {
+    return versionNumber;
+  }
+
+  @Override
+  public void setVersionNumber(int versionNumber) {
+    this.versionNumber = versionNumber;
   }
 
   @Override
@@ -47,9 +58,20 @@ public class SnapshotImpl implements Snapshot {
 
 class SingletonSnapshot implements Snapshot {
   private final Object key;
+  private int versionNumber;
 
   SingletonSnapshot(Object key) {
     this.key = key;
+  }
+
+  @Override
+  public int versionNumber() {
+    return versionNumber;
+  }
+
+  @Override
+  public void setVersionNumber(int versionNumber) {
+    this.versionNumber = versionNumber;
   }
 
   @Override
@@ -77,6 +99,14 @@ class SingletonSnapshot implements Snapshot {
 
 class EmptySnapshot implements Snapshot {
   static Snapshot INSTANCE = new EmptySnapshot();
+
+  @Override
+  public int versionNumber() {
+    return 0;
+  }
+
+  @Override
+  public void setVersionNumber(int versionNumber) {}
 
   @Override
   public Snapshot merge(Snapshot snapshot) {

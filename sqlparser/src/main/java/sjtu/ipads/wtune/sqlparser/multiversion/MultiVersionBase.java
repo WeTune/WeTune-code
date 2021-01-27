@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sqlparser.ast.multiversion;
+package sjtu.ipads.wtune.sqlparser.multiversion;
 
 public abstract class MultiVersionBase<C, B> implements MultiVersion {
   protected C current;

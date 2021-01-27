@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
-import sjtu.ipads.wtune.sqlparser.ast.multiversion.MultiVersion;
+import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
 
 public interface SQLContext extends MultiVersion {
@@ -18,10 +18,6 @@ public interface SQLContext extends MultiVersion {
   <M> M manager(Class<M> mgrClazz);
 
   <M> void addManager(Class<? super M> cls, M mgr);
-
-  default void readSchema(String str) {
-    setSchema(Schema.parse(dbType(), str));
-  }
 
   static SQLNode manage(String dbType, SQLNode root) {
     final SQLContext ctx = SQLContextImpl.build(dbType);

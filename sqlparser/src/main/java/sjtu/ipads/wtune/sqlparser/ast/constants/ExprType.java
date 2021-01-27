@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.ExprAttrImpl;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ExprFieldImpl;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 
-public enum ExprType implements AttrDomain {
+public enum ExprType implements FieldDomain {
   UNKNOWN,
   VARIABLE,
   COLUMN_REF,
@@ -46,7 +46,7 @@ public enum ExprType implements AttrDomain {
   }
 
   @Override
-  public <T, R extends T> AttrKey<R> attr(String name, Class<T> clazz) {
-    return ExprAttrImpl.build(this, name, clazz);
+  public <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz) {
+    return ExprFieldImpl.build(this, name, clazz);
   }
 }

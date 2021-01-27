@@ -1,19 +1,20 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.TableSourceAttrImpl;
+import sjtu.ipads.wtune.sqlparser.ast.internal.TableSourceFieldImpl;
 
-public enum TableSourceType implements AttrDomain {
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
+
+public enum TableSourceType implements FieldDomain {
   SIMPLE_SOURCE,
   JOINED,
   DERIVED_SOURCE;
 
   @Override
   public boolean isInstance(SQLNode node) {
-    return node != null && node.get(NodeAttr.TABLE_SOURCE_KIND) == this;
+    return node != null && node.get(TABLE_SOURCE_KIND) == this;
   }
 
   public boolean isJoined() {
@@ -29,7 +30,7 @@ public enum TableSourceType implements AttrDomain {
   }
 
   @Override
-  public <T, R extends T> AttrKey<R> attr(String name, Class<T> clazz) {
-    return TableSourceAttrImpl.build(this, name, clazz);
+  public <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz) {
+    return TableSourceFieldImpl.build(this, name, clazz);
   }
 }

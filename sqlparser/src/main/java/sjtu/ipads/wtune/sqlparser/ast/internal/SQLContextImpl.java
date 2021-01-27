@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.ast.AttributeManager;
-import sjtu.ipads.wtune.sqlparser.ast.multiversion.MultiVersion;
-import sjtu.ipads.wtune.sqlparser.ast.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
+import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
+import sjtu.ipads.wtune.sqlparser.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.rel.Schema;
 
 import java.util.HashMap;
@@ -11,14 +11,17 @@ import java.util.Map;
 
 public class SQLContextImpl implements SQLContext {
   private final String dbType;
-  private final AttributeManager attrMgr;
+  private final FieldManager attrMgr;
 
   private Schema schema;
   private Map<Class<?>, Object> mgrs;
 
+  private Snapshot snapshot;
+  private int versionNumber;
+
   private SQLContextImpl(String dbType) {
     this.dbType = dbType;
-    this.attrMgr = AttributeManager.empty();
+    this.attrMgr = FieldManager.empty();
   }
 
   public static SQLContext build(String dbType) {
@@ -43,7 +46,7 @@ public class SQLContextImpl implements SQLContext {
   @Override
   @SuppressWarnings("unchecked")
   public <M> M manager(Class<M> mgrClazz) {
-    if (mgrClazz == AttributeManager.class) return (M) attrMgr;
+    if (mgrClazz == FieldManager.class) return (M) attrMgr;
     else if (mgrs == null) return null;
     else return (M) mgrs.get(mgrClazz);
   }
@@ -56,6 +59,9 @@ public class SQLContextImpl implements SQLContext {
 
   @Override
   public void derive() {
+    ++versionNumber;
+    snapshot = null;
+
     attrMgr.derive();
 
     if (mgrs != null)
@@ -65,6 +71,8 @@ public class SQLContextImpl implements SQLContext {
 
   @Override
   public Snapshot snapshot() {
+    if (snapshot != null && snapshot.versionNumber() == versionNumber) return snapshot;
+
     Snapshot snapshot = attrMgr.snapshot();
 
     if (mgrs != null)
@@ -72,11 +80,20 @@ public class SQLContextImpl implements SQLContext {
         if (value instanceof MultiVersion)
           snapshot = snapshot.merge(((MultiVersion) value).snapshot());
 
-    return snapshot;
+    snapshot.setVersionNumber(versionNumber);
+    return this.snapshot = snapshot;
+  }
+
+  @Override
+  public int versionNumber() {
+    return versionNumber;
   }
 
   @Override
   public void setSnapshot(Snapshot snapshot) {
+    this.versionNumber = snapshot.versionNumber();
+    this.snapshot = snapshot;
+
     attrMgr.setSnapshot(snapshot);
 
     if (mgrs != null)

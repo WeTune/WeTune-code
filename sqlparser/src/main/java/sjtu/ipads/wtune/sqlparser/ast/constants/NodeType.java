@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl;
+import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldImpl;
 
-public enum NodeType implements AttrDomain {
+public enum NodeType implements FieldDomain {
   INVALID,
   NAME_2,
   NAME_3,
@@ -38,7 +38,7 @@ public enum NodeType implements AttrDomain {
   }
 
   @Override
-  public <T, R extends T> AttrKey<R> attr(String name, Class<T> clazz) {
-    return NodeAttrImpl.build(this, name, clazz);
+  public <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz) {
+    return NodeFieldImpl.build(this, name, clazz);
   }
 }

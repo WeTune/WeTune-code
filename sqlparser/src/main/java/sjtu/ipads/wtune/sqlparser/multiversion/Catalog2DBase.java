@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sqlparser.ast.multiversion;
+package sjtu.ipads.wtune.sqlparser.multiversion;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;

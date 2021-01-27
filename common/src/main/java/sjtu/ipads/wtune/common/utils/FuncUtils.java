@@ -36,11 +36,11 @@ public interface FuncUtils {
   }
 
   static <T, R, C extends Collection<R>> C collectionMap(
-      Function<? super T, R> func, Iterable<T> os, Supplier<C> supplier) {
+      Function<? super T, ? extends R> func, Iterable<T> os, Supplier<C> supplier) {
     return stream(os).map(func).collect(Collectors.toCollection(supplier));
   }
 
-  static <T, R> List<R> listMap(Function<? super T, R> func, Iterable<T> os) {
+  static <T, R> List<R> listMap(Function<? super T, ? extends R> func, Iterable<T> os) {
     return collectionMap(func, os, ArrayList::new);
   }
 

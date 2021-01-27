@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.attrs.Attrs;
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
+import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
@@ -17,7 +16,8 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
@@ -152,51 +152,47 @@ public interface MySQLASTHelper {
     }
 
     final SQLNode node = factory.newNode(TABLE_NAME);
-    node.set(NodeAttr.TABLE_NAME_SCHEMA, schema);
-    node.set(NodeAttr.TABLE_NAME_TABLE, table);
+    node.set(TABLE_NAME_SCHEMA, schema);
+    node.set(TABLE_NAME_TABLE, table);
 
     return node;
   }
 
-  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Attrs out) {
+  static void collectColumnAttrs(List<MySQLParser.ColumnAttributeContext> attrs, Fields out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectColumnAttr(attr, out));
   }
 
-  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Attrs out) {
+  static void collectGColumnAttrs(List<MySQLParser.GcolAttributeContext> attrs, Fields out) {
     if (attrs == null) return;
     attrs.forEach(attr -> collectGColumnAttr(attr, out));
   }
 
-  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Attrs out) {
+  static void collectColumnAttr(MySQLParser.ColumnAttributeContext attrs, Fields out) {
     if (attrs.NOT_SYMBOL() != null && attrs.nullLiteral() != null)
-      out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
-    if (attrs.checkConstraint() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.CHECK);
-    if (attrs.DEFAULT_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_DEFAULT);
-    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_AUTOINCREMENT);
+      out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+    if (attrs.checkConstraint() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.CHECK);
+    if (attrs.DEFAULT_SYMBOL() != null) out.flag(COLUMN_DEF_DEFAULT);
+    if (attrs.AUTO_INCREMENT_SYMBOL() != null) out.flag(COLUMN_DEF_AUTOINCREMENT);
   }
 
-  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Attrs out) {
-    if (attrs.notRule() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
-    if (attrs.UNIQUE_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.UNIQUE);
-    if (attrs.PRIMARY_SYMBOL() != null) out.flag(NodeAttr.COLUMN_DEF_CONS, ConstraintType.PRIMARY);
+  static void collectGColumnAttr(MySQLParser.GcolAttributeContext attrs, Fields out) {
+    if (attrs.notRule() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.NOT_NULL);
+    if (attrs.UNIQUE_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.UNIQUE);
+    if (attrs.PRIMARY_SYMBOL() != null) out.flag(COLUMN_DEF_CONS, ConstraintType.PRIMARY);
   }
 
   static IndexType parseIndexType(MySQLParser.IndexTypeContext indexType) {
     if (indexType == null) return null;
 
-    switch (indexType.algorithm.getText().toLowerCase()) {
-      case "rtree":
-        return IndexType.RTREE;
-      case "hash":
-        return IndexType.HASH;
-      case "btree":
-        return IndexType.BTREE;
-      default:
-        return null;
-    }
+    return switch (indexType.algorithm.getText().toLowerCase()) {
+      case "rtree" -> IndexType.RTREE;
+      case "hash" -> IndexType.HASH;
+      case "btree" -> IndexType.BTREE;
+      default -> null;
+    };
   }
 
   static IndexType parseIndexType(MySQLParser.IndexNameAndTypeContext ctx) {
@@ -421,21 +417,13 @@ public interface MySQLASTHelper {
     if (token == null) return null;
 
     final String text = token.getText();
-    switch (token.getType()) {
-      case MySQLLexer.INT_NUMBER:
-        return Pair.of(LiteralType.INTEGER, Integer.parseInt(text));
-
-      case MySQLLexer.LONG_NUMBER:
-      case MySQLLexer.ULONGLONG_NUMBER:
-        return Pair.of(LiteralType.LONG, Long.parseLong(text));
-
-      case MySQLLexer.DECIMAL_NUMBER:
-      case MySQLLexer.FLOAT_NUMBER:
-        return Pair.of(LiteralType.FRACTIONAL, Double.parseDouble(text));
-
-      default:
-        return null;
-    }
+    return switch (token.getType()) {
+      case MySQLLexer.INT_NUMBER -> Pair.of(LiteralType.INTEGER, Integer.parseInt(text));
+      case MySQLLexer.LONG_NUMBER, MySQLLexer.ULONGLONG_NUMBER -> Pair.of(LiteralType.LONG, Long.parseLong(text));
+      case MySQLLexer.DECIMAL_NUMBER, MySQLLexer.FLOAT_NUMBER -> Pair
+          .of(LiteralType.FRACTIONAL, Double.parseDouble(text));
+      default -> null;
+    };
   }
 
   static OLAPOption parseOLAPOption(MySQLParser.OlapOptionContext ctx) {
@@ -491,7 +479,7 @@ public interface MySQLASTHelper {
   static SQLNode wrapAsQuery(SQLNodeFactory factory, SQLNode node) {
     if (node.nodeType() == NodeType.QUERY_SPEC || node.nodeType() == NodeType.SET_OP) {
       final SQLNode query = factory.newNode(NodeType.QUERY);
-      query.set(NodeAttr.QUERY_BODY, node);
+      query.set(QUERY_BODY, node);
       return query;
     }
     return node;

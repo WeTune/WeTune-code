@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.rel.Table;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
 
 public class TableImpl implements Table {

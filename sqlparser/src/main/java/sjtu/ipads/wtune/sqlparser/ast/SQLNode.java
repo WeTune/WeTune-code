@@ -1,20 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeImpl;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
 import java.util.Map;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.topDownVisit;
 
-public interface SQLNode extends Attrs {
+public interface SQLNode extends Fields {
   String POSTGRESQL = "postgresql";
   String MYSQL = "mysql";
 
@@ -36,6 +35,12 @@ public interface SQLNode extends Attrs {
 
   String toString(boolean oneline);
 
+  default SQLNode copy() {
+    final SQLNode newNode = node(nodeType());
+    newNode.update(this);
+    return newNode;
+  }
+
   default String dbType() {
     return context() == null ? MYSQL : context().dbType();
   }
@@ -48,13 +53,9 @@ public interface SQLNode extends Attrs {
     return get(PARENT);
   }
 
-  default Map<AttrKey, Object> attrs() {
-    final AttributeManager mgr = attrMgr();
-    return mgr != null ? mgr.getAttrs(this) : directAttrs();
-  }
-
-  default Relation relation() {
-    return get(RELATION);
+  default Map<FieldKey, Object> attrs() {
+    final FieldManager mgr = attrMgr();
+    return mgr != null ? mgr.getFields(this) : directAttrs();
   }
 
   default <T> T manager(Class<T> cls) {
@@ -62,28 +63,22 @@ public interface SQLNode extends Attrs {
     return ctx != null ? ctx.manager(cls) : null;
   }
 
-  default SQLNode copy() {
-    final SQLNode newNode = simple(nodeType());
-    newNode.update(this);
-    return newNode;
+  default FieldManager attrMgr() {
+    return manager(FieldManager.class);
   }
 
-  default AttributeManager attrMgr() {
-    return manager(AttributeManager.class);
-  }
-
-  static SQLNode simple(NodeType nodeType) {
+  static SQLNode node(NodeType nodeType) {
     return NodeImpl.build(nodeType);
   }
 
-  static SQLNode simple(ExprType exprKind) {
-    final SQLNode node = simple(NodeType.EXPR);
+  static SQLNode expr(ExprType exprKind) {
+    final SQLNode node = node(NodeType.EXPR);
     node.set(EXPR_KIND, exprKind);
     return node;
   }
 
-  static SQLNode simple(TableSourceType tableSourceKind) {
-    final SQLNode node = simple(NodeType.TABLE_SOURCE);
+  static SQLNode tableSource(TableSourceType tableSourceKind) {
+    final SQLNode node = node(NodeType.TABLE_SOURCE);
     node.set(TABLE_SOURCE_KIND, tableSourceKind);
     return node;
   }
@@ -91,5 +86,10 @@ public interface SQLNode extends Attrs {
   static void setParent(Object obj, SQLNode parent) {
     if (obj instanceof SQLNode) ((SQLNode) obj).set(PARENT, parent);
     else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setParent(it, parent));
+  }
+
+  static void setContext(Object obj, SQLContext ctx) {
+    if (obj instanceof SQLNode) ((SQLNode) obj).accept(topDownVisit(it -> it.setContext(ctx)));
+    else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setContext(it, ctx));
   }
 }

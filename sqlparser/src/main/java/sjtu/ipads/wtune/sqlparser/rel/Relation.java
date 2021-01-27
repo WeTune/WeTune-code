@@ -1,26 +1,25 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
-import sjtu.ipads.wtune.common.attrs.AttrKey;
-import sjtu.ipads.wtune.sqlparser.ast.AttrDomain;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeAttrImpl;
+import sjtu.ipads.wtune.sqlparser.rel.internal.RelationField;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.bottomUpVisit;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.rel.internal.RelationImpl.rootedBy;
 
 public interface Relation {
-  AttrKey<Relation> RELATION = NodeAttrImpl.build("rel.relation", Relation.class);
+  FieldKey<Relation> RELATION = RelationField.INSTANCE;
 
-  AttrDomain[] RELATION_BOUNDARY = {QUERY, SIMPLE_SOURCE, DERIVED_SOURCE};
+  FieldDomain[] RELATION_BOUNDARY = {QUERY, SIMPLE_SOURCE, DERIVED_SOURCE};
 
-  SQLNode node();
+  SQLNode node(); // invariant:isRelationBounder(node())
 
   String alias();
 
@@ -28,9 +27,16 @@ public interface Relation {
 
   List<Attribute> attributes();
 
+  void reset();
+
+  default boolean isInput() {
+    return TABLE_SOURCE.isInstance(node())
+        || (SET_OP.isInstance(node().parent()) && node().parent().get(SET_OP_LEFT) == node());
+  }
+
   default Relation parent() {
     final SQLNode parentNode = node().parent();
-    return parentNode == null ? null : parentNode.relation();
+    return parentNode == null ? null : parentNode.get(RELATION);
   }
 
   default Attribute attribute(String name) {
@@ -45,11 +51,11 @@ public interface Relation {
   }
 
   default Relation auxiliaryInput() {
-    return DERIVED_SOURCE.isInstance(node()) ? null : parent();
+    return DERIVED_SOURCE.isInstance(node()) || SIMPLE_SOURCE.isInstance(node()) ? null : parent();
   }
 
   static boolean isRelationBoundary(SQLNode node) {
-    for (AttrDomain attrDomain : RELATION_BOUNDARY) if (attrDomain.isInstance(node)) return true;
+    for (FieldDomain fieldDomain : RELATION_BOUNDARY) if (fieldDomain.isInstance(node)) return true;
     return false;
   }
 
@@ -73,8 +79,6 @@ public interface Relation {
     // ensure (node.parent() == null || node.parent().relation() != null)
 
     node.accept(topDownVisit(it -> it.set(RELATION, rootedBy(it)), RELATION_BOUNDARY));
-    node.accept(bottomUpVisit(func(SQLNode::relation).then(Relation::attributes), QUERY));
-
-    return node.relation();
+    return node.get(RELATION);
   }
 }

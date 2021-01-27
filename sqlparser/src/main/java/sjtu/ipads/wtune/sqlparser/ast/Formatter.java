@@ -6,8 +6,9 @@ import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.trimTrailing;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.ARRAY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
@@ -107,18 +108,18 @@ public class Formatter implements SQLVisitor {
   public boolean enterCreateTable(SQLNode createTable) {
     append("CREATE TABLE ");
 
-    safeVisit(createTable.get(NodeAttr.CREATE_TABLE_NAME));
+    safeVisit(createTable.get(CREATE_TABLE_NAME));
 
     append(" (");
     increaseIndent();
 
-    for (var colDef : createTable.get(NodeAttr.CREATE_TABLE_COLUMNS)) {
+    for (var colDef : createTable.get(CREATE_TABLE_COLUMNS)) {
       breakLine();
       safeVisit(colDef);
       append(',');
     }
 
-    for (var conDef : createTable.get(NodeAttr.CREATE_TABLE_CONSTRAINTS)) {
+    for (var conDef : createTable.get(CREATE_TABLE_CONSTRAINTS)) {
       breakLine();
       safeVisit(conDef);
       append(',');
@@ -130,30 +131,30 @@ public class Formatter implements SQLVisitor {
     insertIndent();
     append(')');
 
-    final String engine = createTable.get(NodeAttr.CREATE_TABLE_ENGINE);
+    final String engine = createTable.get(CREATE_TABLE_ENGINE);
     if (engine != null) append(" ENGINE = '").append(engine).append('\'');
     return false;
   }
 
   @Override
   public boolean enterTableName(SQLNode tableName) {
-    appendName(tableName, tableName.get(NodeAttr.TABLE_NAME_SCHEMA), true);
-    appendName(tableName, tableName.get(NodeAttr.TABLE_NAME_TABLE), false);
+    appendName(tableName, tableName.get(TABLE_NAME_SCHEMA), true);
+    appendName(tableName, tableName.get(TABLE_NAME_TABLE), false);
 
     return false;
   }
 
   @Override
   public boolean enterColumnDef(SQLNode colDef) {
-    safeVisit(colDef.get(NodeAttr.COLUMN_DEF_NAME));
-    append(' ').append(colDef.get(NodeAttr.COLUMN_DEF_DATATYPE_RAW));
+    safeVisit(colDef.get(COLUMN_DEF_NAME));
+    append(' ').append(colDef.get(COLUMN_DEF_DATATYPE_RAW));
 
-    if (colDef.isFlag(NodeAttr.COLUMN_DEF_CONS, UNIQUE)) append(" UNIQUE");
-    if (colDef.isFlag(NodeAttr.COLUMN_DEF_CONS, PRIMARY)) append(" PRIMARY KEY");
-    if (colDef.isFlag(NodeAttr.COLUMN_DEF_CONS, NOT_NULL)) append(" NOT NULL");
-    if (colDef.isFlag(NodeAttr.COLUMN_DEF_AUTOINCREMENT)) append(" AUTO_INCREMENT");
+    if (colDef.isFlag(COLUMN_DEF_CONS, UNIQUE)) append(" UNIQUE");
+    if (colDef.isFlag(COLUMN_DEF_CONS, PRIMARY)) append(" PRIMARY KEY");
+    if (colDef.isFlag(COLUMN_DEF_CONS, NOT_NULL)) append(" NOT NULL");
+    if (colDef.isFlag(COLUMN_DEF_AUTOINCREMENT)) append(" AUTO_INCREMENT");
 
-    final var references = colDef.get(NodeAttr.COLUMN_DEF_REF);
+    final var references = colDef.get(COLUMN_DEF_REF);
     if (references != null) safeVisit(references);
 
     return false;
@@ -161,42 +162,42 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterName2(SQLNode name2) {
-    appendName(name2, name2.get(NodeAttr.NAME_2_0), true);
-    appendName(name2, name2.get(NodeAttr.NAME_2_1), false);
+    appendName(name2, name2.get(NAME_2_0), true);
+    appendName(name2, name2.get(NAME_2_1), false);
     return false;
   }
 
   @Override
   public boolean enterName3(SQLNode name3) {
-    appendName(name3, name3.get(NodeAttr.NAME_3_0), true);
-    appendName(name3, name3.get(NodeAttr.NAME_3_1), true);
-    appendName(name3, name3.get(NodeAttr.NAME_3_2), false);
+    appendName(name3, name3.get(NAME_3_0), true);
+    appendName(name3, name3.get(NAME_3_1), true);
+    appendName(name3, name3.get(NAME_3_2), false);
     return false;
   }
 
   @Override
   public boolean enterColumnName(SQLNode colName) {
-    appendName(colName, colName.get(NodeAttr.COLUMN_NAME_SCHEMA), true);
-    appendName(colName, colName.get(NodeAttr.COLUMN_NAME_TABLE), true);
-    appendName(colName, colName.get(NodeAttr.COLUMN_NAME_COLUMN), false);
+    appendName(colName, colName.get(COLUMN_NAME_SCHEMA), true);
+    appendName(colName, colName.get(COLUMN_NAME_TABLE), true);
+    appendName(colName, colName.get(COLUMN_NAME_COLUMN), false);
 
     return false;
   }
 
   @Override
   public boolean enterCommonName(SQLNode commonName) {
-    appendName(commonName, commonName.get(NodeAttr.NAME_3_0), true);
-    appendName(commonName, commonName.get(NodeAttr.NAME_3_1), true);
-    appendName(commonName, commonName.get(NodeAttr.NAME_3_2), false);
+    appendName(commonName, commonName.get(NAME_3_0), true);
+    appendName(commonName, commonName.get(NAME_3_1), true);
+    appendName(commonName, commonName.get(NAME_3_2), false);
     return false;
   }
 
   @Override
   public boolean enterReferences(SQLNode ref) {
     append(" REFERENCES ");
-    safeVisit(ref.get(NodeAttr.REFERENCES_TABLE));
+    safeVisit(ref.get(REFERENCES_TABLE));
 
-    final var columns = ref.get(NodeAttr.REFERENCES_COLUMNS);
+    final var columns = ref.get(REFERENCES_COLUMNS);
     if (columns != null) {
       try (final var ignored = withParen(true)) {
         for (SQLNode column : columns) {
@@ -212,33 +213,23 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterIndexDef(SQLNode indexDef) {
-    final var constraint = indexDef.get(NodeAttr.INDEX_DEF_CONS);
-    final var type = indexDef.get(NodeAttr.INDEX_DEF_TYPE);
-    final var name = indexDef.get(NodeAttr.INDEX_DEF_NAME);
-    final var keys = indexDef.get(NodeAttr.INDEX_DEF_KEYS);
-    final var refs = indexDef.get(NodeAttr.INDEX_DEF_REFS);
+    final var constraint = indexDef.get(INDEX_DEF_CONS);
+    final var type = indexDef.get(INDEX_DEF_TYPE);
+    final var name = indexDef.get(INDEX_DEF_NAME);
+    final var keys = indexDef.get(INDEX_DEF_KEYS);
+    final var refs = indexDef.get(INDEX_DEF_REFS);
 
     if (constraint != null)
       switch (constraint) {
-        case PRIMARY:
-          append("PRIMARY ");
-          break;
-        case UNIQUE:
-          append("UNIQUE ");
-          break;
-        case FOREIGN:
-          append("FOREIGN ");
-          break;
+        case PRIMARY -> append("PRIMARY ");
+        case UNIQUE -> append("UNIQUE ");
+        case FOREIGN -> append("FOREIGN ");
       }
 
     if (type != null)
       switch (type) {
-        case FULLTEXT:
-          append("FULLTEXT ");
-          break;
-        case SPATIAL:
-          append("SPATIAL ");
-          break;
+        case FULLTEXT -> append("FULLTEXT ");
+        case SPATIAL -> append("SPATIAL ");
       }
 
     append("KEY ");
@@ -257,15 +248,9 @@ public class Formatter implements SQLVisitor {
 
     if (type != null)
       switch (type) {
-        case BTREE:
-          append(" USING BTREE ");
-          break;
-        case RTREE:
-          append(" USING RTREE ");
-          break;
-        case HASH:
-          append(" USING HASH ");
-          break;
+        case BTREE -> append(" USING BTREE ");
+        case RTREE -> append(" USING RTREE ");
+        case HASH -> append(" USING HASH ");
       }
 
     return false;
@@ -273,10 +258,10 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterKeyPart(SQLNode keyPart) {
-    final String columnName = keyPart.get(NodeAttr.KEY_PART_COLUMN);
-    final Integer length = keyPart.get(NodeAttr.KEY_PART_LEN);
-    final KeyDirection direction = keyPart.get(NodeAttr.KEY_PART_DIRECTION);
-    final SQLNode expr = keyPart.get(NodeAttr.KEY_PART_EXPR);
+    final String columnName = keyPart.get(KEY_PART_COLUMN);
+    final Integer length = keyPart.get(KEY_PART_LEN);
+    final KeyDirection direction = keyPart.get(KEY_PART_DIRECTION);
+    final SQLNode expr = keyPart.get(KEY_PART_EXPR);
 
     if (columnName != null) appendName(keyPart, columnName, false);
     if (length != null) append('(').append(length).append(')');
@@ -307,30 +292,16 @@ public class Formatter implements SQLVisitor {
   public boolean enterLiteral(SQLNode literal) {
     final Object value = literal.get(LITERAL_VALUE);
     switch (literal.get(LITERAL_TYPE)) {
-      case TEXT:
-        append('\'').append(value).append('\'');
-        break;
-      case INTEGER:
-      case LONG:
-      case FRACTIONAL:
-      case HEX:
-        append(value);
-        break;
-      case BOOL:
-        append(value.toString().toUpperCase());
-        break;
-      case NULL:
-        append("NULL");
-        break;
-      case UNKNOWN:
-        append("UNKNOWN");
-        break;
-      case TEMPORAL:
-        builder
-            .append(literal.get(LITERAL_UNIT).toUpperCase())
-            .append(" '")
-            .append(value)
-            .append('\'');
+      case TEXT -> append('\'').append(value).append('\'');
+      case INTEGER, LONG, FRACTIONAL, HEX -> append(value);
+      case BOOL -> append(value.toString().toUpperCase());
+      case NULL -> append("NULL");
+      case UNKNOWN -> append("UNKNOWN");
+      case TEMPORAL -> builder
+          .append(literal.get(LITERAL_UNIT).toUpperCase())
+          .append(" '")
+          .append(value)
+          .append('\'');
     }
 
     return false;
@@ -341,8 +312,8 @@ public class Formatter implements SQLVisitor {
     final SQLNode name = funcCall.get(FUNC_CALL_NAME);
     final List<SQLNode> args = funcCall.getOr(FUNC_CALL_ARGS, emptyList());
 
-    final String schemaName = name.get(NodeAttr.NAME_2_0);
-    final String funcName = name.get(NodeAttr.NAME_2_1);
+    final String schemaName = name.get(NAME_2_0);
+    final String funcName = name.get(NAME_2_1);
 
     if (schemaName == null && "extract".equalsIgnoreCase(funcName)) {
       append("EXTRACT");
@@ -722,9 +693,9 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterWindowFrame(SQLNode windowFrame) {
-    append(windowFrame.get(NodeAttr.WINDOW_FRAME_UNIT)).append(' ');
-    final SQLNode start = windowFrame.get(NodeAttr.WINDOW_FRAME_START);
-    final SQLNode end = windowFrame.get(NodeAttr.WINDOW_FRAME_END);
+    append(windowFrame.get(WINDOW_FRAME_UNIT)).append(' ');
+    final SQLNode start = windowFrame.get(WINDOW_FRAME_START);
+    final SQLNode end = windowFrame.get(WINDOW_FRAME_END);
 
     if (end != null) append("BETWEEN ");
     safeVisit(start);
@@ -733,7 +704,7 @@ public class Formatter implements SQLVisitor {
       safeVisit(end);
     }
 
-    final WindowExclusion exclusion = windowFrame.get(NodeAttr.WINDOW_FRAME_EXCLUSION);
+    final WindowExclusion exclusion = windowFrame.get(WINDOW_FRAME_EXCLUSION);
     if (exclusion != null) append(" EXCLUDE ").append(exclusion.text());
 
     return false;
@@ -741,10 +712,10 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterFrameBound(SQLNode frameBound) {
-    if (frameBound.get(NodeAttr.FRAME_BOUND_DIRECTION) == null) append("CURRENT ROW");
+    if (frameBound.get(FRAME_BOUND_DIRECTION) == null) append("CURRENT ROW");
     else {
-      safeVisit(frameBound.get(NodeAttr.FRAME_BOUND_EXPR));
-      append(' ').append(frameBound.get(NodeAttr.FRAME_BOUND_DIRECTION));
+      safeVisit(frameBound.get(FRAME_BOUND_EXPR));
+      append(' ').append(frameBound.get(FRAME_BOUND_DIRECTION));
     }
 
     return false;
@@ -752,7 +723,7 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterWindowSpec(SQLNode windowSpec) {
-    final String alias = windowSpec.get(NodeAttr.WINDOW_SPEC_ALIAS);
+    final String alias = windowSpec.get(WINDOW_SPEC_ALIAS);
     if (alias != null) {
       appendName(windowSpec, alias, false);
       append(" AS ");
@@ -760,22 +731,22 @@ public class Formatter implements SQLVisitor {
 
     append("(");
 
-    final String name = windowSpec.get(NodeAttr.WINDOW_SPEC_NAME);
+    final String name = windowSpec.get(WINDOW_SPEC_NAME);
     if (name != null) appendName(windowSpec, name, false);
 
-    final List<SQLNode> partition = windowSpec.get(NodeAttr.WINDOW_SPEC_PARTITION);
+    final List<SQLNode> partition = windowSpec.get(WINDOW_SPEC_PARTITION);
     if (partition != null && !partition.isEmpty()) {
       append(" PARTITION BY ");
       appendNodes(partition, false);
     }
 
-    final List<SQLNode> order = windowSpec.get(NodeAttr.WINDOW_SPEC_ORDER);
+    final List<SQLNode> order = windowSpec.get(WINDOW_SPEC_ORDER);
     if (order != null && !order.isEmpty()) {
       append(" ORDER BY ");
       appendNodes(order, false);
     }
 
-    final SQLNode frame = windowSpec.get(NodeAttr.WINDOW_SPEC_FRAME);
+    final SQLNode frame = windowSpec.get(WINDOW_SPEC_FRAME);
     if (frame != null) {
       append(' ');
       safeVisit(frame);
@@ -852,17 +823,17 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterOrderItem(SQLNode orderItem) {
-    safeVisit(orderItem.get(NodeAttr.ORDER_ITEM_EXPR));
-    final KeyDirection direction = orderItem.get(NodeAttr.ORDER_ITEM_DIRECTION);
+    safeVisit(orderItem.get(ORDER_ITEM_EXPR));
+    final KeyDirection direction = orderItem.get(ORDER_ITEM_DIRECTION);
     if (direction != null) append(' ').append(direction.name());
     return false;
   }
 
   @Override
   public boolean enterSelectItem(SQLNode selectItem) {
-    safeVisit(selectItem.get(NodeAttr.SELECT_ITEM_EXPR));
+    safeVisit(selectItem.get(SELECT_ITEM_EXPR));
 
-    final String alias = selectItem.get(NodeAttr.SELECT_ITEM_ALIAS);
+    final String alias = selectItem.get(SELECT_ITEM_ALIAS);
     if (alias != null) {
       append(" AS ");
       appendName(selectItem, alias, false);
@@ -872,15 +843,15 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterIndexHint(SQLNode indexHint) {
-    final IndexHintType type = indexHint.get(NodeAttr.INDEX_HINT_TYPE);
+    final IndexHintType type = indexHint.get(INDEX_HINT_TYPE);
     append(type).append(" INDEX");
 
-    final IndexHintTarget target = indexHint.get(NodeAttr.INDEX_HINT_TARGET);
+    final IndexHintTarget target = indexHint.get(INDEX_HINT_TARGET);
     if (target != null) append(" FOR ").append(target.text());
 
     append(' ');
     try (final var ignored = withParen(true)) {
-      final List<String> names = indexHint.get(NodeAttr.INDEX_HINT_NAMES);
+      final List<String> names = indexHint.get(INDEX_HINT_NAMES);
 
       if (names != null && !names.isEmpty()) {
         for (String name : names) {
@@ -922,9 +893,9 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterQuery(SQLNode query) {
-    safeVisit(query.get(NodeAttr.QUERY_BODY));
+    safeVisit(query.get(QUERY_BODY));
 
-    final List<SQLNode> orderBy = query.get(NodeAttr.QUERY_ORDER_BY);
+    final List<SQLNode> orderBy = query.get(QUERY_ORDER_BY);
     if (orderBy != null) {
       breakLine();
       append("ORDER BY");
@@ -934,8 +905,8 @@ public class Formatter implements SQLVisitor {
       decreaseIndent();
     }
 
-    final SQLNode offset = query.get(NodeAttr.QUERY_OFFSET);
-    final SQLNode limit = query.get(NodeAttr.QUERY_LIMIT);
+    final SQLNode offset = query.get(QUERY_OFFSET);
+    final SQLNode limit = query.get(QUERY_LIMIT);
 
     if (limit != null) {
       breakLine();
@@ -952,19 +923,19 @@ public class Formatter implements SQLVisitor {
 
   @Override
   public boolean enterQuerySpec(SQLNode querySpec) {
-    final boolean distinct = querySpec.isFlag(NodeAttr.QUERY_SPEC_DISTINCT);
-    final List<SQLNode> selectItems = querySpec.get(NodeAttr.QUERY_SPEC_SELECT_ITEMS);
-    final SQLNode from = querySpec.get(NodeAttr.QUERY_SPEC_FROM);
-    final SQLNode where = querySpec.get(NodeAttr.QUERY_SPEC_WHERE);
-    final List<SQLNode> groupBy = querySpec.get(NodeAttr.QUERY_SPEC_GROUP_BY);
-    final OLAPOption olapOption = querySpec.get(NodeAttr.QUERY_SPEC_OLAP_OPTION);
-    final SQLNode having = querySpec.get(NodeAttr.QUERY_SPEC_HAVING);
-    final List<SQLNode> windows = querySpec.get(NodeAttr.QUERY_SPEC_WINDOWS);
+    final boolean distinct = querySpec.isFlag(QUERY_SPEC_DISTINCT);
+    final List<SQLNode> selectItems = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
+    final SQLNode from = querySpec.get(QUERY_SPEC_FROM);
+    final SQLNode where = querySpec.get(QUERY_SPEC_WHERE);
+    final List<SQLNode> groupBy = querySpec.get(QUERY_SPEC_GROUP_BY);
+    final OLAPOption olapOption = querySpec.get(QUERY_SPEC_OLAP_OPTION);
+    final SQLNode having = querySpec.get(QUERY_SPEC_HAVING);
+    final List<SQLNode> windows = querySpec.get(QUERY_SPEC_WINDOWS);
 
     append("SELECT");
     if (distinct) append(" DISTINCT");
     if (distinct && SQLNode.POSTGRESQL.equals(querySpec.dbType())) {
-      final List<SQLNode> distinctOn = querySpec.get(NodeAttr.QUERY_SPEC_DISTINCT_ON);
+      final List<SQLNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
       if (distinctOn != null && !distinctOn.isEmpty()) {
         append(" ON");
         appendNodes(distinctOn, true, true);
@@ -1042,18 +1013,18 @@ public class Formatter implements SQLVisitor {
   @Override
   public boolean enterSetOp(SQLNode setOp) {
     try (final var ignored = withParen(true)) {
-      safeVisit(setOp.get(NodeAttr.SET_OP_LEFT));
+      safeVisit(setOp.get(SET_OP_LEFT));
     }
 
     breakLine();
-    append(setOp.get(NodeAttr.SET_OP_TYPE));
+    append(setOp.get(SET_OP_TYPE));
 
-    final SetOperationOption option = setOp.get(NodeAttr.SET_OP_OPTION);
+    final SetOperationOption option = setOp.get(SET_OP_OPTION);
     if (option != null) append(' ').append(option);
     breakLine();
 
     try (final var ignored = withParen(true)) {
-      safeVisit(setOp.get(NodeAttr.SET_OP_RIGHT));
+      safeVisit(setOp.get(SET_OP_RIGHT));
     }
 
     return false;
