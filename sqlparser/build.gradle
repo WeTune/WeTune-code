@@ -7,24 +7,28 @@ dependencies {
     implementation('org.apache.commons:commons-lang3:3.10')
 }
 
-def mysqlDir = "$projectDir/src/main/java/sjtu/ipads/wtune/sqlparser/mysql/internal"
-def pgDir = "$projectDir/src/main/java/sjtu/ipads/wtune/sqlparser/pg/internal"
-def genDir = "$projectDir/src/gen/"
-def resourceDir = "$projectDir/src/main/resources"
+def mysqlDir = "src/main/java/sjtu/ipads/wtune/sqlparser/mysql/internal"
+def pgDir = "src/main/java/sjtu/ipads/wtune/sqlparser/pg/internal"
+def genDir = "src/gen/"
+def resourceDir = "src/main/resources"
 
 task antlrMysql {
     if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
-        exec {
-            workingDir resourceDir
-            if (Os.isFamily(Os.FAMILY_WINDOWS))
+        println("generating mysql parser")
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            exec {
+                workingDir resourceDir
                 commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
                         '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                         '-package', 'sjtu.ipads.wtune.sqlparser.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
-            else
+            }
+        else
+            exec {
+                workingDir resourceDir
                 commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
                         '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                         '-package', 'sjtu.ipads.wtune.sqlparser.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
-        }
+            }
     } else {
         println("use generated parser file for mysql")
     }
@@ -32,17 +36,21 @@ task antlrMysql {
 
 task antlrPg {
     if (!file("$pgDir/PGLexer.java").exists() || !file("$pgDir/PGParser.java").exists()) {
-        exec {
-            workingDir resourceDir
-            if (Os.isFamily(Os.FAMILY_WINDOWS))
+        println("generating pg parser")
+        if (Os.isFamily(Os.FAMILY_WINDOWS))
+            exec {
+                workingDir resourceDir
                 commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
                         '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                         '-package', 'sjtu.ipads.wtune.sqlparser.pg.internal', 'PGLexer.g4', 'PGParser.g4'
-            else
+            }
+        else
+            exec {
+                workingDir resourceDir
                 commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
                         '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                         '-package', 'sjtu.ipads.wtune.sqlparser.pg.internal', 'PGLexer.g4', 'PGParser.g4'
-        }
+            }
     } else {
         println("use generated parser file for postgresql")
     }
