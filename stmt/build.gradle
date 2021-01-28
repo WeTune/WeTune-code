@@ -7,10 +7,6 @@ dependencies {
     implementation('org.apache.commons:commons-lang3:3.10')
 }
 
-application {
-    mainClassName = "${moduleName}.scriptgen.ScriptUtils"
-}
-
 def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
 
 task downloadDb {

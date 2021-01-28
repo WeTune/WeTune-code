@@ -6,10 +6,10 @@ before_script:
 cache:
   key:
     files:
-      - data/data.version
+      - wtune_data/data.version
   paths:
     - .gradle/caches
-    - data/wtune.db
+    - wtune_data/wtune.db
     - lib/libz3.so
     - lib/libz3java.so
 
