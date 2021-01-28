@@ -18,4 +18,8 @@ public interface Mutation {
   static SQLNode normalizeConstantTable(SQLNode node) {
     return NormalizeConstantTable.normalize(node);
   }
+
+  static SQLNode normalizeParam(SQLNode node) {
+    return NormalizeParam.normalize(node);
+  }
 }

@@ -101,9 +101,12 @@ public interface ExprFields {
   FieldKey<SubqueryOption> COMPARISON_MOD_OPTION =
       COMPARISON_MOD.attr("option", SubqueryOption.class);
   FieldKey<SQLNode> COMPARISON_MOD_EXPR = COMPARISON_MOD.nodeAttr("expr");
+  // Array
   FieldKey<List<SQLNode>> ARRAY_ELEMENTS = ARRAY.nodesAttr("elements");
+  // TypeCoercion
   FieldKey<SQLDataType> TYPE_COERCION_TYPE = TYPE_COERCION.attr("type", SQLDataType.class);
   FieldKey<String> TYPE_COERCION_STRING = TYPE_COERCION.strAttr("type");
+  // DataTimeOverlap
   FieldKey<SQLNode> DATETIME_OVERLAP_LEFT_START = DATETIME_OVERLAP.nodeAttr("leftStart");
   FieldKey<SQLNode> DATETIME_OVERLAP_LEFT_END = DATETIME_OVERLAP.nodeAttr("leftEnd");
   FieldKey<SQLNode> DATETIME_OVERLAP_RIGHT_START = DATETIME_OVERLAP.nodeAttr("rightStart");

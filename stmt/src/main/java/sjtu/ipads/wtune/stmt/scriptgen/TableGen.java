@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.schema.Table;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +28,7 @@ public class TableGen implements ScriptNode {
         .println("{")
         .increaseIndent()
         .indent()
-        .printf("tableName = '%s',\n", table.tableName())
+        .printf("tableName = '%s',\n", table.name())
         .indent()
         .println("columns = {")
         .increaseIndent();

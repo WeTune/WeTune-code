@@ -1,6 +1,5 @@
 rootProject.name = 'wetune'
 include 'common', 'sqlparser'
-//include 'stmt'
-include 'rawlog'
-include 'superopt'
+include 'stmt'
 include 'symsolver'
+include 'superopt'

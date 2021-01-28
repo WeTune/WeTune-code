@@ -2,13 +2,13 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.rel.Column;
-import sjtu.ipads.wtune.sqlparser.rel.Schema;
-import sjtu.ipads.wtune.sqlparser.rel.Table;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.rel.Column.Flag.*;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.*;
 
 public class TableTest {
   @Test
@@ -37,27 +37,27 @@ public class TableTest {
 
     {
       final Column col0 = table.column("i");
-      assertTrue(col0.isFlagged(PRIMARY));
-      assertTrue(col0.isFlagged(FOREIGN_KEY));
-      assertFalse(col0.isFlagged(AUTO_INCREMENT));
-      assertFalse(col0.isFlagged(HAS_CHECK));
+      assertTrue(col0.isFlag(PRIMARY));
+      assertTrue(col0.isFlag(FOREIGN_KEY));
+      assertFalse(col0.isFlag(AUTO_INCREMENT));
+      assertFalse(col0.isFlag(HAS_CHECK));
     }
 
     {
       final Column col1 = table.column("j");
-      assertFalse(col1.isFlagged(PRIMARY));
-      assertTrue(col1.isFlagged(NOT_NULL));
-      assertTrue(col1.isFlagged(HAS_DEFAULT));
-      assertTrue(col1.isFlagged(INDEXED));
-      assertTrue(col1.isFlagged(UNIQUE));
+      assertFalse(col1.isFlag(PRIMARY));
+      assertTrue(col1.isFlag(NOT_NULL));
+      assertTrue(col1.isFlag(HAS_DEFAULT));
+      assertTrue(col1.isFlag(INDEXED));
+      assertTrue(col1.isFlag(UNIQUE));
     }
 
     {
       final Column col2 = table.column("k");
-      assertFalse(col2.isFlagged(PRIMARY));
-      assertTrue(col2.isFlagged(HAS_CHECK));
-      assertTrue(col2.isFlagged(AUTO_INCREMENT));
-      assertTrue(col2.isFlagged(FOREIGN_KEY));
+      assertFalse(col2.isFlag(PRIMARY));
+      assertTrue(col2.isFlag(HAS_CHECK));
+      assertTrue(col2.isFlag(AUTO_INCREMENT));
+      assertTrue(col2.isFlag(FOREIGN_KEY));
     }
   }
 }

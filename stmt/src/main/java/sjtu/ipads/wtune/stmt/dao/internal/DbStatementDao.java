@@ -1,23 +1,24 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class DbStatementDao extends DbDao implements StatementDao {
-  public DbStatementDao(Supplier<Connection> connectionSupplier) {
-    super(connectionSupplier);
+  private static final StatementDao INSTANCE = new DbStatementDao();
+
+  private DbStatementDao() {}
+
+  public static StatementDao instance() {
+    return INSTANCE;
   }
 
-  static final String KEY_APP_NAME = "appName";
+  static final String KEY_APP_NAME = "app";
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
   static final String KEY_STACK_TRACE = "stackTrace";
@@ -60,7 +61,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       else return null;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -78,7 +79,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       return stmts;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -94,7 +95,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       return stmts;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -114,7 +115,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       delete.executeUpdate();
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -131,7 +132,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
       insert.executeUpdate();
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 }

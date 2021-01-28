@@ -27,18 +27,12 @@ public interface Statement {
 
   Statement alternative(String tag);
 
-  Timing timing(String tag);
-
-  void save();
-
-  void delete(String reason);
-
   default boolean isMain() {
     return "main".equals(tag());
   }
 
-  default App appContext() {
-    return App.find(appName());
+  default App app() {
+    return App.of(appName());
   }
 
   static Statement build(String appName, String rawSql, String stackTrace) {

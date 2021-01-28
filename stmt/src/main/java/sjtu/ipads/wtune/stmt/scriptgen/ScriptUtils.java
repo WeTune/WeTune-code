@@ -1,9 +1,12 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.*;
-import sjtu.ipads.wtune.stmt.schema.Schema;
-import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
-import sjtu.ipads.wtune.stmt.schema.Table;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.support.Workflow;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
+import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,8 +14,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -23,12 +24,12 @@ import static sjtu.ipads.wtune.stmt.Statement.TAG_OPT;
 
 public class ScriptUtils {
   public static void genSchema(String appName, String tag) {
-    final App ctx = App.find(appName);
+    final App ctx = App.of(appName);
     genSchema(ctx.schema(tag), ctx.name(), tag);
   }
 
   public static void genSchema(Schema schema, String appName, String tag) {
-    genSchema(schema, Setup.current().outputDir(), appName, tag);
+    genSchema(schema, FileUtils.testScriptDir(), appName, tag);
   }
 
   public static void genSchema(Schema schema, Path outputDir, String appName, String tag) {
@@ -42,10 +43,10 @@ public class ScriptUtils {
       new SchemaGen(schema).output(new OutputImpl(writer));
       writer.flush();
 
-      final Path sourcePath = schema.sourcePath();
-      Files.copy(sourcePath, directory.resolve(sourcePath.getFileName()), REPLACE_EXISTING);
+      //      final Path sourcePath = schema.sourcePath();
+      //      Files.copy(sourcePath, directory.resolve(sourcePath.getFileName()), REPLACE_EXISTING);
     } catch (IOException e) {
-      throw new StmtException(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -53,7 +54,7 @@ public class ScriptUtils {
     List<Statement> stmts = Statement.findByApp(appName);
     if ("opt".equals(tag)) stmts = listMap(it -> coalesce(it.alternative(TAG_OPT), it), stmts);
     stmts.forEach(Workflow::retrofit);
-    genWorkload(stmts, Setup.current().outputDir(), appName, tag);
+    genWorkload(stmts, FileUtils.testScriptDir(), appName, tag);
   }
 
   public static void genWorkload(
@@ -69,20 +70,16 @@ public class ScriptUtils {
       writer.flush();
 
     } catch (IOException e) {
-      throw new StmtException(e);
+      throw new RuntimeException(e);
     }
   }
 
   public static void genSchemaPatch(String appName) {
-    final List<SchemaPatch> patches =
-        SchemaPatch.findByApp(appName).stream()
-            .filter(it -> !"manual".equals(it.source()))
-            .collect(Collectors.toList());
-    genSchemaPatch(patches, appName);
+    genSchemaPatch(SchemaPatchDao.instance().findByApp(appName), appName);
   }
 
   public static void genSchemaPatch(List<SchemaPatch> patches, String appName) {
-    genSchemaPatch(patches, Setup.current().outputDir(), appName);
+    genSchemaPatch(patches, FileUtils.testScriptDir(), appName);
   }
 
   public static void genSchemaPatch(List<SchemaPatch> patches, Path outputDir, String appName) {
@@ -96,7 +93,7 @@ public class ScriptUtils {
       writer.flush();
 
     } catch (IOException e) {
-      throw new StmtException(e);
+      throw new RuntimeException(e);
     }
 
     try (final PrintWriter writer =
@@ -106,26 +103,7 @@ public class ScriptUtils {
       writer.flush();
 
     } catch (IOException e) {
-      throw new StmtException(e);
-    }
-  }
-
-  public static void genEngineChange(Map<Table, String> changes, String appName) {
-    genEngineChange(changes, Setup.current().outputDir(), appName);
-  }
-
-  public static void genEngineChange(Map<Table, String> changes, Path outputDir, String appName) {
-    final Path directory = outputDir.resolve(appName);
-    directory.toFile().mkdir();
-
-    try (final PrintWriter writer =
-        new PrintWriter(
-            Files.newBufferedWriter(directory.resolve("engine.sql"), CREATE, TRUNCATE_EXISTING))) {
-      for (var pair : changes.entrySet())
-        writer.printf("%s.%s -> %s\n", appName, pair.getKey().tableName(), pair.getValue());
-
-    } catch (IOException e) {
-      throw new StmtException(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -146,7 +124,7 @@ public class ScriptUtils {
           "wtune.lua");
 
   public static void copyResources() {
-    copyResources(Setup.current().outputDir());
+    copyResources(FileUtils.testScriptDir().resolve("testbed"));
   }
 
   public static void copyResources(Path outputDir) {
@@ -161,7 +139,7 @@ public class ScriptUtils {
       directory.toFile().mkdirs();
       Files.copy(input, directory.resolve(fileName), REPLACE_EXISTING);
     } catch (IOException e) {
-      throw new StmtException(e);
+      throw new RuntimeException(e);
     }
   }
 }

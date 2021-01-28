@@ -1,22 +1,23 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
-import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao.*;
 
 public class DbAltStatementDao extends DbDao implements AltStatementDao {
-  public DbAltStatementDao(Supplier<Connection> connectionSupplier) {
-    super(connectionSupplier);
+  private static final AltStatementDao INSTANCE = new DbAltStatementDao();
+
+  private DbAltStatementDao() {}
+
+  public static AltStatementDao instance() {
+    return INSTANCE;
   }
 
   static final String KEY_KIND = "kind";
@@ -58,7 +59,7 @@ public class DbAltStatementDao extends DbDao implements AltStatementDao {
       return alts;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 }

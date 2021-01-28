@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.stmt.mutator;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.stmt.collector.Collector;
+import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.ARRAY_CONTAINS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IN_LIST;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
@@ -28,9 +28,9 @@ class NormalizeTuple {
   }
 
   private static void normalizeTuple(SQLNode node) {
-    final List<SQLNode> paramMarker = Collections.singletonList(SQLNode.simple(PARAM_MARKER));
-    if (ARRAY.isInstance(node)) node.put(ARRAY_ELEMENTS, paramMarker);
-    else if (TUPLE.isInstance(node)) node.put(TUPLE_EXPRS, paramMarker);
+    final List<SQLNode> paramMarker = Collections.singletonList(SQLNode.expr(PARAM_MARKER));
+    if (ARRAY.isInstance(node)) node.set(ARRAY_ELEMENTS, paramMarker);
+    else if (TUPLE.isInstance(node)) node.set(TUPLE_EXPRS, paramMarker);
     else throw new IllegalArgumentException();
   }
 }

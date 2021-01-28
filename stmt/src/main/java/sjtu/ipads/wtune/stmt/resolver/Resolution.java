@@ -1,33 +1,17 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 public interface Resolution {
-  static void resolveBoolExpr(Statement stmt) {
-    ResolveBoolExpr.resolve(stmt);
+  static ParamManager resolveParamSimple(SQLNode node) {
+    return ResolveParamSimple.resolve(node);
   }
 
-  static void resolveQueryScope(Statement stmt) {
-    ResolveQueryScope.resolve(stmt);
+  static ParamManager resolveParamFull(SQLNode node) {
+    return ResolveParamFull.resolve(node);
   }
 
-  static void resolveTable(Statement stmt) {
-    ResolveTable.resolve(stmt);
-  }
-
-  static void resolveColumnRef(Statement stmt) {
-    ResolveColumnRef.resolve(stmt);
-  }
-
-  static void resolveJoinCondition(Statement stmt) {
-    ResolveJoinCondition.resolve(stmt);
-  }
-
-  static void resolveParamSimple(Statement stmt) {
-    ResolveParamSimple.resolve(stmt);
-  }
-
-  static void resolveParamFull(Statement stmt) {
-    ResolveParamFull.resolve(stmt);
+  static BoolExprManager resolveBoolExpr(SQLNode node) {
+    return ResolveBoolExpr.resolve(node);
   }
 }

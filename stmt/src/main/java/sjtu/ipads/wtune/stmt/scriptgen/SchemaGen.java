@@ -1,17 +1,15 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SchemaGen implements ScriptNode {
-  private final Schema schema;
   private final List<TableGen> children;
 
   public SchemaGen(Schema schema) {
-    this.schema = schema;
     this.children = listMap(TableGen::new, schema.tables());
   }
 

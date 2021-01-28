@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
 import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
-import sjtu.ipads.wtune.sqlparser.rel.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface SQLContext extends MultiVersion {
   System.Logger LOG = System.getLogger("wetune.sqlparser");

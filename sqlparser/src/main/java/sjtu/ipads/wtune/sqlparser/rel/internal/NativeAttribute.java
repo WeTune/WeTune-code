@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.sqlparser.rel.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Column;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
-import sjtu.ipads.wtune.sqlparser.rel.Table;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 
@@ -43,5 +43,10 @@ public class NativeAttribute extends BaseAttribute {
   @Override
   public Column column() {
     return column;
+  }
+
+  @Override
+  public SQLNode node() {
+    return null;
   }
 }

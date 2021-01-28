@@ -1,22 +1,21 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.NodeAttr;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.stmt.collector.Collector;
+import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 
 class Clean {
   public static SQLNode clean(SQLNode node) {
-    Collector.collect(node, Clean::isConstant).forEach(Clean::delete);
+    Collector.collect(node, Clean::isConstant).forEach(Clean::deleteBoolLiteral);
     Collector.collect(node, Clean::isTextFunc).forEach(Clean::stringify);
     return node;
   }
@@ -43,7 +42,7 @@ class Clean {
     if (exprKind == ExprType.TUPLE)
       return node.get(TUPLE_EXPRS).stream().allMatch(Clean::isConstant);
     if (exprKind == ExprType.FUNC_CALL)
-      return !node.get(FUNC_CALL_NAME).get(NodeAttr.NAME_2_1).contains("rand")
+      return !node.get(FUNC_CALL_NAME).get(NAME_2_1).contains("rand")
           && node.get(FUNC_CALL_ARGS).stream().allMatch(Clean::isConstant);
 
     if (exprKind == ExprType.MATCH)
@@ -64,11 +63,11 @@ class Clean {
     return false;
   }
 
-  private static void delete(SQLNode node) {
+  private static void deleteBoolLiteral(SQLNode node) {
     final SQLNode parent = node.parent();
 
     if (parent.get(QUERY_SPEC_WHERE) == node) {
-      parent.put(QUERY_SPEC_WHERE, null);
+      parent.unset(QUERY_SPEC_WHERE);
 
     } else if (BINARY.isInstance(parent) && parent.get(BINARY_OP).isLogic()) {
       final SQLNode left = parent.get(BINARY_LEFT);
@@ -84,7 +83,7 @@ class Clean {
     final SQLNode name = node.get(FUNC_CALL_NAME);
     if (name == null || name.get(NAME_2_0) != null) return false; // UDF
 
-    final String funcName = name.get(NodeAttr.NAME_2_1).toLowerCase();
+    final String funcName = name.get(NAME_2_1).toLowerCase();
     final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
 
     switch (funcName) {
@@ -99,14 +98,11 @@ class Clean {
   }
 
   private static void stringify(SQLNode funcCall) {
-    final String text = stringify0(funcCall); // don't inline this
+    final SQLNode literal = SQLNode.expr(LITERAL);
+    literal.set(LITERAL_TYPE, LiteralType.TEXT);
+    literal.set(LITERAL_VALUE, stringify0(funcCall));
 
-    funcCall.put(EXPR_KIND, LITERAL);
-    funcCall.put(LITERAL_TYPE, LiteralType.TEXT);
-    funcCall.put(LITERAL_VALUE, text);
-
-    funcCall.remove(FUNC_CALL_ARGS);
-    funcCall.remove(FUNC_CALL_NAME);
+    funcCall.update(literal);
   }
 
   private static String stringify0(SQLNode node) {

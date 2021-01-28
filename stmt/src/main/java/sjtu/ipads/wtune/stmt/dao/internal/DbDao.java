@@ -1,25 +1,19 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.stmt.utils.DbUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public abstract class DbDao {
-  private final Supplier<Connection> connectionSupplier;
   private final Map<String, PreparedStatement> caches = new HashMap<>();
   private Connection connection = null;
 
-  public DbDao(Supplier<Connection> connectionSupplier) {
-    this.connectionSupplier = connectionSupplier;
-  }
-
   protected Connection connection() {
-    if (connection == null) connection = connectionSupplier.get();
+    if (connection == null) connection = DbUtils.connection();
     return connection;
   }
 
@@ -37,7 +31,7 @@ public abstract class DbDao {
       final Connection conn = connection();
       conn.setAutoCommit(false);
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -46,11 +40,8 @@ public abstract class DbDao {
       final Connection conn = connection();
       conn.commit();
       conn.setAutoCommit(true);
-      //      conn.close();
-      //      this.connection = null;
-      //      caches.clear();
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 }

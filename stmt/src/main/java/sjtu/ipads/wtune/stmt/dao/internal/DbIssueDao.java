@@ -1,23 +1,25 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
 import sjtu.ipads.wtune.stmt.dao.IssueDao;
-import sjtu.ipads.wtune.stmt.Issue;
+import sjtu.ipads.wtune.stmt.support.Issue;
+import sjtu.ipads.wtune.stmt.support.internal.IssueImpl;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class DbIssueDao extends DbDao implements IssueDao {
-  public DbIssueDao(Supplier<Connection> connectionSupplier) {
-    super(connectionSupplier);
+  private static final IssueDao INSTANCE = new DbIssueDao();
+
+  private DbIssueDao() {}
+
+  public static IssueDao instance() {
+    return INSTANCE;
   }
 
-  private static final String KEY_APP_NAME = "appName";
+  private static final String KEY_APP_NAME = "app";
   private static final String KEY_STMT_ID = "stmtId";
 
   private static final String SELECT_ITEMS =
@@ -39,10 +41,10 @@ public class DbIssueDao extends DbDao implements IssueDao {
           + "   SELECT issue_app_name, issue_stmt_id"
           + "   FROM wtune_issues)";
 
-  private static Issue populateOne(ResultSet rs, Issue issue) throws SQLException {
-    issue.setAppName(rs.getString(KEY_APP_NAME));
-    issue.setStmtId(rs.getInt(KEY_STMT_ID));
-    return issue;
+  private static Issue populateOne(ResultSet rs) throws SQLException {
+    final String app = rs.getString(KEY_APP_NAME);
+    final int stmtId = rs.getInt(KEY_STMT_ID);
+    return new IssueImpl(app, stmtId);
   }
 
   @Override
@@ -52,12 +54,12 @@ public class DbIssueDao extends DbDao implements IssueDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Issue> issues = new ArrayList<>(200);
-      while (rs.next()) issues.add(populateOne(rs, new Issue()));
+      while (rs.next()) issues.add(populateOne(rs));
 
       return issues;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -70,12 +72,12 @@ public class DbIssueDao extends DbDao implements IssueDao {
 
       final List<Issue> issues = new ArrayList<>(20);
       final ResultSet rs = ps.executeQuery();
-      while (rs.next()) issues.add(populateOne(rs, new Issue()));
+      while (rs.next()) issues.add(populateOne(rs));
 
       return issues;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -87,12 +89,12 @@ public class DbIssueDao extends DbDao implements IssueDao {
 
       final List<Issue> issues = new ArrayList<>(100);
       final ResultSet rs = ps.executeQuery();
-      while (rs.next()) issues.add(populateOne(rs, new Issue()));
+      while (rs.next()) issues.add(populateOne(rs));
 
       return issues;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 }

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.schema.Constraint;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
 import static sjtu.ipads.wtune.common.utils.Commons.surround;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -17,7 +17,7 @@ public class ConstraintGen implements ScriptNode {
     out.print("{ ")
         .printf("type = '%s', ", constraint.type().name().toLowerCase())
         .print("columns = { ")
-        .prints(", ", listMap(it -> surround(it.columnName(), '\''), constraint.columns()))
+        .prints(", ", listMap(it -> surround(it.name(), '\''), constraint.columns()))
         .print(" } ")
         .print(" }");
   }

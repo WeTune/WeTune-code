@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.rel.Column;
-import sjtu.ipads.wtune.sqlparser.rel.Constraint;
-import sjtu.ipads.wtune.sqlparser.rel.Schema;
-import sjtu.ipads.wtune.sqlparser.rel.Table;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 

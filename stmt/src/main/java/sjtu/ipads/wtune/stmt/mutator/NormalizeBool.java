@@ -5,10 +5,10 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
-import sjtu.ipads.wtune.stmt.collector.BoolCollector;
+import sjtu.ipads.wtune.stmt.utils.BoolCollector;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
@@ -23,14 +23,14 @@ class NormalizeBool {
     // `expr` must be evaluated as boolean
 
     if (COLUMN_REF.isInstance(expr)) {
-      final SQLNode trueLiteral = SQLNode.simple(LITERAL);
-      trueLiteral.put(LITERAL_TYPE, LiteralType.BOOL);
-      trueLiteral.put(LITERAL_VALUE, true);
+      final SQLNode trueLiteral = SQLNode.expr(LITERAL);
+      trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
+      trueLiteral.set(LITERAL_VALUE, true);
 
-      final SQLNode binary = SQLNode.simple(BINARY);
-      binary.put(BINARY_LEFT, SQLNode.simple(expr));
-      binary.put(BINARY_OP, BinaryOp.IS);
-      binary.put(BINARY_RIGHT, trueLiteral);
+      final SQLNode binary = SQLNode.expr(BINARY);
+      binary.set(BINARY_LEFT, expr.copy());
+      binary.set(BINARY_OP, BinaryOp.IS);
+      binary.set(BINARY_RIGHT, trueLiteral);
 
       expr.update(binary);
 
@@ -42,11 +42,11 @@ class NormalizeBool {
 
         normalizeExpr(expr.get(BINARY_LEFT));
 
-        final SQLNode left = expr.get(BINARY_LEFT);
-        expr.directAttrs().clear();
-        expr.put(EXPR_KIND, UNARY);
-        expr.put(UNARY_OP, UnaryOp.NOT);
-        expr.put(UNARY_EXPR, left);
+        final SQLNode unary = SQLNode.expr(UNARY);
+        unary.set(UNARY_OP, UnaryOp.NOT);
+        unary.set(UNARY_EXPR, expr.get(BINARY_LEFT));
+
+        expr.update(unary);
       }
 
     } else if (BINARY.isInstance(expr) && expr.get(BINARY_OP).isLogic()) {

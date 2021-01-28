@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
-import sjtu.ipads.wtune.stmt.utils.StmtHelper;
+import sjtu.ipads.wtune.stmt.utils.DbUtils;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
@@ -16,7 +16,7 @@ public class PatchGen implements ScriptNode {
   public PatchGen(SchemaPatch patch, boolean isApplication) {
     this.patch = patch;
     this.isApplication = isApplication;
-    this.dbType = App.find(patch.app()).dbType();
+    this.dbType = App.of(patch.schema()).dbType();
   }
 
   @Override
@@ -25,18 +25,19 @@ public class PatchGen implements ScriptNode {
       out.printf(
           "CREATE INDEX %s ON %s(%s);",
           quoteName(genName(patch)),
-          quoteName(patch.tableName()),
-          String.join(", ", listMap(this::quoteName, patch.columnNames())));
+          quoteName(patch.table()),
+          String.join(", ", listMap(this::quoteName, patch.columns())));
     else if (MYSQL.equals(dbType))
-      out.printf("DROP INDEX %s ON %s;", quoteName(genName(patch)), quoteName(patch.tableName()));
-    else if (POSTGRESQL.equals(dbType)) out.printf("DROP INDEX %s IF EXISTS;", quoteName(genName(patch)));
+      out.printf("DROP INDEX %s ON %s;", quoteName(genName(patch)), quoteName(patch.table()));
+    else if (POSTGRESQL.equals(dbType))
+      out.printf("DROP INDEX %s IF EXISTS;", quoteName(genName(patch)));
   }
 
   private String quoteName(String name) {
-    return StmtHelper.quoteName(name, dbType);
+    return DbUtils.quoteName(name, dbType);
   }
 
   private static String genName(SchemaPatch patch) {
-    return "wtune_idx_" + patch.tableName() + "_" + String.join("_", patch.columnNames());
+    return "wtune_idx_" + patch.table() + "_" + String.join("_", patch.columns());
   }
 }

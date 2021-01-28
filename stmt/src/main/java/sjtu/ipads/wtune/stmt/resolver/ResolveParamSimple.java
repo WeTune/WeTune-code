@@ -1,58 +1,57 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
-import sjtu.ipads.wtune.stmt.Statement;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.PARAM_INDEX;
+import static sjtu.ipads.wtune.stmt.resolver.ParamManager.PARAM;
 
-class ResolveParamSimple {
-  private static class ParamCollector implements SQLVisitor {
-    private static final Set<ExprType> INTERESTING_ENV =
-        Set.of(UNARY, BINARY, TERNARY, TUPLE, ARRAY, MATCH);
-    private final List<SQLNode> nodes = new ArrayList<>();
+class ResolveParamSimple implements SQLVisitor {
 
-    private void add(SQLNode node) {
-      if (INTERESTING_ENV.contains(node.parent().get(EXPR_KIND))) nodes.add(node);
-    }
+  private static final Set<ExprType> INTERESTING_ENV =
+      Set.of(UNARY, BINARY, TERNARY, TUPLE, ARRAY, MATCH);
 
-    @Override
-    public boolean enterParamMarker(SQLNode paramMarker) {
-      add(paramMarker);
-      return false;
-    }
+  private int nextIndex;
 
-    @Override
-    public boolean enterLiteral(SQLNode literal) {
-      add(literal);
-      return false;
-    }
-
-    @Override
-    public boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
-      if (key == QUERY_OFFSET) {
-        if (child != null) add(child);
-        return false;
-      }
-
-      return true;
-    }
+  private void add(SQLNode node) {
+    final ExprType exprType = node.parent().get(EXPR_KIND);
+    if (exprType != null && INTERESTING_ENV.contains(exprType))
+      node.set(PARAM, new Param(node, nextIndex++));
   }
 
-  public static void resolve(Statement stmt) {
-    final ParamCollector collector = new ParamCollector();
-    stmt.parsed().accept(collector);
+  @Override
+  public boolean enterParamMarker(SQLNode paramMarker) {
+    add(paramMarker);
+    return false;
+  }
 
-    final List<SQLNode> nodes = collector.nodes;
-    for (int i = 0; i < nodes.size(); i++) nodes.get(i).put(PARAM_INDEX, i);
+  @Override
+  public boolean enterLiteral(SQLNode literal) {
+    add(literal);
+    return false;
+  }
+
+  @Override
+  public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
+    if (key == QUERY_OFFSET) {
+      if (child != null) add(child);
+      return false;
+    }
+
+    return true;
+  }
+
+  public static ParamManager resolve(SQLNode node) {
+    if (node.manager(ParamManager.class) == null)
+      node.context().addManager(ParamManager.class, ParamManager.build());
+
+    node.accept(new ResolveParamSimple());
+    return node.manager(ParamManager.class);
   }
 }

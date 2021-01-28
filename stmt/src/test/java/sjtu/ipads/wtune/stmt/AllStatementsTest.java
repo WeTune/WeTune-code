@@ -1,30 +1,21 @@
 package sjtu.ipads.wtune.stmt;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.stmt.mutator.Mutation;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
-import static sjtu.ipads.wtune.stmt.analyzer.Analysis.inferForeignKey;
 import static sjtu.ipads.wtune.stmt.mutator.Mutation.*;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.*;
 
 public class AllStatementsTest {
-  @BeforeAll
-  static void setUp() throws ClassNotFoundException {
-    Class.forName("org.sqlite.JDBC");
-    Setup._default().registerAsGlobal().setup();
-  }
-
   @Test
   @DisplayName("[Stmt] parsing all schema")
   void testSchema() {
-    Statement.findAll().forEach(Statement::appContext);
+    Statement.findAll().forEach(Statement::app);
     for (App app : App.all()) app.schema("base");
   }
 
@@ -46,7 +37,7 @@ public class AllStatementsTest {
     }
   }
 
-  //  @Test
+  @Test
   @DisplayName("[Stmt] mutate all statements")
   void testMutate() {
     final List<Statement> stmts = Statement.findAll();
@@ -54,10 +45,12 @@ public class AllStatementsTest {
       if (stmt.parsed() == null) continue;
 
       final String original = stmt.parsed().toString();
+      stmt.parsed().context().setSchema(stmt.app().schema("base"));
 
       clean(stmt.parsed());
       normalizeBool(stmt.parsed());
       normalizeTuple(stmt.parsed());
+      normalizeConstantTable(stmt.parsed());
 
       final String modified = stmt.parsed().toString();
 
@@ -67,22 +60,26 @@ public class AllStatementsTest {
     }
   }
 
-  //  @Test
+  @Test
   @DisplayName("[Stmt] resolve all statements")
   void testResolve() {
     final List<Statement> stmts = Statement.findAll();
     for (Statement stmt : fastRecycleIter(stmts)) {
       if (stmt.parsed() != null) {
-        clean(stmt.parsed());
-        normalizeBool(stmt.parsed());
-        normalizeTuple(stmt.parsed());
-        resolveBoolExpr(stmt);
-        resolveQueryScope(stmt);
-        resolveTable(stmt);
-        // TODO
-        //        resolveColumnRef(stmt);
-        //        resolveJoinCondition(stmt);
-        //        inferForeignKey(stmt.parsed());
+        resolveBoolExpr(stmt.parsed());
+        resolveParamSimple(stmt.parsed());
+        assertFalse(stmt.parsed().toString().contains("<??>"));
+      }
+    }
+  }
+
+  @Test
+  @DisplayName("[Stmt] resolve all statements")
+  void testResolveFull() {
+    final List<Statement> stmts = Statement.findAll();
+    for (Statement stmt : fastRecycleIter(stmts)) {
+      if (stmt.parsed() != null) {
+        resolveParamFull(stmt.parsed());
         assertFalse(stmt.parsed().toString().contains("<??>"));
       }
     }

@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
 import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.stmt.attrs.Param;
-import sjtu.ipads.wtune.stmt.attrs.ParamModifier;
+import sjtu.ipads.wtune.stmt.resolver.Param;
+import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 
 public class ParamGen implements ScriptNode {
   private final Param param;

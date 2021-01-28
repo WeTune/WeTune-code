@@ -937,7 +937,7 @@ public class Formatter implements SQLVisitor {
     if (distinct && SQLNode.POSTGRESQL.equals(querySpec.dbType())) {
       final List<SQLNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
       if (distinctOn != null && !distinctOn.isEmpty()) {
-        append(" ON");
+        append(" ON ");
         appendNodes(distinctOn, true, true);
       }
     }

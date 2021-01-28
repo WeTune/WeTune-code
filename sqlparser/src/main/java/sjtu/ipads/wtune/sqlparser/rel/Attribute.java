@@ -3,9 +3,10 @@ package sjtu.ipads.wtune.sqlparser.rel;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldImpl;
+import sjtu.ipads.wtune.sqlparser.rel.internal.AttributeField;
 import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
 import sjtu.ipads.wtune.sqlparser.rel.internal.NativeAttribute;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public interface Attribute {
-  FieldKey<Attribute> ATTRIBUTE = NodeFieldImpl.build("rel.attribute", Attribute.class);
+  FieldKey<Attribute> ATTRIBUTE = AttributeField.INSTANCE;
 
   String name();
 
@@ -24,6 +25,16 @@ public interface Attribute {
   Attribute reference();
 
   Column column();
+
+  SQLNode node();
+
+  default Attribute reference(boolean recursive) {
+    if (!recursive) return this;
+
+    final Attribute ref = reference();
+    if (ref == null) return this;
+    return ref.reference(true);
+  }
 
   default Column column(boolean recursive) {
     final Column column = column();
@@ -50,7 +61,7 @@ public interface Attribute {
   }
 
   static Attribute resolve(SQLNode node) {
-    if (!COLUMN_REF.isInstance(node)) throw new IllegalArgumentException();
+    if (!COLUMN_REF.isInstance(node)) return null;
 
     final Relation relation = node.get(RELATION);
     final SQLNode column = node.get(COLUMN_REF_COLUMN);

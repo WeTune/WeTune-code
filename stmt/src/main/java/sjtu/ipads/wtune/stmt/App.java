@@ -1,11 +1,14 @@
 package sjtu.ipads.wtune.stmt;
 
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.internal.AppImpl;
-import sjtu.ipads.wtune.stmt.schema.Schema;
 
 import java.util.Collection;
-import java.util.List;
 
+/**
+ * Basic information about an application. Also serve as the reader and cache for per-app
+ * information (e.g. statements, schema, timing)
+ */
 public interface App {
   String name();
 
@@ -13,14 +16,8 @@ public interface App {
 
   Schema schema(String tag);
 
-  List<Timing> timing(String tag);
-
-  static App find(String name) {
-    return AppImpl.find(name);
-  }
-
-  static App build(String name, String dbType) {
-    return AppImpl.build(name, dbType);
+  static App of(String name) {
+    return AppImpl.of(name);
   }
 
   static Collection<App> all() {

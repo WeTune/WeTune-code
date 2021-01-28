@@ -79,6 +79,7 @@ public interface VisitorController {
       case GROUP_ITEM -> safeVisitChild(GROUP_ITEM_EXPR, n, v);
       case SELECT_ITEM -> safeVisitChild(SELECT_ITEM_EXPR, n, v);
       case QUERY_SPEC -> {
+        safeVisitList(QUERY_SPEC_DISTINCT_ON, n, v);
         safeVisitList(QUERY_SPEC_SELECT_ITEMS, n, v);
         safeVisitChild(QUERY_SPEC_FROM, n, v);
         safeVisitChild(QUERY_SPEC_WHERE, n, v);

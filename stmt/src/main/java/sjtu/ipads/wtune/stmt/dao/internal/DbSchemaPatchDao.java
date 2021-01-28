@@ -1,21 +1,22 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
-import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
-  public DbSchemaPatchDao(Supplier<Connection> connectionSupplier) {
-    super(connectionSupplier);
+  private static final SchemaPatchDao INSTANCE = new DbSchemaPatchDao();
+
+  private DbSchemaPatchDao() {}
+
+  public static SchemaPatchDao instance() {
+    return INSTANCE;
   }
 
   private static final String KEY_COLUMNS = "columnNames";
@@ -36,13 +37,12 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
       "INSERT OR REPLACE INTO wtune_schema_patches (patch_app, patch_type, patch_table_name, patch_columns_name, patch_source) "
           + "VALUES (?, ?, ?, ?, ?)";
 
-  private SchemaPatch inflate(SchemaPatch patch, ResultSet set) throws SQLException {
-    patch.setApp(set.getString(KEY_APP));
-    patch.setType(SchemaPatch.Type.valueOf(set.getString(KEY_TYPE)));
-    patch.setTableName(set.getString(KEY_TABLE_NAME));
-    patch.setColumnNames(Arrays.asList(set.getString(KEY_COLUMNS).split(",")));
-    patch.setSource(set.getString(KEY_SOURCE));
-    return patch;
+  private static SchemaPatch inflate(ResultSet set) throws SQLException {
+    final SchemaPatch.Type type = SchemaPatch.Type.valueOf(set.getString(KEY_TYPE));
+    final String app = set.getString(KEY_APP);
+    final String table = set.getString(KEY_TABLE_NAME);
+    final List<String> columns = Arrays.asList(set.getString(KEY_COLUMNS).split(","));
+    return SchemaPatch.build(type, app, table, columns);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
       ps.executeUpdate();
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -76,12 +76,12 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<SchemaPatch> patches = new ArrayList<>(50);
-      while (rs.next()) patches.add(inflate(new SchemaPatch(), rs));
+      while (rs.next()) patches.add(inflate(rs));
 
       return patches;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -89,16 +89,16 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
   public void save(SchemaPatch patch) {
     try {
       final PreparedStatement ps = prepare(INSERT);
-      ps.setString(1, patch.app());
+      ps.setString(1, patch.schema());
       ps.setString(2, patch.type().name());
-      ps.setString(3, patch.tableName());
-      ps.setString(4, String.join(",", patch.columnNames()));
-      ps.setString(5, patch.source());
+      ps.setString(3, patch.table());
+      ps.setString(4, String.join(",", patch.columns()));
+      ps.setString(5, null);
 
       ps.executeUpdate();
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 }

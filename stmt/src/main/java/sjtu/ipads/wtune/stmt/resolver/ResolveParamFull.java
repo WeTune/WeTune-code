@@ -2,28 +2,30 @@ package sjtu.ipads.wtune.stmt.resolver;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.attrs.Attrs;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
-import sjtu.ipads.wtune.stmt.attrs.ColumnRef;
-import sjtu.ipads.wtune.stmt.attrs.Param;
-import sjtu.ipads.wtune.stmt.attrs.ParamModifier;
-import sjtu.ipads.wtune.stmt.schema.Column;
-import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprAttr.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeAttr.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.stmt.analyzer.Analysis.buildRelationGraph;
-import static sjtu.ipads.wtune.stmt.attrs.ParamModifier.Type.*;
-import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.NOT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.UNARY_MINUS;
+import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
+import static sjtu.ipads.wtune.stmt.resolver.ParamManager.PARAM;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.fromBinaryOp;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
 
 /**
  * Mark parameter in a statement.
@@ -34,13 +36,37 @@ import static sjtu.ipads.wtune.stmt.attrs.StmtAttrs.*;
  *   <li>Literal
  *   <li>ParamMarker
  * </ul>
+ *
+ * The class fine-grained calculates the parameter value. The basic idea is deducing the value of a
+ * parameter from the related column value.
+ *
+ * <p>For example, say we have a predicate
+ *
+ * <pre>"(`x` + 1) * `y` < ? + 3"</pre>
+ *
+ * , where `x`, `y` is a column name, and ? is the parameter. Given a row in database, the target is
+ * to determine the value of ? that make the predicate evaluate to TRUE against the row. i.e.
+ * calculate ? by the following expression:
+ *
+ * <pre>? > ((row.x + 1) * row.y) - 3</pre>
+ *
+ * Such process is implemented by a stack-based evaluation process:
+ *
+ * <ol>
+ *   <li>Init a stack
+ *   <li>Retrieve the value of column `x` in this row, and push it to the stack
+ *   <li>Push constant value 1 to the stack
+ *   <li>Pop 2 values from the stack, add them and push back to the stack
+ *   <li>Retrieve the value of column `y` in this row, and push it to the stack
+ *   <li>Pop 2 values from the stack, times them and push back to the stack
+ *   <li>Pop 1 value from the stack, increase the value and push back to the stack
+ *   <li>Push constant value 3 to the stack
+ *   <li>Pop 2 value to the stack, and minus the second one by the first one, and push the result
+ *   <li>The value on the top of stack is taken to be the parameter's value
+ * </ol>
  */
 class ResolveParamFull implements SQLVisitor {
-
-  public static void resolve(Statement stmt) {
-    buildRelationGraph(stmt.parsed()).expanded().calcRelationPosition();
-    stmt.parsed().accept(new ResolveParamFull());
-  }
+  private int nextIndex;
 
   @Override
   public boolean enterParamMarker(SQLNode paramMarker) {
@@ -55,62 +81,64 @@ class ResolveParamFull implements SQLVisitor {
   }
 
   @Override
-  public boolean enterChild(SQLNode parent, Attrs.Key<SQLNode> key, SQLNode child) {
+  public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
     if (key == QUERY_LIMIT) {
       if (child != null && PARAM_MARKER.isInstance(child)) {
-        child.remove(PARAM_MARKER_NUMBER);
-        child.put(EXPR_KIND, LITERAL);
-        child.put(LITERAL_TYPE, LiteralType.INTEGER);
-        child.put(LITERAL_VALUE, 10);
+        child.unset(PARAM_MARKER_NUMBER);
+        child.set(EXPR_KIND, LITERAL);
+        child.set(LITERAL_TYPE, LiteralType.INTEGER);
+        child.set(LITERAL_VALUE, 10);
       }
       return false;
 
     } else if (key == QUERY_OFFSET) {
       if (child != null)
-        child.put(
-            RESOLVED_PARAM,
-            new Param(
-                child.get(PARAM_INDEX),
-                child,
-                Collections.singletonList(ParamModifier.of(GEN_OFFSET))));
+        child.set(PARAM, new Param(child, nextIndex++, singletonList(modifier(GEN_OFFSET))));
       return false;
     }
 
     return true;
   }
 
-  private static void resolveParam(SQLNode startPoint) {
-    final Pair<SQLNode, SQLNode> pair = boolContext(startPoint);
+  private void resolveParam(SQLNode startPoint) {
+    // identify the scope concerning this param
+    final Pair<SQLNode, SQLNode> pair = boolScope(startPoint);
     if (pair == null) return;
+
     final SQLNode ctx = pair.getLeft();
 
-    boolean not = false;
+    // traceback to the expression root
+    // to determine whether the predicate is negated
+    boolean negated = false;
     SQLNode parent = ctx.parent();
     while (EXPR.isInstance(parent)) {
-      if (parent.get(UNARY_OP) == UnaryOp.NOT) not = !not;
+      if (parent.get(UNARY_OP) == NOT) negated = !negated;
       parent = parent.parent();
     }
 
+    // deduce the param from the value in a DB row
     final LinkedList<ParamModifier> modifierStack = new LinkedList<>();
     SQLNode p = startPoint;
 
     do {
-      if (!resolveReversedModifier(p, modifierStack, not)) return;
+      if (!deduce(p, modifierStack, negated)) return;
       p = p.parent();
     } while (p != ctx);
 
     if (modifierStack.getLast().type() == GUESS) {
       modifierStack.removeLast();
       if (LITERAL.isInstance(startPoint))
-        modifierStack.add(ParamModifier.of(DIRECT_VALUE, startPoint.get(LITERAL_VALUE)));
-      else modifierStack.add(ParamModifier.of(DIRECT_VALUE, "UNKNOWN"));
+        modifierStack.add(modifier(DIRECT_VALUE, startPoint.get(LITERAL_VALUE)));
+      else modifierStack.add(modifier(DIRECT_VALUE, "UNKNOWN"));
     }
 
-    startPoint.put(
-        RESOLVED_PARAM, new Param(startPoint.get(PARAM_INDEX), startPoint, modifierStack));
+    startPoint.set(PARAM, new Param(startPoint, nextIndex++, modifierStack));
   }
 
-  private static Pair<SQLNode, SQLNode> boolContext(SQLNode startPoint) {
+  // find the nearest ancestor of `startPoint` that
+  //   1. itself is a bool expression
+  //   2. none of its children is a bool expression
+  private static Pair<SQLNode, SQLNode> boolScope(SQLNode startPoint) {
     SQLNode child = startPoint, parent = startPoint.parent();
 
     while (EXPR.isInstance(parent) && parent.get(BOOL_EXPR) == null) {
@@ -121,18 +149,18 @@ class ResolveParamFull implements SQLVisitor {
     return parent.get(BOOL_EXPR) == null ? null : Pair.of(parent, child);
   }
 
-  private static boolean resolveReversedModifier(
-      SQLNode target, List<ParamModifier> stack, boolean not) {
+  // deduce the restriction on a parameter's value and express as modifier
+  // e.g. `x` > ? (where `x` is a column name, ? is the parameter), then ? should satisfies "< a"
+  // the resultant modifiers is [Value("x"), Decrease()]
+  private static boolean deduce(SQLNode target, List<ParamModifier> stack, boolean negated) {
     final SQLNode parent = target.parent();
     final ExprType exprKind = parent.get(EXPR_KIND);
 
     if (exprKind == UNARY) {
       final UnaryOp op = parent.get(UNARY_OP);
-      if (op == UnaryOp.UNARY_MINUS) stack.add(ParamModifier.of(ParamModifier.Type.INVERSE));
+      if (op == UNARY_MINUS) stack.add(modifier(INVERSE));
       // omit others since not encountered
-      else return op == UnaryOp.BINARY;
-
-      return true;
+      return op != UnaryOp.BINARY;
 
     } else if (exprKind == BINARY) {
       // if target is on the right, the operator should be reversed
@@ -142,104 +170,105 @@ class ResolveParamFull implements SQLVisitor {
       final SQLNode otherSide = inverseOp ? left : right;
       final BinaryOp op = parent.get(BINARY_OP);
 
-      final ParamModifier modifier = ParamModifier.fromBinaryOp(op, target, inverseOp, not);
+      final ParamModifier modifier = fromBinaryOp(op, target, inverseOp, negated);
       if (modifier == null) return false;
 
       if (modifier.type() != KEEP) stack.add(modifier);
 
-      return resolveModifier(otherSide, stack);
+      return induce(otherSide, stack);
 
     } else if (exprKind == TUPLE) {
-      stack.add(ParamModifier.of(TUPLE_ELEMENT));
+      stack.add(modifier(TUPLE_ELEMENT));
       return true;
 
     } else if (exprKind == ARRAY) {
-      stack.add(ParamModifier.of(ARRAY_ELEMENT));
+      stack.add(modifier(ARRAY_ELEMENT));
       return true;
 
     } else if (exprKind == TERNARY) {
-      if (parent.get(TERNARY_MIDDLE) == target) stack.add(ParamModifier.of(DECREASE));
-      else if (parent.get(TERNARY_RIGHT) == target) stack.add(ParamModifier.of(INCREASE));
+      if (parent.get(TERNARY_MIDDLE) == target) stack.add(modifier(DECREASE));
+      else if (parent.get(TERNARY_RIGHT) == target) stack.add(modifier(INCREASE));
       else return assertFalse();
 
-      return resolveModifier(parent.get(TERNARY_LEFT), stack);
+      return induce(parent.get(TERNARY_LEFT), stack);
 
     } else if (exprKind == MATCH) {
-      stack.add(ParamModifier.of(MATCHING));
-      return resolveModifier(parent.get(MATCH_COLS).get(0), stack);
+      stack.add(modifier(MATCHING));
+      return induce(parent.get(MATCH_COLS).get(0), stack);
 
     } else return false;
   }
 
-  private static boolean resolveModifier(SQLNode target, List<ParamModifier> stack) {
+  // induce a expression's value and express as modifier
+  // e.g. `x` + 1 (where `x` is a column name),
+  // the resultant modifiers is [Value("x"), DirectValue(1), Plus()]
+  private static boolean induce(SQLNode target, List<ParamModifier> stack) {
     final ExprType exprKind = target.get(EXPR_KIND);
 
     if (exprKind == COLUMN_REF) {
-      final ColumnRef cRef = target.get(RESOLVED_COLUMN_REF);
-      final Column column = cRef.resolveAsColumn();
-      if (column == null) {
-        stack.add(ParamModifier.of(GUESS));
-
-      } else {
-        final Integer position = cRef.resolveRootRef().source().node().get(RELATION_POSITION);
-        assert position != null;
-        stack.add(
-            ParamModifier.of(
-                COLUMN_VALUE, column.table().tableName(), column.columnName(), position));
-      }
+      final Column column = target.get(ATTRIBUTE).column(true);
+      if (column == null) stack.add(modifier(GUESS));
+      else stack.add(modifier(COLUMN_VALUE, column.table(), column.name(), /* position */ 0));
 
     } else if (exprKind == FUNC_CALL) {
       final List<SQLNode> args = target.get(FUNC_CALL_ARGS);
       stack.add(
-          ParamModifier.of(
-              INVOKE_FUNC, target.get(FUNC_CALL_NAME).toString().toLowerCase(), args.size()));
-      for (SQLNode arg : Lists.reverse(args)) if (!resolveModifier(arg, stack)) return false;
+          modifier(INVOKE_FUNC, target.get(FUNC_CALL_NAME).toString().toLowerCase(), args.size()));
+      for (SQLNode arg : Lists.reverse(args)) if (!induce(arg, stack)) return false;
 
     } else if (exprKind == BINARY) {
       switch (target.get(BINARY_OP)) {
         case PLUS:
-          stack.add(ParamModifier.of(ADD));
+          stack.add(modifier(ADD));
           break;
         case MINUS:
-          stack.add(ParamModifier.of(SUBTRACT));
+          stack.add(modifier(SUBTRACT));
           break;
         case MULT:
-          stack.add(ParamModifier.of(TIMES));
+          stack.add(modifier(TIMES));
           break;
         case DIV:
-          stack.add(ParamModifier.of(DIVIDE));
+          stack.add(modifier(DIVIDE));
           break;
         default:
           return false;
       }
 
-      return resolveModifier(target.get(BINARY_RIGHT), stack)
-          && resolveModifier(target.get(BINARY_LEFT), stack);
+      return induce(target.get(BINARY_RIGHT), stack) && induce(target.get(BINARY_LEFT), stack);
 
     } else if (exprKind == AGGREGATE) {
-      stack.add(ParamModifier.of(INVOKE_AGG, target.get(AGGREGATE_NAME)));
+      stack.add(modifier(INVOKE_AGG, target.get(AGGREGATE_NAME)));
 
     } else if (exprKind == CAST) {
       if (target.get(CAST_TYPE).category() == Category.INTERVAL) return false;
 
-      resolveModifier(target.get(CAST_EXPR), stack);
+      induce(target.get(CAST_EXPR), stack);
 
     } else if (exprKind == LITERAL) {
-      stack.add(ParamModifier.of(DIRECT_VALUE, target.get(LITERAL_VALUE)));
+      stack.add(modifier(DIRECT_VALUE, target.get(LITERAL_VALUE)));
 
     } else if (exprKind == TUPLE) {
       final List<SQLNode> exprs = target.get(TUPLE_EXPRS);
-      stack.add(ParamModifier.of(MAKE_TUPLE, exprs.size()));
-      for (SQLNode elements : Lists.reverse(exprs))
-        if (!resolveModifier(elements, stack)) return false;
+      stack.add(modifier(MAKE_TUPLE, exprs.size()));
+      for (SQLNode elements : Lists.reverse(exprs)) if (!induce(elements, stack)) return false;
 
     } else if (exprKind == SYMBOL) {
-      stack.add(ParamModifier.of(DIRECT_VALUE, target.get(SYMBOL_TEXT)));
+      stack.add(modifier(DIRECT_VALUE, target.get(SYMBOL_TEXT)));
 
     } else if (exprKind == QUERY_EXPR) {
-      stack.add(ParamModifier.of(GUESS));
+      stack.add(modifier(GUESS));
     } else return false;
 
     return true;
+  }
+
+  public static ParamManager resolve(SQLNode node) {
+    if (node.manager(BoolExprManager.class) == null) resolveBoolExpr(node);
+
+    if (node.manager(ParamManager.class) == null)
+      node.context().addManager(ParamManager.class, ParamManager.build());
+
+    node.accept(new ResolveParamFull());
+    return node.manager(ParamManager.class);
   }
 }

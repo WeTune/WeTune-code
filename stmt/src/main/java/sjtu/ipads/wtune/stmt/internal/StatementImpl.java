@@ -4,10 +4,7 @@ import sjtu.ipads.wtune.sqlparser.SQLParser;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.Timing;
 import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
-import sjtu.ipads.wtune.stmt.dao.StatementDao;
-import sjtu.ipads.wtune.stmt.dao.TimingDao;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -23,7 +20,6 @@ public class StatementImpl implements Statement {
   private String tag;
 
   private Map<String, Statement> alternatives;
-  private Map<String, Timing> timings;
 
   protected StatementImpl(
       String appName, int stmtId, String tag, String rawSql, String stackTrace) {
@@ -70,8 +66,7 @@ public class StatementImpl implements Statement {
   @Override
   public SQLNode parsed() {
     if (parsed == null) {
-      final SQLParser parser = SQLParser.ofDb(App.find(appName).dbType());
-      if (parser != null) parsed = parser.parse(rawSql());
+      parsed = SQLParser.ofDb(App.of(appName).dbType()).parse(rawSql());
     }
 
     return parsed;
@@ -94,32 +89,12 @@ public class StatementImpl implements Statement {
 
   @Override
   public Statement alternative(String tag) {
-    if (alternatives != null)
+    if (alternatives == null)
       alternatives =
           AltStatementDao.instance().findByStmt(appName(), stmtId()).stream()
               .collect(Collectors.toMap(Statement::tag, Function.identity()));
 
     return alternatives.get(tag);
-  }
-
-  @Override
-  public Timing timing(String tag) {
-    if (timings == null)
-      timings =
-          TimingDao.instance().findByStmt(appName(), stmtId()).stream()
-              .collect(Collectors.toMap(Timing::tag, Function.identity()));
-
-    return timings.get(tag);
-  }
-
-  @Override
-  public void save() {
-    StatementDao.instance().save(this);
-  }
-
-  @Override
-  public void delete(String reason) {
-    StatementDao.instance().delete(this, reason);
   }
 
   @Override

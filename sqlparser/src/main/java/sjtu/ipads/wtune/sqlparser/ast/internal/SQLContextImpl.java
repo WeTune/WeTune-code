@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.rel.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.HashMap;
 import java.util.Map;

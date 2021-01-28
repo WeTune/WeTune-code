@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.stmt.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 
 import java.util.List;
 

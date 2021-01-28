@@ -1,20 +1,20 @@
 package sjtu.ipads.wtune.stmt.dao;
 
-import sjtu.ipads.wtune.stmt.dao.internal.DaoInstances;
-import sjtu.ipads.wtune.stmt.Timing;
+import sjtu.ipads.wtune.stmt.support.Timing;
+import sjtu.ipads.wtune.stmt.dao.internal.DbTimingDao;
 
 import java.util.List;
 
-public interface TimingDao extends Dao {
+public interface TimingDao {
   List<Timing> findByStmt(String appName, int stmtId);
+
+  void save(Timing timing);
 
   void beginBatch();
 
   void endBatch();
 
-  void save(Timing timing);
-
   static TimingDao instance() {
-    return DaoInstances.get(TimingDao.class);
+    return DbTimingDao.instance();
   }
 }

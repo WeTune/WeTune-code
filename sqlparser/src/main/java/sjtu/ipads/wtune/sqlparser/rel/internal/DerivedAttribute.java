@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.sqlparser.rel.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Column;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,5 +88,10 @@ public class DerivedAttribute extends BaseAttribute {
     assert selectItem != null;
     final SQLNode expr = selectItem.get(SELECT_ITEM_EXPR);
     return COLUMN_REF.isInstance(expr) ? (reference = Attribute.resolve(expr)) : null;
+  }
+
+  @Override
+  public SQLNode node() {
+    return selectItem;
   }
 }

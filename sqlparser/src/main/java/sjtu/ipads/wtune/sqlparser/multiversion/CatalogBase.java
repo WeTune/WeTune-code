@@ -6,7 +6,7 @@ import java.util.Map;
 public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<K, V>>
     implements Catalog<K, V> {
   // invariant: current == null => prev == null
-  private static final Object REMOVED = new Object();
+  protected static final Object REMOVED = new Object();
 
   protected CatalogBase() {}
 

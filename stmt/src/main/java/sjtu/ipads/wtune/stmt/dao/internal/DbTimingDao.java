@@ -1,23 +1,30 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.StmtException;
+import sjtu.ipads.wtune.stmt.support.Timing;
+import sjtu.ipads.wtune.stmt.support.internal.TimingImpl;
 import sjtu.ipads.wtune.stmt.dao.TimingDao;
-import sjtu.ipads.wtune.stmt.Timing;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
-
-import static sjtu.ipads.wtune.stmt.Timing.*;
 
 public class DbTimingDao extends DbDao implements TimingDao {
-  public DbTimingDao(Supplier<Connection> connectionSupplier) {
-    super(connectionSupplier);
+  private static final DbTimingDao INSTANCE = new DbTimingDao();
+
+  private DbTimingDao() {}
+
+  public static TimingDao instance() {
+    return INSTANCE;
   }
+
+  private static final String KEY_APP_NAME = "app";
+  private static final String KEY_STMT_ID = "stmtId";
+  private static final String KEY_TAG = "tag";
+  private static final String KEY_P50 = "p50";
+  private static final String KEY_P90 = "p90";
+  private static final String KEY_P99 = "p99";
 
   private static final String SELECT_ITEMS =
       String.format(
@@ -50,14 +57,14 @@ public class DbTimingDao extends DbDao implements TimingDao {
           + " perf_p50, perf_p90, perf_p99) "
           + "VALUES (?, ?, ?, ?, ?, ?)";
 
-  private static Timing inflate(Timing timing, ResultSet rs) throws SQLException {
-    return timing
-        .setAppName(rs.getString(KEY_APP_NAME))
-        .setStmtId(rs.getInt(KEY_STMT_ID))
-        .setTag(rs.getString(KEY_TAG))
-        .setP50(rs.getLong(KEY_P50))
-        .setP90(rs.getLong(KEY_P90))
-        .setP99(rs.getLong(KEY_P99));
+  private static Timing inflate(ResultSet rs) throws SQLException {
+    final String app = rs.getString(KEY_APP_NAME);
+    final int stmtId = rs.getInt(KEY_STMT_ID);
+    final String tag = rs.getString(KEY_TAG);
+    final long p50 = rs.getLong(KEY_P50);
+    final long p90 = rs.getLong(KEY_P90);
+    final long p99 = rs.getLong(KEY_P99);
+    return new TimingImpl(app, stmtId, tag, p50, p90, p99);
   }
 
   @Override
@@ -69,12 +76,12 @@ public class DbTimingDao extends DbDao implements TimingDao {
       final ResultSet rs = ps.executeQuery();
 
       final List<Timing> timings = new ArrayList<>(3);
-      while (rs.next()) timings.add(inflate(new Timing(), rs));
+      while (rs.next()) timings.add(inflate(rs));
 
       return timings;
 
     } catch (SQLException throwables) {
-      throw new StmtException(throwables);
+      throw new RuntimeException(throwables);
     }
   }
 
@@ -96,12 +103,13 @@ public class DbTimingDao extends DbDao implements TimingDao {
       final PreparedStatement insertHistory = prepare(INSERT_HISTORY);
       final PreparedStatement upsert = prepare(UPSERT_PERF);
 
-      find.setString(1, timing.appName());
+      find.setString(1, timing.app());
       find.setInt(2, timing.stmtId());
       find.setString(3, timing.tag());
+
       final ResultSet rs = find.executeQuery();
       if (rs.next()) {
-        final Timing existing = inflate(new Timing(), rs);
+        final Timing existing = inflate(rs);
         if (existing.p50() == timing.p50()
             && existing.p90() == timing.p90()
             && existing.p99() == timing.p99()) return;
@@ -117,7 +125,7 @@ public class DbTimingDao extends DbDao implements TimingDao {
   }
 
   private void fillParamAndExec(Timing timing, PreparedStatement upsert) throws SQLException {
-    upsert.setString(1, timing.appName());
+    upsert.setString(1, timing.app());
     upsert.setInt(2, timing.stmtId());
     upsert.setString(3, timing.tag());
     upsert.setLong(4, timing.p50());
