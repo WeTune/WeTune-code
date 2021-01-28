@@ -31,7 +31,7 @@ public class FieldsTest {
     foo.set(ATTR_FIRST, "123");
     assertEquals("123", foo.setIfAbsent(ATTR_FIRST, "456"));
 
-    assertEquals(1, foo.setIfAbsent(ATTR_SECOND, 1));
+    assertNull(foo.setIfAbsent(ATTR_SECOND, 1));
 
     final Map<FieldKey, Object> oldAttrs = foo.directAttrs();
 

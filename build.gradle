@@ -28,6 +28,8 @@ subprojects {
         systemProperty('java.library.path', "$rootDir/lib/")
         environment('LD_LIBRARY_PATH', "$rootDir/lib/")
         useJUnitPlatform()
+        jvmArgs(['--enable-preview'])
+        workingDir(rootDir)
     }
 
     dependencies {
@@ -41,37 +43,43 @@ subprojects {
         dependsOn clean
     }
 
+    tasks.withType(JavaCompile).each {
+        it.options.compilerArgs.add("--enable-preview")
+    }
+
     ext.download = { String url, java.nio.file.Path path, String mod = null ->
-        def proxy = "http://ipads:ipads123!2020@202.120.40.85:11235"
+        def proxy = "http://ipads:ipads123@202.120.40.82:11235"
         def wd = path.getParent().toAbsolutePath().toString()
         def fileName = path.getFileName().toString()
 
         if (!path.toFile().exists()) {
-            exec {
-                workingDir(wd)
 
-                println("downloading $fileName to $wd")
-                if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            println("downloading $fileName to $wd")
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                exec {
+                    workingDir(wd)
                     commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
                             '-Proxy', "\"$proxy\"",
                             '-OutFile', "$fileName"
+                }
 
-                } else {
+            } else {
+                exec {
+                    workingDir(wd)
                     commandLine 'wget', '-e', 'use_proxy=yes',
                             '-e', "http_proxy=$proxy",
                             '-e', "https_proxy=$proxy",
                             '--no-check-certificate',
                             "$url",
                             '-O', "$fileName"
-
-                    if (mod != null)
-                        exec {
-                            workingDir(wd)
-                            commandLine 'chmod', "$mod", "$fileName"
-                        }
                 }
-            }
 
+                if (mod != null)
+                    exec {
+                        workingDir(wd)
+                        commandLine 'chmod', "$mod", "$fileName"
+                    }
+            }
 
         } else {
             println("use cached $fileName found in $wd")
