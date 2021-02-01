@@ -8,7 +8,7 @@ public class MalformedSubqueryFilter extends BaseMatchingRule {
   @Override
   public boolean enterSubqueryFilter(SubqueryFilter op) {
     final Operator in = op.predecessors()[1];
-    if (in.type().isFilter()) {
+    if (!in.type().isValidOutput()) {
       matched = true;
       return false;
     }
