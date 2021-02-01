@@ -81,6 +81,6 @@ public enum OperatorType {
   }
 
   public boolean isFilter() {
-    return this == PlainFilter || this == InnerJoin;
+    return this == PlainFilter || this == SubqueryFilter;
   }
 }
