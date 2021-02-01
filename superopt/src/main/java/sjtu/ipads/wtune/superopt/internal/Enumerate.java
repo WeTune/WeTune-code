@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.superopt.operator.OperatorType;
 import sjtu.ipads.wtune.superopt.rules.Rule;
 import sjtu.ipads.wtune.superopt.rules.simplify.NonLeftDeepJoin;
 import sjtu.ipads.wtune.superopt.rules.support.AllJoin;
+import sjtu.ipads.wtune.superopt.rules.validation.MalformedJoin;
 import sjtu.ipads.wtune.superopt.rules.validation.MalformedSubqueryFilter;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
@@ -21,14 +22,14 @@ public class Enumerate {
   public static final int SKELETON_MAX_OPS = 4;
 
   public static List<Graph> enumFragments() {
-    return enumerate(0, singleton(Graph.empty())).parallelStream()
+    return enumFragments0(0, singleton(Graph.empty())).parallelStream()
         .peek(Graph::setup)
         .filter(Enumerate::prune)
         .sorted(Graph::compareTo)
         .collect(Collectors.toList());
   }
 
-  private static Set<Graph> enumerate(int depth, Set<Graph> graphs) {
+  private static Set<Graph> enumFragments0(int depth, Set<Graph> graphs) {
     if (depth >= SKELETON_MAX_OPS) return graphs;
     final Set<Graph> newGraphs = new HashSet<>();
     for (Graph g : graphs)
@@ -39,14 +40,14 @@ public class Enumerate {
             hole.unFill();
           }
 
-    return Sets.union(newGraphs, enumerate(depth + 1, newGraphs));
+    return Sets.union(newGraphs, enumFragments0(depth + 1, newGraphs));
   }
 
   private static boolean prune(Graph graph) {
     return //        !Rule.match(MalformedDistinct.class, graph) &&
     !Rule.match(MalformedSubqueryFilter.class, graph)
         //        && !Rule.match(MalformedSort.class, graph)
-        //        && !Rule.match(MalformedJoin.class, graph)
+        && !Rule.match(MalformedJoin.class, graph)
         //        && !Rule.match(MalformedLimit.class, graph)
         //        && !Rule.match(MalformedUnion.class, graph)
         //        && !Rule.match(DoubleProj.class, graph)

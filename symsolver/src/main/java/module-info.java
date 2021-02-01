@@ -6,6 +6,6 @@ module sjtu.ipads.wtune.symsolver {
   requires org.apache.commons.lang3;
   requires java.logging;
   requires sjtu.ipads.wtune.common;
-  requires z3;
   requires trove4j;
+  requires z3;
 }

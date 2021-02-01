@@ -79,4 +79,8 @@ public enum OperatorType {
   public boolean isJoin() {
     return this == LeftJoin || this == InnerJoin;
   }
+
+  public boolean isFilter() {
+    return this == PlainFilter || this == InnerJoin;
+  }
 }

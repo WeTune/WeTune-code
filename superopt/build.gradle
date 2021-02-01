@@ -1,3 +1,5 @@
+apply plugin: 'application'
+
 dependencies {
     implementation project(":common")
     implementation project(":symsolver")
@@ -6,3 +8,8 @@ dependencies {
     implementation(name: 'z3-4.8.9')
 }
 
+application {
+    mainModule = 'sjtu.ipads.wtune.superopt'
+    mainClass = 'sjtu.ipads.wtune.superopt.Main'
+    applicationDefaultJvmArgs += ["-Dwetune.superopt.outFile=$rootDir/out", "-Dwetune.superopt.errFile=$rootDir/err"]
+}

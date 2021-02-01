@@ -11,17 +11,21 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'application'
-    apply plugin: 'org.javamodularity.moduleplugin'
 
-    java {
-        targetCompatibility = JavaVersion.VERSION_15
-    }
+    sourceCompatibility = JavaVersion.VERSION_15
+    targetCompatibility = JavaVersion.VERSION_15
 
     repositories {
         flatDir { dirs("$rootDir/lib") }
-        mavenLocal()
         mavenCentral()
+    }
+
+    compileJava {
+        doFirst {
+            options.compilerArgs += [
+                    '--module-path', classpath.asPath
+            ]
+        }
     }
 
     test {
@@ -89,12 +93,6 @@ subprojects {
 
 configurations {
     childJars
-}
-
-dependencies {
-    subprojects.each {
-        childJars project(it.path)
-    }
 }
 
 task cleanAll {

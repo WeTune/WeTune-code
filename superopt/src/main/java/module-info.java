@@ -5,4 +5,6 @@ module sjtu.ipads.wtune.superopt {
   requires sjtu.ipads.wtune.symsolver;
   requires sjtu.ipads.wtune.common;
   requires z3;
+
+  exports sjtu.ipads.wtune.superopt;
 }
