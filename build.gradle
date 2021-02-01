@@ -11,9 +11,11 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'application'
 
     sourceCompatibility = JavaVersion.VERSION_15
     targetCompatibility = JavaVersion.VERSION_15
+
 
     repositories {
         flatDir { dirs("$rootDir/lib") }
@@ -26,6 +28,16 @@ subprojects {
                     '--module-path', classpath.asPath
             ]
         }
+    }
+
+    run {
+        doFirst {
+            environment 'LD_LIBRARY_PATH', "$rootDir/lib/"
+        }
+    }
+
+    application {
+        applicationDefaultJvmArgs += ["-Djava.library.path=$rootDir/lib", '--enable-preview']
     }
 
     test {

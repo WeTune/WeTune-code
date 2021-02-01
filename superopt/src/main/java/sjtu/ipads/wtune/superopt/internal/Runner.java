@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -44,15 +45,17 @@ public class Runner {
 
     final List<Graph> frags = Enumerate.enumFragments();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
-    Collections.shuffle(frags);
 
-    Stream<List<Graph>> stream = Lists.cartesianProduct(frags, frags).stream();
+    final List<List<Graph>> pairs = new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
+    Collections.shuffle(pairs);
+
+    Stream<List<Graph>> stream = pairs.stream();
     if (parallel) stream = stream.parallel();
 
     if (partitions != 1)
       stream =
           stream.filter(
-              xs -> xs.get(0).id() * frags.size() + xs.get(1).id() % partitions == partitionKey);
+              xs -> (xs.get(0).id() * frags.size() + xs.get(1).id()) % partitions == partitionKey);
 
     try {
       final int estimated = ((frags.size() * (frags.size() - 1)) >> 1) / partitions;
@@ -101,6 +104,7 @@ public class Runner {
     }
   }
 
+  
   static {
     System.setProperty(
         "java.util.concurrent.ForkJoinPool.common.parallelism",

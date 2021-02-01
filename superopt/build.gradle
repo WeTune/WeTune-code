@@ -1,5 +1,3 @@
-apply plugin: 'application'
-
 dependencies {
     implementation project(":common")
     implementation project(":symsolver")
