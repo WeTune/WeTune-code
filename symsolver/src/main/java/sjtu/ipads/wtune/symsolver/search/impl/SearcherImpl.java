@@ -1,15 +1,14 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
+import gnu.trove.list.array.TLongArrayList;
 import sjtu.ipads.wtune.symsolver.core.Result;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import sjtu.ipads.wtune.symsolver.search.SearchCtx;
 import sjtu.ipads.wtune.symsolver.search.Searcher;
 
-import java.util.Arrays;
-
 public class SearcherImpl implements Searcher {
   private final SearchCtx ctx;
-  private final IntList guards;
+  private final TLongArrayList guards;
 
   private final long timeout;
 
@@ -18,7 +17,7 @@ public class SearcherImpl implements Searcher {
 
   private SearcherImpl(SearchCtx ctx, long timeout) {
     this.ctx = ctx;
-    this.guards = new IntList(64);
+    this.guards = new TLongArrayList();
     this.timeout = timeout;
   }
 
@@ -68,35 +67,8 @@ public class SearcherImpl implements Searcher {
   }
 
   private boolean canSkip(long seed) {
-    for (int i = 0, bound = guards.length(); i < bound; i++)
-      if ((guards.at(i) & seed) == seed) return true;
+    for (int i = 0, bound = guards.size(); i < bound; i++)
+      if ((guards.get(i) & seed) == seed) return true;
     return false;
-  }
-
-  private static class IntList {
-    private long[] data;
-    private int cursor;
-
-    private IntList(int initSize) {
-      data = new long[initSize];
-      cursor = 0;
-    }
-
-    private int length() {
-      return cursor;
-    }
-
-    private long at(int idx) {
-      return data[idx];
-    }
-
-    private void add(long i) {
-      if (cursor == data.length) data = Arrays.copyOf(data, data.length << 1);
-      data[cursor++] = i;
-    }
-
-    private void clear() {
-      cursor = 0;
-    }
   }
 }

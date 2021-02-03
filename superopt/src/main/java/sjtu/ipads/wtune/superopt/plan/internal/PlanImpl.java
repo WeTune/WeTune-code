@@ -5,9 +5,7 @@ import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.symsolver.core.QueryBuilder;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,12 +13,8 @@ import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public class PlanImpl implements Plan {
   private int id;
-
   public PlanNode head;
-  public List<Input> inputs;
-
   private boolean alreadySetup;
-  private Semantic semantic;
 
   private final Lock l;
 
@@ -79,18 +73,12 @@ public class PlanImpl implements Plan {
   @Override
   public Plan setup() {
     if (alreadySetup) return this;
+    alreadySetup = true;
 
-    inputs = new ArrayList<>(5);
-    int i = 0;
-    for (Hole<PlanNode> hole : holes()) {
-      final Input input = Input.create();
-      hole.fill(input);
-      inputs.add(input);
-    }
+    for (Hole<PlanNode> hole : holes()) hole.fill(Input.create());
 
     acceptVisitor(PlanVisitor.traverse(it -> it.setPlan(this)));
 
-    alreadySetup = true;
     return this;
   }
 
@@ -106,22 +94,15 @@ public class PlanImpl implements Plan {
 
   @Override
   public QueryBuilder semantic() {
-    if (semantic != null) return semantic;
-
-    synchronized (this) {
-      if (semantic == null) {
-        setup();
-        semantic = Semantic.build(this);
-      }
-      return semantic;
-    }
+    setup();
+    return Semantic.build(this);
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof Plan)) return false;
-    Plan plan = (Plan) o;
+    final Plan plan = (Plan) o;
     if ((this.head == null) != (plan.head() == null)) return false;
     if (this.head == null) return true;
     return this.head.structuralEquals(plan.head());
