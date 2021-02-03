@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.util;
+package sjtu.ipads.wtune.common.utils;
 
 public class ComposedLockable implements Lockable {
   private final Lockable[] lockables;

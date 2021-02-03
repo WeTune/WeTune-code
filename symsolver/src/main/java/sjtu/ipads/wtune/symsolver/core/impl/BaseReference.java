@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.core.Reference;
 
 import java.util.Objects;
 
-public class BaseReference<T extends Indexed, P extends Indexed> implements Reference<T, P> {
+public class BaseReference<T, P> implements Reference<T, P> {
   private final T tx, ty;
   private final P px, py;
 
@@ -17,21 +16,7 @@ public class BaseReference<T extends Indexed, P extends Indexed> implements Refe
     this.py = py;
   }
 
-  protected static void checkIndex(Indexed tx, Indexed px, Indexed ty, Indexed py) {
-    if (tx == null
-        || ty == null
-        || px == null
-        || py == null
-        || tx == ty
-        || px == py
-        || !tx.isIndexed()
-        || !px.isIndexed()
-        || !ty.isIndexed()
-        || !py.isIndexed()) throw new IllegalArgumentException();
-  }
-
-  public static <T extends Indexed, P extends Indexed> Constraint build(T tx, P px, T ty, P py) {
-    checkIndex(tx, px, ty, py);
+  public static <T, P> Constraint build(T tx, P px, T ty, P py) {
     return new BaseReference<>(tx, px, ty, py);
   }
 
@@ -61,21 +46,8 @@ public class BaseReference<T extends Indexed, P extends Indexed> implements Refe
   }
 
   @Override
-  public Indexed[] targets() {
-    return new Indexed[] {tx(), px(), ty(), py()};
-  }
-
-  @Override
-  public int compareTo(Constraint o) {
-    int res = kind().compareTo(o.kind());
-    if (res != 0) return res;
-
-    final Reference<?, ?> other = (Reference<?, ?>) o;
-    res = tx().compareTo(other.tx());
-    res = res != 0 ? res : px().compareTo(other.px());
-    res = res != 0 ? res : ty().compareTo(other.ty());
-    res = res != 0 ? res : py().compareTo(other.py());
-    return res;
+  public Object[] targets() {
+    return new Object[] {tx(), px(), ty(), py()};
   }
 
   @Override

@@ -1,17 +1,20 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
-import sjtu.ipads.wtune.symsolver.core.Scoped;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.logic.Func;
 
 public abstract class BaseSym implements Sym {
-  private final Scoped scoped;
+  private Object scope;
   private int index;
   private Func func;
 
-  protected BaseSym(Scoped scoped) {
-    this.scoped = scoped;
+  protected BaseSym() {
     this.index = -1;
+  }
+
+  @Override
+  public void setScope(Object scope) {
+    this.scope = scope;
   }
 
   @Override
@@ -37,11 +40,6 @@ public abstract class BaseSym implements Sym {
 
   @Override
   public Object scope() {
-    return scoped.scope();
-  }
-
-  @Override
-  public <T> T unwrap(Class<T> cls) {
-    return (T) scoped;
+    return scope;
   }
 }

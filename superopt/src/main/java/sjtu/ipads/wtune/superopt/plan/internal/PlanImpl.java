@@ -2,12 +2,9 @@ package sjtu.ipads.wtune.superopt.plan.internal;
 
 import sjtu.ipads.wtune.superopt.plan.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
-import sjtu.ipads.wtune.symsolver.core.QueryBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
@@ -16,11 +13,7 @@ public class PlanImpl implements Plan {
   public PlanNode head;
   private boolean alreadySetup;
 
-  private final Lock l;
-
-  private PlanImpl() {
-    l = new ReentrantLock();
-  }
+  private PlanImpl() {}
 
   public static Plan build() {
     return new PlanImpl();
@@ -32,11 +25,9 @@ public class PlanImpl implements Plan {
 
     for (int i = opStrs.length - 1; i >= 0; i--) {
       final String opStr = opStrs[i];
-      final String[] fields = opStr.split("[<> ]+");
-      final OperatorType type = OperatorType.valueOf(fields[0]);
+      final OperatorType type = OperatorType.valueOf(opStr.split("[<> ]+", 2)[0]);
       final PlanNode op = type.create();
 
-      op.setPlaceholders(fields);
       for (int j = 0; j < type.numPredecessors(); j++) op.setPredecessor(j, planNodes.pop());
 
       planNodes.push(op);
@@ -53,16 +44,6 @@ public class PlanImpl implements Plan {
   @Override
   public int id() {
     return id;
-  }
-
-  @Override
-  public void lock() {
-    l.lock();
-  }
-
-  @Override
-  public void unlock() {
-    l.unlock();
   }
 
   @Override
@@ -93,7 +74,7 @@ public class PlanImpl implements Plan {
   }
 
   @Override
-  public QueryBuilder semantic() {
+  public Semantic semantic() {
     setup();
     return Semantic.build(this);
   }

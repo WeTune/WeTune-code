@@ -10,18 +10,12 @@ public class PlainFilterImpl extends BasePlanNode implements PlainFilter {
   private final Placeholder predicate;
 
   private PlainFilterImpl() {
-    fields = newPlaceholder("c");
-    predicate = newPlaceholder("p");
+    fields = makePlaceholder("c");
+    predicate = makePlaceholder("p");
   }
 
   public static PlainFilterImpl create() {
     return new PlainFilterImpl();
-  }
-
-  @Override
-  public void setPlaceholders(String[] str) {
-    fields.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
-    predicate.setIndex(Integer.parseInt(str[2].substring(str[2].indexOf('p') + 1)));
   }
 
   @Override

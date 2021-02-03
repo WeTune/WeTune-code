@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.symsolver.logic.Func;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public interface Sym extends Indexed, Scoped {
-  <T> T unwrap(Class<T> cls);
+  void setScope(Object scope);
 
   Func func();
 

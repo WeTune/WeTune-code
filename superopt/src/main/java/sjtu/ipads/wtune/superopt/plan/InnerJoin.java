@@ -9,7 +9,7 @@ public interface InnerJoin extends Join {
     return OperatorType.InnerJoin;
   }
 
-  static InnerJoin create(){
+  static InnerJoin create() {
     return InnerJoinImpl.create();
   }
 }

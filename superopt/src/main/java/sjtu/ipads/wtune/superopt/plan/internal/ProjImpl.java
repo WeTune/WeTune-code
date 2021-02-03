@@ -9,16 +9,11 @@ public class ProjImpl extends BasePlanNode implements Proj {
   private final Placeholder fields;
 
   private ProjImpl() {
-    fields = newPlaceholder("c");
+    fields = makePlaceholder("c");
   }
 
   public static ProjImpl create() {
     return new ProjImpl();
-  }
-
-  @Override
-  public void setPlaceholders(String[] str) {
-    fields.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
   }
 
   @Override

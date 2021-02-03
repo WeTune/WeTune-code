@@ -1,9 +1,11 @@
 package sjtu.ipads.wtune.superopt.plan;
 
+import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.superopt.plan.internal.PlanImpl;
+import sjtu.ipads.wtune.superopt.plan.internal.Semantic;
+import sjtu.ipads.wtune.superopt.plan.internal.ToSQLTranslator;
 import sjtu.ipads.wtune.superopt.util.Hole;
-import sjtu.ipads.wtune.superopt.util.Lockable;
-import sjtu.ipads.wtune.symsolver.core.QueryBuilder;
+import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
-public interface Plan extends Comparable<Plan>, Lockable {
+public interface Plan extends Comparable<Plan> {
   void setId(int i);
 
   int id();
@@ -20,27 +22,18 @@ public interface Plan extends Comparable<Plan>, Lockable {
 
   void setHead(PlanNode head);
 
+  // add Input node as leaves & call setPlan(this) on each node
   Plan setup();
 
-  QueryBuilder semantic();
-
-  @Override
-  default int compareTo(Plan o) {
-    final PlanNode head = this.head(), otherHead = o.head();
-    if (head == null && otherHead == null) return 0;
-    if (head == null /* && otherHead != null */) return -1;
-    if (/* head != null && */ otherHead == null) return 1;
-
-    return head.compareTo(otherHead);
-  }
-
-  default String toInformativeString() {
-    return stringify(this, true);
-  }
+  Semantic semantic();
 
   default Plan copy() {
     if (head() == null) return empty();
     else return wrap(head().copy());
+  }
+
+  default SQLNode sql() {
+    return ToSQLTranslator.translate(this);
   }
 
   default List<Hole<PlanNode>> holes() {
@@ -51,8 +44,22 @@ public interface Plan extends Comparable<Plan>, Lockable {
     return holes;
   }
 
+  default String toString(PlaceholderNumbering numbering) {
+    return stringify(this, numbering);
+  }
+
   default void acceptVisitor(PlanVisitor visitor) {
     head().acceptVisitor(visitor);
+  }
+
+  @Override
+  default int compareTo(Plan o) {
+    final PlanNode head = this.head(), otherHead = o.head();
+    if (head == null && otherHead == null) return 0;
+    if (head == null /* && otherHead != null */) return -1;
+    if (/* head != null && */ otherHead == null) return 1;
+
+    return head.compareTo(otherHead);
   }
 
   static Plan empty() {

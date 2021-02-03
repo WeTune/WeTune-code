@@ -44,32 +44,19 @@ public enum OperatorType {
   }
 
   public PlanNode create() {
-    switch (this) {
-      case Input:
-        return InputImpl.create();
-      case InnerJoin:
-        return InnerJoinImpl.create();
-      case LeftJoin:
-        return LeftJoinImpl.create();
-      case PlainFilter:
-        return PlainFilterImpl.create();
-      case SubqueryFilter:
-        return SubqueryFilterImpl.create();
-      case Proj:
-        return ProjImpl.create();
-      case Agg:
-        return AggImpl.create();
-      case Sort:
-        return SortImpl.create();
-      case Limit:
-        return LimitImpl.create();
-      case Union:
-        return UnionImpl.create();
-      case Distinct:
-        return DistinctImpl.create();
-      default:
-        throw new IllegalArgumentException();
-    }
+    return switch (this) {
+      case Input -> InputImpl.create();
+      case InnerJoin -> InnerJoinImpl.create();
+      case LeftJoin -> LeftJoinImpl.create();
+      case PlainFilter -> PlainFilterImpl.create();
+      case SubqueryFilter -> SubqueryFilterImpl.create();
+      case Proj -> ProjImpl.create();
+      case Agg -> AggImpl.create();
+      case Sort -> SortImpl.create();
+      case Limit -> LimitImpl.create();
+      case Union -> UnionImpl.create();
+      case Distinct -> DistinctImpl.create();
+    };
   }
 
   public boolean isValidOutput() {

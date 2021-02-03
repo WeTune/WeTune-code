@@ -18,8 +18,6 @@ public interface PlanNode extends Comparable<PlanNode> {
 
   void acceptVisitor(PlanVisitor visitor);
 
-  default void setPlaceholders(String[] str) {}
-
   default PlanNode copy() {
     final PlanNode thisCopy = type().create();
 

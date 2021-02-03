@@ -44,7 +44,7 @@ public class Main {
     final Plan q0 = wrap(proj(innerJoin(null, null))).setup();
     final Plan q1 = wrap(proj(null)).setup();
 
-    final Collection<Substitution> constraints = Prove.proveEq(q0, q1, -1);
+    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 }

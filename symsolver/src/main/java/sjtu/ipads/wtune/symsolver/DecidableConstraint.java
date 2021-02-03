@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.core.impl.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 
-public interface DecidableConstraint extends Constraint, Decision {
+public interface DecidableConstraint extends Constraint, Decision, Comparable<DecidableConstraint> {
   static DecidableConstraint tableEq(TableSym tx, TableSym ty) {
     return DecidableTableEq.build(tx, ty);
   }

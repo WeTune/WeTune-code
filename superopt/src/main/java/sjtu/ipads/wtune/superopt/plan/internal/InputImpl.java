@@ -9,16 +9,11 @@ public class InputImpl extends BasePlanNode implements Input {
   private final Placeholder table;
 
   private InputImpl() {
-    this.table = newPlaceholder("t");
+    this.table = makePlaceholder("t");
   }
 
   public static InputImpl create() {
     return new InputImpl();
-  }
-
-  @Override
-  public void setPlaceholders(String[] str) {
-    table.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('t') + 1)));
   }
 
   @Override

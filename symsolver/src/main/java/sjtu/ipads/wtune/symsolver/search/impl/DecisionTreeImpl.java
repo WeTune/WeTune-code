@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.DecidableConstraint;
-import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
@@ -18,7 +17,7 @@ public class DecisionTreeImpl implements DecisionTree {
   private DecidableConstraint[] decisions;
 
   private DecisionTreeImpl(DecidableConstraint[] choices) {
-    this.choices = sorted(choices, Constraint::compareTo);
+    this.choices = sorted(choices, DecidableConstraint::compareTo);
     this.seed = 1L << this.choices.length;
   }
 

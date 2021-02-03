@@ -23,10 +23,10 @@ public class Enumerate {
 
   public static List<Plan> enumFragments() {
     return enumFragments0(0, singleton(Plan.empty())).parallelStream()
-                                                     .peek(Plan::setup)
-                                                     .filter(Enumerate::prune)
-                                                     .sorted(Plan::compareTo)
-                                                     .collect(Collectors.toList());
+        .peek(Plan::setup)
+        .filter(Enumerate::prune)
+        .sorted(Plan::compareTo)
+        .collect(Collectors.toList());
   }
 
   private static Set<Plan> enumFragments0(int depth, Set<Plan> plans) {

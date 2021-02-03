@@ -46,7 +46,8 @@ public class Runner {
     final List<Plan> frags = Enumerate.enumFragments();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
 
-    final List<List<Plan>> pairs = new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
+    final List<List<Plan>> pairs =
+        new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
     Collections.shuffle(pairs);
 
     Stream<List<Plan>> stream = pairs.stream();
@@ -77,7 +78,7 @@ public class Runner {
     if (current % 10 == 0) LOG.log(System.Logger.Level.INFO, "{0} / {1}", current, estimatedTotal);
 
     try {
-      final Collection<Substitution> results = Prove.proveEq(g0, g1, 10000);
+      final Collection<Substitution> results = Prove.prove(g0, g1, 10000);
       logResult(results);
     } catch (Throwable ex) {
       logError(ex, g0, g1);
@@ -104,7 +105,6 @@ public class Runner {
     }
   }
 
-  
   static {
     System.setProperty(
         "java.util.concurrent.ForkJoinPool.common.parallelism",

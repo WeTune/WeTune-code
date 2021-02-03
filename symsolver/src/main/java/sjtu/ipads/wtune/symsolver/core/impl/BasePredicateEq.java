@@ -1,35 +1,19 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.core.PredicateEq;
 
 import java.util.Objects;
 
-public class BasePredicateEq<P extends Indexed> implements PredicateEq<P> {
+public class BasePredicateEq<P> implements PredicateEq<P> {
   private final P px, py;
 
   protected BasePredicateEq(P x, P y) {
-    if (x.index() < y.index()) {
-      px = x;
-      py = y;
-    } else {
-      px = y;
-      py = x;
-    }
+    px = x;
+    py = y;
   }
 
-  protected static void checkIndex(Indexed x, Indexed y) {
-    if (x == null
-        || y == null
-        || x == y
-        || !x.isIndexed()
-        || !y.isIndexed()
-        || x.index() == y.index()) throw new IllegalArgumentException();
-  }
-
-  public static <P extends Indexed> Constraint build(P x, P y) {
-    checkIndex(x, y);
+  public static <P> Constraint build(P x, P y) {
     return new BasePredicateEq<>(x, y);
   }
 
@@ -49,18 +33,8 @@ public class BasePredicateEq<P extends Indexed> implements PredicateEq<P> {
   }
 
   @Override
-  public Indexed[] targets() {
-    return new Indexed[] {px(), py()};
-  }
-
-  @Override
-  public int compareTo(Constraint o) {
-    int res = kind().compareTo(o.kind());
-    if (res != 0) return res;
-
-    final PredicateEq<?> other = (PredicateEq<?>) o;
-    res = px().compareTo(other.px());
-    return res != 0 ? res : py().compareTo(other.py());
+  public Object[] targets() {
+    return new Object[] {px(), py()};
   }
 
   @Override

@@ -9,16 +9,11 @@ public class SubqueryFilterImpl extends BasePlanNode implements SubqueryFilter {
   private final Placeholder fields;
 
   private SubqueryFilterImpl() {
-    fields = newPlaceholder("c");
+    fields = makePlaceholder("c");
   }
 
   public static SubqueryFilterImpl create() {
     return new SubqueryFilterImpl();
-  }
-
-  @Override
-  public void setPlaceholders(String[] str) {
-    fields.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
   }
 
   @Override

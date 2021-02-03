@@ -8,14 +8,8 @@ public abstract class JoinImpl extends BasePlanNode implements Join {
 
   protected JoinImpl() {
     super();
-    left = newPlaceholder("c");
-    right = newPlaceholder("c");
-  }
-
-  @Override
-  public void setPlaceholders(String[] str) {
-    left.setIndex(Integer.parseInt(str[1].substring(str[1].indexOf('c') + 1)));
-    right.setIndex(Integer.parseInt(str[2].substring(str[2].indexOf('c') + 1)));
+    left = makePlaceholder("c");
+    right = makePlaceholder("c");
   }
 
   @Override

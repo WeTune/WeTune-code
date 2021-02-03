@@ -34,7 +34,7 @@ final class SummaryImpl implements Summary {
     this.tables = tables;
     this.picks = picks;
     this.preds = preds;
-    this.constraints = sorted(constraints, Constraint::compareTo);
+    this.constraints = sorted(constraints, DecidableConstraint::compareTo);
     this.tracer = tracer;
     this.expectedModCount = tracer.modCount();
   }

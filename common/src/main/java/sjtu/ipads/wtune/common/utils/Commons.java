@@ -162,6 +162,11 @@ public interface Commons {
     return ts;
   }
 
+  static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {
+    arr.sort(comparator);
+    return arr;
+  }
+
   static <T> T echo(T t) {
     System.out.println(t);
     return t;

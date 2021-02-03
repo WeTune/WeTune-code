@@ -4,38 +4,34 @@ import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
-import sjtu.ipads.wtune.superopt.util.LockGuard;
+import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Indexed;
+import sjtu.ipads.wtune.symsolver.core.PickFrom;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.superopt.plan.Placeholder.numbering;
-import static sjtu.ipads.wtune.superopt.util.Lockable.compose;
+import static sjtu.ipads.wtune.common.utils.Commons.listSort;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 
 public class SubstitutionImpl implements Substitution {
   private final Plan g0, g1;
   private final List<Constraint> constraints;
+  private final PlaceholderNumbering numbering;
 
-  private SubstitutionImpl(Plan g0, Plan g1, List<Constraint> constraints) {
+  private SubstitutionImpl(
+      Plan g0, Plan g1, PlaceholderNumbering numbering, List<Constraint> constraints) {
     this.g0 = g0;
     this.g1 = g1;
-    constraints.sort(Constraint::compareTo);
-    this.constraints = constraints;
+    this.numbering = numbering;
+    this.constraints = listSort(constraints, this::compare);
   }
 
-  public static Substitution build(Plan g0, Plan g1, List<Constraint> constraints) {
-    try (LockGuard ignored = compose(g0, g1).guard()) {
-      // Since multiple threads may number the graphs simultaneously but differently,
-      // so we have to copy the placeholders with lock protected
-      numbering(false).number(g0, g1);
-      return new SubstitutionImpl(g0, g1, listMap(it -> it.unwrap(Placeholder::copy), constraints));
-    }
+  public static Substitution build(
+      Plan g0, Plan g1, PlaceholderNumbering numbering, List<Constraint> constraints) {
+    return new SubstitutionImpl(g0, g1, numbering, constraints);
   }
 
   public static Substitution build(String str) {
@@ -44,12 +40,13 @@ public class SubstitutionImpl implements Substitution {
       throw new IllegalArgumentException("invalid serialized substitution: " + str);
 
     final Plan g0 = Plan.rebuild(split[0]), g1 = Plan.rebuild(split[1]);
-    final Map<String, Placeholder> placeholders = numbering().number(g0, g1).placeholders();
+    final PlaceholderNumbering numbering = PlaceholderNumbering.build();
+    numbering.number(g0, g1);
 
     final List<Constraint> constraints =
-        listMap(it -> rebuildConstraint(it, placeholders), split[2].split(";"));
+        listMap(func2(SubstitutionImpl::rebuildConstraint).bind1(numbering), split[2].split(";"));
 
-    return new SubstitutionImpl(g0, g1, constraints);
+    return new SubstitutionImpl(g0, g1, numbering, constraints);
   }
 
   @Override
@@ -86,28 +83,55 @@ public class SubstitutionImpl implements Substitution {
   public String toString() {
     return "%s|%s|%s"
         .formatted(
-            g0.toInformativeString(),
-            g1.toInformativeString(),
-            constraints.stream().map(Object::toString).collect(Collectors.joining(";")));
+            g0.toString(numbering),
+            g1.toString(numbering),
+            constraints.stream().map(this::toString).collect(Collectors.joining(";")));
   }
 
-  private static Constraint rebuildConstraint(String str, Map<String, Placeholder> lookup) {
+  private static Constraint rebuildConstraint(String str, PlaceholderNumbering lookup) {
     final String[] split = str.split("[(),\\[\\]]+");
     switch (Constraint.Kind.valueOf(split[0])) {
       case TableEq:
-        return Constraint.tableEq(lookup.get(split[1]), lookup.get(split[2]));
+        return Constraint.tableEq(lookup.find(split[1]), lookup.find(split[2]));
       case PickEq:
-        return Constraint.pickEq(lookup.get(split[1]), lookup.get(split[2]));
+        return Constraint.pickEq(lookup.find(split[1]), lookup.find(split[2]));
       case PredicateEq:
-        return Constraint.predicateEq(lookup.get(split[1]), lookup.get(split[2]));
+        return Constraint.predicateEq(lookup.find(split[1]), lookup.find(split[2]));
       case PickFrom:
         return Constraint.pickFrom(
-            lookup.get(split[1]), arrayMap(lookup::get, Indexed.class, Commons.subArray(split, 2)));
+            lookup.find(split[1]),
+            arrayMap(lookup::find, Indexed.class, Commons.subArray(split, 2)));
       case Reference:
         return Constraint.reference(
-            lookup.get(split[1]), lookup.get(split[2]), lookup.get(split[3]), lookup.get(split[4]));
+            lookup.find(split[1]),
+            lookup.find(split[2]),
+            lookup.find(split[3]),
+            lookup.find(split[4]));
       default:
         throw new IllegalStateException();
     }
+  }
+
+  private String toString(Constraint constraint) {
+    if (constraint instanceof PickFrom) {
+      return constraint.kind()
+          + "("
+          + numbering.nameOf((Placeholder) ((PickFrom<?, ?>) constraint).p())
+          + ",["
+          + String.join(
+              ",",
+              listMap(it -> numbering.nameOf((Placeholder) it), ((PickFrom<?, ?>) constraint).ts()))
+          + "])";
+    } else
+      return constraint.kind()
+          + "("
+          + String.join(
+              ",", listMap(it -> numbering.nameOf((Placeholder) it), constraint.targets()))
+          + ")";
+  }
+
+  private int compare(Constraint c0, Constraint c1) {
+    final int res = c0.kind().compareTo(c1.kind());
+    return res != 0 ? res : toString(c0).compareTo(toString(c1));
   }
 }

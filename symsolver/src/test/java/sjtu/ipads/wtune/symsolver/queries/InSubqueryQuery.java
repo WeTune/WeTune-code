@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
 
 public class InSubqueryQuery extends BaseQueryBuilder {
   @Override
@@ -21,8 +21,8 @@ public class InSubqueryQuery extends BaseQueryBuilder {
     final Object scope = new Object();
     final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
 
-    final TableSym[] tables = arrayMap(this::tableSym, TableSym.class, supplier.repeat(2));
-    final PickSym[] picks = arrayMap(this::pickSym, PickSym.class, supplier.repeat(3));
+    final TableSym[] tables = supplier(this::makeTable).repeat(2).toArray(TableSym[]::new);
+    final PickSym[] picks = supplier(this::makePick).repeat(3).toArray(PickSym[]::new);
 
     final TableSym t0 = tables[0];
     final TableSym t1 = tables[1];
@@ -39,7 +39,7 @@ public class InSubqueryQuery extends BaseQueryBuilder {
 
     p1.setJoined(p2);
 
-    final Value a = newTuple(), b = newTuple();
+    final Value a = makeTuple(), b = makeTuple();
     final Proposition from = ctx().tupleFrom(a, t0).and(ctx().tupleFrom(b, t1));
     final Proposition join = p1.apply(a).equalsTo(p2.apply(b));
 

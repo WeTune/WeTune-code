@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.util;
+package sjtu.ipads.wtune.common.utils;
 
 public interface Lockable {
   void lock();

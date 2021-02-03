@@ -21,13 +21,13 @@ public class SimpleProjQuery extends BaseQueryBuilder {
     final Object scope = new Object();
     final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
 
-    final TableSym table = tableSym(supplier.get());
-    final PickSym p0 = pickSym(supplier.get());
+    final TableSym table = makeTable();
+    final PickSym p0 = makePick();
 
     p0.setVisibleSources(asArray(table));
     p0.setViableSources(powerSet(Set.of(table)));
 
-    final Value a = newTuple();
+    final Value a = makeTuple();
     final Proposition from = ctx().tupleFrom(a, table);
 
     return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));

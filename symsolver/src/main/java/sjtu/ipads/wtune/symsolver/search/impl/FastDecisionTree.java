@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.DecidableConstraint;
-import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 import sjtu.ipads.wtune.symsolver.utils.Partitioner;
@@ -28,7 +27,7 @@ public class FastDecisionTree implements DecisionTree {
 
   private FastDecisionTree(
       int numTables, int numPicks, int numPreds, DecidableConstraint[] choices) {
-    this.choices = sorted(choices, Constraint::compareTo);
+    this.choices = sorted(choices, DecidableConstraint::compareTo);
 
     pickBase = (numTables * (numTables - 1)) >> 1;
     predBase = pickBase + ((numPicks * (numPicks - 1)) >> 1);

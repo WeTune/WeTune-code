@@ -15,7 +15,7 @@ import java.util.function.Function;
 import static com.google.common.collect.Sets.powerSet;
 import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
 import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
 
 public class Main {
@@ -70,11 +70,8 @@ public class Main {
   private static class Query0 extends BaseQueryBuilder {
     @Override
     protected Function<Value, Proposition> semantic() {
-      final Object scope = new Object();
-      final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
-
-      final TableSym[] tables = arrayMap(this::tableSym, TableSym.class, supplier.repeat(2));
-      final PickSym[] picks = arrayMap(this::pickSym, PickSym.class, supplier.repeat(3));
+      final TableSym[] tables = supplier(this::makeTable).repeat(2).toArray(TableSym[]::new);
+      final PickSym[] picks = supplier(this::makePick).repeat(3).toArray(PickSym[]::new);
 
       final TableSym t0 = tables[0];
       final TableSym t1 = tables[1];
@@ -91,7 +88,7 @@ public class Main {
 
       p1.setJoined(p2);
 
-      final Value a = newTuple(), b = newTuple();
+      final Value a = makeTuple(), b = makeTuple();
       final Proposition from = ctx().tupleFrom(a, t0).and(ctx().tupleFrom(b, t1));
       final Proposition join = p1.apply(a).equalsTo(p2.apply(b));
 
@@ -106,13 +103,13 @@ public class Main {
       final Object scope = new Object();
       final ISupplier<Scoped> supplier = () -> new SimpleScoped(scope);
 
-      final TableSym table = tableSym(supplier.get());
-      final PickSym p0 = pickSym(supplier.get());
+      final TableSym table = makeTable();
+      final PickSym p0 = makePick();
 
       p0.setVisibleSources(asArray(table));
       p0.setViableSources(powerSet(Set.of(table)));
 
-      final Value a = newTuple();
+      final Value a = makeTuple();
       final Proposition from = ctx().tupleFrom(a, table);
 
       return x -> ctx().makeExists(a, x.equalsTo(p0.apply(a)).and(from));

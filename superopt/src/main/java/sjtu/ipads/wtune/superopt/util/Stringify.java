@@ -4,21 +4,21 @@ import sjtu.ipads.wtune.superopt.plan.*;
 
 public class Stringify implements PlanVisitor {
   private final StringBuilder builder;
-  private final boolean informative;
+  private final PlaceholderNumbering numbering;
 
-  public Stringify(boolean informative) {
+  public Stringify(PlaceholderNumbering numbering) {
     this.builder = new StringBuilder();
-    this.informative = informative;
+    this.numbering = numbering;
   }
 
   public static String stringify(Plan g) {
-    final Stringify stringify = new Stringify(false);
+    final Stringify stringify = new Stringify(null);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
 
-  public static String stringify(Plan g, boolean informative) {
-    final Stringify stringify = new Stringify(informative);
+  public static String stringify(Plan g, PlaceholderNumbering numbering) {
+    final Stringify stringify = new Stringify(numbering);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
@@ -26,7 +26,7 @@ public class Stringify implements PlanVisitor {
   @Override
   public boolean enter(PlanNode op) {
     builder.append(op);
-    if (informative) attachInformation(op);
+    attachInformation(op);
     if (!(op instanceof Input)) builder.append('(');
     return true;
   }
@@ -44,28 +44,40 @@ public class Stringify implements PlanVisitor {
   }
 
   private void attachInformation(PlanNode op) {
+    if (numbering == null) return;
+
     builder.append('<');
     switch (op.type()) {
       case Input:
-        builder.append(((Input) op).table());
+        builder.append(toString(((Input) op).table()));
         break;
       case InnerJoin:
       case LeftJoin:
         final Join join = (Join) op;
-        builder.append(join.leftFields()).append(' ').append(join.rightFields());
+        builder
+            .append(toString(join.leftFields()))
+            .append(' ')
+            .append(toString(join.rightFields()));
         break;
       case PlainFilter:
         final PlainFilter plainFilter = (PlainFilter) op;
-        builder.append(plainFilter.predicate()).append(' ').append(plainFilter.fields());
+        builder
+            .append(toString(plainFilter.predicate()))
+            .append(' ')
+            .append(toString(plainFilter.fields()));
         break;
       case SubqueryFilter:
-        builder.append(((SubqueryFilter) op).fields());
+        builder.append(toString(((SubqueryFilter) op).fields()));
         break;
       case Proj:
-        builder.append(((Proj) op).fields());
+        builder.append(toString(((Proj) op).fields()));
         break;
     }
     builder.append('>');
+  }
+
+  private String toString(Placeholder placeholder) {
+    return placeholder.tag() + numbering.numberOf(placeholder);
   }
 
   @Override

@@ -1,9 +1,10 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.internal.Prove;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
-import sjtu.ipads.wtune.superopt.internal.Prove;
+import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
 import java.util.Collection;
 
@@ -13,25 +14,29 @@ import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
 import static sjtu.ipads.wtune.superopt.plan.PlanNode.*;
 
 public class TestProof {
-  private static String makeSubString(Plan g0, Plan g1, String constraintStr) {
-    return g0.toInformativeString() + "|" + g1.toInformativeString() + "|" + constraintStr;
+  private static String makeSubString(
+      Plan g0, Plan g1, PlaceholderNumbering numbering, String constraintStr) {
+    return g0.toString(numbering) + "|" + g1.toString(numbering) + "|" + constraintStr;
   }
 
   private static final class TestHelper {
     private Plan g0, g1;
     private Collection<Substitution> results;
     private Collection<String> strs;
+    private PlaceholderNumbering numbering;
 
     private void solve() {
       if (results != null) return;
       if (g0 == null || g1 == null) throw new IllegalStateException();
-      results = Prove.proveEq(g0, g1, -1);
+      results = Prove.prove(g0, g1, -1);
       strs = results == null ? null : listMap(Object::toString, results);
+      numbering = PlaceholderNumbering.build();
+      numbering.number(g0, g1);
     }
 
     private void check(String target) {
       solve();
-      if (strs != null) assertTrue(strs.contains(makeSubString(g0, g1, target)));
+      if (strs != null) assertTrue(strs.contains(makeSubString(g0, g1, numbering, target)));
     }
 
     private void print() {

@@ -6,8 +6,8 @@ import sjtu.ipads.wtune.symsolver.core.impl.PickSymImpl;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface PickSym extends Sym {
-  static PickSym of(Scoped scoped) {
-    return PickSymImpl.build(scoped);
+  static PickSym of() {
+    return PickSymImpl.build();
   }
 
   TableSym[] visibleSources();

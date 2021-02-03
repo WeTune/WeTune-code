@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.symsolver.core;
 
-public interface Reference<T extends Indexed, P extends Indexed> extends Constraint {
+public interface Reference<T, P> extends Constraint {
   T tx();
 
   P px();

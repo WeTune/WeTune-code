@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.PickSym;
-import sjtu.ipads.wtune.symsolver.core.Scoped;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
 public class PickSymImpl extends BaseSym implements PickSym {
@@ -9,12 +8,8 @@ public class PickSymImpl extends BaseSym implements PickSym {
   private TableSym[][] viableSources;
   private PickSym joined;
 
-  private PickSymImpl(Scoped scoped) {
-    super(scoped);
-  }
-
-  public static PickSym build(Scoped scoped) {
-    return new PickSymImpl(scoped);
+  public static PickSym build() {
+    return new PickSymImpl();
   }
 
   @Override
