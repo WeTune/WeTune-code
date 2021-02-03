@@ -1,25 +1,25 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.core.Substitution;
-import sjtu.ipads.wtune.superopt.internal.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.superopt.internal.Placeholder.numbering;
-import static sjtu.ipads.wtune.superopt.operator.Operator.innerJoin;
-import static sjtu.ipads.wtune.superopt.operator.Operator.proj;
+import static sjtu.ipads.wtune.superopt.plan.Placeholder.numbering;
+import static sjtu.ipads.wtune.superopt.plan.PlanNode.innerJoin;
+import static sjtu.ipads.wtune.superopt.plan.PlanNode.proj;
 import static sjtu.ipads.wtune.symsolver.core.Constraint.*;
 
 public class TestRebuild {
   @Test
   void test() {
-    final Graph g0 = Graph.wrap(proj(innerJoin(null, null))).setup();
-    final Graph g1 = Graph.wrap(proj(null)).setup();
+    final Plan g0 = Plan.wrap(proj(innerJoin(null, null))).setup();
+    final Plan g1 = Plan.wrap(proj(null)).setup();
     final Map<String, Placeholder> sym = numbering().number(g0, g1).placeholders();
     final List<Constraint> constraints =
         List.of(

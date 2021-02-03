@@ -1,18 +1,18 @@
 package sjtu.ipads.wtune.superopt;
 
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.core.Substitution;
 import sjtu.ipads.wtune.superopt.internal.Prove;
 import sjtu.ipads.wtune.superopt.internal.Runner;
+import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.LogManager;
 
-import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
-import static sjtu.ipads.wtune.superopt.operator.Operator.innerJoin;
-import static sjtu.ipads.wtune.superopt.operator.Operator.proj;
+import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
+import static sjtu.ipads.wtune.superopt.plan.PlanNode.innerJoin;
+import static sjtu.ipads.wtune.superopt.plan.PlanNode.proj;
 
 public class Main {
 
@@ -41,8 +41,8 @@ public class Main {
   }
 
   private static void test0() {
-    final Graph q0 = wrap(proj(innerJoin(null, null))).setup();
-    final Graph q1 = wrap(proj(null)).setup();
+    final Plan q0 = wrap(proj(innerJoin(null, null))).setup();
+    final Plan q1 = wrap(proj(null)).setup();
 
     final Collection<Substitution> constraints = Prove.proveEq(q0, q1, -1);
     constraints.forEach(System.out::println);

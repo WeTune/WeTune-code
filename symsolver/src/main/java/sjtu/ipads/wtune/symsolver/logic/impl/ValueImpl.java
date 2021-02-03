@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.symsolver.logic.impl;
 
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 import java.util.Objects;

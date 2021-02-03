@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.stmt;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.mutator.Mutation;
 
 import java.util.function.Function;

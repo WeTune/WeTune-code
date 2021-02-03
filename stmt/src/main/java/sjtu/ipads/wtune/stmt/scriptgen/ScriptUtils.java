@@ -4,8 +4,8 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.support.Workflow;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
+import sjtu.ipads.wtune.stmt.support.Workflow;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
 import java.io.IOException;

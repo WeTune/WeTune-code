@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.symsolver;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.core.Indexed;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;

@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.stmt.resolver.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
+import sjtu.ipads.wtune.common.multiversion.Catalog;
+import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.multiversion.Catalog;
-import sjtu.ipads.wtune.sqlparser.multiversion.CatalogBase;
 import sjtu.ipads.wtune.stmt.resolver.BoolExpr;
 import sjtu.ipads.wtune.stmt.resolver.BoolExprManager;
 

@@ -15,7 +15,6 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
@@ -31,8 +30,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   public SQLNode visitCreate_table_statement(PGParser.Create_table_statementContext ctx) {
     final SQLNode node = newNode(CREATE_TABLE);
 
-    node.set(
-        CREATE_TABLE_NAME, PGASTHelper.tableName(this, stringifyIdentifier(ctx.name)));
+    node.set(CREATE_TABLE_NAME, PGASTHelper.tableName(this, stringifyIdentifier(ctx.name)));
 
     final var defCtx = ctx.define_table();
     final List<SQLNode> colDefs = new ArrayList<>();
@@ -72,8 +70,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   @Override
   public SQLNode visitConstraint_common(PGParser.Constraint_commonContext ctx) {
     final SQLNode node = newNode(INDEX_DEF);
-    if (ctx.identifier() != null)
-      node.set(INDEX_DEF_NAME, stringifyIdentifier(ctx.identifier()));
+    if (ctx.identifier() != null) node.set(INDEX_DEF_NAME, stringifyIdentifier(ctx.identifier()));
     // only EXCLUDE and FOREIGN key can be defined at table level
     final var bodyCtx = ctx.constr_body();
     if (bodyCtx.REFERENCES() != null) {
@@ -95,8 +92,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
 
     } else if (bodyCtx.UNIQUE() != null || bodyCtx.PRIMARY() != null) {
       node.set(INDEX_DEF_CONS, bodyCtx.UNIQUE() != null ? UNIQUE : PRIMARY);
-      node.set(
-          INDEX_DEF_KEYS, keyParts(this, bodyCtx.names_in_parens(0).names_references()));
+      node.set(INDEX_DEF_KEYS, keyParts(this, bodyCtx.names_in_parens(0).names_references()));
 
     } else return null;
 
@@ -125,8 +121,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   @Override
   public SQLNode visitAlter_table_statement(PGParser.Alter_table_statementContext ctx) {
     final SQLNode node = newNode(ALTER_TABLE);
-    node.set(
-        ALTER_TABLE_NAME, PGASTHelper.tableName(this, stringifyIdentifier(ctx.name)));
+    node.set(ALTER_TABLE_NAME, PGASTHelper.tableName(this, stringifyIdentifier(ctx.name)));
 
     final List<SQLNode> actions = new ArrayList<>();
 
@@ -151,9 +146,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   @Override
   public SQLNode visitCreate_index_statement(PGParser.Create_index_statementContext ctx) {
     final SQLNode node = newNode(INDEX_DEF);
-    node.set(
-        INDEX_DEF_TABLE,
-        PGASTHelper.tableName(this, stringifyIdentifier(ctx.table_name)));
+    node.set(INDEX_DEF_TABLE, PGASTHelper.tableName(this, stringifyIdentifier(ctx.table_name)));
     node.set(INDEX_DEF_NAME, stringifyIdentifier(ctx.name));
     if (ctx.UNIQUE() != null) node.set(INDEX_DEF_CONS, UNIQUE);
 
@@ -211,8 +204,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
 
       if (ctx.set_qualifier() != null)
         node.set(
-            SET_OP_OPTION,
-            SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+            SET_OP_OPTION, SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
       return node;
     }
   }
@@ -238,8 +230,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
 
       if (ctx.set_qualifier() != null)
         node.set(
-            SET_OP_OPTION,
-            SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+            SET_OP_OPTION, SetOperationOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
 
       return node;
 
@@ -309,8 +300,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
       node.set(
           SIMPLE_TABLE,
           PGASTHelper.tableName(this, stringifyIdentifier(ctx.schema_qualified_name())));
-      if (ctx.alias_clause() != null)
-        node.set(SIMPLE_ALIAS, parseAlias(ctx.alias_clause()));
+      if (ctx.alias_clause() != null) node.set(SIMPLE_ALIAS, parseAlias(ctx.alias_clause()));
       return node;
 
     } else if (ctx.table_subquery() != null) {
@@ -319,8 +309,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
       if (subquery == null) throw new SQLParserException("unsupported table source");
 
       node.set(DERIVED_SUBQUERY, subquery);
-      if (ctx.alias_clause() != null)
-        node.set(DERIVED_ALIAS, parseAlias(ctx.alias_clause()));
+      if (ctx.alias_clause() != null) node.set(DERIVED_ALIAS, parseAlias(ctx.alias_clause()));
       return node;
     }
     // TODO: other table sources
@@ -337,8 +326,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     final SQLNode node = newNode(SELECT_ITEM);
     node.set(SELECT_ITEM_EXPR, ctx.vex().accept(this));
 
-    if (ctx.col_label() != null)
-      node.set(SELECT_ITEM_ALIAS, stringifyIdentifier(ctx.col_label()));
+    if (ctx.col_label() != null) node.set(SELECT_ITEM_ALIAS, stringifyIdentifier(ctx.col_label()));
     else if (ctx.id_token() != null)
       node.set(SELECT_ITEM_ALIAS, stringifyIdentifier(ctx.id_token()));
 
@@ -362,9 +350,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     } else if (ctx.collate_identifier() != null) {
       final SQLNode node = newNode(ExprType.COLLATE);
       node.set(COLLATE_EXPR, ctx.vex(0).accept(this));
-      node.set(
-          COLLATE_COLLATION,
-          name3(stringifyIdentifier(ctx.collate_identifier().collation)));
+      node.set(COLLATE_COLLATION, name3(stringifyIdentifier(ctx.collate_identifier().collation)));
       return node;
 
     } else if (ctx.value_expression_primary() != null) {
@@ -582,9 +568,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     else if (ctx.MULTIPLY() != null) return wildcard();
     else if (ctx.EXISTS() != null) {
       final SQLNode node = newNode(ExprType.EXISTS);
-      node.set(
-          EXISTS_SUBQUERY_EXPR,
-          wrapAsQueryExpr(this, ctx.table_subquery().accept(this)));
+      node.set(EXISTS_SUBQUERY_EXPR, wrapAsQueryExpr(this, ctx.table_subquery().accept(this)));
       return node;
 
     } else if (ctx.select_stmt_no_parens() != null) {
@@ -697,8 +681,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     if (ctx.vex() != null) node.set(COMPARISON_MOD_EXPR, ctx.vex().accept(this));
     else if (ctx.select_stmt_no_parens() != null)
       node.set(
-          COMPARISON_MOD_EXPR,
-          wrapAsQueryExpr(this, ctx.select_stmt_no_parens().accept(this)));
+          COMPARISON_MOD_EXPR, wrapAsQueryExpr(this, ctx.select_stmt_no_parens().accept(this)));
 
     return node;
   }
@@ -708,8 +691,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     if (ctx.array_elements() != null) return ctx.array_elements().accept(this);
     else if (ctx.table_subquery() != null) {
       final SQLNode node = newNode(ExprType.ARRAY);
-      node.set(
-          ARRAY_ELEMENTS, Collections.singletonList(ctx.table_subquery().accept(this)));
+      node.set(ARRAY_ELEMENTS, Collections.singletonList(ctx.table_subquery().accept(this)));
       return node;
     }
     return assertFalse();
@@ -752,16 +734,12 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   public SQLNode visitWindow_definition(PGParser.Window_definitionContext ctx) {
     final SQLNode node = newNode(WINDOW_SPEC);
 
-    if (ctx.identifier() != null)
-      node.set(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.identifier()));
+    if (ctx.identifier() != null) node.set(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.identifier()));
     if (ctx.partition_by_columns() != null)
-      node.set(
-          WINDOW_SPEC_PARTITION,
-          listMap(this::visitVex, ctx.partition_by_columns().vex()));
+      node.set(WINDOW_SPEC_PARTITION, listMap(this::visitVex, ctx.partition_by_columns().vex()));
     if (ctx.orderby_clause() != null)
       node.set(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderby_clause()));
-    if (ctx.frame_clause() != null)
-      node.set(WINDOW_SPEC_FRAME, ctx.frame_clause().accept(this));
+    if (ctx.frame_clause() != null) node.set(WINDOW_SPEC_FRAME, ctx.frame_clause().accept(this));
 
     return node;
   }
@@ -775,18 +753,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     else if (ctx.GROUPS() != null) node.set(WINDOW_FRAME_UNIT, WindowUnit.GROUPS);
 
     node.set(WINDOW_FRAME_START, ctx.frame_bound(0).accept(this));
-    if (ctx.BETWEEN() != null)
-      node.set(WINDOW_FRAME_END, ctx.frame_bound(1).accept(this));
+    if (ctx.BETWEEN() != null) node.set(WINDOW_FRAME_END, ctx.frame_bound(1).accept(this));
 
     if (ctx.EXCLUDE() != null) {
-      if (ctx.CURRENT() != null)
-        node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.CURRENT_ROW);
-      else if (ctx.GROUP() != null)
-        node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.GROUP);
-      else if (ctx.TIES() != null)
-        node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.TIES);
-      else if (ctx.OTHERS() != null)
-        node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.NO_OTHERS);
+      if (ctx.CURRENT() != null) node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.CURRENT_ROW);
+      else if (ctx.GROUP() != null) node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.GROUP);
+      else if (ctx.TIES() != null) node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.TIES);
+      else if (ctx.OTHERS() != null) node.set(WINDOW_FRAME_EXCLUSION, WindowExclusion.NO_OTHERS);
     }
 
     return node;
@@ -799,8 +772,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     if (ctx.CURRENT() != null) node.set(FRAME_BOUND_EXPR, symbol("current row"));
     else if (ctx.vex() != null) node.set(FRAME_BOUND_EXPR, ctx.vex().accept(this));
 
-    if (ctx.PRECEDING() != null)
-      node.set(FRAME_BOUND_DIRECTION, FrameBoundDirection.PRECEDING);
+    if (ctx.PRECEDING() != null) node.set(FRAME_BOUND_DIRECTION, FrameBoundDirection.PRECEDING);
     else if (ctx.FOLLOWING() != null)
       node.set(FRAME_BOUND_DIRECTION, FrameBoundDirection.FOLLOWING);
 
@@ -838,8 +810,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
   }
 
   private void addAfterOp(SQLNode node, PGParser.After_opsContext ctx) {
-    if (ctx.LIMIT() != null && ctx.ALL() == null)
-      node.set(QUERY_LIMIT, ctx.vex().accept(this));
+    if (ctx.LIMIT() != null && ctx.ALL() == null) node.set(QUERY_LIMIT, ctx.vex().accept(this));
     else if (ctx.FETCH() != null)
       node.set(
           QUERY_LIMIT,
@@ -856,9 +827,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     final SQLNode expr = ctx.vex().accept(this);
 
     if (ExprType.COLUMN_REF.isInstance(expr))
-      node.set(
-          KEY_PART_COLUMN,
-          expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
+      node.set(KEY_PART_COLUMN, expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
     else node.set(KEY_PART_EXPR, expr);
 
     if (ctx.order != null) {
@@ -882,8 +851,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     if (ctx.order != null) {
       final String direction = ctx.order.getText().toLowerCase();
       if ("asc".equals(direction)) node.set(ORDER_ITEM_DIRECTION, KeyDirection.ASC);
-      else if ("desc".equals(direction))
-        node.set(ORDER_ITEM_DIRECTION, KeyDirection.DESC);
+      else if ("desc".equals(direction)) node.set(ORDER_ITEM_DIRECTION, KeyDirection.DESC);
       // TODO: USING
     }
 
@@ -911,8 +879,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
     if (name != null) {
       node.set(FUNC_CALL_NAME, name2(name));
       node.set(
-          FUNC_CALL_ARGS,
-          listMap(this::visitVex_or_named_notation, ctx.vex_or_named_notation()));
+          FUNC_CALL_ARGS, listMap(this::visitVex_or_named_notation, ctx.vex_or_named_notation()));
       return node;
 
     } else if (ctx.function_construct() != null) {
@@ -1024,8 +991,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<SQLNode> implements SQLNod
 
     if (ctx.order0 != null) node.set(AGGREGATE_ORDER, toOrderItems(ctx.order0));
 
-    if (ctx.order1 != null)
-      node.set(AGGREGATE_WITHIN_GROUP_ORDER, toOrderItems(ctx.order1));
+    if (ctx.order1 != null) node.set(AGGREGATE_WITHIN_GROUP_ORDER, toOrderItems(ctx.order1));
 
     if (ctx.filter_clause() != null)
       node.set(AGGREGATE_FILTER, ctx.filter_clause().vex().accept(this));

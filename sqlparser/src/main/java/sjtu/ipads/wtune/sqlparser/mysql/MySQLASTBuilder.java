@@ -101,8 +101,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
     if (tableOptions != null)
       for (var option : tableOptions.createTableOption())
         if (option.ENGINE_SYMBOL() != null) {
-          node.set(
-              CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
+          node.set(CREATE_TABLE_ENGINE, stringifyText(option.engineRef().textOrIdentifier()));
           break;
         }
 
@@ -241,8 +240,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
     final SQLNode node = newNode(NodeType.KEY_PART);
     node.set(KEY_PART_COLUMN, stringifyIdentifier(ctx.identifier()));
     node.set(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
-    if (ctx.fieldLength() != null)
-      node.set(KEY_PART_LEN, fieldLength2Int(ctx.fieldLength()));
+    if (ctx.fieldLength() != null) node.set(KEY_PART_LEN, fieldLength2Int(ctx.fieldLength()));
     return node;
   }
 
@@ -253,8 +251,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
       final SQLNode node = newNode(KEY_PART);
 
       node.set(KEY_PART_EXPR, toExpr(ctx.exprWithParentheses().expr()));
-      if (ctx.direction() != null)
-        node.set(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
+      if (ctx.direction() != null) node.set(KEY_PART_DIRECTION, parseDirection(ctx.direction()));
 
       return node;
     } else return null;
@@ -509,8 +506,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
   @Override
   public SQLNode visitSelectItem(MySQLParser.SelectItemContext ctx) {
     final SQLNode item = newNode(SELECT_ITEM);
-    if (ctx.tableWild() != null)
-      item.set(SELECT_ITEM_EXPR, visitTableWild(ctx.tableWild()));
+    if (ctx.tableWild() != null) item.set(SELECT_ITEM_EXPR, visitTableWild(ctx.tableWild()));
 
     if (ctx.expr() != null) item.set(SELECT_ITEM_EXPR, toExpr(ctx.expr()));
 
@@ -614,8 +610,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
             BinaryOp.ofOp(ctx.compOp().getText()));
 
     if (ctx.ALL_SYMBOL() != null) node.set(BINARY_SUBQUERY_OPTION, SubqueryOption.ALL);
-    else if (ctx.ANY_SYMBOL() != null)
-      node.set(BINARY_SUBQUERY_OPTION, SubqueryOption.ANY);
+    else if (ctx.ANY_SYMBOL() != null) node.set(BINARY_SUBQUERY_OPTION, SubqueryOption.ANY);
 
     return node;
   }
@@ -731,8 +726,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
               .map(it -> it.accept(this))
               .collect(Collectors.toList()));
     // order by
-    if (ctx.orderClause() != null)
-      node.set(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderClause()));
+    if (ctx.orderClause() != null) node.set(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderClause()));
     if (ctx.windowFrameClause() != null)
       node.set(WINDOW_SPEC_FRAME, visitWindowFrameClause(ctx.windowFrameClause()));
 
@@ -743,9 +737,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
   public SQLNode visitWindowFrameClause(MySQLParser.WindowFrameClauseContext ctx) {
     final SQLNode node = newNode(WINDOW_FRAME);
 
-    node.set(
-        WINDOW_FRAME_UNIT,
-        WindowUnit.valueOf(ctx.windowFrameUnits().getText().toUpperCase()));
+    node.set(WINDOW_FRAME_UNIT, WindowUnit.valueOf(ctx.windowFrameUnits().getText().toUpperCase()));
 
     final var frameExclusion = ctx.windowFrameExclusion();
     if (frameExclusion != null) {
@@ -764,8 +756,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
     } else if (frameExtent.windowFrameBetween() != null) {
       final var frameBetween = frameExtent.windowFrameBetween();
-      node.set(
-          WINDOW_FRAME_START, visitWindowFrameBound(frameBetween.windowFrameBound(0)));
+      node.set(WINDOW_FRAME_START, visitWindowFrameBound(frameBetween.windowFrameBound(0)));
       node.set(WINDOW_FRAME_END, visitWindowFrameBound(frameBetween.windowFrameBound(1)));
 
     } else return assertFalse();
@@ -826,7 +817,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
                 ctx.ULONGLONG_NUMBER(),
                 ctx.DECIMAL_NUMBER(),
                 ctx.FLOAT_NUMBER())
-               .getSymbol();
+            .getSymbol();
 
     final Pair<LiteralType, Number> pair = parseNumericLiteral(token);
     assert pair != null;
@@ -1065,8 +1056,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
     if (ctx.pureIdentifier() != null) {
       node.set(
-          FUNC_CALL_NAME,
-          name2(null, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase()));
+          FUNC_CALL_NAME, name2(null, stringifyIdentifier(ctx.pureIdentifier()).toLowerCase()));
 
       if (ctx.udfExprList() != null) node.set(FUNC_CALL_ARGS, toExprs(ctx.udfExprList()));
       else node.set(FUNC_CALL_ARGS, emptyList());
@@ -1168,8 +1158,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
       final var windowingClause = ctx.windowingClause();
       if (windowingClause.windowName() != null) {
         node.set(
-            AGGREGATE_WINDOW_NAME,
-            stringifyIdentifier(windowingClause.windowName().identifier()));
+            AGGREGATE_WINDOW_NAME, stringifyIdentifier(windowingClause.windowName().identifier()));
 
       } else if (windowingClause.windowSpec() != null) {
         node.set(
@@ -1178,10 +1167,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
 
       } else return assertFalse();
     }
-    if (ctx.orderClause() != null)
-      node.set(AGGREGATE_ORDER, toOrderItems(ctx.orderClause()));
-    if (ctx.textString() != null)
-      node.set(AGGREGATE_SEP, stringifyText(ctx.textString()));
+    if (ctx.orderClause() != null) node.set(AGGREGATE_ORDER, toOrderItems(ctx.orderClause()));
+    if (ctx.textString() != null) node.set(AGGREGATE_SEP, stringifyText(ctx.textString()));
 
     return node;
   }
@@ -1305,8 +1292,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
   public SQLNode visitSimpleExprCase(MySQLParser.SimpleExprCaseContext ctx) {
     final SQLNode node = newNode(CASE);
     if (ctx.expr() != null) node.set(CASE_COND, toExpr(ctx.expr()));
-    if (ctx.elseExpression() != null)
-      node.set(CASE_ELSE, toExpr(ctx.elseExpression().expr()));
+    if (ctx.elseExpression() != null) node.set(CASE_ELSE, toExpr(ctx.elseExpression().expr()));
     if (ctx.whenExpression() != null) {
       final var whenExprs = ctx.whenExpression();
       final var thenExprs = ctx.thenExpression();
@@ -1420,5 +1406,4 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<SQLNode> implements 
   private List<SQLNode> toExprs(MySQLParser.UdfExprListContext udfExprList) {
     return listMap(udfExpr -> toExpr(udfExpr.expr()), udfExprList.udfExpr());
   }
-
 }

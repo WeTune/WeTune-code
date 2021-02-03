@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
-import sjtu.ipads.wtune.superopt.operator.*;
+import sjtu.ipads.wtune.superopt.plan.*;
 
-public class Stringify implements GraphVisitor {
+public class Stringify implements PlanVisitor {
   private final StringBuilder builder;
   private final boolean informative;
 
@@ -13,20 +11,20 @@ public class Stringify implements GraphVisitor {
     this.informative = informative;
   }
 
-  public static String stringify(Graph g) {
+  public static String stringify(Plan g) {
     final Stringify stringify = new Stringify(false);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
 
-  public static String stringify(Graph g, boolean informative) {
+  public static String stringify(Plan g, boolean informative) {
     final Stringify stringify = new Stringify(informative);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
 
   @Override
-  public boolean enter(Operator op) {
+  public boolean enter(PlanNode op) {
     builder.append(op);
     if (informative) attachInformation(op);
     if (!(op instanceof Input)) builder.append('(');
@@ -34,18 +32,18 @@ public class Stringify implements GraphVisitor {
   }
 
   @Override
-  public void enterEmpty(Operator parent, int idx) {
+  public void enterEmpty(PlanNode parent, int idx) {
     builder.append("\u25a1,");
   }
 
   @Override
-  public void leave(Operator op) {
+  public void leave(PlanNode op) {
     if (builder.charAt(builder.length() - 1) == ',') builder.deleteCharAt(builder.length() - 1);
     if (!(op instanceof Input)) builder.append(')');
     builder.append(",");
   }
 
-  private void attachInformation(Operator op) {
+  private void attachInformation(PlanNode op) {
     builder.append('<');
     switch (op.type()) {
       case Input:

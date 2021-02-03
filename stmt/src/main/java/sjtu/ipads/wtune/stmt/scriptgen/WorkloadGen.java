@@ -5,8 +5,6 @@ import sjtu.ipads.wtune.stmt.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-
 public class WorkloadGen implements ScriptNode {
   private final List<StmtGen> stmtGens;
 

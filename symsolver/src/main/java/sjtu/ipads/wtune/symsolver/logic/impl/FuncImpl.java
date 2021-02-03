@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.symsolver.logic.impl;
 
 import sjtu.ipads.wtune.symsolver.logic.Func;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
 import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public class FuncImpl extends ValueImpl implements Func {

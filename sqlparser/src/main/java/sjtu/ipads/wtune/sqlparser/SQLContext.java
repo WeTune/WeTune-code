@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sqlparser;
 
+import sjtu.ipads.wtune.common.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
-import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface SQLContext extends MultiVersion {

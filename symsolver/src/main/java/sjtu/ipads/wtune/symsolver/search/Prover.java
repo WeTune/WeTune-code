@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.symsolver.search;
 
 import sjtu.ipads.wtune.symsolver.core.Query;
 import sjtu.ipads.wtune.symsolver.core.Result;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.search.impl.CombinedProver;
 import sjtu.ipads.wtune.symsolver.search.impl.IncrementalProver;
 import sjtu.ipads.wtune.symsolver.search.impl.OneShotProver;
-import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 
 public interface Prover extends Reactor {
   static Prover oneShot(LogicCtx ctx, Query q0, Query q1) {

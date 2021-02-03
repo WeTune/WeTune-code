@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.common.multiversion.Catalog2D;
 import sjtu.ipads.wtune.sqlparser.ast.internal.FieldManagerImpl;
-import sjtu.ipads.wtune.sqlparser.multiversion.Catalog2D;
 
 import java.util.Map;
 

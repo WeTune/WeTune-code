@@ -1,14 +1,11 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.internal.GraphVisitor;
-import sjtu.ipads.wtune.superopt.internal.Placeholder;
-import sjtu.ipads.wtune.superopt.operator.*;
+import sjtu.ipads.wtune.superopt.plan.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class NumberPlaceholders implements GraphVisitor {
+public class NumberPlaceholders implements PlanVisitor {
   private int nextPredId;
   private int nextPickId;
   private int nextTblId;
@@ -25,8 +22,8 @@ public class NumberPlaceholders implements GraphVisitor {
     return new NumberPlaceholders(collect);
   }
 
-  public NumberPlaceholders number(Graph... graphs) {
-    for (Graph graph : graphs) graph.acceptVisitor(this);
+  public NumberPlaceholders number(Plan... plans) {
+    for (Plan plan : plans) plan.acceptVisitor(this);
     return this;
   }
 

@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import com.google.common.collect.Table;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.common.multiversion.Catalog2D;
+import sjtu.ipads.wtune.common.multiversion.Catalog2DBase;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.multiversion.Catalog2D;
-import sjtu.ipads.wtune.sqlparser.multiversion.Catalog2DBase;
 
 import java.util.Map;
 

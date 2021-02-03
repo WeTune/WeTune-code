@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.dao;
 
-import sjtu.ipads.wtune.stmt.support.Timing;
 import sjtu.ipads.wtune.stmt.dao.internal.DbTimingDao;
+import sjtu.ipads.wtune.stmt.support.Timing;
 
 import java.util.List;
 

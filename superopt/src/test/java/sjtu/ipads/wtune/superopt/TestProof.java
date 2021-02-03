@@ -1,24 +1,24 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.core.Substitution;
+import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.internal.Prove;
 
 import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.superopt.core.Graph.wrap;
-import static sjtu.ipads.wtune.superopt.operator.Operator.*;
+import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
+import static sjtu.ipads.wtune.superopt.plan.PlanNode.*;
 
 public class TestProof {
-  private static String makeSubString(Graph g0, Graph g1, String constraintStr) {
+  private static String makeSubString(Plan g0, Plan g1, String constraintStr) {
     return g0.toInformativeString() + "|" + g1.toInformativeString() + "|" + constraintStr;
   }
 
   private static final class TestHelper {
-    private Graph g0, g1;
+    private Plan g0, g1;
     private Collection<Substitution> results;
     private Collection<String> strs;
 

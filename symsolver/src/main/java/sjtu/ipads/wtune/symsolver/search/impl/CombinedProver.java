@@ -1,7 +1,10 @@
 package sjtu.ipads.wtune.symsolver.search.impl;
 
 import sjtu.ipads.wtune.symsolver.DecidableConstraint;
-import sjtu.ipads.wtune.symsolver.core.*;
+import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.PredicateSym;
+import sjtu.ipads.wtune.symsolver.core.Result;
+import sjtu.ipads.wtune.symsolver.core.TableSym;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Prover;
 
@@ -57,7 +60,8 @@ public class CombinedProver implements Prover {
   }
 
   @Override
-  public void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
+  public void reference(
+      DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     for (Prover prover : provers) prover.reference(constraint, tx, px, ty, py);
   }
 }

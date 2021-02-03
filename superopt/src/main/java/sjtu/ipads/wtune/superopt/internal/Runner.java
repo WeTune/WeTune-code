@@ -1,30 +1,30 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.superopt.core.Graph;
-import sjtu.ipads.wtune.superopt.core.Substitution;
+import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class Runner {
   public static final System.Logger LOG = System.getLogger("Enumerator");
-  private final Stream<List<Graph>> stream;
+  private final Stream<List<Plan>> stream;
   private final int estimatedTotal;
   private final AtomicInteger i;
 
   private final PrintWriter out;
   private final PrintWriter err;
 
-  public Runner(Stream<List<Graph>> stream, int estimatedTotal) throws IOException {
+  public Runner(Stream<List<Plan>> stream, int estimatedTotal) throws IOException {
     this.stream = stream;
     this.estimatedTotal = estimatedTotal;
     this.i = new AtomicInteger(0);
@@ -43,13 +43,13 @@ public class Runner {
     final int partitions = args.length >= 4 ? Integer.parseInt(args[2]) : 1;
     final int partitionKey = args.length >= 4 ? Integer.parseInt(args[3]) : -1;
 
-    final List<Graph> frags = Enumerate.enumFragments();
+    final List<Plan> frags = Enumerate.enumFragments();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
 
-    final List<List<Graph>> pairs = new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
+    final List<List<Plan>> pairs = new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
     Collections.shuffle(pairs);
 
-    Stream<List<Graph>> stream = pairs.stream();
+    Stream<List<Plan>> stream = pairs.stream();
     if (parallel) stream = stream.parallel();
 
     if (partitions != 1)
@@ -70,7 +70,7 @@ public class Runner {
     stream.forEach(xs -> doProve(xs.get(0), xs.get(1)));
   }
 
-  private void doProve(Graph g0, Graph g1) {
+  private void doProve(Plan g0, Plan g1) {
     if (g0.id() >= g1.id()) return;
 
     final int current = i.getAndIncrement();
@@ -94,7 +94,7 @@ public class Runner {
     }
   }
 
-  private void logError(Throwable ex, Graph g0, Graph g1) {
+  private void logError(Throwable ex, Plan g0, Plan g1) {
     synchronized (err) {
       err.println("====");
       err.println(g0);

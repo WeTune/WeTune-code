@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FileUtils {
-  public final static String CSV_SEP = ";";
+  public static final String CSV_SEP = ";";
   private static Path dataDir;
 
   static {

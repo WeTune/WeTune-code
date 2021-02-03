@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import sjtu.ipads.wtune.common.multiversion.MultiVersion;
+import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.SQLContext;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
-import sjtu.ipads.wtune.sqlparser.multiversion.MultiVersion;
-import sjtu.ipads.wtune.sqlparser.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.HashMap;
