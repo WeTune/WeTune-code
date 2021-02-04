@@ -6,9 +6,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
@@ -27,37 +27,37 @@ public class MySQLASTBuilderTest {
 
   private static class TestHelper {
     private String sql;
-    private SQLNode node;
+    private ASTNode node;
     private final Function<MySQLParser, ParserRuleContext> rule;
 
     private TestHelper(Function<MySQLParser, ParserRuleContext> rule) {
       this.rule = rule;
     }
 
-    private SQLNode sql(String sql) {
+    private ASTNode sql(String sql) {
       if (sql != null) return (node = PARSER.parse(sql, rule));
       return null;
     }
   }
 
-  private static class ParentChecker implements SQLVisitor {
+  private static class ParentChecker implements ASTVistor {
 
     @Override
-    public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
+    public boolean enterChild(ASTNode parent, FieldKey<ASTNode> key, ASTNode child) {
       if (child != null) assertSame(parent, child.parent());
       return true;
     }
 
     @Override
     public boolean enterChildren(
-        SQLNode parent, FieldKey<List<SQLNode>> key, List<SQLNode> chidlren) {
-      for (SQLNode child : chidlren) if (child != null) assertSame(parent, child.parent());
+        ASTNode parent, FieldKey<List<ASTNode>> key, List<ASTNode> chidlren) {
+      for (ASTNode child : chidlren) if (child != null) assertSame(parent, child.parent());
 
       return true;
     }
   }
 
-  private static void checkParent(SQLNode node) {
+  private static void checkParent(ASTNode node) {
     node.accept(new ParentChecker());
   }
 
@@ -85,7 +85,7 @@ public class MySQLASTBuilderTest {
               + "spatial (k,i)"
               + ") ENGINE = 'innodb';";
 
-      final SQLNode root = helper.sql(createTable);
+      final ASTNode root = helper.sql(createTable);
       assertEquals(CREATE_TABLE, root.nodeType());
 
       final var tableName = root.get(CREATE_TABLE_NAME);
@@ -207,7 +207,7 @@ public class MySQLASTBuilderTest {
     {
       PARSER.setServerVersion(80013);
       final String createTable = "create table t (i int, primary key ((i+1)));";
-      final SQLNode node = helper.sql(createTable);
+      final ASTNode node = helper.sql(createTable);
       assertEquals("CREATE TABLE `t` ( `i` int, PRIMARY KEY ((`i` + 1)) )", node.toString());
     }
   }
@@ -216,7 +216,7 @@ public class MySQLASTBuilderTest {
   @DisplayName("[sqlparser.mysql] variable")
   void testVariable() {
     String sql;
-    SQLNode node;
+    ASTNode node;
 
     {
       sql = "@`a`=1";
@@ -256,7 +256,7 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::columnRef);
 
     {
-      final SQLNode node = helper.sql("a.b.c");
+      final ASTNode node = helper.sql("a.b.c");
       assertEquals("`a`.`b`.`c`", node.get(COLUMN_REF_COLUMN).toString());
     }
   }
@@ -268,9 +268,9 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
 
     {
-      final SQLNode node = helper.sql("a->'$.b'");
+      final ASTNode node = helper.sql("a->'$.b'");
       assertEquals(FUNC_CALL, node.get(EXPR_KIND));
-      final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
+      final List<ASTNode> args = node.get(FUNC_CALL_ARGS);
       assertEquals(2, args.size());
 
       assertEquals("json_extract", node.get(FUNC_CALL_NAME).get(NAME_2_1));
@@ -280,9 +280,9 @@ public class MySQLASTBuilderTest {
     }
 
     {
-      final SQLNode node = helper.sql("a->>'$.b'");
+      final ASTNode node = helper.sql("a->>'$.b'");
       assertEquals(FUNC_CALL, node.get(EXPR_KIND));
-      final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
+      final List<ASTNode> args = node.get(FUNC_CALL_ARGS);
 
       assertEquals(1, args.size());
       assertEquals("json_unquote", node.get(FUNC_CALL_NAME).get(NAME_2_1));
@@ -296,37 +296,37 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::literal);
 
     {
-      final SQLNode node = helper.sql("'abc' 'def'");
+      final ASTNode node = helper.sql("'abc' 'def'");
       assertEquals(LiteralType.TEXT, node.get(LITERAL_TYPE));
       assertEquals("abcdef", node.get(LITERAL_VALUE));
       assertEquals("'abcdef'", node.toString());
     }
     {
-      final SQLNode node = helper.sql("123");
+      final ASTNode node = helper.sql("123");
       assertEquals(LiteralType.INTEGER, node.get(LITERAL_TYPE));
       assertEquals(123, node.get(LITERAL_VALUE));
       assertEquals("123", node.toString());
     }
     {
-      final SQLNode node = helper.sql("123.123");
+      final ASTNode node = helper.sql("123.123");
       assertEquals(LiteralType.FRACTIONAL, node.get(LITERAL_TYPE));
       assertEquals(123.123, node.get(LITERAL_VALUE));
       assertEquals("123.123", node.toString());
     }
     {
-      final SQLNode node = helper.sql("null");
+      final ASTNode node = helper.sql("null");
       assertEquals(LiteralType.NULL, node.get(LITERAL_TYPE));
       assertNull(node.get(LITERAL_VALUE));
       assertEquals("NULL", node.toString());
     }
     {
-      final SQLNode node = helper.sql("true");
+      final ASTNode node = helper.sql("true");
       assertEquals(LiteralType.BOOL, node.get(LITERAL_TYPE));
       assertEquals(true, node.get(LITERAL_VALUE));
       assertEquals("TRUE", node.toString());
     }
     {
-      final SQLNode node = helper.sql("timestamp '2020-01-01 00:00:00.000'");
+      final ASTNode node = helper.sql("timestamp '2020-01-01 00:00:00.000'");
       assertEquals(LiteralType.TEMPORAL, node.get(LITERAL_TYPE));
       assertEquals("2020-01-01 00:00:00.000", node.get(LITERAL_VALUE));
       assertEquals("timestamp", node.get(LITERAL_UNIT));
@@ -339,60 +339,60 @@ public class MySQLASTBuilderTest {
   void testFuncCall() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
-      final SQLNode node = helper.sql("now()");
+      final ASTNode node = helper.sql("now()");
       assertEquals("NOW()", node.toString());
     }
     {
-      final SQLNode node = helper.sql("current_user()");
+      final ASTNode node = helper.sql("current_user()");
       assertEquals("CURRENT_USER()", node.toString());
     }
     {
       PARSER.setServerVersion(50604);
-      final SQLNode node = helper.sql("curtime(0)");
+      final ASTNode node = helper.sql("curtime(0)");
       assertEquals("CURTIME(0)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("COALESCE(1,a,b+1)");
+      final ASTNode node = helper.sql("COALESCE(1,a,b+1)");
       assertEquals("COALESCE(1, `a`, `b` + 1)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("concat(1,a,b+1)");
+      final ASTNode node = helper.sql("concat(1,a,b+1)");
       assertEquals("CONCAT(1, `a`, `b` + 1)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("char(1,a,b+1)");
+      final ASTNode node = helper.sql("char(1,a,b+1)");
       assertEquals("CHAR(1, `a`, `b` + 1)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("adddate(a,interval 10 day)");
+      final ASTNode node = helper.sql("adddate(a,interval 10 day)");
       assertEquals("ADDDATE(`a`, INTERVAL 10 DAY)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("extract(day from a)");
+      final ASTNode node = helper.sql("extract(day from a)");
       assertEquals("EXTRACT(DAY FROM `a`)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("get_format(date, 'USA')");
+      final ASTNode node = helper.sql("get_format(date, 'USA')");
       assertEquals("GET_FORMAT(DATE, 'USA')", node.toString());
     }
     {
-      final SQLNode node = helper.sql("position('a' in a)");
+      final ASTNode node = helper.sql("position('a' in a)");
       assertEquals("POSITION('a' IN `a`)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("timestamp_diff(second,a,b)");
+      final ASTNode node = helper.sql("timestamp_diff(second,a,b)");
       assertEquals("TIMESTAMP_DIFF(SECOND, `a`, `b`)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("old_password('abc')");
+      final ASTNode node = helper.sql("old_password('abc')");
       assertEquals("OLD_PASSWORD('abc')", node.toString());
     }
     {
-      final SQLNode node = helper.sql("right(1,a)");
+      final ASTNode node = helper.sql("right(1,a)");
       assertEquals("RIGHT(1, `a`)", node.toString());
     }
     {
-      SQLNode node = helper.sql("trim(leading 'abc' from a)");
+      ASTNode node = helper.sql("trim(leading 'abc' from a)");
       assertEquals("TRIM(LEADING 'abc' FROM `a`)", node.toString());
       node = helper.sql("trim(trailing 'abc' from a)");
       assertEquals("TRIM(TRAILING 'abc' FROM `a`)", node.toString());
@@ -404,11 +404,11 @@ public class MySQLASTBuilderTest {
       assertEquals("TRIM(BOTH FROM `a`)", node.toString());
     }
     {
-      SQLNode node = helper.sql("substring(a,'a',1)");
+      ASTNode node = helper.sql("substring(a,'a',1)");
       assertEquals("SUBSTRING(`a`, 'a', 1)", node.toString());
     }
     {
-      SQLNode node = helper.sql("geometrycollection(a,b)");
+      ASTNode node = helper.sql("geometrycollection(a,b)");
       assertEquals("GEOMETRYCOLLECTION(`a`, `b`)", node.toString());
       node = helper.sql("geometrycollection()");
       assertEquals("GEOMETRYCOLLECTION()", node.toString());
@@ -418,7 +418,7 @@ public class MySQLASTBuilderTest {
       assertEquals("POINT(`a`, `b`)", node.toString());
     }
     {
-      SQLNode node = helper.sql("my.myfunc(a,b)");
+      ASTNode node = helper.sql("my.myfunc(a,b)");
       assertEquals("MYFUNC(`a`, `b`)", node.toString());
     }
   }
@@ -428,7 +428,7 @@ public class MySQLASTBuilderTest {
   void testCollation() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("a collate 'utf8'");
+      final ASTNode node = helper.sql("a collate 'utf8'");
       assertEquals(COLLATE, node.get(EXPR_KIND));
       assertEquals("`a`", node.get(COLLATE_EXPR).toString());
       assertEquals("utf8", node.get(COLLATE_COLLATION).get(SYMBOL_TEXT));
@@ -440,7 +440,7 @@ public class MySQLASTBuilderTest {
   @DisplayName("[sqlparser.mysql] param marker")
   void testParamMarker() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
-    final SQLNode node = helper.sql("?");
+    final ASTNode node = helper.sql("?");
     assertEquals(PARAM_MARKER, node.get(EXPR_KIND));
   }
 
@@ -449,7 +449,7 @@ public class MySQLASTBuilderTest {
   void testConcatPipe() {
     PARSER.setSqlMode(PipesAsConcat);
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
-    final SQLNode node = helper.sql("'a' || b");
+    final ASTNode node = helper.sql("'a' || b");
     assertEquals(FUNC_CALL, node.get(EXPR_KIND));
     assertEquals("concat", node.get(FUNC_CALL_NAME).get(NAME_2_1));
     assertEquals(2, node.get(FUNC_CALL_ARGS).size());
@@ -461,25 +461,25 @@ public class MySQLASTBuilderTest {
   void testUnary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
-      final SQLNode node = helper.sql("+b");
+      final ASTNode node = helper.sql("+b");
       assertEquals(UNARY, node.get(EXPR_KIND));
       assertEquals(UnaryOp.UNARY_PLUS, node.get(UNARY_OP));
       assertEquals("+`b`", node.toString());
     }
     {
-      final SQLNode node = helper.sql("! b");
+      final ASTNode node = helper.sql("! b");
       assertEquals(UNARY, node.get(EXPR_KIND));
       assertEquals(UnaryOp.NOT, node.get(UNARY_OP));
       assertEquals("NOT `b`", node.toString());
     }
     {
-      final SQLNode node = helper.sql("binary b");
+      final ASTNode node = helper.sql("binary b");
       assertEquals(UNARY, node.get(EXPR_KIND));
       assertEquals(UnaryOp.BINARY, node.get(UNARY_OP));
       assertEquals("BINARY `b`", node.toString());
     }
     {
-      final SQLNode node = helper.sql("not b");
+      final ASTNode node = helper.sql("not b");
       assertEquals(UNARY, node.get(EXPR_KIND));
       assertEquals(UnaryOp.NOT, node.get(UNARY_OP));
       assertEquals("NOT `b`", node.toString());
@@ -491,7 +491,7 @@ public class MySQLASTBuilderTest {
   void testGroupingOp() {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::groupingOperation);
-    final SQLNode node = helper.sql("grouping(1,b)");
+    final ASTNode node = helper.sql("grouping(1,b)");
     assertEquals(GROUPING_OP, node.get(EXPR_KIND));
     assertEquals(2, node.get(GROUPING_OP_EXPRS).size());
     assertEquals("GROUPING(1, `b`)", node.toString());
@@ -501,7 +501,7 @@ public class MySQLASTBuilderTest {
   @DisplayName("[sqlparser.mysql] exists")
   void testExists() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
-    final SQLNode node = helper.sql("exists(select 1)");
+    final ASTNode node = helper.sql("exists(select 1)");
     assertEquals(EXISTS, node.get(EXPR_KIND));
   }
 
@@ -509,7 +509,7 @@ public class MySQLASTBuilderTest {
   @DisplayName("[sqlparser.mysql] match against")
   void testMatchAgainst() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
-    final SQLNode node = helper.sql("match a against ('123' with query expansion)");
+    final ASTNode node = helper.sql("match a against ('123' with query expansion)");
     assertEquals("MATCH `a` AGAINST ('123' WITH QUERY EXPANSION)", node.toString());
   }
 
@@ -518,12 +518,12 @@ public class MySQLASTBuilderTest {
   void testCast() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("convert(a, char)");
+      final ASTNode node = helper.sql("convert(a, char)");
       assertEquals("CAST(`a` AS CHAR)", node.toString());
     }
     {
       PARSER.setServerVersion(80017);
-      final SQLNode node = helper.sql("cast(a as char array)");
+      final ASTNode node = helper.sql("cast(a as char array)");
       assertEquals("CAST(`a` AS CHAR ARRAY)", node.toString());
     }
   }
@@ -533,7 +533,7 @@ public class MySQLASTBuilderTest {
   void testDefault() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("default(a.b)");
+      final ASTNode node = helper.sql("default(a.b)");
       assertEquals("DEFAULT(`a`.`b`)", node.toString());
     }
   }
@@ -543,7 +543,7 @@ public class MySQLASTBuilderTest {
   void testValues() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("values(a.b.c)");
+      final ASTNode node = helper.sql("values(a.b.c)");
       // this is parsed as function
       assertEquals("VALUES(`a`.`b`.`c`)", node.toString());
     }
@@ -554,23 +554,23 @@ public class MySQLASTBuilderTest {
   void testAggregate() {
     final TestHelper helper = new TestHelper(MySQLParser::sumExpr);
     {
-      final SQLNode node = helper.sql("count(distinct a)");
+      final ASTNode node = helper.sql("count(distinct a)");
       assertTrue(node.isFlag(AGGREGATE_DISTINCT));
       assertEquals("COUNT(DISTINCT `a`)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("count(*)");
+      final ASTNode node = helper.sql("count(*)");
       assertEquals(WILDCARD, node.get(AGGREGATE_ARGS).get(0).get(EXPR_KIND));
       assertEquals("COUNT(*)", node.toString());
     }
     {
       PARSER.setServerVersion(80000);
-      final SQLNode node = helper.sql("avg(a) over w");
+      final ASTNode node = helper.sql("avg(a) over w");
       assertEquals("AVG(`a`) OVER `w`", node.toString());
     }
     {
       PARSER.setServerVersion(80000);
-      final SQLNode node = helper.sql("group_concat(a order by b separator ',') over ()");
+      final ASTNode node = helper.sql("group_concat(a order by b separator ',') over ()");
       assertEquals("GROUP_CONCAT(`a` ORDER BY `b` SEPARATOR ',') OVER ()", node.toString());
     }
   }
@@ -580,15 +580,15 @@ public class MySQLASTBuilderTest {
   void testConvertUsing() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("convert(a using '123')");
+      final ASTNode node = helper.sql("convert(a using '123')");
       assertEquals("CONVERT(`a` USING '123')", node.toString());
     }
     {
-      final SQLNode node = helper.sql("convert(a using binary)");
+      final ASTNode node = helper.sql("convert(a using binary)");
       assertEquals("CONVERT(`a` USING binary)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("convert(a using default)");
+      final ASTNode node = helper.sql("convert(a using default)");
       assertEquals("CONVERT(`a` USING default)", node.toString());
     }
   }
@@ -598,11 +598,11 @@ public class MySQLASTBuilderTest {
   void testCaseWhen() {
     final TestHelper helper = new TestHelper(MySQLParser::simpleExpr);
     {
-      final SQLNode node = helper.sql("case when true then 1 else 2 end");
+      final ASTNode node = helper.sql("case when true then 1 else 2 end");
       assertEquals("CASE WHEN TRUE THEN 1 ELSE 2 END", node.toString());
     }
     {
-      final SQLNode node = helper.sql("case a when 1 then 2 when 2 then 4 else 8 end");
+      final ASTNode node = helper.sql("case a when 1 then 2 when 2 then 4 else 8 end");
       assertEquals("CASE `a` WHEN 1 THEN 2 WHEN 2 THEN 4 ELSE 8 END", node.toString());
     }
   }
@@ -613,11 +613,11 @@ public class MySQLASTBuilderTest {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::windowFrameClause);
     {
-      final SQLNode node = helper.sql("rows interval 1 year preceding exclude current row");
+      final ASTNode node = helper.sql("rows interval 1 year preceding exclude current row");
       assertEquals("ROWS INTERVAL 1 YEAR PRECEDING EXCLUDE CURRENT ROW", node.toString());
     }
     {
-      final SQLNode node = helper.sql("range between unbounded preceding and 1 following");
+      final ASTNode node = helper.sql("range between unbounded preceding and 1 following");
       assertEquals("RANGE BETWEEN UNBOUNDED PRECEDING AND 1 FOLLOWING", node.toString());
     }
   }
@@ -628,7 +628,7 @@ public class MySQLASTBuilderTest {
     PARSER.setServerVersion(80000);
     final TestHelper helper = new TestHelper(MySQLParser::windowSpecDetails);
     {
-      final SQLNode node =
+      final ASTNode node =
           helper.sql(
               "window_name partition by col_a "
                   + "order by col_b desc "
@@ -645,19 +645,19 @@ public class MySQLASTBuilderTest {
   void testBinary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
-      final SQLNode node = helper.sql("1+2");
+      final ASTNode node = helper.sql("1+2");
       assertEquals("1 + 2", node.toString());
     }
     {
-      final SQLNode node = helper.sql("1+2*3");
+      final ASTNode node = helper.sql("1+2*3");
       assertEquals("1 + 2 * 3", node.toString());
     }
     {
-      final SQLNode node = helper.sql("(1+2)*3");
+      final ASTNode node = helper.sql("(1+2)*3");
       assertEquals("(1 + 2) * 3", node.toString());
     }
     {
-      SQLNode node = helper.sql("a is not true");
+      ASTNode node = helper.sql("a is not true");
       assertEquals("NOT `a` IS TRUE", node.toString());
       node = helper.sql("a is false");
       assertEquals("`a` IS FALSE", node.toString());
@@ -665,7 +665,7 @@ public class MySQLASTBuilderTest {
       assertEquals("`a` IS UNKNOWN", node.toString());
     }
     {
-      SQLNode node = helper.sql("a and b");
+      ASTNode node = helper.sql("a and b");
       assertEquals("`a` AND `b`", node.toString());
       node = helper.sql("a or b");
       assertEquals("`a` OR `b`", node.toString());
@@ -673,7 +673,7 @@ public class MySQLASTBuilderTest {
       assertEquals("`a` XOR `b`", node.toString());
     }
     {
-      SQLNode node = helper.sql("a like '%123%'");
+      ASTNode node = helper.sql("a like '%123%'");
       assertEquals("`a` LIKE '%123%'", node.toString());
       node = helper.sql("a is null");
       assertEquals("`a` IS NULL", node.toString());
@@ -683,22 +683,22 @@ public class MySQLASTBuilderTest {
       assertEquals("`a` IN (1, 2)", node.toString());
     }
     {
-      SQLNode node = helper.sql("a regexp 'a*'");
+      ASTNode node = helper.sql("a regexp 'a*'");
       assertEquals("`a` REGEXP 'a*'", node.toString());
       node = helper.sql("a not regexp 'a*'");
       assertEquals("NOT `a` REGEXP 'a*'", node.toString());
     }
     {
       PARSER.setServerVersion(80017);
-      SQLNode node = helper.sql("a member of ((1,2+a,b))");
+      ASTNode node = helper.sql("a member of ((1,2+a,b))");
       assertEquals("`a` MEMBER OF ((1, 2 + `a`, `b`))", node.toString());
     }
     {
-      SQLNode node = helper.sql("a sounds like b");
+      ASTNode node = helper.sql("a sounds like b");
       assertEquals("`a` SOUNDS LIKE `b`", node.toString());
     }
     {
-      SQLNode node = helper.sql("a + interval 10 year");
+      ASTNode node = helper.sql("a + interval 10 year");
       assertEquals("`a` + INTERVAL 10 YEAR", node.toString());
     }
   }
@@ -708,7 +708,7 @@ public class MySQLASTBuilderTest {
   void testTernary() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
-      final SQLNode node = helper.sql("a = (b between 1 and 2)");
+      final ASTNode node = helper.sql("a = (b between 1 and 2)");
       assertEquals("`a` = (`b` BETWEEN 1 AND 2)", node.toString());
     }
   }
@@ -718,7 +718,7 @@ public class MySQLASTBuilderTest {
   void testInterval() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
     {
-      final SQLNode node = helper.sql("interval (1+a) day + b");
+      final ASTNode node = helper.sql("interval (1+a) day + b");
       assertEquals("INTERVAL (1 + `a`) DAY + `b`", node.toString());
     }
   }
@@ -728,11 +728,11 @@ public class MySQLASTBuilderTest {
   void testSelectItem() {
     final TestHelper helper = new TestHelper(MySQLParser::selectItem);
     {
-      final SQLNode node = helper.sql("a.*");
+      final ASTNode node = helper.sql("a.*");
       assertEquals("`a`.*", node.toString());
     }
     {
-      final SQLNode node = helper.sql("a.b aaa");
+      final ASTNode node = helper.sql("a.b aaa");
       assertEquals("`a`.`b` AS `aaa`", node.toString());
     }
   }
@@ -742,15 +742,15 @@ public class MySQLASTBuilderTest {
   void testIndexHint() {
     final TestHelper helper = new TestHelper(MySQLParser::indexHint);
     {
-      final SQLNode node = helper.sql("ignore key for join (a, primary)");
+      final ASTNode node = helper.sql("ignore key for join (a, primary)");
       assertEquals("IGNORE INDEX FOR JOIN (`a`, PRIMARY)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("force key for order by (primary)");
+      final ASTNode node = helper.sql("force key for order by (primary)");
       assertEquals("FORCE INDEX FOR ORDER BY (PRIMARY)", node.toString());
     }
     {
-      final SQLNode node = helper.sql("use key for group by ()");
+      final ASTNode node = helper.sql("use key for group by ()");
       assertEquals("USE INDEX FOR GROUP BY ()", node.toString());
     }
   }
@@ -761,7 +761,7 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::singleTable);
     {
       PARSER.setServerVersion(50602);
-      final SQLNode node =
+      final ASTNode node =
           helper.sql("t partition (p,q) tt use key for group by (), use key for order by ()");
       assertEquals(
           "`t` PARTITION (`p`, `q`) AS `tt` USE INDEX FOR GROUP BY (), USE INDEX FOR ORDER BY ()",
@@ -774,18 +774,18 @@ public class MySQLASTBuilderTest {
   void testJoinedTableSource() {
     final TestHelper helper = new TestHelper(MySQLParser::tableReference);
     {
-      final SQLNode node = helper.sql("a join (b join c)");
+      final ASTNode node = helper.sql("a join (b join c)");
       assertEquals("`a` INNER JOIN `b` INNER JOIN `c`", node.toString());
     }
     {
-      final SQLNode node = helper.sql("a natural left join (b join c)");
+      final ASTNode node = helper.sql("a natural left join (b join c)");
       assertEquals("`a` NATURAL LEFT JOIN (`b` INNER JOIN `c`)", node.toString());
       assertEquals(
           "`a`\n" + "NATURAL LEFT JOIN (\n" + "  `b`\n" + "  INNER JOIN `c`\n)",
           node.toString(false));
     }
     {
-      final SQLNode node = helper.sql("a left join b on a.col = b.col inner join c using (col)");
+      final ASTNode node = helper.sql("a left join b on a.col = b.col inner join c using (col)");
       assertEquals(
           "`a` LEFT JOIN `b` ON `a`.`col` = `b`.`col` INNER JOIN `c` USING (`col`)",
           node.toString());
@@ -804,7 +804,7 @@ public class MySQLASTBuilderTest {
   void testSelectStatement() {
     final TestHelper helper = new TestHelper(MySQLParser::selectStatement);
     {
-      final SQLNode node =
+      final ASTNode node =
           helper.sql(
               ""
                   + "select distinct "
@@ -919,13 +919,13 @@ public class MySQLASTBuilderTest {
   @DisplayName("[sqlparser.mysql] modify")
   void testMultiVersion() {
     final TestHelper helper = new TestHelper(MySQLParser::expr);
-    final SQLNode node = helper.sql("1=1 and b and c");
-    final SQLContext ctx = node.context();
+    final ASTNode node = helper.sql("1=1 and b and c");
+    final ASTContext ctx = node.context();
 
     assertEquals("1 = 1 AND `b` AND `c`", node.toString());
     final Snapshot snapshot0 = ctx.snapshot();
 
-    final SQLNode oneEqOne = node.get(BINARY_LEFT).get(BINARY_LEFT);
+    final ASTNode oneEqOne = node.get(BINARY_LEFT).get(BINARY_LEFT);
     ctx.derive();
     node.get(BINARY_LEFT).update(node.get(BINARY_LEFT).get(BINARY_RIGHT));
     assertEquals("`b` AND `c`", node.toString(true));
@@ -937,7 +937,7 @@ public class MySQLASTBuilderTest {
     final Snapshot snapshot2 = ctx.snapshot();
 
     ctx.derive();
-    final SQLNode binary = SQLNode.expr(BINARY);
+    final ASTNode binary = ASTNode.expr(BINARY);
     binary.set(BINARY_OP, BinaryOp.OR);
     binary.set(BINARY_LEFT, node.copy());
     binary.set(BINARY_RIGHT, oneEqOne);
@@ -946,7 +946,7 @@ public class MySQLASTBuilderTest {
     final Snapshot snapshot3 = ctx.snapshot();
 
     ctx.derive();
-    final SQLNode literal = SQLNode.expr(LITERAL);
+    final ASTNode literal = ASTNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.BOOL);
     literal.set(LITERAL_VALUE, true);
     node.set(BINARY_RIGHT, literal);

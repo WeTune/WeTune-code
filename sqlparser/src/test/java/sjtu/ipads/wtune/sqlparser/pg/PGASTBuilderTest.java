@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser.pg;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.function.Function;
@@ -14,14 +14,14 @@ class PGASTBuilderTest {
 
   private static class TestHelper {
     private String sql;
-    private SQLNode node;
+    private ASTNode node;
     private final Function<PGParser, ParserRuleContext> rule;
 
     private TestHelper(Function<PGParser, ParserRuleContext> rule) {
       this.rule = rule;
     }
 
-    private SQLNode sql(String sql) {
+    private ASTNode sql(String sql) {
       if (sql != null) return (node = PARSER.parse(sql, rule));
       return null;
     }

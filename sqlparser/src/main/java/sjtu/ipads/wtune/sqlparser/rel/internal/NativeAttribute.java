@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.rel.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -22,7 +22,7 @@ public class NativeAttribute extends BaseAttribute {
     this.column = column;
   }
 
-  public static List<Attribute> tableAttributesOf(SQLNode node) {
+  public static List<Attribute> tableAttributesOf(ASTNode node) {
     if (!SIMPLE_SOURCE.isInstance(node)) throw new IllegalArgumentException();
 
     final Relation rel = node.get(RELATION);
@@ -46,7 +46,7 @@ public class NativeAttribute extends BaseAttribute {
   }
 
   @Override
-  public SQLNode node() {
+  public ASTNode node() {
     return null;
   }
 }

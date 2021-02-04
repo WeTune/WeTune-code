@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.*;
 
 public class TableTest {

@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.sqlparser;
 
 import sjtu.ipads.wtune.common.multiversion.MultiVersion;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
-import sjtu.ipads.wtune.sqlparser.ast.internal.SQLContextImpl;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ASTContextImpl;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
-public interface SQLContext extends MultiVersion {
+public interface ASTContext extends MultiVersion {
   System.Logger LOG = System.getLogger("wetune.sqlparser");
 
   String dbType();
@@ -19,9 +19,9 @@ public interface SQLContext extends MultiVersion {
 
   <M> void addManager(Class<? super M> cls, M mgr);
 
-  static SQLNode manage(String dbType, SQLNode root) {
-    final SQLContext ctx = SQLContextImpl.build(dbType);
-    root.accept(SQLVisitor.topDownVisit(it -> it.setContext(ctx)));
+  static ASTNode manage(String dbType, ASTNode root) {
+    final ASTContext ctx = ASTContextImpl.build(dbType);
+    root.accept(ASTVistor.topDownVisit(it -> it.setContext(ctx)));
     return root;
   }
 }

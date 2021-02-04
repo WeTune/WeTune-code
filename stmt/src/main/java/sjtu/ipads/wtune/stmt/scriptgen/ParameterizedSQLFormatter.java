@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.Formatter;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.stmt.resolver.Param;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class ParameterizedSQLFormatter extends Formatter {
   }
 
   @Override
-  public boolean enterParamMarker(SQLNode paramMarker) {
+  public boolean enterParamMarker(ASTNode paramMarker) {
     final Param param = paramMarker.get(PARAM);
     if (param != null) {
       builder.append("%s");
@@ -46,7 +46,7 @@ public class ParameterizedSQLFormatter extends Formatter {
   }
 
   @Override
-  public boolean enterLiteral(SQLNode literal) {
+  public boolean enterLiteral(ASTNode literal) {
     final Param param = literal.get(PARAM);
     if (param != null) {
       builder.append("%s");

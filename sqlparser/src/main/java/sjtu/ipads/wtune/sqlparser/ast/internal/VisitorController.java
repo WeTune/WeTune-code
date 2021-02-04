@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 
 public interface VisitorController {
-  static boolean enter(SQLNode n, SQLVisitor v) {
+  static boolean enter(ASTNode n, ASTVistor v) {
     if (n == null) return false;
     if (!v.enter(n)) return false;
 
@@ -44,7 +44,7 @@ public interface VisitorController {
 
   }
 
-  static void visitChildren(SQLNode n, SQLVisitor v) {
+  static void visitChildren(ASTNode n, ASTVistor v) {
     switch (n.nodeType()) {
       case EXPR -> visitExprChildren(n, v);
       case TABLE_SOURCE -> visitTableSourceChildren(n, v);
@@ -100,7 +100,7 @@ public interface VisitorController {
     }
   }
 
-  static void leave(SQLNode n, SQLVisitor v) {
+  static void leave(ASTNode n, ASTVistor v) {
     if (n == null) return;
     switch (n.nodeType()) {
       case INVALID:
@@ -193,24 +193,24 @@ public interface VisitorController {
     v.leave(n);
   }
 
-  private static void safeAccept(SQLNode n, SQLVisitor v) {
+  private static void safeAccept(ASTNode n, ASTVistor v) {
     if (n != null) n.accept(v);
   }
 
-  private static void safeVisitChild(FieldKey<SQLNode> key, SQLNode n, SQLVisitor v) {
-    final SQLNode child = n.get(key);
+  private static void safeVisitChild(FieldKey<ASTNode> key, ASTNode n, ASTVistor v) {
+    final ASTNode child = n.get(key);
     if (v.enterChild(n, key, child)) safeAccept(child, v);
     v.leaveChild(n, key, child);
   }
 
-  private static void safeVisitList(FieldKey<List<SQLNode>> key, SQLNode n, SQLVisitor v) {
-    final List<SQLNode> children = n.get(key);
+  private static void safeVisitList(FieldKey<List<ASTNode>> key, ASTNode n, ASTVistor v) {
+    final List<ASTNode> children = n.get(key);
     if (v.enterChildren(n, key, children))
-      if (children != null) for (SQLNode child : children) safeAccept(child, v);
+      if (children != null) for (ASTNode child : children) safeAccept(child, v);
     v.leaveChildren(n, key, children);
   }
 
-  private static boolean enterExpr(SQLNode n, SQLVisitor v) {
+  private static boolean enterExpr(ASTNode n, ASTVistor v) {
     assert n.nodeType() == EXPR;
 
     switch (n.get(EXPR_KIND)) {
@@ -275,7 +275,7 @@ public interface VisitorController {
     return false;
   }
 
-  private static boolean enterTableSource(SQLNode n, SQLVisitor v) {
+  private static boolean enterTableSource(ASTNode n, ASTVistor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
     return switch (n.get(TABLE_SOURCE_KIND)) {
@@ -286,7 +286,7 @@ public interface VisitorController {
 
   }
 
-  private static void visitExprChildren(SQLNode n, SQLVisitor v) {
+  private static void visitExprChildren(ASTNode n, ASTVistor v) {
     assert n.nodeType() == EXPR;
     switch (n.get(EXPR_KIND)) {
       case VARIABLE -> safeVisitChild(VARIABLE_ASSIGNMENT, n, v);
@@ -342,7 +342,7 @@ public interface VisitorController {
     }
   }
 
-  private static void visitTableSourceChildren(SQLNode n, SQLVisitor v) {
+  private static void visitTableSourceChildren(ASTNode n, ASTVistor v) {
     assert n.nodeType() == TABLE_SOURCE;
     switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE -> {
@@ -358,7 +358,7 @@ public interface VisitorController {
     }
   }
 
-  private static void leaveExpr(SQLNode n, SQLVisitor v) {
+  private static void leaveExpr(ASTNode n, ASTVistor v) {
     assert n.nodeType() == EXPR;
 
     switch (n.get(EXPR_KIND)) {
@@ -473,7 +473,7 @@ public interface VisitorController {
     }
   }
 
-  private static void leaveTableSource(SQLNode n, SQLVisitor v) {
+  private static void leaveTableSource(ASTNode n, ASTVistor v) {
     assert n.nodeType() == TABLE_SOURCE;
 
     switch (n.get(TABLE_SOURCE_KIND)) {

@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.rel.internal;
 
-import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
@@ -19,27 +19,27 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_S
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 
 public class RelationImpl implements Relation {
-  private final SQLNode node;
+  private final ASTNode node;
   private final String alias;
 
   private List<Relation> inputs;
   private List<Attribute> attributes;
   private int expectedVersion;
 
-  private RelationImpl(SQLNode node) {
+  private RelationImpl(ASTNode node) {
     this.node = node;
     this.alias = tableSourceName(node);
   }
 
-  public static Relation rootedBy(SQLNode node) {
-    final SQLNode parent = node.parent();
+  public static Relation rootedBy(ASTNode node) {
+    final ASTNode parent = node.parent();
     return DERIVED_SOURCE.isInstance(parent) && QUERY.isInstance(node)
         ? parent.get(RELATION)
         : new RelationImpl(node);
   }
 
   @Override
-  public SQLNode node() {
+  public ASTNode node() {
     return node;
   }
 
@@ -52,7 +52,7 @@ public class RelationImpl implements Relation {
   public List<Relation> inputs() {
     if (SIMPLE_SOURCE.isInstance(node)) return emptyList();
 
-    final SQLContext ctx = node.context();
+    final ASTContext ctx = node.context();
     if (inputs == null || (ctx != null && ctx.versionNumber() != expectedVersion)) {
       expectedVersion = ctx == null ? 0 : ctx.versionNumber();
       inputs = inputsOf(node);
@@ -63,7 +63,7 @@ public class RelationImpl implements Relation {
 
   @Override
   public List<Attribute> attributes() {
-    final SQLContext ctx = node.context();
+    final ASTContext ctx = node.context();
     if (attributes == null || (ctx != null && ctx.versionNumber() != expectedVersion)) {
       expectedVersion = ctx == null ? 0 : ctx.versionNumber();
       attributes = outputAttributesOf(node);
@@ -83,7 +83,7 @@ public class RelationImpl implements Relation {
     if (parent != null) parent.reset();
   }
 
-  private static List<Attribute> outputAttributesOf(SQLNode node) {
+  private static List<Attribute> outputAttributesOf(ASTNode node) {
     if (SIMPLE_SOURCE.isInstance(node)) {
       return Attribute.fromTable(node);
 
@@ -102,24 +102,24 @@ public class RelationImpl implements Relation {
     } else throw new AssertionError();
   }
 
-  private static List<Relation> inputsOf(SQLNode root) {
+  private static List<Relation> inputsOf(ASTNode root) {
     final CollectInput collect = new CollectInput(root);
     root.accept(collect);
     return collect.inputs;
   }
 
-  private static class CollectInput implements SQLVisitor {
-    private final SQLNode root;
+  private static class CollectInput implements ASTVistor {
+    private final ASTNode root;
     private final Relation rootRel;
     private final List<Relation> inputs = new ArrayList<>(4);
 
-    private CollectInput(SQLNode root) {
+    private CollectInput(ASTNode root) {
       this.root = root;
       this.rootRel = root.get(RELATION);
     }
 
     @Override
-    public boolean enter(SQLNode node) {
+    public boolean enter(ASTNode node) {
       if (node == root || !Relation.isRelationBoundary(node)) return true;
 
       final Relation rel = node.get(RELATION);

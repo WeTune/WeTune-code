@@ -7,7 +7,7 @@ import java.util.List;
 public interface FieldDomain {
   String name();
 
-  boolean isInstance(SQLNode node);
+  boolean isInstance(ASTNode node);
 
   <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz);
 
@@ -19,11 +19,11 @@ public interface FieldDomain {
     return attr(name, Boolean.class);
   }
 
-  default FieldKey<SQLNode> nodeAttr(String name) {
-    return attr(name, SQLNode.class);
+  default FieldKey<ASTNode> nodeAttr(String name) {
+    return attr(name, ASTNode.class);
   }
 
-  default FieldKey<List<SQLNode>> nodesAttr(String name) {
+  default FieldKey<List<ASTNode>> nodesAttr(String name) {
     return attr(name, List.class);
   }
 }

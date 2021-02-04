@@ -8,8 +8,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.function.Function.identity;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 public class AppImpl implements App {
   private final String name;

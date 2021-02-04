@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldImpl;
 
 public enum NodeType implements FieldDomain {
@@ -33,7 +33,7 @@ public enum NodeType implements FieldDomain {
   INDEX_HINT,
   STATEMENT;
 
-  public boolean isInstance(SQLNode node) {
+  public boolean isInstance(ASTNode node) {
     return node != null && node.nodeType() == this;
   }
 

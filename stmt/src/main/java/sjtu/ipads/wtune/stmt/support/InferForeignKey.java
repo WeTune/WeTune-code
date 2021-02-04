@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.support;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
@@ -16,13 +16,13 @@ import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.UNIQUE;
 
 public class InferForeignKey {
-  public static Set<Column> analyze(SQLNode node) {
+  public static Set<Column> analyze(ASTNode node) {
     final Set<Column> inferred = new HashSet<>();
-    node.accept(SQLVisitor.topDownVisit(it -> infer(it, inferred), BINARY));
+    node.accept(ASTVistor.topDownVisit(it -> infer(it, inferred), BINARY));
     return inferred;
   }
 
-  private static void infer(SQLNode binary, Set<Column> inferred) {
+  private static void infer(ASTNode binary, Set<Column> inferred) {
     final Attribute leftAttr = binary.get(BINARY_LEFT).get(ATTRIBUTE);
     final Attribute rightAttr = binary.get(BINARY_RIGHT).get(ATTRIBUTE);
     if (leftAttr != null && rightAttr != null) {

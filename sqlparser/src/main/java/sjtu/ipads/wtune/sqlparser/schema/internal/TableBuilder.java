@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 
@@ -21,7 +21,7 @@ class TableBuilder {
     this.table = table;
   }
 
-  static TableBuilder fromCreateTable(SQLNode tableDef) {
+  static TableBuilder fromCreateTable(ASTNode tableDef) {
     final TableBuilder builder = new TableBuilder(TableImpl.build(tableDef));
 
     tableDef.get(CREATE_TABLE_COLUMNS).forEach(builder::setColumn);
@@ -30,14 +30,14 @@ class TableBuilder {
     return builder;
   }
 
-  TableBuilder fromAlterTable(SQLNode alterTable) {
-    for (SQLNode action : alterTable.get(ALTER_TABLE_ACTIONS))
+  TableBuilder fromAlterTable(ASTNode alterTable) {
+    for (ASTNode action : alterTable.get(ALTER_TABLE_ACTIONS))
       if ("add_constraint".equals(action.get(ALTER_TABLE_ACTION_NAME)))
-        setConstraint((SQLNode) action.get(ALTER_TABLE_ACTION_PAYLOAD));
+        setConstraint((ASTNode) action.get(ALTER_TABLE_ACTION_PAYLOAD));
     return this;
   }
 
-  TableBuilder fromCreateIndex(SQLNode createIndex) {
+  TableBuilder fromCreateIndex(ASTNode createIndex) {
     setConstraint(createIndex);
     return this;
   }
@@ -46,7 +46,7 @@ class TableBuilder {
     return table;
   }
 
-  private void setColumn(SQLNode colDef) {
+  private void setColumn(ASTNode colDef) {
     final ColumnImpl column = ColumnImpl.build(table.name(), colDef);
     table.addColumn(column);
 
@@ -60,7 +60,7 @@ class TableBuilder {
       column.addConstraint(c);
     }
 
-    final SQLNode references = colDef.get(COLUMN_DEF_REF);
+    final ASTNode references = colDef.get(COLUMN_DEF_REF);
     if (references != null) {
       final ConstraintImpl c = ConstraintImpl.build(FOREIGN, singletonList(column));
       c.setRefTableName(references.get(REFERENCES_TABLE));
@@ -71,11 +71,11 @@ class TableBuilder {
     }
   }
 
-  private void setConstraint(SQLNode constraintDef) {
-    final List<SQLNode> keys = constraintDef.get(INDEX_DEF_KEYS);
+  private void setConstraint(ASTNode constraintDef) {
+    final List<ASTNode> keys = constraintDef.get(INDEX_DEF_KEYS);
     final List<ColumnImpl> columns = new ArrayList<>(keys.size());
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
-    for (SQLNode key : keys) {
+    for (ASTNode key : keys) {
       final String columnName = key.get(KEY_PART_COLUMN);
       final ColumnImpl column = table.column(columnName);
       if (column == null) return;
@@ -87,7 +87,7 @@ class TableBuilder {
     c.setIndexType(constraintDef.get(INDEX_DEF_TYPE));
     c.setDirections(directions);
 
-    final SQLNode refs = constraintDef.get(INDEX_DEF_REFS);
+    final ASTNode refs = constraintDef.get(INDEX_DEF_REFS);
     if (refs != null) {
       c.setRefTableName(refs.get(REFERENCES_TABLE));
       c.setRefColNames(refs.get(REFERENCES_COLUMNS));

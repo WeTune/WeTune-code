@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.ast;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
@@ -10,16 +10,16 @@ import sjtu.ipads.wtune.sqlparser.ast.internal.NodeImpl;
 
 import java.util.Map;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.topDownVisit;
 
-public interface SQLNode extends Fields {
+public interface ASTNode extends Fields {
   String POSTGRESQL = "postgresql";
   String MYSQL = "mysql";
 
-  SQLContext context();
+  ASTContext context();
 
-  void setContext(SQLContext ctx);
+  void setContext(ASTContext ctx);
 
   /**
    * Copy attributes from `replacement` to this node.
@@ -29,14 +29,14 @@ public interface SQLNode extends Fields {
    *
    * <p>Note: take extra care to ensure the resultant AST acyclic.
    */
-  void update(SQLNode replacement);
+  void update(ASTNode replacement);
 
-  void accept(SQLVisitor visitor);
+  void accept(ASTVistor visitor);
 
   String toString(boolean oneline);
 
-  default SQLNode copy() {
-    final SQLNode newNode = node(nodeType());
+  default ASTNode copy() {
+    final ASTNode newNode = node(nodeType());
     newNode.update(this);
     return newNode;
   }
@@ -49,7 +49,7 @@ public interface SQLNode extends Fields {
     return get(NODE_TYPE);
   }
 
-  default SQLNode parent() {
+  default ASTNode parent() {
     return get(PARENT);
   }
 
@@ -59,7 +59,7 @@ public interface SQLNode extends Fields {
   }
 
   default <T> T manager(Class<T> cls) {
-    final SQLContext ctx = context();
+    final ASTContext ctx = context();
     return ctx != null ? ctx.manager(cls) : null;
   }
 
@@ -67,29 +67,29 @@ public interface SQLNode extends Fields {
     return manager(FieldManager.class);
   }
 
-  static SQLNode node(NodeType nodeType) {
+  static ASTNode node(NodeType nodeType) {
     return NodeImpl.build(nodeType);
   }
 
-  static SQLNode expr(ExprType exprKind) {
-    final SQLNode node = node(NodeType.EXPR);
+  static ASTNode expr(ExprType exprKind) {
+    final ASTNode node = node(NodeType.EXPR);
     node.set(EXPR_KIND, exprKind);
     return node;
   }
 
-  static SQLNode tableSource(TableSourceType tableSourceKind) {
-    final SQLNode node = node(NodeType.TABLE_SOURCE);
+  static ASTNode tableSource(TableSourceType tableSourceKind) {
+    final ASTNode node = node(NodeType.TABLE_SOURCE);
     node.set(TABLE_SOURCE_KIND, tableSourceKind);
     return node;
   }
 
-  static void setParent(Object obj, SQLNode parent) {
-    if (obj instanceof SQLNode) ((SQLNode) obj).set(PARENT, parent);
+  static void setParent(Object obj, ASTNode parent) {
+    if (obj instanceof ASTNode) ((ASTNode) obj).set(PARENT, parent);
     else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setParent(it, parent));
   }
 
-  static void setContext(Object obj, SQLContext ctx) {
-    if (obj instanceof SQLNode) ((SQLNode) obj).accept(topDownVisit(it -> it.setContext(ctx)));
+  static void setContext(Object obj, ASTContext ctx) {
+    if (obj instanceof ASTNode) ((ASTNode) obj).accept(topDownVisit(it -> it.setContext(ctx)));
     else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setContext(it, ctx));
   }
 }

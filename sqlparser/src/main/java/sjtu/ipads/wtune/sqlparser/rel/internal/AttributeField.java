@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.rel.internal;
 
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldBase;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 
@@ -14,6 +14,6 @@ public class AttributeField extends NodeFieldBase<Attribute> {
 
   @Override
   public Attribute get(Fields owner) {
-    return Attribute.resolve(owner.unwrap(SQLNode.class));
+    return Attribute.resolve(owner.unwrap(ASTNode.class));
   }
 }

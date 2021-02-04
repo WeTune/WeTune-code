@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.ARRAY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
 
-public class Formatter implements SQLVisitor {
+public class Formatter implements ASTVistor {
   private static final String INDENT_STR = "  ";
   private static final String UNKNOWN_PLACEHOLDER = "<??>";
 
@@ -26,16 +26,16 @@ public class Formatter implements SQLVisitor {
     this.oneLine = oneLine;
   }
 
-  private static char quotation(SQLNode node) {
-    if (SQLNode.POSTGRESQL.equals(node.dbType())) {
+  private static char quotation(ASTNode node) {
+    if (ASTNode.POSTGRESQL.equals(node.dbType())) {
       return '"';
     } else {
       return '`';
     }
   }
 
-  private static String quotation2(SQLNode node) {
-    if (SQLNode.POSTGRESQL.equals(node.dbType())) {
+  private static String quotation2(ASTNode node) {
+    if (ASTNode.POSTGRESQL.equals(node.dbType())) {
       return "\"";
     } else {
       return "`";
@@ -89,14 +89,14 @@ public class Formatter implements SQLVisitor {
     breakLine(true);
   }
 
-  private void appendName(SQLNode node, String name, boolean withDot) {
+  private void appendName(ASTNode node, String name, boolean withDot) {
     if (name == null) return;
     append(quotation(node)).append(name).append(quotation(node));
     if (withDot) append('.');
   }
 
   @Override
-  public boolean enter(SQLNode node) {
+  public boolean enter(ASTNode node) {
     if (node.nodeType() == NodeType.INVALID) {
       append(UNKNOWN_PLACEHOLDER);
       return false;
@@ -105,7 +105,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCreateTable(SQLNode createTable) {
+  public boolean enterCreateTable(ASTNode createTable) {
     append("CREATE TABLE ");
 
     safeVisit(createTable.get(CREATE_TABLE_NAME));
@@ -137,7 +137,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterTableName(SQLNode tableName) {
+  public boolean enterTableName(ASTNode tableName) {
     appendName(tableName, tableName.get(TABLE_NAME_SCHEMA), true);
     appendName(tableName, tableName.get(TABLE_NAME_TABLE), false);
 
@@ -145,7 +145,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterColumnDef(SQLNode colDef) {
+  public boolean enterColumnDef(ASTNode colDef) {
     safeVisit(colDef.get(COLUMN_DEF_NAME));
     append(' ').append(colDef.get(COLUMN_DEF_DATATYPE_RAW));
 
@@ -161,14 +161,14 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterName2(SQLNode name2) {
+  public boolean enterName2(ASTNode name2) {
     appendName(name2, name2.get(NAME_2_0), true);
     appendName(name2, name2.get(NAME_2_1), false);
     return false;
   }
 
   @Override
-  public boolean enterName3(SQLNode name3) {
+  public boolean enterName3(ASTNode name3) {
     appendName(name3, name3.get(NAME_3_0), true);
     appendName(name3, name3.get(NAME_3_1), true);
     appendName(name3, name3.get(NAME_3_2), false);
@@ -176,7 +176,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterColumnName(SQLNode colName) {
+  public boolean enterColumnName(ASTNode colName) {
     appendName(colName, colName.get(COLUMN_NAME_SCHEMA), true);
     appendName(colName, colName.get(COLUMN_NAME_TABLE), true);
     appendName(colName, colName.get(COLUMN_NAME_COLUMN), false);
@@ -185,7 +185,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCommonName(SQLNode commonName) {
+  public boolean enterCommonName(ASTNode commonName) {
     appendName(commonName, commonName.get(NAME_3_0), true);
     appendName(commonName, commonName.get(NAME_3_1), true);
     appendName(commonName, commonName.get(NAME_3_2), false);
@@ -193,14 +193,14 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterReferences(SQLNode ref) {
+  public boolean enterReferences(ASTNode ref) {
     append(" REFERENCES ");
     safeVisit(ref.get(REFERENCES_TABLE));
 
     final var columns = ref.get(REFERENCES_COLUMNS);
     if (columns != null) {
       try (final var ignored = withParen(true)) {
-        for (SQLNode column : columns) {
+        for (ASTNode column : columns) {
           safeVisit(column);
           append(", ");
         }
@@ -212,7 +212,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterIndexDef(SQLNode indexDef) {
+  public boolean enterIndexDef(ASTNode indexDef) {
     final var constraint = indexDef.get(INDEX_DEF_CONS);
     final var type = indexDef.get(INDEX_DEF_TYPE);
     final var name = indexDef.get(INDEX_DEF_NAME);
@@ -237,7 +237,7 @@ public class Formatter implements SQLVisitor {
     if (name != null) appendName(indexDef, name, false);
 
     try (final var ignored = withParen(true)) {
-      for (SQLNode key : keys) {
+      for (ASTNode key : keys) {
         safeVisit(key);
         append(", ");
       }
@@ -257,11 +257,11 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterKeyPart(SQLNode keyPart) {
+  public boolean enterKeyPart(ASTNode keyPart) {
     final String columnName = keyPart.get(KEY_PART_COLUMN);
     final Integer length = keyPart.get(KEY_PART_LEN);
     final KeyDirection direction = keyPart.get(KEY_PART_DIRECTION);
-    final SQLNode expr = keyPart.get(KEY_PART_EXPR);
+    final ASTNode expr = keyPart.get(KEY_PART_EXPR);
 
     if (columnName != null) appendName(keyPart, columnName, false);
     if (length != null) append('(').append(length).append(')');
@@ -275,11 +275,11 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterVariable(SQLNode variable) {
+  public boolean enterVariable(ASTNode variable) {
     append(variable.get(VARIABLE_SCOPE).prefix());
     append(variable.get(VARIABLE_NAME));
 
-    final SQLNode assignment = variable.get(VARIABLE_ASSIGNMENT);
+    final ASTNode assignment = variable.get(VARIABLE_ASSIGNMENT);
     if (assignment != null) {
       append(" = ");
       safeVisit(assignment);
@@ -289,7 +289,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterLiteral(SQLNode literal) {
+  public boolean enterLiteral(ASTNode literal) {
     final Object value = literal.get(LITERAL_VALUE);
     switch (literal.get(LITERAL_TYPE)) {
       case TEXT -> append('\'').append(value).append('\'');
@@ -308,9 +308,9 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterFuncCall(SQLNode funcCall) {
-    final SQLNode name = funcCall.get(FUNC_CALL_NAME);
-    final List<SQLNode> args = funcCall.getOr(FUNC_CALL_ARGS, emptyList());
+  public boolean enterFuncCall(ASTNode funcCall) {
+    final ASTNode name = funcCall.get(FUNC_CALL_NAME);
+    final List<ASTNode> args = funcCall.getOr(FUNC_CALL_ARGS, emptyList());
 
     final String schemaName = name.get(NAME_2_0);
     final String funcName = name.get(NAME_2_1);
@@ -346,9 +346,9 @@ public class Formatter implements SQLVisitor {
       try (final var ignored = withParen(true)) {
         if (args.size() != 3) append(UNKNOWN_PLACEHOLDER);
         else {
-          final SQLNode arg0 = args.get(0);
-          final SQLNode arg1 = args.get(1);
-          final SQLNode arg2 = args.get(2);
+          final ASTNode arg0 = args.get(0);
+          final ASTNode arg1 = args.get(1);
+          final ASTNode arg2 = args.get(2);
 
           if (arg0 != null) {
             safeVisit(arg0); // LEADING/TRAILING/BOTH
@@ -370,10 +370,10 @@ public class Formatter implements SQLVisitor {
       try (final var ignored = withParen(true)) {
         if (args.size() < 3) append(UNKNOWN_PLACEHOLDER);
         else {
-          final SQLNode arg0 = args.get(0);
-          final SQLNode arg1 = args.get(1);
-          final SQLNode arg2 = args.get(2);
-          final SQLNode arg3 = args.size() > 3 ? args.get(3) : null;
+          final ASTNode arg0 = args.get(0);
+          final ASTNode arg1 = args.get(1);
+          final ASTNode arg2 = args.get(2);
+          final ASTNode arg3 = args.size() > 3 ? args.get(3) : null;
           safeVisit(arg0);
           append(" PLACING ");
           safeVisit(arg1);
@@ -388,7 +388,7 @@ public class Formatter implements SQLVisitor {
       return false;
     }
 
-    if (schemaName == null && args.isEmpty() && SQLNode.POSTGRESQL.equals(funcCall.dbType())) {
+    if (schemaName == null && args.isEmpty() && ASTNode.POSTGRESQL.equals(funcCall.dbType())) {
       final String upperCase = funcName.toUpperCase();
       if (upperCase.startsWith("CURRENT")
           || "SESSION_USER".equals(upperCase)
@@ -410,13 +410,13 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCollation(SQLNode collation) {
-    final SQLNode expr = collation.get(COLLATE_EXPR);
+  public boolean enterCollation(ASTNode collation) {
+    final ASTNode expr = collation.get(COLLATE_EXPR);
     try (final var ignored = withParen(needParen(collation, expr, true))) {
       safeVisit(expr);
     }
     append(" COLLATE ");
-    if (SQLNode.POSTGRESQL.equals(collation.dbType())) {
+    if (ASTNode.POSTGRESQL.equals(collation.dbType())) {
       collation.get(COLLATE_COLLATION).accept(this);
     } else {
       append('\'').append(collation.get(COLLATE_COLLATION).get(SYMBOL_TEXT)).append('\'');
@@ -425,8 +425,8 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterParamMarker(SQLNode paramMarker) {
-    if (SQLNode.POSTGRESQL.equals(paramMarker.dbType())) {
+  public boolean enterParamMarker(ASTNode paramMarker) {
+    if (ASTNode.POSTGRESQL.equals(paramMarker.dbType())) {
       append('$').append(paramMarker.getOr(PARAM_MARKER_NUMBER, 1));
     } else {
       append('?');
@@ -435,12 +435,12 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterUnary(SQLNode unary) {
+  public boolean enterUnary(ASTNode unary) {
     final String op = unary.get(UNARY_OP).text();
     append(op);
     if (op.length() > 1) append(' ');
 
-    final SQLNode expr = unary.get(UNARY_EXPR);
+    final ASTNode expr = unary.get(UNARY_EXPR);
     try (final var ignored = withParen(needParen(unary, expr, false))) {
       safeVisit(expr);
     }
@@ -449,21 +449,21 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterGroupingOp(SQLNode groupingOp) {
+  public boolean enterGroupingOp(ASTNode groupingOp) {
     append("GROUPING");
     appendNodes(groupingOp.getOr(GROUPING_OP_EXPRS, emptyList()));
     return false;
   }
 
   @Override
-  public boolean enterTuple(SQLNode tuple) {
+  public boolean enterTuple(ASTNode tuple) {
     if (tuple.isFlag(TUPLE_AS_ROW)) append("ROW");
     appendNodes(tuple.getOr(TUPLE_EXPRS, emptyList()), true, true);
     return false;
   }
 
   @Override
-  public boolean enterMatch(SQLNode match) {
+  public boolean enterMatch(ASTNode match) {
     append("MATCH ");
     appendNodes(match.get(MATCH_COLS), false);
 
@@ -478,11 +478,11 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCast(SQLNode cast) {
-    if (SQLNode.POSTGRESQL.equals(cast.dbType())) {
+  public boolean enterCast(ASTNode cast) {
+    if (ASTNode.POSTGRESQL.equals(cast.dbType())) {
       safeVisit(cast.get(CAST_EXPR));
       append("::");
-      cast.get(CAST_TYPE).formatAsCastType(builder, SQLNode.POSTGRESQL);
+      cast.get(CAST_TYPE).formatAsCastType(builder, ASTNode.POSTGRESQL);
 
     } else {
       append("CAST(");
@@ -493,14 +493,14 @@ public class Formatter implements SQLVisitor {
       final SQLDataType castType = cast.get(CAST_TYPE);
       castType.formatAsCastType(builder, cast.dbType());
 
-      if (SQLNode.MYSQL.equals(cast.dbType())) if (cast.isFlag(CAST_IS_ARRAY)) append(" ARRAY");
+      if (ASTNode.MYSQL.equals(cast.dbType())) if (cast.isFlag(CAST_IS_ARRAY)) append(" ARRAY");
       append(')');
     }
     return false;
   }
 
   @Override
-  public boolean enterDefault(SQLNode _default) {
+  public boolean enterDefault(ASTNode _default) {
     append("DEFAULT(");
     safeVisit(_default.get(DEFAULT_COL));
     append(')');
@@ -508,7 +508,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterValues(SQLNode values) {
+  public boolean enterValues(ASTNode values) {
     append("VALUES(");
     safeVisit(values.get(VALUES_EXPR));
     append(')');
@@ -516,15 +516,15 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterSymbol(SQLNode symbol) {
+  public boolean enterSymbol(ASTNode symbol) {
     append(symbol.get(SYMBOL_TEXT).toUpperCase());
     return false;
   }
 
   @Override
-  public boolean enterInterval(SQLNode interval) {
+  public boolean enterInterval(ASTNode interval) {
     append("INTERVAL ");
-    final SQLNode expr = interval.get(INTERVAL_EXPR);
+    final ASTNode expr = interval.get(INTERVAL_EXPR);
     try (final var ignored = withParen(needParen(interval, expr, false))) {
       safeVisit(expr);
     }
@@ -534,8 +534,8 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterWildcard(SQLNode wildcard) {
-    final SQLNode table = wildcard.get(WILDCARD_TABLE);
+  public boolean enterWildcard(ASTNode wildcard) {
+    final ASTNode table = wildcard.get(WILDCARD_TABLE);
     if (table != null) {
       safeVisit(table);
       append('.');
@@ -545,12 +545,12 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterAggregate(SQLNode aggregate) {
+  public boolean enterAggregate(ASTNode aggregate) {
     append(aggregate.get(AGGREGATE_NAME).toUpperCase()).append('(');
     if (aggregate.isFlag(AGGREGATE_DISTINCT)) append("DISTINCT ");
 
     appendNodes(aggregate.get(AGGREGATE_ARGS), false, true);
-    final List<SQLNode> order = aggregate.get(AGGREGATE_ORDER);
+    final List<ASTNode> order = aggregate.get(AGGREGATE_ORDER);
 
     if (order != null && !order.isEmpty()) {
       append(" ORDER BY ");
@@ -563,7 +563,7 @@ public class Formatter implements SQLVisitor {
     append(')');
 
     final String windowName = aggregate.get(AGGREGATE_WINDOW_NAME);
-    final SQLNode windowSpec = aggregate.get(AGGREGATE_WINDOW_SPEC);
+    final ASTNode windowSpec = aggregate.get(AGGREGATE_WINDOW_SPEC);
     if (windowName != null) {
       append(" OVER ");
       appendName(aggregate, windowName, false);
@@ -576,18 +576,18 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterExists(SQLNode exists) {
+  public boolean enterExists(ASTNode exists) {
     append("EXISTS ");
     safeVisit(exists.get(EXISTS_SUBQUERY_EXPR));
     return false;
   }
 
   @Override
-  public boolean enterJoinedTableSource(SQLNode joinedTableSource) {
-    final SQLNode left = joinedTableSource.get(JOINED_LEFT);
-    final SQLNode right = joinedTableSource.get(JOINED_RIGHT);
+  public boolean enterJoinedTableSource(ASTNode joinedTableSource) {
+    final ASTNode left = joinedTableSource.get(JOINED_LEFT);
+    final ASTNode right = joinedTableSource.get(JOINED_RIGHT);
     final JoinType joinType = joinedTableSource.get(JOINED_TYPE);
-    final SQLNode on = joinedTableSource.get(JOINED_ON);
+    final ASTNode on = joinedTableSource.get(JOINED_ON);
     final List<String> using = joinedTableSource.get(JOINED_USING);
 
     safeVisit(left);
@@ -628,7 +628,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterConvertUsing(SQLNode convertUsing) {
+  public boolean enterConvertUsing(ASTNode convertUsing) {
     append("CONVERT(");
     safeVisit(convertUsing.get(CONVERT_USING_EXPR));
     append(" USING ");
@@ -643,9 +643,9 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCase(SQLNode _case) {
+  public boolean enterCase(ASTNode _case) {
     append("CASE");
-    final SQLNode cond = _case.get(CASE_COND);
+    final ASTNode cond = _case.get(CASE_COND);
     if (cond != null) {
       append(' ');
       try (final var ignored = withParen(needParen(_case, cond, false))) {
@@ -654,12 +654,12 @@ public class Formatter implements SQLVisitor {
     }
 
     increaseIndent();
-    for (SQLNode when : _case.get(CASE_WHENS)) {
+    for (ASTNode when : _case.get(CASE_WHENS)) {
       breakLine();
       safeVisit(when);
     }
 
-    final SQLNode _else = _case.get(CASE_ELSE);
+    final ASTNode _else = _case.get(CASE_ELSE);
     if (_else != null) {
       breakLine();
       append("ELSE ");
@@ -676,15 +676,15 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterWhen(SQLNode when) {
+  public boolean enterWhen(ASTNode when) {
     append("WHEN ");
-    final SQLNode cond = when.get(WHEN_COND);
+    final ASTNode cond = when.get(WHEN_COND);
     try (final var ignored = withParen(needParen(when, cond, false))) {
       safeVisit(cond);
     }
 
     append(" THEN ");
-    final SQLNode expr = when.get(WHEN_EXPR);
+    final ASTNode expr = when.get(WHEN_EXPR);
     try (final var ignored = withParen(needParen(when, expr, false))) {
       safeVisit(expr);
     }
@@ -692,10 +692,10 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterWindowFrame(SQLNode windowFrame) {
+  public boolean enterWindowFrame(ASTNode windowFrame) {
     append(windowFrame.get(WINDOW_FRAME_UNIT)).append(' ');
-    final SQLNode start = windowFrame.get(WINDOW_FRAME_START);
-    final SQLNode end = windowFrame.get(WINDOW_FRAME_END);
+    final ASTNode start = windowFrame.get(WINDOW_FRAME_START);
+    final ASTNode end = windowFrame.get(WINDOW_FRAME_END);
 
     if (end != null) append("BETWEEN ");
     safeVisit(start);
@@ -711,7 +711,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterFrameBound(SQLNode frameBound) {
+  public boolean enterFrameBound(ASTNode frameBound) {
     if (frameBound.get(FRAME_BOUND_DIRECTION) == null) append("CURRENT ROW");
     else {
       safeVisit(frameBound.get(FRAME_BOUND_EXPR));
@@ -722,7 +722,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterWindowSpec(SQLNode windowSpec) {
+  public boolean enterWindowSpec(ASTNode windowSpec) {
     final String alias = windowSpec.get(WINDOW_SPEC_ALIAS);
     if (alias != null) {
       appendName(windowSpec, alias, false);
@@ -734,19 +734,19 @@ public class Formatter implements SQLVisitor {
     final String name = windowSpec.get(WINDOW_SPEC_NAME);
     if (name != null) appendName(windowSpec, name, false);
 
-    final List<SQLNode> partition = windowSpec.get(WINDOW_SPEC_PARTITION);
+    final List<ASTNode> partition = windowSpec.get(WINDOW_SPEC_PARTITION);
     if (partition != null && !partition.isEmpty()) {
       append(" PARTITION BY ");
       appendNodes(partition, false);
     }
 
-    final List<SQLNode> order = windowSpec.get(WINDOW_SPEC_ORDER);
+    final List<ASTNode> order = windowSpec.get(WINDOW_SPEC_ORDER);
     if (order != null && !order.isEmpty()) {
       append(" ORDER BY ");
       appendNodes(order, false);
     }
 
-    final SQLNode frame = windowSpec.get(WINDOW_SPEC_FRAME);
+    final ASTNode frame = windowSpec.get(WINDOW_SPEC_FRAME);
     if (frame != null) {
       append(' ');
       safeVisit(frame);
@@ -758,8 +758,8 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterBinary(SQLNode binary) {
-    final SQLNode left = binary.get(BINARY_LEFT);
+  public boolean enterBinary(ASTNode binary) {
+    final ASTNode left = binary.get(BINARY_LEFT);
     try (final var ignored = withParen(needParen(binary, left, true))) {
       safeVisit(left);
     }
@@ -774,7 +774,7 @@ public class Formatter implements SQLVisitor {
     final SubqueryOption subqueryOption = binary.get(BINARY_SUBQUERY_OPTION);
     if (subqueryOption != null) append(subqueryOption).append(' ');
 
-    final SQLNode right = binary.get(BINARY_RIGHT);
+    final ASTNode right = binary.get(BINARY_RIGHT);
 
     final boolean needParen =
         op == BinaryOp.MEMBER_OF || ARRAY.isInstance(right) || needParen(binary, right, false);
@@ -798,11 +798,11 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterTernary(SQLNode ternary) {
+  public boolean enterTernary(ASTNode ternary) {
     final TernaryOp operator = ternary.get(TERNARY_OP);
-    final SQLNode left = ternary.get(TERNARY_LEFT);
-    final SQLNode middle = ternary.get(TERNARY_MIDDLE);
-    final SQLNode right = ternary.get(TERNARY_RIGHT);
+    final ASTNode left = ternary.get(TERNARY_LEFT);
+    final ASTNode middle = ternary.get(TERNARY_MIDDLE);
+    final ASTNode right = ternary.get(TERNARY_RIGHT);
 
     try (final var ignored = withParen(needParen(ternary, left, false))) {
       safeVisit(left);
@@ -822,7 +822,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterOrderItem(SQLNode orderItem) {
+  public boolean enterOrderItem(ASTNode orderItem) {
     safeVisit(orderItem.get(ORDER_ITEM_EXPR));
     final KeyDirection direction = orderItem.get(ORDER_ITEM_DIRECTION);
     if (direction != null) append(' ').append(direction.name());
@@ -830,7 +830,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterSelectItem(SQLNode selectItem) {
+  public boolean enterSelectItem(ASTNode selectItem) {
     safeVisit(selectItem.get(SELECT_ITEM_EXPR));
 
     final String alias = selectItem.get(SELECT_ITEM_ALIAS);
@@ -842,7 +842,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterIndexHint(SQLNode indexHint) {
+  public boolean enterIndexHint(ASTNode indexHint) {
     final IndexHintType type = indexHint.get(INDEX_HINT_TYPE);
     append(type).append(" INDEX");
 
@@ -867,7 +867,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterSimpleTableSource(SQLNode simpleTableSource) {
+  public boolean enterSimpleTableSource(ASTNode simpleTableSource) {
     safeVisit(simpleTableSource.get(SIMPLE_TABLE));
 
     final List<String> partitions = simpleTableSource.get(SIMPLE_PARTITIONS);
@@ -882,8 +882,8 @@ public class Formatter implements SQLVisitor {
       appendName(simpleTableSource, alias, false);
     }
 
-    final List<SQLNode> hints = simpleTableSource.get(SIMPLE_HINTS);
-    if (SQLNode.MYSQL.equals(simpleTableSource.dbType()) && hints != null && !hints.isEmpty()) {
+    final List<ASTNode> hints = simpleTableSource.get(SIMPLE_HINTS);
+    if (ASTNode.MYSQL.equals(simpleTableSource.dbType()) && hints != null && !hints.isEmpty()) {
       append(' ');
       appendNodes(hints, false);
     }
@@ -892,10 +892,10 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterQuery(SQLNode query) {
+  public boolean enterQuery(ASTNode query) {
     safeVisit(query.get(QUERY_BODY));
 
-    final List<SQLNode> orderBy = query.get(QUERY_ORDER_BY);
+    final List<ASTNode> orderBy = query.get(QUERY_ORDER_BY);
     if (orderBy != null) {
       breakLine();
       append("ORDER BY");
@@ -905,8 +905,8 @@ public class Formatter implements SQLVisitor {
       decreaseIndent();
     }
 
-    final SQLNode offset = query.get(QUERY_OFFSET);
-    final SQLNode limit = query.get(QUERY_LIMIT);
+    final ASTNode offset = query.get(QUERY_OFFSET);
+    final ASTNode limit = query.get(QUERY_LIMIT);
 
     if (limit != null) {
       breakLine();
@@ -922,20 +922,20 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterQuerySpec(SQLNode querySpec) {
+  public boolean enterQuerySpec(ASTNode querySpec) {
     final boolean distinct = querySpec.isFlag(QUERY_SPEC_DISTINCT);
-    final List<SQLNode> selectItems = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
-    final SQLNode from = querySpec.get(QUERY_SPEC_FROM);
-    final SQLNode where = querySpec.get(QUERY_SPEC_WHERE);
-    final List<SQLNode> groupBy = querySpec.get(QUERY_SPEC_GROUP_BY);
+    final List<ASTNode> selectItems = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
+    final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
+    final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
+    final List<ASTNode> groupBy = querySpec.get(QUERY_SPEC_GROUP_BY);
     final OLAPOption olapOption = querySpec.get(QUERY_SPEC_OLAP_OPTION);
-    final SQLNode having = querySpec.get(QUERY_SPEC_HAVING);
-    final List<SQLNode> windows = querySpec.get(QUERY_SPEC_WINDOWS);
+    final ASTNode having = querySpec.get(QUERY_SPEC_HAVING);
+    final List<ASTNode> windows = querySpec.get(QUERY_SPEC_WINDOWS);
 
     append("SELECT");
     if (distinct) append(" DISTINCT");
-    if (distinct && SQLNode.POSTGRESQL.equals(querySpec.dbType())) {
-      final List<SQLNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
+    if (distinct && ASTNode.POSTGRESQL.equals(querySpec.dbType())) {
+      final List<ASTNode> distinctOn = querySpec.get(QUERY_SPEC_DISTINCT_ON);
       if (distinctOn != null && !distinctOn.isEmpty()) {
         append(" ON ");
         appendNodes(distinctOn, true, true);
@@ -999,7 +999,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterQueryExpr(SQLNode queryExpr) {
+  public boolean enterQueryExpr(ASTNode queryExpr) {
     try (final var ignored = withParen(true)) {
       increaseIndent();
       breakLine(false);
@@ -1011,7 +1011,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterSetOp(SQLNode setOp) {
+  public boolean enterSetOp(ASTNode setOp) {
     try (final var ignored = withParen(true)) {
       safeVisit(setOp.get(SET_OP_LEFT));
     }
@@ -1031,7 +1031,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterDerivedTableSource(SQLNode derivedTableSource) {
+  public boolean enterDerivedTableSource(ASTNode derivedTableSource) {
     if (derivedTableSource.isFlag(DERIVED_LATERAL)) append("LATERAL ");
     try (final var ignored = withParen(true)) {
       increaseIndent();
@@ -1057,7 +1057,7 @@ public class Formatter implements SQLVisitor {
   }
 
   @Override
-  public boolean enterArray(SQLNode array) {
+  public boolean enterArray(ASTNode array) {
     append("ARRAY[");
     appendNodes(array.get(ARRAY_ELEMENTS), false, true);
     append(']');
@@ -1086,7 +1086,7 @@ public class Formatter implements SQLVisitor {
     }
   }
 
-  private void safeVisit(SQLNode node) {
+  private void safeVisit(ASTNode node) {
     if (node == null) append(UNKNOWN_PLACEHOLDER);
     else node.accept(this);
   }
@@ -1112,7 +1112,7 @@ public class Formatter implements SQLVisitor {
     if (withParen) append(')');
   }
 
-  private void appendNodes(List<SQLNode> exprs, boolean withParen, boolean noBreak) {
+  private void appendNodes(List<ASTNode> exprs, boolean withParen, boolean noBreak) {
     if (exprs == null || exprs.isEmpty()) {
       if (withParen) append("()");
       return;
@@ -1121,28 +1121,28 @@ public class Formatter implements SQLVisitor {
     if (withParen) append('(');
 
     for (int i = 0; i < exprs.size() - 1; i++) {
-      final SQLNode expr = exprs.get(i);
+      final ASTNode expr = exprs.get(i);
       safeVisit(expr);
       append(',');
       if (noBreak) append(' ');
       else breakLine();
     }
 
-    final SQLNode last = exprs.get(exprs.size() - 1);
+    final ASTNode last = exprs.get(exprs.size() - 1);
     safeVisit(last);
 
     if (withParen) append(')');
   }
 
-  private void appendNodes(List<SQLNode> exprs, boolean withParen) {
+  private void appendNodes(List<ASTNode> exprs, boolean withParen) {
     appendNodes(exprs, withParen, false);
   }
 
-  private void appendNodes(List<SQLNode> exprs) {
+  private void appendNodes(List<ASTNode> exprs) {
     appendNodes(exprs, true);
   }
 
-  private static boolean needParen(SQLNode parent, SQLNode child, boolean isLeftChild) {
+  private static boolean needParen(ASTNode parent, ASTNode child, boolean isLeftChild) {
     if (parent == null || child == null) return false;
 
     final int parentPrecedence = getOperatorPrecedence(parent);

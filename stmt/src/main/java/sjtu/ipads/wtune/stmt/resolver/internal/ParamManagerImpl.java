@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.resolver.Param;
 import sjtu.ipads.wtune.stmt.resolver.ParamManager;
 
@@ -12,12 +12,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ParamManagerImpl extends CatalogBase<SQLNode, Param> implements ParamManager {
+public class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements ParamManager {
   private ParamManagerImpl() {
     current = new HashMap<>();
   }
 
-  private ParamManagerImpl(Map<SQLNode, Object> current, Catalog<SQLNode, Param> prev) {
+  private ParamManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, Param> prev) {
     super(current, prev);
   }
 
@@ -26,12 +26,12 @@ public class ParamManagerImpl extends CatalogBase<SQLNode, Param> implements Par
   }
 
   @Override
-  public Param param(SQLNode node) {
+  public Param param(ASTNode node) {
     return get(node);
   }
 
   @Override
-  public Param setParam(SQLNode node, Param param) {
+  public Param setParam(ASTNode node, Param param) {
     return put(node, param);
   }
 
@@ -40,8 +40,8 @@ public class ParamManagerImpl extends CatalogBase<SQLNode, Param> implements Par
     return params0().values();
   }
 
-  private Map<SQLNode, Param> params0() {
-    final Map<SQLNode, Param> params;
+  private Map<ASTNode, Param> params0() {
+    final Map<ASTNode, Param> params;
 
     if (prev == null) params = new HashMap<>();
     else params = ((ParamManagerImpl) prev).params0();
@@ -54,8 +54,8 @@ public class ParamManagerImpl extends CatalogBase<SQLNode, Param> implements Par
   }
 
   @Override
-  protected Catalog<SQLNode, Param> makePrev(
-      Map<SQLNode, Object> current, Catalog<SQLNode, Param> prev) {
+  protected Catalog<ASTNode, Param> makePrev(
+      Map<ASTNode, Object> current, Catalog<ASTNode, Param> prev) {
     return new ParamManagerImpl(current, prev);
   }
 
@@ -76,13 +76,13 @@ class ParamField implements FieldKey<Param> {
 
   @Override
   public Param get(Fields owner) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     return node.manager(ParamManager.class).param(node);
   }
 
   @Override
   public Param set(Fields owner, Param obj) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     return node.manager(ParamManager.class).setParam(node, obj);
   }
 }

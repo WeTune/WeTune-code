@@ -1,23 +1,23 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Param {
-  private final SQLNode node;
+  private final ASTNode node;
   private final int index;
   private final List<ParamModifier> modifiers;
 
-  public Param(SQLNode node, int index) {
+  public Param(ASTNode node, int index) {
     this.index = index;
     this.node = node;
     this.modifiers = null;
   }
 
-  public Param(SQLNode node, int index, List<ParamModifier> modifiers) {
+  public Param(ASTNode node, int index, List<ParamModifier> modifiers) {
     this.index = index;
     this.node = node;
     this.modifiers = modifiers;
@@ -27,7 +27,7 @@ public class Param {
     return index;
   }
 
-  public SQLNode node() {
+  public ASTNode node() {
     return node;
   }
 

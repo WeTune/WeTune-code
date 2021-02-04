@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.stmt.scriptgen;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class SQLGen implements ScriptNode {
-  private final SQLNode node;
+  private final ASTNode node;
   private final String parameterizedSql;
   private final List<ParamGen> paramGens;
 
-  public SQLGen(SQLNode node) {
+  public SQLGen(ASTNode node) {
     final ParameterizedSQLFormatter formatter = new ParameterizedSQLFormatter();
     node.accept(formatter);
 

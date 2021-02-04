@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
-import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeFactory;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.*;
@@ -91,16 +91,16 @@ interface PGASTHelper {
     else return assertFalse();
   }
 
-  static SQLNode tableName(SQLNodeFactory factory, String[] triple) {
-    final SQLNode node = factory.newNode(NodeType.TABLE_NAME);
+  static ASTNode tableName(ASTNodeFactory factory, String[] triple) {
+    final ASTNode node = factory.newNode(NodeType.TABLE_NAME);
     node.set(TABLE_NAME_SCHEMA, triple[1]);
     node.set(TABLE_NAME_TABLE, triple[2]);
 
     return node;
   }
 
-  static SQLNode columnName(SQLNodeFactory factory, String[] triple) {
-    final SQLNode node = factory.newNode(NodeType.COLUMN_NAME);
+  static ASTNode columnName(ASTNodeFactory factory, String[] triple) {
+    final ASTNode node = factory.newNode(NodeType.COLUMN_NAME);
     node.set(COLUMN_NAME_SCHEMA, triple[0]);
     node.set(COLUMN_NAME_TABLE, triple[1]);
     node.set(COLUMN_NAME_COLUMN, triple[2]);
@@ -120,19 +120,19 @@ interface PGASTHelper {
     };
   }
 
-  static List<SQLNode> columnNames(SQLNodeFactory factory, PGParser.Names_referencesContext ctx) {
+  static List<ASTNode> columnNames(ASTNodeFactory factory, PGParser.Names_referencesContext ctx) {
     return ctx.schema_qualified_name().stream()
         .map(PGASTHelper::stringifyIdentifier)
         .map(it -> columnName(factory, it))
         .collect(Collectors.toList());
   }
 
-  static List<SQLNode> keyParts(SQLNodeFactory factory, PGParser.Names_referencesContext ctx) {
+  static List<ASTNode> keyParts(ASTNodeFactory factory, PGParser.Names_referencesContext ctx) {
     final var idContexts = ctx.schema_qualified_name();
-    final List<SQLNode> keyParts = new ArrayList<>(idContexts.size());
+    final List<ASTNode> keyParts = new ArrayList<>(idContexts.size());
 
     for (var idContext : idContexts) {
-      final SQLNode keyPart = factory.newNode(NodeType.KEY_PART);
+      final ASTNode keyPart = factory.newNode(NodeType.KEY_PART);
       keyPart.set(KEY_PART_COLUMN, stringifyIdentifier(idContext)[2]);
 
       keyParts.add(keyPart);
@@ -327,8 +327,8 @@ interface PGASTHelper {
     else return assertFalse();
   }
 
-  static SQLNode parseUnsignedLiteral(
-      SQLNodeFactory factory, PGParser.Unsigned_value_specificationContext ctx) {
+  static ASTNode parseUnsignedLiteral(
+      ASTNodeFactory factory, PGParser.Unsigned_value_specificationContext ctx) {
     final Object value = parseUnsignedValue(ctx);
     if (value instanceof Boolean) return factory.literal(BOOL, value);
     else if (value instanceof Double) return factory.literal(FRACTIONAL, value);
@@ -340,19 +340,19 @@ interface PGASTHelper {
     else return assertFalse();
   }
 
-  static SQLNode parseParam(SQLNodeFactory factory, PGParser.Dollar_numberContext ctx) {
+  static ASTNode parseParam(ASTNodeFactory factory, PGParser.Dollar_numberContext ctx) {
     return factory.paramMarker(Integer.parseInt(ctx.getText().substring(1)));
   }
 
-  static SQLNode buildIndirection(SQLNodeFactory factory, String id, List<SQLNode> indirections) {
+  static ASTNode buildIndirection(ASTNodeFactory factory, String id, List<ASTNode> indirections) {
     assert indirections.size() > 0;
 
-    final SQLNode _0 = indirections.get(0);
+    final ASTNode _0 = indirections.get(0);
 
     if (indirections.size() == 1) return buildIndirection1(factory, id, _0);
 
-    final SQLNode _1 = indirections.get(1);
-    final SQLNode header = buildIndirection2(factory, id, _0, _1);
+    final ASTNode _1 = indirections.get(1);
+    final ASTNode header = buildIndirection2(factory, id, _0, _1);
 
     if (indirections.size() == 2) return header;
 
@@ -367,9 +367,9 @@ interface PGASTHelper {
                 : indirections.subList(1, indirections.size()));
   }
 
-  private static SQLNode buildIndirection1(SQLNodeFactory factory, String id, SQLNode indirection) {
+  private static ASTNode buildIndirection1(ASTNodeFactory factory, String id, ASTNode indirection) {
     if (!indirection.isFlag(INDIRECTION_COMP_SUBSCRIPT)) {
-      final SQLNode indirectionExpr = indirection.get(INDIRECTION_COMP_START);
+      final ASTNode indirectionExpr = indirection.get(INDIRECTION_COMP_START);
       if (ExprType.SYMBOL.isInstance(indirectionExpr))
         return factory.columnRef(id, indirectionExpr.get(SYMBOL_TEXT));
       else if (ExprType.WILDCARD.isInstance(indirectionExpr))
@@ -379,12 +379,12 @@ interface PGASTHelper {
     return factory.indirection(factory.columnRef(null, id), Collections.singletonList(indirection));
   }
 
-  private static SQLNode buildIndirection2(
-      SQLNodeFactory factory, String id, SQLNode _0, SQLNode _1) {
+  private static ASTNode buildIndirection2(
+      ASTNodeFactory factory, String id, ASTNode _0, ASTNode _1) {
     if (_0.isFlag(INDIRECTION_COMP_SUBSCRIPT))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
-    final SQLNode expr0 = _0.get(INDIRECTION_COMP_START);
+    final ASTNode expr0 = _0.get(INDIRECTION_COMP_START);
     if (!ExprType.SYMBOL.isInstance(expr0))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
@@ -392,7 +392,7 @@ interface PGASTHelper {
       return factory.indirection(
           buildIndirection1(factory, id, expr0), Collections.singletonList(_1));
 
-    final SQLNode expr1 = _1.get(INDIRECTION_COMP_START);
+    final ASTNode expr1 = _1.get(INDIRECTION_COMP_START);
 
     if (ExprType.SYMBOL.isInstance(expr1))
       return factory.columnRef(
@@ -429,18 +429,18 @@ interface PGASTHelper {
     return Integer.parseInt(ctx.NUMBER_LITERAL().getText());
   }
 
-  static SQLNode warpAsQuery(SQLNodeFactory factory, SQLNode node) {
+  static ASTNode warpAsQuery(ASTNodeFactory factory, ASTNode node) {
     if (NodeType.QUERY_SPEC.isInstance(node) || NodeType.SET_OP.isInstance(node)) {
-      final SQLNode query = factory.newNode(NodeType.QUERY);
+      final ASTNode query = factory.newNode(NodeType.QUERY);
       query.set(QUERY_BODY, node);
       return query;
     }
     return node;
   }
 
-  static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
+  static ASTNode wrapAsQueryExpr(ASTNodeFactory factory, ASTNode node) {
     assert node.nodeType() == NodeType.QUERY;
-    final SQLNode exprNode = factory.newNode(QUERY_EXPR);
+    final ASTNode exprNode = factory.newNode(QUERY_EXPR);
     exprNode.set(QUERY_EXPR_QUERY, node);
     return exprNode;
   }

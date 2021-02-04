@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.internal;
 
-import sjtu.ipads.wtune.sqlparser.SQLParser;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ASTParser;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
@@ -16,7 +16,7 @@ public class StatementImpl implements Statement {
   private final String stackTrace;
 
   private int stmtId;
-  private SQLNode parsed;
+  private ASTNode parsed;
   private String tag;
 
   private Map<String, Statement> alternatives;
@@ -64,9 +64,9 @@ public class StatementImpl implements Statement {
   }
 
   @Override
-  public SQLNode parsed() {
+  public ASTNode parsed() {
     if (parsed == null) {
-      parsed = SQLParser.ofDb(App.of(appName).dbType()).parse(rawSql());
+      parsed = ASTParser.ofDb(App.of(appName).dbType()).parse(rawSql());
     }
 
     return parsed;

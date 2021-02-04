@@ -4,16 +4,16 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.resolver.BoolExpr;
 import sjtu.ipads.wtune.stmt.resolver.BoolExprManager;
 
 import java.util.Map;
 
-public class BoolExprManagerImpl extends CatalogBase<SQLNode, BoolExpr> implements BoolExprManager {
+public class BoolExprManagerImpl extends CatalogBase<ASTNode, BoolExpr> implements BoolExprManager {
   private BoolExprManagerImpl() {}
 
-  private BoolExprManagerImpl(Map<SQLNode, Object> current, Catalog<SQLNode, BoolExpr> prev) {
+  private BoolExprManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, BoolExpr> prev) {
     super(current, prev);
   }
 
@@ -22,18 +22,18 @@ public class BoolExprManagerImpl extends CatalogBase<SQLNode, BoolExpr> implemen
   }
 
   @Override
-  public BoolExpr bool(SQLNode node) {
+  public BoolExpr bool(ASTNode node) {
     return get(node);
   }
 
   @Override
-  public BoolExpr setBool(SQLNode node, BoolExpr expr) {
+  public BoolExpr setBool(ASTNode node, BoolExpr expr) {
     return put(node, expr);
   }
 
   @Override
-  protected Catalog<SQLNode, BoolExpr> makePrev(
-      Map<SQLNode, Object> current, Catalog<SQLNode, BoolExpr> prev) {
+  protected Catalog<ASTNode, BoolExpr> makePrev(
+      Map<ASTNode, Object> current, Catalog<ASTNode, BoolExpr> prev) {
     return new BoolExprManagerImpl(current, prev);
   }
 
@@ -54,13 +54,13 @@ class BoolExprField implements FieldKey<BoolExpr> {
 
   @Override
   public BoolExpr get(Fields owner) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     return node.manager(BoolExprManager.class).bool(node);
   }
 
   @Override
   public BoolExpr set(Fields owner, BoolExpr obj) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     return node.manager(BoolExprManager.class).setBool(node, obj);
   }
 }

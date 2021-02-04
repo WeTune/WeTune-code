@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.rel.Attribute;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
@@ -19,21 +19,21 @@ import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 class NormalizeConstantTable {
-  public static SQLNode normalize(SQLNode node) {
+  public static ASTNode normalize(ASTNode node) {
     Collector.collect(node, NormalizeConstantTable::canNormalize)
         .forEach(NormalizeConstantTable::normalizeConstantTable);
     return node;
   }
 
-  private static boolean canNormalize(SQLNode node) {
+  private static boolean canNormalize(ASTNode node) {
     return DERIVED_SOURCE.isInstance(node)
         && JOINED.isInstance(node.parent())
         && isConstantTable(node);
   }
 
-  private static boolean isConstantTable(SQLNode derived) {
-    final SQLNode subquery = derived.get(DERIVED_SUBQUERY);
-    final SQLNode body = subquery.get(QUERY_BODY);
+  private static boolean isConstantTable(ASTNode derived) {
+    final ASTNode subquery = derived.get(DERIVED_SUBQUERY);
+    final ASTNode body = subquery.get(QUERY_BODY);
     return !SET_OP.isInstance(body)
         && body.get(QUERY_SPEC_FROM) == null
         && body.get(QUERY_SPEC_SELECT_ITEMS).stream()
@@ -41,7 +41,7 @@ class NormalizeConstantTable {
             .allMatch(LITERAL::isInstance);
   }
 
-  private static void normalizeConstantTable(SQLNode table) {
+  private static void normalizeConstantTable(ASTNode table) {
     Relation relation = table.get(RELATION);
     while (relation.parent() != null) relation = relation.parent();
 
@@ -49,10 +49,10 @@ class NormalizeConstantTable {
     reduceTable(table);
   }
 
-  private static void constantizeExprs(SQLNode rootQuery, SQLNode tableSource) {
+  private static void constantizeExprs(ASTNode rootQuery, ASTNode tableSource) {
     final Relation targetRelation = tableSource.get(RELATION);
 
-    for (SQLNode columnRef : Collector.collect(rootQuery, COLUMN_REF::isInstance)) {
+    for (ASTNode columnRef : Collector.collect(rootQuery, COLUMN_REF::isInstance)) {
       final Attribute attr = columnRef.get(ATTRIBUTE);
       if (attr == null) continue;
 
@@ -67,11 +67,11 @@ class NormalizeConstantTable {
       // means "order by the 1st output column".
       // It can be just removed since constant value won't affect
       // the ordering
-      final SQLNode parent = columnRef.parent();
+      final ASTNode parent = columnRef.parent();
       if (ORDER_ITEM.isInstance(parent)) {
-        final SQLNode grandpa = parent.parent();
+        final ASTNode grandpa = parent.parent();
         if (QUERY.isInstance(grandpa)) {
-          final List<SQLNode> orderItems = grandpa.get(QUERY_ORDER_BY);
+          final List<ASTNode> orderItems = grandpa.get(QUERY_ORDER_BY);
           orderItems.remove(parent);
 
           if (orderItems.isEmpty()) grandpa.unset(QUERY_ORDER_BY);
@@ -80,16 +80,16 @@ class NormalizeConstantTable {
       }
 
       // in-place substitute
-      final SQLNode replacement = rootRef.node().get(SELECT_ITEM_EXPR);
+      final ASTNode replacement = rootRef.node().get(SELECT_ITEM_EXPR);
       columnRef.unset(COLUMN_REF_COLUMN);
       columnRef.update(replacement);
     }
   }
 
-  private static void reduceTable(SQLNode deriveTableSource) {
-    final SQLNode joinNode = deriveTableSource.parent();
-    final SQLNode left = joinNode.get(JOINED_LEFT);
-    final SQLNode right = joinNode.get(JOINED_RIGHT);
+  private static void reduceTable(ASTNode deriveTableSource) {
+    final ASTNode joinNode = deriveTableSource.parent();
+    final ASTNode left = joinNode.get(JOINED_LEFT);
+    final ASTNode right = joinNode.get(JOINED_RIGHT);
     if (left == deriveTableSource) joinNode.update(right);
     else joinNode.update(left);
   }

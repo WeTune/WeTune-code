@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.rel.internal;
 
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldBase;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
@@ -16,10 +16,10 @@ public class RelationField extends NodeFieldBase<Relation> {
 
   @Override
   public Relation get(Fields owner) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
 
     if (!Relation.isRelationBoundary(node)) {
-      final SQLNode parent = node.parent();
+      final ASTNode parent = node.parent();
       return parent == null ? null : parent.get(RELATION);
     }
 

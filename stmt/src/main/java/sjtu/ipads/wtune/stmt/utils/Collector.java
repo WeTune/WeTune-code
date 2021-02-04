@@ -1,35 +1,35 @@
 package sjtu.ipads.wtune.stmt.utils;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class Collector implements SQLVisitor {
-  private final List<SQLNode> filtered = new ArrayList<>();
-  private final Predicate<SQLNode> filter;
+public class Collector implements ASTVistor {
+  private final List<ASTNode> filtered = new ArrayList<>();
+  private final Predicate<ASTNode> filter;
   private final boolean earlyStop;
 
-  protected Collector(Predicate<SQLNode> filter, boolean earlyStop) {
+  protected Collector(Predicate<ASTNode> filter, boolean earlyStop) {
     this.filter = filter;
     this.earlyStop = earlyStop;
   }
 
   @Override
-  public boolean enter(SQLNode node) {
+  public boolean enter(ASTNode node) {
     if (filter.test(node)) {
       filtered.add(node);
       return !earlyStop;
     } else return true;
   }
 
-  public static List<SQLNode> collect(SQLNode node, Predicate<SQLNode> filter) {
+  public static List<ASTNode> collect(ASTNode node, Predicate<ASTNode> filter) {
     return collect(node, filter, true);
   }
 
-  public static List<SQLNode> collect(SQLNode node, Predicate<SQLNode> filter, boolean earlyStop) {
+  public static List<ASTNode> collect(ASTNode node, Predicate<ASTNode> filter, boolean earlyStop) {
     final Collector collector = new Collector(filter, earlyStop);
     node.accept(collector);
     return collector.filtered;

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
 
@@ -17,7 +17,7 @@ public interface Statement {
 
   String stackTrace();
 
-  SQLNode parsed();
+  ASTNode parsed();
 
   String tag();
 

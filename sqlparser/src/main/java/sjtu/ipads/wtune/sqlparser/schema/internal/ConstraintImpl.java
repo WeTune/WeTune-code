@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
@@ -17,8 +17,8 @@ public class ConstraintImpl implements Constraint {
   private List<KeyDirection> directions;
   private IndexType indexType;
 
-  private SQLNode refTableName;
-  private List<SQLNode> refColNames;
+  private ASTNode refTableName;
+  private List<ASTNode> refColNames;
 
   private Table refTable;
   private List<Column> refColumns;
@@ -57,11 +57,11 @@ public class ConstraintImpl implements Constraint {
     return refColumns;
   }
 
-  SQLNode refTableName() {
+  ASTNode refTableName() {
     return refTableName;
   }
 
-  List<SQLNode> refColNames() {
+  List<ASTNode> refColNames() {
     return refColNames;
   }
 
@@ -73,11 +73,11 @@ public class ConstraintImpl implements Constraint {
     this.refColumns = refColumns;
   }
 
-  void setRefTableName(SQLNode refTableName) {
+  void setRefTableName(ASTNode refTableName) {
     this.refTableName = refTableName;
   }
 
-  void setRefColNames(List<SQLNode> refColNames) {
+  void setRefColNames(List<ASTNode> refColNames) {
     this.refColNames = refColNames;
   }
 

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.internal.ColumnImpl;
 
@@ -42,7 +42,7 @@ public interface Column {
     return listFilter(it -> it.type() == type, constraints());
   }
 
-  static Column make(String table, SQLNode colDef) {
+  static Column make(String table, ASTNode colDef) {
     return ColumnImpl.build(table, colDef);
   }
 }

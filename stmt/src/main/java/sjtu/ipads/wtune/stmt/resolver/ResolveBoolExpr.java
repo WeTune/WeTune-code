@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
@@ -13,8 +13,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.UNARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 
-class ResolveBoolExpr implements SQLVisitor {
-  public static BoolExprManager resolve(SQLNode node) {
+class ResolveBoolExpr implements ASTVistor {
+  public static BoolExprManager resolve(ASTNode node) {
     if (node.manager(BoolExprManager.class) == null)
       node.context().addManager(BoolExprManager.class, BoolExprManager.build());
 
@@ -23,20 +23,20 @@ class ResolveBoolExpr implements SQLVisitor {
   }
 
   @Override
-  public boolean enterCase(SQLNode _case) {
+  public boolean enterCase(ASTNode _case) {
     // ignore the form CASE cond WHEN val0 THEN ... END,
     // because val0 is not boolean
     return _case.get(CASE_COND) == null;
   }
 
   @Override
-  public boolean enterWhen(SQLNode when) {
+  public boolean enterWhen(ASTNode when) {
     if (when != null) resolveBool(when.get(WHEN_COND));
     return false;
   }
 
   @Override
-  public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
+  public boolean enterChild(ASTNode parent, FieldKey<ASTNode> key, ASTNode child) {
     if (child != null
         && (key == JOINED_ON || key == QUERY_SPEC_WHERE || key == QUERY_SPEC_HAVING)) {
       resolveBool(child);
@@ -45,7 +45,7 @@ class ResolveBoolExpr implements SQLVisitor {
     return true;
   }
 
-  private static void resolveBool(SQLNode expr) {
+  private static void resolveBool(ASTNode expr) {
     assert EXPR.isInstance(expr);
     // `expr` must be evaluated as boolean
 

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.stmt;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class AllStatementsTest {
     final List<Statement> stmts = Statement.findAll();
 
     for (Statement stmt : fastRecycleIter(stmts)) {
-      final SQLNode parsed = stmt.parsed();
+      final ASTNode parsed = stmt.parsed();
       if (parsed == null) {
         System.out.println(stmt.toString());
         continue;

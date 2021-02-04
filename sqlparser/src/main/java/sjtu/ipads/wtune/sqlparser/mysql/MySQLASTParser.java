@@ -3,20 +3,19 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.SQLParser;
-import sjtu.ipads.wtune.sqlparser.SQLParserException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ASTParser;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.Properties;
 import java.util.function.Function;
 
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.NoMode;
 
-public class MySQLASTParser implements SQLParser {
+public class MySQLASTParser implements ASTParser {
   private long serverVersion = 0;
   private int sqlMode = NoMode;
 
@@ -40,16 +39,16 @@ public class MySQLASTParser implements SQLParser {
     return rule.apply(parser);
   }
 
-  public SQLNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
+  public ASTNode parse(String str, Function<MySQLParser, ParserRuleContext> rule) {
     return parse(str, true, rule);
   }
 
-  public SQLNode parse(String str, boolean managed, Function<MySQLParser, ParserRuleContext> rule) {
+  public ASTNode parse(String str, boolean managed, Function<MySQLParser, ParserRuleContext> rule) {
     try {
-      final SQLNode raw = parse0(str, rule).accept(new MySQLASTBuilder());
-      return raw == null ? null : managed ? SQLContext.manage(MYSQL, raw) : raw;
+      final ASTNode raw = parse0(str, rule).accept(new MySQLASTBuilder());
+      return raw == null ? null : managed ? ASTContext.manage(MYSQL, raw) : raw;
 
-    } catch (SQLParserException exception) {
+    } catch (Exception exception) {
       return null;
     }
   }
@@ -61,7 +60,7 @@ public class MySQLASTParser implements SQLParser {
   }
 
   @Override
-  public SQLNode parse(String string, boolean managed) {
+  public ASTNode parse(String string, boolean managed) {
     return parse(string, managed, MySQLParser::query);
   }
 }

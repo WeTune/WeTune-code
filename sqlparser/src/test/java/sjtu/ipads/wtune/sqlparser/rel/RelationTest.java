@@ -3,9 +3,9 @@ package sjtu.ipads.wtune.sqlparser.rel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
-import sjtu.ipads.wtune.sqlparser.SQLParser;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ASTParser;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
@@ -14,7 +14,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
@@ -40,7 +40,7 @@ public class RelationTest {
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
     final Schema schema = Schema.parse(MYSQL, schemaDef);
-    final SQLNode node = SQLParser.ofDb(MYSQL).parse(sql);
+    final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
     node.context().setSchema(schema);
 
     final Relation rel0 = node.get(RELATION);
@@ -68,7 +68,7 @@ public class RelationTest {
     assertEquals(3, rel1.attributes().size());
     assertEquals(3, rel2.attributes().size());
 
-    final SQLNode existsSubquery =
+    final ASTNode existsSubquery =
         node.get(QUERY_BODY).get(QUERY_SPEC_WHERE).get(EXISTS_SUBQUERY_EXPR).get(QUERY_EXPR_QUERY);
 
     final Relation rel3 = existsSubquery.get(RELATION);
@@ -97,8 +97,8 @@ public class RelationTest {
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
     final Schema schema = Schema.parse(MYSQL, schemaDef);
-    final SQLNode node = SQLParser.ofDb(MYSQL).parse(sql);
-    final SQLContext context = node.context();
+    final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
+    final ASTContext context = node.context();
 
     context.setSchema(schema);
 
@@ -107,25 +107,25 @@ public class RelationTest {
     final Snapshot snapshot0 = context.snapshot();
 
     context.derive();
-    final SQLNode existsSubquery =
+    final ASTNode existsSubquery =
         node.get(QUERY_BODY).get(QUERY_SPEC_WHERE).get(EXISTS_SUBQUERY_EXPR).get(QUERY_EXPR_QUERY);
 
-    final SQLNode literal = SQLNode.expr(LITERAL);
+    final ASTNode literal = ASTNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.BOOL);
     literal.set(LITERAL_VALUE, true);
     existsSubquery.update(literal);
     assertEquals(5, relation.attributes().size());
 
-    final SQLNode tblB = relation.inputs().get(1).node();
-    final SQLNode tblC = SQLNode.tableSource(SIMPLE_SOURCE);
-    final SQLNode tblCName = SQLNode.node(TABLE_NAME);
+    final ASTNode tblB = relation.inputs().get(1).node();
+    final ASTNode tblC = ASTNode.tableSource(SIMPLE_SOURCE);
+    final ASTNode tblCName = ASTNode.node(TABLE_NAME);
     tblCName.set(TABLE_NAME_TABLE, "c");
     tblC.set(SIMPLE_TABLE, tblCName);
     tblB.update(tblC);
     assertEquals(7, relation.attributes().size());
 
-    final SQLNode tblA = relation.inputs().get(0).node();
-    final SQLNode subquery = tblA.get(DERIVED_SUBQUERY).get(QUERY_BODY);
+    final ASTNode tblA = relation.inputs().get(0).node();
+    final ASTNode subquery = tblA.get(DERIVED_SUBQUERY).get(QUERY_BODY);
     subquery.set(QUERY_SPEC_FROM, tblC.copy());
     assertEquals(8, relation.attributes().size());
 

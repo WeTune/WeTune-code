@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.internal.RelationField;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLVisitor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
@@ -19,7 +19,7 @@ public interface Relation {
 
   FieldDomain[] RELATION_BOUNDARY = {QUERY, SIMPLE_SOURCE, DERIVED_SOURCE};
 
-  SQLNode node(); // invariant:isRelationBounder(node())
+  ASTNode node(); // invariant:isRelationBounder(node())
 
   String alias();
 
@@ -35,7 +35,7 @@ public interface Relation {
   }
 
   default Relation parent() {
-    final SQLNode parentNode = node().parent();
+    final ASTNode parentNode = node().parent();
     return parentNode == null ? null : parentNode.get(RELATION);
   }
 
@@ -54,7 +54,7 @@ public interface Relation {
     return DERIVED_SOURCE.isInstance(node()) || SIMPLE_SOURCE.isInstance(node()) ? null : parent();
   }
 
-  static boolean isRelationBoundary(SQLNode node) {
+  static boolean isRelationBoundary(ASTNode node) {
     for (FieldDomain fieldDomain : RELATION_BOUNDARY) if (fieldDomain.isInstance(node)) return true;
     return false;
   }
@@ -71,7 +71,7 @@ public interface Relation {
    * Advice: If you are not sure whether to call this method, then don't. Instead, attach the node
    * to AST properly, and call node.relation().
    */
-  static Relation resolve(SQLNode node) {
+  static Relation resolve(ASTNode node) {
     if (!isRelationBoundary(node))
       throw new IllegalArgumentException("cannot resolve relation for " + node.nodeType());
     // This check cannot be actually performed here, because parent().relation() triggers

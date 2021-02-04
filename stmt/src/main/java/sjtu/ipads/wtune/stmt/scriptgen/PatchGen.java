@@ -5,8 +5,8 @@ import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.utils.DbUtils;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 public class PatchGen implements ScriptNode {
   private final SchemaPatch patch;

@@ -6,8 +6,8 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.SQLNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
 
 public class SQLDataTypeImpl implements SQLDataType {

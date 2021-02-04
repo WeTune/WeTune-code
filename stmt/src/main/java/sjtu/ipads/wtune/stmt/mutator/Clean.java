@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.stmt.utils.Collector;
@@ -14,13 +14,13 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 
 class Clean {
-  public static SQLNode clean(SQLNode node) {
+  public static ASTNode clean(ASTNode node) {
     Collector.collect(node, Clean::isConstant).forEach(Clean::deleteBoolLiteral);
     Collector.collect(node, Clean::isTextFunc).forEach(Clean::stringify);
     return node;
   }
 
-  private static boolean isConstant(SQLNode node) {
+  private static boolean isConstant(ASTNode node) {
     final ExprType exprKind = node.get(EXPR_KIND);
     if (exprKind == LITERAL || exprKind == ExprType.SYMBOL) return true;
 
@@ -50,8 +50,8 @@ class Clean {
           && node.get(MATCH_COLS).stream().allMatch(Clean::isConstant);
 
     if (exprKind == ExprType.CASE) {
-      final SQLNode cond = node.get(CASE_COND);
-      final SQLNode _else = node.get(CASE_ELSE);
+      final ASTNode cond = node.get(CASE_COND);
+      final ASTNode _else = node.get(CASE_ELSE);
       return (cond == null || isConstant(cond))
           && node.get(CASE_WHENS).stream().allMatch(Clean::isConstant)
           && (_else == null || isConstant(_else));
@@ -63,15 +63,15 @@ class Clean {
     return false;
   }
 
-  private static void deleteBoolLiteral(SQLNode node) {
-    final SQLNode parent = node.parent();
+  private static void deleteBoolLiteral(ASTNode node) {
+    final ASTNode parent = node.parent();
 
     if (parent.get(QUERY_SPEC_WHERE) == node) {
       parent.unset(QUERY_SPEC_WHERE);
 
     } else if (BINARY.isInstance(parent) && parent.get(BINARY_OP).isLogic()) {
-      final SQLNode left = parent.get(BINARY_LEFT);
-      final SQLNode right = parent.get(BINARY_RIGHT);
+      final ASTNode left = parent.get(BINARY_LEFT);
+      final ASTNode right = parent.get(BINARY_RIGHT);
 
       if (left == node) parent.update(right);
       else if (right == node) parent.update(left);
@@ -79,12 +79,12 @@ class Clean {
     }
   }
 
-  private static boolean isTextFunc(SQLNode node) {
-    final SQLNode name = node.get(FUNC_CALL_NAME);
+  private static boolean isTextFunc(ASTNode node) {
+    final ASTNode name = node.get(FUNC_CALL_NAME);
     if (name == null || name.get(NAME_2_0) != null) return false; // UDF
 
     final String funcName = name.get(NAME_2_1).toLowerCase();
-    final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
+    final List<ASTNode> args = node.get(FUNC_CALL_ARGS);
 
     switch (funcName) {
       case "concat":
@@ -97,20 +97,20 @@ class Clean {
     }
   }
 
-  private static void stringify(SQLNode funcCall) {
-    final SQLNode literal = SQLNode.expr(LITERAL);
+  private static void stringify(ASTNode funcCall) {
+    final ASTNode literal = ASTNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.TEXT);
     literal.set(LITERAL_VALUE, stringify0(funcCall));
 
     funcCall.update(literal);
   }
 
-  private static String stringify0(SQLNode node) {
+  private static String stringify0(ASTNode node) {
     if (LITERAL.isInstance(node)) return String.valueOf(node.get(LITERAL_VALUE));
     assert FUNC_CALL.isInstance(node);
 
     final String funcName = node.get(FUNC_CALL_NAME).get(NAME_2_1).toLowerCase();
-    final List<SQLNode> args = node.get(FUNC_CALL_ARGS);
+    final List<ASTNode> args = node.get(FUNC_CALL_ARGS);
 
     switch (funcName) {
       case "concat":

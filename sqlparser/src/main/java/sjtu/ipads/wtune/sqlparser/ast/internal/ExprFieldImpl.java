@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 
 import static java.util.Objects.requireNonNull;
@@ -28,7 +28,7 @@ public class ExprFieldImpl<T> extends NodeFieldBase<T> {
   @Override
   public boolean validate(Fields owner, Object obj) {
     if (super.validate(owner, obj)) {
-      final SQLNode node = owner.unwrap(SQLNode.class);
+      final ASTNode node = owner.unwrap(ASTNode.class);
       return EXPR.isInstance(node) && type.isInstance(node);
     }
     return false;

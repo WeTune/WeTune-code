@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.Formatter;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
@@ -17,9 +17,9 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
-public class NodeImpl implements SQLNode {
+public class NodeImpl implements ASTNode {
   private final Map<FieldKey, Object> directAttrs;
-  private SQLContext context;
+  private ASTContext context;
 
   private NodeImpl(NodeType type) {
     this(type, new HashMap<>(8));
@@ -30,7 +30,7 @@ public class NodeImpl implements SQLNode {
     this.directAttrs.put(NODE_TYPE, type);
   }
 
-  public static SQLNode build(NodeType nodeType) {
+  public static ASTNode build(NodeType nodeType) {
     return new NodeImpl(nodeType);
   }
 
@@ -40,18 +40,18 @@ public class NodeImpl implements SQLNode {
   }
 
   @Override
-  public SQLContext context() {
+  public ASTContext context() {
     return context;
   }
 
   @Override
-  public void setContext(SQLContext context) {
+  public void setContext(ASTContext context) {
     this.context = context;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void update(SQLNode other) {
+  public void update(ASTNode other) {
     if (Relation.isRelationBoundary(this)) get(RELATION).reset();
     Arrays.stream(attrs().keySet().toArray(FieldKey[]::new)).forEach(it -> it.unset(this));
 
@@ -63,7 +63,7 @@ public class NodeImpl implements SQLNode {
   }
 
   @Override
-  public void accept(SQLVisitor visitor) {
+  public void accept(ASTVistor visitor) {
     if (VisitorController.enter(this, visitor)) VisitorController.visitChildren(this, visitor);
     VisitorController.leave(this, visitor);
   }

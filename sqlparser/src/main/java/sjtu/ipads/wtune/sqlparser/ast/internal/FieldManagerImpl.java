@@ -4,12 +4,12 @@ import com.google.common.collect.Table;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.multiversion.Catalog2D;
 import sjtu.ipads.wtune.common.multiversion.Catalog2DBase;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 
 import java.util.Map;
 
-public class FieldManagerImpl extends Catalog2DBase<SQLNode, FieldKey, Object>
+public class FieldManagerImpl extends Catalog2DBase<ASTNode, FieldKey, Object>
     implements FieldManager {
 
   protected FieldManagerImpl() {
@@ -17,7 +17,7 @@ public class FieldManagerImpl extends Catalog2DBase<SQLNode, FieldKey, Object>
   }
 
   protected FieldManagerImpl(
-      Table<SQLNode, FieldKey, Object> current, Catalog2D<SQLNode, FieldKey, Object> prev) {
+      Table<ASTNode, FieldKey, Object> current, Catalog2D<ASTNode, FieldKey, Object> prev) {
     this.current = current;
     this.prev = prev;
   }
@@ -27,38 +27,38 @@ public class FieldManagerImpl extends Catalog2DBase<SQLNode, FieldKey, Object>
   }
 
   @Override
-  protected boolean fallbackContains(SQLNode row, FieldKey column) {
+  protected boolean fallbackContains(ASTNode row, FieldKey column) {
     return FieldKey.isPresent(row, column);
   }
 
   @Override
-  protected Object fallbackGet(SQLNode row, FieldKey column) {
+  protected Object fallbackGet(ASTNode row, FieldKey column) {
     return FieldKey.get0(row, column);
   }
 
   @Override
-  protected Object fallbackPut(SQLNode row, FieldKey column, Object value) {
+  protected Object fallbackPut(ASTNode row, FieldKey column, Object value) {
     return FieldKey.set0(row, column, value);
   }
 
   @Override
-  protected Object fallbackRemove(SQLNode row, FieldKey column) {
+  protected Object fallbackRemove(ASTNode row, FieldKey column) {
     return FieldKey.unset0(row, column);
   }
 
   @Override
-  protected Map<FieldKey, Object> fallbackRow(SQLNode row) {
+  protected Map<FieldKey, Object> fallbackRow(ASTNode row) {
     return row.directAttrs();
   }
 
   @Override
-  protected Map<SQLNode, Object> fallbackColumn(FieldKey column) {
+  protected Map<ASTNode, Object> fallbackColumn(FieldKey column) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  protected Catalog2D<SQLNode, FieldKey, Object> makePrev(
-      Table<SQLNode, FieldKey, Object> current, Catalog2D<SQLNode, FieldKey, Object> prev) {
+  protected Catalog2D<ASTNode, FieldKey, Object> makePrev(
+      Table<ASTNode, FieldKey, Object> current, Catalog2D<ASTNode, FieldKey, Object> prev) {
     return new FieldManagerImpl(current, prev);
   }
 }

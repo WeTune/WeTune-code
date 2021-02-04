@@ -6,27 +6,27 @@ import sjtu.ipads.wtune.sqlparser.ast.internal.FieldManagerImpl;
 
 import java.util.Map;
 
-public interface FieldManager extends Catalog2D<SQLNode, FieldKey, Object> {
-  default boolean containsField(SQLNode owner, FieldKey<?> key) {
+public interface FieldManager extends Catalog2D<ASTNode, FieldKey, Object> {
+  default boolean containsField(ASTNode owner, FieldKey<?> key) {
     return contains(owner, key);
   }
 
   @SuppressWarnings("unchecked")
-  default <T> T getField(SQLNode owner, FieldKey<T> key) {
+  default <T> T getField(ASTNode owner, FieldKey<T> key) {
     return (T) get(owner, key);
   }
 
   @SuppressWarnings("unchecked")
-  default <T> T unsetField(SQLNode owner, FieldKey<T> key) {
+  default <T> T unsetField(ASTNode owner, FieldKey<T> key) {
     return (T) remove(owner, key);
   }
 
   @SuppressWarnings("unchecked")
-  default <T> T setField(SQLNode owner, FieldKey<T> key, T value) {
+  default <T> T setField(ASTNode owner, FieldKey<T> key, T value) {
     return (T) put(owner, key, value);
   }
 
-  default Map<FieldKey, Object> getFields(SQLNode owner) {
+  default Map<FieldKey, Object> getFields(ASTNode owner) {
     return row(owner);
   }
 

@@ -2,15 +2,15 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.rel.Relation;
 
 import java.util.function.Supplier;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.SQLContext.LOG;
+import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
@@ -31,7 +31,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
   @Override
   public T get(Fields owner) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     final FieldManager mgr = node.attrMgr();
 
     if (mgr != null) return mgr.getField(node, this);
@@ -40,7 +40,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
   @Override
   public T set(Fields owner, T obj) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     final FieldManager mgr = node.attrMgr();
 
     final T old;
@@ -49,8 +49,8 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
     if (this == PARENT) return old;
 
-    SQLNode.setParent(obj, node);
-    SQLNode.setContext(obj, node.context());
+    ASTNode.setParent(obj, node);
+    ASTNode.setContext(obj, node.context());
     if (mgr != null && (isRelationBoundary(old) || isRelationBoundary(obj)))
       node.get(RELATION).reset();
 
@@ -59,7 +59,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
   @Override
   public T unset(Fields owner) {
-    final SQLNode node = owner.unwrap(SQLNode.class);
+    final ASTNode node = owner.unwrap(ASTNode.class);
     final FieldManager mgr = node.attrMgr();
 
     final T old;
@@ -95,7 +95,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
   @Override
   public boolean validate(Fields owner, Object obj) {
-    return owner instanceof SQLNode && (obj == null || targetClass.isInstance(obj));
+    return owner instanceof ASTNode && (obj == null || targetClass.isInstance(obj));
   }
 
   @Override
@@ -115,6 +115,6 @@ public class NodeFieldBase<T> implements FieldKey<T> {
   }
 
   private static boolean isRelationBoundary(Object obj) {
-    return obj instanceof SQLNode && Relation.isRelationBoundary((SQLNode) obj);
+    return obj instanceof ASTNode && Relation.isRelationBoundary((ASTNode) obj);
   }
 }

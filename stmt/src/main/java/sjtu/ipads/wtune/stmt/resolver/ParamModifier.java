@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 
@@ -61,7 +61,7 @@ public class ParamModifier {
     return new ParamModifier(type, args);
   }
 
-  private static ParamModifier fromLike(SQLNode param) {
+  private static ParamModifier fromLike(ASTNode param) {
     if (LITERAL.isInstance(param)) {
       final String value = param.get(LITERAL_VALUE).toString();
       return ParamModifier.modifier(LIKE, value.startsWith("%"), value.endsWith("%"));
@@ -69,7 +69,7 @@ public class ParamModifier {
     return ParamModifier.modifier(LIKE);
   }
 
-  private static ParamModifier fromIs(SQLNode param, boolean not) {
+  private static ParamModifier fromIs(ASTNode param, boolean not) {
     if (LITERAL.isInstance(param)) {
       if (param.get(LITERAL_TYPE) == LiteralType.NULL)
         return not ? modifier(CHECK_NULL_NOT) : modifier(CHECK_NULL);
@@ -83,7 +83,7 @@ public class ParamModifier {
   private static final ParamModifier KEEP_STILL = modifier(KEEP);
 
   public static ParamModifier fromBinaryOp(
-      BinaryOp op, SQLNode target, boolean inverse, boolean not) {
+      BinaryOp op, ASTNode target, boolean inverse, boolean not) {
     if (op == BinaryOp.EQUAL || op == BinaryOp.IN_LIST || op == BinaryOp.ARRAY_CONTAINS)
       return not ? modifier(NEQ) : KEEP_STILL;
 

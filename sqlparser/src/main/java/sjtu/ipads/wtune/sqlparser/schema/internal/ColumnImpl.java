@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
@@ -32,7 +32,7 @@ public class ColumnImpl implements Column {
     else if (dataType.category() == Category.ENUM) flags.add(IS_ENUM);
   }
 
-  public static ColumnImpl build(String table, SQLNode colDef) {
+  public static ColumnImpl build(String table, ASTNode colDef) {
     final String colName = colDef.get(COLUMN_DEF_NAME).get(COLUMN_NAME_COLUMN);
     final String rawDataType = colDef.get(COLUMN_DEF_DATATYPE_RAW);
     final SQLDataType dataType = colDef.get(COLUMN_DEF_DATATYPE);

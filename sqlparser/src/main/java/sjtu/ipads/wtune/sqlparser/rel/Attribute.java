@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.rel;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.rel.internal.AttributeField;
 import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
@@ -26,7 +26,7 @@ public interface Attribute {
 
   Column column();
 
-  SQLNode node();
+  ASTNode node();
 
   default Attribute reference(boolean recursive) {
     if (!recursive) return this;
@@ -44,27 +44,27 @@ public interface Attribute {
     else return null;
   }
 
-  default SQLNode toSelectItem() {
-    final SQLNode columnName = SQLNode.node(NodeType.COLUMN_NAME);
+  default ASTNode toSelectItem() {
+    final ASTNode columnName = ASTNode.node(NodeType.COLUMN_NAME);
     final Relation owner = owner();
     columnName.set(COLUMN_NAME_TABLE, owner.alias());
     columnName.set(COLUMN_NAME_COLUMN, name());
 
-    final SQLNode columnRef = SQLNode.expr(COLUMN_REF);
+    final ASTNode columnRef = ASTNode.expr(COLUMN_REF);
     columnRef.set(COLUMN_REF_COLUMN, columnName);
 
-    final SQLNode selectItem = SQLNode.node(NodeType.SELECT_ITEM);
+    final ASTNode selectItem = ASTNode.node(NodeType.SELECT_ITEM);
     selectItem.set(SELECT_ITEM_ALIAS, name());
     selectItem.set(SELECT_ITEM_EXPR, columnRef);
 
     return selectItem;
   }
 
-  static Attribute resolve(SQLNode node) {
+  static Attribute resolve(ASTNode node) {
     if (!COLUMN_REF.isInstance(node)) return null;
 
     final Relation relation = node.get(RELATION);
-    final SQLNode column = node.get(COLUMN_REF_COLUMN);
+    final ASTNode column = node.get(COLUMN_REF_COLUMN);
     final String tableName = column.get(COLUMN_NAME_TABLE);
     final String columnName = column.get(COLUMN_NAME_COLUMN);
 
@@ -77,15 +77,15 @@ public interface Attribute {
     return attribute;
   }
 
-  static List<Attribute> fromTable(SQLNode simpleTableSource) {
+  static List<Attribute> fromTable(ASTNode simpleTableSource) {
     return NativeAttribute.tableAttributesOf(simpleTableSource);
   }
 
-  static List<Attribute> fromProjection(SQLNode querySpec) {
+  static List<Attribute> fromProjection(ASTNode querySpec) {
     return DerivedAttribute.projectionAttributesOf(querySpec);
   }
 
-  static Attribute of(SQLNode node) {
+  static Attribute of(ASTNode node) {
     return node.get(ATTRIBUTE);
   }
 }

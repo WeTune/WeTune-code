@@ -1,25 +1,25 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public interface Mutation {
-  static SQLNode clean(SQLNode node) {
+  static ASTNode clean(ASTNode node) {
     return Clean.clean(node);
   }
 
-  static SQLNode normalizeBool(SQLNode node) {
+  static ASTNode normalizeBool(ASTNode node) {
     return NormalizeBool.normalize(node);
   }
 
-  static SQLNode normalizeTuple(SQLNode node) {
+  static ASTNode normalizeTuple(ASTNode node) {
     return NormalizeTuple.normalize(node);
   }
 
-  static SQLNode normalizeConstantTable(SQLNode node) {
+  static ASTNode normalizeConstantTable(ASTNode node) {
     return NormalizeConstantTable.normalize(node);
   }
 
-  static SQLNode normalizeParam(SQLNode node) {
+  static ASTNode normalizeParam(ASTNode node) {
     return NormalizeParam.normalize(node);
   }
 }

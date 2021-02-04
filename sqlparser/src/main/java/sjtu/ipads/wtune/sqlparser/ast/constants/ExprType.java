@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ExprFieldImpl;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
@@ -41,7 +41,7 @@ public enum ExprType implements FieldDomain {
   COMPARISON_MOD // actually invalid, just used in parsing process
 ;
 
-  public boolean isInstance(SQLNode node) {
+  public boolean isInstance(ASTNode node) {
     return EXPR_KIND.get(node) == this;
   }
 

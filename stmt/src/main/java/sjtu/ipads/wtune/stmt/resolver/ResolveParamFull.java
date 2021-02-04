@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.stmt.resolver;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLVisitor;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
@@ -65,23 +65,23 @@ import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
  *   <li>The value on the top of stack is taken to be the parameter's value
  * </ol>
  */
-class ResolveParamFull implements SQLVisitor {
+class ResolveParamFull implements ASTVistor {
   private int nextIndex;
 
   @Override
-  public boolean enterParamMarker(SQLNode paramMarker) {
+  public boolean enterParamMarker(ASTNode paramMarker) {
     resolveParam(paramMarker);
     return false;
   }
 
   @Override
-  public boolean enterLiteral(SQLNode literal) {
+  public boolean enterLiteral(ASTNode literal) {
     resolveParam(literal);
     return false;
   }
 
   @Override
-  public boolean enterChild(SQLNode parent, FieldKey<SQLNode> key, SQLNode child) {
+  public boolean enterChild(ASTNode parent, FieldKey<ASTNode> key, ASTNode child) {
     if (key == QUERY_LIMIT) {
       if (child != null && PARAM_MARKER.isInstance(child)) {
         child.unset(PARAM_MARKER_NUMBER);
@@ -100,17 +100,17 @@ class ResolveParamFull implements SQLVisitor {
     return true;
   }
 
-  private void resolveParam(SQLNode startPoint) {
+  private void resolveParam(ASTNode startPoint) {
     // identify the scope concerning this param
-    final Pair<SQLNode, SQLNode> pair = boolScope(startPoint);
+    final Pair<ASTNode, ASTNode> pair = boolScope(startPoint);
     if (pair == null) return;
 
-    final SQLNode ctx = pair.getLeft();
+    final ASTNode ctx = pair.getLeft();
 
     // traceback to the expression root
     // to determine whether the predicate is negated
     boolean negated = false;
-    SQLNode parent = ctx.parent();
+    ASTNode parent = ctx.parent();
     while (EXPR.isInstance(parent)) {
       if (parent.get(UNARY_OP) == NOT) negated = !negated;
       parent = parent.parent();
@@ -118,7 +118,7 @@ class ResolveParamFull implements SQLVisitor {
 
     // deduce the param from the value in a DB row
     final LinkedList<ParamModifier> modifierStack = new LinkedList<>();
-    SQLNode p = startPoint;
+    ASTNode p = startPoint;
 
     do {
       if (!deduce(p, modifierStack, negated)) return;
@@ -138,8 +138,8 @@ class ResolveParamFull implements SQLVisitor {
   // find the nearest ancestor of `startPoint` that
   //   1. itself is a bool expression
   //   2. none of its children is a bool expression
-  private static Pair<SQLNode, SQLNode> boolScope(SQLNode startPoint) {
-    SQLNode child = startPoint, parent = startPoint.parent();
+  private static Pair<ASTNode, ASTNode> boolScope(ASTNode startPoint) {
+    ASTNode child = startPoint, parent = startPoint.parent();
 
     while (EXPR.isInstance(parent) && parent.get(BOOL_EXPR) == null) {
       child = parent;
@@ -152,8 +152,8 @@ class ResolveParamFull implements SQLVisitor {
   // deduce the restriction on a parameter's value and express as modifier
   // e.g. `x` > ? (where `x` is a column name, ? is the parameter), then ? should satisfies "< a"
   // the resultant modifiers is [Value("x"), Decrease()]
-  private static boolean deduce(SQLNode target, List<ParamModifier> stack, boolean negated) {
-    final SQLNode parent = target.parent();
+  private static boolean deduce(ASTNode target, List<ParamModifier> stack, boolean negated) {
+    final ASTNode parent = target.parent();
     final ExprType exprKind = parent.get(EXPR_KIND);
 
     if (exprKind == UNARY) {
@@ -164,10 +164,10 @@ class ResolveParamFull implements SQLVisitor {
 
     } else if (exprKind == BINARY) {
       // if target is on the right, the operator should be reversed
-      final SQLNode left = parent.get(BINARY_LEFT);
-      final SQLNode right = parent.get(BINARY_RIGHT);
+      final ASTNode left = parent.get(BINARY_LEFT);
+      final ASTNode right = parent.get(BINARY_RIGHT);
       final boolean inverseOp = right == target;
-      final SQLNode otherSide = inverseOp ? left : right;
+      final ASTNode otherSide = inverseOp ? left : right;
       final BinaryOp op = parent.get(BINARY_OP);
 
       final ParamModifier modifier = fromBinaryOp(op, target, inverseOp, negated);
@@ -202,7 +202,7 @@ class ResolveParamFull implements SQLVisitor {
   // induce a expression's value and express as modifier
   // e.g. `x` + 1 (where `x` is a column name),
   // the resultant modifiers is [Value("x"), DirectValue(1), Plus()]
-  private static boolean induce(SQLNode target, List<ParamModifier> stack) {
+  private static boolean induce(ASTNode target, List<ParamModifier> stack) {
     final ExprType exprKind = target.get(EXPR_KIND);
 
     if (exprKind == COLUMN_REF) {
@@ -211,10 +211,10 @@ class ResolveParamFull implements SQLVisitor {
       else stack.add(modifier(COLUMN_VALUE, column.table(), column.name(), /* position */ 0));
 
     } else if (exprKind == FUNC_CALL) {
-      final List<SQLNode> args = target.get(FUNC_CALL_ARGS);
+      final List<ASTNode> args = target.get(FUNC_CALL_ARGS);
       stack.add(
           modifier(INVOKE_FUNC, target.get(FUNC_CALL_NAME).toString().toLowerCase(), args.size()));
-      for (SQLNode arg : Lists.reverse(args)) if (!induce(arg, stack)) return false;
+      for (ASTNode arg : Lists.reverse(args)) if (!induce(arg, stack)) return false;
 
     } else if (exprKind == BINARY) {
       switch (target.get(BINARY_OP)) {
@@ -248,9 +248,9 @@ class ResolveParamFull implements SQLVisitor {
       stack.add(modifier(DIRECT_VALUE, target.get(LITERAL_VALUE)));
 
     } else if (exprKind == TUPLE) {
-      final List<SQLNode> exprs = target.get(TUPLE_EXPRS);
+      final List<ASTNode> exprs = target.get(TUPLE_EXPRS);
       stack.add(modifier(MAKE_TUPLE, exprs.size()));
-      for (SQLNode elements : Lists.reverse(exprs)) if (!induce(elements, stack)) return false;
+      for (ASTNode elements : Lists.reverse(exprs)) if (!induce(elements, stack)) return false;
 
     } else if (exprKind == SYMBOL) {
       stack.add(modifier(DIRECT_VALUE, target.get(SYMBOL_TEXT)));
@@ -262,7 +262,7 @@ class ResolveParamFull implements SQLVisitor {
     return true;
   }
 
-  public static ParamManager resolve(SQLNode node) {
+  public static ParamManager resolve(ASTNode node) {
     if (node.manager(BoolExprManager.class) == null) resolveBoolExpr(node);
 
     if (node.manager(ParamManager.class) == null)

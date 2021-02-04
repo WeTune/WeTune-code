@@ -2,14 +2,14 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.multiversion.MultiVersion;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.SQLContext;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class SQLContextImpl implements SQLContext {
+public class ASTContextImpl implements ASTContext {
   private final String dbType;
   private final FieldManager attrMgr;
 
@@ -19,13 +19,13 @@ public class SQLContextImpl implements SQLContext {
   private Snapshot snapshot;
   private int versionNumber;
 
-  private SQLContextImpl(String dbType) {
+  private ASTContextImpl(String dbType) {
     this.dbType = dbType;
     this.attrMgr = FieldManager.empty();
   }
 
-  public static SQLContext build(String dbType) {
-    return new SQLContextImpl(dbType);
+  public static ASTContext build(String dbType) {
+    return new ASTContextImpl(dbType);
   }
 
   @Override

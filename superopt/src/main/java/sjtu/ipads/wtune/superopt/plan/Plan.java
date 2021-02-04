@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.superopt.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.superopt.plan.internal.PlanImpl;
 import sjtu.ipads.wtune.superopt.plan.internal.Semantic;
-import sjtu.ipads.wtune.superopt.plan.internal.ToSQLTranslator;
+import sjtu.ipads.wtune.superopt.plan.internal.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
@@ -32,8 +32,8 @@ public interface Plan extends Comparable<Plan> {
     else return wrap(head().copy());
   }
 
-  default SQLNode sql() {
-    return ToSQLTranslator.translate(this);
+  default ASTNode sql() {
+    return ToASTTranslator.translate(this);
   }
 
   default List<Hole<PlanNode>> holes() {

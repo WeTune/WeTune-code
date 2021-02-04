@@ -3,10 +3,10 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Fields;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
-import sjtu.ipads.wtune.sqlparser.ast.internal.SQLNodeFactory;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeFactory;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
@@ -131,8 +131,8 @@ public interface MySQLASTHelper {
     return triple;
   }
 
-  static SQLNode tableName(
-      SQLNodeFactory factory,
+  static ASTNode tableName(
+      ASTNodeFactory factory,
       MySQLParser.QualifiedIdentifierContext qualifiedId,
       MySQLParser.DotIdentifierContext dotId) {
     final String schema, table;
@@ -151,7 +151,7 @@ public interface MySQLASTHelper {
       return null;
     }
 
-    final SQLNode node = factory.newNode(TABLE_NAME);
+    final ASTNode node = factory.newNode(TABLE_NAME);
     node.set(TABLE_NAME_SCHEMA, schema);
     node.set(TABLE_NAME_TABLE, table);
 
@@ -476,18 +476,18 @@ public interface MySQLASTHelper {
     else return JoinType.NATURAL_INNER_JOIN;
   }
 
-  static SQLNode wrapAsQuery(SQLNodeFactory factory, SQLNode node) {
+  static ASTNode wrapAsQuery(ASTNodeFactory factory, ASTNode node) {
     if (node.nodeType() == NodeType.QUERY_SPEC || node.nodeType() == NodeType.SET_OP) {
-      final SQLNode query = factory.newNode(NodeType.QUERY);
+      final ASTNode query = factory.newNode(NodeType.QUERY);
       query.set(QUERY_BODY, node);
       return query;
     }
     return node;
   }
 
-  static SQLNode wrapAsQueryExpr(SQLNodeFactory factory, SQLNode node) {
+  static ASTNode wrapAsQueryExpr(ASTNodeFactory factory, ASTNode node) {
     assert node.nodeType() == NodeType.QUERY;
-    final SQLNode exprNode = factory.newNode(QUERY_EXPR);
+    final ASTNode exprNode = factory.newNode(QUERY_EXPR);
     exprNode.set(QUERY_EXPR_QUERY, node);
     return exprNode;
   }

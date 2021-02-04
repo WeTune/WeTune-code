@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
@@ -13,21 +13,21 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
 class NormalizeBool {
-  public static SQLNode normalize(SQLNode node) {
+  public static ASTNode normalize(ASTNode node) {
     BoolCollector.collect(node).forEach(NormalizeBool::normalizeExpr);
     return node;
   }
 
-  private static void normalizeExpr(SQLNode expr) {
+  private static void normalizeExpr(ASTNode expr) {
     assert EXPR.isInstance(expr);
     // `expr` must be evaluated as boolean
 
     if (COLUMN_REF.isInstance(expr)) {
-      final SQLNode trueLiteral = SQLNode.expr(LITERAL);
+      final ASTNode trueLiteral = ASTNode.expr(LITERAL);
       trueLiteral.set(LITERAL_TYPE, LiteralType.BOOL);
       trueLiteral.set(LITERAL_VALUE, true);
 
-      final SQLNode binary = SQLNode.expr(BINARY);
+      final ASTNode binary = ASTNode.expr(BINARY);
       binary.set(BINARY_LEFT, expr.copy());
       binary.set(BINARY_OP, BinaryOp.IS);
       binary.set(BINARY_RIGHT, trueLiteral);
@@ -35,14 +35,14 @@ class NormalizeBool {
       expr.update(binary);
 
     } else if (expr.get(BINARY_OP) == BinaryOp.IS) {
-      final SQLNode right = expr.get(BINARY_RIGHT);
+      final ASTNode right = expr.get(BINARY_RIGHT);
       if (LITERAL.isInstance(right)
           && right.get(LITERAL_TYPE) == LiteralType.BOOL
           && right.get(LITERAL_VALUE).equals(Boolean.FALSE)) {
 
         normalizeExpr(expr.get(BINARY_LEFT));
 
-        final SQLNode unary = SQLNode.expr(UNARY);
+        final ASTNode unary = ASTNode.expr(UNARY);
         unary.set(UNARY_OP, UnaryOp.NOT);
         unary.set(UNARY_EXPR, expr.get(BINARY_LEFT));
 
