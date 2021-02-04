@@ -43,7 +43,7 @@ public class Runner {
     final int partitions = args.length >= 4 ? Integer.parseInt(args[2]) : 1;
     final int partitionKey = args.length >= 4 ? Integer.parseInt(args[3]) : -1;
 
-    final List<Plan> frags = Enumerate.enumFragments();
+    final List<Plan> frags = Enumerate.enumPlans();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
 
     final List<List<Plan>> pairs =

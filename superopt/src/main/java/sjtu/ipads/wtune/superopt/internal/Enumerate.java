@@ -21,15 +21,15 @@ import static java.util.Collections.singleton;
 public class Enumerate {
   public static final int SKELETON_MAX_OPS = 4;
 
-  public static List<Plan> enumFragments() {
-    return enumFragments0(0, singleton(Plan.empty())).parallelStream()
+  public static List<Plan> enumPlans() {
+    return enumPlans0(0, singleton(Plan.empty())).parallelStream()
         .peek(Plan::setup)
-        .filter(Enumerate::prune)
         .sorted(Plan::compareTo)
+        .filter(Enumerate::prune)
         .collect(Collectors.toList());
   }
 
-  private static Set<Plan> enumFragments0(int depth, Set<Plan> plans) {
+  private static Set<Plan> enumPlans0(int depth, Set<Plan> plans) {
     if (depth >= SKELETON_MAX_OPS) return plans;
     final Set<Plan> newPlans = new HashSet<>();
     for (Plan g : plans)
@@ -40,7 +40,7 @@ public class Enumerate {
             hole.unFill();
           }
 
-    return Sets.union(newPlans, enumFragments0(depth + 1, newPlans));
+    return Sets.union(newPlans, enumPlans0(depth + 1, newPlans));
   }
 
   private static boolean prune(Plan plan) {

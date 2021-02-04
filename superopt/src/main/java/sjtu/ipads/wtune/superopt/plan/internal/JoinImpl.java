@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.plan.internal;
 
 import sjtu.ipads.wtune.superopt.plan.Join;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
 
 public abstract class JoinImpl extends BasePlanNode implements Join {
   private final Placeholder left, right;

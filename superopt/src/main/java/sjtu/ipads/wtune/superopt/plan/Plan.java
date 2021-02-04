@@ -32,8 +32,8 @@ public interface Plan extends Comparable<Plan> {
     else return wrap(head().copy());
   }
 
-  default ASTNode sql() {
-    return ToASTTranslator.translate(this);
+  default ASTNode ast() {
+    return ToASTTranslator.build().translate(this);
   }
 
   default List<Hole<PlanNode>> holes() {

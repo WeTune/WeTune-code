@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution.internal;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;

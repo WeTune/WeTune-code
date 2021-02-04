@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.plan.internal;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import sjtu.ipads.wtune.superopt.plan.*;
+import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
 import sjtu.ipads.wtune.symsolver.core.*;
 import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
 import sjtu.ipads.wtune.symsolver.logic.Proposition;

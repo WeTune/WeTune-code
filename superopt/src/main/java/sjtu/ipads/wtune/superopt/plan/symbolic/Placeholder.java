@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.plan;
+package sjtu.ipads.wtune.superopt.plan.symbolic;
 
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Indexed;
