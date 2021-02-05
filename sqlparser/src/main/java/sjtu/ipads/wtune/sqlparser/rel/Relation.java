@@ -19,7 +19,7 @@ public interface Relation {
 
   FieldDomain[] RELATION_BOUNDARY = {QUERY, SIMPLE_SOURCE, DERIVED_SOURCE};
 
-  ASTNode node(); // invariant:isRelationBounder(node())
+  ASTNode node(); // invariant: isRelationBoundary(node())
 
   String alias();
 
@@ -32,6 +32,10 @@ public interface Relation {
   default boolean isInput() {
     return TABLE_SOURCE.isInstance(node())
         || (SET_OP.isInstance(node().parent()) && node().parent().get(SET_OP_LEFT) == node());
+  }
+
+  default boolean isTable() {
+    return SIMPLE_SOURCE.isInstance(node());
   }
 
   default Relation parent() {

@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.ARRAY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
 
 public class Formatter implements ASTVistor {
   private static final String INDENT_STR = "  ";
@@ -596,7 +596,7 @@ public class Formatter implements ASTVistor {
 
     append(joinType.text()).append(' ');
     final boolean needParen =
-        JOINED.isInstance(right) && !(joinType.isInner() && right.get(JOINED_TYPE).isInner());
+        JOINED_SOURCE.isInstance(right) && !(joinType.isInner() && right.get(JOINED_TYPE).isInner());
     try (final var ignored = withParen(needParen)) {
       if (needParen) {
         increaseIndent();

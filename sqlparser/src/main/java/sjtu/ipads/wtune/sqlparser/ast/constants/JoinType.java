@@ -38,4 +38,8 @@ public enum JoinType {
         || this == NATURAL_LEFT_JOIN
         || this == NATURAL_RIGHT_JOIN;
   }
+
+  public boolean isRight() {
+    return this == NATURAL_RIGHT_JOIN || this == RIGHT_JOIN;
+  }
 }

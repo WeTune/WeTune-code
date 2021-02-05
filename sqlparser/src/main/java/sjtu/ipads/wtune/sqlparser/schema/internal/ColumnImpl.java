@@ -51,7 +51,7 @@ public class ColumnImpl implements Column {
   }
 
   @Override
-  public String table() {
+  public String tableName() {
     return table;
   }
 

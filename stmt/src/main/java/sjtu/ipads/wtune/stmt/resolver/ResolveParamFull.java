@@ -208,7 +208,7 @@ class ResolveParamFull implements ASTVistor {
     if (exprKind == COLUMN_REF) {
       final Column column = target.get(ATTRIBUTE).column(true);
       if (column == null) stack.add(modifier(GUESS));
-      else stack.add(modifier(COLUMN_VALUE, column.table(), column.name(), /* position */ 0));
+      else stack.add(modifier(COLUMN_VALUE, column.tableName(), column.name(), /* position */ 0));
 
     } else if (exprKind == FUNC_CALL) {
       final List<ASTNode> args = target.get(FUNC_CALL_ARGS);

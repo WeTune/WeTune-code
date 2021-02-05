@@ -1,9 +1,9 @@
-package sjtu.ipads.wtune.superopt.substitution.internal;
+package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Indexed;
@@ -100,7 +100,7 @@ public class SubstitutionImpl implements Substitution {
       case PickFrom:
         return Constraint.pickFrom(
             lookup.find(split[1]),
-            arrayMap(lookup::find, Indexed.class, Commons.subArray(split, 2)));
+            (Object[]) arrayMap(lookup::find, Indexed.class, Commons.subArray(split, 2)));
       case Reference:
         return Constraint.reference(
             lookup.find(split[1]),

@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.internal.ColumnImpl;
 
 import java.util.Collection;
+import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
@@ -24,7 +25,7 @@ public interface Column {
     IS_ENUM
   }
 
-  String table();
+  String tableName();
 
   String name();
 
@@ -40,6 +41,12 @@ public interface Column {
 
   default Collection<Constraint> constraints(ConstraintType type) {
     return listFilter(it -> it.type() == type, constraints());
+  }
+
+  default boolean references(List<Column> referred) {
+    return constraints(ConstraintType.FOREIGN).stream()
+        .map(Constraint::refColumns)
+        .anyMatch(referred::equals);
   }
 
   static Column make(String table, ASTNode colDef) {

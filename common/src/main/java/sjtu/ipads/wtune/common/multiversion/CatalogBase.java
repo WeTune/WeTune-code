@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.common.multiversion;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<K, V>>
     implements Catalog<K, V> {
@@ -53,6 +52,22 @@ public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<
   }
 
   @Override
+  public Set<K> keys() {
+    final Set<K> set;
+
+    if (prev == null) set = new HashSet<>(fallbackKeys());
+    else set = prev.keys();
+
+    if (current != null)
+      for (var pair : current.entrySet()) {
+        if (pair.getValue() == REMOVED) set.remove(pair.getKey());
+        else set.add(pair.getKey());
+      }
+
+    return set;
+  }
+
+  @Override
   protected Map<K, Object> makeCurrent() {
     return new HashMap<>();
   }
@@ -76,5 +91,9 @@ public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<
 
   protected V fallbackRemove(K k) {
     return null;
+  }
+
+  protected Set<K> fallbackKeys() {
+    return Collections.emptySet();
   }
 }

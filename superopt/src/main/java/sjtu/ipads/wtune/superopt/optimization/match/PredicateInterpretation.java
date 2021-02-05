@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.plan.symbolic;
+package sjtu.ipads.wtune.superopt.optimization.match;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 

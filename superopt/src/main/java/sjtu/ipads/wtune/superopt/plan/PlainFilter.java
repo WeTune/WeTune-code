@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.plan;
 
 import sjtu.ipads.wtune.superopt.plan.internal.PlainFilterImpl;
-import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
 
 public interface PlainFilter extends PlanNode {
   Placeholder fields();

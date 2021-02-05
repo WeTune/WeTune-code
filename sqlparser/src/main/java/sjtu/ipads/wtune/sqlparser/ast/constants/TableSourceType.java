@@ -9,7 +9,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
 
 public enum TableSourceType implements FieldDomain {
   SIMPLE_SOURCE,
-  JOINED,
+  JOINED_SOURCE,
   DERIVED_SOURCE;
 
   @Override
@@ -18,7 +18,7 @@ public enum TableSourceType implements FieldDomain {
   }
 
   public boolean isJoined() {
-    return this == JOINED;
+    return this == JOINED_SOURCE;
   }
 
   public boolean isSimple() {

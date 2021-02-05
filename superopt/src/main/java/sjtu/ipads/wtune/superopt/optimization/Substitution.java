@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.superopt.substitution;
+package sjtu.ipads.wtune.superopt.optimization;
 
 import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.substitution.internal.SubstitutionImpl;
+import sjtu.ipads.wtune.superopt.optimization.internal.SubstitutionImpl;
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 

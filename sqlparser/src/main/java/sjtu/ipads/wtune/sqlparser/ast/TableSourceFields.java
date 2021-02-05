@@ -18,11 +18,11 @@ public interface TableSourceFields {
   // mysql only
   FieldKey<List<ASTNode>> SIMPLE_HINTS = SIMPLE_SOURCE.nodesAttr("hints");
   //// Joined
-  FieldKey<ASTNode> JOINED_LEFT = JOINED.nodeAttr("left");
-  FieldKey<ASTNode> JOINED_RIGHT = JOINED.nodeAttr("right");
-  FieldKey<JoinType> JOINED_TYPE = JOINED.attr("type", JoinType.class);
-  FieldKey<ASTNode> JOINED_ON = JOINED.nodeAttr("on");
-  FieldKey<List<String>> JOINED_USING = JOINED.attr("using", List.class);
+  FieldKey<ASTNode> JOINED_LEFT = JOINED_SOURCE.nodeAttr("left");
+  FieldKey<ASTNode> JOINED_RIGHT = JOINED_SOURCE.nodeAttr("right");
+  FieldKey<JoinType> JOINED_TYPE = JOINED_SOURCE.attr("type", JoinType.class);
+  FieldKey<ASTNode> JOINED_ON = JOINED_SOURCE.nodeAttr("on");
+  FieldKey<List<String>> JOINED_USING = JOINED_SOURCE.attr("using", List.class);
   //// Derived
   FieldKey<ASTNode> DERIVED_SUBQUERY = DERIVED_SOURCE.nodeAttr("subquery");
   FieldKey<String> DERIVED_ALIAS = DERIVED_SOURCE.strAttr("alias");

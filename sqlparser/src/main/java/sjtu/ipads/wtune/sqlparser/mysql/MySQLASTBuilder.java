@@ -458,7 +458,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
 
   @Override
   public ASTNode visitJoinedTable(MySQLParser.JoinedTableContext ctx) {
-    final ASTNode node = newNode(JOINED);
+    final ASTNode node = newNode(JOINED_SOURCE);
     final JoinType joinType =
         Commons.coalesce(
             parseJoinType(ctx.innerJoinType()),

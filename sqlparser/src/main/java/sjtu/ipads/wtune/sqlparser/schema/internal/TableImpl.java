@@ -59,7 +59,7 @@ public class TableImpl implements Table {
 
   @Override
   public Collection<ConstraintImpl> constraints() {
-    return constraints;
+    return constraints == null ? Collections.emptyList() : constraints;
   }
 
   @Override

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt;
 import sjtu.ipads.wtune.superopt.internal.Prove;
 import sjtu.ipads.wtune.superopt.internal.Runner;
 import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.optimization.Substitution;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

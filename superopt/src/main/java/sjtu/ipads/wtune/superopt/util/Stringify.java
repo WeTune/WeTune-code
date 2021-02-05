@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.util;
 
 import sjtu.ipads.wtune.superopt.plan.*;
-import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Placeholder;
 
 public class Stringify implements PlanVisitor {
   private final StringBuilder builder;

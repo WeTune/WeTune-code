@@ -4,7 +4,7 @@ import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.procedure.TObjectIntProcedure;
 import sjtu.ipads.wtune.superopt.plan.*;
-import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Placeholder;
 
 public class PlaceholderNumbering implements PlanVisitor {
   private int nextPredId;

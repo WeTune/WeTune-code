@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
 
 public interface ASTNodeFactory {
@@ -167,7 +167,7 @@ public interface ASTNodeFactory {
   }
 
   default ASTNode joined(ASTNode left, ASTNode right, JoinType type) {
-    final ASTNode tableSource = newNode(JOINED);
+    final ASTNode tableSource = newNode(JOINED_SOURCE);
     tableSource.set(JOINED_LEFT, left);
     tableSource.set(JOINED_RIGHT, right);
     tableSource.set(JOINED_TYPE, type);

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 

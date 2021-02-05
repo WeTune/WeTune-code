@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.plan.internal;
 
 import sjtu.ipads.wtune.superopt.plan.Input;
-import sjtu.ipads.wtune.superopt.plan.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 

@@ -53,8 +53,8 @@ public interface ASTNode extends Fields {
     return get(PARENT);
   }
 
-  default Map<FieldKey, Object> attrs() {
-    final FieldManager mgr = attrMgr();
+  default Map<FieldKey, Object> fields() {
+    final FieldManager mgr = fieldMgr();
     return mgr != null ? mgr.getFields(this) : directAttrs();
   }
 
@@ -63,7 +63,7 @@ public interface ASTNode extends Fields {
     return ctx != null ? ctx.manager(cls) : null;
   }
 
-  default FieldManager attrMgr() {
+  default FieldManager fieldMgr() {
     return manager(FieldManager.class);
   }
 

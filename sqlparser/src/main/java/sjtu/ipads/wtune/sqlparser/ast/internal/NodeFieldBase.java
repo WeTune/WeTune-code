@@ -32,7 +32,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
   @Override
   public T get(Fields owner) {
     final ASTNode node = owner.unwrap(ASTNode.class);
-    final FieldManager mgr = node.attrMgr();
+    final FieldManager mgr = node.fieldMgr();
 
     if (mgr != null) return mgr.getField(node, this);
     else return FieldKey.super.get(node);
@@ -41,7 +41,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
   @Override
   public T set(Fields owner, T obj) {
     final ASTNode node = owner.unwrap(ASTNode.class);
-    final FieldManager mgr = node.attrMgr();
+    final FieldManager mgr = node.fieldMgr();
 
     final T old;
     if (mgr != null) old = mgr.setField(node, this, obj);
@@ -60,7 +60,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
   @Override
   public T unset(Fields owner) {
     final ASTNode node = owner.unwrap(ASTNode.class);
-    final FieldManager mgr = node.attrMgr();
+    final FieldManager mgr = node.fieldMgr();
 
     final T old;
     if (mgr != null) old = mgr.unsetField(node, this);

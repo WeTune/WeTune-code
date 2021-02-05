@@ -53,13 +53,13 @@ public class NodeImpl implements ASTNode {
   @SuppressWarnings("unchecked")
   public void update(ASTNode other) {
     if (Relation.isRelationBoundary(this)) get(RELATION).reset();
-    Arrays.stream(attrs().keySet().toArray(FieldKey[]::new)).forEach(it -> it.unset(this));
+    Arrays.stream(fields().keySet().toArray(FieldKey[]::new)).forEach(it -> it.unset(this));
 
     set(NODE_TYPE, other.nodeType());
     if (EXPR.isInstance(other)) set(EXPR_KIND, other.get(EXPR_KIND));
     else if (TABLE_SOURCE.isInstance(other)) set(TABLE_SOURCE_KIND, other.get(TABLE_SOURCE_KIND));
 
-    for (var pair : other.attrs().entrySet()) set(pair.getKey(), pair.getValue());
+    for (var pair : other.fields().entrySet()) set(pair.getKey(), pair.getValue());
   }
 
   @Override

@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.common.multiversion;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Map;
+import java.util.Set;
 
 public interface Catalog2D<R, C, V> extends Catalog<Pair<R, C>, V> {
   @Override
@@ -23,6 +24,11 @@ public interface Catalog2D<R, C, V> extends Catalog<Pair<R, C>, V> {
   @Override
   default V remove(Pair<R, C> pair) {
     return remove(pair.getKey(), pair.getValue());
+  }
+
+  @Override
+  default Set<Pair<R, C>> keys() {
+    throw new UnsupportedOperationException();
   }
 
   boolean contains(R row, C column);

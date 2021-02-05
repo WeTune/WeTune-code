@@ -280,7 +280,7 @@ public interface VisitorController {
 
     return switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE -> v.enterSimpleTableSource(n);
-      case JOINED -> v.enterJoinedTableSource(n);
+      case JOINED_SOURCE -> v.enterJoinedTableSource(n);
       case DERIVED_SOURCE -> v.enterDerivedTableSource(n);
     };
 
@@ -349,7 +349,7 @@ public interface VisitorController {
         safeVisitChild(SIMPLE_TABLE, n, v);
         safeVisitList(SIMPLE_HINTS, n, v);
       }
-      case JOINED -> {
+      case JOINED_SOURCE -> {
         safeVisitChild(JOINED_LEFT, n, v);
         safeVisitChild(JOINED_RIGHT, n, v);
         safeVisitChild(JOINED_ON, n, v);
@@ -478,7 +478,7 @@ public interface VisitorController {
 
     switch (n.get(TABLE_SOURCE_KIND)) {
       case SIMPLE_SOURCE -> v.leaveSimpleTableSource(n);
-      case JOINED -> v.leaveJoinedTableSource(n);
+      case JOINED_SOURCE -> v.leaveJoinedTableSource(n);
       case DERIVED_SOURCE -> v.leaveDerivedTableSource(n);
     }
   }

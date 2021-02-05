@@ -14,7 +14,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
@@ -27,8 +27,8 @@ class NormalizeConstantTable {
 
   private static boolean canNormalize(ASTNode node) {
     return DERIVED_SOURCE.isInstance(node)
-        && JOINED.isInstance(node.parent())
-        && isConstantTable(node);
+           && JOINED_SOURCE.isInstance(node.parent())
+           && isConstantTable(node);
   }
 
   private static boolean isConstantTable(ASTNode derived) {
