@@ -2,11 +2,16 @@ package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.superopt.internal.Prove;
 import sjtu.ipads.wtune.superopt.internal.Runner;
-import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
+import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.plan.internal.ToASTTranslator;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.logging.LogManager;
 
@@ -31,12 +36,31 @@ public class Main {
     }
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     if (args.length >= 1 && "run".equals(args[0])) {
       Runner.build(args).run();
 
     } else {
-      test0();
+
+      try (final PrintWriter writer =
+          new PrintWriter(
+              Files.newOutputStream(Paths.get("wtune_data", "augmented_substitution")))) {
+
+        final SubstitutionRepo repo =
+            SubstitutionRepo.make()
+                .readLines(Files.readAllLines(Paths.get("wtune_data", "substitutions")));
+        System.out.println(repo.count());
+
+        for (Substitution substitution : repo) {
+          final ToASTTranslator translator =
+              ToASTTranslator.build().setNumbering(substitution.numbering());
+
+          writer.println(translator.translate(substitution.g0()));
+          writer.println(translator.translate(substitution.g1()));
+          writer.println(substitution);
+          writer.println("====");
+        }
+      }
     }
   }
 

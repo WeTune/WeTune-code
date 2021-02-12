@@ -6,11 +6,7 @@ import sjtu.ipads.wtune.superopt.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 
 public class InputImpl extends BasePlanNode implements Input {
-  private final Placeholder table;
-
-  private InputImpl() {
-    this.table = makePlaceholder("t");
-  }
+  private InputImpl() {}
 
   public static InputImpl create() {
     return new InputImpl();
@@ -23,7 +19,7 @@ public class InputImpl extends BasePlanNode implements Input {
 
   @Override
   public Placeholder table() {
-    return table;
+    return plan().placeholders().getTable(this, 0);
   }
 
   @Override

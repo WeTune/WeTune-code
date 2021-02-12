@@ -1,39 +1,38 @@
-package sjtu.ipads.wtune.superopt.util;
+package sjtu.ipads.wtune.superopt.plan.internal;
 
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.procedure.TObjectIntProcedure;
 import sjtu.ipads.wtune.superopt.plan.*;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
 
-public class PlaceholderNumbering implements PlanVisitor {
-  private int nextPredId;
+public class NumberingImpl implements PlanVisitor, Numbering {
+  private int nextPredicateId;
   private int nextPickId;
-  private int nextTblId;
+  private int nextTableId;
 
   private final TObjectIntMap<Placeholder> numbering;
 
-  private PlaceholderNumbering() {
+  private NumberingImpl() {
     this.numbering = new TObjectIntHashMap<>(16, 1.0f, -1);
   }
 
-  public static PlaceholderNumbering build() {
-    return new PlaceholderNumbering();
+  public static Numbering build() {
+    return new NumberingImpl();
   }
 
-  public void number(Plan... plans) {
+  @Override
+  public Numbering number(Plan... plans) {
     for (Plan plan : plans) plan.acceptVisitor(this);
+    return this;
   }
 
-  public String nameOf(Placeholder placeholder) {
-    return placeholder.tag() + numbering.get(placeholder);
-  }
-
+  @Override
   public int numberOf(Placeholder placeholder) {
     return numbering.get(placeholder);
   }
 
-  public Placeholder find(String name) {
+  @Override
+  public Placeholder placeholderOf(String name) {
     final Finder finder = new Finder(name);
     numbering.forEachEntry(finder);
     return finder.found;
@@ -59,7 +58,7 @@ public class PlaceholderNumbering implements PlanVisitor {
 
   @Override
   public boolean enterPlainFilter(PlainFilter op) {
-    addPlaceholder(op.predicate(), nextPredId++);
+    addPlaceholder(op.predicate(), nextPredicateId++);
     addPlaceholder(op.fields(), nextPickId++);
     return true;
   }
@@ -78,7 +77,7 @@ public class PlaceholderNumbering implements PlanVisitor {
 
   @Override
   public boolean enterInput(Input input) {
-    addPlaceholder(input.table(), nextTblId++);
+    addPlaceholder(input.table(), nextTableId++);
     return true;
   }
 

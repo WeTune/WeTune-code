@@ -1,14 +1,8 @@
 package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -47,6 +41,16 @@ public interface FuncUtils {
   @SafeVarargs
   static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
     return stream(os).map(func).collect(Collectors.toList());
+  }
+
+  static <P0, P1, R> List<R> zipMap(
+      BiFunction<? super P0, ? super P1, R> func, Collection<P0> l0, Collection<P1> l1) {
+    final int bound = Math.min(l0.size(), l1.size());
+    final List<R> list = new ArrayList<>(bound);
+    final Iterator<P0> it0 = l0.iterator();
+    final Iterator<P1> it1 = l1.iterator();
+    for (int i = 0; i < bound; i++) list.add(func.apply(it0.next(), it1.next()));
+    return list;
   }
 
   static <T> List<T> listFilter(Predicate<? super T> func, Iterable<T> os) {

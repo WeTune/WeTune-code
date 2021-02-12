@@ -4,18 +4,14 @@ import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.PlanNode;
 
 class PlaceholderImpl implements Placeholder {
-  private final PlanNode scope;
+  private final PlanNode owner;
   private final String tag;
   private int index;
 
-  private PlaceholderImpl(PlanNode scope, String tag, int index) {
-    this.scope = scope;
+  PlaceholderImpl(PlanNode owner, String tag, int index) {
+    this.owner = owner;
     this.tag = tag;
     this.index = index;
-  }
-
-  PlaceholderImpl(PlanNode scope, String tag) {
-    this(scope, tag, 0);
   }
 
   @Override
@@ -24,8 +20,8 @@ class PlaceholderImpl implements Placeholder {
   }
 
   @Override
-  public Placeholder copy() {
-    return new PlaceholderImpl(scope, tag, index);
+  public PlanNode owner() {
+    return owner;
   }
 
   @Override
@@ -40,6 +36,6 @@ class PlaceholderImpl implements Placeholder {
 
   @Override
   public String toString() {
-    return tag() + index();
+    return "@" + tag();
   }
 }

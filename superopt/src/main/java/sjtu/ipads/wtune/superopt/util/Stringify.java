@@ -2,12 +2,13 @@ package sjtu.ipads.wtune.superopt.util;
 
 import sjtu.ipads.wtune.superopt.plan.*;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Numbering;
 
 public class Stringify implements PlanVisitor {
   private final StringBuilder builder;
-  private final PlaceholderNumbering numbering;
+  private final Numbering numbering;
 
-  public Stringify(PlaceholderNumbering numbering) {
+  public Stringify(Numbering numbering) {
     this.builder = new StringBuilder();
     this.numbering = numbering;
   }
@@ -18,7 +19,7 @@ public class Stringify implements PlanVisitor {
     return stringify.toString();
   }
 
-  public static String stringify(Plan g, PlaceholderNumbering numbering) {
+  public static String stringify(Plan g, Numbering numbering) {
     final Stringify stringify = new Stringify(numbering);
     g.acceptVisitor(stringify);
     return stringify.toString();

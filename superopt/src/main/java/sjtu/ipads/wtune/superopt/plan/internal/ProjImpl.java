@@ -6,11 +6,7 @@ import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 import sjtu.ipads.wtune.superopt.plan.Proj;
 
 public class ProjImpl extends BasePlanNode implements Proj {
-  private final Placeholder fields;
-
-  private ProjImpl() {
-    fields = makePlaceholder("c");
-  }
+  private ProjImpl() {}
 
   public static ProjImpl create() {
     return new ProjImpl();
@@ -23,7 +19,7 @@ public class ProjImpl extends BasePlanNode implements Proj {
 
   @Override
   public Placeholder fields() {
-    return fields;
+    return plan().placeholders().getPick(this, 0);
   }
 
   @Override

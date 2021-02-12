@@ -13,7 +13,11 @@ public class PlanImpl implements Plan {
   public PlanNode head;
   private boolean alreadySetup;
 
-  private PlanImpl() {}
+  private final Placeholders placeholders;
+
+  private PlanImpl() {
+    placeholders = new PlaceholdersImpl();
+  }
 
   public static Plan build() {
     return new PlanImpl();
@@ -80,6 +84,11 @@ public class PlanImpl implements Plan {
   }
 
   @Override
+  public Placeholders placeholders() {
+    return placeholders;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof Plan)) return false;
@@ -92,5 +101,14 @@ public class PlanImpl implements Plan {
   @Override
   public int hashCode() {
     return head == null ? 0 : head.structuralHash();
+  }
+
+  private static class Counter implements PlanVisitor {
+    private int count;
+
+    @Override
+    public void leave(PlanNode op) {
+      ++count;
+    }
   }
 }

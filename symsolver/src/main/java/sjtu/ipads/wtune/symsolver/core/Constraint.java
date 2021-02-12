@@ -6,8 +6,8 @@ import static sjtu.ipads.wtune.common.utils.Commons.subArray;
 
 public interface Constraint {
   // !!! Impl Note !!!
-  // Don't change the impl of compareTo,
-  // some optimization depends on the current behaviour.
+  // Don't change the impl of `compareTo`,
+  // some tricks depend on the current behaviour.
   // see TraceImpl::fastCheckConflict, FastDecisionTree::new
   Kind kind();
 
@@ -17,8 +17,8 @@ public interface Constraint {
     TableEq,
     PickEq,
     PredicateEq,
-    PickFrom,
-    Reference
+    Reference,
+    PickFrom
   }
 
   static Constraint tableEq(Object tx, Object ty) {

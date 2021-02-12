@@ -6,13 +6,7 @@ import sjtu.ipads.wtune.superopt.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 
 public class PlainFilterImpl extends BasePlanNode implements PlainFilter {
-  private final Placeholder fields;
-  private final Placeholder predicate;
-
-  private PlainFilterImpl() {
-    fields = makePlaceholder("c");
-    predicate = makePlaceholder("p");
-  }
+  private PlainFilterImpl() {}
 
   public static PlainFilterImpl create() {
     return new PlainFilterImpl();
@@ -25,12 +19,12 @@ public class PlainFilterImpl extends BasePlanNode implements PlainFilter {
 
   @Override
   public Placeholder fields() {
-    return fields;
+    return plan().placeholders().getPick(this, 0);
   }
 
   @Override
   public Placeholder predicate() {
-    return predicate;
+    return plan().placeholders().getPredicate(this, 0);
   }
 
   @Override

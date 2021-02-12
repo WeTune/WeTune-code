@@ -10,7 +10,7 @@ public interface InnerJoinOp extends JoinOp {
     return OperatorType.InnerJoin;
   }
 
-  public static InnerJoinOp build(ASTNode onCondition) {
+  static InnerJoinOp build(ASTNode onCondition) {
     return InnerJoinOpImpl.build(onCondition);
   }
 }

@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.plan.Plan;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class Runner {
-  public static final System.Logger LOG = System.getLogger("Enumerator");
+  public static final System.Logger LOG = System.getLogger("superopt");
   private final Stream<List<Plan>> stream;
   private final int estimatedTotal;
   private final AtomicInteger i;

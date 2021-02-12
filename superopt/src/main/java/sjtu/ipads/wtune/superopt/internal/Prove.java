@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
+import sjtu.ipads.wtune.superopt.plan.Numbering;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.plan.internal.Semantic;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Solver;
 import sjtu.ipads.wtune.symsolver.core.Summary;
@@ -21,7 +21,7 @@ public class Prove {
   private final Plan g0, g1;
   private final Semantic semantic0, semantic1;
 
-  private PlaceholderNumbering numbering;
+  private Numbering numbering;
 
   public Prove(Plan g0, Plan g1) {
     this.g0 = g0;
@@ -40,8 +40,7 @@ public class Prove {
       if ((summaries = solver.solve()) == null) return null;
     }
 
-    numbering = PlaceholderNumbering.build();
-    numbering.number(g0, g1);
+    numbering = Numbering.make().number(g0, g1);
 
     return listMap(this::makeSubstitution, summaries);
   }
@@ -52,6 +51,8 @@ public class Prove {
   }
 
   private Constraint makeConstraint(Constraint constraint) {
+    // We need to reconstruct the constraint by replacing the
+    // Sym in the raw constraint by Placeholder
     final Constraint.Kind kind = constraint.kind();
     final Object[] targets = constraint.targets();
     final Placeholder[] placeholders = new Placeholder[targets.length];

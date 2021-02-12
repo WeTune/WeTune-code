@@ -1,16 +1,21 @@
 package sjtu.ipads.wtune.superopt.plan.internal;
 
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 
 public abstract class BasePlanNode implements PlanNode {
   private Plan plan;
+  private PlanNode successor;
   private final PlanNode[] predecessors;
 
   protected BasePlanNode() {
     predecessors = new PlanNode[type().numPredecessors()];
+  }
+
+  @Override
+  public PlanNode successor() {
+    return successor;
   }
 
   @Override
@@ -24,8 +29,14 @@ public abstract class BasePlanNode implements PlanNode {
   }
 
   @Override
-  public void setPredecessor(int idx, PlanNode prev) {
-    this.predecessors[idx] = prev;
+  public void setSuccessor(PlanNode successor) {
+    this.successor = successor;
+  }
+
+  @Override
+  public void setPredecessor(int idx, PlanNode predecessor) {
+    this.predecessors[idx] = predecessor;
+    if (predecessor != null) predecessor.setSuccessor(this);
   }
 
   @Override
@@ -56,13 +67,9 @@ public abstract class BasePlanNode implements PlanNode {
     return type().name();
   }
 
-  protected Placeholder makePlaceholder(String tag) {
-    return new PlaceholderImpl(this, tag);
-  }
-
   protected abstract PlanNode newInstance();
 
-  abstract boolean accept0(PlanVisitor visitor);
+  protected abstract boolean accept0(PlanVisitor visitor);
 
-  abstract void leave0(PlanVisitor visitor);
+  protected abstract void leave0(PlanVisitor visitor);
 }

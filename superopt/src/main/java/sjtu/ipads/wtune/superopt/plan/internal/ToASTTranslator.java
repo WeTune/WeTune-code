@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.plan.internal;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
 import sjtu.ipads.wtune.superopt.plan.*;
-import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -23,7 +22,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
 
 public class ToASTTranslator implements PlanVisitor {
   private final Deque<Relation> stack;
-  private PlaceholderNumbering numbering;
+  private Numbering numbering;
   private ConstraintRegistry constraints;
 
   private ToASTTranslator() {
@@ -35,17 +34,20 @@ public class ToASTTranslator implements PlanVisitor {
   }
 
   public ASTNode translate(Plan plan) {
+    stack.clear();
     plan.acceptVisitor(this);
     assert stack.size() == 1;
     return stack.peek().assembleAsQuery();
   }
 
-  public void setNumbering(PlaceholderNumbering numbering) {
+  public ToASTTranslator setNumbering(Numbering numbering) {
     this.numbering = numbering;
+    return this;
   }
 
-  public void setConstraints(ConstraintRegistry constraints) {
+  public ToASTTranslator setConstraints(ConstraintRegistry constraints) {
     this.constraints = constraints;
+    return this;
   }
 
   @Override

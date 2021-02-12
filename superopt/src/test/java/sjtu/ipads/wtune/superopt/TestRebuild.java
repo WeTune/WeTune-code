@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.superopt;
 
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.plan.Numbering;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
 import java.util.List;
@@ -19,22 +19,22 @@ public class TestRebuild {
   void test() {
     final Plan g0 = Plan.wrap(proj(innerJoin(null, null))).setup();
     final Plan g1 = Plan.wrap(proj(null)).setup();
-    final PlaceholderNumbering numbering = PlaceholderNumbering.build();
+    final Numbering numbering = Numbering.make();
     numbering.number(g0, g1);
     final List<Constraint> constraints =
         Lists.newArrayList(
-            tableEq(numbering.find("t0"), numbering.find("t2")),
-            pickEq(numbering.find("c0"), numbering.find("c2")),
-            pickEq(numbering.find("c1"), numbering.find("c3")),
-            pickFrom(numbering.find("c0"), numbering.find("t1")),
-            pickFrom(numbering.find("c1"), numbering.find("t0")),
-            pickFrom(numbering.find("c2"), numbering.find("t1")),
-            pickFrom(numbering.find("c3"), numbering.find("t2")),
+            tableEq(numbering.placeholderOf("t0"), numbering.placeholderOf("t2")),
+            pickEq(numbering.placeholderOf("c0"), numbering.placeholderOf("c2")),
+            pickEq(numbering.placeholderOf("c1"), numbering.placeholderOf("c3")),
+            pickFrom(numbering.placeholderOf("c0"), numbering.placeholderOf("t1")),
+            pickFrom(numbering.placeholderOf("c1"), numbering.placeholderOf("t0")),
+            pickFrom(numbering.placeholderOf("c2"), numbering.placeholderOf("t1")),
+            pickFrom(numbering.placeholderOf("c3"), numbering.placeholderOf("t2")),
             reference(
-                numbering.find("t0"),
-                numbering.find("c1"),
-                numbering.find("t1"),
-                numbering.find("c2")));
+                numbering.placeholderOf("t0"),
+                numbering.placeholderOf("c1"),
+                numbering.placeholderOf("t1"),
+                numbering.placeholderOf("c2")));
 
     final Substitution sub0 = Substitution.build(g0, g1, numbering, constraints);
     final String str0 = sub0.toString();

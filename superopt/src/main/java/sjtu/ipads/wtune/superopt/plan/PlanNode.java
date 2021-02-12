@@ -10,9 +10,13 @@ public interface PlanNode extends Comparable<PlanNode> {
 
   Plan plan();
 
+  PlanNode successor();
+
   PlanNode[] predecessors();
 
   void setPlan(Plan plan);
+
+  void setSuccessor(PlanNode node);
 
   void setPredecessor(int idx, PlanNode prev);
 
@@ -44,6 +48,15 @@ public interface PlanNode extends Comparable<PlanNode> {
       }
 
     return ret;
+  }
+
+  default void replacePredecessor(PlanNode target, PlanNode rep) {
+    final PlanNode[] pres = predecessors();
+    for (int i = 0; i < pres.length; i++)
+      if (pres[i] == target) {
+        setPredecessor(i, rep);
+        break;
+      }
   }
 
   default boolean structuralEquals(PlanNode other) {

@@ -1,11 +1,8 @@
 package sjtu.ipads.wtune.superopt.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.superopt.plan.internal.PlanImpl;
 import sjtu.ipads.wtune.superopt.plan.internal.Semantic;
-import sjtu.ipads.wtune.superopt.plan.internal.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.util.Hole;
-import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +24,11 @@ public interface Plan extends Comparable<Plan> {
 
   Semantic semantic();
 
+  Placeholders placeholders();
+
   default Plan copy() {
     if (head() == null) return empty();
     else return wrap(head().copy());
-  }
-
-  default ASTNode ast() {
-    return ToASTTranslator.build().translate(this);
   }
 
   default List<Hole<PlanNode>> holes() {
@@ -44,7 +39,7 @@ public interface Plan extends Comparable<Plan> {
     return holes;
   }
 
-  default String toString(PlaceholderNumbering numbering) {
+  default String toString(Numbering numbering) {
     return stringify(this, numbering);
   }
 

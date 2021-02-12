@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.symsolver.core.impl;
 
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickFrom;
-import sjtu.ipads.wtune.symsolver.core.Sym;
 
 import java.util.Arrays;
 import java.util.Objects;

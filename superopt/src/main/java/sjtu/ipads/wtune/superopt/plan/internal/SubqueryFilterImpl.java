@@ -6,11 +6,7 @@ import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
 import sjtu.ipads.wtune.superopt.plan.SubqueryFilter;
 
 public class SubqueryFilterImpl extends BasePlanNode implements SubqueryFilter {
-  private final Placeholder fields;
-
-  private SubqueryFilterImpl() {
-    fields = makePlaceholder("c");
-  }
+  private SubqueryFilterImpl() {}
 
   public static SubqueryFilterImpl create() {
     return new SubqueryFilterImpl();
@@ -18,7 +14,7 @@ public class SubqueryFilterImpl extends BasePlanNode implements SubqueryFilter {
 
   @Override
   public Placeholder fields() {
-    return fields;
+    return plan().placeholders().getPick(this, 0);
   }
 
   @Override

@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.plan.Numbering;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.plan.internal.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.util.PlaceholderNumbering;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
@@ -22,7 +22,7 @@ public class TestTranslate {
                             proj(leftJoin(plainFilter(null), subqueryFilter(null, null))))))))
             .setup();
 
-    final PlaceholderNumbering numbering = PlaceholderNumbering.build();
+    final Numbering numbering = Numbering.make();
     numbering.number(plan);
 
     final ToASTTranslator translator = ToASTTranslator.build();
