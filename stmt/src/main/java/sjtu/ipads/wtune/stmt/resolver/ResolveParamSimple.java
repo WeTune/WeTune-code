@@ -3,25 +3,25 @@ package sjtu.ipads.wtune.stmt.resolver;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.stmt.resolver.ParamManager.PARAM;
 
 class ResolveParamSimple implements ASTVistor {
 
-  private static final Set<ExprType> INTERESTING_ENV =
+  private static final Set<ExprKind> INTERESTING_ENV =
       Set.of(UNARY, BINARY, TERNARY, TUPLE, ARRAY, MATCH);
 
   private int nextIndex;
 
   private void add(ASTNode node) {
-    final ExprType exprType = node.parent().get(EXPR_KIND);
-    if (exprType != null && INTERESTING_ENV.contains(exprType))
+    final ExprKind exprKind = node.parent().get(EXPR_KIND);
+    if (exprKind != null && INTERESTING_ENV.contains(exprKind))
       node.set(PARAM, new Param(node, nextIndex++));
   }
 

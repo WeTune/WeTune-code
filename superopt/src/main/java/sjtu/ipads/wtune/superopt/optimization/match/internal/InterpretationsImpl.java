@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt.optimization.match.internal;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.optimization.match.InputInterpretation;
 import sjtu.ipads.wtune.superopt.optimization.match.Interpretations;

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 
 class Clean {
   public static ASTNode clean(ASTNode node) {
@@ -21,35 +21,35 @@ class Clean {
   }
 
   private static boolean isConstant(ASTNode node) {
-    final ExprType exprKind = node.get(EXPR_KIND);
-    if (exprKind == LITERAL || exprKind == ExprType.SYMBOL) return true;
+    final ExprKind exprKind = node.get(EXPR_KIND);
+    if (exprKind == LITERAL || exprKind == ExprKind.SYMBOL) return true;
 
-    if (exprKind == ExprType.CAST) return isConstant(node.get(CAST_EXPR));
-    if (exprKind == ExprType.COLLATE) return isConstant(node.get(COLLATE_EXPR));
-    if (exprKind == ExprType.INTERVAL) return isConstant(node.get(INTERVAL_EXPR));
-    if (exprKind == ExprType.CONVERT_USING) return isConstant(node.get(CONVERT_USING_EXPR));
-    if (exprKind == ExprType.DEFAULT) return isConstant(node.get(DEFAULT_COL));
-    if (exprKind == ExprType.VALUES) return isConstant(node.get(VALUES_EXPR));
+    if (exprKind == ExprKind.CAST) return isConstant(node.get(CAST_EXPR));
+    if (exprKind == ExprKind.COLLATE) return isConstant(node.get(COLLATE_EXPR));
+    if (exprKind == ExprKind.INTERVAL) return isConstant(node.get(INTERVAL_EXPR));
+    if (exprKind == ExprKind.CONVERT_USING) return isConstant(node.get(CONVERT_USING_EXPR));
+    if (exprKind == ExprKind.DEFAULT) return isConstant(node.get(DEFAULT_COL));
+    if (exprKind == ExprKind.VALUES) return isConstant(node.get(VALUES_EXPR));
 
-    if (exprKind == ExprType.UNARY) return isConstant(node.get(UNARY_EXPR));
+    if (exprKind == ExprKind.UNARY) return isConstant(node.get(UNARY_EXPR));
     if (exprKind == BINARY)
       return isConstant(node.get(BINARY_LEFT)) && isConstant(node.get(BINARY_RIGHT));
-    if (exprKind == ExprType.TERNARY)
+    if (exprKind == ExprKind.TERNARY)
       return isConstant(node.get(TERNARY_LEFT))
           && isConstant(node.get(TERNARY_MIDDLE))
           && isConstant(node.get(TERNARY_RIGHT));
 
-    if (exprKind == ExprType.TUPLE)
+    if (exprKind == ExprKind.TUPLE)
       return node.get(TUPLE_EXPRS).stream().allMatch(Clean::isConstant);
-    if (exprKind == ExprType.FUNC_CALL)
+    if (exprKind == ExprKind.FUNC_CALL)
       return !node.get(FUNC_CALL_NAME).get(NAME_2_1).contains("rand")
           && node.get(FUNC_CALL_ARGS).stream().allMatch(Clean::isConstant);
 
-    if (exprKind == ExprType.MATCH)
+    if (exprKind == ExprKind.MATCH)
       return isConstant(node.get(MATCH_EXPR))
           && node.get(MATCH_COLS).stream().allMatch(Clean::isConstant);
 
-    if (exprKind == ExprType.CASE) {
+    if (exprKind == ExprKind.CASE) {
       final ASTNode cond = node.get(CASE_COND);
       final ASTNode _else = node.get(CASE_ELSE);
       return (cond == null || isConstant(cond))
@@ -57,7 +57,7 @@ class Clean {
           && (_else == null || isConstant(_else));
     }
 
-    if (exprKind == ExprType.WHEN)
+    if (exprKind == ExprKind.WHEN)
       return isConstant(node.get(WHEN_COND)) && isConstant(node.get(WHEN_EXPR));
 
     return false;

@@ -1,8 +1,8 @@
-package sjtu.ipads.wtune.sqlparser.rel.internal;
+package sjtu.ipads.wtune.sqlparser.relational.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.ArrayList;
@@ -12,10 +12,10 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.WILDCARD;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class DerivedAttribute extends BaseAttribute {
   // Subtleties:

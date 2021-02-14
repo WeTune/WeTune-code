@@ -8,7 +8,7 @@ import java.util.List;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
 
 public interface TableSourceFields {
   //// Simple

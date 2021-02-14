@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.stmt.support;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.HashSet;
@@ -10,8 +10,8 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.BINARY;
-import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.UNIQUE;
 

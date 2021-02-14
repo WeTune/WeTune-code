@@ -15,11 +15,11 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.NOT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.UNARY_MINUS;
-import static sjtu.ipads.wtune.sqlparser.rel.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.resolver.ParamManager.PARAM;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
@@ -154,7 +154,7 @@ class ResolveParamFull implements ASTVistor {
   // the resultant modifiers is [Value("x"), Decrease()]
   private static boolean deduce(ASTNode target, List<ParamModifier> stack, boolean negated) {
     final ASTNode parent = target.parent();
-    final ExprType exprKind = parent.get(EXPR_KIND);
+    final ExprKind exprKind = parent.get(EXPR_KIND);
 
     if (exprKind == UNARY) {
       final UnaryOp op = parent.get(UNARY_OP);
@@ -203,7 +203,7 @@ class ResolveParamFull implements ASTVistor {
   // e.g. `x` + 1 (where `x` is a column name),
   // the resultant modifiers is [Value("x"), DirectValue(1), Plus()]
   private static boolean induce(ASTNode target, List<ParamModifier> stack) {
-    final ExprType exprKind = target.get(EXPR_KIND);
+    final ExprKind exprKind = target.get(EXPR_KIND);
 
     if (exprKind == COLUMN_REF) {
       final Column column = target.get(ATTRIBUTE).column(true);

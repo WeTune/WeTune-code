@@ -9,7 +9,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 
-public interface NodeFields {
+public interface NodeFields { // also serves as a marker interface
   FieldKey<NodeType> NODE_TYPE = NodeFieldBase.build("nodeType", NodeType.class);
   FieldKey<ASTNode> PARENT = NodeFieldBase.build("parent", ASTNode.class);
 
@@ -141,11 +141,11 @@ public interface NodeFields {
   FieldKey<Object> ALTER_TABLE_ACTION_PAYLOAD = ALTER_TABLE_ACTION.attr("payload", Object.class);
 
   //// Expr
-  FieldKey<ExprType> EXPR_KIND = EXPR.attr("kind", ExprType.class);
+  FieldKey<ExprKind> EXPR_KIND = EXPR.attr("kind", ExprKind.class);
   // for named argument in PG
   FieldKey<String> EXPR_FUNC_ARG_NAME = EXPR.strAttr("argName");
   FieldKey<Boolean> EXPR_FUNC_ARG_VARIADIC = EXPR.boolAttr("variadic");
 
   //// TableSource
-  FieldKey<TableSourceType> TABLE_SOURCE_KIND = TABLE_SOURCE.attr("kind", TableSourceType.class);
+  FieldKey<TableSourceKind> TABLE_SOURCE_KIND = TABLE_SOURCE.attr("kind", TableSourceKind.class);
 }

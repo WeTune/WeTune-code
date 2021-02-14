@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.stmt.resolver.ParamManager;
 import sjtu.ipads.wtune.stmt.resolver.Resolution;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_NUMBER;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.PARAM_MARKER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 
 public class NormalizeParam {
   public static ASTNode normalize(ASTNode root) {

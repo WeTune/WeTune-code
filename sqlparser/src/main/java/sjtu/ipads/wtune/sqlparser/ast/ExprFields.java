@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
 public interface ExprFields {
@@ -114,7 +114,7 @@ public interface ExprFields {
 
   static int getOperatorPrecedence(ASTNode node) {
     if (!EXPR.isInstance(node)) return -1;
-    final ExprType exprKind = node.get(EXPR_KIND);
+    final ExprKind exprKind = node.get(EXPR_KIND);
     return switch (exprKind) {
       case UNARY -> node.get(UNARY_OP).precedence();
       case BINARY -> node.get(BINARY_OP).precedence();

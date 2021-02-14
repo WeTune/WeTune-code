@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.function.Supplier;
 
@@ -12,7 +12,6 @@ import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
 
 public class NodeFieldBase<T> implements FieldKey<T> {
   public static final String SQL_ATTR_PREFIX = "sql.attr.";
@@ -51,8 +50,6 @@ public class NodeFieldBase<T> implements FieldKey<T> {
 
     ASTNode.setParent(obj, node);
     ASTNode.setContext(obj, node.context());
-    if (mgr != null && (isRelationBoundary(old) || isRelationBoundary(obj)))
-      node.get(RELATION).reset();
 
     return old;
   }

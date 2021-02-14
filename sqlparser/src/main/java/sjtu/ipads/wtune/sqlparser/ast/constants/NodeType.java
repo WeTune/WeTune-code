@@ -5,6 +5,9 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldImpl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public enum NodeType implements FieldDomain {
   INVALID,
   NAME_2,
@@ -33,12 +36,21 @@ public enum NodeType implements FieldDomain {
   INDEX_HINT,
   STATEMENT;
 
+  private final List<FieldKey> fields = new ArrayList<>(5);
+
   public boolean isInstance(ASTNode node) {
     return node != null && node.nodeType() == this;
   }
 
   @Override
+  public List<FieldKey> fields() {
+    return fields;
+  }
+
+  @Override
   public <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz) {
-    return NodeFieldImpl.build(this, name, clazz);
+    final FieldKey<R> field = NodeFieldImpl.build(this, name, clazz);
+    fields.add(field);
+    return field;
   }
 }

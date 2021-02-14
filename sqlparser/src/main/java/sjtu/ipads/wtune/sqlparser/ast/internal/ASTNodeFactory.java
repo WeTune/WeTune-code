@@ -8,21 +8,21 @@ import java.util.List;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
 
 public interface ASTNodeFactory {
   default ASTNode newNode(NodeType type) {
     return ASTNode.node(type);
   }
 
-  default ASTNode newNode(ExprType exprKind) {
+  default ASTNode newNode(ExprKind exprKind) {
     return ASTNode.expr(exprKind);
   }
 
-  default ASTNode newNode(TableSourceType kind) {
+  default ASTNode newNode(TableSourceKind kind) {
     final ASTNode node = ASTNode.node(NodeType.TABLE_SOURCE);
     node.set(TABLE_SOURCE_KIND, kind);
     return node;
@@ -77,24 +77,24 @@ public interface ASTNodeFactory {
   }
 
   default ASTNode paramMarker() {
-    return newNode(ExprType.PARAM_MARKER);
+    return newNode(ExprKind.PARAM_MARKER);
   }
 
   default ASTNode symbol(String text) {
-    final ASTNode node = newNode(ExprType.SYMBOL);
+    final ASTNode node = newNode(ExprKind.SYMBOL);
     node.set(SYMBOL_TEXT, text);
     return node;
   }
 
   default ASTNode literal(LiteralType type, Object value) {
-    final ASTNode node = newNode(ExprType.LITERAL);
+    final ASTNode node = newNode(ExprKind.LITERAL);
     node.set(LITERAL_TYPE, type);
     if (value != null) node.set(LITERAL_VALUE, value);
     return node;
   }
 
   default ASTNode wildcard() {
-    return newNode(ExprType.WILDCARD);
+    return newNode(ExprKind.WILDCARD);
   }
 
   default ASTNode wildcard(ASTNode table) {

@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.superopt.optimization.internal;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.superopt.optimization.*;
 
 import java.util.ArrayList;
@@ -15,9 +15,9 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class ToPlanTranslator {
   public Operator translate(ASTNode node) {

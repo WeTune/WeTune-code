@@ -1,9 +1,9 @@
-package sjtu.ipads.wtune.sqlparser.rel.internal;
+package sjtu.ipads.wtune.sqlparser.relational.internal;
 
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldBase;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 
 public class AttributeField extends NodeFieldBase<Attribute> {
   public static final AttributeField INSTANCE = new AttributeField();

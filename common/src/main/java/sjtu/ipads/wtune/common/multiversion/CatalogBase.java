@@ -69,7 +69,7 @@ public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<
 
   @Override
   protected Map<K, Object> makeCurrent() {
-    return new HashMap<>();
+    return new IdentityHashMap<>();
   }
 
   @Override

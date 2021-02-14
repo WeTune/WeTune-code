@@ -162,6 +162,10 @@ public interface Commons {
     return ts;
   }
 
+  static <T> List<T> listConcatView(List<T>... ts) {
+    return new ConcatenatedList<>(Arrays.asList(ts));
+  }
+
   static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {
     arr.sort(comparator);
     return arr;

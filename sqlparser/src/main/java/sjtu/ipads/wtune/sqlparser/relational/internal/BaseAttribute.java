@@ -1,7 +1,7 @@
-package sjtu.ipads.wtune.sqlparser.rel.internal;
+package sjtu.ipads.wtune.sqlparser.relational.internal;
 
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public abstract class BaseAttribute implements Attribute {
   private final Relation owner;

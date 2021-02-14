@@ -23,11 +23,11 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.IndexType.FULLTEXT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.IndexType.SPATIAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
 import static sjtu.ipads.wtune.sqlparser.mysql.MySQLASTHelper.*;
 
 public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements ASTNodeFactory {
@@ -294,7 +294,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
 
   @Override
   public ASTNode visitLimitOption(MySQLParser.LimitOptionContext ctx) {
-    if (ctx.PARAM_MARKER() != null) return ASTNode.expr(ExprType.PARAM_MARKER);
+    if (ctx.PARAM_MARKER() != null) return ASTNode.expr(ExprKind.PARAM_MARKER);
     if (ctx.ULONGLONG_NUMBER() != null)
       return literal(LiteralType.LONG, Long.parseLong(ctx.ULONGLONG_NUMBER().getText()));
     if (ctx.LONG_NUMBER() != null)

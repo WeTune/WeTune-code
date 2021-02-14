@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimization.match.internal;
 
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.superopt.optimization.match.ProjectionInterpretation;
 
 import java.util.List;

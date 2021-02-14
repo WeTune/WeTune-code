@@ -3,20 +3,21 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.NodeFields;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
-public class ExprFieldImpl<T> extends NodeFieldBase<T> {
-  private final ExprType type;
+public class ExprFieldImpl<T> extends NodeFieldBase<T> implements NodeFields {
+  private final ExprKind type;
 
-  private ExprFieldImpl(ExprType type, String name, Class<?> targetClass) {
+  private ExprFieldImpl(ExprKind type, String name, Class<?> targetClass) {
     super(name, targetClass);
     this.type = type;
   }
 
-  public static <T> FieldKey<T> build(ExprType type, String name, Class<?> targetClass) {
+  public static <T> FieldKey<T> build(ExprKind type, String name, Class<?> targetClass) {
     requireNonNull(type);
     requireNonNull(name);
     requireNonNull(targetClass);

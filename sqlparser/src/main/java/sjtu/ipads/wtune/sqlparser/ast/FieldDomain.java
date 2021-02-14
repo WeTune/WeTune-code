@@ -9,6 +9,8 @@ public interface FieldDomain {
 
   boolean isInstance(ASTNode node);
 
+  List<FieldKey> fields();
+
   <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz);
 
   default FieldKey<String> strAttr(String name) {

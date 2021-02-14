@@ -8,8 +8,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.UNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 

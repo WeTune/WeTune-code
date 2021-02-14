@@ -3,9 +3,9 @@ package sjtu.ipads.wtune.sqlparser.ast;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeImpl;
 
 import java.util.Map;
@@ -71,13 +71,13 @@ public interface ASTNode extends Fields {
     return NodeImpl.build(nodeType);
   }
 
-  static ASTNode expr(ExprType exprKind) {
+  static ASTNode expr(ExprKind exprKind) {
     final ASTNode node = node(NodeType.EXPR);
     node.set(EXPR_KIND, exprKind);
     return node;
   }
 
-  static ASTNode tableSource(TableSourceType tableSourceKind) {
+  static ASTNode tableSource(TableSourceKind tableSourceKind) {
     final ASTNode node = node(NodeType.TABLE_SOURCE);
     node.set(TABLE_SOURCE_KIND, tableSourceKind);
     return node;

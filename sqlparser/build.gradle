@@ -5,6 +5,7 @@ dependencies {
     implementation('org.antlr:antlr4-runtime:4.8-1')
     implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')
+    implementation('net.sf.trove4j:trove4j:3.0.3')
 }
 
 def mysqlDir = "src/main/java/sjtu/ipads/wtune/sqlparser/mysql/internal"

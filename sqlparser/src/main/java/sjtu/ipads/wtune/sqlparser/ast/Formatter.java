@@ -10,8 +10,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.ARRAY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.ARRAY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 
 public class Formatter implements ASTVistor {
   private static final String INDENT_STR = "  ";

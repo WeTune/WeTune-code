@@ -18,7 +18,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;

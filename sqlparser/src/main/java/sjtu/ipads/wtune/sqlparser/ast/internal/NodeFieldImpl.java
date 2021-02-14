@@ -3,11 +3,12 @@ package sjtu.ipads.wtune.sqlparser.ast.internal;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.NodeFields;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
 import static java.util.Objects.requireNonNull;
 
-public class NodeFieldImpl<T> extends NodeFieldBase<T> {
+public class NodeFieldImpl<T> extends NodeFieldBase<T> implements NodeFields {
   private final NodeType type;
 
   private NodeFieldImpl(NodeType type, String name, Class<?> targetClass) {

@@ -1,10 +1,9 @@
-package sjtu.ipads.wtune.sqlparser.rel.internal;
+package sjtu.ipads.wtune.sqlparser.relational.internal;
 
-import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,20 +14,21 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableSourceName;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
 
 public class RelationImpl implements Relation {
   private final ASTNode node;
   private final String alias;
+  private final int digest;
 
   private List<Relation> inputs;
   private List<Attribute> attributes;
-  private int expectedVersion;
 
   private RelationImpl(ASTNode node) {
     this.node = node;
     this.alias = tableSourceName(node);
+    this.digest = node.hashCode();
   }
 
   public static Relation rootedBy(ASTNode node) {
@@ -52,38 +52,22 @@ public class RelationImpl implements Relation {
   public List<Relation> inputs() {
     if (SIMPLE_SOURCE.isInstance(node)) return emptyList();
 
-    final ASTContext ctx = node.context();
-    if (inputs == null || (ctx != null && ctx.versionNumber() != expectedVersion)) {
-      expectedVersion = ctx == null ? 0 : ctx.versionNumber();
-      inputs = inputsOf(node);
-    }
-
+    if (inputs == null) inputs = inputsOf(node);
     return inputs;
   }
 
   @Override
   public List<Attribute> attributes() {
-    final ASTContext ctx = node.context();
-    if (attributes == null || (ctx != null && ctx.versionNumber() != expectedVersion)) {
-      expectedVersion = ctx == null ? 0 : ctx.versionNumber();
-      attributes = outputAttributesOf(node);
-    }
-
+    if (attributes == null) attributes = attributesOf(node);
     return attributes;
   }
 
   @Override
-  public void reset() {
-    inputs = null;
-    attributes = null;
-
-    if (!isInput()) return;
-
-    final Relation parent = parent();
-    if (parent != null) parent.reset();
+  public boolean isOutdated() {
+    return node.hashCode() != digest;
   }
 
-  private static List<Attribute> outputAttributesOf(ASTNode node) {
+  private static List<Attribute> attributesOf(ASTNode node) {
     if (SIMPLE_SOURCE.isInstance(node)) {
       return Attribute.fromTable(node);
 
@@ -91,13 +75,13 @@ public class RelationImpl implements Relation {
       return Attribute.fromProjection(node);
 
     } else if (DERIVED_SOURCE.isInstance(node)) {
-      return outputAttributesOf(node.get(DERIVED_SUBQUERY));
+      return attributesOf(node.get(DERIVED_SUBQUERY));
 
     } else if (QUERY.isInstance(node)) {
-      return outputAttributesOf(node.get(QUERY_BODY));
+      return attributesOf(node.get(QUERY_BODY));
 
     } else if (SET_OP.isInstance(node)) {
-      return outputAttributesOf(node.get(SET_OP_LEFT));
+      return attributesOf(node.get(SET_OP_LEFT));
 
     } else throw new AssertionError();
   }

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import com.google.common.base.Equivalence;
 import com.google.common.collect.Table;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.multiversion.Catalog2D;
@@ -17,7 +18,8 @@ public class FieldManagerImpl extends Catalog2DBase<ASTNode, FieldKey, Object>
   }
 
   protected FieldManagerImpl(
-      Table<ASTNode, FieldKey, Object> current, Catalog2D<ASTNode, FieldKey, Object> prev) {
+      Table<Equivalence.Wrapper<ASTNode>, Equivalence.Wrapper<FieldKey>, Object> current,
+      Catalog2D<ASTNode, FieldKey, Object> prev) {
     this.current = current;
     this.prev = prev;
   }
@@ -58,7 +60,8 @@ public class FieldManagerImpl extends Catalog2DBase<ASTNode, FieldKey, Object>
 
   @Override
   protected Catalog2D<ASTNode, FieldKey, Object> makePrev(
-      Table<ASTNode, FieldKey, Object> current, Catalog2D<ASTNode, FieldKey, Object> prev) {
+      Table<Equivalence.Wrapper<ASTNode>, Equivalence.Wrapper<FieldKey>, Object> current,
+      Catalog2D<ASTNode, FieldKey, Object> prev) {
     return new FieldManagerImpl(current, prev);
   }
 }

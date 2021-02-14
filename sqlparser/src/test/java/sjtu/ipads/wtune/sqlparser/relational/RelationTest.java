@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sqlparser.rel;
+package sjtu.ipads.wtune.sqlparser.relational;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +17,10 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class RelationTest {
   @Test
@@ -102,7 +102,7 @@ public class RelationTest {
 
     context.setSchema(schema);
 
-    final Relation relation = node.get(RELATION);
+    Relation relation = node.get(RELATION);
     assertEquals(5, relation.attributes().size());
     final Snapshot snapshot0 = context.snapshot();
 
@@ -113,7 +113,10 @@ public class RelationTest {
     final ASTNode literal = ASTNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.BOOL);
     literal.set(LITERAL_VALUE, true);
+    assertFalse(relation.isOutdated());
     existsSubquery.update(literal);
+    assertTrue(relation.isOutdated());
+    relation = node.get(RELATION);
     assertEquals(5, relation.attributes().size());
 
     final ASTNode tblB = relation.inputs().get(1).node();
@@ -121,16 +124,24 @@ public class RelationTest {
     final ASTNode tblCName = ASTNode.node(TABLE_NAME);
     tblCName.set(TABLE_NAME_TABLE, "c");
     tblC.set(SIMPLE_TABLE, tblCName);
+    assertFalse(relation.isOutdated());
     tblB.update(tblC);
+    assertTrue(relation.isOutdated());
+    relation = node.get(RELATION);
     assertEquals(7, relation.attributes().size());
 
     final ASTNode tblA = relation.inputs().get(0).node();
     final ASTNode subquery = tblA.get(DERIVED_SUBQUERY).get(QUERY_BODY);
+    assertFalse(relation.isOutdated());
     subquery.set(QUERY_SPEC_FROM, tblC.copy());
+    assertTrue(relation.isOutdated());
+    relation = node.get(RELATION);
     assertEquals(8, relation.attributes().size());
 
     context.setSnapshot(snapshot0);
 
-    assertEquals(6, relation.attributes().size());
+    assertTrue(relation.isOutdated());
+    relation = node.get(RELATION);
+    assertEquals(5, relation.attributes().size());
   }
 }

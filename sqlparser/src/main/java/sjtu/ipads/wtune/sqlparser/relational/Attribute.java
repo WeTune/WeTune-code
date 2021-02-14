@@ -1,19 +1,19 @@
-package sjtu.ipads.wtune.sqlparser.rel;
+package sjtu.ipads.wtune.sqlparser.relational;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.rel.internal.AttributeField;
-import sjtu.ipads.wtune.sqlparser.rel.internal.DerivedAttribute;
-import sjtu.ipads.wtune.sqlparser.rel.internal.NativeAttribute;
+import sjtu.ipads.wtune.sqlparser.relational.internal.AttributeField;
+import sjtu.ipads.wtune.sqlparser.relational.internal.DerivedAttribute;
+import sjtu.ipads.wtune.sqlparser.relational.internal.NativeAttribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public interface Attribute {
   FieldKey<Attribute> ATTRIBUTE = AttributeField.INSTANCE;
@@ -44,7 +44,7 @@ public interface Attribute {
     else return null;
   }
 
-  default ASTNode toSelectItem() {
+  default ASTNode toColumnRef() {
     final ASTNode columnName = ASTNode.node(NodeType.COLUMN_NAME);
     final Relation owner = owner();
     columnName.set(COLUMN_NAME_TABLE, owner.alias());
@@ -53,11 +53,7 @@ public interface Attribute {
     final ASTNode columnRef = ASTNode.expr(COLUMN_REF);
     columnRef.set(COLUMN_REF_COLUMN, columnName);
 
-    final ASTNode selectItem = ASTNode.node(NodeType.SELECT_ITEM);
-    selectItem.set(SELECT_ITEM_ALIAS, name());
-    selectItem.set(SELECT_ITEM_EXPR, columnRef);
-
-    return selectItem;
+    return columnRef;
   }
 
   static Attribute resolve(ASTNode node) {

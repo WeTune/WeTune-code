@@ -20,7 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.PRIMARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.UNIQUE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.pg.PGASTHelper.*;
 
@@ -296,7 +296,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   @Override
   public ASTNode visitFrom_primary(PGParser.From_primaryContext ctx) {
     if (ctx.schema_qualified_name() != null) {
-      final ASTNode node = newNode(TableSourceType.SIMPLE_SOURCE);
+      final ASTNode node = newNode(TableSourceKind.SIMPLE_SOURCE);
       node.set(
           SIMPLE_TABLE,
           PGASTHelper.tableName(this, stringifyIdentifier(ctx.schema_qualified_name())));
@@ -304,7 +304,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
       return node;
 
     } else if (ctx.table_subquery() != null) {
-      final ASTNode node = newNode(TableSourceType.DERIVED_SOURCE);
+      final ASTNode node = newNode(TableSourceKind.DERIVED_SOURCE);
       final ASTNode subquery = ctx.table_subquery().accept(this);
       if (subquery == null) throw new UnsupportedOperationException("unsupported table source");
 
@@ -342,13 +342,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   @Override
   public ASTNode visitVex(PGParser.VexContext ctx) {
     if (ctx.CAST_EXPRESSION() != null) {
-      final ASTNode node = newNode(ExprType.CAST);
+      final ASTNode node = newNode(ExprKind.CAST);
       node.set(CAST_EXPR, ctx.vex(0).accept(this));
       node.set(CAST_TYPE, parseDataType(ctx.data_type()));
       return node;
 
     } else if (ctx.collate_identifier() != null) {
-      final ASTNode node = newNode(ExprType.COLLATE);
+      final ASTNode node = newNode(ExprKind.COLLATE);
       node.set(COLLATE_EXPR, ctx.vex(0).accept(this));
       node.set(COLLATE_COLLATION, name3(stringifyIdentifier(ctx.collate_identifier().collation)));
       return node;
@@ -398,14 +398,14 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
                 BinaryOp.IN_SUBQUERY);
       else {
         final var vexs = ctx.vex();
-        final ASTNode tuple = newNode(ExprType.TUPLE);
+        final ASTNode tuple = newNode(ExprKind.TUPLE);
         tuple.set(TUPLE_EXPRS, listMap(this::visitVex, vexs.subList(1, vexs.size())));
         node = binary(left, tuple, BinaryOp.IN_LIST);
       }
       return ctx.NOT() == null ? node : unary(node, UnaryOp.NOT);
 
     } else if (ctx.BETWEEN() != null) {
-      final ASTNode node = newNode(ExprType.TERNARY);
+      final ASTNode node = newNode(ExprKind.TERNARY);
       node.set(TERNARY_OP, TernaryOp.BETWEEN_AND);
       node.set(TERNARY_LEFT, ctx.vex(0).accept(this));
       node.set(TERNARY_MIDDLE, ctx.vex_b().accept(this));
@@ -466,7 +466,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
           : indirection(node, parseIndirectionList(ctx.indirection_list()));
 
     } else if (ctx.vex().size() >= 1) {
-      final ASTNode tuple = newNode(ExprType.TUPLE);
+      final ASTNode tuple = newNode(ExprKind.TUPLE);
       tuple.set(TUPLE_EXPRS, listMap(this::visitVex, ctx.vex()));
       return tuple;
 
@@ -476,7 +476,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   @Override
   public ASTNode visitVex_b(PGParser.Vex_bContext ctx) {
     if (ctx.CAST_EXPRESSION() != null) {
-      final ASTNode node = newNode(ExprType.CAST);
+      final ASTNode node = newNode(ExprKind.CAST);
       node.set(CAST_EXPR, ctx.vex_b(0).accept(this));
       node.set(CAST_TYPE, parseDataType(ctx.data_type()));
       return node;
@@ -553,7 +553,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
           : indirection(node, parseIndirectionList(ctx.indirection_list()));
 
     } else if (ctx.vex().size() >= 1) {
-      final ASTNode tuple = newNode(ExprType.TUPLE);
+      final ASTNode tuple = newNode(ExprKind.TUPLE);
       tuple.set(TUPLE_EXPRS, listMap(this::visitVex, ctx.vex()));
       return tuple;
 
@@ -567,12 +567,12 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     else if (ctx.NULL() != null) return literal(LiteralType.NULL, null);
     else if (ctx.MULTIPLY() != null) return wildcard();
     else if (ctx.EXISTS() != null) {
-      final ASTNode node = newNode(ExprType.EXISTS);
+      final ASTNode node = newNode(ExprKind.EXISTS);
       node.set(EXISTS_SUBQUERY_EXPR, wrapAsQueryExpr(this, ctx.table_subquery().accept(this)));
       return node;
 
     } else if (ctx.select_stmt_no_parens() != null) {
-      final ASTNode queryExpr = newNode(ExprType.QUERY_EXPR);
+      final ASTNode queryExpr = newNode(ExprKind.QUERY_EXPR);
       queryExpr.set(QUERY_EXPR_QUERY, ctx.select_stmt_no_parens().accept(this));
       return ctx.indirection_list() == null
           ? queryExpr
@@ -608,7 +608,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
       final ASTNode param = parseParam(this, ctx.dollar_number());
       if (ctx.indirection_list() != null) {
         final List<ASTNode> indirections = parseIndirectionList(ctx.indirection_list());
-        final ASTNode indirection = newNode(ExprType.INDIRECTION);
+        final ASTNode indirection = newNode(ExprKind.INDIRECTION);
         indirection.set(INDIRECTION_EXPR, param);
         indirection.set(INDIRECTION_COMPS, indirections);
         return indirection;
@@ -627,7 +627,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitIndirection(PGParser.IndirectionContext ctx) {
-    final ASTNode node = newNode(ExprType.INDIRECTION_COMP);
+    final ASTNode node = newNode(ExprKind.INDIRECTION_COMP);
     if (ctx.col_label() != null) {
       node.set(INDIRECTION_COMP_START, symbol(ctx.col_label().getText()));
 
@@ -648,7 +648,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitCase_expression(PGParser.Case_expressionContext ctx) {
-    final ASTNode _case = newNode(ExprType.CASE);
+    final ASTNode _case = newNode(ExprKind.CASE);
     if (ctx.condition != null) _case.set(CASE_COND, ctx.condition.accept(this));
     if (ctx.otherwise != null) _case.set(CASE_ELSE, ctx.otherwise.accept(this));
     final var whens = ctx.when;
@@ -657,7 +657,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     for (int i = 0; i < whens.size(); i++) {
       final var when = whens.get(i);
       final var then = thens.get(i);
-      final ASTNode whenNode = newNode(ExprType.WHEN);
+      final ASTNode whenNode = newNode(ExprKind.WHEN);
       whenNode.set(WHEN_COND, when.accept(this));
       whenNode.set(WHEN_EXPR, then.accept(this));
       whenNodes.add(whenNode);
@@ -669,7 +669,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitComparison_mod(PGParser.Comparison_modContext ctx) {
-    final ASTNode node = newNode(ExprType.COMPARISON_MOD);
+    final ASTNode node = newNode(ExprKind.COMPARISON_MOD);
 
     final SubqueryOption option;
     if (ctx.ALL() != null) option = SubqueryOption.ALL;
@@ -690,7 +690,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   public ASTNode visitArray_expression(PGParser.Array_expressionContext ctx) {
     if (ctx.array_elements() != null) return ctx.array_elements().accept(this);
     else if (ctx.table_subquery() != null) {
-      final ASTNode node = newNode(ExprType.ARRAY);
+      final ASTNode node = newNode(ExprKind.ARRAY);
       node.set(ARRAY_ELEMENTS, Collections.singletonList(ctx.table_subquery().accept(this)));
       return node;
     }
@@ -699,7 +699,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitArray_elements(PGParser.Array_elementsContext ctx) {
-    final ASTNode node = newNode(ExprType.ARRAY);
+    final ASTNode node = newNode(ExprKind.ARRAY);
     final List<ASTNode> elements = listMap(this::visitArray_element, ctx.array_element());
     node.set(ARRAY_ELEMENTS, elements);
     return node;
@@ -714,7 +714,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitType_coercion(PGParser.Type_coercionContext ctx) {
-    final ASTNode node = newNode(ExprType.TYPE_COERCION);
+    final ASTNode node = newNode(ExprKind.TYPE_COERCION);
     node.set(TYPE_COERCION_TYPE, parseDataType(ctx.data_type()));
     node.set(TYPE_COERCION_STRING, stringifyText(ctx.character_string()));
     return node;
@@ -722,7 +722,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
   @Override
   public ASTNode visitDatetime_overlaps(PGParser.Datetime_overlapsContext ctx) {
-    final ASTNode node = newNode(ExprType.DATETIME_OVERLAP);
+    final ASTNode node = newNode(ExprKind.DATETIME_OVERLAP);
     node.set(DATETIME_OVERLAP_LEFT_START, ctx.vex(0).accept(this));
     node.set(DATETIME_OVERLAP_LEFT_END, ctx.vex(1).accept(this));
     node.set(DATETIME_OVERLAP_RIGHT_START, ctx.vex(2).accept(this));
@@ -826,7 +826,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     final ASTNode node = newNode(KEY_PART);
     final ASTNode expr = ctx.vex().accept(this);
 
-    if (ExprType.COLUMN_REF.isInstance(expr))
+    if (ExprKind.COLUMN_REF.isInstance(expr))
       node.set(KEY_PART_COLUMN, expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN));
     else node.set(KEY_PART_EXPR, expr);
 
@@ -867,7 +867,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   private List<ASTNode> parseIndirectionList(PGParser.Indirection_listContext ctx) {
     final List<ASTNode> indirections = listMap(this::visitIndirection, ctx.indirection());
     if (ctx.MULTIPLY() != null) {
-      final ASTNode node = newNode(ExprType.INDIRECTION_COMP);
+      final ASTNode node = newNode(ExprKind.INDIRECTION_COMP);
       node.set(INDIRECTION_COMP_START, wildcard());
       indirections.add(node);
     }

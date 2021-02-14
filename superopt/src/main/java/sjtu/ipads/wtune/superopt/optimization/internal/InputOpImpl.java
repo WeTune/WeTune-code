@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.superopt.optimization.InputOp;
 
 public class InputOpImpl extends OperatorBase implements InputOp {

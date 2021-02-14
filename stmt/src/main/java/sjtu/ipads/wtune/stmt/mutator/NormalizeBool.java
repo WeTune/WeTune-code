@@ -2,14 +2,14 @@ package sjtu.ipads.wtune.stmt.mutator;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.stmt.utils.BoolCollector;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
 class NormalizeBool {
@@ -56,7 +56,7 @@ class NormalizeBool {
     } else if (UNARY.isInstance(expr) && expr.get(UNARY_OP).isLogic())
       normalizeExpr(expr.get(UNARY_EXPR));
 
-    final ExprType exprKind = expr.get(EXPR_KIND);
+    final ExprKind exprKind = expr.get(EXPR_KIND);
     assert exprKind == UNARY
         || exprKind == BINARY
         || exprKind == TERNARY

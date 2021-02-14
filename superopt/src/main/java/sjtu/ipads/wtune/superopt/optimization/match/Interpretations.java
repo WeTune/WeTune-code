@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimization.match;
 
 import sjtu.ipads.wtune.common.multiversion.MultiVersion;
-import sjtu.ipads.wtune.sqlparser.rel.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.superopt.optimization.Operator;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
 

@@ -1,18 +1,18 @@
-package sjtu.ipads.wtune.sqlparser.rel;
+package sjtu.ipads.wtune.sqlparser.relational;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-import sjtu.ipads.wtune.sqlparser.rel.internal.RelationField;
+import sjtu.ipads.wtune.sqlparser.relational.internal.RelationField;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.rel.internal.RelationImpl.rootedBy;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.internal.RelationImpl.rootedBy;
 
 public interface Relation {
   FieldKey<Relation> RELATION = RelationField.INSTANCE;
@@ -27,7 +27,7 @@ public interface Relation {
 
   List<Attribute> attributes();
 
-  void reset();
+  boolean isOutdated();
 
   default boolean isInput() {
     return TABLE_SOURCE.isInstance(node())

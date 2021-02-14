@@ -15,7 +15,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType.*;
 
 interface PGASTHelper {
@@ -356,9 +356,9 @@ interface PGASTHelper {
 
     if (indirections.size() == 2) return header;
 
-    assert ExprType.COLUMN_REF.isInstance(header) || ExprType.INDIRECTION.isInstance(header);
+    assert ExprKind.COLUMN_REF.isInstance(header) || ExprKind.INDIRECTION.isInstance(header);
 
-    return ExprType.COLUMN_REF.isInstance(header)
+    return ExprKind.COLUMN_REF.isInstance(header)
         ? factory.indirection(header, indirections.subList(2, indirections.size()))
         : factory.indirection(
             header.get(INDIRECTION_EXPR),
@@ -370,9 +370,9 @@ interface PGASTHelper {
   private static ASTNode buildIndirection1(ASTNodeFactory factory, String id, ASTNode indirection) {
     if (!indirection.isFlag(INDIRECTION_COMP_SUBSCRIPT)) {
       final ASTNode indirectionExpr = indirection.get(INDIRECTION_COMP_START);
-      if (ExprType.SYMBOL.isInstance(indirectionExpr))
+      if (ExprKind.SYMBOL.isInstance(indirectionExpr))
         return factory.columnRef(id, indirectionExpr.get(SYMBOL_TEXT));
-      else if (ExprType.WILDCARD.isInstance(indirectionExpr))
+      else if (ExprKind.WILDCARD.isInstance(indirectionExpr))
         return factory.wildcard(factory.tableName(id));
     }
 
@@ -385,7 +385,7 @@ interface PGASTHelper {
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
     final ASTNode expr0 = _0.get(INDIRECTION_COMP_START);
-    if (!ExprType.SYMBOL.isInstance(expr0))
+    if (!ExprKind.SYMBOL.isInstance(expr0))
       return factory.indirection(factory.columnRef(null, id), Arrays.asList(_0, _1));
 
     if (_1.isFlag(INDIRECTION_COMP_SUBSCRIPT))
@@ -394,10 +394,10 @@ interface PGASTHelper {
 
     final ASTNode expr1 = _1.get(INDIRECTION_COMP_START);
 
-    if (ExprType.SYMBOL.isInstance(expr1))
+    if (ExprKind.SYMBOL.isInstance(expr1))
       return factory.columnRef(
           id, expr0.get(SYMBOL_TEXT), expr1.get(SYMBOL_TEXT));
-    else if (ExprType.WILDCARD.isInstance(expr1))
+    else if (ExprKind.WILDCARD.isInstance(expr1))
       return factory.wildcard(factory.tableName(expr0.get(SYMBOL_TEXT)));
     else
       return factory.indirection(

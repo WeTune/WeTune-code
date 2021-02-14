@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.superopt.plan.*;
 
 import java.util.Deque;
@@ -14,11 +14,11 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.INNER_JOIN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.LEFT_JOIN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
 
 public class ToASTTranslator implements PlanVisitor {
   private final Deque<Relation> stack;
@@ -163,7 +163,7 @@ public class ToASTTranslator implements PlanVisitor {
       if (projection == null)
         if (selection == null) selection = node;
         else {
-          final ASTNode newSelection = expr(ExprType.BINARY);
+          final ASTNode newSelection = expr(ExprKind.BINARY);
           newSelection.set(BINARY_LEFT, node);
           newSelection.set(BINARY_RIGHT, selection);
           newSelection.set(BINARY_OP, conjunctive ? AND : OR);

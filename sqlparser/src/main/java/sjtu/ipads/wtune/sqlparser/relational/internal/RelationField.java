@@ -1,11 +1,11 @@
-package sjtu.ipads.wtune.sqlparser.rel.internal;
+package sjtu.ipads.wtune.sqlparser.relational.internal;
 
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldBase;
-import sjtu.ipads.wtune.sqlparser.rel.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
-import static sjtu.ipads.wtune.sqlparser.rel.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class RelationField extends NodeFieldBase<Relation> {
   public static final RelationField INSTANCE = new RelationField();
@@ -24,7 +24,8 @@ public class RelationField extends NodeFieldBase<Relation> {
     }
 
     Relation relation = super.get(owner);
-    if (relation == null) node.set(RELATION, relation = Relation.resolve(node));
+    if (relation == null || relation.isOutdated())
+      node.set(RELATION, relation = Relation.resolve(node));
 
     return relation;
   }

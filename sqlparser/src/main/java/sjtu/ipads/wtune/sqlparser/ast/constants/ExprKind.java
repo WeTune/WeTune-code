@@ -5,9 +5,12 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ExprFieldImpl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 
-public enum ExprType implements FieldDomain {
+public enum ExprKind implements FieldDomain {
   UNKNOWN,
   VARIABLE,
   COLUMN_REF,
@@ -41,12 +44,21 @@ public enum ExprType implements FieldDomain {
   COMPARISON_MOD // actually invalid, just used in parsing process
 ;
 
+  private final List<FieldKey> fields = new ArrayList<>(5);
+
   public boolean isInstance(ASTNode node) {
     return EXPR_KIND.get(node) == this;
   }
 
   @Override
+  public List<FieldKey> fields() {
+    return fields;
+  }
+
+  @Override
   public <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz) {
-    return ExprFieldImpl.build(this, name, clazz);
+    final FieldKey<R> field = ExprFieldImpl.build(this, name, clazz);
+    fields.add(field);
+    return field;
   }
 }

@@ -11,7 +11,7 @@ public class InputInterpretationImpl implements InputInterpretation {
   }
 
   @Override
-  public Operator input() {
+  public Operator operator() {
     return input;
   }
 
