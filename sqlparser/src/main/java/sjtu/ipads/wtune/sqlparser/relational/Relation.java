@@ -4,11 +4,13 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.relational.internal.RelationField;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableNameOf;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
@@ -28,6 +30,10 @@ public interface Relation {
   List<Attribute> attributes();
 
   boolean isOutdated();
+
+  default Table table() {
+    return isTable() ? node().context().schema().table(tableNameOf(node())) : null;
+  }
 
   default boolean isInput() {
     return TABLE_SOURCE.isInstance(node())

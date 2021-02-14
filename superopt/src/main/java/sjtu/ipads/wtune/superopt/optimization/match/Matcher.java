@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.superopt.optimization.match;
 
-import sjtu.ipads.wtune.superopt.plan.PlanNode;
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public interface Matcher {
-  MatchResult match(MatchContext ctx, Operator operator);
+  MatchResult match(MatchContext ctx, PlanNode planNode);
 
-  <T extends PlanNode> T planNode();
+  <T extends sjtu.ipads.wtune.superopt.plan.PlanNode> T planNode();
 }

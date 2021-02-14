@@ -177,8 +177,15 @@ public class ToASTTranslator implements PlanVisitor {
     }
 
     private void setProjection(ASTNode projection) {
-      if (this.projection == null) this.projection = projection;
-      else {
+      if (this.projection == null) {
+        if (!SELECT_ITEM.isInstance(projection)) {
+          final ASTNode selectItem = ASTNode.node(SELECT_ITEM);
+          selectItem.set(SELECT_ITEM_EXPR, projection);
+          projection = selectItem;
+        }
+        this.projection = projection;
+
+      } else {
         this.source = this.assembleAsSource();
         this.projection = projection;
         this.selection = null;

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.superopt.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.plan.Operators;
 import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.util.Hole;
@@ -35,7 +35,7 @@ public class Enumerate {
     final Set<Plan> newPlans = new HashSet<>();
     for (Plan g : plans)
       for (Hole<PlanNode> hole : g.holes())
-        for (PlanNode template : OperatorType.templates())
+        for (PlanNode template : Operators.templates())
           if (hole.fill(template)) {
             newPlans.add(canonicalize(g.copy()));
             hole.unFill();

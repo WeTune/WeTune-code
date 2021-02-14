@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimization.match;
 
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 
 public interface Matching {
-  Operator root();
+  PlanNode root();
 
-  Operator matchingPoint();
+  PlanNode matchingPoint();
 
   Substitution substitution();
 

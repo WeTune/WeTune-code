@@ -1,21 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimization.match.internal;
 
 import sjtu.ipads.wtune.superopt.optimization.match.InputInterpretation;
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class InputInterpretationImpl implements InputInterpretation {
-  private final Operator input;
+  private final PlanNode input;
 
-  public InputInterpretationImpl(Operator input) {
+  public InputInterpretationImpl(PlanNode input) {
     this.input = input;
   }
 
   @Override
-  public Operator operator() {
+  public PlanNode operator() {
     return input;
   }
 
-  boolean isCompatible(Operator other) {
+  boolean isCompatible(PlanNode other) {
     return other == input;
   }
 }

@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.optimization.match.Interpretations;
 import sjtu.ipads.wtune.superopt.plan.InnerJoin;
 import sjtu.ipads.wtune.superopt.plan.Input;
@@ -19,7 +19,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 
 public class Instantiate implements PlanVisitor {
   private Interpretations interpretations;
-  private final Deque<Operator> stack = new LinkedList<>();
+  private final Deque<PlanNode> stack = new LinkedList<>();
 
   @Override
   public void leaveInput(Input input) {

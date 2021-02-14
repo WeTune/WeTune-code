@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimization.match.internal;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.superopt.optimization.match.Interpretations;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
 import sjtu.ipads.wtune.superopt.plan.Proj;
-import sjtu.ipads.wtune.superopt.optimization.*;
 import sjtu.ipads.wtune.superopt.optimization.match.MatchContext;
 import sjtu.ipads.wtune.superopt.optimization.match.MatchResult;
 
@@ -18,10 +19,10 @@ public class ProjMatcher extends MatcherBase {
     super(proj);
   }
 
-  public MatchResult match(MatchContext ctx, Operator target) {
-    if (!(target instanceof ProjOp)) return ABORT;
+  public MatchResult match(MatchContext ctx, PlanNode target) {
+    if (!(target instanceof ProjNode)) return ABORT;
 
-    final List<Attribute> projection = ((ProjOp) target).projection();
+    final List<Attribute> projection = ((ProjNode) target).projection();
     final Placeholder placeholder = ((Proj) planNode()).fields();
 
     // take snapshot

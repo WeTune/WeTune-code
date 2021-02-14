@@ -13,6 +13,8 @@ import java.util.List;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.COLUMN_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public interface Attribute {
@@ -29,10 +31,9 @@ public interface Attribute {
   ASTNode node();
 
   default Attribute reference(boolean recursive) {
-    if (!recursive) return this;
-
     final Attribute ref = reference();
     if (ref == null) return this;
+    if (!recursive) return ref;
     return ref.reference(true);
   }
 
@@ -45,7 +46,7 @@ public interface Attribute {
   }
 
   default ASTNode toColumnRef() {
-    final ASTNode columnName = ASTNode.node(NodeType.COLUMN_NAME);
+    final ASTNode columnName = ASTNode.node(COLUMN_NAME);
     final Relation owner = owner();
     columnName.set(COLUMN_NAME_TABLE, owner.alias());
     columnName.set(COLUMN_NAME_COLUMN, name());
@@ -54,6 +55,24 @@ public interface Attribute {
     columnRef.set(COLUMN_REF_COLUMN, columnName);
 
     return columnRef;
+  }
+
+  default ASTNode toSelectItem() {
+    final Attribute ref = reference();
+    if (ref == null) return node().copy();
+
+    final ASTNode colName = ASTNode.node(COLUMN_NAME);
+    colName.set(COLUMN_NAME_TABLE, ref.owner().alias());
+    colName.set(COLUMN_NAME_COLUMN, ref.name());
+
+    final ASTNode columnRef = ASTNode.expr(COLUMN_REF);
+    columnRef.set(COLUMN_REF_COLUMN, colName);
+
+    final ASTNode selectItem = ASTNode.node(SELECT_ITEM);
+    selectItem.set(SELECT_ITEM_EXPR, columnRef);
+    selectItem.set(SELECT_ITEM_ALIAS, name());
+
+    return colName;
   }
 
   static Attribute resolve(ASTNode node) {

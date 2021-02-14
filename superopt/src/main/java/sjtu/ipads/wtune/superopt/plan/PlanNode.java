@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.plan;
 
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public interface PlanNode extends Comparable<PlanNode> {
   void acceptVisitor(PlanVisitor visitor);
 
   default PlanNode copy() {
-    final PlanNode thisCopy = type().create();
+    final PlanNode thisCopy = Operators.create(type());
 
     final PlanNode[] prev = predecessors();
     for (int i = 0; i < prev.length; i++) {

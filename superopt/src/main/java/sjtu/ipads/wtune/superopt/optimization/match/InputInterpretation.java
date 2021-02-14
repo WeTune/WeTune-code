@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimization.match;
 
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public interface InputInterpretation {
-  Operator operator();
+  PlanNode operator();
 }

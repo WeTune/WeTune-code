@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.optimization.match.internal;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.optimization.match.InputInterpretation;
@@ -11,7 +12,6 @@ import sjtu.ipads.wtune.superopt.optimization.match.PredicateInterpretation;
 import sjtu.ipads.wtune.superopt.optimization.match.ProjectionInterpretation;
 import sjtu.ipads.wtune.superopt.plan.ConstraintRegistry;
 import sjtu.ipads.wtune.superopt.plan.Placeholder;
-import sjtu.ipads.wtune.superopt.optimization.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,11 +39,11 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
-  public boolean assignInput(Placeholder placeholder, Operator operator) {
+  public boolean assignInput(Placeholder placeholder, PlanNode planNode) {
     final InputInterpretationImpl existing = inputs.get(placeholder);
-    if (existing != null) return existing.isCompatible(operator);
+    if (existing != null) return existing.isCompatible(planNode);
 
-    final InputInterpretationImpl interpretation = new InputInterpretationImpl(operator);
+    final InputInterpretationImpl interpretation = new InputInterpretationImpl(planNode);
     inputs.put(placeholder, interpretation);
     for (Placeholder p : constraints.eqInputOf(placeholder)) inputs.put(p, interpretation);
 

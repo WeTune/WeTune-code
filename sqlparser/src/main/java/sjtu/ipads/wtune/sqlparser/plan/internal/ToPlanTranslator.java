@@ -1,11 +1,10 @@
-package sjtu.ipads.wtune.superopt.optimization.internal;
+package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.superopt.optimization.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,54 +19,53 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SO
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class ToPlanTranslator {
-  public Operator translate(ASTNode node) {
+  public static PlanNode translate(ASTNode node) {
     return translate(node.get(RELATION));
   }
 
-  private Operator translate(Relation relation) {
-    if (relation.isTable()) return InputOp.make(relation);
+  private static PlanNode translate(Relation relation) {
+    if (relation.isTable()) return InputNode.make(relation);
 
-    final ASTNode querySpec = querySpecNode(relation.node());
+    final ASTNode querySpec = locateQuerySpecNode(relation.node());
 
-    if (querySpec == null) return InputOp.make(relation); // TODO: UNION operator
+    if (querySpec == null) return InputNode.make(relation); // TODO: UNION operator
 
-    final List<Attribute> attributes = relation.attributes();
-    final ProjOp proj = ProjOp.make(attributes);
+    final ProjNode proj = ProjNode.make(relation);
 
     final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
-    if (where != null) proj.predecessors()[0] = translateFilter(where);
+    if (where != null) proj.setPredecessor(0, translateFilter(where));
 
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
     if (from != null) {
-      final Operator source = translateTableSource(from);
+      final PlanNode source = translateTableSource(from);
       if (source == null) return null;
-      if (where != null) proj.predecessors()[0].predecessors()[0] = source;
-      else proj.predecessors()[0] = source;
+      if (where != null) proj.predecessors()[0].setPredecessor(0, source);
+      else proj.setPredecessor(0, source);
     }
 
     return proj;
   }
 
-  private Operator translateTableSource(ASTNode tableSource) {
+  private static PlanNode translateTableSource(ASTNode tableSource) {
     assert TABLE_SOURCE.isInstance(tableSource);
 
     if (JOINED_SOURCE.isInstance(tableSource)) {
       final ASTNode onCondition = tableSource.get(JOINED_ON);
       final JoinType joinType = tableSource.get(JOINED_TYPE);
 
-      final Operator op;
-      if (joinType.isInner()) op = InnerJoinOp.build(onCondition);
-      else if (joinType.isOuter()) op = LeftJoinOp.build(onCondition);
+      final PlanNode op;
+      if (joinType.isInner()) op = InnerJoinNode.build(onCondition);
+      else if (joinType.isOuter()) op = LeftJoinNode.build(onCondition);
       else return null;
 
-      final Operator left = translateTableSource(tableSource.get(JOINED_LEFT));
-      final Operator right = translateTableSource(tableSource.get(JOINED_RIGHT));
+      final PlanNode left = translateTableSource(tableSource.get(JOINED_LEFT));
+      final PlanNode right = translateTableSource(tableSource.get(JOINED_RIGHT));
       if (joinType.isRight()) {
-        op.predecessors()[0] = right;
-        op.predecessors()[1] = left;
+        op.setPredecessor(0, right);
+        op.setPredecessor(1, left);
       } else {
-        op.predecessors()[0] = left;
-        op.predecessors()[1] = right;
+        op.setPredecessor(0, left);
+        op.setPredecessor(1, right);
       }
 
       return op;
@@ -75,13 +73,13 @@ public class ToPlanTranslator {
     } else return translate(tableSource);
   }
 
-  private Operator translateFilter(ASTNode expr) {
-    final List<FilterOp> filters = new ArrayList<>(4);
+  private static PlanNode translateFilter(ASTNode expr) {
+    final List<FilterNode> filters = new ArrayList<>(4);
     translateFilter0(expr, filters);
-    return FilterGroupOp.make(expr, filters);
+    return FilterGroupNode.make(expr, filters);
   }
 
-  private void translateFilter0(ASTNode expr, List<FilterOp> filters) {
+  private static void translateFilter0(ASTNode expr, List<FilterNode> filters) {
     final BinaryOp binaryOp = expr.get(BINARY_OP);
 
     if (binaryOp == AND) {
@@ -89,17 +87,17 @@ public class ToPlanTranslator {
       translateFilter0(expr.get(BINARY_RIGHT), filters);
 
     } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
-      final SubqueryFilterOp filter = SubqueryFilterOp.make(expr);
+      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);
       filter.predecessors()[1] = translate(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
       filters.add(filter);
 
-    } else filters.add(PlainFilterOp.make(expr));
+    } else filters.add(PlainFilterNode.make(expr));
   }
 
-  private ASTNode querySpecNode(ASTNode node) {
+  private static ASTNode locateQuerySpecNode(ASTNode node) {
     if (QUERY_SPEC.isInstance(node)) return node;
-    if (QUERY.isInstance(node)) return querySpecNode(node.get(QUERY_BODY));
-    if (DERIVED_SOURCE.isInstance(node)) return querySpecNode(node.get(DERIVED_SUBQUERY));
+    if (QUERY.isInstance(node)) return locateQuerySpecNode(node.get(QUERY_BODY));
+    if (DERIVED_SOURCE.isInstance(node)) return locateQuerySpecNode(node.get(DERIVED_SUBQUERY));
     if (SET_OP.isInstance(node)) return null;
     throw new IllegalArgumentException();
   }

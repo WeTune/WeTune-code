@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.optimization.match.internal;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.superopt.plan.Input;
-import sjtu.ipads.wtune.superopt.optimization.Operator;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.optimization.match.Interpretations;
 import sjtu.ipads.wtune.superopt.optimization.match.MatchContext;
 import sjtu.ipads.wtune.superopt.optimization.match.MatchResult;
@@ -16,12 +16,12 @@ public class InputMatcher extends MatcherBase {
   }
 
   @Override
-  public MatchResult match(MatchContext ctx, Operator operator) {
+  public MatchResult match(MatchContext ctx, PlanNode planNode) {
     final Interpretations interpretations = ctx.interpretations();
     final Snapshot snapshot = interpretations.snapshot();
     interpretations.derive();
 
-    if (interpretations.assignInput(((Input) planNode).table(), operator)) return SUCCEED;
+    if (interpretations.assignInput(((Input) this.planNode).table(), planNode)) return SUCCEED;
     else {
       interpretations.setSnapshot(snapshot);
       return RETRY;

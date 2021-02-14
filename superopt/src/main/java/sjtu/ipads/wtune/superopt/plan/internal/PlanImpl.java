@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.plan.internal;
 
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.plan.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
@@ -30,7 +31,7 @@ public class PlanImpl implements Plan {
     for (int i = opStrs.length - 1; i >= 0; i--) {
       final String opStr = opStrs[i];
       final OperatorType type = OperatorType.valueOf(opStr.split("[<> ]+", 2)[0]);
-      final PlanNode op = type.create();
+      final PlanNode op = Operators.create(type);
 
       for (int j = 0; j < type.numPredecessors(); j++) op.setPredecessor(j, planNodes.pop());
 
