@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import sjtu.ipads.wtune.superopt.plan.*;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
-public class Canonicalize implements PlanVisitor {
-  private PlanNode root;
+public class Canonicalize implements OperatorVisitor {
+  private Operator root;
 
-  private Canonicalize(PlanNode root) {
+  private Canonicalize(Operator root) {
     this.root = root;
   }
 
   @Override
   public boolean enterPlainFilter(PlainFilter op) {
-    final PlanNode succ = op.successor();
+    final Operator succ = op.successor();
 
     if (succ instanceof SubqueryFilter && succ.predecessors()[0] == op) {
       if (succ == root) {
@@ -29,10 +29,10 @@ public class Canonicalize implements PlanVisitor {
     return true;
   }
 
-  public static Plan canonicalize(Plan plan) {
-    final Canonicalize visitor = new Canonicalize(plan.head());
-    plan.acceptVisitor(visitor);
-    plan.setHead(visitor.root);
-    return plan;
+  public static Fragment canonicalize(Fragment fragment) {
+    final Canonicalize visitor = new Canonicalize(fragment.head());
+    fragment.acceptVisitor(visitor);
+    fragment.setHead(visitor.root);
+    return fragment;
   }
 }

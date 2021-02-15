@@ -3,31 +3,27 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
-import sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRef;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRefs;
 
 public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode {
-  private final ASTNode expr;
-  private final List<ASTNode> columnRefs;
+  protected final ASTNode expr;
+  protected List<OutputAttribute> usedAttributes;
 
-  protected FilterNodeBase(ASTNode expr) {
+  protected FilterNodeBase(ASTNode expr, List<OutputAttribute> usedAttributes) {
     this.expr = expr;
-    this.columnRefs = collectColumnRef(expr);
+    this.usedAttributes = usedAttributes;
   }
 
   @Override
   public ASTNode expr() {
     final ASTNode copy = expr.copy();
-
-    final List<ASTNode> nodes = collectColumnRef(copy);
-    final List<OutputAttribute> usedAttrs = usedAttributes0(nodes);
+    final List<ASTNode> nodes = collectColumnRefs(copy);
 
     for (int i = 0, bound = nodes.size(); i < bound; i++) {
-      final OutputAttribute usedAttr = usedAttrs.get(i);
+      final OutputAttribute usedAttr = usedAttributes.get(i);
       if (usedAttr != null) nodes.get(i).update(usedAttr.toColumnRef());
     }
 
@@ -41,10 +37,13 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
 
   @Override
   public List<OutputAttribute> usedAttributes() {
-    return usedAttributes0(columnRefs);
+    return usedAttributes;
   }
 
-  private List<OutputAttribute> usedAttributes0(List<ASTNode> nodes) {
-    return listMap(predecessors()[0]::outputAttribute, nodes);
+  @Override
+  public void resolveUsedAttributes() {
+    if (usedAttributes == null)
+      usedAttributes = resolveUsedAttributes0(collectColumnRefs(expr), predecessors()[0]);
+    else usedAttributes = resolveUsedAttributes1(usedAttributes, predecessors()[0]);
   }
 }

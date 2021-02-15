@@ -82,4 +82,17 @@ public class TableImpl implements Table {
     if (constraints == null) constraints = new ArrayList<>();
     constraints.add(constraint);
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TableImpl table = (TableImpl) o;
+    return Objects.equals(schema, table.schema) && Objects.equals(name, table.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(schema, name);
+  }
 }

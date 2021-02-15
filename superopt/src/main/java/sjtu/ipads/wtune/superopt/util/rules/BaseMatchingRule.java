@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.util.rules;
 
-import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.plan.PlanVisitor;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
 
-public abstract class BaseMatchingRule implements PlanVisitor, Rule {
+public abstract class BaseMatchingRule implements OperatorVisitor, Rule {
   protected boolean matched;
 
-  public boolean match(Plan g) {
+  public boolean match(Fragment g) {
     g.acceptVisitor(this);
     return matched;
   }

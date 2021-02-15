@@ -59,7 +59,7 @@ class NormalizeConstantTable {
       final Attribute rootRef = attr.reference(true);
 
       if (rootRef.owner() != targetRelation) continue;
-      assert LITERAL.isInstance(rootRef.node().get(SELECT_ITEM_EXPR));
+      assert LITERAL.isInstance(rootRef.selectItem().get(SELECT_ITEM_EXPR));
 
       // If the expr is an ORDER BY item then just remove it.
       // Consider "SELECT .. FROM (SELECT 1 AS o) t ORDER BY t.o"
@@ -80,7 +80,7 @@ class NormalizeConstantTable {
       }
 
       // in-place substitute
-      final ASTNode replacement = rootRef.node().get(SELECT_ITEM_EXPR);
+      final ASTNode replacement = rootRef.selectItem().get(SELECT_ITEM_EXPR);
       columnRef.unset(COLUMN_REF_COLUMN);
       columnRef.update(replacement);
     }

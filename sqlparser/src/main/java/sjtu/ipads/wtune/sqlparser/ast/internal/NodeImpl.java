@@ -51,8 +51,7 @@ public class NodeImpl implements ASTNode {
   @Override
   @SuppressWarnings("unchecked")
   public void update(ASTNode other) {
-    for (FieldKey fieldKey : fields0())
-      unset(fieldKey);
+    for (FieldKey fieldKey : fields0()) unset(fieldKey);
 
     set(NODE_TYPE, other.nodeType());
     if (EXPR.isInstance(other)) set(EXPR_KIND, other.get(EXPR_KIND));

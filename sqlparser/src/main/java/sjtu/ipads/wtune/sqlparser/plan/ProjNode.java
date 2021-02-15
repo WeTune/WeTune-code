@@ -18,4 +18,8 @@ public interface ProjNode extends PlanNode {
   static ProjNode make(Relation relation) {
     return ProjNodeImpl.build(relation);
   }
+
+  static ProjNode make(List<OutputAttribute> projs) {
+    return ProjNodeImpl.build(projs);
+  }
 }

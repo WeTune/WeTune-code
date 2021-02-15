@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.DerivedOutputAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.internal.NativeOutputAttribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 
@@ -14,17 +15,27 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 
 public interface OutputAttribute {
+  PlanNode origin();
+
   String qualification();
 
   String name();
 
-  PlanNode owner();
+  ASTNode expr();
 
-  OutputAttribute reference();
+  String[] referenceName();
 
-  ASTNode node();
+  OutputAttribute reference(boolean recursive);
 
-  Column column();
+  Column column(boolean recursive);
+
+  List<OutputAttribute> used();
+
+  void setReference(OutputAttribute attribute);
+
+  void setUsed(List<OutputAttribute> used);
+
+  boolean refEquals(OutputAttribute other);
 
   default ASTNode toColumnRef() {
     final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
@@ -37,8 +48,33 @@ public interface OutputAttribute {
     return ref;
   }
 
-  static List<OutputAttribute> fromInput(PlanNode node, Relation rel) {
-    return NativeOutputAttribute.build(node, rel);
+  default ASTNode toSelectItem() {
+    final OutputAttribute ref = reference(false);
+    if (ref == this) {
+      final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
+
+      item.set(SELECT_ITEM_EXPR, expr().copy());
+      item.set(SELECT_ITEM_ALIAS, name());
+
+      return item;
+    }
+
+    final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
+    colName.set(COLUMN_NAME_TABLE, ref.qualification());
+    colName.set(COLUMN_NAME_COLUMN, ref.name());
+
+    final ASTNode colRef = ASTNode.expr(ExprKind.COLUMN_REF);
+    colRef.set(COLUMN_REF_COLUMN, colName);
+
+    final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
+    item.set(SELECT_ITEM_EXPR, colRef);
+    item.set(SELECT_ITEM_ALIAS, name());
+
+    return item;
+  }
+
+  static List<OutputAttribute> fromInput(PlanNode node, Table table, String tableAlias) {
+    return NativeOutputAttribute.build(node, table, tableAlias);
   }
 
   static List<OutputAttribute> fromProj(PlanNode node, Relation rel) {

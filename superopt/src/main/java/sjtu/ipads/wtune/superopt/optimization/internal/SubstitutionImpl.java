@@ -1,16 +1,14 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.common.utils.Commons;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.plan.Numbering;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
-import sjtu.ipads.wtune.superopt.plan.Placeholders;
-import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.Indexed;
 import sjtu.ipads.wtune.symsolver.core.PickFrom;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,31 +17,20 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.superopt.internal.Canonicalize.canonicalize;
 
 public class SubstitutionImpl implements Substitution {
-  private final Plan g0, g1;
-  private final List<Constraint> constraints;
+  private final Fragment g0, g1;
+  private final Constraints constraints;
   private final Numbering numbering;
 
-  private SubstitutionImpl(Plan g0, Plan g1, Numbering numbering, List<Constraint> constraints) {
+  private SubstitutionImpl(
+      Fragment g0, Fragment g1, Numbering numbering, List<Constraint> constraints) {
     this.g0 = g0;
     this.g1 = g1;
     this.numbering = numbering;
-    this.constraints = listSort(constraints, this::compare);
-  }
-
-  public static Substitution buildIdentity(Plan g0) {
-    final Plan g1 = g0.copy();
-    final Placeholders ps0 = g0.placeholders(), ps1 = g1.placeholders();
-
-    final List<Constraint> constraints = new ArrayList<>(ps0.count());
-    constraints.addAll(zipMap(Constraint::tableEq, ps0.tables(), ps1.tables()));
-    constraints.addAll(zipMap(Constraint::pickEq, ps0.picks(), ps1.picks()));
-    constraints.addAll(zipMap(Constraint::predicateEq, ps0.predicates(), ps1.predicates()));
-
-    return new SubstitutionImpl(g0, g1, Numbering.make().number(g0, g1), constraints);
+    this.constraints = new Constraints(listSort(constraints, this::compare));
   }
 
   public static Substitution build(
-      Plan g0, Plan g1, Numbering numbering, List<Constraint> constraints) {
+      Fragment g0, Fragment g1, Numbering numbering, List<Constraint> constraints) {
     return new SubstitutionImpl(g0, g1, numbering, constraints);
   }
 
@@ -52,7 +39,7 @@ public class SubstitutionImpl implements Substitution {
     if (split.length != 3)
       throw new IllegalArgumentException("invalid serialized substitution: " + str);
 
-    final Plan g0 = Plan.rebuild(split[0]), g1 = Plan.rebuild(split[1]);
+    final Fragment g0 = Fragment.rebuild(split[0]), g1 = Fragment.rebuild(split[1]);
     final Numbering numbering = Numbering.make().number(g0, g1);
 
     final List<Constraint> constraints =
@@ -66,12 +53,12 @@ public class SubstitutionImpl implements Substitution {
   }
 
   @Override
-  public Plan g0() {
+  public Fragment g0() {
     return g0;
   }
 
   @Override
-  public Plan g1() {
+  public Fragment g1() {
     return g1;
   }
 
@@ -81,7 +68,7 @@ public class SubstitutionImpl implements Substitution {
   }
 
   @Override
-  public List<Constraint> constraints() {
+  public Constraints constraints() {
     return constraints;
   }
 
@@ -103,7 +90,7 @@ public class SubstitutionImpl implements Substitution {
         .formatted(
             g0.toString(numbering),
             g1.toString(numbering),
-            constraints.stream().map(this::toString).collect(Collectors.joining(";")));
+            stream(constraints).map(this::toString).collect(Collectors.joining(";")));
   }
 
   private String toString(Constraint constraint) {
@@ -142,7 +129,8 @@ public class SubstitutionImpl implements Substitution {
       case PickFrom:
         return Constraint.pickFrom(
             lookup.placeholderOf(split[1]),
-            (Object[]) arrayMap(lookup::placeholderOf, Indexed.class, Commons.subArray(split, 2)));
+            (Object[])
+                arrayMap(lookup::placeholderOf, Placeholder.class, Commons.subArray(split, 2)));
       case Reference:
         return Constraint.reference(
             lookup.placeholderOf(split[1]),

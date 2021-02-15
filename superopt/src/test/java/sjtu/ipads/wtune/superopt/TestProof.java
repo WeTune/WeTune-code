@@ -1,26 +1,26 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.internal.Prove;
-import sjtu.ipads.wtune.superopt.plan.Numbering;
-import sjtu.ipads.wtune.superopt.plan.Plan;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 
 import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
-import static sjtu.ipads.wtune.superopt.plan.PlanNode.*;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.*;
 
 public class TestProof {
   private static String makeSubString(
-      Plan g0, Plan g1, Numbering numbering, String constraintStr) {
+      Fragment g0, Fragment g1, Numbering numbering, String constraintStr) {
     return g0.toString(numbering) + "|" + g1.toString(numbering) + "|" + constraintStr;
   }
 
   private static final class TestHelper {
-    private Plan g0, g1;
+    private Fragment g0, g1;
     private Collection<Substitution> results;
     private Collection<String> strs;
     private Numbering numbering;
@@ -53,14 +53,9 @@ public class TestProof {
     test.print();
 
     test.check(
-        "TableEq(t0,t2);PickEq(c0,c3);"
-            + "PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
-            + "Reference(t0,c1,t1,c2)");
-
+        "TableEq(t0,t2);PickEq(c0,c3);Reference(t0,c1,t1,c2);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2])");
     test.check(
-        "TableEq(t0,t2);PickEq(c0,c2);PickEq(c1,c3);"
-            + "PickFrom(c0,[t1]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
-            + "Reference(t0,c1,t1,c2)");
+        "TableEq(t0,t2);PickEq(c0,c2);PickEq(c1,c3);Reference(t0,c1,t1,c2);PickFrom(c0,[t1]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2])");
   }
 
   @Test
@@ -100,6 +95,6 @@ public class TestProof {
     test.g1 = wrap(leftJoin(null, null));
     test.print();
     test.check(
-        "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c2);PickEq(c1,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t2]);PickFrom(c3,[t3]);Reference(t2,c2,t3,c3)");
+        "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c2);PickEq(c1,c3);Reference(t2,c2,t3,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t2]);PickFrom(c3,[t3])");
   }
 }

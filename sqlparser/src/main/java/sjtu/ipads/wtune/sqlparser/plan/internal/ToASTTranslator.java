@@ -52,7 +52,7 @@ public class ToASTTranslator {
   }
 
   private void translateInput(InputNode input) {
-    stack.push(Query.from(input.tableSource()));
+    stack.push(Query.from(input.toTableSource()));
   }
 
   private void translateProj(ProjNode op) {

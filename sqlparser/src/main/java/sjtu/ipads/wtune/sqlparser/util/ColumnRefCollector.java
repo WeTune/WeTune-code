@@ -6,6 +6,8 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
+
 public final class ColumnRefCollector implements ASTVistor {
   private final List<ASTNode> nodes = new ArrayList<>();
 
@@ -20,9 +22,12 @@ public final class ColumnRefCollector implements ASTVistor {
     return false;
   }
 
-  public static List<ASTNode> collectColumnRef(ASTNode... roots) {
+  public static List<ASTNode> collectColumnRefs(Iterable<ASTNode> roots) {
     final ColumnRefCollector collector = new ColumnRefCollector();
     for (ASTNode root : roots) root.accept(collector);
     return collector.nodes;
+  }
+  public static List<ASTNode> collectColumnRefs(ASTNode root) {
+    return collectColumnRefs(singletonList(root));
   }
 }

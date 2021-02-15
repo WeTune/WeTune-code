@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.superopt.plan.*;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
-import sjtu.ipads.wtune.superopt.plan.Numbering;
+import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 
-public class Stringify implements PlanVisitor {
+public class Stringify implements OperatorVisitor {
   private final StringBuilder builder;
   private final Numbering numbering;
 
@@ -13,20 +13,20 @@ public class Stringify implements PlanVisitor {
     this.numbering = numbering;
   }
 
-  public static String stringify(Plan g) {
+  public static String stringify(Fragment g) {
     final Stringify stringify = new Stringify(null);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
 
-  public static String stringify(Plan g, Numbering numbering) {
+  public static String stringify(Fragment g, Numbering numbering) {
     final Stringify stringify = new Stringify(numbering);
     g.acceptVisitor(stringify);
     return stringify.toString();
   }
 
   @Override
-  public boolean enter(PlanNode op) {
+  public boolean enter(Operator op) {
     builder.append(op);
     attachInformation(op);
     if (!(op instanceof Input)) builder.append('(');
@@ -34,18 +34,18 @@ public class Stringify implements PlanVisitor {
   }
 
   @Override
-  public void enterEmpty(PlanNode parent, int idx) {
+  public void enterEmpty(Operator parent, int idx) {
     builder.append("\u25a1,");
   }
 
   @Override
-  public void leave(PlanNode op) {
+  public void leave(Operator op) {
     if (builder.charAt(builder.length() - 1) == ',') builder.deleteCharAt(builder.length() - 1);
     if (!(op instanceof Input)) builder.append(')');
     builder.append(",");
   }
 
-  private void attachInformation(PlanNode op) {
+  private void attachInformation(Operator op) {
     if (numbering == null) return;
 
     builder.append('<');

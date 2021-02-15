@@ -35,7 +35,7 @@ public class PlanTest {
     final PlanNode plan = ToPlanTranslator.translate(node);
     final ASTNode ast = ToASTTranslator.translate(plan);
     assertEquals(
-        "SELECT `a`.`x`, `a`.`y`, `a`.`z`, `b`.`i`, `b`.`j` FROM (SELECT `a`.`x`, `a`.`y`, `a`.`z` FROM `a` AS `a`) INNER JOIN `b` AS `b` ON `a`.`x` = `b`.`i` WHERE `b`.`j` IN (SELECT `c`.`p` FROM `c` AS `c`)",
+        "SELECT `a`.`x` AS `x`, `a`.`y` AS `y`, `a`.`z` AS `z`, `b`.`i` AS `i`, `b`.`j` AS `j` FROM (SELECT `a`.`x` AS `x`, `a`.`y` AS `y`, `a`.`z` AS `z` FROM `a` AS `a`) INNER JOIN `b` AS `b` ON `a`.`x` = `b`.`i` WHERE <??> IN (SELECT `c`.`p` AS `p` FROM `c` AS `c`)",
         ast.toString());
   }
 }

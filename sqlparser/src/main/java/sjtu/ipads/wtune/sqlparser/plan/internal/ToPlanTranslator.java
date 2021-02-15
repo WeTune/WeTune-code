@@ -24,24 +24,32 @@ public class ToPlanTranslator {
   }
 
   private static PlanNode translate(Relation relation) {
+    // input
     if (relation.isTable()) return InputNode.make(relation);
 
     final ASTNode querySpec = locateQuerySpecNode(relation.node());
-
     if (querySpec == null) return InputNode.make(relation); // TODO: UNION operator
 
-    final ProjNode proj = ProjNode.make(relation);
-
-    final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
-    if (where != null) proj.setPredecessor(0, translateFilter(where));
-
+    // source
+    PlanNode source = null;
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
-    if (from != null) {
-      final PlanNode source = translateTableSource(from);
-      if (source == null) return null;
-      if (where != null) proj.predecessors()[0].setPredecessor(0, source);
-      else proj.setPredecessor(0, source);
+    if (from != null) source = translateTableSource(from);
+    if (source == null) throw new IllegalArgumentException("null table source is not supported");
+    source.resolveUsedAttributes();
+
+    // filter
+    PlanNode filter = null;
+    final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
+    if (where != null) {
+      filter = translateFilter(where);
+      filter.setPredecessor(0, source);
+      filter.resolveUsedAttributes();
     }
+
+    // projection
+    final ProjNode proj = ProjNode.make(relation);
+    proj.setPredecessor(0, filter != null ? filter : source);
+    proj.resolveUsedAttributes();
 
     return proj;
   }
@@ -50,16 +58,18 @@ public class ToPlanTranslator {
     assert TABLE_SOURCE.isInstance(tableSource);
 
     if (JOINED_SOURCE.isInstance(tableSource)) {
+      // join
       final ASTNode onCondition = tableSource.get(JOINED_ON);
       final JoinType joinType = tableSource.get(JOINED_TYPE);
 
       final PlanNode op;
-      if (joinType.isInner()) op = InnerJoinNode.build(onCondition);
-      else if (joinType.isOuter()) op = LeftJoinNode.build(onCondition);
+      if (joinType.isInner()) op = InnerJoinNode.make(onCondition);
+      else if (joinType.isOuter()) op = LeftJoinNode.make(onCondition);
       else return null;
 
       final PlanNode left = translateTableSource(tableSource.get(JOINED_LEFT));
       final PlanNode right = translateTableSource(tableSource.get(JOINED_RIGHT));
+
       if (joinType.isRight()) {
         op.setPredecessor(0, right);
         op.setPredecessor(1, left);
@@ -87,7 +97,7 @@ public class ToPlanTranslator {
       translateFilter0(expr.get(BINARY_RIGHT), filters);
 
     } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
-      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);
+      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr.get(BINARY_LEFT));
       filter.predecessors()[1] = translate(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
       filters.add(filter);
 

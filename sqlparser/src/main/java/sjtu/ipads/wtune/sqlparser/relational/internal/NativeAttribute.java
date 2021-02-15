@@ -36,17 +36,17 @@ public class NativeAttribute extends BaseAttribute {
   }
 
   @Override
-  public Attribute reference() {
-    return null;
+  public Attribute reference(boolean recursive) {
+    return this;
   }
 
   @Override
-  public Column column() {
+  public Column column(boolean recursive) {
     return column;
   }
 
   @Override
-  public ASTNode node() {
+  public ASTNode selectItem() {
     return null;
   }
 }

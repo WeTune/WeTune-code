@@ -12,9 +12,9 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
@@ -77,7 +77,7 @@ public class RelationTest {
     assertEquals(7, rel3.attributes().size());
     assertSame(rel0, rel3.auxiliaryInput());
     assertSame(schema.table("a").column("x"), rel3.attributes().get(3).column(true));
-    assertSame(rel1.attributes().get(0), rel3.attributes().get(3).reference());
+    assertSame(rel1.attributes().get(0), rel3.attributes().get(3).reference(false));
   }
 
   @Test

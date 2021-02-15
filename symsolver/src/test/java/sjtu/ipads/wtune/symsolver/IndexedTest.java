@@ -6,13 +6,13 @@ import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
 
 public class IndexedTest {
   @Test
   void test() {
-    final TableSym[] tbls = generate(3, TableSym.class, i -> TableSym.of(null));
-    final PickSym[] picks = generate(3, PickSym.class, i -> PickSym.of(null));
+    final TableSym[] tbls = supplier(TableSym::of).repeat(3, TableSym.class);
+    final PickSym[] picks = supplier(PickSym::of).repeat(3, PickSym.class);
 
     Indexed.number(tbls, 0);
     Indexed.number(picks, 1);

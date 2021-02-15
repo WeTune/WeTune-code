@@ -3,13 +3,19 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.internal.LeftJoinNodeImpl;
 
+import java.util.List;
+
 public interface LeftJoinNode extends JoinNode {
   @Override
   default OperatorType type() {
     return OperatorType.LeftJoin;
   }
 
-  static LeftJoinNode build(ASTNode onCondition) {
+  static LeftJoinNode make(ASTNode onCondition) {
     return LeftJoinNodeImpl.build(onCondition);
+  }
+
+  static LeftJoinNode make(List<OutputAttribute> left, List<OutputAttribute> right) {
+    return LeftJoinNodeImpl.build(left, right);
   }
 }

@@ -53,6 +53,35 @@ public class DerivedAttribute extends BaseAttribute {
     return attributes;
   }
 
+  @Override
+  public ASTNode selectItem() {
+    return selectItem;
+  }
+
+  @Override
+  public Column column(boolean recursive) {
+    if (!recursive) return null;
+
+    final Attribute ref = reference(true);
+    return ref == null ? null : ref.column(true);
+  }
+
+  @Override
+  public Attribute reference(boolean recursive) {
+    final Attribute ref = reference0();
+    if (ref == null) return this;
+    if (!recursive) return ref;
+    return ref.reference(true);
+  }
+
+  private Attribute reference0() {
+    if (reference != null) return reference;
+
+    assert selectItem != null;
+    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
+    return COLUMN_REF.isInstance(expr) ? (reference = Attribute.resolve(expr)) : null;
+  }
+
   private static void expandWildcard(ASTNode item, List<Attribute> dest) {
     final Relation relation = item.get(RELATION);
     final ASTNode name = item.get(SELECT_ITEM_EXPR).get(WILDCARD_TABLE);
@@ -74,24 +103,5 @@ public class DerivedAttribute extends BaseAttribute {
     if (COLUMN_REF.isInstance(expr)) return expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
 
     return "item" + index;
-  }
-
-  @Override
-  public Column column() {
-    return null;
-  }
-
-  @Override
-  public Attribute reference() {
-    if (reference != null) return reference;
-
-    assert selectItem != null;
-    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
-    return COLUMN_REF.isInstance(expr) ? (reference = Attribute.resolve(expr)) : null;
-  }
-
-  @Override
-  public ASTNode node() {
-    return selectItem;
   }
 }

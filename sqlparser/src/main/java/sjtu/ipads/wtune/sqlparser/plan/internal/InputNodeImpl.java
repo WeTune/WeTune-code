@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
@@ -20,20 +21,31 @@ import static sjtu.ipads.wtune.sqlparser.plan.OutputAttribute.fromInput;
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final Table table;
   private final String alias;
-  private final List<OutputAttribute> attributes;
+  private List<OutputAttribute> attributes;
 
-  private InputNodeImpl(Relation table) {
-    this.table = table.table();
-    this.alias = table.alias();
-    this.attributes = fromInput(this, table);
+  private InputNodeImpl(Relation rel) {
+    this.table = rel.table();
+    this.alias = rel.alias();
+    this.attributes = fromInput(this, table, alias);
   }
 
-  public static InputNode build(Relation table) {
-    return new InputNodeImpl(table);
+  private InputNodeImpl(Table table, String alias, List<OutputAttribute> attributes) {
+    this.table = table;
+    this.alias = alias;
+    this.attributes = attributes;
+  }
+
+  public static InputNode build(Relation rel) {
+    return new InputNodeImpl(rel);
   }
 
   @Override
-  public ASTNode tableSource() {
+  public Table table() {
+    return table;
+  }
+
+  @Override
+  public ASTNode toTableSource() {
     final ASTNode name = node(TABLE_NAME);
     name.set(TABLE_NAME_TABLE, table.name());
 
@@ -52,5 +64,13 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   @Override
   public List<OutputAttribute> usedAttributes() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public void resolveUsedAttributes() {}
+
+  @Override
+  protected PlanNode copy0() {
+    return new InputNodeImpl(table, alias, attributes);
   }
 }

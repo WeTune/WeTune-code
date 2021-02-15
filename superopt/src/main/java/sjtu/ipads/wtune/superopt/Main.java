@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.superopt;
 
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.internal.Prove;
 import sjtu.ipads.wtune.superopt.internal.Runner;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
-import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.plan.internal.ToASTTranslator;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,9 +15,9 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.logging.LogManager;
 
-import static sjtu.ipads.wtune.superopt.plan.Plan.wrap;
-import static sjtu.ipads.wtune.superopt.plan.PlanNode.innerJoin;
-import static sjtu.ipads.wtune.superopt.plan.PlanNode.proj;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.innerJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.proj;
 
 public class Main {
 
@@ -65,8 +65,8 @@ public class Main {
   }
 
   private static void test0() {
-    final Plan q0 = wrap(proj(innerJoin(null, null))).setup();
-    final Plan q1 = wrap(proj(null)).setup();
+    final Fragment q0 = wrap(proj(innerJoin(null, null))).setup();
+    final Fragment q1 = wrap(proj(null)).setup();
 
     final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
     constraints.forEach(System.out::println);

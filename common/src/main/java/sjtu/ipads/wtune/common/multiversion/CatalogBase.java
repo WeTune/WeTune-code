@@ -7,7 +7,7 @@ public class CatalogBase<K, V> extends MultiVersionBase<Map<K, Object>, Catalog<
   // invariant: current == null => prev == null
   protected static final Object REMOVED = new Object();
 
-  protected CatalogBase() {}
+  public CatalogBase() {}
 
   protected CatalogBase(Map<K, Object> current, Catalog<K, V> prev) {
     super(current, prev);

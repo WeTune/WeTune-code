@@ -8,7 +8,6 @@ import sjtu.ipads.wtune.symsolver.search.DecisionTree;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.common.utils.Commons.asArray;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.supplier;
 import static sjtu.ipads.wtune.symsolver.DecidableConstraint.*;
 import static sjtu.ipads.wtune.symsolver.core.Indexed.number;
@@ -16,8 +15,8 @@ import static sjtu.ipads.wtune.symsolver.core.Indexed.number;
 public class DecisionTest {
   @Test
   void testBasic() {
-    final TableSym[] tables = supplier(func(TableSym::of).bind(null)).repeat(3, TableSym.class);
-    final PickSym[] picks = supplier(func(PickSym::of).bind(null)).repeat(4, PickSym.class);
+    final TableSym[] tables = supplier(TableSym::of).repeat(3, TableSym.class);
+    final PickSym[] picks = supplier(PickSym::of).repeat(4, PickSym.class);
 
     number(tables, 0);
     number(picks, 0);
@@ -48,8 +47,8 @@ public class DecisionTest {
 
   @Test
   void testFast() {
-    final TableSym[] tables = supplier(func(TableSym::of).bind(null)).repeat(2, TableSym.class);
-    final PickSym[] picks = supplier(func(PickSym::of).bind(null)).repeat(4, PickSym.class);
+    final TableSym[] tables = supplier(TableSym::of).repeat(2, TableSym.class);
+    final PickSym[] picks = supplier(PickSym::of).repeat(4, PickSym.class);
 
     number(tables, 0);
     number(picks, 0);

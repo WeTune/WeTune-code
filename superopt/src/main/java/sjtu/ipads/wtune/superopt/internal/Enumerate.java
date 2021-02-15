@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.superopt.plan.Operators;
-import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.plan.PlanNode;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.Operators;
 import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.util.rules.Rule;
 import sjtu.ipads.wtune.superopt.util.rules.simplify.NonLeftDeepJoin;
@@ -22,38 +22,38 @@ import static sjtu.ipads.wtune.superopt.internal.Canonicalize.canonicalize;
 public class Enumerate {
   public static final int MAX_FRAGMENT_SIZE = 4;
 
-  public static List<Plan> enumPlans() {
-    return enumPlans0(0, singleton(Plan.empty())).parallelStream()
-        .peek(Plan::setup)
-        .sorted(Plan::compareTo)
+  public static List<Fragment> enumPlans() {
+    return enumPlans0(0, singleton(Fragment.empty())).parallelStream()
+        .peek(Fragment::setup)
+        .sorted(Fragment::compareTo)
         .filter(Enumerate::prune)
         .collect(Collectors.toList());
   }
 
-  private static Set<Plan> enumPlans0(int depth, Set<Plan> plans) {
-    if (depth >= MAX_FRAGMENT_SIZE) return plans;
-    final Set<Plan> newPlans = new HashSet<>();
-    for (Plan g : plans)
-      for (Hole<PlanNode> hole : g.holes())
-        for (PlanNode template : Operators.templates())
+  private static Set<Fragment> enumPlans0(int depth, Set<Fragment> fragments) {
+    if (depth >= MAX_FRAGMENT_SIZE) return fragments;
+    final Set<Fragment> newFragments = new HashSet<>();
+    for (Fragment g : fragments)
+      for (Hole<Operator> hole : g.holes())
+        for (Operator template : Operators.templates())
           if (hole.fill(template)) {
-            newPlans.add(canonicalize(g.copy()));
+            newFragments.add(canonicalize(g.copy()));
             hole.unFill();
           }
 
-    return Sets.union(newPlans, enumPlans0(depth + 1, newPlans));
+    return Sets.union(newFragments, enumPlans0(depth + 1, newFragments));
   }
 
-  private static boolean prune(Plan plan) {
+  private static boolean prune(Fragment fragment) {
     return //        !Rule.match(MalformedDistinct.class, graph) &&
-    !Rule.match(MalformedSubqueryFilter.class, plan)
+    !Rule.match(MalformedSubqueryFilter.class, fragment)
         //        && !Rule.match(MalformedSort.class, graph)
-        && !Rule.match(MalformedJoin.class, plan)
+        && !Rule.match(MalformedJoin.class, fragment)
         //        && !Rule.match(MalformedLimit.class, graph)
         //        && !Rule.match(MalformedUnion.class, graph)
         //        && !Rule.match(DoubleProj.class, graph)
-        && !Rule.match(NonLeftDeepJoin.class, plan)
+        && !Rule.match(NonLeftDeepJoin.class, fragment)
         //                && !Rule.match(AllUnion.class, graph)
-        && !Rule.match(AllJoin.class, plan);
+        && !Rule.match(AllJoin.class, fragment);
   }
 }

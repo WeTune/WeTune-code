@@ -51,14 +51,13 @@ class TableBuilder {
     table.addColumn(column);
 
     final EnumSet<ConstraintType> constraints = colDef.get(COLUMN_DEF_CONS);
-    if (constraints == null) return;
+    if (constraints != null)
+      for (ConstraintType cType : constraints) {
+        final ConstraintImpl c = ConstraintImpl.build(cType, singletonList(column));
 
-    for (ConstraintType cType : constraints) {
-      final ConstraintImpl c = ConstraintImpl.build(cType, singletonList(column));
-
-      table.addConstraint(c);
-      column.addConstraint(c);
-    }
+        table.addConstraint(c);
+        column.addConstraint(c);
+      }
 
     final ASTNode references = colDef.get(COLUMN_DEF_REF);
     if (references != null) {

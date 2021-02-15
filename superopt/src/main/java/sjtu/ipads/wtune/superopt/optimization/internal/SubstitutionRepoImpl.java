@@ -48,6 +48,12 @@ public class SubstitutionRepoImpl implements SubstitutionRepo {
   }
 
   @Override
+  public SubstitutionRepo add(Substitution sub) {
+    substitutions.add(sub);
+    return this;
+  }
+
+  @Override
   public void remove(Substitution sub) {
     substitutions.remove(sub);
   }

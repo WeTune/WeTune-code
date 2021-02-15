@@ -1,26 +1,28 @@
 package sjtu.ipads.wtune.superopt.optimization;
 
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.optimization.internal.SubstitutionImpl;
-import sjtu.ipads.wtune.superopt.plan.Numbering;
-import sjtu.ipads.wtune.superopt.plan.Plan;
+import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
 import java.util.List;
 
 public interface Substitution {
-  Plan g0();
+  Fragment g0();
 
-  Plan g1();
+  Fragment g1();
 
   Numbering numbering();
 
-  List<Constraint> constraints();
+  Constraints constraints();
 
   default Substitution copy() {
     return rebuild(toString());
   }
 
-  static Substitution build(Plan g0, Plan g1, Numbering numbering, List<Constraint> constraints) {
+  static Substitution build(
+      Fragment g0, Fragment g1, Numbering numbering, List<Constraint> constraints) {
     return SubstitutionImpl.build(g0, g1, numbering, constraints);
   }
 

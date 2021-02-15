@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Semantic;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.plan.Placeholder;
-import sjtu.ipads.wtune.superopt.plan.Numbering;
-import sjtu.ipads.wtune.superopt.plan.Plan;
-import sjtu.ipads.wtune.superopt.plan.internal.Semantic;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Solver;
 import sjtu.ipads.wtune.symsolver.core.Summary;
@@ -18,19 +18,19 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Prove {
-  private final Plan g0, g1;
+  private final Fragment g0, g1;
   private final Semantic semantic0, semantic1;
 
   private Numbering numbering;
 
-  public Prove(Plan g0, Plan g1) {
+  public Prove(Fragment g0, Fragment g1) {
     this.g0 = g0;
     this.g1 = g1;
     this.semantic0 = g0.semantic();
     this.semantic1 = g1.semantic();
   }
 
-  public static Collection<Substitution> prove(Plan g0, Plan g1, int timeout) {
+  public static Collection<Substitution> prove(Fragment g0, Fragment g1, int timeout) {
     return new Prove(g0, g1).prove(timeout);
   }
 

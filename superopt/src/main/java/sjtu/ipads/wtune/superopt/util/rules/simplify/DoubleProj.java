@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.util.rules.simplify;
 
-import sjtu.ipads.wtune.superopt.plan.Proj;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
 import sjtu.ipads.wtune.superopt.util.rules.BaseMatchingRule;
 
 public class DoubleProj extends BaseMatchingRule {

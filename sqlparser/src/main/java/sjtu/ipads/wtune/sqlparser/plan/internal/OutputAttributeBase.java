@@ -25,7 +25,15 @@ public abstract class OutputAttributeBase implements OutputAttribute {
   }
 
   @Override
-  public PlanNode owner() {
+  public PlanNode origin() {
     return owner;
+  }
+
+  @Override
+  public boolean refEquals(OutputAttribute other) {
+    if (this == other) return true;
+
+    final OutputAttribute thisRef = this.reference(true), otherRef = other.reference(true);
+    return thisRef == otherRef;
   }
 }

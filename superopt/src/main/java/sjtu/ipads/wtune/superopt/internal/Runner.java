@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Lists;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.plan.Plan;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -17,14 +17,14 @@ import java.util.stream.Stream;
 
 public class Runner {
   public static final System.Logger LOG = System.getLogger("superopt");
-  private final Stream<List<Plan>> stream;
+  private final Stream<List<Fragment>> stream;
   private final int estimatedTotal;
   private final AtomicInteger i;
 
   private final PrintWriter out;
   private final PrintWriter err;
 
-  public Runner(Stream<List<Plan>> stream, int estimatedTotal) throws IOException {
+  public Runner(Stream<List<Fragment>> stream, int estimatedTotal) throws IOException {
     this.stream = stream;
     this.estimatedTotal = estimatedTotal;
     this.i = new AtomicInteger(0);
@@ -43,14 +43,14 @@ public class Runner {
     final int partitions = args.length >= 4 ? Integer.parseInt(args[2]) : 1;
     final int partitionKey = args.length >= 4 ? Integer.parseInt(args[3]) : -1;
 
-    final List<Plan> frags = Enumerate.enumPlans();
+    final List<Fragment> frags = Enumerate.enumPlans();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
 
-    final List<List<Plan>> pairs =
+    final List<List<Fragment>> pairs =
         new ArrayList<>(Lists.cartesianProduct(frags, Lists.reverse(frags)));
     Collections.shuffle(pairs);
 
-    Stream<List<Plan>> stream = pairs.stream();
+    Stream<List<Fragment>> stream = pairs.stream();
     if (parallel) stream = stream.parallel();
 
     if (partitions != 1)
@@ -71,7 +71,7 @@ public class Runner {
     stream.forEach(xs -> doProve(xs.get(0), xs.get(1)));
   }
 
-  private void doProve(Plan g0, Plan g1) {
+  private void doProve(Fragment g0, Fragment g1) {
     if (g0.id() >= g1.id()) return;
 
     final int current = i.getAndIncrement();
@@ -95,7 +95,7 @@ public class Runner {
     }
   }
 
-  private void logError(Throwable ex, Plan g0, Plan g1) {
+  private void logError(Throwable ex, Fragment g0, Fragment g1) {
     synchronized (err) {
       err.println("====");
       err.println(g0);

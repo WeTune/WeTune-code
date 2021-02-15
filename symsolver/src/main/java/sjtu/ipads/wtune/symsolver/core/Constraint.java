@@ -13,6 +13,8 @@ public interface Constraint {
 
   Object[] targets();
 
+  boolean involves(Object obj);
+
   enum Kind {
     TableEq,
     PickEq,

@@ -12,6 +12,4 @@ public interface JoinNode extends PlanNode {
   List<OutputAttribute> leftAttributes();
 
   List<OutputAttribute> rightAttributes();
-
-  List<OutputAttribute> usedAttributes();
 }
