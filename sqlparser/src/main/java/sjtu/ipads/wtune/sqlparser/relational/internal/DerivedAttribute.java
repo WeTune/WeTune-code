@@ -61,7 +61,6 @@ public class DerivedAttribute extends BaseAttribute {
   @Override
   public Column column(boolean recursive) {
     if (!recursive) return null;
-
     final Attribute ref = reference(true);
     return ref == null ? null : ref.column(true);
   }
@@ -69,8 +68,7 @@ public class DerivedAttribute extends BaseAttribute {
   @Override
   public Attribute reference(boolean recursive) {
     final Attribute ref = reference0();
-    if (ref == null) return this;
-    if (!recursive) return ref;
+    if (!recursive || ref == null) return ref;
     return ref.reference(true);
   }
 

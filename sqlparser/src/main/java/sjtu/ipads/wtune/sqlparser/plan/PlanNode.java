@@ -54,7 +54,9 @@ public interface PlanNode {
    * @see OutputAttribute#refEquals(OutputAttribute)
    */
   default OutputAttribute resolveAttribute(OutputAttribute attr) {
-    for (OutputAttribute out : outputAttributes()) if (out.refEquals(attr)) return out;
+    for (OutputAttribute out : outputAttributes())
+      if (out.refEquals(attr))
+        return out;
     return null;
   }
 

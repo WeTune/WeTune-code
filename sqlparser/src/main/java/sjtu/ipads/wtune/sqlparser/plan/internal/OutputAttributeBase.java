@@ -34,6 +34,6 @@ public abstract class OutputAttributeBase implements OutputAttribute {
     if (this == other) return true;
 
     final OutputAttribute thisRef = this.reference(true), otherRef = other.reference(true);
-    return thisRef == otherRef;
+    return thisRef != null && thisRef == otherRef;
   }
 }

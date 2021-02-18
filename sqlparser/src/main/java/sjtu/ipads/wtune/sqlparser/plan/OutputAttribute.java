@@ -49,27 +49,11 @@ public interface OutputAttribute {
   }
 
   default ASTNode toSelectItem() {
-    final OutputAttribute ref = reference(false);
-    if (ref == this) {
-      final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
-
-      item.set(SELECT_ITEM_EXPR, expr().copy());
-      item.set(SELECT_ITEM_ALIAS, name());
-
-      return item;
-    }
-
-    final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
-    colName.set(COLUMN_NAME_TABLE, ref.qualification());
-    colName.set(COLUMN_NAME_COLUMN, ref.name());
-
-    final ASTNode colRef = ASTNode.expr(ExprKind.COLUMN_REF);
-    colRef.set(COLUMN_REF_COLUMN, colName);
-
+    final Column column = column(false);
+    final OutputAttribute ref = column != null ? this : reference(false);
     final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
-    item.set(SELECT_ITEM_EXPR, colRef);
     item.set(SELECT_ITEM_ALIAS, name());
-
+    item.set(SELECT_ITEM_EXPR, ref == null ? expr().copy() : ref.toColumnRef());
     return item;
   }
 

@@ -55,4 +55,11 @@ public class NativeOutputAttribute extends OutputAttributeBase {
 
   @Override
   public void setUsed(List<OutputAttribute> used) {}
+
+  @Override
+  public boolean refEquals(OutputAttribute other) {
+    if (other instanceof NativeOutputAttribute) return this == other;
+    else if (other instanceof DerivedOutputAttribute) return this == other.reference(true);
+    else return false;
+  }
 }

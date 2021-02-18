@@ -68,7 +68,7 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     for (OutputAttribute proj : projection) {
       final OutputAttribute resolved = proj.reference(false);
       final String[] refName = proj.referenceName();
-      if (resolved == proj && refName != null) {
+      if (resolved == null && refName != null) {
         final OutputAttribute ref = input.resolveAttribute(refName[0], refName[1]);
         proj.setReference(ref);
       }

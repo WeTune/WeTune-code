@@ -27,8 +27,8 @@ class NormalizeConstantTable {
 
   private static boolean canNormalize(ASTNode node) {
     return DERIVED_SOURCE.isInstance(node)
-           && JOINED_SOURCE.isInstance(node.parent())
-           && isConstantTable(node);
+        && JOINED_SOURCE.isInstance(node.parent())
+        && isConstantTable(node);
   }
 
   private static boolean isConstantTable(ASTNode derived) {
@@ -58,7 +58,7 @@ class NormalizeConstantTable {
 
       final Attribute rootRef = attr.reference(true);
 
-      if (rootRef.owner() != targetRelation) continue;
+      if (rootRef == null || rootRef.owner() != targetRelation) continue;
       assert LITERAL.isInstance(rootRef.selectItem().get(SELECT_ITEM_EXPR));
 
       // If the expr is an ORDER BY item then just remove it.

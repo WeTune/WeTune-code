@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
+import sjtu.ipads.wtune.sqlparser.relational.internal.DerivedAttribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ public class DerivedOutputAttribute extends OutputAttributeBase {
     final List<Attribute> attrs = relation.attributes();
     final List<OutputAttribute> outAttrs = new ArrayList<>(attrs.size());
     for (Attribute attr : attrs) {
+      assert attr instanceof DerivedAttribute;
+
       final ASTNode expr = attr.selectItem().get(SELECT_ITEM_EXPR);
       final Attribute ref = attr.reference(false);
       final String[] referenceName =
@@ -53,13 +56,12 @@ public class DerivedOutputAttribute extends OutputAttributeBase {
   @Override
   public Column column(boolean recursive) {
     final OutputAttribute ref = reference(true);
-    return ref == this ? null : ref.column(true);
+    return ref == null ? null : ref.column(true);
   }
 
   @Override
   public OutputAttribute reference(boolean recursive) {
-    if (reference == null) return this;
-    if (!recursive) return reference;
+    if (!recursive || reference == null) return reference;
     return reference.reference(true);
   }
 
@@ -76,5 +78,13 @@ public class DerivedOutputAttribute extends OutputAttributeBase {
   @Override
   public void setUsed(List<OutputAttribute> used) {
     this.used = used;
+  }
+
+  @Override
+  public boolean refEquals(OutputAttribute other) {
+    if (other instanceof NativeOutputAttribute) return reference(true) == other;
+    else if (other instanceof DerivedOutputAttribute)
+      return reference(true) == other.reference(true);
+    else return false;
   }
 }
