@@ -1,8 +1,7 @@
-package sjtu.ipads.wtune.sqlparser.plan.internal;
+package sjtu.ipads.wtune.sqlparser.plan;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.Deque;
 import java.util.LinkedList;

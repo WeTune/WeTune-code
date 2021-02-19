@@ -10,6 +10,8 @@ import sjtu.ipads.wtune.superopt.util.Constraints;
 import java.util.List;
 
 public interface Interpretations extends MultiVersion {
+  Constraints constraints();
+
   InputInterpretation getInput(Placeholder placeholder);
 
   AttributeInterpretation getAttributes(Placeholder placeholder);

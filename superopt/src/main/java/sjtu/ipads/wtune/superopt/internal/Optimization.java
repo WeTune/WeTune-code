@@ -3,9 +3,9 @@ package sjtu.ipads.wtune.superopt.internal;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.matching.Hint;
-import sjtu.ipads.wtune.superopt.fragment.matching.Matching;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
+import sjtu.ipads.wtune.superopt.optimization.Hint;
+import sjtu.ipads.wtune.superopt.optimization.Matching;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
 
@@ -62,7 +62,7 @@ public class Optimization {
         continue;
       }
 
-      final PlanNode[] nodePreds = node.predecessors();
+      final PlanNode[] nodePreds = n.predecessors();
       final Operator[] opPreds = op.predecessors();
 
       // Subtlety here is that
@@ -74,7 +74,7 @@ public class Optimization {
       // The matching of each child will be based on each of `lastResults`.
 
       List<Matching> lastResults = singletonList(Matching.build(n, inter.snapshot()));
-      for (int i = 0, bound = nodePreds.length; i < bound; i++) {
+      for (int i = 0, bound = opPreds.length; i < bound; i++) {
         // failed to match last child, break
         if (lastResults.isEmpty()) break;
 

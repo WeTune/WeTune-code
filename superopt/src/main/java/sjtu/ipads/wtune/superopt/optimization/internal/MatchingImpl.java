@@ -1,8 +1,8 @@
-package sjtu.ipads.wtune.superopt.fragment.matching.internal;
+package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.superopt.fragment.matching.Matching;
+import sjtu.ipads.wtune.superopt.optimization.Matching;
 
 public class MatchingImpl implements Matching {
   private final PlanNode matchPoint;

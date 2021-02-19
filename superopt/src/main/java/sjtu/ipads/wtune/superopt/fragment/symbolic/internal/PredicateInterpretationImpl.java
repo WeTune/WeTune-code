@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.PredicateInterpretation;
 
 public class PredicateInterpretationImpl extends InterpretationBase<ASTNode>
@@ -11,7 +10,7 @@ public class PredicateInterpretationImpl extends InterpretationBase<ASTNode>
   }
 
   @Override
-  public boolean isCompatible(Interpretation<ASTNode> other) {
-    return this.object().equals(other.object());
+  public boolean isCompatible(ASTNode obj) {
+    return this.object().equals(obj);
   }
 }

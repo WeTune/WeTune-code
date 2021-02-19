@@ -1,9 +1,8 @@
-package sjtu.ipads.wtune.sqlparser.plan.internal;
+package sjtu.ipads.wtune.sqlparser.plan;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.ArrayList;
@@ -78,6 +77,7 @@ public class ToPlanTranslator {
         op.setPredecessor(1, right);
       }
 
+      op.resolveUsedAttributes();
       return op;
 
     } else return translate(tableSource);

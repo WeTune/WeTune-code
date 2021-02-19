@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.internal.ToASTTranslator;
-import sjtu.ipads.wtune.sqlparser.plan.internal.ToPlanTranslator;
+import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
+import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.internal.Optimization;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
@@ -67,6 +67,58 @@ public class TestSubstitution {
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `a`.`i` AS `i` FROM `a` AS `a`",
+        ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
+  }
+
+  @Test
+  void test2() {
+    final String schema =
+        "create table a (i int); "
+            + "create table b (j int references a(i)); "
+            + "create table c (k int)";
+    final String sql = "select b.* from a join b on a.i = b.j";
+    final String substitution =
+        "Proj<c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))"
+            + "|Proj<c3>(Input<t2>)"
+            + "|TableEq(t0,t2);PickEq(c0,c3);"
+            + "PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
+            + "Reference(t0,c1,t1,c2)";
+    final ASTNode ast = ASTParser.mysql().parse(sql);
+    ast.context().setSchema(Schema.parse(MYSQL, schema));
+
+    final PlanNode plan = ToPlanTranslator.translate(ast);
+    final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
+
+    final Set<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    assertEquals(1, optimized.size());
+    assertEquals(
+        "SELECT `b`.`j` AS `j` FROM `b` AS `b`",
+        ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
+  }
+
+  @Test
+  void test3() {
+    final String schema =
+        "create table a (i int); "
+            + "create table b (j int references a(i)); "
+            + "create table c (k int)";
+    final String sql = "select b.* from a join b on a.i = b.j join c on b.j = c.k";
+    final String substitution =
+        "Proj<c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))"
+            + "|Proj<c3>(Input<t2>)"
+            + "|TableEq(t0,t2);PickEq(c0,c3);"
+            + "PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
+            + "Reference(t0,c1,t1,c2)";
+    final ASTNode ast = ASTParser.mysql().parse(sql);
+    ast.context().setSchema(Schema.parse(MYSQL, schema));
+
+    final PlanNode plan = ToPlanTranslator.translate(ast);
+    final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
+
+    final Set<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    assertEquals(1, optimized.size());
+    assertEquals(
+        "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
         ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
   }
 }

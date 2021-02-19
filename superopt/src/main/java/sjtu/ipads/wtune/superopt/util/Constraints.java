@@ -36,6 +36,14 @@ public class Constraints implements Iterable<Constraint> {
     return Collections.emptyList();
   }
 
+  public boolean requiresReference(Placeholder x, Placeholder y) {
+    for (Constraint constraint : constraints)
+      if (constraint.kind() == Constraint.Kind.Reference
+          && constraint.involves(x)
+          && constraint.involves(y)) return true;
+    return false;
+  }
+
   private static List<Set<Placeholder>> calcEquivalentClass(List<Constraint> constraint) {
     final List<Set<Placeholder>> equivalentClasses = new ArrayList<>();
 

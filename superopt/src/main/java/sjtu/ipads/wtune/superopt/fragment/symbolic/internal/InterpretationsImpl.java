@@ -32,6 +32,11 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
+  public Constraints constraints() {
+    return constraints;
+  }
+
+  @Override
   public InputInterpretation getInput(Placeholder placeholder) {
     return ((InputInterpretation) interpretations.get(placeholder));
   }

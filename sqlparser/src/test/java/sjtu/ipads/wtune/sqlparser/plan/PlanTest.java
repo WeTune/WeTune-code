@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.internal.ToASTTranslator;
-import sjtu.ipads.wtune.sqlparser.plan.internal.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

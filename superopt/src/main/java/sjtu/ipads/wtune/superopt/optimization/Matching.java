@@ -1,10 +1,10 @@
-package sjtu.ipads.wtune.superopt.fragment.matching;
+package sjtu.ipads.wtune.superopt.optimization;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.matching.internal.MatchingImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
+import sjtu.ipads.wtune.superopt.optimization.internal.MatchingImpl;
 
 public interface Matching {
   PlanNode matchPoint();

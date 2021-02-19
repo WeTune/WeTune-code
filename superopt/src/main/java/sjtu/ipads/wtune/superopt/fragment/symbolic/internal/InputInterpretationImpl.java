@@ -4,7 +4,6 @@ import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.InputInterpretation;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretation;
 
 public class InputInterpretationImpl extends InterpretationBase<PlanNode>
     implements InputInterpretation {
@@ -13,8 +12,7 @@ public class InputInterpretationImpl extends InterpretationBase<PlanNode>
   }
 
   @Override
-  public boolean isCompatible(Interpretation<PlanNode> other) {
-    final PlanNode otherNode = other.object();
+  public boolean isCompatible(PlanNode otherNode) {
     final PlanNode thisNode = object();
     if (thisNode == otherNode) return true;
     if (otherNode.type() != thisNode.type()) return false;
