@@ -59,7 +59,7 @@ public class ToASTTranslator {
     stack.peek().setProjection(op.selectItems());
   }
 
-  private void translateFilter(PlainFilterNode op) {
+  private void translateFilter(FilterNode op) {
     assert !stack.isEmpty();
     stack.peek().appendSelection(op.expr(), true);
   }

@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class PlaceholdersImpl implements Placeholders {
@@ -48,17 +49,17 @@ public class PlaceholdersImpl implements Placeholders {
 
   @Override
   public Collection<Placeholder> tables() {
-    return tables.values();
+    return tables == null ? Collections.emptyList() : tables.values();
   }
 
   @Override
   public Collection<Placeholder> picks() {
-    return picks.values();
+    return picks == null ? Collections.emptyList() : picks.values();
   }
 
   @Override
   public Collection<Placeholder> predicates() {
-    return predicates.values();
+    return predicates == null ? Collections.emptyList() : predicates.values();
   }
 
   @Override

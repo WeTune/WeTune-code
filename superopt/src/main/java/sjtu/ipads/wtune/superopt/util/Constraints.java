@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.symsolver.core.*;
 
 import java.util.*;
 
-public class Constraints implements Iterable<Constraint> {
+public class Constraints extends AbstractList<Constraint> {
   private final List<Constraint> constraints;
   private final List<Set<Placeholder>> equivalentClasses;
 
@@ -18,8 +18,18 @@ public class Constraints implements Iterable<Constraint> {
   }
 
   @Override
+  public Constraint get(int index) {
+    return constraints.get(index);
+  }
+
+  @Override
   public Iterator<Constraint> iterator() {
     return constraints.iterator();
+  }
+
+  @Override
+  public int size() {
+    return constraints.size();
   }
 
   public Placeholder[] sourceOf(Placeholder pick) {

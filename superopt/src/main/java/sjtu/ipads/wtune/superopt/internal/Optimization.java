@@ -2,33 +2,32 @@ package sjtu.ipads.wtune.superopt.internal;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.optimization.Hint;
-import sjtu.ipads.wtune.superopt.optimization.Matching;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
+import sjtu.ipads.wtune.superopt.optimization.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public class Optimization {
-  private final Set<PlanNode> known = new HashSet<>();
+  private final List<PlanNode> optimized = new ArrayList<>();
+  private final Set<String> known = new HashSet<>();
   private final SubstitutionRepo repo;
 
   public Optimization(SubstitutionRepo repo) {
     this.repo = repo;
   }
 
-  public Set<PlanNode> optimize(PlanNode op) {
+  public List<PlanNode> optimize(PlanNode op) {
+    optimized.clear();
     known.clear();
     matchAndSubstitute(op);
-    return known;
+    return optimized;
   }
 
   private void matchAndSubstitute(PlanNode op) {
@@ -38,7 +37,10 @@ public class Optimization {
         // impl note: `substituted` should be plan root instead of matching point
         final PlanNode substituted = matching.substitute(sub.g1(), interpretations);
         // match the substituted plan from beginning
-        if (known.add(substituted)) matchAndSubstitute(substituted);
+        if (known.add(ToASTTranslator.translate(substituted).toString())) {
+          optimized.add(substituted);
+          matchAndSubstitute(substituted);
+        }
       }
     }
     // percolate down
@@ -46,7 +48,10 @@ public class Optimization {
   }
 
   private Iterable<Substitution> match0(PlanNode op) {
-    return repo;
+    return stream(Fingerprint.make(op))
+        .map(repo::findByFingerprint)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
   }
 
   private static List<Matching> match1(PlanNode node, Operator op, Interpretations inter) {

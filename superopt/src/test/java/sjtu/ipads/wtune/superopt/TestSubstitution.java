@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.superopt.internal.Optimization;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
@@ -37,7 +37,7 @@ public class TestSubstitution {
     final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
 
     final Optimization opt = new Optimization(repo);
-    final Set<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
+    final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
     assertEquals(
@@ -62,7 +62,7 @@ public class TestSubstitution {
     final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
 
     final Optimization opt = new Optimization(repo);
-    final Set<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
+    final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
     assertEquals(
@@ -89,7 +89,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
 
-    final Set<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    final List<PlanNode> optimized = new Optimization(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b`",
@@ -115,7 +115,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
 
-    final Set<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    final List<PlanNode> optimized = new Optimization(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
