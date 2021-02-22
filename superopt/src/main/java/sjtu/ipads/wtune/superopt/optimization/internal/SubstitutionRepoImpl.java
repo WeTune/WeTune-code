@@ -5,7 +5,7 @@ import com.google.common.collect.Multimap;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
-import sjtu.ipads.wtune.superopt.internal.Generalize;
+import sjtu.ipads.wtune.superopt.internal.Generalization;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
 import sjtu.ipads.wtune.superopt.util.Constraints;
@@ -59,7 +59,7 @@ public class SubstitutionRepoImpl implements SubstitutionRepo {
 
   @Override
   public SubstitutionRepo add(Substitution sub) {
-    if (Generalize.canGeneralize(sub, this)) return this;
+    if (Generalization.canGeneralize(sub, this)) return this;
     if (isEligibleTarget(sub.g1(), sub)) {
       substitutions.add(sub);
       index.put(FragmentFingerprint.make(sub.g0()), sub);

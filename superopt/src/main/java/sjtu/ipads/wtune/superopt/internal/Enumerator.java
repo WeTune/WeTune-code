@@ -17,16 +17,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalize.canonicalize;
+import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
 
-public class Enumerate {
+public class Enumerator {
   public static final int MAX_FRAGMENT_SIZE = 4;
 
   public static List<Fragment> enumPlans() {
     return enumPlans0(0, singleton(Fragment.empty())).parallelStream()
         .peek(Fragment::setup)
         .sorted(Fragment::compareTo)
-        .filter(Enumerate::prune)
+        .filter(Enumerator::prune)
         .collect(Collectors.toList());
   }
 

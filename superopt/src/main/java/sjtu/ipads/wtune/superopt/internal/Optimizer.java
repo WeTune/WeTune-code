@@ -14,12 +14,12 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
-public class Optimization {
+public class Optimizer {
   private final List<PlanNode> optimized = new ArrayList<>();
   private final Set<String> known = new HashSet<>();
   private final SubstitutionRepo repo;
 
-  public Optimization(SubstitutionRepo repo) {
+  public Optimizer(SubstitutionRepo repo) {
     this.repo = repo;
   }
 

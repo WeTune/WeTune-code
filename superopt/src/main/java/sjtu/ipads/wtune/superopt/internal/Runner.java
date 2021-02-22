@@ -43,7 +43,7 @@ public class Runner {
     final int partitions = args.length >= 4 ? Integer.parseInt(args[2]) : 1;
     final int partitionKey = args.length >= 4 ? Integer.parseInt(args[3]) : -1;
 
-    final List<Fragment> frags = Enumerate.enumPlans();
+    final List<Fragment> frags = Enumerator.enumPlans();
     for (int i = 0, bound = frags.size(); i < bound; i++) frags.get(i).setId(i);
 
     final List<List<Fragment>> pairs =
@@ -78,7 +78,7 @@ public class Runner {
     if (current % 10 == 0) LOG.log(System.Logger.Level.INFO, "{0} / {1}", current, estimatedTotal);
 
     try {
-      final Collection<Substitution> results = Prove.prove(g0, g1, 10000);
+      final Collection<Substitution> results = Prover.prove(g0, g1, 10000);
       logResult(results);
     } catch (Throwable ex) {
       logError(ex, g0, g1);

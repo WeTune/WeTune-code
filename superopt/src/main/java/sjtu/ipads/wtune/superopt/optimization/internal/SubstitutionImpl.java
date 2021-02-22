@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.listSort;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalize.canonicalize;
+import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
 
 public class SubstitutionImpl implements Substitution {
   private final Fragment g0, g1;

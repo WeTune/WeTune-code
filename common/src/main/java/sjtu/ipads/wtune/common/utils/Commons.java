@@ -162,6 +162,7 @@ public interface Commons {
     return ts;
   }
 
+  @SafeVarargs
   static <T> List<T> listConcatView(List<T>... ts) {
     return new ConcatenatedList<>(Arrays.asList(ts));
   }

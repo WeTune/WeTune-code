@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
 import static sjtu.ipads.wtune.superopt.fragment.Operator.plainFilter;
 import static sjtu.ipads.wtune.superopt.fragment.Operator.subqueryFilter;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalize.canonicalize;
+import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
 
-public class TestCanonicalize {
+public class TestCanonicalization {
   @Test
   void test() {
     final Fragment fragment =

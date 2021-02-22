@@ -18,9 +18,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.listConcatView;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionFilter;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 
 public class FilterHint {
@@ -38,14 +38,12 @@ public class FilterHint {
 
     final List<List<PlanNode>> plainDist = distributePlainFilters(plainFilters, plainOps, inter);
     final List<List<PlanNode>> subDist = distributeSubqueryFilters(subFilters, subOps, inter);
+    final PlanNode predecessor = filter.predecessors()[0];
 
-    if (subDist.isEmpty()) return listMap(FilterHint::rebuildFilters, plainDist);
-    else if (plainDist.isEmpty()) return listMap(FilterHint::rebuildFilters, subDist);
-    else
-      return Lists.cartesianProduct(plainDist, subDist).stream()
-          .map(it -> listConcatView(it.get(0), it.get(1)))
-          .map(FilterHint::rebuildFilters)
-          .collect(Collectors.toList());
+    return Lists.cartesianProduct(plainDist, subDist).stream()
+        .map(it -> listConcatView(it.get(0), it.get(1)))
+        .map(it -> rebuildFilters(it, predecessor))
+        .collect(Collectors.toList());
   }
 
   private static List<PlainFilter> collectPlainFilters(Operator op) {
@@ -76,7 +74,7 @@ public class FilterHint {
     return new SubqueryFilterDistributor(filters, ops, inter).distribute();
   }
 
-  private static PlanNode rebuildFilters(List<PlanNode> nodes) {
+  private static PlanNode rebuildFilters(List<PlanNode> nodes, PlanNode predecessor) {
     assert !nodes.isEmpty();
 
     final PlanNode head = nodes.get(0).copy();
@@ -87,6 +85,8 @@ public class FilterHint {
       prev.setPredecessor(0, copy);
       prev = copy;
     }
+
+    prev.setPredecessor(0, predecessor.copy());
 
     return head;
   }
@@ -103,7 +103,7 @@ public class FilterHint {
   private abstract static class FilterDistributor<T extends Operator> {
     protected final Set<FilterNode> filters;
     protected final List<T> operators;
-    protected final Collection<FilterNode> used;
+    protected final Set<FilterNode> used;
     protected final Interpretations inter;
     private final List<PlanNode> assigned;
     private final List<List<PlanNode>> results;
@@ -124,7 +124,8 @@ public class FilterHint {
 
     private void distribute0(int idx) {
       if (idx >= operators.size()) {
-        results.add(new ArrayList<>(assigned));
+        // only if all filters are occupied, the distribution is valid
+        if (used.size() == filters.size()) results.add(new ArrayList<>(assigned));
         return;
       }
 
@@ -167,9 +168,13 @@ public class FilterHint {
 
     @Override
     protected Iterable<Set<FilterNode>> makeAssignments(int idx) {
-      final Set<FilterNode> candidates = candidatesOf(operators.get(idx));
+      final Set<FilterNode> candidates = Sets.difference(candidatesOf(operators.get(idx)), used);
+      if (idx == operators.size() - 1)
+        return singletonList(candidates); // last one should occupy all the remaining
+
       final int max = filters.size() - used.size() - (operators.size() - idx - 1);
       assert max > 0;
+
       return Sets.combinations(candidates, max);
     }
   }

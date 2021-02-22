@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.internal.Prove;
+import sjtu.ipads.wtune.superopt.internal.Prover;
 import sjtu.ipads.wtune.superopt.internal.Runner;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
@@ -68,7 +68,7 @@ public class Main {
     final Fragment q0 = wrap(proj(innerJoin(null, null))).setup();
     final Fragment q1 = wrap(proj(null)).setup();
 
-    final Collection<Substitution> constraints = Prove.prove(q0, q1, -1);
+    final Collection<Substitution> constraints = Prover.prove(q0, q1, -1);
     constraints.forEach(System.out::println);
   }
 }

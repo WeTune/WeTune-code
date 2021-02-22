@@ -17,13 +17,13 @@ import static java.util.Comparator.comparingInt;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
-public class Prove {
+public class Prover {
   private final Fragment g0, g1;
   private final Semantic semantic0, semantic1;
 
   private Numbering numbering;
 
-  public Prove(Fragment g0, Fragment g1) {
+  public Prover(Fragment g0, Fragment g1) {
     this.g0 = g0;
     this.g1 = g1;
     this.semantic0 = g0.semantic();
@@ -31,7 +31,7 @@ public class Prove {
   }
 
   public static Collection<Substitution> prove(Fragment g0, Fragment g1, int timeout) {
-    return new Prove(g0, g1).prove(timeout);
+    return new Prover(g0, g1).prove(timeout);
   }
 
   public Collection<Substitution> prove(int timeout) {

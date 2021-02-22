@@ -109,7 +109,7 @@ public class ToASTTranslator {
         if (selection == null) selection = node;
         else {
           final ASTNode newSelection = expr(ExprKind.BINARY);
-          newSelection.set(BINARY_LEFT, node);
+          newSelection.set(BINARY_LEFT, node.copy());
           newSelection.set(BINARY_RIGHT, selection);
           newSelection.set(BINARY_OP, conjunctive ? AND : OR);
           selection = newSelection;

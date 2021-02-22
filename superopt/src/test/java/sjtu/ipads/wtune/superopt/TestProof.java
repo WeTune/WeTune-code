@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
-import sjtu.ipads.wtune.superopt.internal.Prove;
+import sjtu.ipads.wtune.superopt.internal.Prover;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 
 import java.util.Collection;
@@ -28,7 +28,7 @@ public class TestProof {
     private void solve() {
       if (results != null) return;
       if (g0 == null || g1 == null) throw new IllegalStateException();
-      results = Prove.prove(g0, g1, -1);
+      results = Prover.prove(g0, g1, -1);
       strs = results == null ? null : listMap(Object::toString, results);
       numbering = Numbering.make();
       numbering.number(g0, g1);

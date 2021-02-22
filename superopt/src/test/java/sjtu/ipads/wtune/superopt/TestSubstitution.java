@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.internal.Optimization;
+import sjtu.ipads.wtune.superopt.internal.Optimizer;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
 
@@ -36,7 +36,7 @@ public class TestSubstitution {
     final Substitution sub = Substitution.rebuild(substitution);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
 
-    final Optimization opt = new Optimization(repo);
+    final Optimizer opt = new Optimizer(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
@@ -61,7 +61,7 @@ public class TestSubstitution {
     final Substitution sub = Substitution.rebuild(substitution);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
 
-    final Optimization opt = new Optimization(repo);
+    final Optimizer opt = new Optimizer(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
@@ -89,7 +89,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b`",
@@ -115,7 +115,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = new Optimization(repo).optimize(plan);
+    final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",

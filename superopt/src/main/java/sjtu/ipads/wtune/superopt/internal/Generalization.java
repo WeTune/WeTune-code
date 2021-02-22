@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
-public class Generalize {
+public class Generalization {
   public static boolean canGeneralize(Substitution sub, SubstitutionRepo repo) {
     final Substitution copy = sub.copy();
     return canGeneralize(copy, s -> s != copy && (repo.contains(s) || repo.contains(s.flip())));

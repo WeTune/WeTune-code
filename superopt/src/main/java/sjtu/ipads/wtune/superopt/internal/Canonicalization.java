@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.superopt.internal;
 
 import sjtu.ipads.wtune.superopt.fragment.*;
 
-public class Canonicalize implements OperatorVisitor {
+public class Canonicalization implements OperatorVisitor {
   private Operator root;
 
-  private Canonicalize(Operator root) {
+  private Canonicalization(Operator root) {
     this.root = root;
   }
 
@@ -30,7 +30,7 @@ public class Canonicalize implements OperatorVisitor {
   }
 
   public static Fragment canonicalize(Fragment fragment) {
-    final Canonicalize visitor = new Canonicalize(fragment.head());
+    final Canonicalization visitor = new Canonicalization(fragment.head());
     fragment.acceptVisitor(visitor);
     fragment.setHead(visitor.root);
     return fragment;
