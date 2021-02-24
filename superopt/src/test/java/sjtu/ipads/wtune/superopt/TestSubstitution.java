@@ -36,7 +36,7 @@ public class TestSubstitution {
     final Substitution sub = Substitution.rebuild(substitution);
     final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
-    final Optimizer opt = new Optimizer(repo);
+    final Optimizer opt = Optimizer.make(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
@@ -61,7 +61,7 @@ public class TestSubstitution {
     final Substitution sub = Substitution.rebuild(substitution);
     final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
-    final Optimizer opt = new Optimizer(repo);
+    final Optimizer opt = Optimizer.make(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
 
     assertEquals(1, optimized.size());
@@ -89,7 +89,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
+    final List<PlanNode> optimized = Optimizer.make(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b`",
@@ -115,7 +115,7 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.translate(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
+    final List<PlanNode> optimized = Optimizer.make(repo).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",

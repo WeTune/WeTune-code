@@ -10,23 +10,24 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 import java.util.Collections;
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanAttribute.fromInput;
+import static sjtu.ipads.wtune.sqlparser.plan.internal.NativePlanAttribute.fromColumn;
 
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final Table table;
   private final String alias;
-  private List<PlanAttribute> attributes;
+  private final List<PlanAttribute> attributes;
 
   private InputNodeImpl(Relation rel) {
     this.table = rel.table();
     this.alias = rel.alias();
-    this.attributes = fromInput(table, alias);
+    this.attributes = listMap(it -> fromColumn(alias, it), table.columns());
   }
 
   private InputNodeImpl(Table table, String alias, List<PlanAttribute> attributes) {

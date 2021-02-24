@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
@@ -43,6 +44,8 @@ public class ToASTTranslator {
     else if (node instanceof PlainFilterNode) translateFilter((PlainFilterNode) node);
     else if (node instanceof SubqueryFilterNode) translateFilter((SubqueryFilterNode) node);
     else if (node instanceof AggNode) translateAgg((AggNode) node);
+    else if (node instanceof SortNode) translateSort((SortNode) node);
+    else if (node instanceof LimitNode) translateLimit((LimitNode) node);
     else assert false;
   }
 
@@ -76,13 +79,6 @@ public class ToASTTranslator {
     stack.peek().appendFilter(binary, true);
   }
 
-  private void translateAgg(AggNode agg) {
-    assert !stack.isEmpty();
-    final Query q = stack.peek();
-    q.setGroupKeys(agg.groupKeys());
-    q.setAggregation(agg.aggregations());
-  }
-
   private void translateJoin(JoinNode op) {
     final ASTNode rightSource = stack.pop().assembleAsSource();
     final ASTNode leftSource = stack.pop().assembleAsSource();
@@ -96,11 +92,33 @@ public class ToASTTranslator {
     stack.push(Query.from(join));
   }
 
+  private void translateAgg(AggNode agg) {
+    assert !stack.isEmpty();
+    final Query q = stack.peek();
+    q.setGroupKeys(agg.groupKeys());
+    q.setAggregation(agg.aggregations());
+  }
+
+  private void translateSort(SortNode sort) {
+    assert !stack.isEmpty();
+    stack.peek().setOrderKeys(sort.orderKeys());
+  }
+
+  private void translateLimit(LimitNode limit) {
+    assert !stack.isEmpty();
+    final Query q = stack.peek();
+    q.setLimit(limit.limit());
+    q.setOffset(limit.offset());
+  }
+
   private static class Query {
     private List<ASTNode> projection;
     private ASTNode filter;
     private ASTNode source;
     private List<ASTNode> groupKeys;
+    private List<ASTNode> orderKeys;
+    private ASTNode limit;
+    private ASTNode offset;
 
     private static Query from(ASTNode source) {
       final Query rel = new Query();
@@ -143,6 +161,18 @@ public class ToASTTranslator {
       this.groupKeys = groupKeys;
     }
 
+    private void setOrderKeys(List<ASTNode> orderKeys) {
+      this.orderKeys = orderKeys;
+    }
+
+    private void setLimit(ASTNode limit) {
+      this.limit = limit;
+    }
+
+    public void setOffset(ASTNode offset) {
+      this.offset = offset;
+    }
+
     private ASTNode assembleAsQuery() {
       if (projection == null && filter == null && QUERY.isInstance(source)) return source;
 
@@ -150,10 +180,14 @@ public class ToASTTranslator {
       querySpec.set(QUERY_SPEC_SELECT_ITEMS, selectItems());
       querySpec.set(QUERY_SPEC_FROM, source);
       if (filter != null) querySpec.set(QUERY_SPEC_WHERE, filter);
-      if (groupKeys != null && !groupKeys.isEmpty()) querySpec.set(QUERY_SPEC_GROUP_BY, groupKeys);
+      if (!isEmpty(groupKeys)) querySpec.set(QUERY_SPEC_GROUP_BY, groupKeys);
 
       final ASTNode query = node(QUERY);
       query.set(QUERY_BODY, querySpec);
+
+      if (!isEmpty(orderKeys)) query.set(QUERY_ORDER_BY, orderKeys);
+      if (limit != null) query.set(QUERY_LIMIT, limit);
+      if (offset != null) query.set(QUERY_OFFSET, offset);
 
       return query;
     }

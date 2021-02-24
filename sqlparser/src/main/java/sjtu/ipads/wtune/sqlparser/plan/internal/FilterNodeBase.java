@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode {
   protected final ASTNode expr;
@@ -20,13 +20,7 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   @Override
   public ASTNode expr() {
     final ASTNode copy = expr.deepCopy();
-    final List<ASTNode> nodes = collectColumnRefs(copy);
-
-    for (int i = 0, bound = nodes.size(); i < bound; i++) {
-      final PlanAttribute usedAttr = usedAttributes.get(i);
-      if (usedAttr != null) nodes.get(i).update(usedAttr.toColumnRef());
-    }
-
+    updateColumnRefs(gatherColumnRefs(copy), usedAttributes);
     return copy;
   }
 
@@ -43,7 +37,7 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   @Override
   public void resolveUsedAttributes() {
     if (usedAttributes == null)
-      usedAttributes = resolveUsedAttributes0(collectColumnRefs(expr), predecessors()[0]);
+      usedAttributes = resolveUsedAttributes0(gatherColumnRefs(expr), predecessors()[0]);
     else usedAttributes = resolveUsedAttributes1(usedAttributes, predecessors()[0]);
   }
 }

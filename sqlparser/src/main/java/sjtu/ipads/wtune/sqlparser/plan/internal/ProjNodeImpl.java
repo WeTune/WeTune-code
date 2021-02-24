@@ -12,7 +12,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private final List<PlanAttribute> projections;
@@ -52,7 +52,7 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
           final PlanAttribute ref = input.resolveAttribute(refName[0], refName[1]);
           proj.setUsed(ref != null ? singletonList(ref) : emptyList());
 
-        } else proj.setUsed(resolveUsedAttributes0(collectColumnRefs(proj.expr()), input));
+        } else proj.setUsed(resolveUsedAttributes0(gatherColumnRefs(proj.expr()), input));
       else proj.setUsed(resolveUsedAttributes1(proj.used(), input));
     }
   }

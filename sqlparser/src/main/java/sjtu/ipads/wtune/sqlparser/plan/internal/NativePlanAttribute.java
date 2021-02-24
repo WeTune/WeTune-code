@@ -19,6 +19,10 @@ public class NativePlanAttribute extends PlanAttributeBase {
     this.column = column;
   }
 
+  public static PlanAttribute fromColumn(String tableAlias, Column c) {
+    return new NativePlanAttribute(tableAlias, c);
+  }
+
   public static List<PlanAttribute> build(Table rel, String tableAlias) {
     final Collection<? extends Column> columns = rel.columns();
     return listMap(it -> new NativePlanAttribute(tableAlias, it), columns);

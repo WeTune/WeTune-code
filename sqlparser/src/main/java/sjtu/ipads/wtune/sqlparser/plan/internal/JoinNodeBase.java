@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.Commons.listConcatView;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   protected final ASTNode onCondition;
@@ -77,7 +77,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
       // otherwise, copy the original expression (and rectify column refs)
       final ASTNode copy = onCondition.deepCopy();
 
-      final List<ASTNode> nodes = collectColumnRefs(copy);
+      final List<ASTNode> nodes = gatherColumnRefs(copy);
 
       for (int i = 0; i < used.size(); i++) {
         final PlanAttribute usedAttr = used.get(i);
@@ -90,7 +90,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public List<PlanAttribute> outputAttributes() {
-    return listConcatView(
+    return listJoin(
         predecessors()[0].outputAttributes(), predecessors()[1].outputAttributes());
   }
 
@@ -116,7 +116,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public void resolveUsedAttributes() {
-    if (used == null) used = resolveUsedAttributes0(collectColumnRefs(onCondition), this);
+    if (used == null) used = resolveUsedAttributes0(gatherColumnRefs(onCondition), this);
     else used = resolveUsedAttributes1(used, this);
 
     left = listFilter(Objects::nonNull, resolveUsedAttributes1(used, predecessors()[0]));

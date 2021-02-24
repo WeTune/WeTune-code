@@ -11,8 +11,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
 public class DerivedPlanAttribute extends PlanAttributeBase {
@@ -25,6 +24,18 @@ public class DerivedPlanAttribute extends PlanAttributeBase {
     super(qualification, name);
     this.expr = expr;
     this.referenceName = referenceName;
+  }
+
+  public static PlanAttribute fromExpr(String qualification, String name, ASTNode expr) {
+    final String[] refName;
+    if (COLUMN_REF.isInstance(expr)) {
+      if (qualification == null) qualification = expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_TABLE);
+
+      final ASTNode colName = expr.get(COLUMN_REF_COLUMN);
+      refName = new String[] {colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN)};
+    } else refName = null;
+
+    return new DerivedPlanAttribute(qualification, name, expr, refName);
   }
 
   public static List<PlanAttribute> build(List<Attribute> attrs, String qualification) {

@@ -47,6 +47,8 @@ public abstract class PlanNodeBase implements PlanNode {
     return node;
   }
 
+  protected abstract PlanNode copy0();
+
   protected static List<PlanAttribute> resolveUsedAttributes0(
       List<ASTNode> columnRefs, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, columnRefs);
@@ -57,5 +59,12 @@ public abstract class PlanNodeBase implements PlanNode {
     return listMap(lookup::resolveAttribute, attr);
   }
 
-  protected abstract PlanNode copy0();
+  protected static List<ASTNode> updateColumnRefs(
+      List<ASTNode> refs, List<PlanAttribute> usedAttrs) {
+    for (int i = 0, bound = refs.size(); i < bound; i++) {
+      final PlanAttribute usedAttr = usedAttrs.get(i);
+      if (usedAttr != null) refs.get(i).update(usedAttr.toColumnRef());
+    }
+    return refs;
+  }
 }

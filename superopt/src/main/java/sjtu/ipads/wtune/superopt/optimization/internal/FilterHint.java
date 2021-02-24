@@ -63,7 +63,7 @@ public class FilterHint {
     if (distributor.filters.size() - subOps.size() < plainOps.size()) return emptyList();
 
     // distribute nodes to operators
-    distributor.distribute(listConcatView(subOps, plainOps), 0);
+    distributor.distribute(listJoin(subOps, plainOps), 0);
 
     // rebuild filter chain
     final PlanNode successor = filterNodes.get(0).successor();
@@ -190,6 +190,6 @@ public class FilterHint {
     binary.set(BINARY_RIGHT, f1.expr());
     binary.set(BINARY_OP, BinaryOp.AND);
 
-    return PlainFilterNode.make(binary, listConcatView(f0.usedAttributes(), f1.usedAttributes()));
+    return PlainFilterNode.make(binary, listJoin(f0.usedAttributes(), f1.usedAttributes()));
   }
 }

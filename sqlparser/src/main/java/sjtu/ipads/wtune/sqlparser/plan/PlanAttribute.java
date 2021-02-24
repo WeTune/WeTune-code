@@ -7,14 +7,13 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.DerivedPlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.internal.NativePlanAttribute;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.collectColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public interface PlanAttribute {
   String qualification();
@@ -55,7 +54,7 @@ public interface PlanAttribute {
 
     final List<PlanAttribute> usedAttrs = used();
     if (!isEmpty(usedAttrs)) {
-      final List<ASTNode> colRefs = collectColumnRefs(item);
+      final List<ASTNode> colRefs = gatherColumnRefs(item);
       for (int i = 0, bound = colRefs.size(); i < bound; i++) {
         final PlanAttribute usedAttr = usedAttrs.get(i);
         if (usedAttr != null) colRefs.get(i).update(usedAttr.toColumnRef());
@@ -65,8 +64,12 @@ public interface PlanAttribute {
     return item;
   }
 
-  static List<PlanAttribute> fromInput(Table table, String tableAlias) {
-    return NativePlanAttribute.build(table, tableAlias);
+  static PlanAttribute fromColumn(String tableAlias, Column c) {
+    return NativePlanAttribute.fromColumn(tableAlias, c);
+  }
+
+  static PlanAttribute fromExpr(String qualification, String name, ASTNode expr) {
+    return DerivedPlanAttribute.fromExpr(qualification, name, expr);
   }
 
   static List<PlanAttribute> fromAttrs(List<Attribute> attrs, String qualification) {

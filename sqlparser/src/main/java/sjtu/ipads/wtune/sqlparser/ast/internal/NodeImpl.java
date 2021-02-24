@@ -11,7 +11,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listConcatView;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
@@ -114,7 +114,7 @@ public class NodeImpl implements ASTNode {
     final List<FieldKey> tableSourceFields =
         tableSourceKind == null ? Collections.emptyList() : tableSourceKind.fields();
 
-    return listConcatView(nodeFields, exprFields, tableSourceFields);
+    return listJoin(nodeFields, exprFields, tableSourceFields);
   }
 
   @Override

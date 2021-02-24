@@ -1,9 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.support.Issue;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
@@ -82,22 +79,21 @@ public class Main {
             .importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
     System.out.println(bank.count());
 
-    final Optimizer optimizer = new Optimizer(bank);
+    final Optimizer optimizer = Optimizer.make(bank);
 
     final Issue issue = Issue.findAll().get(2);
 
-    final String sql =
-        "SELECT COUNT(`adminrolei0_`.`admin_role_id`) AS `col_0_0_` FROM `blc_admin_role` AS `adminrolei0_` "
-            + "INNER JOIN `blc_admin_user_role_xref` AS `allusers1_` ON `adminrolei0_`.`admin_role_id` = `allusers1_`.`admin_role_id` "
-            + "WHERE `allusers1_`.`admin_user_id` = 1";
-
     final Statement stmt = Statement.findOne(issue.app(), issue.stmtId());
-    //    final ASTNode ast = stmt.parsed();
-    final ASTNode ast = ASTParser.mysql().parse(sql);
+    final ASTNode ast = stmt.parsed();
+    //    final ASTNode ast = ASTParser.mysql().parse(sql);
     ast.context().setSchema(stmt.app().schema("base"));
 
+    System.out.println(stmt);
     System.out.println(ast.toString(false));
     //    final PlanNode plan = ToPlanTranslator.translate(ast);
+    //    System.out.println(
+    //        sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(plan).toString(false));
+
     //    for (Substitution substitution : optimizer.match0(plan)) {
     //      System.out.println(substitution);
     //    }

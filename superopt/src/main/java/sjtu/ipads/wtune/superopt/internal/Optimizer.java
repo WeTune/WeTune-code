@@ -21,8 +21,12 @@ public class Optimizer {
   private final Set<String> known = new HashSet<>();
   private final SubstitutionBank repo;
 
-  public Optimizer(SubstitutionBank repo) {
-    this.repo = repo;
+  private Optimizer(SubstitutionBank bank) {
+    this.repo = bank;
+  }
+
+  public static Optimizer make(SubstitutionBank bank) {
+    return new Optimizer(bank);
   }
 
   public List<ASTNode> optimize(ASTNode ast) {

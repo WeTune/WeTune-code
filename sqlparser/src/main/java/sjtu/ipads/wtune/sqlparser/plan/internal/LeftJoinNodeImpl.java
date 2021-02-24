@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listConcatView;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 
 public class LeftJoinNodeImpl extends JoinNodeBase implements LeftJoinNode {
   protected LeftJoinNodeImpl(ASTNode onCondition) {
@@ -15,7 +15,7 @@ public class LeftJoinNodeImpl extends JoinNodeBase implements LeftJoinNode {
   }
 
   protected LeftJoinNodeImpl(List<PlanAttribute> left, List<PlanAttribute> right) {
-    super(null, listConcatView(left, right), left, right);
+    super(null, listJoin(left, right), left, right);
   }
 
   public static LeftJoinNode build(ASTNode onCondition) {

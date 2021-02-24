@@ -57,9 +57,13 @@ public interface PlanNode {
   }
 
   default PlanAttribute resolveAttribute(String qualification, String name) {
+    qualification = simpleName(qualification);
+    name = simpleName(name);
+
     for (PlanAttribute attr : outputAttributes())
-      if (attr.qualification().equals(simpleName(qualification))
-          && attr.name().equals(simpleName(name))) return attr;
+      if ((qualification == null || qualification.equals(attr.qualification()))
+          && name.equals(attr.name())) return attr;
+
     return null;
   }
 
