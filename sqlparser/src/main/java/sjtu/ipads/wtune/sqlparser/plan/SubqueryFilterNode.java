@@ -15,7 +15,7 @@ public interface SubqueryFilterNode extends FilterNode {
     return SubqueryFilterNodeImpl.build(expr);
   }
 
-  static SubqueryFilterNode make(List<OutputAttribute> usedAttrs) {
+  static SubqueryFilterNode make(List<PlanAttribute> usedAttrs) {
     return SubqueryFilterNodeImpl.build(usedAttrs);
   }
 }

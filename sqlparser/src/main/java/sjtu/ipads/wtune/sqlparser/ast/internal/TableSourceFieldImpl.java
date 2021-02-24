@@ -23,7 +23,9 @@ public class TableSourceFieldImpl<T> extends NodeFieldBase<T> implements NodeFie
     requireNonNull(targetClass);
 
     return new TableSourceFieldImpl<>(
-        type, SQL_ATTR_PREFIX + "tableSource." + type.name().toLowerCase() + name, targetClass);
+        type,
+        SQL_ATTR_PREFIX + "tableSource." + type.name().toLowerCase() + "." + name,
+        targetClass);
   }
 
   @Override

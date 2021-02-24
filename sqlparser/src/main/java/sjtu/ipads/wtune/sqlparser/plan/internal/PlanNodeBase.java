@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
@@ -41,19 +41,19 @@ public abstract class PlanNodeBase implements PlanNode {
   public PlanNode copy() {
     final PlanNode node = copy0();
     node.setSuccessor(successor());
-    final PlanNode[] predecessors = this.predecessors();
-    for (int i = 0, bound = predecessors.length; i < bound; i++)
-      node.setPredecessor(i, predecessors[i]);
+    final PlanNode[] thisPred = this.predecessors();
+    final PlanNode[] copiedPred = node.predecessors();
+    for (int i = 0, bound = thisPred.length; i < bound; i++) copiedPred[i] = thisPred[i];
     return node;
   }
 
-  protected static List<OutputAttribute> resolveUsedAttributes0(
+  protected static List<PlanAttribute> resolveUsedAttributes0(
       List<ASTNode> columnRefs, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, columnRefs);
   }
 
-  protected static List<OutputAttribute> resolveUsedAttributes1(
-      List<OutputAttribute> attr, PlanNode lookup) {
+  protected static List<PlanAttribute> resolveUsedAttributes1(
+      List<PlanAttribute> attr, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, attr);
   }
 

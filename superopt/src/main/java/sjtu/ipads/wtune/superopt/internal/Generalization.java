@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
+import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
 public class Generalization {
-  public static boolean canGeneralize(Substitution sub, SubstitutionRepo repo) {
+  public static boolean canGeneralize(Substitution sub, SubstitutionBank repo) {
     final Substitution copy = sub.copy();
     return canGeneralize(copy, s -> s != copy && (repo.contains(s) || repo.contains(s.flip())));
   }

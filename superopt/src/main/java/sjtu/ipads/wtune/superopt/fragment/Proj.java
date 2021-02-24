@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.superopt.fragment.internal.ProjImpl;
@@ -25,7 +25,7 @@ public interface Proj extends Operator {
   @Override
   default PlanNode instantiate(Interpretations interpretations) {
     final PlanNode pred = predecessors()[0].instantiate(interpretations);
-    final List<OutputAttribute> projs = interpretations.getAttributes(fields()).object();
+    final List<PlanAttribute> projs = interpretations.getAttributes(fields()).object();
     final ProjNode node = ProjNode.make(projs);
     node.setPredecessor(0, pred);
     node.resolveUsedAttributes();

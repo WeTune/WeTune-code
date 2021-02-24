@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class LeftJoinNodeImpl extends JoinNodeBase implements LeftJoinNode {
     super(onCondition, null, null, null);
   }
 
-  protected LeftJoinNodeImpl(List<OutputAttribute> left, List<OutputAttribute> right) {
+  protected LeftJoinNodeImpl(List<PlanAttribute> left, List<PlanAttribute> right) {
     super(null, listConcatView(left, right), left, right);
   }
 
@@ -22,7 +22,7 @@ public class LeftJoinNodeImpl extends JoinNodeBase implements LeftJoinNode {
     return new LeftJoinNodeImpl(onCondition);
   }
 
-  public static LeftJoinNode build(List<OutputAttribute> left, List<OutputAttribute> right) {
+  public static LeftJoinNode build(List<PlanAttribute> left, List<PlanAttribute> right) {
     return new LeftJoinNodeImpl(left, right);
   }
 

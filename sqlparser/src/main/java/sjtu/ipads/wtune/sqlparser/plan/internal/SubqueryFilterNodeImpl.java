@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 
@@ -16,7 +16,7 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
     super(expr, null);
   }
 
-  private SubqueryFilterNodeImpl(ASTNode expr, List<OutputAttribute> usedAttrs) {
+  private SubqueryFilterNodeImpl(ASTNode expr, List<PlanAttribute> usedAttrs) {
     super(expr, usedAttrs);
   }
 
@@ -24,8 +24,8 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
     return new SubqueryFilterNodeImpl(expr);
   }
 
-  public static SubqueryFilterNode build(List<OutputAttribute> usedAttrs) {
-    final List<ASTNode> columnRefs = listMap(OutputAttribute::toColumnRef, usedAttrs);
+  public static SubqueryFilterNode build(List<PlanAttribute> usedAttrs) {
+    final List<ASTNode> columnRefs = listMap(PlanAttribute::toColumnRef, usedAttrs);
     if (columnRefs.size() == 1) return new SubqueryFilterNodeImpl(columnRefs.get(0), usedAttrs);
     else {
       final ASTNode tuple = ASTNode.expr(ExprKind.TUPLE);

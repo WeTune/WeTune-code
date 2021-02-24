@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,13 +29,13 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   protected final boolean isNormalForm;
   // `left` and `right` is used for normal-formed ON-condition.
   // `used` is used otherwise
-  protected List<OutputAttribute> left, right, used;
+  protected List<PlanAttribute> left, right, used;
 
   protected JoinNodeBase(
       ASTNode onCondition,
-      List<OutputAttribute> used,
-      List<OutputAttribute> left,
-      List<OutputAttribute> right) {
+      List<PlanAttribute> used,
+      List<PlanAttribute> left,
+      List<PlanAttribute> right) {
     if (onCondition == null && used == null) throw new IllegalArgumentException();
 
     this.onCondition = onCondition;
@@ -49,7 +49,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   public ASTNode onCondition() {
     if (isNormalForm) {
       // if normal formed, reconstruct the ON-condition from scratch
-      final List<OutputAttribute> leftKeys = leftAttributes(), rightKeys = rightAttributes();
+      final List<PlanAttribute> leftKeys = leftAttributes(), rightKeys = rightAttributes();
 
       if (leftKeys.size() != rightKeys.size()) ASTContext.LOG.log(WARNING, "Mismatched join keys");
 
@@ -75,12 +75,12 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
     } else {
       // otherwise, copy the original expression (and rectify column refs)
-      final ASTNode copy = onCondition.copy();
+      final ASTNode copy = onCondition.deepCopy();
 
       final List<ASTNode> nodes = collectColumnRefs(copy);
 
       for (int i = 0; i < used.size(); i++) {
-        final OutputAttribute usedAttr = used.get(i);
+        final PlanAttribute usedAttr = used.get(i);
         if (usedAttr != null) nodes.get(i).update(usedAttr.toColumnRef());
       }
 
@@ -89,7 +89,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public List<OutputAttribute> outputAttributes() {
+  public List<PlanAttribute> outputAttributes() {
     return listConcatView(
         predecessors()[0].outputAttributes(), predecessors()[1].outputAttributes());
   }
@@ -100,17 +100,17 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public List<OutputAttribute> leftAttributes() {
+  public List<PlanAttribute> leftAttributes() {
     return left;
   }
 
   @Override
-  public List<OutputAttribute> rightAttributes() {
+  public List<PlanAttribute> rightAttributes() {
     return right;
   }
 
   @Override
-  public List<OutputAttribute> usedAttributes() {
+  public List<PlanAttribute> usedAttributes() {
     return used;
   }
 

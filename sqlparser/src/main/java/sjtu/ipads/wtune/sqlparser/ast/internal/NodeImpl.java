@@ -12,6 +12,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.listConcatView;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
@@ -58,6 +59,19 @@ public class NodeImpl implements ASTNode {
     else if (TABLE_SOURCE.isInstance(other)) set(TABLE_SOURCE_KIND, other.get(TABLE_SOURCE_KIND));
 
     for (var pair : other.fields().entrySet()) set(pair.getKey(), pair.getValue());
+  }
+
+  @Override
+  public ASTNode shallowCopy() {
+    return new NodeImpl(nodeType(), fields());
+  }
+
+  @Override
+  public ASTNode deepCopy() {
+    final ASTNode copy = shallowCopy();
+    for (var kv : copy.fields().entrySet())
+      if (kv.getKey() != PARENT) copy.set(kv.getKey(), deepCopy0(kv.getValue()));
+    return copy;
   }
 
   @Override
@@ -113,5 +127,11 @@ public class NodeImpl implements ASTNode {
     final Formatter formatter = new Formatter(oneline);
     accept(formatter);
     return formatter.toString();
+  }
+
+  private static Object deepCopy0(Object obj) {
+    if (obj instanceof ASTNode) return ((ASTNode) obj).deepCopy();
+    else if (obj instanceof Iterable) return listMap(it -> deepCopy0(it), (Iterable<?>) obj);
+    else return obj;
   }
 }

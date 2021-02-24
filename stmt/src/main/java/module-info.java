@@ -5,4 +5,7 @@ module sjtu.ipads.wtune.stmt {
   requires java.sql;
   requires com.google.common;
   requires org.apache.commons.lang3;
+
+  exports sjtu.ipads.wtune.stmt;
+  exports sjtu.ipads.wtune.stmt.support;
 }

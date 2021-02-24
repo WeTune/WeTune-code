@@ -25,6 +25,6 @@ public interface Input extends Operator {
 
   @Override
   default PlanNode instantiate(Interpretations interpretations) {
-    return interpretations.getInput(table()).object();
+    return PlanNode.copyTree(interpretations.getInput(table()).object());
   }
 }

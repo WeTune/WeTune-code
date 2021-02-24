@@ -7,6 +7,6 @@ module sjtu.ipads.wtune.superopt {
   requires sjtu.ipads.wtune.symsolver;
   requires sjtu.ipads.wtune.common;
   requires sjtu.ipads.wtune.sqlparser;
-  requires z3;
+  requires sjtu.ipads.wtune.stmt;
   requires trove4j;
 }

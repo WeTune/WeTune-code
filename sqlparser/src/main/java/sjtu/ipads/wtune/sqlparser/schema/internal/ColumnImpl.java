@@ -11,6 +11,7 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.*;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class ColumnImpl implements Column {
   private final String table;
@@ -33,7 +34,7 @@ public class ColumnImpl implements Column {
   }
 
   public static ColumnImpl build(String table, ASTNode colDef) {
-    final String colName = colDef.get(COLUMN_DEF_NAME).get(COLUMN_NAME_COLUMN);
+    final String colName = simpleName(colDef.get(COLUMN_DEF_NAME).get(COLUMN_NAME_COLUMN));
     final String rawDataType = colDef.get(COLUMN_DEF_DATATYPE_RAW);
     final SQLDataType dataType = colDef.get(COLUMN_DEF_DATATYPE);
 
@@ -107,5 +108,9 @@ public class ColumnImpl implements Column {
       case UNIQUE -> flags.add(UNIQUE);
       case FOREIGN_KEY -> flags.add(FOREIGN_KEY);
     }
+  }
+
+  @Override public String toString() {
+    return table + "." + name;
   }
 }

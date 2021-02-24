@@ -10,7 +10,7 @@ import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.internal.Optimizer;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
-import sjtu.ipads.wtune.superopt.optimization.SubstitutionRepo;
+import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class TestSubstitution {
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
     final Substitution sub = Substitution.rebuild(substitution);
-    final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
+    final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
     final Optimizer opt = new Optimizer(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
@@ -59,7 +59,7 @@ public class TestSubstitution {
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
     final Substitution sub = Substitution.rebuild(substitution);
-    final SubstitutionRepo repo = SubstitutionRepo.make().add(sub);
+    final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
     final Optimizer opt = new Optimizer(repo);
     final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
@@ -87,7 +87,7 @@ public class TestSubstitution {
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
     final PlanNode plan = ToPlanTranslator.translate(ast);
-    final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
+    final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
     final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
     assertEquals(1, optimized.size());
@@ -113,7 +113,7 @@ public class TestSubstitution {
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
     final PlanNode plan = ToPlanTranslator.translate(ast);
-    final SubstitutionRepo repo = SubstitutionRepo.make().add(Substitution.rebuild(substitution));
+    final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
     final List<PlanNode> optimized = new Optimizer(repo).optimize(plan);
     assertEquals(1, optimized.size());

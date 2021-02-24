@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.*;
@@ -57,7 +57,7 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
-  public boolean assignAttributes(Placeholder placeholder, List<OutputAttribute> colRefs) {
+  public boolean assignAttributes(Placeholder placeholder, List<PlanAttribute> colRefs) {
     return assign0(placeholder, new AttributeInterpretationImpl(colRefs));
   }
 
@@ -112,7 +112,6 @@ public class InterpretationsImpl implements Interpretations {
   private boolean checkSource(PickFrom<Placeholder, Placeholder> constraint) {
     final AttributeInterpretation attrInter = getAttributes(constraint.p());
     if (attrInter == null) return true;
-    final List<OutputAttribute> attributes = attrInter.object();
 
     final Placeholder[] ts = constraint.ts();
     final PlanNode[] inputs = new PlanNode[ts.length];
@@ -122,8 +121,10 @@ public class InterpretationsImpl implements Interpretations {
       inputs[i] = inter.object();
     }
 
-    for (OutputAttribute attribute : attributes)
-      if (stream(inputs).noneMatch(it -> it.resolveAttribute(attribute) != null)) return false;
+    for (PlanAttribute attribute : attrInter.object())
+      for (PlanAttribute usedAttribute : attribute.used())
+        if (stream(inputs).noneMatch(it -> it.resolveAttribute(usedAttribute) != null))
+          return false;
 
     return true;
   }
@@ -134,8 +135,8 @@ public class InterpretationsImpl implements Interpretations {
 
     if (referee == null || referred == null || referee == referred) return true;
 
-    final List<OutputAttribute> refereeRefs = referee.object();
-    final List<OutputAttribute> referredRefs = referred.object();
+    final List<PlanAttribute> refereeRefs = referee.object();
+    final List<PlanAttribute> referredRefs = referred.object();
 
     if (refereeRefs.size() != referredRefs.size()) return false;
 
@@ -143,13 +144,14 @@ public class InterpretationsImpl implements Interpretations {
     final List<Column> referredCols = new ArrayList<>(referredRefs.size());
 
     for (int i = 0, bound = refereeRefs.size(); i < bound; i++) {
-      final OutputAttribute refereeAttr = refereeRefs.get(i);
-      final OutputAttribute referredAttr = referredRefs.get(i);
+      final PlanAttribute refereeAttr = refereeRefs.get(i);
+      final PlanAttribute referredAttr = referredRefs.get(i);
 
       if (refereeAttr == null || referredAttr == null) return false;
       if (refereeAttr == referredAttr) continue;
 
       final Column refereeCol = refereeAttr.column(true), referredCol = referredAttr.column(true);
+      if (refereeCol == null || referredCol == null) return false;
       if (refereeCol == referredCol) continue;
 
       refereeCols.add(refereeCol);

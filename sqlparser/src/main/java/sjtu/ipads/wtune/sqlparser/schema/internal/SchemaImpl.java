@@ -16,6 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class SchemaImpl implements Schema {
   private final Map<String, TableImpl> tables;
@@ -97,7 +98,7 @@ public class SchemaImpl implements Schema {
 
   @Override
   public TableImpl table(String name) {
-    return tables.get(name);
+    return tables.get(simpleName(name));
   }
 
   @Override

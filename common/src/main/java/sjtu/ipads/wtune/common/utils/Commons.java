@@ -155,6 +155,20 @@ public interface Commons {
     return ret;
   }
 
+  static <T> T head(List<T> xs) {
+    if (xs.isEmpty()) return null;
+    else return xs.get(0);
+  }
+
+  static <T> T tail(List<T> xs) {
+    if (xs.isEmpty()) return null;
+    else return xs.get(xs.size() - 1);
+  }
+
+  static boolean isEmpty(Collection<?> xs) {
+    return xs == null || xs.isEmpty();
+  }
+
   static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {
     final List<T> ts = new ArrayList<>(ts0.size() + ts1.size());
     ts.addAll(ts0);

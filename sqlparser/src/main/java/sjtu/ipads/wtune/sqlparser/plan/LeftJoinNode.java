@@ -15,7 +15,7 @@ public interface LeftJoinNode extends JoinNode {
     return LeftJoinNodeImpl.build(onCondition);
   }
 
-  static LeftJoinNode make(List<OutputAttribute> left, List<OutputAttribute> right) {
+  static LeftJoinNode make(List<PlanAttribute> left, List<PlanAttribute> right) {
     return LeftJoinNodeImpl.build(left, right);
   }
 }

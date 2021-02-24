@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.relational;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.relational.internal.AttributeField;
 import sjtu.ipads.wtune.sqlparser.relational.internal.DerivedAttribute;
 import sjtu.ipads.wtune.sqlparser.relational.internal.NativeAttribute;
@@ -27,6 +28,15 @@ public interface Attribute {
   Column column(boolean recursive);
 
   Attribute reference(boolean recursive);
+
+  default ASTNode toColumnRef() {
+    final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
+    colName.set(COLUMN_NAME_TABLE, owner().alias());
+    colName.set(COLUMN_NAME_COLUMN, name());
+    final ASTNode columnRef = ASTNode.expr(COLUMN_REF);
+    columnRef.set(COLUMN_REF_COLUMN, colName);
+    return columnRef;
+  }
 
   static Attribute resolve(ASTNode node) {
     if (!COLUMN_REF.isInstance(node)) return null;

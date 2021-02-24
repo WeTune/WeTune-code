@@ -28,7 +28,7 @@ class NormalizeBool {
       trueLiteral.set(LITERAL_VALUE, true);
 
       final ASTNode binary = ASTNode.expr(BINARY);
-      binary.set(BINARY_LEFT, expr.copy());
+      binary.set(BINARY_LEFT, expr.shallowCopy());
       binary.set(BINARY_OP, BinaryOp.IS);
       binary.set(BINARY_RIGHT, trueLiteral);
 

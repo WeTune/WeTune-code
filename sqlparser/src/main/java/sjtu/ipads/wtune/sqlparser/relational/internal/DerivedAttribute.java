@@ -16,6 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class DerivedAttribute extends BaseAttribute {
   // Subtleties:
@@ -82,11 +83,11 @@ public class DerivedAttribute extends BaseAttribute {
 
   private static void expandWildcard(ASTNode item, List<Attribute> dest) {
     final Relation relation = item.get(RELATION);
-    final ASTNode name = item.get(SELECT_ITEM_EXPR).get(WILDCARD_TABLE);
+    final ASTNode tableName = item.get(SELECT_ITEM_EXPR).get(WILDCARD_TABLE);
     final List<Relation> inputs =
-        name == null
+        tableName == null
             ? relation.inputs()
-            : singletonList(relation.input(name.get(TABLE_NAME_TABLE)));
+            : singletonList(relation.input(tableName.get(TABLE_NAME_TABLE)));
 
     for (Relation input : inputs)
       for (Attribute ref : input.attributes())

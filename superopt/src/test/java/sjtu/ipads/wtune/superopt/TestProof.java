@@ -59,12 +59,22 @@ public class TestProof {
   }
 
   @Test
-  void testRemoveLeftJoin() {
+  void testRemoveLeftJoin0() {
     final TestHelper test = new TestHelper();
     test.g0 = wrap(proj(leftJoin(null, null)));
     test.g1 = wrap(proj(null));
     test.print();
     test.check("TableEq(t0,t2);PickEq(c0,c3);PickFrom(c0,[t0]);PickFrom(c3,[t2])");
+  }
+
+  @Test
+  void testRemoveLeftJoin1() {
+    final TestHelper test = new TestHelper();
+    test.g0 = wrap(proj(plainFilter(leftJoin(null, null))));
+    test.g1 = wrap(proj(plainFilter(null)));
+    test.print();
+    test.check(
+        "TableEq(t0,t2);PickEq(c0,c4);PickEq(c1,c5);PredicateEq(p0,p1);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c4,[t2]);PickFrom(c5,[t2])");
   }
 
   @Test

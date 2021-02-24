@@ -15,7 +15,7 @@ public interface PlainFilterNode extends FilterNode {
     return PlainFilterNodeImpl.build(expr);
   }
 
-  static PlainFilterNode make(ASTNode expr, List<OutputAttribute> usedAttrs) {
+  static PlainFilterNode make(ASTNode expr, List<PlanAttribute> usedAttrs) {
     return PlainFilterNodeImpl.build(expr, usedAttrs);
   }
 }

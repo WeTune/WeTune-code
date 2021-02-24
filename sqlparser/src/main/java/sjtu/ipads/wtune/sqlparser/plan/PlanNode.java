@@ -8,6 +8,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public interface PlanNode {
   OperatorType type();
@@ -16,9 +17,7 @@ public interface PlanNode {
 
   PlanNode[] predecessors();
 
-  List<OutputAttribute> outputAttributes();
-
-  List<OutputAttribute> usedAttributes();
+  List<PlanAttribute> outputAttributes();
 
   void setPredecessor(int idx, PlanNode op);
 
@@ -26,15 +25,45 @@ public interface PlanNode {
 
   PlanNode copy();
 
+  List<PlanAttribute> usedAttributes();
+
   void resolveUsedAttributes();
 
-  default OutputAttribute resolveAttribute(String qualification, String name) {
-    for (OutputAttribute attr : outputAttributes())
-      if (attr.qualification().equals(qualification) && attr.name().equals(name)) return attr;
+  static PlanNode rootOf(PlanNode node) {
+    while (node.successor() != null) node = node.successor();
+    return node;
+  }
+
+  static PlanNode copyTree(PlanNode node) {
+    final PlanNode copy = node.copy();
+    final PlanNode[] predecessors = node.predecessors();
+    for (int i = 0; i < predecessors.length; i++) copy.setPredecessor(i, copyTree(predecessors[i]));
+    return copy;
+  }
+
+  static PlanNode copyToRoot(PlanNode node) {
+    // copy the nodes on the path from `node` to root
+    final PlanNode copy = node.copy();
+    if (node.successor() == null) return copy;
+
+    final PlanNode successor = copyToRoot(node.successor());
+    successor.replacePredecessor(node, copy);
+    return copy;
+  }
+
+  static void resolveUsedAttributes(PlanNode node) {
+    node.resolveUsedAttributes();
+    for (PlanNode predecessor : node.predecessors()) resolveUsedAttributes(predecessor);
+  }
+
+  default PlanAttribute resolveAttribute(String qualification, String name) {
+    for (PlanAttribute attr : outputAttributes())
+      if (attr.qualification().equals(simpleName(qualification))
+          && attr.name().equals(simpleName(name))) return attr;
     return null;
   }
 
-  default OutputAttribute resolveAttribute(ASTNode columnRef) {
+  default PlanAttribute resolveAttribute(ASTNode columnRef) {
     if (!COLUMN_REF.isInstance(columnRef)) throw new IllegalArgumentException();
     final ASTNode colName = columnRef.get(COLUMN_REF_COLUMN);
     return resolveAttribute(colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN));
@@ -51,12 +80,10 @@ public interface PlanNode {
    *
    * <pre>  SELECT t.j FROM t</pre>
    *
-   * @see OutputAttribute#refEquals(OutputAttribute)
+   * @see PlanAttribute#refEquals(PlanAttribute)
    */
-  default OutputAttribute resolveAttribute(OutputAttribute attr) {
-    for (OutputAttribute out : outputAttributes())
-      if (out.refEquals(attr))
-        return out;
+  default PlanAttribute resolveAttribute(PlanAttribute attr) {
+    for (PlanAttribute out : outputAttributes()) if (out.refEquals(attr)) return out;
     return null;
   }
 

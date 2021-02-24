@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-public class Runner {
+public class ProofRunner {
   public static final System.Logger LOG = System.getLogger("superopt");
   private final Stream<List<Fragment>> stream;
   private final int estimatedTotal;
@@ -24,7 +24,7 @@ public class Runner {
   private final PrintWriter out;
   private final PrintWriter err;
 
-  public Runner(Stream<List<Fragment>> stream, int estimatedTotal) throws IOException {
+  public ProofRunner(Stream<List<Fragment>> stream, int estimatedTotal) throws IOException {
     this.stream = stream;
     this.estimatedTotal = estimatedTotal;
     this.i = new AtomicInteger(0);
@@ -38,7 +38,7 @@ public class Runner {
             Files.newOutputStream(Paths.get(System.getProperty("wetune.superopt.errFile"))));
   }
 
-  public static Runner build(String[] args) {
+  public static ProofRunner build(String[] args) {
     final boolean parallel = args.length >= 2 && Boolean.parseBoolean(args[1]);
     final int partitions = args.length >= 4 ? Integer.parseInt(args[2]) : 1;
     final int partitionKey = args.length >= 4 ? Integer.parseInt(args[3]) : -1;
@@ -60,7 +60,7 @@ public class Runner {
 
     try {
       final int estimated = ((frags.size() * (frags.size() - 1)) >> 1) / partitions;
-      return new Runner(stream, estimated);
+      return new ProofRunner(stream, estimated);
 
     } catch (IOException ioe) {
       throw new RuntimeException(ioe);

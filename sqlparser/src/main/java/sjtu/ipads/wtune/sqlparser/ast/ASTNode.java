@@ -22,24 +22,57 @@ public interface ASTNode extends Fields {
   void setContext(ASTContext ctx);
 
   /**
-   * Copy attributes from `replacement` to this node.
+   * Copy fields from `replacement` to this node.
    *
-   * <p>Attributes that are incompatible with the node's type/expr kind/table source kind will not
-   * be copied.
+   * <p>Conceptually, the method replaces the whole sub-tree rooted by the this node with the
+   * sub-tree rooted by `replacement`, and setup all necessary context and parent relationship.
    *
-   * <p>Note: take extra care to ensure the resultant AST acyclic.
+   * <ul>
+   *   <b>NOTE</b>
+   *   <li>All existing fields of this node will be unset.
+   *   <li>All existing fields & field values of `replacement` will be set to this node as-is,
+   *       except those incompatible with the node type/expr kind/table source kind.
+   *   <li>Children will not be copied recursively.
+   *   <li>Children's parent will be updated as this node.
+   *   <li>Children's context will be updated as this node's context recursively.
+   *   <li>PLEASE ENSURE THE RESULTANT AST ACYCLIC.
+   * </ul>
    */
   void update(ASTNode replacement);
+
+  /**
+   * Shallow copy the node.
+   *
+   * <ul>
+   *   <b>NOTE</b>
+   *   <li>Children will not be copied recursively.
+   *   <li>Children's parent will not point to the copy. Thus, never use the copy as a tree root.
+   *   <li>Context will not be inherited.
+   * </ul>
+   *
+   * In short, keep in mind the following two snippets are totally different:
+   *
+   * <pre>ASTNode copy = node.copy()</pre>
+   *
+   * <pre>ASTNode copy = newNode(); copy.update(node);</pre>
+   */
+  ASTNode shallowCopy();
+
+  /**
+   * Deep copy the node, i.e. copy the entirely subtree.
+   *
+   * <ul>
+   *   <b>NOTE</b>
+   *   <li>Children will be copied recursively.
+   *   <li>All node's parent will be updated.
+   *   <li>ASTContext will not be inherited.
+   * </ul>
+   */
+  ASTNode deepCopy();
 
   void accept(ASTVistor visitor);
 
   String toString(boolean oneline);
-
-  default ASTNode copy() {
-    final ASTNode newNode = node(nodeType());
-    newNode.update(this);
-    return newNode;
-  }
 
   default String dbType() {
     return context() == null ? MYSQL : context().dbType();

@@ -28,7 +28,7 @@ public interface Fingerprint {
       case PlainFilter:
         return 'f';
       default:
-        throw new IllegalArgumentException();
+        return '?';
     }
   }
 }

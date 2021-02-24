@@ -35,7 +35,7 @@ public interface PlainFilter extends Operator {
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
-    if (node.type() != this.type()) return false;
+    if (!node.type().isFilter()) return false;
     final PlainFilterNode filter = (PlainFilterNode) node;
     return inter.assignAttributes(fields(), filter.usedAttributes())
         && inter.assignPredicate(predicate(), filter.expr());

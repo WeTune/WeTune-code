@@ -9,7 +9,7 @@ public interface JoinNode extends PlanNode {
 
   boolean isNormalForm();
 
-  List<OutputAttribute> leftAttributes();
+  List<PlanAttribute> leftAttributes();
 
-  List<OutputAttribute> rightAttributes();
+  List<PlanAttribute> rightAttributes();
 }

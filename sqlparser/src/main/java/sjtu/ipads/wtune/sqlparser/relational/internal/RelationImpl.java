@@ -16,6 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableSourceName;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class RelationImpl implements Relation {
   private final ASTNode node;
@@ -27,7 +28,7 @@ public class RelationImpl implements Relation {
 
   private RelationImpl(ASTNode node) {
     this.node = node;
-    this.alias = tableSourceName(node);
+    this.alias = simpleName(tableSourceName(node));
     this.digest = node.hashCode();
   }
 

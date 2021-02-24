@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import java.util.List;
 
 public interface ProjNode extends PlanNode {
-
   List<ASTNode> selectItems();
 
   @Override
@@ -15,11 +14,7 @@ public interface ProjNode extends PlanNode {
     return OperatorType.Proj;
   }
 
-  static ProjNode make(Relation relation) {
-    return ProjNodeImpl.build(relation);
-  }
-
-  static ProjNode make(List<OutputAttribute> projs) {
+  static ProjNode make(List<PlanAttribute> projs) {
     return ProjNodeImpl.build(projs);
   }
 }

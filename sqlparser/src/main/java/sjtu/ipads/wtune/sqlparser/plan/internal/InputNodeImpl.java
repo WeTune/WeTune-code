@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -16,20 +16,20 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.OutputAttribute.fromInput;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanAttribute.fromInput;
 
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final Table table;
   private final String alias;
-  private List<OutputAttribute> attributes;
+  private List<PlanAttribute> attributes;
 
   private InputNodeImpl(Relation rel) {
     this.table = rel.table();
     this.alias = rel.alias();
-    this.attributes = fromInput(this, table, alias);
+    this.attributes = fromInput(table, alias);
   }
 
-  private InputNodeImpl(Table table, String alias, List<OutputAttribute> attributes) {
+  private InputNodeImpl(Table table, String alias, List<PlanAttribute> attributes) {
     this.table = table;
     this.alias = alias;
     this.attributes = attributes;
@@ -45,6 +45,11 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
+  public List<PlanAttribute> usedAttributes() {
+    return Collections.emptyList();
+  }
+
+  @Override
   public ASTNode toTableSource() {
     final ASTNode name = node(TABLE_NAME);
     name.set(TABLE_NAME_TABLE, table.name());
@@ -57,13 +62,8 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  public List<OutputAttribute> outputAttributes() {
+  public List<PlanAttribute> outputAttributes() {
     return attributes;
-  }
-
-  @Override
-  public List<OutputAttribute> usedAttributes() {
-    return Collections.emptyList();
   }
 
   @Override

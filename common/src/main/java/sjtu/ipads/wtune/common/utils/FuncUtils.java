@@ -34,13 +34,30 @@ public interface FuncUtils {
     return stream(os).map(func).collect(Collectors.toCollection(supplier));
   }
 
+  static <T, R, C extends Collection<R>> C collectionFlatMap(
+      Function<? super T, ? extends Iterable<R>> func, Iterable<T> os, Supplier<C> supplier) {
+    return stream(os)
+        .map(func)
+        .flatMap(FuncUtils::stream)
+        .collect(Collectors.toCollection(supplier));
+  }
+
   static <T, R> List<R> listMap(Function<? super T, ? extends R> func, Iterable<T> os) {
     return collectionMap(func, os, ArrayList::new);
   }
 
   @SafeVarargs
   static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
-    return stream(os).map(func).collect(Collectors.toList());
+    return listMap(func, Arrays.asList(os));
+  }
+
+  static <T, R> List<R> listFlatMap(
+      Function<? super T, ? extends Iterable<R>> func, Iterable<T> os) {
+    return collectionFlatMap(func, os, ArrayList::new);
+  }
+
+  static <T, R> List<R> listFlatMap(Function<? super T, ? extends Iterable<R>> func, T... os) {
+    return listFlatMap(func, Arrays.asList(os));
   }
 
   static <P0, P1, R> List<R> zipMap(
@@ -99,7 +116,8 @@ public interface FuncUtils {
   }
 
   static <T> Stream<T> stream(Iterable<T> iterable) {
-    return StreamSupport.stream(iterable.spliterator(), false);
+    if (iterable instanceof Collection) return ((Collection<T>) iterable).stream();
+    else return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   static <T> Stream<T> stream(T[] array) {

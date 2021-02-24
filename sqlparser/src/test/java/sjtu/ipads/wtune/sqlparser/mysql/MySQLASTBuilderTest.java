@@ -775,7 +775,7 @@ public class MySQLASTBuilderTest {
     final TestHelper helper = new TestHelper(MySQLParser::tableReference);
     {
       final ASTNode node = helper.sql("a join (b join c)");
-      assertEquals("`a` INNER JOIN `b` INNER JOIN `c`", node.toString());
+      assertEquals("`a` INNER JOIN (`b` INNER JOIN `c`)", node.toString());
     }
     {
       final ASTNode node = helper.sql("a natural left join (b join c)");
@@ -939,7 +939,7 @@ public class MySQLASTBuilderTest {
     ctx.derive();
     final ASTNode binary = ASTNode.expr(BINARY);
     binary.set(BINARY_OP, BinaryOp.OR);
-    binary.set(BINARY_LEFT, node.copy());
+    binary.set(BINARY_LEFT, node.deepCopy());
     binary.set(BINARY_RIGHT, oneEqOne);
     node.update(binary);
     assertEquals("`c` OR 1 = 1", node.toString());

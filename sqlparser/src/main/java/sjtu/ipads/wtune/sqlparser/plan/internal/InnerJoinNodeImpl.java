@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.OutputAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class InnerJoinNodeImpl extends JoinNodeBase implements InnerJoinNode {
     super(onCondition, null, null, null);
   }
 
-  protected InnerJoinNodeImpl(List<OutputAttribute> left, List<OutputAttribute> right) {
+  protected InnerJoinNodeImpl(List<PlanAttribute> left, List<PlanAttribute> right) {
     super(null, listConcatView(left, right), left, right);
   }
 
@@ -22,7 +22,7 @@ public class InnerJoinNodeImpl extends JoinNodeBase implements InnerJoinNode {
     return new InnerJoinNodeImpl(onCondition);
   }
 
-  public static InnerJoinNode build(List<OutputAttribute> left, List<OutputAttribute> right) {
+  public static InnerJoinNode build(List<PlanAttribute> left, List<PlanAttribute> right) {
     return new InnerJoinNodeImpl(left, right);
   }
 

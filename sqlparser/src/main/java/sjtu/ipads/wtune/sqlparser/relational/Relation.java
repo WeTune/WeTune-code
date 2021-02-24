@@ -9,12 +9,15 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableNameOf;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.relational.internal.RelationImpl.rootedBy;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isAggFunc;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public interface Relation {
   FieldKey<Relation> RELATION = RelationField.INSTANCE;
@@ -50,11 +53,13 @@ public interface Relation {
   }
 
   default Attribute attribute(String name) {
+    name = simpleName(name);
     for (Attribute attribute : attributes()) if (name.equals(attribute.name())) return attribute;
     return null;
   }
 
   default Relation input(String name) {
+    name = simpleName(name);
     for (Relation input : inputs()) if (name.equals(input.alias())) return input;
     final Relation aux = auxiliaryInput();
     return aux != null ? aux.input(name) : null;

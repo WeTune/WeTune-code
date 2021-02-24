@@ -35,11 +35,6 @@ public class ToASTTranslator {
   }
 
   private void translate0(PlanNode node) {
-    if (node instanceof FilterGroupNode) {
-      ((FilterGroupNode) node).filters().forEach(this::translate0);
-      return;
-    }
-
     for (PlanNode predecessor : node.predecessors()) translate0(predecessor);
 
     if (node instanceof InputNode) translateInput((InputNode) node);
@@ -47,6 +42,7 @@ public class ToASTTranslator {
     else if (node instanceof ProjNode) translateProj((ProjNode) node);
     else if (node instanceof PlainFilterNode) translateFilter((PlainFilterNode) node);
     else if (node instanceof SubqueryFilterNode) translateFilter((SubqueryFilterNode) node);
+    else if (node instanceof AggNode) translateAgg((AggNode) node);
     else assert false;
   }
 
@@ -61,7 +57,7 @@ public class ToASTTranslator {
 
   private void translateFilter(FilterNode op) {
     assert !stack.isEmpty();
-    stack.peek().appendSelection(op.expr(), true);
+    stack.peek().appendFilter(op.expr(), true);
   }
 
   private void translateFilter(SubqueryFilterNode op) {
@@ -77,7 +73,14 @@ public class ToASTTranslator {
     binary.set(BINARY_RIGHT, queryExpr);
 
     assert !stack.isEmpty();
-    stack.peek().appendSelection(binary, true);
+    stack.peek().appendFilter(binary, true);
+  }
+
+  private void translateAgg(AggNode agg) {
+    assert !stack.isEmpty();
+    final Query q = stack.peek();
+    q.setGroupKeys(agg.groupKeys());
+    q.setAggregation(agg.aggregations());
   }
 
   private void translateJoin(JoinNode op) {
@@ -95,8 +98,9 @@ public class ToASTTranslator {
 
   private static class Query {
     private List<ASTNode> projection;
-    private ASTNode selection;
+    private ASTNode filter;
     private ASTNode source;
+    private List<ASTNode> groupKeys;
 
     private static Query from(ASTNode source) {
       final Query rel = new Query();
@@ -104,20 +108,20 @@ public class ToASTTranslator {
       return rel;
     }
 
-    private void appendSelection(ASTNode node, boolean conjunctive) {
+    private void appendFilter(ASTNode filterNode, boolean conjunctive) {
       if (projection == null)
-        if (selection == null) selection = node;
+        if (filter == null) filter = filterNode;
         else {
-          final ASTNode newSelection = expr(ExprKind.BINARY);
-          newSelection.set(BINARY_LEFT, node.copy());
-          newSelection.set(BINARY_RIGHT, selection);
-          newSelection.set(BINARY_OP, conjunctive ? AND : OR);
-          selection = newSelection;
+          final ASTNode newFilter = expr(ExprKind.BINARY);
+          newFilter.set(BINARY_LEFT, filterNode);
+          newFilter.set(BINARY_RIGHT, filter);
+          newFilter.set(BINARY_OP, conjunctive ? AND : OR);
+          filter = newFilter;
         }
       else {
         source = this.assembleAsSource();
         projection = null;
-        selection = node;
+        filter = filterNode;
       }
     }
 
@@ -126,17 +130,27 @@ public class ToASTTranslator {
       else {
         this.source = this.assembleAsSource();
         this.projection = projection;
-        this.selection = null;
+        this.filter = null;
       }
     }
 
+    private void setAggregation(List<ASTNode> aggregation) {
+      this.projection = aggregation;
+    }
+
+    private void setGroupKeys(List<ASTNode> groupKeys) {
+      assert projection != null;
+      this.groupKeys = groupKeys;
+    }
+
     private ASTNode assembleAsQuery() {
-      if (projection == null && selection == null && QUERY.isInstance(source)) return source;
+      if (projection == null && filter == null && QUERY.isInstance(source)) return source;
 
       final ASTNode querySpec = node(QUERY_SPEC);
       querySpec.set(QUERY_SPEC_SELECT_ITEMS, selectItems());
       querySpec.set(QUERY_SPEC_FROM, source);
-      if (selection != null) querySpec.set(QUERY_SPEC_WHERE, selection);
+      if (filter != null) querySpec.set(QUERY_SPEC_WHERE, filter);
+      if (groupKeys != null && !groupKeys.isEmpty()) querySpec.set(QUERY_SPEC_GROUP_BY, groupKeys);
 
       final ASTNode query = node(QUERY);
       query.set(QUERY_BODY, querySpec);
@@ -145,7 +159,7 @@ public class ToASTTranslator {
     }
 
     private ASTNode assembleAsSource() {
-      if (projection == null && selection == null) return source;
+      if (projection == null && filter == null) return source;
 
       final ASTNode source = tableSource(DERIVED_SOURCE);
       source.set(DERIVED_SUBQUERY, assembleAsQuery());

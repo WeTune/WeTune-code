@@ -595,8 +595,7 @@ public class Formatter implements ASTVistor {
     breakLine();
 
     append(joinType.text()).append(' ');
-    final boolean needParen =
-        JOINED_SOURCE.isInstance(right) && !(joinType.isInner() && right.get(JOINED_TYPE).isInner());
+    final boolean needParen = JOINED_SOURCE.isInstance(right);
     try (final var ignored = withParen(needParen)) {
       if (needParen) {
         increaseIndent();
@@ -605,23 +604,23 @@ public class Formatter implements ASTVistor {
 
       safeVisit(right);
 
-      if (on != null || using != null) {
-        increaseIndent();
-        breakLine();
-        if (on != null) {
-          append("ON ");
-          safeVisit(on);
-        } else {
-          append("USING ");
-          appendStrings(using, true, quotation2(joinedTableSource));
-        }
-        decreaseIndent();
-      }
-
       if (needParen) {
         decreaseIndent();
         breakLine(false);
       }
+    }
+
+    if (on != null || using != null) {
+      increaseIndent();
+      breakLine();
+      if (on != null) {
+        append("ON ");
+        safeVisit(on);
+      } else {
+        append("USING ");
+        appendStrings(using, true, quotation2(joinedTableSource));
+      }
+      decreaseIndent();
     }
 
     return false;

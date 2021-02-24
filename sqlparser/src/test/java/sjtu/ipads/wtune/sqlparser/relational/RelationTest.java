@@ -133,7 +133,7 @@ public class RelationTest {
     final ASTNode tblA = relation.inputs().get(0).node();
     final ASTNode subquery = tblA.get(DERIVED_SUBQUERY).get(QUERY_BODY);
     assertFalse(relation.isOutdated());
-    subquery.set(QUERY_SPEC_FROM, tblC.copy());
+    subquery.set(QUERY_SPEC_FROM, tblC.deepCopy());
     assertTrue(relation.isOutdated());
     relation = node.get(RELATION);
     assertEquals(8, relation.attributes().size());

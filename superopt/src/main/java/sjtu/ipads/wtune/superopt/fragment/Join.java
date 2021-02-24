@@ -16,8 +16,8 @@ public interface Join extends Operator {
     final PlanNode pred0 = predecessors()[0].instantiate(interpretations);
     final PlanNode pred1 = predecessors()[1].instantiate(interpretations);
 
-    final List<OutputAttribute> left = interpretations.getAttributes(leftFields()).object();
-    final List<OutputAttribute> right = interpretations.getAttributes(rightFields()).object();
+    final List<PlanAttribute> left = interpretations.getAttributes(leftFields()).object();
+    final List<PlanAttribute> right = interpretations.getAttributes(rightFields()).object();
 
     final PlanNode node =
         type() == OperatorType.LeftJoin

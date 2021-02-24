@@ -10,6 +10,7 @@ import java.util.*;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class TableImpl implements Table {
   private final String schema;
@@ -27,8 +28,8 @@ public class TableImpl implements Table {
 
   public static TableImpl build(ASTNode tableDef) {
     final ASTNode tableName = tableDef.get(CREATE_TABLE_NAME);
-    final String schema = tableName.get(TABLE_NAME_SCHEMA);
-    final String name = tableName.get(TABLE_NAME_TABLE);
+    final String schema = simpleName(tableName.get(TABLE_NAME_SCHEMA));
+    final String name = simpleName(tableName.get(TABLE_NAME_TABLE));
     final String engine =
         POSTGRESQL.equals(tableDef.dbType())
             ? POSTGRESQL
@@ -64,7 +65,7 @@ public class TableImpl implements Table {
 
   @Override
   public ColumnImpl column(String name) {
-    return columns.get(name);
+    return columns.get(simpleName(name));
   }
 
   void addPatch(SchemaPatch patch) {
