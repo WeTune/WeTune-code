@@ -19,7 +19,7 @@ public class ProjImpl extends BaseOperator implements Proj {
 
   @Override
   public Placeholder fields() {
-    return plan().placeholders().getPick(this, 0);
+    return fragment().placeholders().getPick(this, 0);
   }
 
   @Override

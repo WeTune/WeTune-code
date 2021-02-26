@@ -64,7 +64,8 @@ public class SubstitutionBankImpl implements SubstitutionBank {
 
   @Override
   public SubstitutionBank add(Substitution sub) {
-    if (sub.g0().toString().equals(sub.g1().toString())) return this;
+    final Substitution flipped = sub.flip();
+    if (flipped.toString().equals(sub.toString())) return this;
     if (Generalization.canGeneralize(sub, this)) return this;
 
     if (isEligible(sub)) {
@@ -72,7 +73,6 @@ public class SubstitutionBankImpl implements SubstitutionBank {
       index.put(FragmentFingerprint.make(sub.g0()), sub);
     }
 
-    final Substitution flipped = sub.flip();
     if (isEligible(flipped)) {
       substitutions.add(flipped);
       index.put(FragmentFingerprint.make(flipped.g0()), flipped);

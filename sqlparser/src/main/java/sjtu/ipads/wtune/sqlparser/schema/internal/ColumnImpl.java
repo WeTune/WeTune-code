@@ -113,4 +113,17 @@ public class ColumnImpl implements Column {
   @Override public String toString() {
     return table + "." + name;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ColumnImpl column = (ColumnImpl) o;
+    return Objects.equals(table, column.table) && Objects.equals(name, column.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(table, name);
+  }
 }

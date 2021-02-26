@@ -33,6 +33,11 @@ public class BasePredicateEq<P> implements PredicateEq<P> {
   }
 
   @Override
+  public Constraint flip() {
+    return new BasePredicateEq<>(py, px);
+  }
+
+  @Override
   public Object[] targets() {
     return new Object[] {px(), py()};
   }

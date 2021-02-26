@@ -6,59 +6,71 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
 import java.util.List;
+import java.util.Objects;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
-  private final List<PlanAttribute> projections;
+  private final List<ASTNode> selectItems;
+  private final List<PlanAttribute> defined;
+  private List<PlanAttribute> used;
 
-  private ProjNodeImpl(List<PlanAttribute> projs) {
-    this.projections = projs;
+  private ProjNodeImpl(List<PlanAttribute> defined, List<PlanAttribute> used) {
+    this.selectItems = listMap(PlanAttribute::toSelectItem, defined);
+    this.defined = defined;
+    this.used = used;
+    bindAttributes(defined, this);
   }
 
-  public static ProjNodeImpl build(List<PlanAttribute> projs) {
-    return new ProjNodeImpl(projs);
+  public static ProjNode build(List<PlanAttribute> definedAttrs) {
+    return new ProjNodeImpl(definedAttrs, null);
+  }
+
+  public static ProjNode build(List<PlanAttribute> definedAttrs, List<PlanAttribute> usedAttrs) {
+    if (definedAttrs == null) definedAttrs = usedAttrs;
+    return new ProjNodeImpl(listMap(PlanAttribute::copy, definedAttrs), usedAttrs);
   }
 
   @Override
   public List<ASTNode> selectItems() {
-    return listMap(PlanAttribute::toSelectItem, projections);
+    final List<ASTNode> copy = listMap(ASTNode::deepCopy, selectItems);
+    updateColumnRefs(gatherColumnRefs(copy), used);
+    return copy;
   }
 
   @Override
   public List<PlanAttribute> usedAttributes() {
-    return listFlatMap(PlanAttribute::used, projections);
+    return used;
   }
 
   @Override
-  public List<PlanAttribute> outputAttributes() {
-    return projections;
+  public List<PlanAttribute> definedAttributes() {
+    return defined;
   }
 
   @Override
-  public void resolveUsedAttributes() {
+  public void resolveUsedTree() {
     final PlanNode input = predecessors()[0];
-
-    for (PlanAttribute proj : projections) {
-      final List<PlanAttribute> used = proj.used();
-      if (used == null)
-        if (WILDCARD.isInstance(proj.expr())) {
-          final String[] refName = proj.referenceName();
-          final PlanAttribute ref = input.resolveAttribute(refName[0], refName[1]);
-          proj.setUsed(ref != null ? singletonList(ref) : emptyList());
-
-        } else proj.setUsed(resolveUsedAttributes0(gatherColumnRefs(proj.expr()), input));
-      else proj.setUsed(resolveUsedAttributes1(proj.used(), input));
-    }
+    if (used != null) used = resolveUsed1(used, input);
+    else used = resolveUsed0(gatherColumnRefs(listMap(PlanAttribute::expr, defined)), input);
   }
 
   @Override
   protected PlanNode copy0() {
-    return new ProjNodeImpl(projections);
+    return build(defined, used);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ProjNodeImpl projNode = (ProjNodeImpl) o;
+    return Objects.equals(selectItems, projNode.selectItems);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(selectItems);
   }
 }

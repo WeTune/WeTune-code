@@ -15,12 +15,18 @@ public interface Constraint {
 
   boolean involves(Object obj);
 
+  Constraint flip();
+
   enum Kind {
     TableEq,
     PickEq,
     PredicateEq,
     Reference,
-    PickFrom
+    PickFrom;
+
+    public boolean isEq() {
+      return this == TableEq || this == PickEq || this == PredicateEq;
+    }
   }
 
   static Constraint tableEq(Object tx, Object ty) {

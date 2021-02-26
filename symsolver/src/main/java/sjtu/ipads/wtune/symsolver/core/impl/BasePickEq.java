@@ -38,6 +38,11 @@ public class BasePickEq<P> implements PickEq<P> {
   }
 
   @Override
+  public Constraint flip() {
+    return new BasePickEq<>(py, px);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

@@ -107,4 +107,14 @@ public class TestProof {
     test.check(
         "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c2);PickEq(c1,c3);Reference(t2,c2,t3,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t2]);PickFrom(c3,[t3])");
   }
+
+  @Test
+  void testChangeFilterColumn() {
+    final TestHelper test = new TestHelper();
+    test.g0 = wrap(plainFilter(innerJoin(null, null)));
+    test.g1 = wrap(plainFilter(innerJoin(null, null)));
+    test.print();
+    test.check(
+        "TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c1);PickEq(c0,c4);PickEq(c1,c4);PickEq(c2,c3);PickEq(c2,c5);PickEq(c3,c5);PredicateEq(p0,p1);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t3]);PickFrom(c4,[t2]);PickFrom(c5,[t3])");
+  }
 }

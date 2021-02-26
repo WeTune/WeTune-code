@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -15,19 +16,18 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanAttribute.fromExpr;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isAggFunc;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ToPlanTranslator {
   public static PlanNode translate(ASTNode node) {
     final PlanNode plan = translate0(node);
-    PlanNode.resolveUsedAttributes(plan);
+    PlanNode.resolveUsedTree(plan);
     return plan;
   }
 
@@ -35,13 +35,13 @@ public class ToPlanTranslator {
     return translate0(node.get(RELATION));
   }
 
-  private static PlanNode translate0(Relation relation) {
+  private static PlanNode translate0(Relation rel) {
     // input
-    if (relation.isTable()) return InputNode.make(relation);
+    if (rel.isTable()) return InputNode.make(rel.table(), rel.alias());
 
-    final ASTNode querySpec = locateQuerySpecNode(relation.node());
-    final ASTNode query = locateQueryNode(relation.node());
-    if (querySpec == null) return InputNode.make(relation); // TODO: UNION operator
+    final ASTNode querySpec = locateQuerySpecNode(rel.node());
+    final ASTNode query = locateQueryNode(rel.node());
+    if (querySpec == null) return InputNode.make(rel.table(), rel.alias()); // TODO: UNION operator
 
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
     final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
@@ -57,7 +57,7 @@ public class ToPlanTranslator {
     // filter
     prev = translateFilter(where, prev);
     // projection & aggregation
-    prev = translateProj(relation.alias(), selectItems, groupBy, prev);
+    prev = translateProj(rel.alias(), selectItems, groupBy, prev);
     // sort
     prev = translateSort(orderBy, prev);
     // limit
@@ -123,14 +123,16 @@ public class ToPlanTranslator {
       List<ASTNode> groupKeys,
       PlanNode predecessor) {
     if (predecessor == null) return null;
+    groupKeys = groupKeys != null ? groupKeys : Collections.emptyList();
 
     final List<PlanAttribute> outAttrs = new ArrayList<>(selections.size());
-    for (int i = 0; i < selections.size(); i++) {
-      final ASTNode selection = selections.get(i);
-      outAttrs.add(fromExpr(qualification, aliasOf(selection, i), selection));
+    for (ASTNode selectItem : selections) {
+      final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
+      if (WILDCARD.isInstance(expr)) expandWildcard(qualification, expr, predecessor, outAttrs);
+      else outAttrs.add(fromExpr(qualification, aliasOf(selectItem), expr));
     }
 
-    if (!isEmpty(groupKeys) || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
+    if (!groupKeys.isEmpty() || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
       // Aggregation. The result is Agg(Proj(..)). The projections are all attributes used in group
       // keys and aggregations
       final List<PlanAttribute> projAttrs = new ArrayList<>(selections.size() + groupKeys.size());
@@ -203,17 +205,24 @@ public class ToPlanTranslator {
   }
 
   private static boolean isAggregation(ASTNode selectItem) {
-    final ASTNode funcName = selectItem.get(SELECT_ITEM_EXPR).get(FUNC_CALL_NAME);
-    return funcName != null && funcName.get(NAME_2_0) == null && isAggFunc(funcName.get(NAME_2_1));
+    return AGGREGATE.isInstance(selectItem.get(SELECT_ITEM_EXPR));
   }
 
-  private static String aliasOf(ASTNode selectItem, int idx) {
+  private static void expandWildcard(
+      String qualification, ASTNode wildcard, PlanNode predecessor, List<PlanAttribute> dest) {
+    final ASTNode table = wildcard.get(WILDCARD_TABLE);
+    final String tableName = table != null ? table.get(TABLE_NAME_TABLE) : null;
+    for (PlanAttribute inAttr : predecessor.definedAttributes())
+      if (tableName == null || tableName.equals(inAttr.qualification()))
+        dest.add(fromExpr(qualification, inAttr.name(), inAttr.toColumnRef()));
+  }
+
+  private static String aliasOf(ASTNode selectItem) {
     final String alias = selectItem.get(SELECT_ITEM_ALIAS);
     if (alias != null) return alias;
 
     final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
-    return COLUMN_REF.isInstance(expr)
-        ? expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN)
-        : "item" + idx;
+    // Memo: Don't synthesize an alias for anonymous column.
+    return COLUMN_REF.isInstance(expr) ? expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN) : null;
   }
 }

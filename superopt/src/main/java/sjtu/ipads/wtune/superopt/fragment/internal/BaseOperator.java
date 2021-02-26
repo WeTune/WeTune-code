@@ -24,7 +24,7 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
-  public Fragment plan() {
+  public Fragment fragment() {
     return fragment;
   }
 

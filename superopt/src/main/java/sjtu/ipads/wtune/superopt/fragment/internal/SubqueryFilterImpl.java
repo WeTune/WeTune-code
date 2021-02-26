@@ -14,7 +14,7 @@ public class SubqueryFilterImpl extends BaseOperator implements SubqueryFilter {
 
   @Override
   public Placeholder fields() {
-    return plan().placeholders().getPick(this, 0);
+    return fragment().placeholders().getPick(this, 0);
   }
 
   @Override

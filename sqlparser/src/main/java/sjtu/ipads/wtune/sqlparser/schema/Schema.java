@@ -7,6 +7,8 @@ import java.util.Collection;
 public interface Schema {
   Collection<? extends Table> tables();
 
+  String dbType();
+
   Table table(String name);
 
   void patch(Iterable<SchemaPatch> patches);

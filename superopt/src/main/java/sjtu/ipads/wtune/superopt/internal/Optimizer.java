@@ -1,10 +1,12 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.optimization.*;
@@ -19,14 +21,19 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 public class Optimizer {
   private final List<PlanNode> optimized = new ArrayList<>();
   private final Set<String> known = new HashSet<>();
-  private final SubstitutionBank repo;
 
-  private Optimizer(SubstitutionBank bank) {
+  private final Queue<PlanNode> toOptimized = new LinkedList<>();
+
+  private final SubstitutionBank repo;
+  private final Schema schema;
+
+  private Optimizer(SubstitutionBank bank, Schema schema) {
     this.repo = bank;
+    this.schema = schema;
   }
 
-  public static Optimizer make(SubstitutionBank bank) {
-    return new Optimizer(bank);
+  public static Optimizer make(SubstitutionBank bank, Schema schema) {
+    return new Optimizer(bank, schema);
   }
 
   public List<ASTNode> optimize(ASTNode ast) {
@@ -34,12 +41,24 @@ public class Optimizer {
     return listMap(ToASTTranslator::translate, plans);
   }
 
-  public List<PlanNode> optimize(PlanNode op) {
+  public List<PlanNode> optimize(PlanNode node) {
     optimized.clear();
     known.clear();
-    known.add(ToASTTranslator.translate(op).toString());
-    matchAndSubstitute(op);
+    toOptimized.clear();
+
+    known.add(ToASTTranslator.translate(node).toString().toLowerCase());
+    toOptimized.offer(node);
+
+    optimize0();
+
     return optimized;
+  }
+
+  private void optimize0() {
+    while (!toOptimized.isEmpty()) {
+      final PlanNode plan = toOptimized.poll();
+      matchAndSubstitute(plan);
+    }
   }
 
   /*
@@ -57,21 +76,24 @@ public class Optimizer {
         (do this by PlanNode::copyTree)
   */
 
-  private void matchAndSubstitute(PlanNode op) {
-    for (Substitution sub : match0(op)) {
-      final Interpretations interpretations = Interpretations.build(sub.constraints());
-      for (Match match : match1(op, sub.g0().head(), interpretations)) {
+  private void matchAndSubstitute(PlanNode node) {
+    for (Substitution sub : match0(node)) {
+      final Interpretations interpretations = Interpretations.constrainedBy(sub.constraints());
+      for (Match match : match1(node, sub.g0().head(), interpretations)) {
         // impl note: `substituted` should be the root of new plan instead of matching point
         final PlanNode substituted = match.substitute(sub.g1(), interpretations);
         // match the substituted plan from beginning
-        if (known.add(ToASTTranslator.translate(substituted).toString())) {
-          optimized.add(substituted);
-          matchAndSubstitute(substituted);
+        final ASTNode ast = toAST(substituted);
+        if (known.add(ast.toString().toLowerCase())) {
+          // re-translate the plan to reset rearrangement
+          final PlanNode newPlan = ToPlanTranslator.translate(ast);
+          optimized.add(newPlan);
+          toOptimized.offer(newPlan);
         }
       }
     }
     // percolate down
-    for (PlanNode predecessor : op.predecessors()) matchAndSubstitute(predecessor);
+    for (PlanNode predecessor : node.predecessors()) matchAndSubstitute(predecessor);
   }
 
   public List<Substitution> match0(PlanNode op) {
@@ -133,5 +155,12 @@ public class Optimizer {
     }
 
     return ret;
+  }
+
+  private ASTNode toAST(PlanNode plan) {
+    final ASTNode ast = ToASTTranslator.translate(plan);
+    ASTContext.manage(schema.dbType(), ast);
+    ast.context().setSchema(schema);
+    return ast;
   }
 }

@@ -57,8 +57,9 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
-  public boolean assignAttributes(Placeholder placeholder, List<PlanAttribute> colRefs) {
-    return assign0(placeholder, new AttributeInterpretationImpl(colRefs));
+  public boolean assignAttributes(
+      Placeholder placeholder, List<PlanAttribute> in, List<PlanAttribute> out) {
+    return assign0(placeholder, new AttributeInterpretationImpl(in, out));
   }
 
   @Override
@@ -75,9 +76,11 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   private <T> boolean assign1(Placeholder placeholder, Interpretation<T> assignment) {
-    final Interpretation<T> existingAssignment =
-        (Interpretation<T>) interpretations.get(placeholder);
-    if (existingAssignment != null) return existingAssignment.isCompatible(assignment);
+    final Interpretation<T> existing = (Interpretation<T>) interpretations.get(placeholder);
+    if (existing != null) {
+      if (!existing.isCompatible(assignment)) return false;
+      if (!assignment.shouldOverride(existing)) return true;
+    }
     interpretations.put(placeholder, assignment);
     return true;
   }
@@ -121,10 +124,8 @@ public class InterpretationsImpl implements Interpretations {
       inputs[i] = inter.object();
     }
 
-    for (PlanAttribute attribute : attrInter.object())
-      for (PlanAttribute usedAttribute : attribute.used())
-        if (stream(inputs).noneMatch(it -> it.resolveAttribute(usedAttribute) != null))
-          return false;
+    for (PlanAttribute used : attrInter.object().getLeft())
+      if (stream(inputs).noneMatch(it -> it.resolveAttribute(used) != null)) return false;
 
     return true;
   }
@@ -135,8 +136,8 @@ public class InterpretationsImpl implements Interpretations {
 
     if (referee == null || referred == null || referee == referred) return true;
 
-    final List<PlanAttribute> refereeRefs = referee.object();
-    final List<PlanAttribute> referredRefs = referred.object();
+    final List<PlanAttribute> refereeRefs = referee.object().getLeft();
+    final List<PlanAttribute> referredRefs = referred.object().getLeft();
 
     if (refereeRefs.size() != referredRefs.size()) return false;
 
@@ -150,7 +151,7 @@ public class InterpretationsImpl implements Interpretations {
       if (refereeAttr == null || referredAttr == null) return false;
       if (refereeAttr == referredAttr) continue;
 
-      final Column refereeCol = refereeAttr.column(true), referredCol = referredAttr.column(true);
+      final Column refereeCol = refereeAttr.column(), referredCol = referredAttr.column();
       if (refereeCol == null || referredCol == null) return false;
       if (refereeCol == referredCol) continue;
 

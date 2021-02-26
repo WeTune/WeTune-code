@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -27,16 +28,16 @@ public interface PlainFilter extends Operator {
     final PlanNode node =
         PlainFilterNode.make(
             interpretations.getPredicate(predicate()).object(),
-            interpretations.getAttributes(fields()).object());
+            interpretations.getAttributes(fields()).object().getLeft());
     node.setPredecessor(0, predecessor);
-    node.resolveUsedAttributes();
+    node.resolveUsedTree();
     return node;
   }
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
     if (!node.type().isFilter()) return false;
-    final PlainFilterNode filter = (PlainFilterNode) node;
+    final FilterNode filter = (FilterNode) node;
     return inter.assignAttributes(fields(), filter.usedAttributes())
         && inter.assignPredicate(predicate(), filter.expr());
   }

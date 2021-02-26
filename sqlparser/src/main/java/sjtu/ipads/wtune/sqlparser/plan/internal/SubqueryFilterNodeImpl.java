@@ -36,6 +36,6 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
 
   @Override
   protected PlanNode copy0() {
-    return new SubqueryFilterNodeImpl(expr, usedAttributes);
+    return new SubqueryFilterNodeImpl(expr, usedAttrs);
   }
 }

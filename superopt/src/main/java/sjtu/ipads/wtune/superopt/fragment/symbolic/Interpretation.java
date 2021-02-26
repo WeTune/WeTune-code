@@ -8,4 +8,12 @@ public interface Interpretation<T> {
   default boolean isCompatible(Interpretation<T> other) {
     return isCompatible(other.object());
   }
+
+  default boolean shouldOverride(T obj) {
+    return false;
+  }
+
+  default boolean shouldOverride(Interpretation<T> other) {
+    return shouldOverride(other.object());
+  }
 }

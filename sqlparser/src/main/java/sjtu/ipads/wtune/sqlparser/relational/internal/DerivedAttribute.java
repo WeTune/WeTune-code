@@ -16,7 +16,6 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class DerivedAttribute extends BaseAttribute {
   // Subtleties:
@@ -25,7 +24,7 @@ public class DerivedAttribute extends BaseAttribute {
   //    such attribute is resolved lazily.
   // 2. sometimes `selectItem` is not available
   //    e.g. select * from t
-  //    such attribute is resolve eagerly
+  //    such attribute is resolved eagerly
 
   // invariant: reference == null => selectItem != null
   private final ASTNode selectItem;

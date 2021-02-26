@@ -23,10 +23,10 @@ public interface SubqueryFilter extends Operator {
   default PlanNode instantiate(Interpretations inter) {
     final PlanNode pred0 = predecessors()[0].instantiate(inter);
     final PlanNode pred1 = predecessors()[1].instantiate(inter);
-    final PlanNode node = SubqueryFilterNode.make(inter.getAttributes(fields()).object());
+    final PlanNode node = SubqueryFilterNode.make(inter.getAttributes(fields()).object().getLeft());
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
-    node.resolveUsedAttributes();
+    node.resolveUsedTree();
     return node;
   }
 

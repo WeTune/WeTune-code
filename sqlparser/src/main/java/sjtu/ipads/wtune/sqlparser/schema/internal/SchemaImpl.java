@@ -19,13 +19,15 @@ import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class SchemaImpl implements Schema {
+  private final String dbType;
   private final Map<String, TableImpl> tables;
 
-  private SchemaImpl() {
-    tables = new HashMap<>();
+  private SchemaImpl(String dbType) {
+    this.dbType = dbType;
+    this.tables = new HashMap<>();
   }
 
-  public static Schema build(Iterable<ASTNode> defs) {
+  public static Schema build(String dbType, Iterable<ASTNode> defs) {
     final Map<String, TableBuilder> builders = new HashMap<>();
     for (ASTNode def : defs) {
       if (def == null) continue; // skip comment
@@ -35,14 +37,14 @@ public class SchemaImpl implements Schema {
       else if (type == ALTER_TABLE) addAlterTable(def, builders);
       else if (type == INDEX_DEF) addIndexDef(def, builders);
     }
-    final SchemaImpl schema = new SchemaImpl();
+    final SchemaImpl schema = new SchemaImpl(dbType);
     builders.values().forEach(it -> schema.addTable(it.table()));
     schema.buildRef();
     return schema;
   }
 
   public static Schema build(String dbType, String str) {
-    return build(listMap(ASTParser.ofDb(dbType)::parseRaw, splitSql(str)));
+    return build(dbType, listMap(ASTParser.ofDb(dbType)::parseRaw, splitSql(str)));
   }
 
   private static void addCreateTable(ASTNode node, Map<String, TableBuilder> builders) {
@@ -89,6 +91,11 @@ public class SchemaImpl implements Schema {
                 listMap(it -> ref.column(it.get(COLUMN_NAME_COLUMN)), constraint.refColNames()));
           }
         }
+  }
+
+  @Override
+  public String dbType() {
+    return dbType;
   }
 
   @Override

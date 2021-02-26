@@ -51,6 +51,11 @@ public class BaseReference<T, P> implements Reference<T, P> {
   }
 
   @Override
+  public Constraint flip() {
+    return this;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

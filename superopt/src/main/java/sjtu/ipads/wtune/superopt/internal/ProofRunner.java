@@ -78,7 +78,7 @@ public class ProofRunner {
     if (current % 10 == 0) LOG.log(System.Logger.Level.INFO, "{0} / {1}", current, estimatedTotal);
 
     try {
-      final Collection<Substitution> results = Prover.prove(g0, g1, 10000);
+      final Collection<Substitution> results = Prover.prove(g0, g1, 20000);
       logResult(results);
     } catch (Throwable ex) {
       logError(ex, g0, g1);

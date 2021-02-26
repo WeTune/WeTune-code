@@ -8,6 +8,11 @@ import sjtu.ipads.wtune.symsolver.core.impl.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 
 public interface DecidableConstraint extends Constraint, Decision, Comparable<DecidableConstraint> {
+  @Override
+  default Constraint flip() {
+    throw new UnsupportedOperationException();
+  }
+
   static DecidableConstraint tableEq(TableSym tx, TableSym ty) {
     return DecidableTableEq.build(tx, ty);
   }

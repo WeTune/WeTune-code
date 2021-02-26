@@ -4,11 +4,11 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
@@ -24,30 +24,20 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final String alias;
   private final List<PlanAttribute> attributes;
 
-  private InputNodeImpl(Relation rel) {
-    this.table = rel.table();
-    this.alias = rel.alias();
-    this.attributes = listMap(it -> fromColumn(alias, it), table.columns());
-  }
-
-  private InputNodeImpl(Table table, String alias, List<PlanAttribute> attributes) {
+  private InputNodeImpl(Table table, String alias) {
     this.table = table;
     this.alias = alias;
-    this.attributes = attributes;
+    this.attributes = listMap(it -> fromColumn(alias, it), table.columns());
+    bindAttributes(attributes, this);
   }
 
-  public static InputNode build(Relation rel) {
-    return new InputNodeImpl(rel);
+  public static InputNode build(Table table, String alias) {
+    return new InputNodeImpl(table, alias);
   }
 
   @Override
   public Table table() {
     return table;
-  }
-
-  @Override
-  public List<PlanAttribute> usedAttributes() {
-    return Collections.emptyList();
   }
 
   @Override
@@ -63,15 +53,30 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  public List<PlanAttribute> outputAttributes() {
+  public List<PlanAttribute> usedAttributes() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<PlanAttribute> definedAttributes() {
     return attributes;
   }
 
   @Override
-  public void resolveUsedAttributes() {}
+  protected PlanNode copy0() {
+    return new InputNodeImpl(table, alias);
+  }
 
   @Override
-  protected PlanNode copy0() {
-    return new InputNodeImpl(table, alias, attributes);
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    InputNodeImpl inputNode = (InputNodeImpl) o;
+    return Objects.equals(table, inputNode.table) && Objects.equals(alias, inputNode.alias);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(table, alias);
   }
 }

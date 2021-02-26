@@ -41,7 +41,7 @@ public class TestHint {
     final PlanNode joinNode = ToPlanTranslator.translate(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator joinOp = sub.g0().head().predecessors()[0];
-    final Interpretations inter = Interpretations.build(sub.constraints());
+    final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
 
     final Iterable<PlanNode> mutated = Hint.apply(joinNode, joinOp, inter);
     assertEquals(1, Iterables.size(mutated));
@@ -69,7 +69,7 @@ public class TestHint {
     final PlanNode joinNode = ToPlanTranslator.translate(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator joinOp = sub.g0().head().predecessors()[0];
-    final Interpretations inter = Interpretations.build(sub.constraints());
+    final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
 
     final Iterable<PlanNode> mutated = Hint.apply(joinNode, joinOp, inter);
     assertEquals(1, Iterables.size(mutated));
@@ -97,7 +97,7 @@ public class TestHint {
     final PlanNode filterNode = ToPlanTranslator.translate(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator filterOp = sub.g0().head();
-    final Interpretations inter = Interpretations.build(sub.constraints());
+    final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
 
     final Iterable<PlanNode> mutated = Hint.apply(filterNode, filterOp, inter);
     final List<String> str =

@@ -29,12 +29,12 @@ public class JoinHint {
       final InnerJoinNode joinTree = rebuildJoinTree(joins, i);
       if (!isValidJoin(joinTree)) continue;
 
-      resolveUsedAttributes(joinTree);
+      resolveUsedTree(joinTree);
       if (!isEligibleMatch(joinTree, op, inter)) continue;
 
       if (successor != null) copyToRoot(successor).replacePredecessor(originRoot, joinTree);
 
-      resolveUsedAttributes(rootOf(joinTree));
+      resolveUsedTree(rootOf(joinTree));
       joinTrees.add(joinTree);
     }
 
@@ -100,9 +100,9 @@ public class JoinHint {
 
     // check whether the Reference constraint can be enforced
     if (inter.constraints().requiresReference(op.leftFields(), op.rightFields())) {
-      final List<Column> referred = listMap(it -> it.column(true), node.rightAttributes());
+      final List<Column> referred = listMap(PlanAttribute::column, node.rightAttributes());
       for (PlanAttribute referee : node.leftAttributes()) {
-        final Column column = referee.column(true);
+        final Column column = referee.column();
         if (column == null || !column.references(referred)) return false;
       }
     }

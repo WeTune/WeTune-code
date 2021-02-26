@@ -19,7 +19,7 @@ public class InputImpl extends BaseOperator implements Input {
 
   @Override
   public Placeholder table() {
-    return plan().placeholders().getTable(this, 0);
+    return fragment().placeholders().getTable(this, 0);
   }
 
   @Override

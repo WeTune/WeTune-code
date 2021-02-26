@@ -6,8 +6,8 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
@@ -34,37 +34,30 @@ public class NativePlanAttribute extends PlanAttributeBase {
   }
 
   @Override
-  public String[] referenceName() {
-    return null;
-  }
-
-  @Override
-  public Column column(boolean recursive) {
+  public Column column() {
     return column;
-  }
-
-  @Override
-  public PlanAttribute reference(boolean recursive) {
-    return this;
-  }
-
-  @Override
-  public List<PlanAttribute> used() {
-    return Collections.singletonList(this);
-  }
-
-  @Override
-  public void setUsed(List<PlanAttribute> used) {}
-
-  @Override
-  public boolean refEquals(PlanAttribute other) {
-    if (other instanceof NativePlanAttribute) return this == other;
-    else if (other instanceof DerivedPlanAttribute) return this == other.reference(true);
-    else return false;
   }
 
   @Override
   public String toString() {
     return column + " AS " + qualification() + "." + name();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    NativePlanAttribute that = (NativePlanAttribute) o;
+    return Objects.equals(column, that.column);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(column);
+  }
+
+  @Override
+  public PlanAttribute copy() {
+    return new NativePlanAttribute(qualification(), column());
   }
 }

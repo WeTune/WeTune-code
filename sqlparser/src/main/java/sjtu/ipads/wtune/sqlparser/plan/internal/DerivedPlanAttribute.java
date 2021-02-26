@@ -9,33 +9,24 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
 public class DerivedPlanAttribute extends PlanAttributeBase {
   private final ASTNode expr;
-  private final String[] referenceName;
-  private List<PlanAttribute> used;
 
-  public DerivedPlanAttribute(
-      String qualification, String name, ASTNode expr, String[] referenceName) {
+  public DerivedPlanAttribute(String qualification, String name, ASTNode expr) {
     super(qualification, name);
     this.expr = expr;
-    this.referenceName = referenceName;
   }
 
   public static PlanAttribute fromExpr(String qualification, String name, ASTNode expr) {
-    final String[] refName;
-    if (COLUMN_REF.isInstance(expr)) {
-      if (qualification == null) qualification = expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_TABLE);
+    if (qualification == null && COLUMN_REF.isInstance(expr))
+      qualification = expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_TABLE);
 
-      final ASTNode colName = expr.get(COLUMN_REF_COLUMN);
-      refName = new String[] {colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN)};
-    } else refName = null;
-
-    return new DerivedPlanAttribute(qualification, name, expr, refName);
+    return new DerivedPlanAttribute(qualification, name, expr);
   }
 
   public static List<PlanAttribute> build(List<Attribute> attrs, String qualification) {
@@ -53,14 +44,9 @@ public class DerivedPlanAttribute extends PlanAttributeBase {
       final String[] referenceName =
           ref != null ? new String[] {ref.owner().alias(), ref.name()} : null;
 
-      outAttrs.add(new DerivedPlanAttribute(qualification, attr.name(), expr, referenceName));
+      outAttrs.add(new DerivedPlanAttribute(qualification, attr.name(), expr));
     }
     return outAttrs;
-  }
-
-  @Override
-  public String[] referenceName() {
-    return referenceName;
   }
 
   @Override
@@ -69,34 +55,21 @@ public class DerivedPlanAttribute extends PlanAttributeBase {
   }
 
   @Override
-  public Column column(boolean recursive) {
+  public Column column() {
     final PlanAttribute ref = reference(true);
-    return ref == null ? null : ref.column(true);
+    return ref != null ? ref.column() : null;
   }
 
   @Override
-  public PlanAttribute reference(boolean recursive) {
-    final PlanAttribute reference =
-        isEmpty(used) || !COLUMN_REF.isInstance(expr) ? null : used.get(0);
+  public boolean isReferencedBy(String qualification, String alias) {
+    if (super.isReferencedBy(qualification, alias)) return true;
 
-    if (!recursive || reference == null) return reference;
-    return reference.reference(true);
+    final PlanAttribute ref = reference(false);
+    return ref != null && ref.isReferencedBy(qualification, alias);
   }
 
   @Override
-  public List<PlanAttribute> used() {
-    return used;
-  }
-
-  @Override
-  public void setUsed(List<PlanAttribute> used) {
-    this.used = used;
-  }
-
-  @Override
-  public boolean refEquals(PlanAttribute other) {
-    if (other instanceof NativePlanAttribute) return reference(true) == other;
-    else if (other instanceof DerivedPlanAttribute) return reference(true) == other.reference(true);
-    else return false;
+  public PlanAttribute copy() {
+    return new DerivedPlanAttribute(qualification(), name(), expr());
   }
 }

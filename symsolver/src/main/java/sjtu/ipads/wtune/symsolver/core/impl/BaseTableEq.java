@@ -38,6 +38,11 @@ public class BaseTableEq<T> implements TableEq<T> {
   }
 
   @Override
+  public Constraint flip() {
+    return new BaseTableEq<>(ty, tx);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof TableEq)) return false;

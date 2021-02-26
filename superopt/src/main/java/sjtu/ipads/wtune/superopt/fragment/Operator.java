@@ -11,7 +11,7 @@ import java.util.List;
 public interface Operator extends Comparable<Operator> {
   OperatorType type();
 
-  Fragment plan();
+  Fragment fragment();
 
   Operator successor();
 

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import gnu.trove.list.TIntList;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -49,22 +50,30 @@ public abstract class PlanNodeBase implements PlanNode {
 
   protected abstract PlanNode copy0();
 
-  protected static List<PlanAttribute> resolveUsedAttributes0(
-      List<ASTNode> columnRefs, PlanNode lookup) {
+  protected static List<PlanAttribute> resolveUsed0(List<ASTNode> columnRefs, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, columnRefs);
   }
 
-  protected static List<PlanAttribute> resolveUsedAttributes1(
-      List<PlanAttribute> attr, PlanNode lookup) {
+  protected static List<PlanAttribute> resolveUsed1(List<PlanAttribute> attr, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, attr);
   }
 
-  protected static List<ASTNode> updateColumnRefs(
-      List<ASTNode> refs, List<PlanAttribute> usedAttrs) {
+  protected static void updateColumnRefs(List<ASTNode> refs, List<PlanAttribute> usedAttrs) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
       final PlanAttribute usedAttr = usedAttrs.get(i);
       if (usedAttr != null) refs.get(i).update(usedAttr.toColumnRef());
     }
-    return refs;
+  }
+
+  protected static void updateColumnRefs(
+      List<ASTNode> refs, TIntList usedAttrs, List<PlanAttribute> inputAttrs) {
+    for (int i = 0, bound = refs.size(); i < bound; i++) {
+      final int attrIdx = usedAttrs.get(i);
+      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).toColumnRef());
+    }
+  }
+
+  protected static void bindAttributes(List<PlanAttribute> attrs, PlanNode node) {
+    attrs.forEach(it -> it.setOrigin(node));
   }
 }

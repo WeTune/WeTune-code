@@ -19,12 +19,12 @@ public class PlainFilterImpl extends BaseOperator implements PlainFilter {
 
   @Override
   public Placeholder fields() {
-    return plan().placeholders().getPick(this, 0);
+    return fragment().placeholders().getPick(this, 0);
   }
 
   @Override
   public Placeholder predicate() {
-    return plan().placeholders().getPredicate(this, 0);
+    return fragment().placeholders().getPredicate(this, 0);
   }
 
   @Override

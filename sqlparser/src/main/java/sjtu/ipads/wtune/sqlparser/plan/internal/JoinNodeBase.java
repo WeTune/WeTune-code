@@ -76,22 +76,14 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
     } else {
       // otherwise, copy the original expression (and rectify column refs)
       final ASTNode copy = onCondition.deepCopy();
-
-      final List<ASTNode> nodes = gatherColumnRefs(copy);
-
-      for (int i = 0; i < used.size(); i++) {
-        final PlanAttribute usedAttr = used.get(i);
-        if (usedAttr != null) nodes.get(i).update(usedAttr.toColumnRef());
-      }
-
+      updateColumnRefs(gatherColumnRefs(copy), used);
       return copy;
     }
   }
 
   @Override
-  public List<PlanAttribute> outputAttributes() {
-    return listJoin(
-        predecessors()[0].outputAttributes(), predecessors()[1].outputAttributes());
+  public List<PlanAttribute> definedAttributes() {
+    return listJoin(predecessors()[0].definedAttributes(), predecessors()[1].definedAttributes());
   }
 
   @Override
@@ -115,12 +107,12 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public void resolveUsedAttributes() {
-    if (used == null) used = resolveUsedAttributes0(gatherColumnRefs(onCondition), this);
-    else used = resolveUsedAttributes1(used, this);
+  public void resolveUsedTree() {
+    if (used == null) used = resolveUsed0(gatherColumnRefs(onCondition), this);
+    else used = resolveUsed1(used, this);
 
-    left = listFilter(Objects::nonNull, resolveUsedAttributes1(used, predecessors()[0]));
-    right = listFilter(Objects::nonNull, resolveUsedAttributes1(used, predecessors()[1]));
+    left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
+    right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
   }
 
   private static boolean isNormalForm(ASTNode expr) {
@@ -133,5 +125,18 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
           && COLUMN_REF.isInstance(expr.get(BINARY_RIGHT));
 
     } else return false;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    JoinNodeBase that = (JoinNodeBase) o;
+    return Objects.equals(onCondition, that.onCondition);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.getClass(), onCondition);
   }
 }

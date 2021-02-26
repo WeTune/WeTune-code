@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.support.Issue;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
@@ -16,6 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.logging.LogManager;
+
+import static java.util.Collections.singletonList;
 
 public class Main {
 
@@ -74,32 +79,35 @@ public class Main {
   }
 
   private static void test0() throws IOException {
+    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "substitution_bank"));
     final SubstitutionBank bank =
-        SubstitutionBank.make()
-            .importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
-    System.out.println(bank.count());
+        SubstitutionBank.make().importFrom(lines.subList(0, lines.size() - 1));
+    bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
-    final Optimizer optimizer = Optimizer.make(bank);
-
-    final Issue issue = Issue.findAll().get(2);
+    final Issue issue = Issue.findAll().get(7);
+    final String sql = "";
 
     final Statement stmt = Statement.findOne(issue.app(), issue.stmtId());
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
-    ast.context().setSchema(stmt.app().schema("base"));
+    final Schema schema = stmt.app().schema("base");
+    ast.context().setSchema(schema);
 
     System.out.println(stmt);
     System.out.println(ast.toString(false));
-    //    final PlanNode plan = ToPlanTranslator.translate(ast);
+
+    final PlanNode plan = ToPlanTranslator.translate(ast);
     //    System.out.println(
     //        sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(plan).toString(false));
 
-    //    for (Substitution substitution : optimizer.match0(plan)) {
+    //    for (Substitution substitution : optimizer.match0(filter)) {
     //      System.out.println(substitution);
     //    }
 
-    final List<ASTNode> optimized = optimizer.optimize(ast);
+    final List<PlanNode> optimized = Optimizer.make(bank, schema).optimize(plan);
     System.out.println(optimized.size());
-    for (ASTNode opt : optimized) System.out.println(opt);
+
+    for (PlanNode opt : optimized)
+      System.out.println(sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(opt).toString());
   }
 }

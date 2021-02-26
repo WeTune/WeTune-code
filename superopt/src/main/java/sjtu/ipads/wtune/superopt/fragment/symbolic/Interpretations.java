@@ -18,13 +18,18 @@ public interface Interpretations extends MultiVersion {
 
   PredicateInterpretation getPredicate(Placeholder placeholder);
 
-  boolean assignAttributes(Placeholder placeholder, List<PlanAttribute> projection);
+  boolean assignAttributes(
+      Placeholder placeholder, List<PlanAttribute> in, List<PlanAttribute> out);
 
   boolean assignInput(Placeholder placeholder, PlanNode planNode);
 
   boolean assignPredicate(Placeholder placeholder, ASTNode expr);
 
-  static Interpretations build(Constraints constraints) {
+  default boolean assignAttributes(Placeholder placeholder, List<PlanAttribute> in) {
+    return assignAttributes(placeholder, in, null);
+  }
+
+  static Interpretations constrainedBy(Constraints constraints) {
     return InterpretationsImpl.build(constraints);
   }
 }

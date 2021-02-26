@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.optimization.internal.MatchingImpl;
 
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedAttributes;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedTree;
 
 public interface Match {
   PlanNode matchPoint();
@@ -21,7 +21,7 @@ public interface Match {
     else {
       matchPoint.successor().replacePredecessor(matchPoint, newNode);
       final PlanNode root = PlanNode.rootOf(newNode);
-      resolveUsedAttributes(root);
+      resolveUsedTree(root);
       return root;
     }
   }
