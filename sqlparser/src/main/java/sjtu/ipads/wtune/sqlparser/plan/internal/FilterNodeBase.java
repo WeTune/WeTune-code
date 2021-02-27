@@ -36,7 +36,7 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   }
 
   @Override
-  public void resolveUsedTree() {
+  public void resolveUsed() {
     if (usedAttrs == null) usedAttrs = resolveUsed0(gatherColumnRefs(expr), predecessors()[0]);
     else usedAttrs = resolveUsed1(usedAttrs, predecessors()[0]);
   }

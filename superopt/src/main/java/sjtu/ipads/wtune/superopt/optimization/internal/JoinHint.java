@@ -1,16 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import com.google.common.collect.Lists;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.fragment.InnerJoin;
+import sjtu.ipads.wtune.superopt.fragment.Join;
+import sjtu.ipads.wtune.superopt.fragment.LeftJoin;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
@@ -26,7 +31,7 @@ public class JoinHint {
     final PlanNode successor = originRoot.successor();
 
     for (int i = 0, bound = joins.size(); i <= bound; i++) {
-      final InnerJoinNode joinTree = rebuildJoinTree(joins, i);
+      final JoinNode joinTree = rebuildJoinTree(joins, i);
       if (!isValidJoin(joinTree)) continue;
 
       resolveUsedTree(joinTree);
@@ -52,12 +57,39 @@ public class JoinHint {
     return joins;
   }
 
-  private static InnerJoinNode rebuildJoinTree(List<InnerJoinNode> nodes, int rootIdx) {
+  public static Iterable<PlanNode> rearrangeJoin(
+      InnerJoinNode originRoot, LeftJoin op, Interpretations inter) {
+    final List<JoinNode> path = findPathToLeftJoin(originRoot);
+    if (isEmpty(path)) return emptyList();
+
+    final JoinNode joinTree = rebuildJoinTree(Lists.reverse(path), path.size() - 1);
+    if (!isValidJoin(joinTree)) return emptyList();
+
+    resolveUsedTree(joinTree);
+    if (!isEligibleMatch(joinTree, op, inter)) return emptyList();
+
+    final PlanNode successor = originRoot.successor();
+    if (successor != null) copyToRoot(successor).replacePredecessor(originRoot, joinTree);
+
+    resolveUsedTree(rootOf(joinTree));
+    return singletonList(joinTree);
+  }
+
+  private static List<JoinNode> findPathToLeftJoin(PlanNode node) {
+    if (!(node instanceof JoinNode)) return null;
+    if (node instanceof LeftJoinNode) return newArrayList((JoinNode) node);
+    assert node instanceof InnerJoinNode;
+    final List<JoinNode> path = findPathToLeftJoin(node.predecessors()[0]);
+    if (path != null) path.add((JoinNode) node);
+    return path;
+  }
+
+  private static JoinNode rebuildJoinTree(List<? extends JoinNode> nodes, int rootIdx) {
     final boolean shiftLeaves = rootIdx >= nodes.size();
     rootIdx = Math.min(rootIdx, nodes.size() - 1);
 
     // use nodes[rootIdx] as root, construct a left-deep join tree with remaining nodes
-    final InnerJoinNode root = (InnerJoinNode) nodes.get(rootIdx).copy();
+    final JoinNode root = (JoinNode) nodes.get(rootIdx).copy();
     root.setPredecessor(1, copyTree(root.predecessors()[1]));
 
     PlanNode successor = root;
@@ -82,15 +114,15 @@ public class JoinHint {
   }
 
   private static boolean isValidJoin(PlanNode node) {
-    if (!(node instanceof InnerJoinNode)) return true;
-    final InnerJoinNode join = (InnerJoinNode) node;
+    if (!(node instanceof JoinNode)) return true;
+    final JoinNode join = (JoinNode) node;
     // check if all attributes are presented in input
     for (PlanAttribute attr : join.usedAttributes())
       if (join.resolveAttribute(attr) == null) return false;
     return isValidJoin(join.predecessors()[0]);
   }
 
-  private static boolean isEligibleMatch(InnerJoinNode node, InnerJoin op, Interpretations inter) {
+  private static boolean isEligibleMatch(JoinNode node, Join op, Interpretations inter) {
     final AttributeInterpretation leftInter = inter.getAttributes(op.leftFields());
     final AttributeInterpretation rightInter = inter.getAttributes(op.rightFields());
 

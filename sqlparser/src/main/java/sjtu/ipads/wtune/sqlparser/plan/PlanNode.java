@@ -22,7 +22,7 @@ public interface PlanNode {
 
   void setSuccessor(PlanNode successor);
 
-  void resolveUsedTree();
+  void resolveUsed();
 
   List<PlanAttribute> definedAttributes();
 
@@ -83,7 +83,7 @@ public interface PlanNode {
 
   static void resolveUsedTree(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) resolveUsedTree(predecessor);
-    node.resolveUsedTree();
+    node.resolveUsed();
   }
 
   static boolean equalsTree(PlanNode n0, PlanNode n1) {

@@ -85,6 +85,15 @@ public class TestOptimizer {
   }
 
   @Test
+  void testDiaspora202() {
+    // TODO: remove distinct
+    final String expected =
+        "SELECT COUNT(DISTINCT `contacts`.`id`) FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `aspect_memberships`.`aspect_id` = 250 AND `aspect_memberships`.`contact_id` = `contacts`.`id` WHERE `contacts`.`user_id` = 332";
+    doTest("diaspora", 202, expected);
+  }
+
+  // TODO: diaspora-224
+  @Test
   void testDiaspora295() {
     doTest(
         "diaspora",

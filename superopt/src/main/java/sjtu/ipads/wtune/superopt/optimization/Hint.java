@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.InnerJoin;
+import sjtu.ipads.wtune.superopt.fragment.LeftJoin;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
@@ -30,6 +31,10 @@ public interface Hint {
     if ((opType == OperatorType.PlainFilter && nodeType.isFilter())
         || (opType == OperatorType.SubqueryFilter && nodeType == OperatorType.SubqueryFilter))
       return rearrangeFilter((FilterNode) node, op, inter);
+
+    // Rearrange plan to match left join
+    if (opType == OperatorType.LeftJoin && nodeType == OperatorType.InnerJoin)
+      return rearrangeJoin((InnerJoinNode) node, (LeftJoin) op, inter);
 
     // Otherwise, if operator and node are of different type, then they can never match
     if (opType != nodeType) return emptyList();

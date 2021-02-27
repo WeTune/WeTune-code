@@ -21,7 +21,7 @@ public interface Proj extends Operator {
     final var pair = interpretations.getAttributes(fields()).object();
     final ProjNode node = ProjNode.copyFrom(pair.getRight(), pair.getLeft());
     node.setPredecessor(0, pred);
-    node.resolveUsedTree();
+    node.resolveUsed();
     return node;
   }
 

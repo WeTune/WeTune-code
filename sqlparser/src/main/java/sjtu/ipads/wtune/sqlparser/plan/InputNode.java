@@ -15,7 +15,7 @@ public interface InputNode extends PlanNode {
   }
 
   @Override
-  default void resolveUsedTree() {}
+  default void resolveUsed() {}
 
   static InputNode make(Table table, String alias) {
     return InputNodeImpl.build(table, alias);

@@ -30,7 +30,7 @@ public interface PlainFilter extends Operator {
             interpretations.getPredicate(predicate()).object(),
             interpretations.getAttributes(fields()).object().getLeft());
     node.setPredecessor(0, predecessor);
-    node.resolveUsedTree();
+    node.resolveUsed();
     return node;
   }
 

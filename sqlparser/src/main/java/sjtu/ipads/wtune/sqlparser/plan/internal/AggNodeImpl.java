@@ -71,7 +71,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
-  public void resolveUsedTree() {
+  public void resolveUsed() {
     // `input` must contains all attributes used in groupKeys and groupItems,
     // and its output relation must keep unchanged even after substitution.
     // Thus, to handle attribute displace, the used attribute are recorded by index.

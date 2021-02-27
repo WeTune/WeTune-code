@@ -26,7 +26,7 @@ public interface SubqueryFilter extends Operator {
     final PlanNode node = SubqueryFilterNode.make(inter.getAttributes(fields()).object().getLeft());
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
-    node.resolveUsedTree();
+    node.resolveUsed();
     return node;
   }
 

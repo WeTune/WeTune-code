@@ -50,7 +50,7 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  public void resolveUsedTree() {
+  public void resolveUsed() {
     final PlanNode input = predecessors()[0];
     if (used != null) used = resolveUsed1(used, input);
     else used = resolveUsed0(gatherColumnRefs(listMap(PlanAttribute::expr, defined)), input);

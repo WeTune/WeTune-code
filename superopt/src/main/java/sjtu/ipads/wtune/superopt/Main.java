@@ -84,7 +84,7 @@ public class Main {
         SubstitutionBank.make().importFrom(lines.subList(0, lines.size() - 1));
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
-    final Issue issue = Issue.findAll().get(7);
+    final Issue issue = Issue.findAll().get(5);
     final String sql = "";
 
     final Statement stmt = Statement.findOne(issue.app(), issue.stmtId());

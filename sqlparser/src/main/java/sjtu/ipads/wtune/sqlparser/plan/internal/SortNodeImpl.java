@@ -41,7 +41,7 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   @Override
-  public void resolveUsedTree() {
+  public void resolveUsed() {
     if (usedAttrs == null) {
       final PlanNode input = predecessors()[0];
       final List<PlanAttribute> attrs = input.definedAttributes();

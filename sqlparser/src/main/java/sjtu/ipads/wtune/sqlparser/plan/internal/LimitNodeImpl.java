@@ -42,7 +42,7 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   }
 
   @Override
-  public void resolveUsedTree() {}
+  public void resolveUsed() {}
 
   @Override
   protected PlanNode copy0() {

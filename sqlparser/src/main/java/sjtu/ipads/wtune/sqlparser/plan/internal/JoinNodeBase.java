@@ -107,7 +107,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public void resolveUsedTree() {
+  public void resolveUsed() {
     if (used == null) used = resolveUsed0(gatherColumnRefs(onCondition), this);
     else used = resolveUsed1(used, this);
 

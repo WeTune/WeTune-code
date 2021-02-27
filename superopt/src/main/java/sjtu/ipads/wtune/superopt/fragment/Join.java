@@ -24,7 +24,7 @@ public interface Join extends Operator {
 
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
-    node.resolveUsedTree();
+    node.resolveUsed();
     return node;
   }
 
