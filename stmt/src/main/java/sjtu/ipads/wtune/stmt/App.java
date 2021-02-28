@@ -14,7 +14,11 @@ public interface App {
 
   String dbType();
 
-  Schema schema(String tag);
+  Schema schema(String tag, boolean patched);
+
+  default Schema schema(String tag) {
+    return schema(tag, false);
+  }
 
   static App of(String name) {
     return AppImpl.of(name);

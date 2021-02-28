@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface SchemaPatch {
   enum Type {
+    INDEX,
     BOOLEAN,
     ENUM,
     UNIQUE,

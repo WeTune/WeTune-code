@@ -44,6 +44,7 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
+      //      Workflow.inferForeignKeys("discourse");
       test0();
     }
   }
@@ -84,17 +85,19 @@ public class Main {
         SubstitutionBank.make().importFrom(lines.subList(0, lines.size() - 1));
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
-    final Issue issue = Issue.findAll().get(5);
+    final Issue issue = Issue.findAll().get(27);
     final String sql = "";
 
     final Statement stmt = Statement.findOne(issue.app(), issue.stmtId());
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
-    final Schema schema = stmt.app().schema("base");
+    final Schema schema = stmt.app().schema("base", true);
     ast.context().setSchema(schema);
 
     System.out.println(stmt);
     System.out.println(ast.toString(false));
+
+    //    System.out.println(InferForeignKey.analyze(stmt.parsed()));
 
     final PlanNode plan = ToPlanTranslator.translate(ast);
     //    System.out.println(
@@ -109,5 +112,6 @@ public class Main {
 
     for (PlanNode opt : optimized)
       System.out.println(sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(opt).toString());
+    System.out.println(stmt);
   }
 }

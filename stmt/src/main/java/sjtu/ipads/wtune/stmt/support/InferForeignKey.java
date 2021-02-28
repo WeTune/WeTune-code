@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.support;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
@@ -13,7 +14,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.UNIQUE;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.PRIMARY;
 
 public class InferForeignKey {
   public static Set<Column> analyze(ASTNode node) {
@@ -35,6 +36,9 @@ public class InferForeignKey {
   }
 
   private static void addSuspect(Column column, Set<Column> inferred) {
-    if (!column.isFlag(FOREIGN_KEY) && !column.isFlag(UNIQUE)) inferred.add(column);
+    if (!column.isFlag(FOREIGN_KEY)
+        && !column.isFlag(PRIMARY)
+        && (column.dataType().category() == Category.INTEGRAL
+            || column.dataType().category() == Category.STRING)) inferred.add(column);
   }
 }

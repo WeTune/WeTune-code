@@ -20,8 +20,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.PredicateInterpretation;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
@@ -36,12 +35,15 @@ public class FilterHint {
   private final Set<FilterNode> used;
   private final List<FilterNode> assigned;
 
+  private final boolean forceFullMatch;
+
   private final List<Pair<List<FilterNode>, Set<FilterNode>>> results;
 
-  public FilterHint(Collection<FilterNode> filters, Interpretations inter) {
+  public FilterHint(Collection<FilterNode> filters, boolean forceFullMatch, Interpretations inter) {
     this.filters = new HashSet<>(filters);
     this.subqueryFilters =
         collectionFilter(it -> it instanceof SubqueryFilter, filters, HashSet::new);
+    this.forceFullMatch = forceFullMatch;
     this.inter = inter;
 
     this.used = new HashSet<>();
@@ -54,8 +56,9 @@ public class FilterHint {
       FilterNode chainHead, Operator op, Interpretations inter) {
     final List<FilterNode> filterNodes = gatherFilters(chainHead);
     final List<Operator> filterOps = gatherFilters(op);
+    final boolean forceFullMatch = op.successor() != null;
 
-    final FilterHint distributor = new FilterHint(filterNodes, inter);
+    final FilterHint distributor = new FilterHint(filterNodes, forceFullMatch, inter);
 
     final List<Operator> subOps = listFilter(it -> it instanceof SubqueryFilter, filterOps);
     // if SubqueryFilters in plan is insufficient, then must fail to match
@@ -73,7 +76,9 @@ public class FilterHint {
     final List<PlanNode> rebuiltChains = new ArrayList<>(distributor.results.size());
     for (var pair : distributor.results) {
       final Iterable<FilterNode> used = pair.getLeft();
-      final Iterable<FilterNode> unused = Sets.difference(distributor.filters, pair.getRight());
+      final Set<FilterNode> unused = Sets.difference(distributor.filters, pair.getRight());
+
+      assert !forceFullMatch || unused.isEmpty();
 
       final PlanNode matchPoint = rebuildFilters(unused, used, chainHead, predecessor);
       rebuiltChains.add(matchPoint);
@@ -85,7 +90,8 @@ public class FilterHint {
 
   private void distribute(List<? extends Operator> operators, int idx) {
     if (idx >= operators.size()) {
-      results.add(Pair.of(new ArrayList<>(assigned), new HashSet<>(used)));
+      if (!forceFullMatch || used.size() == filters.size())
+        results.add(Pair.of(new ArrayList<>(assigned), new HashSet<>(used)));
       return;
     }
 
@@ -114,11 +120,12 @@ public class FilterHint {
       candidates.removeAll(used);
 
       if (candidates.isEmpty()) return emptySet();
+      if (forceFullMatch && idx == operators.size() - 1) return singleton(candidates);
 
       final int max = filters.size() - used.size() - (operators.size() - idx - 1);
       assert max > 0;
 
-      return IntStream.range(1, max + 1)
+      return IntStream.range(1, Math.min(max, candidates.size()) + 1)
           .mapToObj(it -> Sets.combinations(candidates, it))
           .reduce(Sets::union)
           .get();

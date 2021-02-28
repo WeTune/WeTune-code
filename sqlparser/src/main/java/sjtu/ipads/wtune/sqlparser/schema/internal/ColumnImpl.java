@@ -76,7 +76,8 @@ public class ColumnImpl implements Column {
     return constraints == null ? Collections.emptyList() : constraints;
   }
 
-  @Override public Collection<SchemaPatch> patches() {
+  @Override
+  public Collection<SchemaPatch> patches() {
     return patches == null ? Collections.emptyList() : patches;
   }
 
@@ -91,18 +92,30 @@ public class ColumnImpl implements Column {
     if (constraint.type() == null) flags.add(INDEXED);
     else
       switch (constraint.type()) {
-        case UNIQUE -> flags.add(UNIQUE);
-        case PRIMARY -> flags.add(PRIMARY);
-        case NOT_NULL -> flags.add(NOT_NULL);
-        case FOREIGN -> flags.add(FOREIGN_KEY);
-        case CHECK -> flags.add(HAS_CHECK);
+        case PRIMARY:
+          flags.add(PRIMARY);
+        case UNIQUE:
+          flags.add(UNIQUE);
+          flags.add(INDEXED);
+          break;
+        case NOT_NULL:
+          flags.add(NOT_NULL);
+          break;
+        case FOREIGN:
+          flags.add(FOREIGN_KEY);
+          flags.add(INDEXED);
+          break;
+        case CHECK:
+          flags.add(HAS_CHECK);
+          break;
       }
   }
 
-  void addPatch(SchemaPatch patch){
+  void addPatch(SchemaPatch patch) {
     if (patches == null) patches = new ArrayList<>(2);
     patches.add(patch);
     switch (patch.type()) {
+      case INDEX -> flags.add(INDEXED);
       case BOOLEAN -> flags.add(IS_BOOLEAN);
       case ENUM -> flags.add(IS_ENUM);
       case UNIQUE -> flags.add(UNIQUE);

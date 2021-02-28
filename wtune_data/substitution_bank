@@ -2034,3 +2034,5 @@ Proj<c0>(PlainFilter<p0 c1>(LeftJoin<c2 c3>(Input<t0>,Input<t1>)))|Proj<c4>(Plai
 Proj<c0>(PlainFilter<p0 c1>(LeftJoin<c2 c3>(Input<t0>,Input<t1>)))|Proj<c4>(PlainFilter<p1 c5>(Input<t2>))|TableEq(t0,t2);PickEq(c0,c4);PickEq(c1,c5);PredicateEq(p0,p1);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c4,[t2]);PickFrom(c5,[t2])
 ====
 PlainFilter<p0 c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))|PlainFilter<p1 c3>(InnerJoin<c4 c5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c1);PickEq(c0,c4);PickEq(c1,c4);PickEq(c2,c3);PickEq(c2,c5);PickEq(c3,c5);PredicateEq(p0,p1);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t3]);PickFrom(c4,[t2]);PickFrom(c5,[t3])
+====
+InnerJoin<c0 c1>(InnerJoin<c2 c3>(Input<t0>,Input<t1>),Input<t2>)|InnerJoin<c4 c5>(InnerJoin<c6 c7>(Input<t3>,Input<t4>),Input<t5>)|TableEq(t0,t3);TableEq(t1,t4);TableEq(t2,t5);PickEq(c0,c3);PickEq(c0,c7);PickEq(c1,c5);PickEq(c2,c4);PickEq(c2,c6);PickEq(c3,c7);PickEq(c4,c6);PickFrom(c3,[t1]);PickFrom(c2,[t0]);PickFrom(c1,[t2]);PickFrom(c0,[t1]);PickFrom(c6,[t3]);PickFrom(c7,[t4]);PickFrom(c5,[t5]);PickFrom(c4,[t3])

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.internal;
 
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
 import java.util.*;
@@ -39,8 +40,10 @@ public class AppImpl implements App {
     return dbType;
   }
 
-  public Schema schema(String tag) {
-    return schemas.computeIfAbsent(tag, this::readSchema);
+  public Schema schema(String tag, boolean patched) {
+    final Schema schema = schemas.computeIfAbsent(tag, this::readSchema);
+    if (patched) schema.patch(SchemaPatchDao.instance().findByApp(name));
+    return schema;
   }
 
   private Schema readSchema(String tag) {

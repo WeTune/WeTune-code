@@ -44,9 +44,11 @@ public interface Column {
   }
 
   default boolean references(List<Column> referred) {
-    return constraints(ConstraintType.FOREIGN).stream()
-        .map(Constraint::refColumns)
-        .anyMatch(referred::equals);
+    if (!isFlag(Flag.FOREIGN_KEY)) return false;
+
+    final Collection<Constraint> fks = constraints(ConstraintType.FOREIGN);
+    return fks.isEmpty() // not native FK, then it must be patched
+        || fks.stream().map(Constraint::refColumns).anyMatch(referred::equals);
   }
 
   static Column make(String table, ASTNode colDef) {

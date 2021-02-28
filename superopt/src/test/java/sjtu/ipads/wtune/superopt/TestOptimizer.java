@@ -35,7 +35,7 @@ public class TestOptimizer {
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);
     final ASTNode ast = stmt.parsed();
-    final Schema schema = stmt.app().schema("base");
+    final Schema schema = stmt.app().schema("base", true);
     ast.context().setSchema(schema);
 
     final Optimizer optimizer = Optimizer.make(bank(), schema);
@@ -92,12 +92,184 @@ public class TestOptimizer {
     doTest("diaspora", 202, expected);
   }
 
-  // TODO: diaspora-224
+  // TODO: diaspora-224 too long
+
   @Test
   void testDiaspora295() {
     doTest(
         "diaspora",
         295,
         "SELECT COUNT(DISTINCT `contacts`.`id`) FROM `contacts` AS `contacts` WHERE `contacts`.`user_id` = 1945");
+  }
+
+  @Test
+  void testDiaspora460() {
+    final String appName = "diaspora";
+    final int stmtId = 460;
+    final String expected =
+        "SELECT `contacts`.`person_id` AS `person_id` FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id` WHERE 1 = 0";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiaspora478() {
+    // TODO: DISTINCT
+    final String appName = "diaspora";
+    final int stmtId = 478;
+    final String[] expected = {
+      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` INNER JOIN `profiles` AS `profiles` ON `contacts`.`person_id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `profiles`.`alias_0` ASC LIMIT 25 OFFSET 0",
+      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` INNER JOIN `profiles` AS `profiles` ON `contacts`.`person_id` = `profiles`.`person_id` WHERE `contacts`.`receiving` = TRUE AND `contacts`.`user_id` = 3 ORDER BY `profiles`.`alias_0` ASC LIMIT 25 OFFSET 0"
+    };
+
+    doTest(appName, stmtId, expected);
+  }
+
+  // TODO: diaspora-492 failed to remove subquery
+
+  @Test
+  void testDiscourse123() {
+    final String appName = "discourse";
+    final int stmtId = 123;
+    final String expected =
+        "SELECT `category_groups`.`category_id` AS `category_id` FROM `category_groups` AS `category_groups` INNER JOIN `group_users` AS `group_users` ON `category_groups`.`group_id` = `group_users`.`group_id` WHERE `group_users`.`user_id` = 86";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse182() {
+    final String appName = "discourse";
+    final int stmtId = 182;
+    final String expected =
+        "SELECT `topic_allowed_groups`.`group_id` AS `group_id` FROM `topic_allowed_groups` AS `topic_allowed_groups` WHERE `topic_allowed_groups`.`topic_id` = 15596";
+    doTest(appName, stmtId, expected);
+  }
+
+  // TODO: discourse-207 too long
+
+  @Test
+  void testDiscourse276() {
+    final String appName = "discourse";
+    final int stmtId = 276;
+    final String expected =
+        "SELECT `ignored_users`.`ignored_user_id` AS `ignored_user_id` FROM `ignored_users` AS `ignored_users` WHERE `ignored_users`.`user_id` = 155";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse277() {
+    final String appName = "discourse";
+    final int stmtId = 277;
+    final String expected =
+        "SELECT `muted_users`.`muted_user_id` AS `muted_user_id` FROM `muted_users` AS `muted_users` WHERE `muted_users`.`user_id` = 155";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse371() {
+    final String appName = "discourse";
+    final int stmtId = 371;
+    final String expected =
+        "SELECT `topic_allowed_users`.`user_id` AS `user_id` FROM `topic_allowed_users` AS `topic_allowed_users` WHERE `topic_allowed_users`.`topic_id` = 15632";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse373() {
+    final String appName = "discourse";
+    final int stmtId = 373;
+    final String expected =
+        "SELECT `group_users`.`user_id` AS `user_id` FROM `group_users` AS `group_users` WHERE `group_users`.`group_id` = 2";
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse417() {
+    final String appName = "discourse";
+    final int stmtId = 417;
+    final String[] expected =
+        new String[] {
+          "SELECT `category_users`.`user_id` AS `user_id` FROM `category_users` AS `category_users` WHERE `category_users`.`notification_level` = 4 AND `category_users`.`category_id` IS NULL",
+          "SELECT `category_users`.`user_id` AS `user_id` FROM `category_users` AS `category_users` WHERE `category_users`.`category_id` IS NULL AND `category_users`.`notification_level` = 4"
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse449() {
+    final String appName = "discourse";
+    final int stmtId = 449;
+    final String[] expected =
+        new String[] {
+          "SELECT `child_themes`.`parent_theme_id` AS `parent_theme_id` FROM `child_themes` AS `child_themes` WHERE `child_themes`.`child_theme_id` = 1017",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse599() {
+    final String appName = "discourse";
+    final int stmtId = 599;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(*) FROM `category_tags` AS `category_tags` WHERE `category_tags`.`category_id` = 3121",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse600() {
+    final String appName = "discourse";
+    final int stmtId = 600;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(*) FROM `category_tag_groups` AS `category_tag_groups` WHERE `category_tag_groups`.`category_id` = 3121",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse624() {
+    final String appName = "discourse";
+    final int stmtId = 624;
+    final String[] expected =
+        new String[] {
+          "SELECT `group_users`.`group_id` AS `group_id` FROM `group_users` AS `group_users` WHERE `group_users`.`user_id` = 247",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse660() {
+    final String appName = "discourse";
+    final int stmtId = 660;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(*) FROM `category_groups` AS `category_groups` WHERE `category_groups`.`group_id` = 2378",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test
+  void testDiscourse833() {
+    final String appName = "discourse";
+    final int stmtId = 833;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(*) FROM `group_users` AS `group_users` WHERE `group_users`.`group_id` = 2397",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // TODO: discourse: 877 too long
+
+  @Test
+  void testDiscourse942() {
+    final String appName = "discourse";
+    final int stmtId = 942;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(*) FROM `group_users` AS `gu` WHERE `gu`.`user_id` = 779 AND (`gu`.`owner` AND `gu`.`group_id` > 0)",
+        };
+    doTest(appName, stmtId, expected);
   }
 }
