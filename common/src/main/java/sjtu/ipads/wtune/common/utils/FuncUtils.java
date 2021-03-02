@@ -105,6 +105,15 @@ public interface FuncUtils {
     return IntStream.range(0, n).mapToObj(func).toArray(len -> Commons.makeArray(retType, len));
   }
 
+  static <T> int indexOf(Predicate<T> pred, Iterable<T> os) {
+    int index = 0;
+    for (T o : os) {
+      if (pred.test(o)) return index;
+      index++;
+    }
+    return -1;
+  }
+
   static <T> T find(Predicate<T> pred, Iterable<T> os) {
     return stream(os).filter(pred).findFirst().orElse(null);
   }

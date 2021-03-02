@@ -38,12 +38,12 @@ public class TestSubstitution {
     final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
     final Optimizer opt = Optimizer.make(repo, schema);
-    final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.translate(ast));
+    final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.toPlan(ast));
 
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT `a`.`i` AS `i` FROM `a` AS `a` WHERE `a`.`i` = 1",
-        ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
+        "SELECT * FROM `a` AS `a` WHERE `a`.`i` = 1",
+        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
   }
 
   @Test
@@ -63,14 +63,14 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final PlanNode plan = ToPlanTranslator.translate(ast);
+    final PlanNode plan = ToPlanTranslator.toPlan(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
     final List<PlanNode> optimized = Optimizer.make(repo, schema).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT `b`.`j` AS `j` FROM `b` AS `b`",
-        ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
+        "SELECT * FROM `b` AS `b`",
+        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
   }
 
   @Test
@@ -90,13 +90,13 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final PlanNode plan = ToPlanTranslator.translate(ast);
+    final PlanNode plan = ToPlanTranslator.toPlan(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
     final List<PlanNode> optimized = Optimizer.make(repo, schema).optimize(plan);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
-        ToASTTranslator.translate(Iterables.getOnlyElement(optimized)).toString());
+        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
   }
 }

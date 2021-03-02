@@ -70,6 +70,12 @@ public abstract class BaseProver implements Prover {
   }
 
   @Override
+  public void pickSub(DecidableConstraint constraint, PickSym px, PickSym py) {
+    final Value x = ctx.makeTuple("x");
+    addAssertion(constraint, ctx.makeForAll(x, px.apply(x).equalsTo(px.apply(py.apply(x)))));
+  }
+
+  @Override
   public void reference(
       DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     pickFrom(constraint, px, tx);

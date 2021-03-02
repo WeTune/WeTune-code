@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 
@@ -16,7 +16,7 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
     super(expr, null);
   }
 
-  private SubqueryFilterNodeImpl(ASTNode expr, List<PlanAttribute> usedAttrs) {
+  private SubqueryFilterNodeImpl(ASTNode expr, List<AttributeDef> usedAttrs) {
     super(expr, usedAttrs);
   }
 
@@ -24,18 +24,27 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
     return new SubqueryFilterNodeImpl(expr);
   }
 
-  public static SubqueryFilterNode build(List<PlanAttribute> usedAttrs) {
-    final List<ASTNode> columnRefs = listMap(PlanAttribute::toColumnRef, usedAttrs);
-    if (columnRefs.size() == 1) return new SubqueryFilterNodeImpl(columnRefs.get(0), usedAttrs);
-    else {
-      final ASTNode tuple = ASTNode.expr(ExprKind.TUPLE);
-      tuple.set(TUPLE_EXPRS, columnRefs);
-      return new SubqueryFilterNodeImpl(tuple, usedAttrs);
-    }
+  public static SubqueryFilterNode build(List<AttributeDef> usedAttrs) {
+    return new SubqueryFilterNodeImpl(makeLeftExpr(usedAttrs), usedAttrs);
+  }
+
+  @Override
+  public ASTNode leftExpr() {
+    return makeLeftExpr(usedAttrs);
   }
 
   @Override
   protected PlanNode copy0() {
     return new SubqueryFilterNodeImpl(expr, usedAttrs);
+  }
+
+  private static ASTNode makeLeftExpr(List<AttributeDef> usedAttrs) {
+    if (usedAttrs.size() == 1) return usedAttrs.get(0).toColumnRef();
+    else {
+      final List<ASTNode> colRefs = listMap(AttributeDef::toColumnRef, usedAttrs);
+      final ASTNode tuple = ASTNode.expr(ExprKind.TUPLE);
+      tuple.set(TUPLE_EXPRS, colRefs);
+      return tuple;
+    }
   }
 }

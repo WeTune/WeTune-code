@@ -17,7 +17,7 @@ public class TracerImpl implements Tracer {
   private final PickSym[] picks;
   private final PredicateSym[] preds;
 
-  private final int tableSeq, pickSeq, predSeq;
+  private final int tableSep, pickSep, predSep;
 
   private final List<DecidableConstraint> constraints;
 
@@ -25,6 +25,7 @@ public class TracerImpl implements Tracer {
   private final DisjointSet<PickSym> eqPicks;
   private final DisjointSet<PredicateSym> eqPreds;
   private final Map<PickSym, PickSym> refs;
+  private final PickSym[] upstreams;
   private final TableSym[][] srcs;
 
   private final boolean useFastTableIndex;
@@ -48,9 +49,9 @@ public class TracerImpl implements Tracer {
     this.picks = picks;
     this.preds = preds;
 
-    this.tableSeq = markSeq(tables);
-    this.pickSeq = markSeq(picks);
-    this.predSeq = markSeq(preds);
+    this.tableSep = markSep(tables);
+    this.pickSep = markSep(picks);
+    this.predSep = markSep(preds);
 
     constraints = new ArrayList<>();
 
@@ -59,6 +60,7 @@ public class TracerImpl implements Tracer {
     eqPreds = DisjointSet.fromBoundedMembers(preds);
 
     refs = new HashMap<>();
+    upstreams = new PickSym[picks.length];
     srcs = new TableSym[picks.length][];
 
     useFastTableIndex = isCanonicalIndexed(tables);
@@ -86,6 +88,12 @@ public class TracerImpl implements Tracer {
   public void predicateEq(DecidableConstraint constraint, PredicateSym px, PredicateSym py) {
     addConstraint(constraint);
     eqPreds.connect(px, py);
+  }
+
+  @Override
+  public void pickSub(DecidableConstraint constraint, PickSym px, PickSym py) {
+    addConstraint(constraint);
+    upstreams[indexOf(px)] = py;
   }
 
   @Override
@@ -201,11 +209,14 @@ public class TracerImpl implements Tracer {
         if (isEq(px, py)) constraints.add(DecidableConstraint.pickEq(px, py));
       }
 
-      final TableSym[] srcX = srcs[i];
-      if (srcX != null) constraints.add(DecidableConstraint.pickFrom(px, srcX));
-
       final DecidableConstraint refConstraint = refConstraintOf(px);
       if (refConstraint != null) constraints.add(refConstraint);
+
+      final TableSym[] src = srcs[i];
+      if (src != null) constraints.add(DecidableConstraint.pickFrom(px, src));
+
+      final PickSym upstream = upstreams[i];
+      if (upstream != null) constraints.add(DecidableConstraint.pickSub(px, upstream));
     }
 
     return new SummaryImpl(
@@ -438,21 +449,23 @@ public class TracerImpl implements Tracer {
   }
 
   private boolean fastCheckIncomplete() {
+    // At least one side of the equivalent queries should have all its
+    // symbols involved in some Eq relation
     return fastCheckIncomplete0(true) && fastCheckIncomplete0(false);
   }
 
   private boolean fastCheckIncomplete0(boolean firstHalf) {
     if (firstHalf) {
-      for (int i = 0; i < tableSeq; i++) if (!eqTables.contains(tables[i])) return true;
-      for (int i = 0; i < pickSeq; i++) if (!eqPicks.contains(picks[i])) return true;
-      for (int i = 0; i < predSeq; i++) if (!eqPreds.contains(preds[i])) return true;
+      for (int i = 0; i < tableSep; i++) if (!eqTables.contains(tables[i])) return true;
+      for (int i = 0; i < pickSep; i++) if (!eqPicks.contains(picks[i])) return true;
+      for (int i = 0; i < predSep; i++) if (!eqPreds.contains(preds[i])) return true;
 
     } else {
-      for (int i = tableSeq, bound = tables.length; i < bound; i++)
+      for (int i = tableSep, bound = tables.length; i < bound; i++)
         if (!eqTables.contains(tables[i])) return true;
-      for (int i = pickSeq, bound = picks.length; i < bound; i++)
+      for (int i = pickSep, bound = picks.length; i < bound; i++)
         if (!eqPicks.contains(picks[i])) return true;
-      for (int i = predSeq, bound = preds.length; i < bound; i++)
+      for (int i = predSep, bound = preds.length; i < bound; i++)
         if (!eqPreds.contains(preds[i])) return true;
     }
     return false;
@@ -471,7 +484,7 @@ public class TracerImpl implements Tracer {
     return stream(groups).filter(Objects::nonNull).collect(toList());
   }
 
-  private static int markSeq(Scoped... scoped) {
+  private static int markSep(Scoped... scoped) {
     for (int i = 1, bound = scoped.length; i < bound; i++)
       if (scoped[i - 1].scope() != scoped[i].scope()) return i;
     return 0;

@@ -28,7 +28,7 @@ public class ToASTTranslator {
     this.stack = new LinkedList<>();
   }
 
-  public static ASTNode translate(PlanNode head) {
+  public static ASTNode toAST(PlanNode head) {
     final ToASTTranslator translator = new ToASTTranslator();
     translator.translate0(head);
     assert translator.stack.size() == 1;
@@ -53,19 +53,27 @@ public class ToASTTranslator {
     stack.push(Query.from(input.toTableSource()));
   }
 
-  private void translateProj(ProjNode op) {
+  private void translateProj(ProjNode node) {
     assert !stack.isEmpty();
-    stack.peek().setProjection(op.selectItems());
+    final Query q = stack.peek();
+    if (node.isWildcard()) {
+      final ASTNode item = node(SELECT_ITEM);
+      final ASTNode wildcard = expr(WILDCARD);
+      item.set(SELECT_ITEM_EXPR, wildcard);
+      q.setProjection(singletonList(item));
+
+    } else q.setProjection(node.selectItems());
+    q.setQualification(qualificationOf(node.definedAttributes()));
   }
 
-  private void translateFilter(FilterNode op) {
+  private void translateFilter(FilterNode node) {
     assert !stack.isEmpty();
-    stack.peek().appendFilter(op.expr(), true);
+    stack.peek().appendFilter(node.expr(), true);
   }
 
-  private void translateFilter(SubqueryFilterNode op) {
+  private void translateFilter(SubqueryFilterNode node) {
     final ASTNode subquery = stack.pop().assembleAsQuery();
-    final ASTNode column = op.expr().get(BINARY_LEFT);
+    final ASTNode column = node.leftExpr();
 
     final ASTNode queryExpr = expr(QUERY_EXPR);
     queryExpr.set(QUERY_EXPR_QUERY, subquery);
@@ -79,15 +87,15 @@ public class ToASTTranslator {
     stack.peek().appendFilter(binary, true);
   }
 
-  private void translateJoin(JoinNode op) {
+  private void translateJoin(JoinNode node) {
     final ASTNode rightSource = stack.pop().assembleAsSource();
     final ASTNode leftSource = stack.pop().assembleAsSource();
 
     final ASTNode join = tableSource(JOINED_SOURCE);
     join.set(JOINED_LEFT, leftSource);
     join.set(JOINED_RIGHT, rightSource);
-    join.set(JOINED_ON, op.onCondition());
-    join.set(JOINED_TYPE, op instanceof InnerJoinNode ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_ON, node.onCondition());
+    join.set(JOINED_TYPE, node instanceof InnerJoinNode ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }
@@ -97,6 +105,7 @@ public class ToASTTranslator {
     final Query q = stack.peek();
     q.setGroupKeys(agg.groupKeys());
     q.setAggregation(agg.aggregations());
+    q.setQualification(qualificationOf(agg.definedAttributes()));
   }
 
   private void translateSort(SortNode sort) {
@@ -111,6 +120,17 @@ public class ToASTTranslator {
     q.setOffset(limit.offset());
   }
 
+  private static String qualificationOf(List<AttributeDef> defs) {
+    String ret = null;
+    for (AttributeDef def : defs) {
+      final String qualification = def.qualification();
+      if (qualification != null)
+        if (ret == null) ret = qualification;
+        else if (!ret.equals(qualification)) return null;
+    }
+    return ret;
+  }
+
   private static class Query {
     private List<ASTNode> projection;
     private ASTNode filter;
@@ -119,6 +139,7 @@ public class ToASTTranslator {
     private List<ASTNode> orderKeys;
     private ASTNode limit;
     private ASTNode offset;
+    private String qualification;
 
     private static Query from(ASTNode source) {
       final Query rel = new Query();
@@ -149,6 +170,9 @@ public class ToASTTranslator {
         this.source = this.assembleAsSource();
         this.projection = projection;
         this.filter = null;
+        this.orderKeys = null;
+        this.offset = null;
+        this.limit = null;
       }
     }
 
@@ -171,6 +195,10 @@ public class ToASTTranslator {
 
     public void setOffset(ASTNode offset) {
       this.offset = offset;
+    }
+
+    public void setQualification(String qualification) {
+      this.qualification = qualification;
     }
 
     private ASTNode assembleAsQuery() {
@@ -197,6 +225,7 @@ public class ToASTTranslator {
 
       final ASTNode source = tableSource(DERIVED_SOURCE);
       source.set(DERIVED_SUBQUERY, assembleAsQuery());
+      source.set(DERIVED_ALIAS, qualification);
 
       return source;
     }

@@ -63,7 +63,7 @@ public class NodeImpl implements ASTNode {
 
   @Override
   public ASTNode shallowCopy() {
-    return new NodeImpl(nodeType(), fields());
+    return new NodeImpl(nodeType(), new HashMap<>(fields()));
   }
 
   @Override
@@ -131,7 +131,7 @@ public class NodeImpl implements ASTNode {
 
   private static Object deepCopy0(Object obj) {
     if (obj instanceof ASTNode) return ((ASTNode) obj).deepCopy();
-    else if (obj instanceof Iterable) return listMap(it -> deepCopy0(it), (Iterable<?>) obj);
+    else if (obj instanceof Iterable) return listMap(NodeImpl::deepCopy0, (Iterable<?>) obj);
     else return obj;
   }
 }

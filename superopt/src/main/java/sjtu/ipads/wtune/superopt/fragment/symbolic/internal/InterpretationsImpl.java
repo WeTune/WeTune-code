@@ -4,13 +4,15 @@ import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.*;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickFrom;
+import sjtu.ipads.wtune.symsolver.core.PickSub;
 import sjtu.ipads.wtune.symsolver.core.Reference;
 
 import java.util.ArrayList;
@@ -57,9 +59,8 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
-  public boolean assignAttributes(
-      Placeholder placeholder, List<PlanAttribute> in, List<PlanAttribute> out) {
-    return assign0(placeholder, new AttributeInterpretationImpl(in, out));
+  public boolean assignAttributes(Placeholder placeholder, List<AttributeDef> defs) {
+    return assign0(placeholder, new AttributeInterpretationImpl(defs));
   }
 
   @Override
@@ -109,6 +110,8 @@ public class InterpretationsImpl implements Interpretations {
       return checkReference((Reference<Placeholder, Placeholder>) constraint);
     else if (constraint.kind() == Constraint.Kind.PickFrom)
       return checkSource((PickFrom<Placeholder, Placeholder>) constraint);
+    else if (constraint.kind() == Constraint.Kind.PickSub)
+      return checkSub((PickSub<Placeholder>) constraint);
     else return true;
   }
 
@@ -124,8 +127,12 @@ public class InterpretationsImpl implements Interpretations {
       inputs[i] = inter.object();
     }
 
-    for (PlanAttribute used : attrInter.object().getLeft())
-      if (stream(inputs).noneMatch(it -> it.resolveAttribute(used) != null)) return false;
+    for (AttributeDef def : attrInter.object())
+      outer:
+      for (int ref : def.references()) {
+        for (PlanNode input : inputs) if (input.resolveAttribute(ref) != null) continue outer;
+        return false;
+      }
 
     return true;
   }
@@ -136,22 +143,26 @@ public class InterpretationsImpl implements Interpretations {
 
     if (referee == null || referred == null || referee == referred) return true;
 
-    final List<PlanAttribute> refereeRefs = referee.object().getLeft();
-    final List<PlanAttribute> referredRefs = referred.object().getLeft();
+    final List<AttributeDef> refereeRefs = referee.object();
+    final List<AttributeDef> referredRefs = referred.object();
 
     if (refereeRefs.size() != referredRefs.size()) return false;
+
+    final InputInterpretation input = getInput(constraint.ty());
+    final PlanNode inputNode = input == null ? null : input.object();
 
     final List<Column> refereeCols = new ArrayList<>(refereeRefs.size());
     final List<Column> referredCols = new ArrayList<>(referredRefs.size());
 
     for (int i = 0, bound = refereeRefs.size(); i < bound; i++) {
-      final PlanAttribute refereeAttr = refereeRefs.get(i);
-      final PlanAttribute referredAttr = referredRefs.get(i);
+      final AttributeDef refereeAttr = refereeRefs.get(i);
+      final AttributeDef referredAttr = referredRefs.get(i);
 
       if (refereeAttr == null || referredAttr == null) return false;
       if (refereeAttr == referredAttr) continue;
 
-      final Column refereeCol = refereeAttr.column(), referredCol = referredAttr.column();
+      final Column refereeCol = refereeAttr.referredColumn();
+      final Column referredCol = nativeColumnOf(referredAttr, inputNode);
       if (refereeCol == null || referredCol == null) return false;
       if (refereeCol == referredCol) continue;
 
@@ -163,5 +174,47 @@ public class InterpretationsImpl implements Interpretations {
 
     for (Column refereeCol : refereeCols) if (!refereeCol.references(referredCols)) return false;
     return true;
+  }
+
+  private boolean checkSub(PickSub<Placeholder> constraint) {
+    final AttributeInterpretation downstream = getAttributes(constraint.px());
+    final AttributeInterpretation upstream = getAttributes(constraint.py());
+    if (downstream == null || upstream == null || downstream == upstream) return true;
+
+    final List<AttributeDef> downstreamAttrs = downstream.object();
+    final List<AttributeDef> upstreamAttrs = upstream.object();
+
+    for (AttributeDef downstreamAttr : downstreamAttrs)
+      if (!upstreamAttrs.contains(downstreamAttr)) return false;
+
+    return true;
+  }
+
+  private static Column nativeColumnOf(AttributeDef attr, PlanNode surface) {
+    // Retrieve the native column of given `attr`, from the perspective of `surface` node.
+    // If there are filters between the native input node and `surface` node, then returns null.
+    // Example:
+    // plan: Proj<t.id>(Input<t>), nativeColumnOf(t.id,Proj) -> Column{`t`.`id`}
+    // plan: Proj<t.id>(Filter(Input<t>)), nativeColumnOf(t.id,Proj) -> null
+    // plan: Proj<t.id>(Filter(Input<t>)), nativeColumnOf(t.id,Input) -> Column{`t`.`id`}
+
+    if (surface == null) return attr.referredColumn();
+
+    final AttributeDef pivot = surface.resolveAttribute(attr);
+    if (pivot == null) return null;
+
+    final AttributeDef source = pivot.nativeUpstream();
+    if (source == null) return null;
+
+    final PlanNode inputNode = source.definer();
+    assert inputNode.type() == OperatorType.Input;
+
+    PlanNode pathNode = inputNode;
+    while (pathNode != surface) {
+      if (pathNode.type().isFilter()) return null;
+      pathNode = pathNode.successor();
+    }
+
+    return source.referredColumn();
   }
 }

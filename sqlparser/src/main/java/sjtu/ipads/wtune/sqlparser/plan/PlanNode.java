@@ -24,39 +24,43 @@ public interface PlanNode {
 
   void resolveUsed();
 
-  List<PlanAttribute> definedAttributes();
+  List<AttributeDef> definedAttributes();
 
-  List<PlanAttribute> usedAttributes();
+  List<AttributeDef> usedAttributes();
 
   PlanNode copy();
 
-  default PlanAttribute resolveAttribute(String qualification, String name) {
+  void replacePredecessor(PlanNode target, PlanNode rep);
+
+  default AttributeDef resolveAttribute(String qualification, String name) {
     qualification = simpleName(qualification);
     name = simpleName(name);
 
-    for (PlanAttribute attr : definedAttributes())
+    for (AttributeDef attr : definedAttributes())
       if (attr.isReferencedBy(qualification, name)) return attr;
 
     return null;
   }
 
-  default PlanAttribute resolveAttribute(ASTNode columnRef) {
+  default AttributeDef resolveAttribute(ASTNode columnRef) {
     if (!COLUMN_REF.isInstance(columnRef)) throw new IllegalArgumentException();
     final ASTNode colName = columnRef.get(COLUMN_REF_COLUMN);
     return resolveAttribute(colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN));
   }
 
-  default PlanAttribute resolveAttribute(PlanAttribute attr) {
-    return resolveAttribute(attr.qualification(), attr.name());
+  default AttributeDef resolveAttribute(int id) {
+    for (AttributeDef outAttr : definedAttributes()) if (outAttr.isReferencedBy(id)) return outAttr;
+    return null;
   }
 
-  default void replacePredecessor(PlanNode target, PlanNode rep) {
-    final PlanNode[] predecessors = predecessors();
-    for (int i = 0; i < predecessors.length; i++)
-      if (predecessors[i] == target) {
-        setPredecessor(i, rep);
-        break;
-      }
+  default AttributeDef resolveAttribute(AttributeDef attr) {
+    if (attr == null) return null;
+    final AttributeDef resolved = resolveAttribute(attr.id());
+    if (resolved == null && attr.isIdentity()) {
+      final AttributeDef upstream = attr.upstream();
+      assert upstream != null;
+      return upstream == attr ? null : resolveAttribute(upstream);
+    } else return resolved;
   }
 
   static PlanNode rootOf(PlanNode node) {

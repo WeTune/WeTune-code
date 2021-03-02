@@ -1,11 +1,14 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.superopt.fragment.internal.ProjImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+
+import java.util.List;
 
 public interface Proj extends Operator {
   Placeholder fields();
@@ -18,17 +21,16 @@ public interface Proj extends Operator {
   @Override
   default PlanNode instantiate(Interpretations interpretations) {
     final PlanNode pred = predecessors()[0].instantiate(interpretations);
-    final var pair = interpretations.getAttributes(fields()).object();
-    final ProjNode node = ProjNode.copyFrom(pair.getRight(), pair.getLeft());
+    final List<AttributeDef> pair = interpretations.getAttributes(fields()).object();
+    final ProjNode node = ProjNode.make(pair);
     node.setPredecessor(0, pred);
-    node.resolveUsed();
     return node;
   }
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
     if (node.type() != this.type()) return false;
-    return inter.assignAttributes(fields(), node.usedAttributes(), node.definedAttributes());
+    return inter.assignAttributes(fields(), node.definedAttributes());
   }
 
   static Proj create() {

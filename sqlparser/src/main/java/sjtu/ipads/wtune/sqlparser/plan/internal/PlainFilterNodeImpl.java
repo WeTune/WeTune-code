@@ -2,13 +2,13 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
 
 public class PlainFilterNodeImpl extends FilterNodeBase implements PlainFilterNode {
-  private PlainFilterNodeImpl(ASTNode expr, List<PlanAttribute> usedAttrs) {
+  private PlainFilterNodeImpl(ASTNode expr, List<AttributeDef> usedAttrs) {
     super(expr, usedAttrs);
   }
 
@@ -16,7 +16,7 @@ public class PlainFilterNodeImpl extends FilterNodeBase implements PlainFilterNo
     return new PlainFilterNodeImpl(expr, null);
   }
 
-  public static PlainFilterNode build(ASTNode expr, List<PlanAttribute> usedAttrs) {
+  public static PlainFilterNode build(ASTNode expr, List<AttributeDef> usedAttrs) {
     return new PlainFilterNodeImpl(expr, usedAttrs);
   }
 

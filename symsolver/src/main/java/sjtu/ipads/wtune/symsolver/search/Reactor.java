@@ -14,6 +14,8 @@ public interface Reactor {
 
   void pickFrom(DecidableConstraint constraint, PickSym p, TableSym... src);
 
+  void pickSub(DecidableConstraint constraint, PickSym px, PickSym py);
+
   void reference(DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py);
 
   void decide(Decision... decisions);

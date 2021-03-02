@@ -1,35 +1,52 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
 import java.util.List;
 import java.util.Objects;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private final List<ASTNode> selectItems;
-  private final List<PlanAttribute> defined;
-  private List<PlanAttribute> used;
+  private final List<AttributeDef> defined;
+  private List<AttributeDef> used;
 
-  private ProjNodeImpl(List<PlanAttribute> defined, List<PlanAttribute> used) {
-    this.selectItems = listMap(PlanAttribute::toSelectItem, defined);
-    this.defined = defined;
-    this.used = used;
+  private boolean isWildcard;
+
+  private ProjNodeImpl(String qualification, List<ASTNode> selectItems) {
+    this.selectItems = selectItems;
+    this.defined = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
     bindAttributes(defined, this);
   }
 
-  public static ProjNode build(List<PlanAttribute> definedAttrs) {
-    return new ProjNodeImpl(definedAttrs, null);
+  private ProjNodeImpl(List<AttributeDef> defined) {
+    this.selectItems = listMap(AttributeDef::toSelectItem, defined);
+    this.defined = listMap(AttributeDef::copy, defined);
+    bindAttributes(this.defined, this);
   }
 
-  public static ProjNode build(List<PlanAttribute> definedAttrs, List<PlanAttribute> usedAttrs) {
-    if (definedAttrs == null) definedAttrs = usedAttrs;
-    return new ProjNodeImpl(listMap(PlanAttribute::copy, definedAttrs), usedAttrs);
+  public static ProjNode build(String qualification, List<ASTNode> selectItems) {
+    return new ProjNodeImpl(qualification, selectItems);
+  }
+
+  public static ProjNode build(List<AttributeDef> definedAttrs) {
+    return new ProjNodeImpl(definedAttrs);
+  }
+
+  @Override
+  public boolean isWildcard() {
+    return isWildcard;
+  }
+
+  @Override
+  public void setWildcard(boolean wildcard) {
+    isWildcard = wildcard;
   }
 
   @Override
@@ -40,12 +57,12 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
+  public List<AttributeDef> usedAttributes() {
     return used;
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return defined;
   }
 
@@ -53,12 +70,14 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   public void resolveUsed() {
     final PlanNode input = predecessors()[0];
     if (used != null) used = resolveUsed1(used, input);
-    else used = resolveUsed0(gatherColumnRefs(listMap(PlanAttribute::expr, defined)), input);
+    else used = resolveUsed0(gatherColumnRefs(selectItems), input);
+
+    if (used.equals(predecessors()[0].definedAttributes())) isWildcard = true;
   }
 
   @Override
   protected PlanNode copy0() {
-    return build(defined, used);
+    return new ProjNodeImpl(defined);
   }
 
   @Override

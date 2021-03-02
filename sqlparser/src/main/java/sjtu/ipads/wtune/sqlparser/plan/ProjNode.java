@@ -8,16 +8,20 @@ import java.util.List;
 public interface ProjNode extends PlanNode {
   List<ASTNode> selectItems();
 
+  boolean isWildcard();
+
+  void setWildcard(boolean flag);
+
   @Override
   default OperatorType type() {
     return OperatorType.Proj;
   }
 
-  static ProjNode make(List<PlanAttribute> projs) {
+  static ProjNode make(List<AttributeDef> projs) {
     return ProjNodeImpl.build(projs);
   }
 
-  static ProjNode copyFrom(List<PlanAttribute> defined, List<PlanAttribute> used) {
-    return ProjNodeImpl.build(defined, used);
+  static ProjNode make(String qualification, List<ASTNode> selectItems) {
+    return ProjNodeImpl.build(qualification, selectItems);
   }
 }

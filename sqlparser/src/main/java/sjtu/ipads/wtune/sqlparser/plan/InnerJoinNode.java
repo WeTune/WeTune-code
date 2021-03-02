@@ -15,7 +15,7 @@ public interface InnerJoinNode extends JoinNode {
     return InnerJoinNodeImpl.build(onCondition);
   }
 
-  static InnerJoinNode make(List<PlanAttribute> left, List<PlanAttribute> right) {
+  static InnerJoinNode make(List<AttributeDef> left, List<AttributeDef> right) {
     return InnerJoinNodeImpl.build(left, right);
   }
 }

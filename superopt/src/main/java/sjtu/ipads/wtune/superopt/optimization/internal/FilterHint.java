@@ -6,10 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
 import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
@@ -22,8 +19,7 @@ import java.util.stream.IntStream;
 
 import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionFilter;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 
@@ -40,9 +36,9 @@ public class FilterHint {
   private final List<Pair<List<FilterNode>, Set<FilterNode>>> results;
 
   public FilterHint(Collection<FilterNode> filters, boolean forceFullMatch, Interpretations inter) {
-    this.filters = new HashSet<>(filters);
+    this.filters = new LinkedHashSet<>(filters);
     this.subqueryFilters =
-        collectionFilter(it -> it instanceof SubqueryFilter, filters, HashSet::new);
+        collectionFilter(it -> it instanceof SubqueryFilterNode, filters, HashSet::new);
     this.forceFullMatch = forceFullMatch;
     this.inter = inter;
 
@@ -75,12 +71,12 @@ public class FilterHint {
     final PlanNode predecessor = filterNodes.get(filterNodes.size() - 1).predecessors()[0];
     final List<PlanNode> rebuiltChains = new ArrayList<>(distributor.results.size());
     for (var pair : distributor.results) {
-      final Iterable<FilterNode> used = pair.getLeft();
+      final List<FilterNode> used = pair.getLeft();
       final Set<FilterNode> unused = Sets.difference(distributor.filters, pair.getRight());
 
       assert !forceFullMatch || unused.isEmpty();
 
-      final PlanNode matchPoint = rebuildFilters(unused, used, chainHead, predecessor);
+      final PlanNode matchPoint = rebuildFilters(unused, normalize(used), chainHead, predecessor);
       rebuiltChains.add(matchPoint);
       resolveUsedTree(rootOf(matchPoint));
     }
@@ -90,8 +86,9 @@ public class FilterHint {
 
   private void distribute(List<? extends Operator> operators, int idx) {
     if (idx >= operators.size()) {
-      if (!forceFullMatch || used.size() == filters.size())
+      if (!forceFullMatch || used.size() == filters.size()) {
         results.add(Pair.of(new ArrayList<>(assigned), new HashSet<>(used)));
+      }
       return;
     }
 
@@ -141,11 +138,13 @@ public class FilterHint {
     Set<FilterNode> candidates = filters;
     if (attr != null)
       candidates =
-          collectionFilter(it -> attr.isCompatible(it.usedAttributes()), candidates, HashSet::new);
+          collectionFilter(
+              it -> attr.isCompatible(it.usedAttributes()), candidates, LinkedHashSet::new);
     if (pred != null)
-      candidates = collectionFilter(it -> pred.isCompatible(it.expr()), candidates, HashSet::new);
+      candidates =
+          collectionFilter(it -> pred.isCompatible(it.expr()), candidates, LinkedHashSet::new);
 
-    return candidates == filters ? new HashSet<>(filters) : candidates;
+    return candidates == filters ? new LinkedHashSet<>(filters) : candidates;
   }
 
   private Set<FilterNode> candidatesOf(SubqueryFilter op) {
@@ -191,12 +190,12 @@ public class FilterHint {
     final Iterator<FilterNode> iter = nodes.iterator();
     if (!iter.hasNext()) return predecessor;
 
-    final PlanNode head = iter.next().copy();
+    final PlanNode head = copyFilter(iter.next());
 
     PlanNode prev = head;
     while (iter.hasNext()) {
       final FilterNode node = iter.next();
-      final PlanNode copy = node.copy();
+      final PlanNode copy = copyFilter(node);
       prev.setPredecessor(0, copy);
       prev = copy;
     }
@@ -212,5 +211,19 @@ public class FilterHint {
     binary.set(BINARY_OP, BinaryOp.AND);
 
     return PlainFilterNode.make(binary, listJoin(f0.usedAttributes(), f1.usedAttributes()));
+  }
+
+  private static PlanNode copyFilter(PlanNode node) {
+    final PlanNode copy = node.copy();
+    if (copy instanceof SubqueryFilterNode)
+      copy.setPredecessor(1, copyTree(copy.predecessors()[1]));
+    return copy;
+  }
+
+  private static List<FilterNode> normalize(List<FilterNode> filters) {
+    // put PlainFilters before SubqueryFilters
+    final int sep = indexOf(it -> it instanceof PlainFilterNode, filters);
+    if (sep == -1) return filters;
+    return listJoin(filters.subList(sep, filters.size()), filters.subList(0, sep));
   }
 }

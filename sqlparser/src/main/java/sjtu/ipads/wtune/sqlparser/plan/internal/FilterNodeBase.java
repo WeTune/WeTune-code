@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,9 +11,9 @@ import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRef
 
 public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode {
   protected final ASTNode expr;
-  protected List<PlanAttribute> usedAttrs;
+  protected List<AttributeDef> usedAttrs;
 
-  protected FilterNodeBase(ASTNode expr, List<PlanAttribute> usedAttrs) {
+  protected FilterNodeBase(ASTNode expr, List<AttributeDef> usedAttrs) {
     this.expr = expr;
     this.usedAttrs = usedAttrs;
   }
@@ -26,12 +26,12 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return predecessors()[0].definedAttributes();
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
+  public List<AttributeDef> usedAttributes() {
     return usedAttrs;
   }
 

@@ -16,15 +16,14 @@ public interface Join extends Operator {
     final PlanNode pred0 = predecessors()[0].instantiate(interpretations);
     final PlanNode pred1 = predecessors()[1].instantiate(interpretations);
 
-    final List<PlanAttribute> l = interpretations.getAttributes(leftFields()).object().getLeft();
-    final List<PlanAttribute> r = interpretations.getAttributes(rightFields()).object().getLeft();
+    final List<AttributeDef> l = interpretations.getAttributes(leftFields()).object();
+    final List<AttributeDef> r = interpretations.getAttributes(rightFields()).object();
 
     final PlanNode node =
         type() == OperatorType.LeftJoin ? LeftJoinNode.make(l, r) : InnerJoinNode.make(l, r);
 
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
-    node.resolveUsed();
     return node;
   }
 

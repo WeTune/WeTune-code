@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
 
@@ -28,14 +28,14 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return predecessors()[0].definedAttributes();
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
-    final List<PlanAttribute> used = new ArrayList<>(usedAttrs.size());
-    final List<PlanAttribute> inputAttrs = predecessors()[0].definedAttributes();
+  public List<AttributeDef> usedAttributes() {
+    final List<AttributeDef> used = new ArrayList<>(usedAttrs.size());
+    final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
     usedAttrs.forEach(it -> used.add(it == -1 ? null : inputAttrs.get(it)));
     return used;
   }
@@ -44,12 +44,12 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
   public void resolveUsed() {
     if (usedAttrs == null) {
       final PlanNode input = predecessors()[0];
-      final List<PlanAttribute> attrs = input.definedAttributes();
+      final List<AttributeDef> attrs = input.definedAttributes();
 
       final TIntList used = new TIntArrayList(orderKeys.size());
       final List<ASTNode> colRefs = gatherColumnRefs(orderKeys);
       for (ASTNode colRef : colRefs) {
-        final PlanAttribute resolved = input.resolveAttribute(colRef);
+        final AttributeDef resolved = input.resolveAttribute(colRef);
         used.add(resolved != null ? attrs.indexOf(resolved) : -1);
       }
       this.usedAttrs = used;

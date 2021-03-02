@@ -15,7 +15,7 @@ public interface AggNode extends PlanNode {
     return OperatorType.Agg;
   }
 
-  static AggNode make(List<PlanAttribute> aggs, List<ASTNode> groupKeys) {
-    return AggNodeImpl.build(aggs, groupKeys);
+  static AggNode make(String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys) {
+    return AggNodeImpl.build(qualification, aggs, groupKeys);
   }
 }

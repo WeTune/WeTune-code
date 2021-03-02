@@ -22,7 +22,8 @@ public interface Constraint {
     PickEq,
     PredicateEq,
     Reference,
-    PickFrom;
+    PickFrom,
+    PickSub;
 
     public boolean isEq() {
       return this == TableEq || this == PickEq || this == PredicateEq;
@@ -45,6 +46,10 @@ public interface Constraint {
     return BasePickFrom.build(p, ts);
   }
 
+  static Constraint pickSub(Object px, Object py) {
+    return BasePickSub.build(px, py);
+  }
+
   static Constraint reference(Object tx, Object px, Object ty, Object py) {
     return BaseReference.build(tx, px, ty, py);
   }
@@ -55,6 +60,7 @@ public interface Constraint {
       case PickEq -> pickEq(targets[0], targets[1]);
       case PredicateEq -> predicateEq(targets[0], targets[1]);
       case PickFrom -> pickFrom(targets[0], subArray(targets, 1));
+      case PickSub -> pickSub(targets[0], targets[1]);
       case Reference -> reference(targets[0], targets[1], targets[2], targets[3]);
     };
   }

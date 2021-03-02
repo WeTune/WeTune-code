@@ -76,6 +76,12 @@ public class SearchCtxImpl implements SearchCtx {
   }
 
   @Override
+  public void pickSub(DecidableConstraint constraint, PickSym px, PickSym py) {
+    tracer.pickSub(constraint, px, py);
+    prover.pickSub(constraint, px, py);
+  }
+
+  @Override
   public void reference(
       DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     tracer.reference(constraint, tx, px, ty, py);

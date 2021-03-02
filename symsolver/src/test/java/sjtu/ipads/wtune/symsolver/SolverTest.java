@@ -3,9 +3,7 @@ package sjtu.ipads.wtune.symsolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.queries.InSubqueryQuery;
-import sjtu.ipads.wtune.symsolver.queries.InnerJoinQuery;
-import sjtu.ipads.wtune.symsolver.queries.SimpleProjQuery;
+import sjtu.ipads.wtune.symsolver.queries.*;
 import sjtu.ipads.wtune.symsolver.search.Decision;
 import sjtu.ipads.wtune.symsolver.search.Tracer;
 
@@ -62,6 +60,35 @@ public class SolverTest {
             pickEq(picks[1], picks[4]),
             pickEq(picks[2], picks[5]),
             pickFrom(picks[0], tables[0]));
+    assertSame(Result.EQUIVALENT, solver.check(constraints0));
+
+    solver.close();
+  }
+
+  @Test
+  @DisplayName("[prove] filter push up")
+  void testProof2() {
+    final QueryBuilder q0 = new JoinFilterQuery();
+    final QueryBuilder q1 = new FilterJoinQuery();
+
+    final Solver solver = Solver.make(q0, q1);
+    final TableSym[] tables = solver.tables();
+    final PickSym[] picks = solver.picks();
+    final PredicateSym[] preds = solver.predicates();
+
+    final Decision[] constraints0 =
+        asArray(
+            tableEq(tables[0], tables[2]),
+            tableEq(tables[1], tables[3]),
+            pickEq(picks[0], picks[5]),
+            pickEq(picks[1], picks[6]),
+            pickEq(picks[2], picks[7]),
+            pickEq(picks[3], picks[4]),
+            predicateEq(preds[0], preds[1]),
+            pickFrom(picks[4], asArray(tables[3])),
+            pickSub(picks[3], picks[2]));
+
+    System.out.println(solver.check(constraints0));
     assertSame(Result.EQUIVALENT, solver.check(constraints0));
 
     solver.close();

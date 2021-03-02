@@ -33,8 +33,8 @@ public class OptimizationRunner {
 
   public List<ASTNode> optimize(Statement stmt) {
     final ASTNode ast = stmt.parsed();
-    final PlanNode plan = ToPlanTranslator.translate(ast);
+    final PlanNode plan = ToPlanTranslator.toPlan(ast);
     return listMap(
-        ToASTTranslator::translate, Optimizer.make(repo, stmt.app().schema("base")).optimize(plan));
+        ToASTTranslator::toAST, Optimizer.make(repo, stmt.app().schema("base")).optimize(plan));
   }
 }

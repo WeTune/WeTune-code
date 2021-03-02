@@ -107,6 +107,15 @@ public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
     pick.setVisibleSources(visible);
     pick.setViableSources(makeViableSources(visible, false));
 
+    Operator prev = op.predecessors()[0];
+    while (prev.type().numPredecessors() == 1) {
+      if (prev instanceof Proj) {
+        pick.setUpstream(pickSym(((Proj) prev).fields()));
+        break;
+      }
+      prev = prev.predecessors()[0];
+    }
+
     final Value[] out = asArray(pick.apply(in.out));
 
     stack.push(new Relation(visible, in.cond, out, in.bound));
@@ -149,6 +158,7 @@ public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
     q.acceptVisitor(this);
 
     final Relation rel = stack.peek();
+    assert !stack.isEmpty();
     final LogicCtx ctx = ctx(); // don't inline this variable: we don't want this-ref to be captured
     return x -> ctx.makeExists(rel.bound, rel.cond.and(x.equalsTo(ctx.makeCombine(rel.out))));
   }

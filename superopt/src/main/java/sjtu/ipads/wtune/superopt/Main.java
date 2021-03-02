@@ -5,7 +5,6 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.support.Issue;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.internal.Optimizer;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.logging.LogManager;
 
 import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 public class Main {
 
@@ -44,7 +44,7 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      //      Workflow.inferForeignKeys("discourse");
+      //      Workflow.inferForeignKeys("fatfreecrm");
       test0();
     }
   }
@@ -85,33 +85,26 @@ public class Main {
         SubstitutionBank.make().importFrom(lines.subList(0, lines.size() - 1));
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
-    final Issue issue = Issue.findAll().get(27);
-    final String sql = "";
+    final String sql =
+        "SELECT group_users.group_id FROM group_users WHERE group_users.group_id IN (SELECT groups.id FROM groups WHERE groups.id > 0) AND group_users.user_id=779";
+    final Statement stmt = Statement.findOne("discourse", 944);
+    normalize(stmt);
 
-    final Statement stmt = Statement.findOne(issue.app(), issue.stmtId());
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
+    //    final Schema schema = App.of("discourse").schema("base", true);
     ast.context().setSchema(schema);
 
     System.out.println(stmt);
     System.out.println(ast.toString(false));
 
-    //    System.out.println(InferForeignKey.analyze(stmt.parsed()));
-
-    final PlanNode plan = ToPlanTranslator.translate(ast);
-    //    System.out.println(
-    //        sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(plan).toString(false));
-
-    //    for (Substitution substitution : optimizer.match0(filter)) {
-    //      System.out.println(substitution);
-    //    }
-
+    final PlanNode plan = ToPlanTranslator.toPlan(ast);
     final List<PlanNode> optimized = Optimizer.make(bank, schema).optimize(plan);
     System.out.println(optimized.size());
 
     for (PlanNode opt : optimized)
-      System.out.println(sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.translate(opt).toString());
+      System.out.println(sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST(opt).toString());
     System.out.println(stmt);
   }
 }

@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Input;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
 import sjtu.ipads.wtune.superopt.optimization.Fingerprint;
 
 public class FragmentFingerprint implements OperatorVisitor {
@@ -15,8 +18,8 @@ public class FragmentFingerprint implements OperatorVisitor {
   @Override
   public boolean enter(Operator op) {
     if (op instanceof Input) return false;
-    if (!(op instanceof PlainFilter) || !(op.successor() instanceof PlainFilter))
-      fingerprint.append(Fingerprint.charOf(op.type()));
+    //    if (!(op instanceof PlainFilter) || !(op.successor() instanceof PlainFilter))
+    fingerprint.append(Fingerprint.charOf(op.type()));
     return true;
   }
 }

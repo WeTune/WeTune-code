@@ -59,6 +59,6 @@ public class BasePredicateEq<P> implements PredicateEq<P> {
 
   @Override
   public String toString() {
-    return "PredicateEq(" + px() + "," + py() + ")";
+    return "PredicateEq(" + px() + ',' + py() + ")";
   }
 }

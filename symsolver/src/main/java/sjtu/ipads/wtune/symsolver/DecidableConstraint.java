@@ -29,6 +29,10 @@ public interface DecidableConstraint extends Constraint, Decision, Comparable<De
     return DecidablePickFrom.build(p, ts);
   }
 
+  static DecidableConstraint pickSub(PickSym px, PickSym py) {
+    return DecidablePickSub.build(px, py);
+  }
+
   static DecidableConstraint reference(TableSym tx, PickSym px, TableSym ty, PickSym py) {
     return DecidableReference.build(tx, px, ty, py);
   }

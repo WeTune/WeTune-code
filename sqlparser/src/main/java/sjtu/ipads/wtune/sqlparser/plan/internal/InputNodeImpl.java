@@ -1,15 +1,17 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.System.identityHashCode;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
@@ -17,17 +19,26 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.internal.NativePlanAttribute.fromColumn;
+import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.fromColumn;
 
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final Table table;
-  private final String alias;
-  private final List<PlanAttribute> attributes;
+  private final List<AttributeDef> attributes;
+  private String alias;
 
+  // for `build`
   private InputNodeImpl(Table table, String alias) {
     this.table = table;
     this.alias = alias;
-    this.attributes = listMap(it -> fromColumn(alias, it), table.columns());
+    this.attributes = listMap(this::makeAttribute, table.columns());
+    bindAttributes(attributes, this);
+  }
+
+  // for `copy`
+  private InputNodeImpl(Table table, String alias, List<AttributeDef> attrs) {
+    this.table = table;
+    this.alias = alias;
+    this.attributes = listMap(AttributeDef::copy, attrs);
     bindAttributes(attributes, this);
   }
 
@@ -35,9 +46,9 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
     return new InputNodeImpl(table, alias);
   }
 
-  @Override
-  public Table table() {
-    return table;
+  private AttributeDef makeAttribute(Column column) {
+    // id is calculated from identity and column
+    return fromColumn(identityHashCode(this) * 31 + column.hashCode(), alias, column);
   }
 
   @Override
@@ -53,18 +64,23 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
+  public void setAlias(String alias) {
+    this.alias = alias;
+  }
+
+  @Override
+  public List<AttributeDef> usedAttributes() {
     return Collections.emptyList();
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return attributes;
   }
 
   @Override
   protected PlanNode copy0() {
-    return new InputNodeImpl(table, alias);
+    return new InputNodeImpl(table, alias, attributes);
   }
 
   @Override

@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.symsolver.core.TableSym;
 public class PickSymImpl extends BaseSym implements PickSym {
   private TableSym[] visibleSources;
   private TableSym[][] viableSources;
-  private PickSym joined;
+  private PickSym joined, upstream;
 
   public static PickSym build() {
     return new PickSymImpl();
@@ -27,6 +27,10 @@ public class PickSymImpl extends BaseSym implements PickSym {
     return joined;
   }
 
+  public PickSym upstream() {
+    return upstream;
+  }
+
   @Override
   public void setVisibleSources(TableSym[] visibleSources) {
     this.visibleSources = visibleSources;
@@ -41,6 +45,11 @@ public class PickSymImpl extends BaseSym implements PickSym {
   @Override
   public void setJoined(PickSym joined) {
     this.joined = joined;
+  }
+
+  @Override
+  public void setUpstream(PickSym upstream) {
+    this.upstream = upstream;
   }
 
   @Override

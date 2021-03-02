@@ -6,6 +6,8 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.SubqueryFilterNodeImpl;
 import java.util.List;
 
 public interface SubqueryFilterNode extends FilterNode {
+  ASTNode leftExpr();
+
   @Override
   default OperatorType type() {
     return OperatorType.SubqueryFilter;
@@ -15,7 +17,7 @@ public interface SubqueryFilterNode extends FilterNode {
     return SubqueryFilterNodeImpl.build(expr);
   }
 
-  static SubqueryFilterNode make(List<PlanAttribute> usedAttrs) {
+  static SubqueryFilterNode make(List<AttributeDef> usedAttrs) {
     return SubqueryFilterNodeImpl.build(usedAttrs);
   }
 }

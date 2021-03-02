@@ -46,7 +46,7 @@ public class SubstitutionBankImpl implements SubstitutionBank {
         add(Substitution.rebuild(line));
       } catch (Exception ex) {
         LOG.log(WARNING, "Malformed serialized substitution: {0}", line);
-        LOG.log(WARNING, "Stacktrace: {0}", ex);
+        LOG.log(WARNING, "Stacktrace: {0}", ex.toString());
       }
     }
     return this;

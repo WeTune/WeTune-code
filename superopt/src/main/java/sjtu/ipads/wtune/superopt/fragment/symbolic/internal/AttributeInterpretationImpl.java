@@ -1,33 +1,36 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
-import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
 
 import java.util.List;
-import java.util.Objects;
 
-public class AttributeInterpretationImpl
-    extends InterpretationBase<Pair<List<PlanAttribute>, List<PlanAttribute>>>
+public class AttributeInterpretationImpl extends InterpretationBase<List<AttributeDef>>
     implements AttributeInterpretation {
-
-  protected AttributeInterpretationImpl(List<PlanAttribute> in, List<PlanAttribute> out) {
-    super(Pair.of(in, out));
+  protected AttributeInterpretationImpl(List<AttributeDef> object) {
+    super(object);
   }
 
   @Override
-  public boolean isCompatible(Pair<List<PlanAttribute>, List<PlanAttribute>> obj) {
-    final List<PlanAttribute> used0 = object().getLeft(), used1 = obj.getLeft();
+  public boolean isCompatible(List<AttributeDef> thatDefs) {
+    return object().equals(thatDefs);
+  }
 
-    if (used0.size() != used1.size()) return false;
-
-    for (int i = 0, bound = used0.size(); i < bound; i++)
-      if (!Objects.equals(used0.get(i), used1.get(i))) return false;
+  @Override
+  public boolean shouldOverride(List<AttributeDef> thatDefs) {
+    final List<AttributeDef> thisDefs = object();
+    assert thisDefs.size() == thatDefs.size();
+    for (int i = 0, bound = thisDefs.size(); i < bound; i++)
+      if (!shouldOverride(thisDefs.get(i), thatDefs.get(i))) return false;
     return true;
   }
 
-  @Override
-  public boolean shouldOverride(Pair<List<PlanAttribute>, List<PlanAttribute>> obj) {
-    return obj.getRight() != null && object().getRight() == null;
+  private static boolean shouldOverride(AttributeDef thisDef, AttributeDef thatDef) {
+    if (!thisDef.equals(thatDef)) { }
+    assert thisDef.equals(thatDef);
+    if (thisDef.id() == thatDef.id()) return false;
+    assert thisDef.isIdentity() || thatDef.isIdentity();
+    final int[] thisRefs = thisDef.references();
+    return thisRefs.length == 1 && thisRefs[0] == thatDef.id();
   }
 }

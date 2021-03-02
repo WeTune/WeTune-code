@@ -16,16 +16,16 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanAttribute.fromExpr;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ToPlanTranslator {
-  public static PlanNode translate(ASTNode node) {
+  public static PlanNode toPlan(ASTNode node) {
     final PlanNode plan = translate0(node);
     PlanNode.resolveUsedTree(plan);
     return plan;
@@ -66,6 +66,44 @@ public class ToPlanTranslator {
     if (prev == null) throw new IllegalArgumentException("failed to convert AST to plan");
 
     return prev;
+  }
+
+  private static PlanNode translateProj(
+      String qualification,
+      List<ASTNode> selections,
+      List<ASTNode> groupKeys,
+      PlanNode predecessor) {
+    if (predecessor == null) return null;
+
+    final boolean isWildcard = isWildcard(selections);
+    selections = expandWildcards(selections, predecessor);
+    groupKeys = groupKeys != null ? groupKeys : Collections.emptyList();
+
+    if (!groupKeys.isEmpty() || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
+      // Aggregation. The structure should be Agg(Proj(..)). Proj's definedAttrs are all attributes
+      // used in group keys and aggregations
+      final List<ASTNode> projSelections = new ArrayList<>(selections.size() + groupKeys.size());
+      for (ASTNode ref : listJoin(gatherColumnRefs(groupKeys), gatherColumnRefs(selections))) {
+        final ASTNode item = ASTNode.node(SELECT_ITEM);
+        item.set(SELECT_ITEM_EXPR, ref);
+        projSelections.add(item);
+      }
+
+      final ProjNode proj = ProjNode.make(null, projSelections);
+      final AggNode agg = AggNode.make(qualification, selections, groupKeys);
+
+      proj.setPredecessor(0, predecessor);
+      agg.setPredecessor(0, proj);
+
+      return agg;
+
+    } else {
+      // vanilla projection
+      final ProjNode proj = ProjNode.make(qualification, selections);
+      proj.setPredecessor(0, predecessor);
+      proj.setWildcard(isWildcard);
+      return proj;
+    }
   }
 
   private static PlanNode translateTableSource(ASTNode tableSource) {
@@ -117,46 +155,6 @@ public class ToPlanTranslator {
     return filters.get(0);
   }
 
-  private static PlanNode translateProj(
-      String qualification,
-      List<ASTNode> selections,
-      List<ASTNode> groupKeys,
-      PlanNode predecessor) {
-    if (predecessor == null) return null;
-    groupKeys = groupKeys != null ? groupKeys : Collections.emptyList();
-
-    final List<PlanAttribute> outAttrs = new ArrayList<>(selections.size());
-    for (ASTNode selectItem : selections) {
-      final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
-      if (WILDCARD.isInstance(expr)) expandWildcard(qualification, expr, predecessor, outAttrs);
-      else outAttrs.add(fromExpr(qualification, aliasOf(selectItem), expr));
-    }
-
-    if (!groupKeys.isEmpty() || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
-      // Aggregation. The result is Agg(Proj(..)). The projections are all attributes used in group
-      // keys and aggregations
-      final List<PlanAttribute> projAttrs = new ArrayList<>(selections.size() + groupKeys.size());
-      for (ASTNode ref : listJoin(gatherColumnRefs(groupKeys), gatherColumnRefs(selections))) {
-        final String name = ref.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN);
-        projAttrs.add(fromExpr(qualification, name, ref));
-      }
-
-      final ProjNode proj = ProjNode.make(projAttrs);
-      final AggNode agg = AggNode.make(outAttrs, groupKeys);
-
-      proj.setPredecessor(0, predecessor);
-      agg.setPredecessor(0, proj);
-
-      return agg;
-
-    } else {
-      // vanilla projection
-      final ProjNode proj = ProjNode.make(outAttrs);
-      proj.setPredecessor(0, predecessor);
-      return proj;
-    }
-  }
-
   private static PlanNode translateSort(List<ASTNode> orderKeys, PlanNode predecessor) {
     if (isEmpty(orderKeys)) return predecessor;
     if (predecessor == null) return null;
@@ -175,21 +173,6 @@ public class ToPlanTranslator {
     return limitNode;
   }
 
-  private static void translateFilter0(ASTNode expr, List<FilterNode> filters) {
-    final BinaryOp binaryOp = expr.get(BINARY_OP);
-
-    if (binaryOp == AND) {
-      translateFilter0(expr.get(BINARY_LEFT), filters);
-      translateFilter0(expr.get(BINARY_RIGHT), filters);
-
-    } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
-      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr.get(BINARY_LEFT));
-      filter.predecessors()[1] = translate0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
-      filters.add(filter);
-
-    } else filters.add(PlainFilterNode.make(expr));
-  }
-
   private static ASTNode locateQuerySpecNode(ASTNode node) {
     if (QUERY_SPEC.isInstance(node)) return node;
     if (QUERY.isInstance(node)) return locateQuerySpecNode(node.get(QUERY_BODY));
@@ -204,25 +187,53 @@ public class ToPlanTranslator {
     else throw new IllegalArgumentException();
   }
 
+  private static void translateFilter0(ASTNode expr, List<FilterNode> filters) {
+    final BinaryOp binaryOp = expr.get(BINARY_OP);
+
+    if (binaryOp == AND) {
+      translateFilter0(expr.get(BINARY_LEFT), filters);
+      translateFilter0(expr.get(BINARY_RIGHT), filters);
+
+    } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
+      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);
+      final PlanNode subquery = translate0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
+      filter.setPredecessor(1, subquery);
+
+      filters.add(filter);
+
+    } else filters.add(PlainFilterNode.make(expr));
+  }
+
+  private static boolean isWildcard(List<ASTNode> selectItems) {
+    if (selectItems.size() != 1) return false;
+    final ASTNode expr = selectItems.get(0).get(SELECT_ITEM_EXPR);
+    return WILDCARD.isInstance(expr) && expr.get(WILDCARD_TABLE) == null;
+  }
+
   private static boolean isAggregation(ASTNode selectItem) {
     return AGGREGATE.isInstance(selectItem.get(SELECT_ITEM_EXPR));
   }
 
-  private static void expandWildcard(
-      String qualification, ASTNode wildcard, PlanNode predecessor, List<PlanAttribute> dest) {
-    final ASTNode table = wildcard.get(WILDCARD_TABLE);
-    final String tableName = table != null ? table.get(TABLE_NAME_TABLE) : null;
-    for (PlanAttribute inAttr : predecessor.definedAttributes())
-      if (tableName == null || tableName.equals(inAttr.qualification()))
-        dest.add(fromExpr(qualification, inAttr.name(), inAttr.toColumnRef()));
-  }
+  private static List<ASTNode> expandWildcards(List<ASTNode> selectItems, PlanNode predecessor) {
+    if (selectItems.stream().map(SELECT_ITEM_EXPR::get).noneMatch(WILDCARD::isInstance))
+      return selectItems;
 
-  private static String aliasOf(ASTNode selectItem) {
-    final String alias = selectItem.get(SELECT_ITEM_ALIAS);
-    if (alias != null) return alias;
+    final List<ASTNode> ret = new ArrayList<>(selectItems.size() << 1);
+    for (ASTNode item : selectItems) {
+      final ASTNode expr = item.get(SELECT_ITEM_EXPR);
+      if (!WILDCARD.isInstance(expr)) {
+        ret.add(item);
+        continue;
+      }
 
-    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
-    // Memo: Don't synthesize an alias for anonymous column.
-    return COLUMN_REF.isInstance(expr) ? expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN) : null;
+      final ASTNode table = expr.get(WILDCARD_TABLE);
+      final String tableName = table != null ? table.get(TABLE_NAME_TABLE) : null;
+
+      for (AttributeDef inAttr : predecessor.definedAttributes())
+        if (tableName == null || tableName.equals(inAttr.qualification()))
+          ret.add(inAttr.toSelectItem());
+    }
+
+    return ret;
   }
 }

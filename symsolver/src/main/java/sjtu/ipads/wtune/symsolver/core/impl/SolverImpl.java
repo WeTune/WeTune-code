@@ -110,6 +110,9 @@ public class SolverImpl implements Solver {
     for (PickSym pick : picks) {
       choices.addAll(listMap(src -> pickFrom(pick, src), pick.viableSources()));
 
+      //      final PickSym upstream = pick.upstream();
+      //      if (upstream != null) choices.add(pickSub(pick, upstream));
+
       final PickSym joined = pick.joined();
       if (joined == null) continue;
 

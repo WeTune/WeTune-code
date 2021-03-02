@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.Collections;
@@ -32,12 +32,12 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return predecessors()[0].definedAttributes();
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
+  public List<AttributeDef> usedAttributes() {
     return Collections.emptyList();
   }
 

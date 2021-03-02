@@ -2,12 +2,14 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import gnu.trove.list.TIntList;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.selectItemAlias;
 
 public abstract class PlanNodeBase implements PlanNode {
   private PlanNode successor;
@@ -39,6 +41,16 @@ public abstract class PlanNodeBase implements PlanNode {
   }
 
   @Override
+  public void replacePredecessor(PlanNode target, PlanNode rep) {
+    final PlanNode[] predecessors = predecessors();
+    for (int i = 0; i < predecessors.length; i++)
+      if (predecessors[i] == target) {
+        setPredecessor(i, rep);
+        break;
+      }
+  }
+
+  @Override
   public PlanNode copy() {
     final PlanNode node = copy0();
     node.setSuccessor(successor());
@@ -50,30 +62,37 @@ public abstract class PlanNodeBase implements PlanNode {
 
   protected abstract PlanNode copy0();
 
-  protected static List<PlanAttribute> resolveUsed0(List<ASTNode> columnRefs, PlanNode lookup) {
+  protected AttributeDef makeAttribute(String qualification, ASTNode selectItem) {
+    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
+    final String name = selectItemAlias(selectItem);
+    final int id = System.identityHashCode(this) * 31 + selectItem.hashCode();
+    return AttributeDef.fromExpr(id, qualification, name, expr);
+  }
+
+  protected static List<AttributeDef> resolveUsed0(List<ASTNode> columnRefs, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, columnRefs);
   }
 
-  protected static List<PlanAttribute> resolveUsed1(List<PlanAttribute> attr, PlanNode lookup) {
+  protected static List<AttributeDef> resolveUsed1(List<AttributeDef> attr, PlanNode lookup) {
     return listMap(lookup::resolveAttribute, attr);
   }
 
-  protected static void updateColumnRefs(List<ASTNode> refs, List<PlanAttribute> usedAttrs) {
+  protected static void updateColumnRefs(List<ASTNode> refs, List<AttributeDef> usedAttrs) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
-      final PlanAttribute usedAttr = usedAttrs.get(i);
+      final AttributeDef usedAttr = usedAttrs.get(i);
       if (usedAttr != null) refs.get(i).update(usedAttr.toColumnRef());
     }
   }
 
   protected static void updateColumnRefs(
-      List<ASTNode> refs, TIntList usedAttrs, List<PlanAttribute> inputAttrs) {
+      List<ASTNode> refs, TIntList usedAttrs, List<AttributeDef> inputAttrs) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
       final int attrIdx = usedAttrs.get(i);
       if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).toColumnRef());
     }
   }
 
-  protected static void bindAttributes(List<PlanAttribute> attrs, PlanNode node) {
-    attrs.forEach(it -> it.setOrigin(node));
+  protected static void bindAttributes(List<AttributeDef> attrs, PlanNode node) {
+    attrs.forEach(it -> it.setDefiner(node));
   }
 }

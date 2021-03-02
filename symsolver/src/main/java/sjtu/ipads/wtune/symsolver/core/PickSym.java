@@ -22,6 +22,8 @@ public interface PickSym extends Sym {
 
   void setJoined(PickSym joined);
 
+  void setUpstream(PickSym upstream);
+
   default void setViableSources(Iterable<? extends Iterable<TableSym>> viableSources) {
     setViableSources(
         stream(viableSources)

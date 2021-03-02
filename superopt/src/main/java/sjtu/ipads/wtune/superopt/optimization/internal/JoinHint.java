@@ -117,7 +117,7 @@ public class JoinHint {
     if (!(node instanceof JoinNode)) return true;
     final JoinNode join = (JoinNode) node;
     // check if all attributes are presented in input
-    for (PlanAttribute attr : join.usedAttributes())
+    for (AttributeDef attr : join.usedAttributes())
       if (join.resolveAttribute(attr) == null) return false;
     return isValidJoin(join.predecessors()[0]);
   }
@@ -132,9 +132,9 @@ public class JoinHint {
 
     // check whether the Reference constraint can be enforced
     if (inter.constraints().requiresReference(op.leftFields(), op.rightFields())) {
-      final List<Column> referred = listMap(PlanAttribute::column, node.rightAttributes());
-      for (PlanAttribute referee : node.leftAttributes()) {
-        final Column column = referee.column();
+      final List<Column> referred = listMap(AttributeDef::referredColumn, node.rightAttributes());
+      for (AttributeDef referee : node.leftAttributes()) {
+        final Column column = referee.referredColumn();
         if (column == null || !column.references(referred)) return false;
       }
     }

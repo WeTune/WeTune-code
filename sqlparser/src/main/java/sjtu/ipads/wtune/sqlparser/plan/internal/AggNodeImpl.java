@@ -4,7 +4,7 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
@@ -12,33 +12,41 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class AggNodeImpl extends PlanNodeBase implements AggNode {
-  private final List<PlanAttribute> definedAttrs;
-
   private final List<ASTNode> groupKeys;
-  private final List<ASTNode> aggregations;
+  private final List<ASTNode> selectItems;
+
+  private final List<AttributeDef> definedAttrs;
 
   private TIntList keyUsedAttrs;
   private TIntList aggUsedAttrs;
 
-  private AggNodeImpl(
-      List<PlanAttribute> definedAttrs,
-      List<ASTNode> groupKeys,
-      TIntList keyUsedAttrs,
-      TIntList aggUsedAttrs) {
-    this.definedAttrs = definedAttrs;
+  private AggNodeImpl(String qualification, List<ASTNode> selectItems, List<ASTNode> groupKeys) {
     this.groupKeys = groupKeys;
-    this.aggregations = listMap(PlanAttribute::toSelectItem, definedAttrs);
-    this.keyUsedAttrs = keyUsedAttrs;
-    this.aggUsedAttrs = aggUsedAttrs;
+    this.selectItems = selectItems;
+    this.definedAttrs = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
     bindAttributes(definedAttrs, this);
   }
 
-  public static AggNode build(List<PlanAttribute> aggs, List<ASTNode> groupKeys) {
-    return new AggNodeImpl(aggs, groupKeys, null, null);
+  private AggNodeImpl(
+      List<AttributeDef> definedAttrs,
+      List<ASTNode> groupKeys,
+      TIntList keyUsedAttrs,
+      TIntList aggUsedAttrs) {
+    this.definedAttrs = listMap(AttributeDef::copy, definedAttrs);
+    this.selectItems = listMap(AttributeDef::toSelectItem, definedAttrs);
+    this.groupKeys = groupKeys;
+    this.keyUsedAttrs = keyUsedAttrs;
+    this.aggUsedAttrs = aggUsedAttrs;
+    bindAttributes(this.definedAttrs, this);
+  }
+
+  public static AggNode build(String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys) {
+    return new AggNodeImpl(qualification, aggs, groupKeys);
   }
 
   @Override
@@ -51,20 +59,25 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
 
   @Override
   public List<ASTNode> aggregations() {
-    final List<ASTNode> aggs = listMap(ASTNode::deepCopy, aggregations);
-    updateColumnRefs(gatherColumnRefs(aggs), aggUsedAttrs, predecessors()[0].definedAttributes());
+    final List<ASTNode> aggs = listMap(ASTNode::deepCopy, selectItems);
+    final List<ASTNode> refs = gatherColumnRefs(aggs);
+    final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
+    for (int i = 0, bound = refs.size(); i < bound; i++) {
+      final int attrIdx = aggUsedAttrs.get(i);
+      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).upstream().toColumnRef());
+    }
     return aggs;
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return definedAttrs;
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
-    final List<PlanAttribute> used = new ArrayList<>(aggUsedAttrs.size());
-    final List<PlanAttribute> inputAttrs = predecessors()[0].definedAttributes();
+  public List<AttributeDef> usedAttributes() {
+    final List<AttributeDef> used = new ArrayList<>(aggUsedAttrs.size());
+    final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
     aggUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
     if (keyUsedAttrs != null) keyUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
     return used;
@@ -81,8 +94,13 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     // Plan: Agg<[0]>(Proj<b.id>(InnerJoin<a.ref=b.id>(Input<a>, Input<b>)))
     // Plan_opt: Agg<[0]>(Proj<a.ref>(Input<a>))
     // SQL_opt: SELECT COUNT(a.ref) FROM a JOIN b ON a.ref = b.id
-    if (aggUsedAttrs == null) aggUsedAttrs = resolveUsedAttributes0(aggregations);
+    if (aggUsedAttrs == null) aggUsedAttrs = resolveUsedAttributes0(selectItems);
     if (groupKeys != null && keyUsedAttrs == null) keyUsedAttrs = resolveUsedAttributes0(groupKeys);
+  }
+
+  @Override
+  protected PlanNode copy0() {
+    return new AggNodeImpl(definedAttrs, groupKeys, keyUsedAttrs, aggUsedAttrs);
   }
 
   @Override
@@ -93,37 +111,31 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     super.setPredecessor(idx, op);
   }
 
-  private TIntList resolveUsedAttributes0(List<ASTNode> nodes) {
-    final PlanNode input = predecessors()[0];
-    final List<PlanAttribute> inputAttrs = input.definedAttributes();
-    assert input instanceof ProjNode;
-
-    final TIntList usedAttrs = new TIntArrayList(nodes.size());
-    for (ASTNode node : nodes)
-      for (ASTNode colRef : gatherColumnRefs(node)) {
-        final PlanAttribute resolved = input.resolveAttribute(colRef);
-        usedAttrs.add(resolved != null ? inputAttrs.indexOf(resolved) : -1);
-      }
-    return usedAttrs;
-  }
-
-  @Override
-  protected PlanNode copy0() {
-    return new AggNodeImpl(
-        listMap(PlanAttribute::copy, definedAttrs), groupKeys, keyUsedAttrs, aggUsedAttrs);
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     AggNodeImpl aggNode = (AggNodeImpl) o;
     return Objects.equals(groupKeys, aggNode.groupKeys)
-        && Objects.equals(aggregations, aggNode.aggregations);
+        && Objects.equals(selectItems, aggNode.selectItems);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(groupKeys, aggregations);
+    return Objects.hash(groupKeys, selectItems);
+  }
+
+  private TIntList resolveUsedAttributes0(List<ASTNode> nodes) {
+    final PlanNode input = predecessors()[0];
+    final List<AttributeDef> inputAttrs = input.definedAttributes();
+    assert input instanceof ProjNode;
+
+    final TIntList usedAttrs = new TIntArrayList(nodes.size());
+    for (ASTNode node : nodes)
+      for (ASTNode colRef : gatherColumnRefs(node)) {
+        final AttributeDef resolved = input.resolveAttribute(colRef);
+        usedAttrs.add(resolved != null ? inputAttrs.indexOf(resolved) : -1);
+      }
+    return usedAttrs;
   }
 }

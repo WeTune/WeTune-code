@@ -28,9 +28,8 @@ public interface PlainFilter extends Operator {
     final PlanNode node =
         PlainFilterNode.make(
             interpretations.getPredicate(predicate()).object(),
-            interpretations.getAttributes(fields()).object().getLeft());
+            interpretations.getAttributes(fields()).object());
     node.setPredecessor(0, predecessor);
-    node.resolveUsed();
     return node;
   }
 

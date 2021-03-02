@@ -3,9 +3,10 @@ package sjtu.ipads.wtune.superopt.internal;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
-import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
@@ -17,6 +18,9 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
+import static sjtu.ipads.wtune.superopt.internal.PlanNormalizer.normalize;
+import static sjtu.ipads.wtune.superopt.internal.SortReducer.reduceSort;
 
 public class Optimizer {
   private final List<PlanNode> optimized = new ArrayList<>();
@@ -37,8 +41,8 @@ public class Optimizer {
   }
 
   public List<ASTNode> optimize(ASTNode ast) {
-    final List<PlanNode> plans = optimize(ToPlanTranslator.translate(ast));
-    return listMap(ToASTTranslator::translate, plans);
+    final List<PlanNode> plans = optimize(toPlan(ast));
+    return listMap(ToASTTranslator::toAST, plans);
   }
 
   public List<PlanNode> optimize(PlanNode node) {
@@ -46,7 +50,10 @@ public class Optimizer {
     known.clear();
     toOptimized.clear();
 
-    known.add(ToASTTranslator.translate(node).toString().toLowerCase());
+    final boolean sortReduced = reduceSort(node);
+
+    if (sortReduced) optimized.add(node);
+    known.add(ToASTTranslator.toAST(node).toString().toLowerCase());
     toOptimized.offer(node);
 
     optimize0();
@@ -83,10 +90,12 @@ public class Optimizer {
         // impl note: `substituted` should be the root of new plan instead of matching point
         final PlanNode substituted = match.substitute(sub.g1(), interpretations);
         // match the substituted plan from beginning
+        if (containsNonLeftDeepJoin(substituted)) continue;
+        normalize(substituted);
         final ASTNode ast = toAST(substituted);
         if (known.add(ast.toString().toLowerCase())) {
           // re-translate the plan to reset rearrangement
-          final PlanNode newPlan = ToPlanTranslator.translate(ast);
+          final PlanNode newPlan = toPlan(ast);
           optimized.add(newPlan);
           toOptimized.offer(newPlan);
         }
@@ -157,8 +166,21 @@ public class Optimizer {
     return ret;
   }
 
+  private static boolean containsNonLeftDeepJoin(PlanNode node) {
+    if (node.type() == OperatorType.Input) return false;
+    for (PlanNode predecessor : node.predecessors())
+      if (containsNonLeftDeepJoin(predecessor)) return true;
+
+    return node.type().isJoin() && node.predecessors()[1].type().isJoin()
+        || node.type() == OperatorType.Proj
+            && ((ProjNode) node).isWildcard()
+            && node.successor() != null
+            && node.successor().type().isJoin()
+            && node.predecessors()[0].type().isJoin();
+  }
+
   private ASTNode toAST(PlanNode plan) {
-    final ASTNode ast = ToASTTranslator.translate(plan);
+    final ASTNode ast = ToASTTranslator.toAST(plan);
     ASTContext.manage(schema.dbType(), ast);
     ast.context().setSchema(schema);
     return ast;

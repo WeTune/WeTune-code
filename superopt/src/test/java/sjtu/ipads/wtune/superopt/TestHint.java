@@ -38,7 +38,7 @@ public class TestHint {
     final ASTNode ast = ASTParser.mysql().parse(sql);
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
-    final PlanNode joinNode = ToPlanTranslator.translate(ast).predecessors()[0];
+    final PlanNode joinNode = ToPlanTranslator.toPlan(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator joinOp = sub.g0().head().predecessors()[0];
     final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
@@ -47,7 +47,7 @@ public class TestHint {
     assertEquals(1, Iterables.size(mutated));
     assertEquals(
         "SELECT * FROM `b` AS `b` INNER JOIN `a` AS `a` ON `b`.`j` = `a`.`i`",
-        ToASTTranslator.translate(Iterables.getOnlyElement(mutated)).toString());
+        ToASTTranslator.toAST(Iterables.getOnlyElement(mutated)).toString());
   }
 
   @Test
@@ -66,7 +66,7 @@ public class TestHint {
     final ASTNode ast = ASTParser.mysql().parse(sql);
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
-    final PlanNode joinNode = ToPlanTranslator.translate(ast).predecessors()[0];
+    final PlanNode joinNode = ToPlanTranslator.toPlan(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator joinOp = sub.g0().head().predecessors()[0];
     final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
@@ -75,7 +75,7 @@ public class TestHint {
     assertEquals(1, Iterables.size(mutated));
     assertEquals(
         "SELECT * FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k` INNER JOIN `a` AS `a` ON `b`.`j` = `a`.`i`",
-        ToASTTranslator.translate(Iterables.getOnlyElement(mutated)).toString());
+        ToASTTranslator.toAST(Iterables.getOnlyElement(mutated)).toString());
   }
 
   @Test
@@ -94,14 +94,14 @@ public class TestHint {
     final ASTNode ast = ASTParser.mysql().parse(sql);
     ast.context().setSchema(Schema.parse(MYSQL, schema));
 
-    final PlanNode filterNode = ToPlanTranslator.translate(ast).predecessors()[0];
+    final PlanNode filterNode = ToPlanTranslator.toPlan(ast).predecessors()[0];
     final Substitution sub = Substitution.rebuild(substitution);
     final Operator filterOp = sub.g0().head();
     final Interpretations inter = Interpretations.constrainedBy(sub.constraints());
 
     final Iterable<PlanNode> mutated = Hint.apply(filterNode, filterOp, inter);
     final List<String> str =
-        listMap(func(ToASTTranslator::translate).andThen(ASTNode::toString), mutated);
+        listMap(func(ToASTTranslator::toAST).andThen(ASTNode::toString), mutated);
     assertEquals(2, str.size());
     assertTrue(
         str.contains(

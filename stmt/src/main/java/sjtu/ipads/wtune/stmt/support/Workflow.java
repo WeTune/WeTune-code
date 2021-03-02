@@ -68,11 +68,15 @@ public interface Workflow {
     }
   }
 
-  static void retrofit(Statement stmt) {
+  static void normalize(Statement stmt) {
     clean(stmt.parsed());
     normalizeBool(stmt.parsed());
     normalizeTuple(stmt.parsed());
     normalizeConstantTable(stmt.parsed());
+  }
+
+  static void retrofit(Statement stmt) {
+    normalize(stmt);
     resolveBoolExpr(stmt.parsed());
     resolveParamFull(stmt.parsed());
   }

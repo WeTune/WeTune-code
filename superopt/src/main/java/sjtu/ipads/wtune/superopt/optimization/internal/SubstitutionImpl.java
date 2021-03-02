@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
@@ -118,27 +117,9 @@ public class SubstitutionImpl implements Substitution {
 
   private static Constraint rebuildConstraint(String str, Numbering lookup) {
     final String[] split = str.split("[(),\\[\\]]+");
-    switch (Constraint.Kind.valueOf(split[0])) {
-      case TableEq:
-        return Constraint.tableEq(lookup.placeholderOf(split[1]), lookup.placeholderOf(split[2]));
-      case PickEq:
-        return Constraint.pickEq(lookup.placeholderOf(split[1]), lookup.placeholderOf(split[2]));
-      case PredicateEq:
-        return Constraint.predicateEq(
-            lookup.placeholderOf(split[1]), lookup.placeholderOf(split[2]));
-      case PickFrom:
-        return Constraint.pickFrom(
-            lookup.placeholderOf(split[1]),
-            (Object[])
-                arrayMap(lookup::placeholderOf, Placeholder.class, Commons.subArray(split, 2)));
-      case Reference:
-        return Constraint.reference(
-            lookup.placeholderOf(split[1]),
-            lookup.placeholderOf(split[2]),
-            lookup.placeholderOf(split[3]),
-            lookup.placeholderOf(split[4]));
-      default:
-        throw new IllegalStateException();
-    }
+    final Constraint.Kind kind = Constraint.Kind.valueOf(split[0]);
+    final Placeholder[] targets = new Placeholder[split.length - 1];
+    for (int i = 1; i < split.length; i++) targets[i - 1] = lookup.placeholderOf(split[i]);
+    return Constraint.make(kind, targets);
   }
 }

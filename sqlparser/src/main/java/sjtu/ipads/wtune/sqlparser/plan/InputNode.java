@@ -5,9 +5,9 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.InputNodeImpl;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public interface InputNode extends PlanNode {
-  Table table();
-
   ASTNode toTableSource();
+
+  void setAlias(String alias);
 
   @Override
   default OperatorType type() {

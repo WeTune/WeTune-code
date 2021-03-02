@@ -60,6 +60,11 @@ public class CombinedProver implements Prover {
   }
 
   @Override
+  public void pickSub(DecidableConstraint constraint, PickSym px, PickSym py) {
+    for (Prover prover : provers) prover.pickSub(constraint, px, py);
+  }
+
+  @Override
   public void reference(
       DecidableConstraint constraint, TableSym tx, PickSym px, TableSym ty, PickSym py) {
     for (Prover prover : provers) prover.reference(constraint, tx, px, ty, py);

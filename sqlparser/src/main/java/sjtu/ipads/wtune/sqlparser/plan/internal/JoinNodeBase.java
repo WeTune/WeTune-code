@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanAttribute;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,13 +29,13 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   protected final boolean isNormalForm;
   // `left` and `right` is used for normal-formed ON-condition.
   // `used` is used otherwise
-  protected List<PlanAttribute> left, right, used;
+  protected List<AttributeDef> left, right, used;
 
   protected JoinNodeBase(
       ASTNode onCondition,
-      List<PlanAttribute> used,
-      List<PlanAttribute> left,
-      List<PlanAttribute> right) {
+      List<AttributeDef> used,
+      List<AttributeDef> left,
+      List<AttributeDef> right) {
     if (onCondition == null && used == null) throw new IllegalArgumentException();
 
     this.onCondition = onCondition;
@@ -49,7 +49,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   public ASTNode onCondition() {
     if (isNormalForm) {
       // if normal formed, reconstruct the ON-condition from scratch
-      final List<PlanAttribute> leftKeys = leftAttributes(), rightKeys = rightAttributes();
+      final List<AttributeDef> leftKeys = leftAttributes(), rightKeys = rightAttributes();
 
       if (leftKeys.size() != rightKeys.size()) ASTContext.LOG.log(WARNING, "Mismatched join keys");
 
@@ -82,7 +82,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public List<PlanAttribute> definedAttributes() {
+  public List<AttributeDef> definedAttributes() {
     return listJoin(predecessors()[0].definedAttributes(), predecessors()[1].definedAttributes());
   }
 
@@ -92,17 +92,17 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public List<PlanAttribute> leftAttributes() {
+  public List<AttributeDef> leftAttributes() {
     return left;
   }
 
   @Override
-  public List<PlanAttribute> rightAttributes() {
+  public List<AttributeDef> rightAttributes() {
     return right;
   }
 
   @Override
-  public List<PlanAttribute> usedAttributes() {
+  public List<AttributeDef> usedAttributes() {
     return used;
   }
 
@@ -113,6 +113,8 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
     left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
     right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
+    if (isNormalForm && left.size() != right.size())
+      new Object();
   }
 
   private static boolean isNormalForm(ASTNode expr) {

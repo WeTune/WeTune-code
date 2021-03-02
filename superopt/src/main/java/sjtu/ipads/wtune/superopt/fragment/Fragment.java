@@ -51,7 +51,9 @@ public interface Fragment extends Comparable<Fragment> {
   }
 
   default PlanNode instantiate(Interpretations interpretations) {
-    return head().instantiate(interpretations);
+    final PlanNode instantiated = head().instantiate(interpretations);
+    PlanNode.resolveUsedTree(instantiated);
+    return instantiated;
   }
 
   @Override
