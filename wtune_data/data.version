@@ -1,12 +1,13 @@
-[7f1eb210222a0441b510f41b2a8b4deaf7c546ff] migrate from GDrive
-[4422e09855893864b0245daaf9ea89640e87f572] remove lobsters-88 which access a VIEW
-[bfcba3f97d48ad0ca0c525079ebb82cfe3d51775] remove Chinese character in sql
-[dc24a47acc5e4f8cdb96827a2ef5ed463642a09c] correct invalid statements
-[342ae364af1e19ab46bf464a499eb0e14084299c] add schema patch
-[7f29b8faa55d26ed870f6fef735ccb0924e4350d] modify malformed stmtImpl
-[14fab8406ecb44bd1764f427ccb1faf92cb2347d] add alt statements
-[df1184b31e064f1cbb4f9d1f64a291126df62b2e] remove invalid and duplicated
-[bc57ee3249eb19be0b3c047bd0d8bf47e19e5f41] add output group
-[eeaa0dedc720b5eeeb2bf0cd683b98d274c97ea8] add struct group
-[e3b7b505c07bf0afaaeee62a59ea33698509d6c7] update numbers
-[19c4894f3e43f6293f80bfee6369055c9962f469] add column wtune_stmt.stmt_trace
+1. migrate from GDrive
+2. remove lobsters-88 which access a VIEW
+3. remove Chinese character in sql
+4. correct invalid statements
+5. add schema patch
+6. modify malformed stmtImpl
+7. add alt statements
+8. remove invalid and duplicated
+9. add output group
+10. add struct group
+11. update numbers
+12. add column wtune_stmt.stmt_trace
+13. update schema patches
