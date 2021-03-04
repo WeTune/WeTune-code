@@ -8,6 +8,10 @@ import java.util.List;
 public interface ProjNode extends PlanNode {
   List<ASTNode> selectItems();
 
+  boolean isForcedUnique();
+
+  void setForcedUnique(boolean flag);
+
   boolean isWildcard();
 
   void setWildcard(boolean flag);

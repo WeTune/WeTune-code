@@ -17,6 +17,7 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private final List<AttributeDef> defined;
   private List<AttributeDef> used;
 
+  private boolean isForcedUnique;
   private boolean isWildcard;
 
   private ProjNodeImpl(String qualification, List<ASTNode> selectItems) {
@@ -37,6 +38,16 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   public static ProjNode build(List<AttributeDef> definedAttrs) {
     return new ProjNodeImpl(definedAttrs);
+  }
+
+  @Override
+  public boolean isForcedUnique() {
+    return isForcedUnique;
+  }
+
+  @Override
+  public void setForcedUnique(boolean forcedUnique) {
+    isForcedUnique = forcedUnique;
   }
 
   @Override

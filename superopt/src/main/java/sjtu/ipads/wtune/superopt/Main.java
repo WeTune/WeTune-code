@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.internal.Optimizer;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
+import sjtu.ipads.wtune.superopt.internal.UniquenessInference;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 
@@ -86,7 +87,7 @@ public class Main {
 
     final String sql =
         "SELECT group_users.group_id FROM group_users WHERE group_users.group_id IN (SELECT groups.id FROM groups WHERE groups.id > 0) AND group_users.user_id=779";
-    final Statement stmt = Statement.findOne("spree", 285);
+    final Statement stmt = Statement.findOne("shopizer", 1);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
@@ -99,6 +100,7 @@ public class Main {
     System.out.println(ast.toString(false));
 
     final PlanNode plan = ToPlanTranslator.toPlan(ast);
+    System.out.println(UniquenessInference.inferUniqueness(plan));
     final List<PlanNode> optimized = Optimizer.make(bank, schema).optimize(plan);
     System.out.println(optimized.size());
 

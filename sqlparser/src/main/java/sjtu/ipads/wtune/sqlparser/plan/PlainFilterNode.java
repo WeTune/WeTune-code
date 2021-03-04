@@ -4,8 +4,11 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.internal.PlainFilterNodeImpl;
 
 import java.util.List;
+import java.util.Set;
 
 public interface PlainFilterNode extends FilterNode {
+  Set<AttributeDef> fixedValueAttributes();
+
   @Override
   default OperatorType type() {
     return OperatorType.PlainFilter;

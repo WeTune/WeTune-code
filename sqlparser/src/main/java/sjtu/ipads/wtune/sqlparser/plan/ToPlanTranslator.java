@@ -59,7 +59,7 @@ public class ToPlanTranslator {
     // filter
     prev = translateFilter(where, prev);
     // projection & aggregation
-    prev = translateProj(rel.alias(), selectItems, groupBy, prev);
+    prev = translateProj(rel.alias(), isDistinct(querySpec), selectItems, groupBy, prev);
     // sort
     prev = translateSort(orderBy, prev);
     // limit
@@ -72,6 +72,7 @@ public class ToPlanTranslator {
 
   private static PlanNode translateProj(
       String qualification,
+      boolean explicitDistinct,
       List<ASTNode> selections,
       List<ASTNode> groupKeys,
       PlanNode predecessor) {
@@ -97,6 +98,8 @@ public class ToPlanTranslator {
       proj.setPredecessor(0, predecessor);
       agg.setPredecessor(0, proj);
 
+      proj.setForcedUnique(isDistinctAggregation(selections));
+
       return agg;
 
     } else {
@@ -104,6 +107,7 @@ public class ToPlanTranslator {
       final ProjNode proj = ProjNode.make(qualification, selections);
       proj.setPredecessor(0, predecessor);
       proj.setWildcard(isWildcard);
+      proj.setForcedUnique(explicitDistinct);
       return proj;
     }
   }
@@ -192,10 +196,20 @@ public class ToPlanTranslator {
     } else filters.add(PlainFilterNode.make(expr));
   }
 
+  private static boolean isDistinct(ASTNode querySpec) {
+    return querySpec.getOr(QUERY_SPEC_DISTINCT, false)
+        || querySpec.get(QUERY_SPEC_DISTINCT_ON) != null;
+  }
+
   private static boolean isWildcard(List<ASTNode> selectItems) {
     if (selectItems.size() != 1) return false;
     final ASTNode expr = selectItems.get(0).get(SELECT_ITEM_EXPR);
     return WILDCARD.isInstance(expr) && expr.get(WILDCARD_TABLE) == null;
+  }
+
+  private static boolean isDistinctAggregation(List<ASTNode> selectItems) {
+    return selectItems.stream()
+        .anyMatch(it -> it.get(SELECT_ITEM_EXPR).getOr(AGGREGATE_DISTINCT, false));
   }
 
   private static boolean isAggregation(ASTNode selectItem) {

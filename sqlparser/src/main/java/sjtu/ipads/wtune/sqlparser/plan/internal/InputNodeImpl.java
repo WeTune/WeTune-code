@@ -52,6 +52,11 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
+  public Table table() {
+    return this.table;
+  }
+
+  @Override
   public ASTNode toTableSource() {
     final ASTNode name = node(TABLE_NAME);
     name.set(TABLE_NAME_TABLE, table.name());

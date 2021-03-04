@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
+import static sjtu.ipads.wtune.superopt.internal.DistinctReducer.reduceDistinct;
 import static sjtu.ipads.wtune.superopt.internal.PlanNormalizer.normalize;
 import static sjtu.ipads.wtune.superopt.internal.SortReducer.reduceSort;
 
@@ -50,22 +51,17 @@ public class Optimizer {
     known.clear();
     toOptimized.clear();
 
-    final boolean sortReduced = reduceSort(node);
+    if (reduceSort(node) || reduceDistinct(node)) optimized.add(node);
 
-    if (sortReduced) optimized.add(node);
     known.add(ToASTTranslator.toAST(node).toString().toLowerCase());
     toOptimized.offer(node);
 
-    optimize0();
-
-    return optimized;
-  }
-
-  private void optimize0() {
     while (!toOptimized.isEmpty()) {
       final PlanNode plan = toOptimized.poll();
-      matchAndSubstitute(plan);
+      optimize0(plan);
     }
+
+    return optimized;
   }
 
   /*
@@ -83,26 +79,19 @@ public class Optimizer {
         (do this by PlanNode::copyTree)
   */
 
-  private void matchAndSubstitute(PlanNode node) {
+  private void optimize0(PlanNode node) {
+    //    if (inferUniqueness(node))
     for (Substitution sub : match0(node)) {
       final Interpretations interpretations = Interpretations.constrainedBy(sub.constraints());
       for (Match match : match1(node, sub.g0().head(), interpretations)) {
-        // impl note: `substituted` should be the root of new plan instead of matching point
-        final PlanNode substituted = match.substitute(sub.g1(), interpretations);
-        // match the substituted plan from beginning
-        if (containsNonLeftDeepJoin(substituted)) continue;
-        normalize(substituted);
-        final ASTNode ast = toAST(substituted);
-        if (known.add(ast.toString().toLowerCase())) {
-          // re-translate the plan to reset rearrangement
-          final PlanNode newPlan = toPlan(ast);
-          optimized.add(newPlan);
-          toOptimized.offer(newPlan);
-        }
+        // `substituted` is the root of new plan instead of matching point
+        final PlanNode substituted = postProcess(match.substitute(sub.g1(), interpretations));
+        if (substituted != null) addOptimized(substituted);
       }
     }
+
     // percolate down
-    for (PlanNode predecessor : node.predecessors()) matchAndSubstitute(predecessor);
+    for (PlanNode predecessor : node.predecessors()) optimize0(predecessor);
   }
 
   public List<Substitution> match0(PlanNode op) {
@@ -177,6 +166,22 @@ public class Optimizer {
             && node.successor() != null
             && node.successor().type().isJoin()
             && node.predecessors()[0].type().isJoin();
+  }
+
+  private static PlanNode postProcess(PlanNode plan) {
+    if (containsNonLeftDeepJoin(plan)) return null;
+    normalize(plan);
+    return plan;
+  }
+
+  private void addOptimized(PlanNode plan) {
+    // re-translate the plan to reset rearrangement
+    final ASTNode ast = toAST(plan);
+    if (known.add(ast.toString().toLowerCase())) {
+      final PlanNode newPlan = toPlan(ast);
+      optimized.add(newPlan);
+      toOptimized.offer(newPlan);
+    }
   }
 
   private ASTNode toAST(PlanNode plan) {

@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 public interface InputNode extends PlanNode {
   ASTNode toTableSource();
 
+  Table table();
+
   void setAlias(String alias);
 
   @Override
