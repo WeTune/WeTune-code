@@ -35,10 +35,10 @@ public class TestOptimizer {
 
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);
-    normalize(stmt);
     final ASTNode ast = stmt.parsed();
     final Schema schema = stmt.app().schema("base", true);
     ast.context().setSchema(schema);
+    normalize(stmt);
 
     final Optimizer optimizer = Optimizer.make(bank(), schema);
     final List<ASTNode> optimized = optimizer.optimize(ast);
@@ -596,11 +596,11 @@ public class TestOptimizer {
   // 70
   // TODO: discourse-3825 too long
   // 71
-  // TODO: discourse-3829 cross join support (no ON-condition)
+  // TODO: discourse-3829 too long
   // 72
-  // TODO: discourse-3831 cross join support (no ON-condition)
+  // TODO: discourse-3831 too long
   // 73
-  // TODO: discourse-3842 cross join support (no ON-condition)
+  // TODO: discourse-3842 too long
 
   @Test // 74
   void testDiscourse4071() {
@@ -1279,9 +1279,9 @@ public class TestOptimizer {
   }
 
   // 152
-  // TODO: solidus-744 distinct
+  // TODO: solidus-744 DISTINCT
   // 153
-  // TODO: solidus-753 distinct
+  // TODO: solidus-753 DISTINCT
 
   @Test // 154
   void testSolidus761() {
@@ -1385,8 +1385,16 @@ public class TestOptimizer {
   // TODO spree-109 DISTINCT
   // 164
   // TODO spree-125 DISTINCT
-  // 165
-  // TODO spree-285 subquery to join
+
+  @Test // 165
+  void testSpree285() {
+    final String app = "spree";
+    final int stmtId = 285;
+    final String[] expected = {
+      "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_adjustments`.`adjustable_type` = 'Spree::LineItem' AND (`spree_adjustments`.`source_type` = 'Spree::TaxRate' AND `spree_line_items`.`order_id` = 1)"
+    };
+    doTest(app, stmtId, expected);
+  }
 
   @Test // 166
   void testSpree333() {

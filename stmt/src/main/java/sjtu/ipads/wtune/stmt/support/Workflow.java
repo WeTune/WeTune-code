@@ -73,6 +73,7 @@ public interface Workflow {
     normalizeBool(stmt.parsed());
     normalizeTuple(stmt.parsed());
     normalizeConstantTable(stmt.parsed());
+    normalizeJoinCondition(stmt.parsed());
   }
 
   static void retrofit(Statement stmt) {

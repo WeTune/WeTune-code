@@ -44,7 +44,6 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      //      Workflow.inferForeignKeys("fatfreecrm");
       test0();
     }
   }
@@ -87,14 +86,14 @@ public class Main {
 
     final String sql =
         "SELECT group_users.group_id FROM group_users WHERE group_users.group_id IN (SELECT groups.id FROM groups WHERE groups.id > 0) AND group_users.user_id=779";
-    final Statement stmt = Statement.findOne("discourse", 944);
-    normalize(stmt);
+    final Statement stmt = Statement.findOne("spree", 285);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
     //    final Schema schema = App.of("discourse").schema("base", true);
     ast.context().setSchema(schema);
+    normalize(stmt);
 
     System.out.println(stmt);
     System.out.println(ast.toString(false));

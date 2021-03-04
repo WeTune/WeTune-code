@@ -13,6 +13,14 @@ public interface FuncUtils {
     return t -> supplier.get();
   }
 
+  static <P> IConsumer<P> consumer(IConsumer<P> consumer) {
+    return consumer;
+  }
+
+  static <P0, P1> IBiConsumer<P0, P1> consumer2(IBiConsumer<P0, P1> consumer) {
+    return consumer;
+  }
+
   static <P, R> IFunction<P, R> func(IFunction<P, R> func) {
     return func;
   }

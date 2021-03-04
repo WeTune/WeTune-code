@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.support;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -9,8 +10,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import java.util.HashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
@@ -24,6 +24,7 @@ public class InferForeignKey {
   }
 
   private static void infer(ASTNode binary, Set<Column> inferred) {
+    if (binary.get(BINARY_OP) != BinaryOp.EQUAL) return;
     final Attribute leftAttr = binary.get(BINARY_LEFT).get(ATTRIBUTE);
     final Attribute rightAttr = binary.get(BINARY_RIGHT).get(ATTRIBUTE);
     if (leftAttr != null && rightAttr != null) {

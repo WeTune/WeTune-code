@@ -23,7 +23,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
 
 public class ToASTTranslator implements OperatorVisitor {
-  private final Deque<Relation> stack;
+  private final Deque<Query> stack;
   private Numbering numbering;
   private Constraints constraints;
 
@@ -59,7 +59,7 @@ public class ToASTTranslator implements OperatorVisitor {
     final ASTNode tableSource = tableSource(SIMPLE_SOURCE);
     tableSource.set(SIMPLE_TABLE, tableName);
 
-    stack.push(Relation.from(tableSource));
+    stack.push(Query.from(tableSource));
   }
 
   @Override
@@ -95,12 +95,12 @@ public class ToASTTranslator implements OperatorVisitor {
 
   @Override
   public void leaveInnerJoin(InnerJoin op) {
-    stack.push(Relation.from(makeJoin(op)));
+    stack.push(Query.from(makeJoin(op)));
   }
 
   @Override
   public void leaveLeftJoin(LeftJoin op) {
-    stack.push(Relation.from(makeJoin(op)));
+    stack.push(Query.from(makeJoin(op)));
   }
 
   @Override
@@ -150,13 +150,13 @@ public class ToASTTranslator implements OperatorVisitor {
         + (numbering == null ? placeholder.index() : numbering.numberOf(placeholder));
   }
 
-  private static class Relation {
+  private static class Query {
     private ASTNode projection;
     private ASTNode selection;
     private ASTNode source;
 
-    private static Relation from(ASTNode source) {
-      final Relation rel = new Relation();
+    private static Query from(ASTNode source) {
+      final Query rel = new Query();
       rel.source = source;
       return rel;
     }

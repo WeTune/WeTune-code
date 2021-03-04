@@ -32,15 +32,6 @@ public interface Attribute {
 
   Attribute reference(boolean recursive);
 
-  default ASTNode toColumnRef() {
-    final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
-    colName.set(COLUMN_NAME_TABLE, owner().alias());
-    colName.set(COLUMN_NAME_COLUMN, name());
-    final ASTNode columnRef = ASTNode.expr(COLUMN_REF);
-    columnRef.set(COLUMN_REF_COLUMN, colName);
-    return columnRef;
-  }
-
   static Attribute resolve(ASTNode node) {
     if (!COLUMN_REF.isInstance(node)) return null;
 

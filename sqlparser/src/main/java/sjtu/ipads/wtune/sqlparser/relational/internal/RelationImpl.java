@@ -113,46 +113,4 @@ public class RelationImpl implements Relation {
       return false;
     }
   }
-  //  private static void normalizeProjection(SQLNode querySpec) {
-  //    final List<SQLNode> items = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
-  //    if (items.stream().noneMatch(it -> WILDCARD.isInstance(it.get(SELECT_ITEM_EXPR)))) return;
-  //
-  //    final Relation rel = querySpec.relation();
-  //    final List<SQLNode> newItems = new ArrayList<>(16);
-  //    for (SQLNode item : items)
-  //      if (!WILDCARD.isInstance(item.get(SELECT_ITEM_EXPR))) newItems.add(qualifyItem(rel,
-  // item));
-  //      else expandWildcard(rel, item, newItems);
-  //
-  //    querySpec.set(QUERY_SPEC_SELECT_ITEMS, newItems);
-  //  }
-  //
-  //  private static SQLNode qualifyItem(Relation relation, SQLNode item) {
-  //    final SQLNode column = item.get(SELECT_ITEM_EXPR).get(COLUMN_REF_COLUMN);
-  //
-  //    final String columnName = column.get(COLUMN_NAME_COLUMN);
-  //    item.setIfAbsent(SELECT_ITEM_ALIAS, columnName);
-  //
-  //    if (column.get(COLUMN_NAME_TABLE) != null) return item;
-  //
-  //    for (Relation input : relation.inputs())
-  //      if (input.attribute(columnName) != null) {
-  //        column.set(COLUMN_NAME_TABLE, input.alias());
-  //        break;
-  //      }
-  //
-  //    return item;
-  //  }
-  //
-  //  private static void expandWildcard(Relation relation, SQLNode item, List<SQLNode> dest) {
-  //    final SQLNode name = item.get(SELECT_ITEM_EXPR).get(WILDCARD_TABLE);
-  //    final List<Relation> inputs =
-  //        name == null
-  //            ? relation.inputs()
-  //            : singletonList(relation.input(name.get(TABLE_NAME_TABLE)));
-  //
-  //    for (Relation input : inputs)
-  //      for (Attribute attribute : input.attributes()) dest.add(attribute.toSelectItem());
-  //  }
-  //
 }

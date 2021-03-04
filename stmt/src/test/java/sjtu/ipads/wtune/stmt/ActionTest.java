@@ -77,4 +77,19 @@ public class ActionTest {
         "SELECT * FROM `a` WHERE `a`.`i` IS TRUE OR NOT `a`.`j` IS TRUE AND NOT `a`.`j` = `a`.`i`",
         stmt.parsed().toString());
   }
+
+  @Test
+  @DisplayName("[Stmt.Mutator] normalize join condition")
+  void testNormalizeJoinCondition() {
+    final Statement stmt =
+        Statement.build(
+            "test",
+            "select * from a join b on a.i = b.x and a.j=3 join c on b.y=c.v and b.z=c.w and c.u<10 where a.j=b.y",
+            null);
+    stmt.parsed().context().setSchema(stmt.app().schema("base"));
+    Mutation.normalizeJoinCondition(stmt.parsed());
+    assertEquals(
+        "SELECT * FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` and `a`.j` = `b`.`y` INNER JOIN `c` ON `b`.`y` = `c`.`v` AND `b`.`z` = `c`.`w` WHERE `a`.`j` = 3 AND `c`.`u` < 10",
+        stmt.parsed().toString());
+  }
 }

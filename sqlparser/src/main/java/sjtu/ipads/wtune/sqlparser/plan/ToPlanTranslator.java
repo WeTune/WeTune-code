@@ -18,10 +18,12 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQueryNode;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQuerySpecNode;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ToPlanTranslator {
@@ -39,8 +41,8 @@ public class ToPlanTranslator {
     // input
     if (rel.isTable()) return InputNode.make(rel.table(), rel.alias());
 
-    final ASTNode querySpec = locateQuerySpecNode(rel.node());
-    final ASTNode query = locateQueryNode(rel.node());
+    final ASTNode querySpec = locateQuerySpecNode(rel);
+    final ASTNode query = locateQueryNode(rel);
     if (querySpec == null) return InputNode.make(rel.table(), rel.alias()); // TODO: UNION operator
 
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
@@ -171,20 +173,6 @@ public class ToPlanTranslator {
     final LimitNode limitNode = LimitNode.make(limit, offset);
     limitNode.setPredecessor(0, predecessor);
     return limitNode;
-  }
-
-  private static ASTNode locateQuerySpecNode(ASTNode node) {
-    if (QUERY_SPEC.isInstance(node)) return node;
-    if (QUERY.isInstance(node)) return locateQuerySpecNode(node.get(QUERY_BODY));
-    if (DERIVED_SOURCE.isInstance(node)) return locateQuerySpecNode(node.get(DERIVED_SUBQUERY));
-    if (SET_OP.isInstance(node)) return null;
-    throw new IllegalArgumentException();
-  }
-
-  private static ASTNode locateQueryNode(ASTNode node) {
-    if (QUERY.isInstance(node)) return node;
-    if (DERIVED_SOURCE.isInstance(node)) return node.get(DERIVED_SUBQUERY);
-    else throw new IllegalArgumentException();
   }
 
   private static void translateFilter0(ASTNode expr, List<FilterNode> filters) {

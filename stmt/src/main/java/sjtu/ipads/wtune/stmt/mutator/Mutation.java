@@ -15,6 +15,10 @@ public interface Mutation {
     return NormalizeTuple.normalize(node);
   }
 
+  static ASTNode normalizeJoinCondition(ASTNode node) {
+    return NormalizeJoinCondition.normalize(node);
+  }
+
   static ASTNode normalizeConstantTable(ASTNode node) {
     return NormalizeConstantTable.normalize(node);
   }
