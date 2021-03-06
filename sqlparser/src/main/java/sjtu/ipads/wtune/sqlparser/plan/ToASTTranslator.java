@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -152,8 +153,8 @@ public class ToASTTranslator {
         if (filter == null) filter = filterNode;
         else {
           final ASTNode newFilter = expr(ExprKind.BINARY);
-          newFilter.set(BINARY_LEFT, filterNode);
-          newFilter.set(BINARY_RIGHT, filter);
+          newFilter.set(BINARY_LEFT, filter);
+          newFilter.set(BINARY_RIGHT, filterNode);
           newFilter.set(BINARY_OP, conjunctive ? AND : OR);
           filter = newFilter;
         }
@@ -173,6 +174,15 @@ public class ToASTTranslator {
         this.orderKeys = null;
         this.offset = null;
         this.limit = null;
+      }
+
+      if (projection.isEmpty()) {
+        final ASTNode expr = expr(LITERAL);
+        expr.set(LITERAL_TYPE, LiteralType.INTEGER);
+        expr.set(LITERAL_VALUE, 1);
+        final ASTNode item = node(SELECT_ITEM);
+        item.set(SELECT_ITEM_EXPR, expr);
+        projection.add(item);
       }
     }
 

@@ -24,6 +24,23 @@ public interface Interpretations extends MultiVersion {
 
   boolean assignPredicate(Placeholder placeholder, ASTNode expr);
 
+  boolean hasAssignment(Placeholder placeholder);
+
+  default PlanNode interpretInput(Placeholder placeholder) {
+    final InputInterpretation inter = getInput(placeholder);
+    return inter == null ? null : inter.object();
+  }
+
+  default List<AttributeDef> interpretAttributes(Placeholder placeholder) {
+    final AttributeInterpretation inter = getAttributes(placeholder);
+    return inter == null ? null : inter.object();
+  }
+
+  default ASTNode interpretPredicate(Placeholder placeholder) {
+    final PredicateInterpretation inter = getPredicate(placeholder);
+    return inter == null ? null : inter.object();
+  }
+
   static Interpretations constrainedBy(Constraints constraints) {
     return InterpretationsImpl.build(constraints);
   }

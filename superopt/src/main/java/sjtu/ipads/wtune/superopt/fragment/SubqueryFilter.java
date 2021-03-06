@@ -7,9 +7,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.SubqueryFilterImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 
-public interface SubqueryFilter extends Operator {
-  Placeholder fields();
-
+public interface SubqueryFilter extends Filter {
   @Override
   default OperatorType type() {
     return OperatorType.SubqueryFilter;

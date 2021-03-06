@@ -190,4 +190,18 @@ public interface Commons {
     System.out.println(t);
     return t;
   }
+
+  static <T> Set<T> newIdentitySet() {
+    return Collections.newSetFromMap(new IdentityHashMap<>());
+  }
+
+  static <T> Set<T> newIdentitySet(int expectedSize) {
+    return Collections.newSetFromMap(new IdentityHashMap<>(expectedSize));
+  }
+
+  static <T> Set<T> newIdentitySet(Collection<T> xs) {
+    final Set<T> set = Collections.newSetFromMap(new IdentityHashMap<>(xs.size()));
+    set.addAll(xs);
+    return set;
+  }
 }

@@ -69,8 +69,17 @@ public abstract class AttributeDefBase implements AttributeDef {
   }
 
   @Override
-  public int hashCode() {
-    // this class should never be used as Map key or put into set
-    throw new UnsupportedOperationException();
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (!(obj instanceof AttributeDefBase)) return false;
+    final AttributeDef thisSrc = this.source(), thatSrc = ((AttributeDefBase) obj).source();
+    return thisSrc.id() == thatSrc.id();
   }
+
+  @Override
+  public int hashCode() {
+    return source().id();
+  }
+
+  protected abstract AttributeDef source();
 }

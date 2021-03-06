@@ -35,6 +35,10 @@ public interface ASTParser {
     return ofDb(MYSQL);
   }
 
+  static ASTParser postgresql() {
+    return ofDb(POSTGRESQL);
+  }
+
   static List<String> splitSql(String str) {
     final List<String> list = new ArrayList<>(str.length() / 100);
 

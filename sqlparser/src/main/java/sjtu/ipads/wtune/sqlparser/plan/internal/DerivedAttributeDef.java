@@ -109,13 +109,9 @@ public class DerivedAttributeDef extends AttributeDefBase {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof AttributeDef)) return false;
-
-    final AttributeDef that = (AttributeDef) o;
-    return this.id() == that.id()
-        || this.isIdentity() && this.references()[0] == that.id()
-        || that.isIdentity() && that.references()[0] == this.id();
+  protected AttributeDef source() {
+    final AttributeDef upstream = upstream();
+    if (upstream == null) return this;
+    else return ((AttributeDefBase) upstream).source();
   }
 }

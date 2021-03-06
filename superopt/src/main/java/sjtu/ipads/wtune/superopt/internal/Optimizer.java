@@ -43,7 +43,7 @@ public class Optimizer {
 
   public List<ASTNode> optimize(ASTNode ast) {
     final List<PlanNode> plans = optimize(toPlan(ast));
-    return listMap(ToASTTranslator::toAST, plans);
+    return listMap(this::toAST, plans);
   }
 
   public List<PlanNode> optimize(PlanNode node) {

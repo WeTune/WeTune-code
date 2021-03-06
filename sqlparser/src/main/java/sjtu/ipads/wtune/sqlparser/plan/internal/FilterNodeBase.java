@@ -51,6 +51,6 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.getClass(), expr);
+    return Objects.hash(this.getClass(), expr.toString());
   }
 }

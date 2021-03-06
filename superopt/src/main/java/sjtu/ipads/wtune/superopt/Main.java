@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
+import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
@@ -86,15 +87,16 @@ public class Main {
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
     final String sql =
-        "SELECT group_users.group_id FROM group_users WHERE group_users.group_id IN (SELECT groups.id FROM groups WHERE groups.id > 0) AND group_users.user_id=779";
-    final Statement stmt = Statement.findOne("shopizer", 1);
+        "SELECT \"group_users\".\"group_id\" FROM \"group_users\" AS \"group_users\" WHERE \"group_users\".\"group_id\" IN (SELECT \"groups\".\"id\" FROM \"groups\" AS \"groups\" WHERE \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0) AND \"group_users\".\"user_id\" = 779";
+    final Statement stmt = Statement.findOne("discourse", 948);
 
-    final ASTNode ast = stmt.parsed();
-    //    final ASTNode ast = ASTParser.mysql().parse(sql);
+    //    final ASTNode ast = stmt.parsed();
+    //        final ASTNode ast = ASTParser.mysql().parse(sql);
+    final ASTNode ast = ASTParser.postgresql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
     //    final Schema schema = App.of("discourse").schema("base", true);
     ast.context().setSchema(schema);
-    normalize(stmt);
+    normalize(ast);
 
     System.out.println(stmt);
     System.out.println(ast.toString(false));

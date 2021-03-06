@@ -79,20 +79,12 @@ public class NativeAttributeDef extends AttributeDefBase {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o instanceof NativeAttributeDef) return ((NativeAttributeDef) o).id() == this.id();
-    else if (o instanceof DerivedAttributeDef) return o.equals(this);
-    else return false;
-  }
-
-  @Override
-  public int hashCode() {
-    throw new IllegalArgumentException();
-  }
-
-  @Override
   public AttributeDef copy() {
     return new NativeAttributeDef(this.id(), qualification(), referredColumn());
+  }
+
+  @Override
+  protected AttributeDef source() {
+    return this;
   }
 }

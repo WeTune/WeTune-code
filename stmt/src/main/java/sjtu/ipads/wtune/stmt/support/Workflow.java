@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.support;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.Statement;
@@ -68,16 +69,16 @@ public interface Workflow {
     }
   }
 
-  static void normalize(Statement stmt) {
-    clean(stmt.parsed());
-    normalizeBool(stmt.parsed());
-    normalizeTuple(stmt.parsed());
-    normalizeConstantTable(stmt.parsed());
-    normalizeJoinCondition(stmt.parsed());
+  static void normalize(ASTNode root) {
+    clean(root);
+    normalizeBool(root);
+    normalizeTuple(root);
+    normalizeConstantTable(root);
+    normalizeJoinCondition(root);
   }
 
   static void retrofit(Statement stmt) {
-    normalize(stmt);
+    normalize(stmt.parsed());
     resolveBoolExpr(stmt.parsed());
     resolveParamFull(stmt.parsed());
   }

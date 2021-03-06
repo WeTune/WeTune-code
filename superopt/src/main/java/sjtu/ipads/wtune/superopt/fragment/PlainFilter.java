@@ -8,9 +8,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.PlainFilterImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 
-public interface PlainFilter extends Operator {
-  Placeholder fields();
-
+public interface PlainFilter extends Filter {
   Placeholder predicate();
 
   @Override

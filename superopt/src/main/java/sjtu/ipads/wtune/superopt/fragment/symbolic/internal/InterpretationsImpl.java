@@ -68,6 +68,11 @@ public class InterpretationsImpl implements Interpretations {
     return assign0(placeholder, new PredicateInterpretationImpl(expr));
   }
 
+  @Override
+  public boolean hasAssignment(Placeholder placeholder) {
+    return interpretations.contains(placeholder);
+  }
+
   private <T> boolean assign0(Placeholder placeholder, Interpretation<T> assignment) {
     if (!assign1(placeholder, assignment)) return false;
     for (Placeholder p : constraints.equivalenceOf(placeholder))
