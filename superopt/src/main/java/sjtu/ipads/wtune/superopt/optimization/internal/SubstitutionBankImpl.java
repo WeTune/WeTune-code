@@ -2,15 +2,12 @@ package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
 import sjtu.ipads.wtune.superopt.internal.Generalization;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.util.ComplexityComparator;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 
 import java.util.Collection;
@@ -20,9 +17,8 @@ import java.util.Set;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
+import static sjtu.ipads.wtune.superopt.util.ComplexityComparator.compareComplexity;
 import static sjtu.ipads.wtune.symsolver.core.Constraint.Kind.*;
 
 public class SubstitutionBankImpl implements SubstitutionBank {
@@ -114,47 +110,5 @@ public class SubstitutionBankImpl implements SubstitutionBank {
 
     // complexity of target shouldn't be greater that source
     return compareComplexity(sub.g1(), sub.g0()) <= 0;
-  }
-
-  public static int compareComplexity(Fragment g0, Fragment g1) {
-    final int[] count0 = OperatorCounter.count(g0), count1 = OperatorCounter.count(g1);
-    int result = 0;
-
-    for (int i = 0, bound = count0.length; i < bound; i++) {
-      if (i == LeftJoin.ordinal() || i == InnerJoin.ordinal()) continue;
-
-      if (result < 0 && count0[i] > count1[i]) return 0;
-      if (result > 0 && count0[i] < count1[i]) return 0;
-      if (count0[i] > count1[i]) result = 1;
-      else if (count0[i] < count1[i]) result = -1;
-    }
-
-    if (result != 0) return result;
-
-    final int numInnerJoin0 = count0[InnerJoin.ordinal()];
-    final int numLeftJoin0 = count0[LeftJoin.ordinal()];
-    final int numInnerJoin1 = count1[InnerJoin.ordinal()];
-    final int numLeftJoin1 = count1[LeftJoin.ordinal()];
-    final int numJoin0 = numInnerJoin0 + numLeftJoin0, numJoin1 = numInnerJoin1 + numLeftJoin1;
-
-    if (numJoin0 < numJoin1) return -1;
-    if (numJoin0 > numJoin1) return 1;
-    return Integer.signum(numLeftJoin0 - numLeftJoin1);
-  }
-
-  private static class OperatorCounter implements OperatorVisitor {
-    private final int[] counters = new int[OperatorType.values().length];
-
-    static int[] count(Fragment g0) {
-      final OperatorCounter counter = new OperatorCounter();
-      g0.acceptVisitor(counter);
-      return counter.counters;
-    }
-
-    @Override
-    public boolean enter(Operator op) {
-      ++counters[op.type().ordinal()];
-      return true;
-    }
   }
 }

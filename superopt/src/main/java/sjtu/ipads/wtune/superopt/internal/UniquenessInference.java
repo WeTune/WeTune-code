@@ -25,6 +25,7 @@ public class UniquenessInference {
     else if (node instanceof JoinNode) return inferUniqueCores((JoinNode) node);
     else if (node instanceof PlainFilterNode) return inferUniqueCores(((PlainFilterNode) node));
     else if (node instanceof ProjNode) return inferUniqueCores((ProjNode) node);
+    else if (node instanceof SubqueryFilterNode) return inferUniqueCores(node.predecessors()[0]);
     else {
       assert node.type().numPredecessors() == 1;
       return inferUniqueCores(node.predecessors()[0]);

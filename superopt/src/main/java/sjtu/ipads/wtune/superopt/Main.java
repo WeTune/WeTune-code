@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
@@ -87,12 +86,12 @@ public class Main {
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
     final String sql =
-        "SELECT \"group_users\".\"group_id\" FROM \"group_users\" AS \"group_users\" WHERE \"group_users\".\"group_id\" IN (SELECT \"groups\".\"id\" FROM \"groups\" AS \"groups\" WHERE \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0) AND \"group_users\".\"user_id\" = 779";
-    final Statement stmt = Statement.findOne("discourse", 948);
+        "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM (SELECT * FROM \"group_users\" AS \"gu\" INNER JOIN \"groups\" AS \"groups\" ON \"gu\".\"group_id\" = \"groups\".\"id\" WHERE \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0) AS \"sub0\" INNER JOIN \"group_users\" AS \"group_users\" ON \"sub0\".\"id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 779";
+    final Statement stmt = Statement.findOne("diaspora", 224);
 
-    //    final ASTNode ast = stmt.parsed();
+    final ASTNode ast = stmt.parsed();
     //        final ASTNode ast = ASTParser.mysql().parse(sql);
-    final ASTNode ast = ASTParser.postgresql().parse(sql);
+    //    final ASTNode ast = ASTParser.postgresql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
     //    final Schema schema = App.of("discourse").schema("base", true);
     ast.context().setSchema(schema);
@@ -103,11 +102,10 @@ public class Main {
 
     final PlanNode plan = ToPlanTranslator.toPlan(ast);
     System.out.println(UniquenessInference.inferUniqueness(plan));
-    final List<PlanNode> optimized = Optimizer.make(bank, schema).optimize(plan);
+    final List<ASTNode> optimized = Optimizer.make(bank, schema).optimize(ast);
     System.out.println(optimized.size());
 
-    for (PlanNode opt : optimized)
-      System.out.println(sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST(opt).toString());
+    for (ASTNode opt : optimized) System.out.println(opt);
     System.out.println(stmt);
   }
 }

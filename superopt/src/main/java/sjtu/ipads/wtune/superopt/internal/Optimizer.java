@@ -3,9 +3,7 @@ package sjtu.ipads.wtune.superopt.internal;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
@@ -22,12 +20,14 @@ import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.superopt.internal.DistinctReducer.reduceDistinct;
 import static sjtu.ipads.wtune.superopt.internal.PlanNormalizer.normalize;
 import static sjtu.ipads.wtune.superopt.internal.SortReducer.reduceSort;
+import static sjtu.ipads.wtune.superopt.util.ComplexityComparator.compareComplexity;
 
 public class Optimizer {
   private final List<PlanNode> optimized = new ArrayList<>();
   private final Set<String> known = new HashSet<>();
 
-  private final Queue<PlanNode> toOptimized = new LinkedList<>();
+  private final Queue<PlanNode> toOptimized =
+      new PriorityQueue<>((x, y) -> compareComplexity(x, y, false));
 
   private final SubstitutionBank repo;
   private final Schema schema;
@@ -59,6 +59,11 @@ public class Optimizer {
     while (!toOptimized.isEmpty()) {
       final PlanNode plan = toOptimized.poll();
       optimize0(plan);
+
+      final PlanNode head = toOptimized.peek();
+      if (head != null && compareComplexity(plan, head, true) < 0) {
+        return optimized;
+      }
     }
 
     return optimized;
@@ -85,8 +90,8 @@ public class Optimizer {
       final Interpretations interpretations = Interpretations.constrainedBy(sub.constraints());
       for (Match match : match1(node, sub.g0().head(), interpretations)) {
         // `substituted` is the root of new plan instead of matching point
-        final PlanNode substituted = postProcess(match.substitute(sub.g1(), interpretations));
-        if (substituted != null) addOptimized(substituted);
+        final PlanNode substituted = match.substitute(sub.g1(), interpretations);
+        if (normalize(substituted)) addOptimized(substituted);
       }
     }
 
@@ -153,25 +158,6 @@ public class Optimizer {
     }
 
     return ret;
-  }
-
-  private static boolean containsNonLeftDeepJoin(PlanNode node) {
-    if (node.type() == OperatorType.Input) return false;
-    for (PlanNode predecessor : node.predecessors())
-      if (containsNonLeftDeepJoin(predecessor)) return true;
-
-    return node.type().isJoin() && node.predecessors()[1].type().isJoin()
-        || node.type() == OperatorType.Proj
-            && ((ProjNode) node).isWildcard()
-            && node.successor() != null
-            && node.successor().type().isJoin()
-            && node.predecessors()[0].type().isJoin();
-  }
-
-  private static PlanNode postProcess(PlanNode plan) {
-    if (containsNonLeftDeepJoin(plan)) return null;
-    normalize(plan);
-    return plan;
   }
 
   private void addOptimized(PlanNode plan) {

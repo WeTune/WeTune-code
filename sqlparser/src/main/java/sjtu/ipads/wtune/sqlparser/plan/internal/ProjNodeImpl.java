@@ -83,7 +83,10 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     if (used != null) used = resolveUsed1(used, input);
     else used = resolveUsed0(gatherColumnRefs(selectItems), input);
 
-    if (used.equals(predecessors()[0].definedAttributes())) isWildcard = true;
+    final PlanNode succ = successor();
+    if ((succ == null && definedAttributes().equals(predecessors()[0].definedAttributes()))
+        || (succ != null && definedAttributes().containsAll(predecessors()[0].definedAttributes())))
+      isWildcard = true;
   }
 
   @Override

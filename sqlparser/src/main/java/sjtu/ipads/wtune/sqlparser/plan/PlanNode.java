@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.List;
@@ -11,9 +12,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
-public interface PlanNode {
-  OperatorType type();
-
+public interface PlanNode extends TypedTreeNode<OperatorType> {
   PlanNode successor();
 
   PlanNode[] predecessors();
@@ -35,6 +34,10 @@ public interface PlanNode {
   default AttributeDef resolveAttribute(String qualification, String name) {
     qualification = simpleName(qualification);
     name = simpleName(name);
+
+    for (AttributeDef attr : definedAttributes())
+      if ((qualification == null || qualification.equals(attr.qualification()))
+          && name.equals(attr.name())) return attr;
 
     for (AttributeDef attr : definedAttributes())
       if (attr.isReferencedBy(qualification, name)) return attr;

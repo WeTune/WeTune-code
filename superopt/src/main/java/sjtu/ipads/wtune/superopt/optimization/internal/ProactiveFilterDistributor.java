@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import com.google.common.base.Equivalence;
 import com.google.common.collect.Sets;
+import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
@@ -47,9 +48,7 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
     final var candidates = candidatesOf(target);
 
     if (target.type() == OperatorType.PlainFilter) {
-      final int max =
-          (dist.pool().size() - dist.used().size())
-              - (dist.slots().size() - dist.assigned().size() - 1);
+      final int max = maxAssignmentsOf(target);
       if (max <= 0) return;
 
       for (int i = 1; i <= max; i++)
@@ -77,6 +76,22 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
       unused.removeIf(it -> it.get().type() == OperatorType.PlainFilter);
 
     return unused;
+  }
+
+  private int maxAssignmentsOf(Filter target) {
+    final int maxAllowed =
+        (dist.pool().size() - dist.used().size())
+            - (dist.slots().size() - dist.assigned().size() - 1);
+    if (maxAllowed <= 0) return -1;
+
+    final boolean usedInJoinKey =
+        dist.interpretations().constraints().equivalenceOf(target.fields()).stream()
+            .map(Placeholder::owner)
+            .map(TypedTreeNode::type)
+            .anyMatch(OperatorType::isJoin);
+
+    // heuristic
+    return usedInJoinKey ? Math.min(maxAllowed, 2) : maxAllowed;
   }
 
   @Override

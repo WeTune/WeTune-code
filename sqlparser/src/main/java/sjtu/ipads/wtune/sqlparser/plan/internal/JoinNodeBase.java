@@ -108,13 +108,24 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public void resolveUsed() {
-    if (used == null) used = resolveUsed0(gatherColumnRefs(onCondition), this);
-    else used = resolveUsed1(used, this);
+    if (used == null) {
+      used = resolveUsed0(gatherColumnRefs(onCondition), this);
+      if (used.contains(null))
+      {
+        new Object();
+      }
+    }
+    else {
+      final List<AttributeDef> tmp = resolveUsed1(used, this);
+      if (tmp.contains(null)) {
+        new Object();
+      }
+      used = resolveUsed1(used, this);
+    }
 
     left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
     right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
-    if (isNormalForm && left.size() != right.size())
-      new Object();
+    assert !isNormalForm || left.size() == right.size();
   }
 
   private static boolean isNormalForm(ASTNode expr) {

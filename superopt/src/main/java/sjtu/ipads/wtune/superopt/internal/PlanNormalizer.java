@@ -10,30 +10,43 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
 public class PlanNormalizer {
-  public static void normalize(PlanNode node) {
+  public static boolean normalize(PlanNode node) {
     final PlanNode successor = node.successor();
     final PlanNode[] predecessors = node.predecessors();
-    for (PlanNode predecessor : predecessors) normalize(predecessor);
+    for (PlanNode predecessor : predecessors) if (!normalize(predecessor)) return false;
 
+    // Join(Input,LeftJoin): non-left deep join tree, and cannot be refactor as left-deep
+    if (node.type().isJoin() && node.predecessors()[1].type() == LeftJoin) return false;
+
+    // remove unnecessary wildcard projection
+    // e.g. select sub.a from (select * from x) sub => select x.a from x
     if (node.type() == Proj
         && ((ProjNode) node).isWildcard()
         && successor != null
         && successor.type().isJoin()
         && !predecessors[0].type().isFilter()) {
       successor.replacePredecessor(node, predecessors[0]);
-      return;
+      return true;
     }
 
     if (node.type().isJoin()) {
+      // insert proj if a filter directly precedes a join
       if (predecessors[0].type().isFilter()) insertProj(node, predecessors[0]);
       if (predecessors[1].type().isFilter()) insertProj(node, predecessors[1]);
+      // enforce left-deep join tree
+      final PlanNode old = node;
+      node = enforceLeftDeepJoin((JoinNode) node);
+      successor.replacePredecessor(old, node);
+      // add qualification
       rectifyQualification(node);
+      return true;
     }
 
     node.resolveUsed();
+    return true;
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
@@ -51,6 +64,40 @@ public class PlanNormalizer {
     final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
     item.set(SELECT_ITEM_EXPR, expr);
     return item;
+  }
+
+  private static JoinNode enforceLeftDeepJoin(JoinNode join) {
+    final PlanNode right = join.predecessors()[1];
+    assert right.type() != LeftJoin;
+
+    if (right.type() != InnerJoin) {
+      join.resolveUsed();
+      return join;
+    }
+
+    final JoinNode newJoin = (JoinNode) right;
+
+    final PlanNode b = right.predecessors()[0]; // b can be another JOIN
+    final PlanNode c = right.predecessors()[1]; // c must not be a JOIN
+    assert !c.type().isJoin();
+
+    if (b.definedAttributes().containsAll(join.rightAttributes())) {
+      // 1. join<a.x=b.y>(a,join<b.z=c.w>(b,c)) => join<b.z=c.w>(join<a.x=b.y>(a,b),c)
+      join.setPredecessor(1, b);
+      newJoin.setPredecessor(0, join);
+      newJoin.setPredecessor(1, c);
+      join.resolveUsed();
+      enforceLeftDeepJoin(join);
+      return newJoin;
+
+    } else {
+      // 2. join<a.x=c.y>(a,join<b.z=c.w>(b,c)) => join<b.z=c.w>(join<a.x=c.y>(a,c),b)
+      join.setPredecessor(1, c);
+      newJoin.setPredecessor(0, join);
+      newJoin.setPredecessor(1, b);
+      newJoin.resolveUsed();
+      return enforceLeftDeepJoin(newJoin);
+    }
   }
 
   private static void rectifyQualification(PlanNode node) {
