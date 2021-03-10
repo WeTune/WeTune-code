@@ -40,7 +40,7 @@ public abstract class BaseOperator implements Operator {
   }
 
   @Override
-  public void setPlan(Fragment fragment) {
+  public void setFragment(Fragment fragment) {
     this.fragment = fragment;
   }
 

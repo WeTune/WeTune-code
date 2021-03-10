@@ -1,12 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode {
@@ -26,6 +30,11 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   }
 
   @Override
+  public ASTNode rawExpr() {
+    return expr;
+  }
+
+  @Override
   public List<AttributeDef> definedAttributes() {
     return predecessors()[0].definedAttributes();
   }
@@ -42,15 +51,44 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   }
 
   @Override
+  public List<FilterNode> breakDown() {
+    if (expr.get(BINARY_OP) != BinaryOp.AND) return singletonList(this);
+
+    resolveUsed();
+
+    final List<ASTNode> exprs = collectExprs(expr(), new ArrayList<>());
+    final List<FilterNode> filters = new ArrayList<>(exprs.size());
+    for (ASTNode expr : exprs) {
+      if (expr.get(BINARY_OP) == BinaryOp.IN_SUBQUERY) {
+        final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);
+        final PlanNode subQuery = toPlan(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
+        filter.setPredecessor(1, subQuery);
+        filters.add(filter);
+
+      } else filters.add(PlainFilterNode.make(expr));
+    }
+
+    return filters;
+  }
+
+  private List<ASTNode> collectExprs(ASTNode node, List<ASTNode> exprs) {
+    if (node.get(BINARY_OP) == BinaryOp.AND) {
+      collectExprs(node.get(BINARY_RIGHT), exprs);
+      collectExprs(node.get(BINARY_LEFT), exprs);
+    } else exprs.add(node);
+    return exprs;
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     FilterNodeBase that = (FilterNodeBase) o;
-    return Objects.equals(expr, that.expr);
+    return expr.toString().equalsIgnoreCase(that.expr.toString());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(this.getClass(), expr.toString());
+    return Objects.hash(this.getClass(), expr.toString().toLowerCase());
   }
 }

@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
 import sjtu.ipads.wtune.superopt.internal.Generalization;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.util.ComplexityComparator;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 
 import java.util.Collection;
@@ -18,7 +17,7 @@ import java.util.Set;
 import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
-import static sjtu.ipads.wtune.superopt.util.ComplexityComparator.compareComplexity;
+import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 import static sjtu.ipads.wtune.symsolver.core.Constraint.Kind.*;
 
 public class SubstitutionBankImpl implements SubstitutionBank {
@@ -109,6 +108,6 @@ public class SubstitutionBankImpl implements SubstitutionBank {
         return false;
 
     // complexity of target shouldn't be greater that source
-    return compareComplexity(sub.g1(), sub.g0()) <= 0;
+    return compareCost(sub.g1(), sub.g0()) <= 0;
   }
 }

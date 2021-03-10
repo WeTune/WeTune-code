@@ -18,7 +18,6 @@ public class FragmentFingerprint implements OperatorVisitor {
   @Override
   public boolean enter(Operator op) {
     if (op instanceof Input) return false;
-    //    if (!(op instanceof PlainFilter) || !(op.successor() instanceof PlainFilter))
     fingerprint.append(Fingerprint.charOf(op.type()));
     return true;
   }

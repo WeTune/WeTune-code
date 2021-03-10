@@ -4,7 +4,9 @@ import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 
 import java.util.List;
 import java.util.Objects;
@@ -110,12 +112,10 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   public void resolveUsed() {
     if (used == null) {
       used = resolveUsed0(gatherColumnRefs(onCondition), this);
-      if (used.contains(null))
-      {
+      if (used.contains(null)) {
         new Object();
       }
-    }
-    else {
+    } else {
       final List<AttributeDef> tmp = resolveUsed1(used, this);
       if (tmp.contains(null)) {
         new Object();
@@ -126,6 +126,18 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
     left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
     right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
     assert !isNormalForm || left.size() == right.size();
+  }
+
+  @Override
+  public InnerJoinNode toInnerJoin() {
+    if (this instanceof InnerJoinNode) return (InnerJoinNode) this;
+    else return new InnerJoinNodeImpl(onCondition, used, left, right);
+  }
+
+  @Override
+  public LeftJoinNode toLeftJoin() {
+    if (this instanceof LeftJoinNode) return (LeftJoinNode) this;
+    else return new LeftJoinNodeImpl(onCondition, used, left, right);
   }
 
   private static boolean isNormalForm(ASTNode expr) {

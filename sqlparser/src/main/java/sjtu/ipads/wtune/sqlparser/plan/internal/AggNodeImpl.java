@@ -14,6 +14,9 @@ import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class AggNodeImpl extends PlanNodeBase implements AggNode {
@@ -66,6 +69,14 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
       final int attrIdx = aggUsedAttrs.get(i);
       if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).upstream().toColumnRef());
     }
+
+    final ProjNode proj = (ProjNode) predecessors()[0];
+    if (!proj.isForcedUnique())
+      for (ASTNode agg : aggs) {
+        final ASTNode expr = agg.get(SELECT_ITEM_EXPR);
+        if (AGGREGATE.isInstance(expr)) expr.set(AGGREGATE_DISTINCT, false);
+      }
+
     return aggs;
   }
 

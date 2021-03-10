@@ -16,7 +16,7 @@ public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operat
 
   Operator[] predecessors();
 
-  void setPlan(Fragment fragment);
+  void setFragment(Fragment fragment);
 
   void setSuccessor(Operator node);
 

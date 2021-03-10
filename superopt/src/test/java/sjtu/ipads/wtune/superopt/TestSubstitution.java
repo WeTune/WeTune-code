@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.internal.Optimizer;
+import sjtu.ipads.wtune.superopt.optimization.Optimizer;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 

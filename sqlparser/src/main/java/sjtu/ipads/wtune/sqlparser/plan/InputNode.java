@@ -9,6 +9,8 @@ public interface InputNode extends PlanNode {
 
   Table table();
 
+  int id();
+
   void setAlias(String alias);
 
   @Override

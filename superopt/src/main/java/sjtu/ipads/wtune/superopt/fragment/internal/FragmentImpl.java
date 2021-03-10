@@ -65,7 +65,7 @@ public class FragmentImpl implements Fragment {
 
     for (Hole<Operator> hole : holes()) hole.fill(Input.create());
 
-    acceptVisitor(OperatorVisitor.traverse(it -> it.setPlan(this)));
+    acceptVisitor(OperatorVisitor.traverse(it -> it.setFragment(this)));
 
     return this;
   }

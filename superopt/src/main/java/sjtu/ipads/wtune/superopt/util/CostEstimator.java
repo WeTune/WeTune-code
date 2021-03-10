@@ -9,16 +9,16 @@ import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 
-public class ComplexityComparator {
-  public static int compareComplexity(PlanNode o1, PlanNode o2, boolean preferInner) {
-    return compareOperators(countOp(o1), countOp(o2), preferInner);
+public class CostEstimator {
+  public static int compareCost(PlanNode o1, PlanNode o2) {
+    return compareCost(computeComplexity(o1), computeComplexity(o2), false);
   }
 
-  public static int compareComplexity(Fragment g0, Fragment g1) {
-    return compareOperators(countOp(g0), countOp(g1), true);
+  public static int compareCost(Fragment g0, Fragment g1) {
+    return compareCost(computeComplexity(g0), computeComplexity(g1), true);
   }
 
-  public static int compareOperators(int[] opCount0, int[] opCount1, boolean preferInner) {
+  private static int compareCost(int[] opCount0, int[] opCount1, boolean preferInner) {
     int result = 0;
 
     for (int i = 0, bound = opCount0.length; i < bound; i++) {
@@ -40,18 +40,18 @@ public class ComplexityComparator {
 
     if (numJoin0 < numJoin1) return -1;
     if (numJoin0 > numJoin1) return 1;
-    // if `preferInner`, consider inner join is always better than left join, otherwise opposite
+    // if `preferInner`, consider inner join is always better than left join
     final int leftJoinDiff = Integer.signum(numLeftJoin0 - numLeftJoin1);
-    return preferInner ? leftJoinDiff : -leftJoinDiff;
+    return preferInner ? leftJoinDiff : 0;
   }
 
-  static int[] countOp(Fragment g0) {
+  public static int[] computeComplexity(Fragment g0) {
     final OperatorCounter counter = new OperatorCounter();
     g0.head().accept(counter);
     return counter.counters;
   }
 
-  static int[] countOp(PlanNode p) {
+  public static int[] computeComplexity(PlanNode p) {
     final OperatorCounter counter = new OperatorCounter();
     p.accept(counter);
     return counter.counters;

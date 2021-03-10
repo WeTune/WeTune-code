@@ -39,7 +39,7 @@ class NormalizeJoinCondition implements ASTVistor {
 
     // step 2: move join condition in where to JOIN
     // e.g. a join b where a.id = b.ref and b.name = 'alice'
-    //   => a join b on a.id = b.ref and b.name = 'alice'
+    //   => a join b on a.id = b.ref where b.name = 'alice'
     final List<ASTNode> joinConds = collectJoinCondition(querySpec.get(QUERY_SPEC_WHERE));
     final List<Relation> allInputs = querySpec.get(RELATION).inputs();
     for (int i = 1, bound = allInputs.size(); i < bound; i++) {
@@ -49,6 +49,7 @@ class NormalizeJoinCondition implements ASTVistor {
         final List<Relation> inputs = allInputs.subList(0, i + 1);
         if (isAttributePresent(cond.get(BINARY_LEFT).get(ATTRIBUTE), inputs)
             && isAttributePresent(cond.get(BINARY_RIGHT).get(ATTRIBUTE), inputs)) {
+          removeCondition(cond);
           addOnCondition(allInputs.get(i).node().parent(), cond);
           iter.remove();
         }

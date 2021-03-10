@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.internal.Optimizer;
+import sjtu.ipads.wtune.superopt.optimization.Optimizer;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 
 import java.io.IOException;
@@ -74,8 +74,8 @@ public class TestOptimizer {
     doTest(
         "broadleaf",
         201,
-        "SELECT `adminpermi0_`.`admin_permission_id` AS `admin_pe1_4_`, `adminpermi0_`.`description` AS `descript2_4_`, `adminpermi0_`.`is_friendly` AS `is_frien3_4_`, `adminpermi0_`.`name` AS `name4_4_`, `adminpermi0_`.`permission_type` AS `permissi5_4_` FROM `blc_admin_permission` AS `adminpermi0_` INNER JOIN `blc_admin_user_permission_xref` AS `allusers1_` ON `adminpermi0_`.`admin_permission_id` = `allusers1_`.`admin_permission_id` WHERE `allusers1_`.`admin_user_id` = 1 AND `adminpermi0_`.`is_friendly` = 1 ORDER BY `descript2_4_` ASC LIMIT 50",
-        "SELECT `adminpermi0_`.`admin_permission_id` AS `admin_pe1_4_`, `adminpermi0_`.`description` AS `descript2_4_`, `adminpermi0_`.`is_friendly` AS `is_frien3_4_`, `adminpermi0_`.`name` AS `name4_4_`, `adminpermi0_`.`permission_type` AS `permissi5_4_` FROM `blc_admin_permission` AS `adminpermi0_` INNER JOIN `blc_admin_user_permission_xref` AS `allusers1_` ON `adminpermi0_`.`admin_permission_id` = `allusers1_`.`admin_permission_id` WHERE `adminpermi0_`.`is_friendly` = 1 AND `allusers1_`.`admin_user_id` = 1 ORDER BY `descript2_4_` ASC LIMIT 50");
+        "SELECT `adminpermi0_`.`admin_permission_id` AS `admin_pe1_4_`, `adminpermi0_`.`description` AS `descript2_4_`, `adminpermi0_`.`is_friendly` AS `is_frien3_4_`, `adminpermi0_`.`name` AS `name4_4_`, `adminpermi0_`.`permission_type` AS `permissi5_4_` FROM `blc_admin_permission` AS `adminpermi0_` INNER JOIN `blc_admin_user_permission_xref` AS `allusers1_` ON `adminpermi0_`.`admin_permission_id` = `allusers1_`.`admin_permission_id` WHERE `adminpermi0_`.`is_friendly` = 1 AND `allusers1_`.`admin_user_id` = 1 ORDER BY `descript2_4_` ASC LIMIT 50",
+        "SELECT `adminpermi0_`.`admin_permission_id` AS `admin_pe1_4_`, `adminpermi0_`.`description` AS `descript2_4_`, `adminpermi0_`.`is_friendly` AS `is_frien3_4_`, `adminpermi0_`.`name` AS `name4_4_`, `adminpermi0_`.`permission_type` AS `permissi5_4_` FROM `blc_admin_permission` AS `adminpermi0_` INNER JOIN `blc_admin_user_permission_xref` AS `allusers1_` ON `adminpermi0_`.`admin_permission_id` = `allusers1_`.`admin_permission_id` WHERE `allusers1_`.`admin_user_id` = 1 AND `adminpermi0_`.`is_friendly` = 1 ORDER BY `descript2_4_` ASC LIMIT 50");
   }
 
   @Test // 4
@@ -88,11 +88,15 @@ public class TestOptimizer {
 
   @Test // 5
   void testDiaspora202() {
-    // XXX: distinct
-    final String expected =
-        "SELECT COUNT(DISTINCT `contacts`.`id`) FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id` WHERE `aspect_memberships`.`aspect_id` = 250 AND `contacts`.`user_id` = 332";
+    final String[] expected = {
+      "SELECT COUNT(`contacts`.`id`) FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id` WHERE `aspect_memberships`.`aspect_id` = 250 AND `contacts`.`user_id` = 332",
+      "SELECT COUNT(`contacts`.`id`) FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id` WHERE `contacts`.`user_id` = 332 AND `aspect_memberships`.`aspect_id` = 250"
+    };
+
     doTest("diaspora", 202, expected);
   }
+
+  // TODO: diaspora-224
 
   //  @Test // 6
   //  void testDiaspora224() {
@@ -102,6 +106,8 @@ public class TestOptimizer {
   //        "SELECT COUNT(DISTINCT `contacts`.`id`) FROM `contacts` AS `contacts` WHERE
   // `contacts`.`user_id` = 1945");
   //  }
+
+  // TODO: diaspora-295
 
   @Test // 8
   void testDiaspora460() {
@@ -114,12 +120,10 @@ public class TestOptimizer {
 
   @Test // 9
   void testDiaspora478() {
-    // XXX DISTINCT
     final String appName = "diaspora";
     final int stmtId = 478;
     final String[] expected = {
-      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` INNER JOIN `profiles` AS `profiles` ON `contacts`.`person_id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0",
-      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` INNER JOIN `profiles` AS `profiles` ON `contacts`.`person_id` = `profiles`.`person_id` WHERE `contacts`.`receiving` = TRUE AND `contacts`.`user_id` = 3 ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0"
+      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0",
     };
 
     doTest(appName, stmtId, expected);
@@ -290,8 +294,7 @@ public class TestOptimizer {
     final int stmtId = 942;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(*) FROM `group_users` AS `gu` WHERE `gu`.`user_id` = 779 AND (`gu`.`owner` IS TRUE AND `gu`.`group_id` > 0)",
-          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"group_id\" > 0 AND \"gu\".\"user_id\" = 779 AND \"gu\".\"owner\" IS TRUE"
+          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"owner\" IS TRUE AND \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0"
         };
     doTest(appName, stmtId, expected);
   }
@@ -302,7 +305,8 @@ public class TestOptimizer {
     final int stmtId = 944;
     final String[] expected =
         new String[] {
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"gu\" INNER JOIN \"group_users\" AS \"group_users\" ON \"gu\".\"group_id\" = \"group_users\".\"group_id\" WHERE \"gu\".\"user_id\" = 779 AND \"group_users\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0",
+          "SELECT \"gu\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"group_users\" AS \"gu\" ON \"group_users\".\"group_id\" = \"gu\".\"group_id\" WHERE \"gu\".\"group_id\" > 0 AND \"gu\".\"user_id\" = 779 AND \"group_users\".\"user_id\" = 779",
+          "SELECT \"gu\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"group_users\" AS \"gu\" ON \"group_users\".\"group_id\" = \"gu\".\"group_id\" WHERE \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0 AND \"group_users\".\"user_id\" = 779"
         };
     doTest(appName, stmtId, expected);
   }
@@ -313,7 +317,8 @@ public class TestOptimizer {
     final int stmtId = 945;
     final String[] expected =
         new String[] {
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"gu\" INNER JOIN \"group_users\" AS \"group_users\" ON \"gu\".\"group_id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"owner\" = TRUE AND \"gu\".\"user_id\" = 779 AND \"group_users\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0",
+          "SELECT \"gu\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"group_users\" AS \"gu\" ON \"group_users\".\"group_id\" = \"gu\".\"group_id\" WHERE \"gu\".\"group_id\" > 0 AND \"gu\".\"user_id\" = 779 AND \"group_users\".\"user_id\" = 779 AND \"group_users\".\"owner\" = TRUE",
+          "SELECT \"gu\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"group_users\" AS \"gu\" ON \"group_users\".\"group_id\" = \"gu\".\"group_id\" WHERE \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0 AND \"group_users\".\"user_id\" = 779 AND \"group_users\".\"owner\" = TRUE"
         };
     doTest(appName, stmtId, expected);
   }
@@ -324,7 +329,7 @@ public class TestOptimizer {
     final int stmtId = 946;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"group_id\" > 0 AND \"gu\".\"user_id\" = 779",
+          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0",
         };
     doTest(appName, stmtId, expected);
   }
@@ -335,8 +340,8 @@ public class TestOptimizer {
     final int stmtId = 948;
     final String[] expected =
         new String[] {
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"groups\" AS \"groups\" ON \"group_users\".\"group_id\" = \"groups\".\"id\" WHERE \"group_users\".\"user_id\" = 779 AND \"groups\".\"id\" > 0 AND \"groups\".\"automatic\" = TRUE",
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"groups\" AS \"groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"groups\".\"id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 779 AND \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0"
+          "SELECT \"groups\".\"id\" AS \"id\" FROM \"groups\" AS \"groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"groups\".\"id\" = \"group_users\".\"group_id\" WHERE \"groups\".\"id\" > 0 AND \"groups\".\"automatic\" = TRUE AND \"group_users\".\"user_id\" = 779",
+          "SELECT \"groups\".\"id\" AS \"id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"groups\" AS \"groups\" ON \"group_users\".\"group_id\" = \"groups\".\"id\" WHERE \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0 AND \"group_users\".\"user_id\" = 779"
         };
     doTest(appName, stmtId, expected);
   }
@@ -347,8 +352,8 @@ public class TestOptimizer {
     final int stmtId = 949;
     final String[] expected =
         new String[] {
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"groups\" AS \"groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"groups\".\"id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 779 AND \"groups\".\"automatic\" = TRUE AND \"group_users\".\"owner\" = TRUE AND \"groups\".\"id\" > 0",
-          "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM \"groups\" AS \"groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"groups\".\"id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"owner\" = TRUE AND \"group_users\".\"user_id\" = 779 AND \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0"
+          "SELECT \"groups\".\"id\" AS \"id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"groups\" AS \"groups\" ON \"group_users\".\"group_id\" = \"groups\".\"id\" WHERE \"groups\".\"id\" > 0 AND \"groups\".\"automatic\" = TRUE AND \"group_users\".\"user_id\" = 779 AND \"group_users\".\"owner\" = TRUE",
+          "SELECT \"groups\".\"id\" AS \"id\" FROM \"group_users\" AS \"group_users\" INNER JOIN \"groups\" AS \"groups\" ON \"group_users\".\"group_id\" = \"groups\".\"id\" WHERE \"groups\".\"automatic\" = TRUE AND \"groups\".\"id\" > 0 AND \"group_users\".\"user_id\" = 779 AND \"group_users\".\"owner\" = TRUE"
         };
     doTest(appName, stmtId, expected);
   }
@@ -359,7 +364,7 @@ public class TestOptimizer {
     final int stmtId = 994;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"group_id\" > 0 AND \"gu\".\"group_id\" > 0 AND \"gu\".\"user_id\" = 780"
+          "SELECT COUNT(*) FROM \"group_users\" AS \"gu\" WHERE \"gu\".\"user_id\" = 780 AND \"gu\".\"group_id\" > 0 AND \"gu\".\"group_id\" > 0"
         };
     doTest(appName, stmtId, expected);
   }
@@ -533,8 +538,8 @@ public class TestOptimizer {
     final int stmtId = 2832;
     final String[] expected =
         new String[] {
-          "SELECT \"categories\".\"name\" AS \"name\" FROM \"tag_group_memberships\" AS \"tag_group_memberships\" INNER JOIN \"category_tag_groups\" AS \"category_tag_groups\" ON \"tag_group_memberships\".\"tag_group_id\" = \"category_tag_groups\".\"tag_group_id\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" WHERE \"tag_group_memberships\".\"tag_id\" = 1771 AND \"categories\".\"id\" IN ($1)",
-          "SELECT \"categories\".\"name\" AS \"name\" FROM \"category_tag_groups\" AS \"category_tag_groups\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" WHERE \"tag_group_memberships\".\"tag_id\" = 1771 AND \"categories\".\"id\" IN ($1)"
+          "SELECT \"categories\".\"name\" AS \"name\" FROM \"categories\" AS \"categories\" INNER JOIN \"category_tag_groups\" AS \"category_tag_groups\" ON \"categories\".\"id\" = \"category_tag_groups\".\"category_id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"tag_group_memberships\".\"tag_id\" = 1771 AND \"categories\".\"id\" IN ($1)",
+          "SELECT \"categories\".\"name\" AS \"name\" FROM \"categories\" AS \"categories\" INNER JOIN \"category_tag_groups\" AS \"category_tag_groups\" ON \"categories\".\"id\" = \"category_tag_groups\".\"category_id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771"
         };
     doTest(appName, stmtId, expected);
   }
@@ -613,7 +618,7 @@ public class TestOptimizer {
     final int stmtId = 4156;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"topic_id\" AS \"topic_id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"users\" AS \"users\" ON \"posts\".\"user_id\" = \"users\".\"id\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"user_id\" = 7304 ORDER BY \"posts\".\"created_at\" DESC"
+          "SELECT \"posts\".\"topic_id\" AS \"topic_id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"user_id\" = 7304 ORDER BY \"posts\".\"created_at\" DESC"
         };
     doTest(appName, stmtId, expected);
   }
@@ -624,7 +629,7 @@ public class TestOptimizer {
     final int stmtId = 5044;
     final String[] expected =
         new String[] {
-          "SELECT \"category_search_data\".\"category_id\" AS \"category_id\" FROM \"category_search_data\" AS \"category_search_data\" WHERE \"category_search_data\".\"locale\" <> 'fr' OR \"category_search_data\".\"version\" <> 3 ORDER BY \"category_id\" ASC LIMIT 500",
+          "SELECT \"category_search_data\".\"category_id\" AS \"category_id\" FROM \"category_search_data\" AS \"category_search_data\" WHERE \"category_search_data\".\"locale\" <> 'fr' OR \"category_search_data\".\"version\" <> 3 ORDER BY \"category_search_data\".\"category_id\" ASC LIMIT 500"
         };
     doTest(appName, stmtId, expected);
   }
@@ -655,8 +660,7 @@ public class TestOptimizer {
     final int stmtId = 9;
     final String[] expected =
         new String[] {
-          "SELECT `taggings`.`tag_id` AS `tag_id` FROM `taggings` AS `taggings` WHERE `taggings`.`taggable_type` = 'Contact' AND `taggings`.`context` = 'tags' AND `taggings`.`taggable_id` = 1234",
-          "SELECT `taggings`.`tag_id` AS `tag_id` FROM `taggings` AS `taggings` WHERE `taggings`.`taggable_id` = 1234 AND `taggings`.`taggable_type` = 'Contact' AND `taggings`.`context` = 'tags'"
+          "SELECT `taggings`.`tag_id` AS `tag_id` FROM `taggings` AS `taggings` WHERE `taggings`.`context` = 'tags' AND `taggings`.`taggable_type` = 'Contact' AND `taggings`.`taggable_id` = 1234"
         };
     doTest(appName, stmtId, expected);
   }
@@ -832,8 +836,8 @@ public class TestOptimizer {
     final int stmtId = 176;
     final String[] expected =
         new String[] {
-          "SELECT 1 AS `one` FROM `taggings` AS `taggings` WHERE `taggings`.`taggable_id` = 511 AND `taggings`.`context` = 'tags' AND `taggings`.`taggable_type` = 'Lead' LIMIT 1",
-          "SELECT 1 AS `one` FROM `taggings` AS `taggings` WHERE `taggings`.`taggable_type` = 'Lead' AND `taggings`.`taggable_id` = 511 AND `taggings`.`context` = 'tags' LIMIT 1"
+          "SELECT 1 AS `one` FROM `taggings` AS `taggings` WHERE `taggings`.`taggable_type` = 'Lead' AND `taggings`.`context` = 'tags' AND `taggings`.`taggable_id` = 511 LIMIT 1",
+          "SELECT 1 AS `one` FROM `taggings` AS `taggings` WHERE `taggings`.`context` = 'tags' AND `taggings`.`taggable_id` = 511 AND `taggings`.`taggable_type` = 'Lead' LIMIT 1"
         };
     doTest(appName, stmtId, expected);
   }
@@ -910,8 +914,8 @@ public class TestOptimizer {
     final int stmtId = 12;
     final String[] expected =
         new String[] {
-          "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $5 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"target_id\" = $1",
-          "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $5 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"target_id\" = $1 AND \"actions\".\"action_type\" = $2",
+          "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"user_type\" = $4 AND \"actions\".\"user_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"action_type\" = $2 AND \"actions\".\"target_id\" = $1",
+          "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_id\" = $1 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"user_type\" = $5 AND \"actions\".\"target_type\" = $3"
         };
     doTest(appName, stmtId, expected);
   }
@@ -923,7 +927,7 @@ public class TestOptimizer {
     final int stmtId = 31;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(\"subquery_for_count\".\"count_column\") FROM (SELECT \"users\".\"type\", \"users\".\"id\", \"users\".\"name\", \"users\".\"login\", \"users\".\"email\", \"users\".\"email_md5\", \"users\".\"email_public\", \"users\".\"avatar\", \"users\".\"state\", \"users\".\"tagline\", \"users\".\"github\", \"users\".\"website\", \"users\".\"location\", \"users\".\"location_id\", \"users\".\"twitter\", \"users\".\"team_users_count\", \"users\".\"created_at\", \"users\".\"updated_at\" AS \"count_column\" FROM \"users\" AS \"users\" WHERE NOT \"users\".\"type\" IS NULL AND \"users\".\"location_id\" = 1 LIMIT 25 OFFSET 0) AS \"subquery_for_count\"",
+          "SELECT COUNT(\"subquery_for_count\".\"count_column\") FROM (SELECT \"users\".\"type\" AS \"type\", \"users\".\"id\" AS \"id\", \"users\".\"name\" AS \"name\", \"users\".\"login\" AS \"login\", \"users\".\"email\" AS \"email\", \"users\".\"email_md5\" AS \"email_md5\", \"users\".\"email_public\" AS \"email_public\", \"users\".\"avatar\" AS \"avatar\", \"users\".\"state\" AS \"state\", \"users\".\"tagline\" AS \"tagline\", \"users\".\"github\" AS \"github\", \"users\".\"website\" AS \"website\", \"users\".\"location\" AS \"location\", \"users\".\"location_id\" AS \"location_id\", \"users\".\"twitter\" AS \"twitter\", \"users\".\"team_users_count\" AS \"team_users_count\", \"users\".\"created_at\" AS \"created_at\", \"users\".\"updated_at\" AS \"count_column\" FROM \"users\" AS \"users\" WHERE \"users\".\"location_id\" = 1 AND NOT \"users\".\"type\" IS NULL LIMIT 25 OFFSET 0) AS \"subquery_for_count\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -934,8 +938,8 @@ public class TestOptimizer {
     final int stmtId = 72;
     final String[] expected =
         new String[] {
-          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"user_id\" = $1 AND \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $4",
-          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"action_type\" = $2",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"user_type\" = $4 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"action_type\" = $2 AND \"actions\".\"user_id\" = $1",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5"
         };
     doTest(appName, stmtId, expected);
   }
@@ -946,8 +950,8 @@ public class TestOptimizer {
     final int stmtId = 73;
     final String[] expected =
         new String[] {
-          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"user_id\" = $1 AND \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $4",
-          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"action_type\" = $2"
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"user_type\" = $4 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"action_type\" = $2 AND \"actions\".\"user_id\" = $1",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5"
         };
     doTest(appName, stmtId, expected);
   }
@@ -958,9 +962,8 @@ public class TestOptimizer {
     final int stmtId = 93;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`story_id` = 67 AND `comments`.`is_moderated` = FALSE AND `comments`.`is_deleted` = FALSE",
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`story_id` = 67 AND `comments`.`is_moderated` = FALSE",
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_moderated` = FALSE AND `comments`.`is_deleted` = FALSE AND `comments`.`story_id` = 67"
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND `comments`.`story_id` = 67",
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_moderated` = FALSE AND `comments`.`story_id` = 67 AND `comments`.`is_deleted` = FALSE"
         };
     doTest(appName, stmtId, expected);
   }
@@ -971,9 +974,8 @@ public class TestOptimizer {
     final int stmtId = 95;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` INNER JOIN `stories` AS `stories` ON `comments`.`story_id` = `stories`.`id` INNER JOIN `domains` AS `domains` ON `stories`.`domain_id` = `domains`.`id` WHERE `domains`.`domain` = 'lobste.rs' AND `comments`.`is_moderated` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment3 comment4' IN BOOLEAN MODE) AND `comments`.`is_deleted` = FALSE",
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` INNER JOIN `stories` AS `stories` ON `comments`.`story_id` = `stories`.`id` INNER JOIN `domains` AS `domains` ON `stories`.`domain_id` = `domains`.`id` WHERE `comments`.`is_deleted` = FALSE AND `domains`.`domain` = 'lobste.rs' AND `comments`.`is_moderated` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment3 comment4' IN BOOLEAN MODE)",
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` INNER JOIN `stories` AS `stories` ON `comments`.`story_id` = `stories`.`id` INNER JOIN `domains` AS `domains` ON `stories`.`domain_id` = `domains`.`id` WHERE `comments`.`is_moderated` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment3 comment4' IN BOOLEAN MODE) AND `comments`.`is_deleted` = FALSE AND `domains`.`domain` = 'lobste.rs'"
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` INNER JOIN `stories` AS `stories` ON `comments`.`story_id` = `stories`.`id` INNER JOIN `domains` AS `domains` ON `stories`.`domain_id` = `domains`.`id` WHERE MATCH `comments`.`comment` AGAINST ('comment3 comment4' IN BOOLEAN MODE) AND `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND `domains`.`domain` = 'lobste.rs'",
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` INNER JOIN `stories` AS `stories` ON `comments`.`story_id` = `stories`.`id` INNER JOIN `domains` AS `domains` ON `stories`.`domain_id` = `domains`.`id` WHERE `comments`.`is_moderated` = FALSE AND `domains`.`domain` = 'lobste.rs' AND MATCH `comments`.`comment` AGAINST ('comment3 comment4' IN BOOLEAN MODE) AND `comments`.`is_deleted` = FALSE"
         };
     doTest(appName, stmtId, expected);
   }
@@ -984,8 +986,8 @@ public class TestOptimizer {
     final int stmtId = 114;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment1' IN BOOLEAN MODE)",
-          "SELECT COUNT(DISTINCT `comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_moderated` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment1' IN BOOLEAN MODE) AND `comments`.`is_deleted` = FALSE"
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_deleted` = FALSE AND MATCH `comments`.`comment` AGAINST ('comment1' IN BOOLEAN MODE) AND `comments`.`is_moderated` = FALSE",
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE MATCH `comments`.`comment` AGAINST ('comment1' IN BOOLEAN MODE) AND `comments`.`is_moderated` = FALSE AND `comments`.`is_deleted` = FALSE"
         };
     doTest(appName, stmtId, expected);
   }
@@ -996,8 +998,7 @@ public class TestOptimizer {
     final int stmtId = 129;
     final String[] expected =
         new String[] {
-          "SELECT COUNT(DISTINCT `stories`.`id`) FROM `stories` AS `stories` WHERE `stories`.`merged_story_id` IS NULL AND (MATCH `stories`.`title` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`description` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`story_cache` AGAINST ('unique' IN BOOLEAN MODE)) AND `stories`.`is_expired` = FALSE",
-          "SELECT COUNT(DISTINCT `stories`.`id`) FROM `stories` AS `stories` WHERE `stories`.`is_expired` = FALSE AND `stories`.`merged_story_id` IS NULL AND (MATCH `stories`.`title` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`description` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`story_cache` AGAINST ('unique' IN BOOLEAN MODE))"
+          "SELECT COUNT(`stories`.`id`) FROM `stories` AS `stories` WHERE `stories`.`is_expired` = FALSE AND (MATCH `stories`.`title` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`description` AGAINST ('unique' IN BOOLEAN MODE) OR MATCH `stories`.`story_cache` AGAINST ('unique' IN BOOLEAN MODE)) AND `stories`.`merged_story_id` IS NULL",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1395,7 +1396,9 @@ public class TestOptimizer {
     final int stmtId = 285;
     final String[] expected = {
       "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_adjustments`.`source_type` = 'Spree::TaxRate' AND `spree_adjustments`.`adjustable_type` = 'Spree::LineItem' AND `spree_line_items`.`order_id` = 1",
-      "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_adjustments`.`adjustable_type` = 'Spree::LineItem' AND `spree_adjustments`.`source_type` = 'Spree::TaxRate' AND `spree_line_items`.`order_id` = 1"
+      "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_adjustments`.`adjustable_type` = 'Spree::LineItem' AND `spree_adjustments`.`source_type` = 'Spree::TaxRate' AND `spree_line_items`.`order_id` = 1",
+      "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_line_items`.`order_id` = 1 AND `spree_adjustments`.`adjustable_type` = 'Spree::LineItem' AND `spree_adjustments`.`source_type` = 'Spree::TaxRate'",
+      "SELECT `spree_adjustments`.`id` AS `id`, `spree_adjustments`.`source_type` AS `source_type`, `spree_adjustments`.`source_id` AS `source_id`, `spree_adjustments`.`adjustable_type` AS `adjustable_type`, `spree_adjustments`.`adjustable_id` AS `adjustable_id`, `spree_adjustments`.`amount` AS `amount`, `spree_adjustments`.`label` AS `label`, `spree_adjustments`.`mandatory` AS `mandatory`, `spree_adjustments`.`eligible` AS `eligible`, `spree_adjustments`.`created_at` AS `created_at`, `spree_adjustments`.`updated_at` AS `updated_at`, `spree_adjustments`.`state` AS `state`, `spree_adjustments`.`order_id` AS `order_id`, `spree_adjustments`.`included` AS `included` FROM `spree_adjustments` AS `spree_adjustments` INNER JOIN `spree_line_items` AS `spree_line_items` ON `spree_adjustments`.`adjustable_id` = `spree_line_items`.`id` WHERE `spree_line_items`.`order_id` = 1 AND `spree_adjustments`.`source_type` = 'Spree::TaxRate' AND `spree_adjustments`.`adjustable_type` = 'Spree::LineItem'"
     };
     doTest(app, stmtId, expected);
   }
@@ -1415,7 +1418,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 393;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_prices`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_variants`.`deleted_at` IS NULL AND `spree_products`.`available_on` <= '2020-05-01 07:05:53.714072' AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:53.714089') AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:53.713734') AND `spree_products`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:53.713734') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:53.714089') AND `spree_products`.`available_on` <= '2020-05-01 07:05:53.714072' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1425,7 +1428,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 396;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_prices`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_variants`.`deleted_at` IS NULL AND `spree_products`.`available_on` <= '2020-05-01 07:05:55.179810' AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:55.179826') AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:55.179498') AND `spree_products`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:55.179498') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:55.179826') AND `spree_products`.`available_on` <= '2020-05-01 07:05:55.179810' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1450,7 +1453,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 524;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE NOT `spree_orders`.`completed_at` IS NULL AND `spree_orders`.`user_id` = 658 LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE `spree_orders`.`user_id` = 658 AND NOT `spree_orders`.`completed_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1460,7 +1463,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 528;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE NOT `spree_orders`.`completed_at` IS NULL AND `spree_orders`.`user_id` = 660 LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE `spree_orders`.`user_id` = 660 AND NOT `spree_orders`.`completed_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1540,7 +1543,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 634;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE NOT `spree_orders`.`completed_at` IS NULL AND `spree_orders`.`user_id` = 277 LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT 1 AS `one` FROM `spree_orders` AS `spree_orders` WHERE `spree_orders`.`user_id` = 277 AND NOT `spree_orders`.`completed_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1610,7 +1613,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 712;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_prices`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_variants`.`deleted_at` IS NULL AND `spree_products`.`available_on` <= '2020-05-01 07:07:42.906389' AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:07:42.906418') AND `spree_products`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`",
+      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:07:42.906418') AND `spree_products`.`available_on` <= '2020-05-01 07:07:42.906389' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`",
     };
     doTest(app, stmtId, expected);
   }

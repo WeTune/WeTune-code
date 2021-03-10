@@ -18,6 +18,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 
 public class FilterHint {
+
   public static Iterable<PlanNode> rearrangeFilter(
       FilterNode chainHead, Operator op, Interpretations inter) {
     final List<FilterNode> pool = gatherFilters(chainHead);
@@ -34,7 +35,7 @@ public class FilterHint {
     final List<PlanNode> ret = new ArrayList<>(dist.results().size());
     for (List<FilterAssignment> result : dist.results()) {
       final PlanNode matchPoint = rebuildFilters(result, slots, chainHead, predecessor);
-      resolveUsedTree(rootOf(matchPoint));
+      resolveUsedOnTree(rootOf(matchPoint));
       ret.add(matchPoint);
     }
 
@@ -82,7 +83,7 @@ public class FilterHint {
 
     assignments = sortAssignments(assignments, ops);
     final PlanNode matchPoint =
-        rebuildFilters0(listMap(FilterAssignment::assignment, assignments), copyTree(predecessor));
+        rebuildFilters0(listMap(FilterAssignment::assignment, assignments), copyOnTree(predecessor));
 
     final PlanNode newHead;
     if (tail.op() == null) {

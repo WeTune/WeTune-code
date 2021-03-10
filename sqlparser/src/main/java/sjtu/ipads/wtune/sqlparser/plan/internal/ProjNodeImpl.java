@@ -28,8 +28,13 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   private ProjNodeImpl(List<AttributeDef> defined) {
     this.selectItems = listMap(AttributeDef::toSelectItem, defined);
-    this.defined = listMap(AttributeDef::copy, defined);
+    this.defined = listMap(this::rectifyAttribute, defined);
     bindAttributes(this.defined, this);
+  }
+
+  private AttributeDef rectifyAttribute(AttributeDef def) {
+    if (def instanceof DerivedAttributeDef) return def.copy();
+    else return makeAttribute(def.qualification(), def.toSelectItem());
   }
 
   public static ProjNode build(String qualification, List<ASTNode> selectItems) {

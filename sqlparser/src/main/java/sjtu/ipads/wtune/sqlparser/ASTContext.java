@@ -24,4 +24,10 @@ public interface ASTContext extends MultiVersion {
     root.accept(ASTVistor.topDownVisit(it -> it.setContext(ctx)));
     return root;
   }
+
+  static ASTNode manage(Schema schema, ASTNode root) {
+    root = manage(schema.dbType(), root);
+    root.context().setSchema(schema);
+    return root;
+  }
 }

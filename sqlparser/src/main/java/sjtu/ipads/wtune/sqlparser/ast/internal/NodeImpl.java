@@ -71,6 +71,8 @@ public class NodeImpl implements ASTNode {
     final ASTNode copy = shallowCopy();
     for (var kv : copy.fields().entrySet())
       if (kv.getKey() != PARENT) copy.set(kv.getKey(), deepCopy0(kv.getValue()));
+
+    ASTNode.setContext(copy, context);
     return copy;
   }
 

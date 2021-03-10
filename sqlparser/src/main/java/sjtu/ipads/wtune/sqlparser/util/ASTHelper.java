@@ -1,15 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.util;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 
@@ -36,6 +39,14 @@ public interface ASTHelper {
 
   static ASTNode locateQuerySpecNode(Relation relation) {
     return locateQuerySpecNode0(relation.node());
+  }
+
+  static boolean isNullCheck(ASTNode expr) {
+    final BinaryOp op = expr.get(BINARY_OP);
+    final ASTNode right = expr.get(BINARY_RIGHT);
+    return op == BinaryOp.IS
+        && LITERAL.isInstance(right)
+        && right.get(LITERAL_TYPE) == LiteralType.NULL;
   }
 
   private static ASTNode locateQuerySpecNode0(ASTNode node) {

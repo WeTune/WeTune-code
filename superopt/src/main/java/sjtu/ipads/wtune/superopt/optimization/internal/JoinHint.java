@@ -1,109 +1,84 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.superopt.fragment.InnerJoin;
 import sjtu.ipads.wtune.superopt.fragment.Join;
-import sjtu.ipads.wtune.superopt.fragment.LeftJoin;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 
 public class JoinHint {
   public static Iterable<PlanNode> rearrangeJoin(
-      InnerJoinNode originRoot, InnerJoin op, Interpretations inter) {
+      JoinNode joinRoot, Join op, Interpretations inter) {
     // premise: the join tree is always kept left-deep
     // This function tries to shift each join node in join tree as the root
-    final List<InnerJoinNode> joins = collectInnerJoinNodes(originRoot);
+    final List<JoinNode> joins = gatherJoins(joinRoot);
     final List<PlanNode> joinTrees = new ArrayList<>(joins.size() + 1);
-
-    final PlanNode successor = originRoot.successor();
+    final PlanNode successor = joinRoot.successor();
+    assert successor != null;
 
     for (int i = 0, bound = joins.size(); i <= bound; i++) {
-      final JoinNode joinTree = rebuildJoinTree(joins, i);
-      if (!isValidJoin(joinTree)) continue;
+      if (i < bound && joins.get(i).type() != op.type()) continue;
 
-      resolveUsedTree(joinTree);
+      final JoinNode joinTree = rebuildJoinTree(joins, i);
+      if (!isValidJoinTree(joinTree)) continue;
       if (!isEligibleMatch(joinTree, op, inter)) continue;
 
-      if (successor != null) copyToRoot(successor).replacePredecessor(originRoot, joinTree);
+      final PlanNode newSuccessor = copyToRoot(successor);
+      newSuccessor.replacePredecessor(joinRoot, joinTree);
+      resolveUsedToRoot(newSuccessor);
 
-      resolveUsedTree(rootOf(joinTree));
       joinTrees.add(joinTree);
     }
 
     return joinTrees;
   }
 
-  private static List<InnerJoinNode> collectInnerJoinNodes(PlanNode node) {
-    final List<InnerJoinNode> joins = new ArrayList<>();
+  private static List<JoinNode> gatherJoins(PlanNode node) {
+    final List<JoinNode> joins = new ArrayList<>();
 
-    while (node instanceof InnerJoinNode) {
-      joins.add((InnerJoinNode) node);
+    while (node.type().isJoin()) {
+      assert !node.predecessors()[1].type().isJoin();
+      joins.add((JoinNode) node);
       node = node.predecessors()[0];
     }
 
     return joins;
   }
 
-  public static Iterable<PlanNode> rearrangeJoin(
-      InnerJoinNode originRoot, LeftJoin op, Interpretations inter) {
-    final List<JoinNode> path = findPathToLeftJoin(originRoot);
-    if (isEmpty(path)) return emptyList();
-
-    final JoinNode joinTree = rebuildJoinTree(Lists.reverse(path), path.size() - 1);
-    if (!isValidJoin(joinTree)) return emptyList();
-
-    resolveUsedTree(joinTree);
-    if (!isEligibleMatch(joinTree, op, inter)) return emptyList();
-
-    final PlanNode successor = originRoot.successor();
-    if (successor != null) copyToRoot(successor).replacePredecessor(originRoot, joinTree);
-
-    resolveUsedTree(rootOf(joinTree));
-    return singletonList(joinTree);
-  }
-
-  private static List<JoinNode> findPathToLeftJoin(PlanNode node) {
-    if (!(node instanceof JoinNode)) return null;
-    if (node instanceof LeftJoinNode) return newArrayList((JoinNode) node);
-    assert node instanceof InnerJoinNode;
-    final List<JoinNode> path = findPathToLeftJoin(node.predecessors()[0]);
-    if (path != null) path.add((JoinNode) node);
-    return path;
-  }
-
   private static JoinNode rebuildJoinTree(List<? extends JoinNode> nodes, int rootIdx) {
-    final boolean shiftLeaves = rootIdx >= nodes.size();
+    // use `rootIdx` >= node.size to indicate swapping left-most leaf to right additionally
+    // e.g. Join1(Join2(a,b),c) -> Join2(Join1(a,c),b) -> Join2(Join1(b,c),a)
+    final boolean requireFlip = rootIdx >= nodes.size();
     rootIdx = Math.min(rootIdx, nodes.size() - 1);
 
     // use nodes[rootIdx] as root, construct a left-deep join tree with remaining nodes
     final JoinNode root = (JoinNode) nodes.get(rootIdx).copy();
-    root.setPredecessor(1, copyTree(root.predecessors()[1]));
+    if (requireFlip && root.type() == LeftJoin) return null; // left join shouldn't be flipped
+
+    root.setPredecessor(1, copyOnTree(root.predecessors()[1]));
 
     PlanNode successor = root;
     for (int i = 0, bound = nodes.size(); i < bound; i++) {
       if (i == rootIdx) continue;
 
       final PlanNode current = nodes.get(i).copy();
-      current.setPredecessor(1, copyTree(current.predecessors()[1]));
+      current.setPredecessor(1, copyOnTree(current.predecessors()[1]));
       successor.setPredecessor(0, current);
       successor = current;
     }
-    successor.setPredecessor(0, copyTree(tail(nodes).predecessors()[0]));
+    successor.setPredecessor(0, copyOnTree(tail(nodes).predecessors()[0]));
 
-    if (shiftLeaves) {
+    if (requireFlip) {
       final PlanNode rightMostLeaf = root.predecessors()[1];
       final PlanNode leftMostLeaf = successor.predecessors()[0];
       root.setPredecessor(1, leftMostLeaf);
@@ -113,16 +88,19 @@ public class JoinHint {
     return root;
   }
 
-  private static boolean isValidJoin(PlanNode node) {
+  private static boolean isValidJoinTree(PlanNode node) {
+    if (node == null) return false;
     if (!(node instanceof JoinNode)) return true;
     final JoinNode join = (JoinNode) node;
     // check if all attributes are presented in input
     for (AttributeDef attr : join.usedAttributes())
       if (join.resolveAttribute(attr) == null) return false;
-    return isValidJoin(join.predecessors()[0]);
+    return isValidJoinTree(join.predecessors()[0]);
   }
 
   private static boolean isEligibleMatch(JoinNode node, Join op, Interpretations inter) {
+    resolveUsedOnTree(node);
+
     final AttributeInterpretation leftInter = inter.getAttributes(op.leftFields());
     final AttributeInterpretation rightInter = inter.getAttributes(op.rightFields());
 

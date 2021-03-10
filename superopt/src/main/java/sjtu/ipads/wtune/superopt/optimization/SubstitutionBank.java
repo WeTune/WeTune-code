@@ -1,8 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimization;
 
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.optimization.internal.SubstitutionBankImpl;
 
 import java.util.Collection;
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 
 public interface SubstitutionBank extends Iterable<Substitution> {
   SubstitutionBank importFrom(Iterable<String> lines);
@@ -16,6 +20,10 @@ public interface SubstitutionBank extends Iterable<Substitution> {
   int count();
 
   Collection<Substitution> findByFingerprint(String fingerprint);
+
+  default List<Substitution> findByFingerprint(PlanNode plan) {
+    return listFlatMap(this::findByFingerprint, Fingerprint.make(plan));
+  }
 
   static SubstitutionBank make() {
     return SubstitutionBankImpl.build();

@@ -81,19 +81,25 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
     return copy;
   }
 
-  static PlanNode copyTree(PlanNode node) {
+  static PlanNode copyOnTree(PlanNode node) {
     final PlanNode copy = node.copy();
     final PlanNode[] predecessors = node.predecessors();
-    for (int i = 0; i < predecessors.length; i++) copy.setPredecessor(i, copyTree(predecessors[i]));
+    for (int i = 0; i < predecessors.length; i++)
+      copy.setPredecessor(i, copyOnTree(predecessors[i]));
     return copy;
   }
 
-  static void resolveUsedTree(PlanNode node) {
-    for (PlanNode predecessor : node.predecessors()) resolveUsedTree(predecessor);
+  static void resolveUsedToRoot(PlanNode node) {
+    node.resolveUsed();
+    if (node.successor() != null) resolveUsedToRoot(node.successor());
+  }
+
+  static void resolveUsedOnTree(PlanNode node) {
+    for (PlanNode predecessor : node.predecessors()) resolveUsedOnTree(predecessor);
     node.resolveUsed();
   }
 
-  static boolean equalsTree(PlanNode n0, PlanNode n1) {
+  static boolean equalsOnTree(PlanNode n0, PlanNode n1) {
     if (!Objects.equals(n0, n1)) return false;
     final PlanNode[] predecessors0 = n0.predecessors();
     final PlanNode[] predecessors1 = n1.predecessors();
@@ -102,9 +108,9 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
     return true;
   }
 
-  static int hashCodeTree(PlanNode n0) {
+  static int hashCodeOnTree(PlanNode n0) {
     int hash = n0.hashCode();
-    for (PlanNode predecessor : n0.predecessors()) hash = hash * 31 + hashCodeTree(predecessor);
+    for (PlanNode predecessor : n0.predecessors()) hash = hash * 31 + hashCodeOnTree(predecessor);
     return hash;
   }
 }

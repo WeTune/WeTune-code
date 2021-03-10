@@ -1,14 +1,12 @@
 package sjtu.ipads.wtune.superopt;
 
+import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.internal.Optimizer;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
-import sjtu.ipads.wtune.superopt.internal.UniquenessInference;
+import sjtu.ipads.wtune.superopt.optimization.Optimizer;
 import sjtu.ipads.wtune.superopt.optimization.Substitution;
 import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
 
@@ -86,11 +84,11 @@ public class Main {
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
     final String sql =
-        "SELECT \"group_users\".\"group_id\" AS \"group_id\" FROM (SELECT * FROM \"group_users\" AS \"gu\" INNER JOIN \"groups\" AS \"groups\" ON \"gu\".\"group_id\" = \"groups\".\"id\" WHERE \"gu\".\"user_id\" = 779 AND \"gu\".\"group_id\" > 0) AS \"sub0\" INNER JOIN \"group_users\" AS \"group_users\" ON \"sub0\".\"id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 779";
-    final Statement stmt = Statement.findOne("diaspora", 224);
+        "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0\n";
+    final Statement stmt = Statement.findOne("diaspora", 478);
 
-    final ASTNode ast = stmt.parsed();
-    //        final ASTNode ast = ASTParser.mysql().parse(sql);
+//    final ASTNode ast = stmt.parsed();
+            final ASTNode ast = ASTParser.mysql().parse(sql);
     //    final ASTNode ast = ASTParser.postgresql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
     //    final Schema schema = App.of("discourse").schema("base", true);
@@ -100,8 +98,8 @@ public class Main {
     System.out.println(stmt);
     System.out.println(ast.toString(false));
 
-    final PlanNode plan = ToPlanTranslator.toPlan(ast);
-    System.out.println(UniquenessInference.inferUniqueness(plan));
+    //    final PlanNode plan = ToPlanTranslator.toPlan(ast);
+    //    System.out.println(UniquenessInference.inferUniqueness(plan));
     final List<ASTNode> optimized = Optimizer.make(bank, schema).optimize(ast);
     System.out.println(optimized.size());
 

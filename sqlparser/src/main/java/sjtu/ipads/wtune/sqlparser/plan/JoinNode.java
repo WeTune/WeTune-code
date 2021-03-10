@@ -12,4 +12,8 @@ public interface JoinNode extends PlanNode {
   List<AttributeDef> leftAttributes();
 
   List<AttributeDef> rightAttributes();
+
+  JoinNode toInnerJoin();
+
+  JoinNode toLeftJoin();
 }

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public interface Fragment extends Comparable<Fragment> {
@@ -52,7 +53,7 @@ public interface Fragment extends Comparable<Fragment> {
 
   default PlanNode instantiate(Interpretations interpretations) {
     final PlanNode instantiated = head().instantiate(interpretations);
-    PlanNode.resolveUsedTree(instantiated);
+    resolveUsedOnTree(instantiated);
     return instantiated;
   }
 

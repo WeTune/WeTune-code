@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;

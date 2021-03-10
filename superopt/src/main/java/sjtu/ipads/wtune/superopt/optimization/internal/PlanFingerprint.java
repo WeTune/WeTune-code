@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimization.internal;
 
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -25,7 +27,7 @@ public class PlanFingerprint {
     // The method is recursive. The current node combine the fingerprints of its children and then
     // prepend itself.
 
-    // terminate if `budget` is run out or `node` is input.
+    // terminate if `budget` is run out or `node` is of Input.
     if (budget == 0 || node instanceof InputNode) return singleton("");
 
     final OperatorType type = node.type();
@@ -54,19 +56,6 @@ public class PlanFingerprint {
     // if a filter is the child of another filter, then it can be skipped.
     if (node.type().isFilter() && node.successor().type().isFilter())
       strings.addAll(fingerprint0(preds[0], budget));
-
-    // special handling for inner join:
-    // if the child of inner join is a left join, swap them and calculate its fingerprint.
-    if (node instanceof InnerJoinNode && preds[0] instanceof LeftJoinNode) {
-      final PlanNode nodeCopy = node.copy();
-      final PlanNode predCopy = preds[0].copy();
-      // Don't use `setPredecessor`, we don't want to set parent
-      nodeCopy.predecessors()[0] = predCopy.predecessors()[0];
-      nodeCopy.predecessors()[1] = predCopy.predecessors()[1];
-      predCopy.predecessors()[0] = nodeCopy;
-      predCopy.predecessors()[1] = preds[1];
-      strings.addAll(fingerprint0(predCopy, budget));
-    }
 
     return strings;
   }

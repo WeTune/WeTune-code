@@ -29,7 +29,7 @@ import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRef
 public class ToPlanTranslator {
   public static PlanNode toPlan(ASTNode node) {
     final PlanNode plan = translate0(node);
-    PlanNode.resolveUsedTree(plan);
+    PlanNode.resolveUsedOnTree(plan);
     return plan;
   }
 
@@ -183,8 +183,8 @@ public class ToPlanTranslator {
     final BinaryOp binaryOp = expr.get(BINARY_OP);
 
     if (binaryOp == AND) {
-      translateFilter0(expr.get(BINARY_LEFT), filters);
       translateFilter0(expr.get(BINARY_RIGHT), filters);
+      translateFilter0(expr.get(BINARY_LEFT), filters);
 
     } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
       final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);

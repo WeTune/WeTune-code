@@ -1,8 +1,5 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
-import sjtu.ipads.wtune.common.multiversion.Catalog;
-import sjtu.ipads.wtune.common.multiversion.CatalogBase;
-import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
@@ -16,21 +13,38 @@ import sjtu.ipads.wtune.symsolver.core.PickSub;
 import sjtu.ipads.wtune.symsolver.core.Reference;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public class InterpretationsImpl implements Interpretations {
+  private final InterpretationsImpl base;
   private final Constraints constraints;
-  private final Catalog<Placeholder, Interpretation> interpretations;
+  private final Map<Placeholder, Interpretation> interpretations;
 
   private InterpretationsImpl(Constraints constraints) {
+    this.base = null;
     this.constraints = constraints;
-    this.interpretations = new CatalogBase<>();
+    this.interpretations = new IdentityHashMap<>();
+  }
+
+  private InterpretationsImpl(InterpretationsImpl base) {
+    this.base = base;
+    this.constraints = base.constraints();
+    this.interpretations = new IdentityHashMap<>();
   }
 
   public static Interpretations build(Constraints constraints) {
+    requireNonNull(constraints);
     return new InterpretationsImpl(constraints);
+  }
+
+  public static Interpretations build(Interpretations interpretations) {
+    if (!(interpretations instanceof InterpretationsImpl)) throw new IllegalArgumentException();
+    return new InterpretationsImpl((InterpretationsImpl) interpretations);
   }
 
   @Override
@@ -40,17 +54,17 @@ public class InterpretationsImpl implements Interpretations {
 
   @Override
   public InputInterpretation getInput(Placeholder placeholder) {
-    return ((InputInterpretation) interpretations.get(placeholder));
+    return (InputInterpretation) get0(placeholder);
   }
 
   @Override
   public AttributeInterpretation getAttributes(Placeholder placeholder) {
-    return ((AttributeInterpretation) interpretations.get(placeholder));
+    return ((AttributeInterpretation) get0(placeholder));
   }
 
   @Override
   public PredicateInterpretation getPredicate(Placeholder placeholder) {
-    return ((PredicateInterpretation) interpretations.get(placeholder));
+    return ((PredicateInterpretation) get0(placeholder));
   }
 
   @Override
@@ -70,7 +84,15 @@ public class InterpretationsImpl implements Interpretations {
 
   @Override
   public boolean hasAssignment(Placeholder placeholder) {
-    return interpretations.contains(placeholder);
+    return interpretations.containsKey(placeholder)
+        || (base != null && base.hasAssignment(placeholder));
+  }
+
+  private Interpretation get0(Placeholder placeholder) {
+    final Interpretation interpretation = interpretations.get(placeholder);
+    if (interpretation != null) return interpretation;
+    else if (base != null) return base.get0(placeholder);
+    else return null;
   }
 
   private <T> boolean assign0(Placeholder placeholder, Interpretation<T> assignment) {
@@ -89,21 +111,6 @@ public class InterpretationsImpl implements Interpretations {
     }
     interpretations.put(placeholder, assignment);
     return true;
-  }
-
-  @Override
-  public Snapshot snapshot() {
-    return interpretations.snapshot();
-  }
-
-  @Override
-  public void setSnapshot(Snapshot snapshot) {
-    interpretations.setSnapshot(snapshot);
-  }
-
-  @Override
-  public void derive() {
-    interpretations.derive();
   }
 
   private boolean checkConstraints() {

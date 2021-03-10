@@ -26,7 +26,7 @@ public record FilterAssignment(Filter op, List<FilterNode> used) {
       final FilterNode node = (FilterNode) Iterables.getOnlyElement(used).copy();
 
       if (node.type() == OperatorType.SubqueryFilter)
-        node.setPredecessor(1, PlanNode.copyTree(node.predecessors()[1]));
+        node.setPredecessor(1, PlanNode.copyOnTree(node.predecessors()[1]));
       return node;
 
     } else return used.stream().reduce(FilterAssignment::combineFilters).get();

@@ -20,9 +20,8 @@ public interface Fingerprint {
       case Proj:
         return 'p';
       case InnerJoin:
-        return 'i';
       case LeftJoin:
-        return 'l';
+        return 'j';
       case SubqueryFilter:
         return 's';
       case PlainFilter:

@@ -1,52 +1,108 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.superopt.optimization.internal.TypeBasedAlgorithm;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static java.util.Collections.newSetFromMap;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
-public class PlanNormalizer {
-  public static boolean normalize(PlanNode node) {
-    final PlanNode successor = node.successor();
-    final PlanNode[] predecessors = node.predecessors();
-    for (PlanNode predecessor : predecessors) if (!normalize(predecessor)) return false;
+public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
-    // Join(Input,LeftJoin): non-left deep join tree, and cannot be refactor as left-deep
-    if (node.type().isJoin() && node.predecessors()[1].type() == LeftJoin) return false;
+  public static PlanNode normalize(PlanNode node) {
+    final PlanNode ret = new PlanNormalizer().dispatch(node);
+    if (ret != null) PlanNode.resolveUsedOnTree(ret);
+    return ret;
+  }
 
-    // remove unnecessary wildcard projection
-    // e.g. select sub.a from (select * from x) sub => select x.a from x
-    if (node.type() == Proj
-        && ((ProjNode) node).isWildcard()
-        && successor != null
-        && successor.type().isJoin()
-        && !predecessors[0].type().isFilter()) {
-      successor.replacePredecessor(node, predecessors[0]);
-      return true;
+  @Override
+  protected PlanNode dispatch(PlanNode node) {
+    for (PlanNode predecessor : node.predecessors()) if (dispatch(predecessor) == null) return null;
+    return super.dispatch(node);
+  }
+
+  @Override
+  protected PlanNode onInput(InputNode input) {
+    return input;
+  }
+
+  @Override
+  protected PlanNode onLimit(LimitNode limit) {
+    return limit;
+  }
+
+  @Override
+  protected PlanNode onSort(SortNode sort) {
+    return sort;
+  }
+
+  @Override
+  protected PlanNode onAgg(AggNode agg) {
+    return agg;
+  }
+
+  @Override
+  protected PlanNode onSubqueryFilter(SubqueryFilterNode filter) {
+    return filter;
+  }
+
+  @Override
+  protected PlanNode onLeftJoin(LeftJoinNode leftJoin) {
+    final PlanNode successor = leftJoin.successor();
+    if (successor.type().isJoin() && successor.predecessors()[1] == leftJoin) return null;
+    return handleJoin(leftJoin);
+  }
+
+  @Override
+  protected PlanNode onInnerJoin(InnerJoinNode innerJoin) {
+    return handleJoin(innerJoin);
+  }
+
+  @Override
+  protected PlanNode onProj(ProjNode proj) {
+    if (isRedundantProj(proj)) {
+      proj.successor().replacePredecessor(proj, proj.predecessors()[0]);
+      return proj.predecessors()[0];
     }
+    return proj;
+  }
 
-    if (node.type().isJoin()) {
-      // insert proj if a filter directly precedes a join
-      if (predecessors[0].type().isFilter()) insertProj(node, predecessors[0]);
-      if (predecessors[1].type().isFilter()) insertProj(node, predecessors[1]);
-      // enforce left-deep join tree
-      final PlanNode old = node;
-      node = enforceLeftDeepJoin((JoinNode) node);
-      successor.replacePredecessor(old, node);
-      // add qualification
-      rectifyQualification(node);
-      return true;
-    }
+  @Override
+  protected PlanNode onPlainFilter(PlainFilterNode filter) {
+    final List<FilterNode> filters = filter.breakDown();
+    assert !filters.isEmpty();
 
-    node.resolveUsed();
-    return true;
+    if (filters.size() != 1) {
+      for (int i = 0, bound = filters.size() - 1; i < bound; i++)
+        filters.get(i).setPredecessor(0, filters.get(i + 1));
+      tail(filters).setPredecessor(0, filter.predecessors()[0]);
+      filter.successor().replacePredecessor(filter, filters.get(0));
+
+    } else assert filters.get(0) == filter;
+
+    for (FilterNode f : filters)
+      if (!allowNullValue(f.rawExpr())) {
+        f.resolveUsed();
+        f.usedAttributes().forEach(PlanNormalizer::enforceEffectiveNonNull);
+      }
+
+    return filters.get(0);
+  }
+
+  private static boolean isRedundantProj(ProjNode proj) {
+    return proj.isWildcard()
+        && proj.successor() instanceof JoinNode
+        && !proj.predecessors()[0].type().isFilter();
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
@@ -56,7 +112,6 @@ public class PlanNormalizer {
     successor.replacePredecessor(predecessor, proj);
     proj.setWildcard(true);
     proj.setPredecessor(0, predecessor);
-    proj.resolveUsed();
   }
 
   private static ASTNode makeSelectItem(AttributeDef def) {
@@ -66,14 +121,49 @@ public class PlanNormalizer {
     return item;
   }
 
+  private static boolean allowNullValue(ASTNode expr) {
+    final BinaryOp op = expr.get(BINARY_OP);
+    return op == null
+        || (op == IS && expr.get(BINARY_RIGHT).get(LITERAL_TYPE) == LiteralType.NULL)
+        || !op.isRelation();
+  }
+
+  private static void enforceEffectiveNonNull(AttributeDef attr) {
+    final PlanNode definer = attr.definer();
+    final PlanNode successor = definer.successor();
+    if (successor.type() == LeftJoin && successor.predecessors()[1] == definer)
+      enforceEffectiveInnerJoin(successor);
+  }
+
+  private static void enforceEffectiveInnerJoin(PlanNode leftJoin) {
+    assert leftJoin.type() == LeftJoin;
+    final JoinNode innerJoin = ((JoinNode) leftJoin).toInnerJoin();
+    leftJoin.successor().replacePredecessor(leftJoin, innerJoin);
+    innerJoin.setPredecessor(0, leftJoin.predecessors()[0]);
+    innerJoin.setPredecessor(1, leftJoin.predecessors()[1]);
+  }
+
+  private static PlanNode handleJoin(JoinNode node) {
+    final PlanNode[] predecessors = node.predecessors();
+    // 1. insert proj if a filter directly precedes a join
+    if (predecessors[0].type().isFilter()) insertProj(node, predecessors[0]);
+    if (predecessors[1].type().isFilter()) insertProj(node, predecessors[1]);
+
+    // 2. enforce left-deep join tree
+    final PlanNode old = node;
+    node = enforceLeftDeepJoin(node);
+    node.successor().replacePredecessor(old, node);
+
+    // 3. add qualification
+    rectifyQualification(node);
+    return node;
+  }
+
   private static JoinNode enforceLeftDeepJoin(JoinNode join) {
     final PlanNode right = join.predecessors()[1];
     assert right.type() != LeftJoin;
 
-    if (right.type() != InnerJoin) {
-      join.resolveUsed();
-      return join;
-    }
+    if (right.type() != InnerJoin) return join;
 
     final JoinNode newJoin = (JoinNode) right;
 
@@ -86,7 +176,6 @@ public class PlanNormalizer {
       join.setPredecessor(1, b);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, c);
-      join.resolveUsed();
       enforceLeftDeepJoin(join);
       return newJoin;
 
@@ -95,7 +184,6 @@ public class PlanNormalizer {
       join.setPredecessor(1, c);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, b);
-      newJoin.resolveUsed();
       return enforceLeftDeepJoin(newJoin);
     }
   }
@@ -107,7 +195,9 @@ public class PlanNormalizer {
     assert right.type() == Proj || right.type() == OperatorType.Input;
 
     final Map<String, PlanNode> qualified = new HashMap<>();
-    final Set<PlanNode> unqualified = Collections.newSetFromMap(new IdentityHashMap<>());
+    final Set<PlanNode> unqualified = newSetFromMap(new IdentityHashMap<>());
+
+    // Classify attributes by whether qualified, group unqualified ones by definer
     for (AttributeDef attr : listJoin(left.definedAttributes(), right.definedAttributes())) {
       final String qualification = attr.qualification();
       final PlanNode definer = attr.definer();
@@ -116,6 +206,7 @@ public class PlanNormalizer {
         unqualified.add(definer);
     }
 
+    // set unique qualification to qualified ones
     for (PlanNode n : unqualified) {
       final String qualification = makeQualification(qualified.keySet());
       setQualification(n, qualification);

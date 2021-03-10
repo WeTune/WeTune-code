@@ -22,12 +22,14 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SO
 import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.fromColumn;
 
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
+  private int id;
   private final Table table;
   private final List<AttributeDef> attributes;
   private String alias;
 
   // for `build`
   private InputNodeImpl(Table table, String alias) {
+    this.id = System.identityHashCode(this);
     this.table = table;
     this.alias = alias;
     this.attributes = listMap(this::makeAttribute, table.columns());
@@ -35,7 +37,8 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   // for `copy`
-  private InputNodeImpl(Table table, String alias, List<AttributeDef> attrs) {
+  private InputNodeImpl(int id, Table table, String alias, List<AttributeDef> attrs) {
+    this.id = id;
     this.table = table;
     this.alias = alias;
     this.attributes = listMap(AttributeDef::copy, attrs);
@@ -54,6 +57,11 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   @Override
   public Table table() {
     return this.table;
+  }
+
+  @Override
+  public int id() {
+    return this.id;
   }
 
   @Override
@@ -85,7 +93,7 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
 
   @Override
   protected PlanNode copy0() {
-    return new InputNodeImpl(table, alias, attributes);
+    return new InputNodeImpl(id, table, alias, attributes);
   }
 
   @Override

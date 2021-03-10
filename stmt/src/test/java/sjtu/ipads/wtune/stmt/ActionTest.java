@@ -89,7 +89,7 @@ public class ActionTest {
     stmt.parsed().context().setSchema(stmt.app().schema("base"));
     Mutation.normalizeJoinCondition(stmt.parsed());
     assertEquals(
-        "SELECT * FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` and `a`.j` = `b`.`y` INNER JOIN `c` ON `b`.`y` = `c`.`v` AND `b`.`z` = `c`.`w` WHERE `a`.`j` = 3 AND `c`.`u` < 10",
+        "SELECT * FROM `a` INNER JOIN `b` ON `a`.`i` = `b`.`x` AND `a`.`j` = `b`.`y` INNER JOIN `c` ON `b`.`y` = `c`.`v` AND `b`.`z` = `c`.`w` WHERE `a`.`j` = 3 AND `c`.`u` < 10",
         stmt.parsed().toString());
   }
 }

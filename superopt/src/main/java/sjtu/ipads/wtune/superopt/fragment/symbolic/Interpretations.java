@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic;
 
-import sjtu.ipads.wtune.common.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -9,7 +8,7 @@ import sjtu.ipads.wtune.superopt.util.Constraints;
 
 import java.util.List;
 
-public interface Interpretations extends MultiVersion {
+public interface Interpretations {
   Constraints constraints();
 
   InputInterpretation getInput(Placeholder placeholder);
@@ -41,7 +40,11 @@ public interface Interpretations extends MultiVersion {
     return inter == null ? null : inter.object();
   }
 
-  static Interpretations constrainedBy(Constraints constraints) {
+  static Interpretations derivedInterpretations(Interpretations base) {
+    return InterpretationsImpl.build(base);
+  }
+
+  static Interpretations constrainedInterpretations(Constraints constraints) {
     return InterpretationsImpl.build(constraints);
   }
 }
