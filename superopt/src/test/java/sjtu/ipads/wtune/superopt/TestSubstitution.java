@@ -21,7 +21,7 @@ public class TestSubstitution {
   @Test
   void test0() {
     final String schemaSQL = "create table b (j int);" + "create table a (i int references b(j));";
-    final String sql = "select b.j from a inner join b on a.i = b.j where b.j = 1";
+    final String sql = "select DISTINCT b.j from a inner join b on a.i = b.j where b.j = 1";
     final String substitution =
         "Proj<c0>(PlainFilter<p0 c1>(InnerJoin<c2 c3>(Input<t0>,Input<t1>)))"
             + "|Proj<c4>(PlainFilter<p1 c5>(Input<t2>))"
@@ -52,7 +52,7 @@ public class TestSubstitution {
         "create table a (i int); "
             + "create table b (j int references a(i)); "
             + "create table c (k int)";
-    final String sql = "select b.* from a join b on a.i = b.j";
+    final String sql = "select DISTINCT b.* from a join b on a.i = b.j";
     final String substitution =
         "Proj<c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))"
             + "|Proj<c3>(Input<t2>)"
@@ -79,7 +79,7 @@ public class TestSubstitution {
         "create table a (i int); "
             + "create table b (j int references a(i)); "
             + "create table c (k int)";
-    final String sql = "select b.* from a join b on a.i = b.j join c on b.j = c.k";
+    final String sql = "select DISTINCT b.* from a join b on a.i = b.j join c on b.j = c.k";
     final String substitution =
         "Proj<c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))"
             + "|Proj<c3>(Input<t2>)"

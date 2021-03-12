@@ -530,7 +530,7 @@ public class TestOptimizer {
     final int stmtId = 2832;
     final String[] expected =
         new String[] {
-          "SELECT \"categories\".\"name\" AS \"name\" FROM \"categories\" AS \"categories\" INNER JOIN \"category_tag_groups\" AS \"category_tag_groups\" ON \"categories\".\"id\" = \"category_tag_groups\".\"category_id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
+          "SELECT \"categories\".\"name\" AS \"name\" FROM \"category_tag_groups\" AS \"category_tag_groups\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1031,8 +1031,16 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 118
-  // TODO: redmine-136 DISTINCT
+  @Test // 118
+  void testRedmine136() {
+    final String appName = "redmine";
+    final int stmtId = 136;
+    final String[] expected =
+        new String[] {
+          "SELECT `users`.`id` AS `id`, `users`.`login` AS `login`, `users`.`hashed_password` AS `hashed_password`, `users`.`firstname` AS `firstname`, `users`.`lastname` AS `lastname`, `users`.`admin` AS `admin`, `users`.`status` AS `status`, `users`.`last_login_on` AS `last_login_on`, `users`.`language` AS `language`, `users`.`auth_source_id` AS `auth_source_id`, `users`.`created_on` AS `created_on`, `users`.`updated_on` AS `updated_on`, `users`.`type` AS `type`, `users`.`identity_url` AS `identity_url`, `users`.`mail_notification` AS `mail_notification`, `users`.`salt` AS `salt`, `users`.`must_change_passwd` AS `must_change_passwd`, `users`.`passwd_changed_on` AS `passwd_changed_on` FROM `users` AS `users` INNER JOIN `email_addresses` AS `email_addresses` ON `users`.`id` = `email_addresses`.`user_id` WHERE `users`.`type` IN (?) AND LOWER(`email_addresses`.`address`) IN (?) ORDER BY `id` ASC LIMIT 1",
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 119
   void testRedmine284() {
@@ -1067,26 +1075,120 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 122
-  // TODO: shopizer-1 DISTINCT
-  // 123
-  // TODO: shopizer-3 DISTINCT
-  // 124
-  // TODO: shopizer-14 DISTINCT
-  // 125
-  // TODO: shopizer-18 DISTINCT
-  // 126
-  // TODO: shopizer-24 DISTINCT
-  // 127
-  // TODO: shopizer-31 DISTINCT
-  // 128
-  // TODO: shopizer-39 DISTINCT
-  // 129
-  // TODO: shopizer-40 DISTINCT
-  // 130
-  // TODO: shopizer-46 DISTINCT
-  // 131
-  // TODO: shopizer-57 DISTINCT
+  @Test // 122
+  void testShopizer1() {
+    final String appName = "shopizer";
+    final int stmtId = 1;
+    final String[] expected =
+        new String[] {
+          "SELECT `productopt0_`.`product_option_id` AS `product_1_50_0_`, `merchantst1_`.`merchant_id` AS `merchant1_27_1_`, `descriptio2_`.`description_id` AS `descript1_51_2_`, `productopt0_`.`product_option_code` AS `product_2_50_0_`, `productopt0_`.`merchant_id` AS `merchant6_50_0_`, `productopt0_`.`product_option_sort_ord` AS `product_3_50_0_`, `productopt0_`.`product_option_type` AS `product_4_50_0_`, `productopt0_`.`product_option_read` AS `product_5_50_0_`, `merchantst1_`.`date_created` AS `date_cre2_27_1_`, `merchantst1_`.`date_modified` AS `date_mod3_27_1_`, `merchantst1_`.`updt_id` AS `updt_id4_27_1_`, `merchantst1_`.`store_code` AS `store_co5_27_1_`, `merchantst1_`.`continueshoppingurl` AS `continue6_27_1_`, `merchantst1_`.`country_id` AS `country23_27_1_`, `merchantst1_`.`currency_id` AS `currenc24_27_1_`, `merchantst1_`.`currency_format_national` AS `currency7_27_1_`, `merchantst1_`.`language_id` AS `languag25_27_1_`, `merchantst1_`.`domain_name` AS `domain_n8_27_1_`, `merchantst1_`.`in_business_since` AS `in_busin9_27_1_`, `merchantst1_`.`invoice_template` AS `invoice10_27_1_`, `merchantst1_`.`seizeunitcode` AS `seizeun11_27_1_`, `merchantst1_`.`store_email` AS `store_e12_27_1_`, `merchantst1_`.`store_logo` AS `store_l13_27_1_`, `merchantst1_`.`store_template` AS `store_t14_27_1_`, `merchantst1_`.`store_address` AS `store_a15_27_1_`, `merchantst1_`.`store_city` AS `store_c16_27_1_`, `merchantst1_`.`store_name` AS `store_n17_27_1_`, `merchantst1_`.`store_phone` AS `store_p18_27_1_`, `merchantst1_`.`store_postal_code` AS `store_p19_27_1_`, `merchantst1_`.`store_state_prov` AS `store_s20_27_1_`, `merchantst1_`.`use_cache` AS `use_cac21_27_1_`, `merchantst1_`.`weightunitcode` AS `weightu22_27_1_`, `merchantst1_`.`zone_id` AS `zone_id26_27_1_`, `descriptio2_`.`date_created` AS `date_cre2_51_2_`, `descriptio2_`.`date_modified` AS `date_mod3_51_2_`, `descriptio2_`.`updt_id` AS `updt_id4_51_2_`, `descriptio2_`.`description` AS `descript5_51_2_`, `descriptio2_`.`language_id` AS `language9_51_2_`, `descriptio2_`.`name` AS `name6_51_2_`, `descriptio2_`.`title` AS `title7_51_2_`, `descriptio2_`.`product_option_id` AS `product10_51_2_`, `descriptio2_`.`product_option_comment` AS `product_8_51_2_`, `descriptio2_`.`product_option_id` AS `product10_51_0__`, `descriptio2_`.`description_id` AS `descript1_51_0__` FROM `product_option` AS `productopt0_` INNER JOIN `merchant_store` AS `merchantst1_` ON `productopt0_`.`merchant_id` = `merchantst1_`.`merchant_id` INNER JOIN `product_option_desc` AS `descriptio2_` ON `productopt0_`.`product_option_id` = `descriptio2_`.`product_option_id` WHERE `merchantst1_`.`merchant_id` = 1 AND `descriptio2_`.`language_id` = 1",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  //  @Test // 123
+  //  void testShopizer3() {
+  //    final String appName = "shopizer";
+  //    final int stmtId = 3;
+  //    final String[] expected =
+  //        new String[] {
+  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
+  // `watchers`.`watchable_type` = 'Issue'",
+  //        };
+  //    doTest(appName, stmtId, expected);
+  //  }
+  //
+  @Test // 124
+  void testShopizer14() {
+    final String appName = "shopizer";
+    final int stmtId = 14;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `language2_`.`language_id` = 1 AND `category0_`.`depth` >= 0 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 125
+  void testShopizer18() {
+    final String appName = "shopizer";
+    final int stmtId = 18;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `category0_`.`lineage` LIKE '%/1/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  //  @Test // 126
+  //  void testShopizer24() {
+  //    final String appName = "shopizer";
+  //    final int stmtId = 24;
+  //    final String[] expected =
+  //        new String[] {
+  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
+  // `watchers`.`watchable_type` = 'Issue'",
+  //        };
+  //    doTest(appName, stmtId, expected);
+  //  }
+
+  @Test // 127
+  void testShopizer31() {
+    final String appName = "shopizer";
+    final int stmtId = 31;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `language2_`.`language_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+        };
+    doTest(appName, stmtId, expected);
+  }
+  //
+  //  @Test // 128
+  //  void testShopizer39() {
+  //    final String appName = "shopizer";
+  //    final int stmtId = 39;
+  //    final String[] expected =
+  //        new String[] {
+  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
+  // `watchers`.`watchable_type` = 'Issue'",
+  //        };
+  //    doTest(appName, stmtId, expected);
+  //  }
+
+  @Test // 129
+  void testShopizer40() {
+    final String appName = "shopizer";
+    final int stmtId = 40;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 130
+  void testShopizer46() {
+    final String appName = "shopizer";
+    final int stmtId = 46;
+    final String[] expected =
+        new String[] {
+          "SELECT `productopt0_`.`product_option_value_id` AS `product_1_52_0_`, `merchantst1_`.`merchant_id` AS `merchant1_27_1_`, `descriptio2_`.`description_id` AS `descript1_53_2_`, `productopt0_`.`product_option_val_code` AS `product_2_52_0_`, `productopt0_`.`merchant_id` AS `merchant6_52_0_`, `productopt0_`.`product_opt_for_disp` AS `product_3_52_0_`, `productopt0_`.`product_opt_val_image` AS `product_4_52_0_`, `productopt0_`.`product_opt_val_sort_ord` AS `product_5_52_0_`, `merchantst1_`.`date_created` AS `date_cre2_27_1_`, `merchantst1_`.`date_modified` AS `date_mod3_27_1_`, `merchantst1_`.`updt_id` AS `updt_id4_27_1_`, `merchantst1_`.`store_code` AS `store_co5_27_1_`, `merchantst1_`.`continueshoppingurl` AS `continue6_27_1_`, `merchantst1_`.`country_id` AS `country23_27_1_`, `merchantst1_`.`currency_id` AS `currenc24_27_1_`, `merchantst1_`.`currency_format_national` AS `currency7_27_1_`, `merchantst1_`.`language_id` AS `languag25_27_1_`, `merchantst1_`.`domain_name` AS `domain_n8_27_1_`, `merchantst1_`.`in_business_since` AS `in_busin9_27_1_`, `merchantst1_`.`invoice_template` AS `invoice10_27_1_`, `merchantst1_`.`seizeunitcode` AS `seizeun11_27_1_`, `merchantst1_`.`store_email` AS `store_e12_27_1_`, `merchantst1_`.`store_logo` AS `store_l13_27_1_`, `merchantst1_`.`store_template` AS `store_t14_27_1_`, `merchantst1_`.`store_address` AS `store_a15_27_1_`, `merchantst1_`.`store_city` AS `store_c16_27_1_`, `merchantst1_`.`store_name` AS `store_n17_27_1_`, `merchantst1_`.`store_phone` AS `store_p18_27_1_`, `merchantst1_`.`store_postal_code` AS `store_p19_27_1_`, `merchantst1_`.`store_state_prov` AS `store_s20_27_1_`, `merchantst1_`.`use_cache` AS `use_cac21_27_1_`, `merchantst1_`.`weightunitcode` AS `weightu22_27_1_`, `merchantst1_`.`zone_id` AS `zone_id26_27_1_`, `descriptio2_`.`date_created` AS `date_cre2_53_2_`, `descriptio2_`.`date_modified` AS `date_mod3_53_2_`, `descriptio2_`.`updt_id` AS `updt_id4_53_2_`, `descriptio2_`.`description` AS `descript5_53_2_`, `descriptio2_`.`language_id` AS `language8_53_2_`, `descriptio2_`.`name` AS `name6_53_2_`, `descriptio2_`.`title` AS `title7_53_2_`, `descriptio2_`.`product_option_value_id` AS `product_9_53_2_`, `descriptio2_`.`product_option_value_id` AS `product_9_53_0__`, `descriptio2_`.`description_id` AS `descript1_53_0__` FROM `product_option_value` AS `productopt0_` INNER JOIN `merchant_store` AS `merchantst1_` ON `productopt0_`.`merchant_id` = `merchantst1_`.`merchant_id` INNER JOIN `product_option_value_description` AS `descriptio2_` ON `productopt0_`.`product_option_value_id` = `descriptio2_`.`product_option_value_id` WHERE `merchantst1_`.`merchant_id` = 1 AND `descriptio2_`.`language_id` = 1",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  //  @Test // 131
+  //  void testShopizer57() {
+  //    final String appName = "shopizer";
+  //    final int stmtId = 57;
+  //    final String[] expected =
+  //        new String[] {
+  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
+  // `watchers`.`watchable_type` = 'Issue'",
+  //        };
+  //    doTest(appName, stmtId, expected);
+  //  }
+
   // 132
   // TODO: shopizer-67 too long
   // 133
@@ -1264,10 +1366,27 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 152
-  // TODO: solidus-744 DISTINCT
-  // 153
-  // TODO: solidus-753 DISTINCT
+  @Test // 152
+  void testSolidus744() {
+    final String appName = "solidus";
+    final int stmtId = 744;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(`spree_products`.`id`) FROM `spree_products` AS `spree_products` WHERE `spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-16 05:07:38.510287'",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 153
+  void testSolidus753() {
+    final String appName = "solidus";
+    final int stmtId = 753;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(`spree_products`.`id`) FROM `spree_products` AS `spree_products`",
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 154
   void testSolidus761() {
@@ -1367,10 +1486,25 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  // 163
-  // TODO spree-109 DISTINCT
-  // 164
-  // TODO spree-125 DISTINCT
+  @Test // 163
+  void testSpree109() {
+    final String app = "spree";
+    final int stmtId = 109;
+    final String[] expected = {
+      "SELECT COUNT(`spree_orders`.`id`) FROM `spree_orders` AS `spree_orders` WHERE NOT `spree_orders`.`completed_at` IS NULL"
+    };
+    doTest(app, stmtId, expected);
+  }
+
+  @Test // 164
+  void testSpree125() {
+    final String app = "spree";
+    final int stmtId = 125;
+    final String[] expected = {
+      "SELECT COUNT(`spree_orders`.`id`) FROM `spree_orders` AS `spree_orders`"
+    };
+    doTest(app, stmtId, expected);
+  }
 
   @Test // 165
   void testSpree285() {
@@ -1412,10 +1546,25 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  // 169
-  // TODO spree-402 DISTINCT
-  // 170
-  // TODO spree-414 DISTINCT
+  @Test // 169
+  void testSpree402() {
+    final String app = "spree";
+    final int stmtId = 402;
+    final String[] expected = {
+      "SELECT COUNT(`spree_products`.`id`) FROM `spree_products` AS `spree_products`"
+    };
+    doTest(app, stmtId, expected);
+  }
+
+  @Test // 170
+  void testSpree414() {
+    final String app = "spree";
+    final int stmtId = 414;
+    final String[] expected = {
+      "SELECT COUNT(`spree_products`.`id`) FROM `spree_products` AS `spree_products` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:06:03.678713')"
+    };
+    doTest(app, stmtId, expected);
+  }
 
   @Test // 171
   void testSpree447() {

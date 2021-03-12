@@ -188,10 +188,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private List<PlanNode> transform(PlanNode n) {
     if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
-    if (!inferUniqueness(n)) {
-      inferUniqueness(n);
-      return emptyList();
-    }
+    if (!inferUniqueness(n)) return emptyList();
 
     final List<PlanNode> transformed = new MinCostList();
 
