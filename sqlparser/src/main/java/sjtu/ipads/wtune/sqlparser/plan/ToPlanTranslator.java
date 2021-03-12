@@ -1,17 +1,21 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
-import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.expr;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
@@ -22,8 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQueryNode;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQuerySpecNode;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.*;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ToPlanTranslator {
@@ -59,7 +62,7 @@ public class ToPlanTranslator {
     // filter
     prev = translateFilter(where, prev);
     // projection & aggregation
-    prev = translateProj(rel.alias(), isDistinct(querySpec), selectItems, groupBy, prev);
+    prev = translateProj(rel.alias(), isForcedDistinct(querySpec), selectItems, groupBy, prev);
     // sort
     prev = translateSort(orderBy, prev);
     // limit
@@ -73,24 +76,26 @@ public class ToPlanTranslator {
   private static PlanNode translateProj(
       String qualification,
       boolean explicitDistinct,
-      List<ASTNode> selections,
-      List<ASTNode> groupKeys,
+      List<ASTNode> selectItems,
+      List<ASTNode> grouping,
       PlanNode predecessor) {
     if (predecessor == null) return null;
 
-    final boolean isWildcard = isWildcard(selections);
-    selections = expandWildcards(selections, predecessor);
-    groupKeys = groupKeys != null ? groupKeys : Collections.emptyList();
+    final List<ASTNode> selections = expandWildcards(selectItems, predecessor);
+    final List<ASTNode> groupKeys = coalesce(grouping, emptyList());
 
     if (!groupKeys.isEmpty() || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
       // Aggregation. The structure should be Agg(Proj(..)). Proj's definedAttrs are all attributes
       // used in group keys and aggregations
       final List<ASTNode> projSelections = new ArrayList<>(selections.size() + groupKeys.size());
       for (ASTNode ref : listJoin(gatherColumnRefs(groupKeys), gatherColumnRefs(selections))) {
-        final ASTNode item = ASTNode.node(SELECT_ITEM);
+        final ASTNode item = node(SELECT_ITEM);
         item.set(SELECT_ITEM_EXPR, ref);
         projSelections.add(item);
       }
+
+      //      if (isWildcardAggregation(selections))
+      // projSelections.addAll(expandWildcards(predecessor));
 
       final ProjNode proj = ProjNode.make(null, projSelections);
       final AggNode agg = AggNode.make(qualification, selections, groupKeys);
@@ -106,7 +111,7 @@ public class ToPlanTranslator {
       // vanilla projection
       final ProjNode proj = ProjNode.make(qualification, selections);
       proj.setPredecessor(0, predecessor);
-      proj.setWildcard(isWildcard);
+      proj.setWildcard(isGlobalWildcard(selectItems));
       proj.setForcedUnique(explicitDistinct);
       return proj;
     }
@@ -196,20 +201,19 @@ public class ToPlanTranslator {
     } else filters.add(PlainFilterNode.make(expr));
   }
 
-  private static boolean isDistinct(ASTNode querySpec) {
-    return querySpec.getOr(QUERY_SPEC_DISTINCT, false)
-        || querySpec.get(QUERY_SPEC_DISTINCT_ON) != null;
-  }
-
-  private static boolean isWildcard(List<ASTNode> selectItems) {
-    if (selectItems.size() != 1) return false;
-    final ASTNode expr = selectItems.get(0).get(SELECT_ITEM_EXPR);
-    return WILDCARD.isInstance(expr) && expr.get(WILDCARD_TABLE) == null;
-  }
-
   private static boolean isDistinctAggregation(List<ASTNode> selectItems) {
     return selectItems.stream()
-        .anyMatch(it -> it.get(SELECT_ITEM_EXPR).getOr(AGGREGATE_DISTINCT, false));
+        .map(SELECT_ITEM_EXPR::get)
+        .anyMatch(it -> it.getOr(AGGREGATE_DISTINCT, false));
+  }
+
+  private static boolean isWildcardAggregation(List<ASTNode> selectItems) {
+    return selectItems.stream()
+        .map(SELECT_ITEM_EXPR::get)
+        .map(AGGREGATE_ARGS::get)
+        .filter(Objects::nonNull)
+        .map(Commons::head)
+        .anyMatch(WILDCARD::isInstance);
   }
 
   private static boolean isAggregation(ASTNode selectItem) {
@@ -232,10 +236,17 @@ public class ToPlanTranslator {
       final String tableName = table != null ? table.get(TABLE_NAME_TABLE) : null;
 
       for (AttributeDef inAttr : predecessor.definedAttributes())
-        if (tableName == null || tableName.equals(inAttr.qualification()))
-          ret.add(inAttr.toSelectItem());
+        if (inAttr.name() != null
+            && (tableName == null || tableName.equals(inAttr.qualification())))
+          ret.add(makeSelectItem(inAttr.toColumnRef()));
     }
 
     return ret;
+  }
+
+  private static List<ASTNode> expandWildcards(PlanNode predecessor) {
+    final ASTNode item = node(SELECT_ITEM);
+    item.set(SELECT_ITEM_EXPR, expr(WILDCARD));
+    return expandWildcards(singletonList(item), predecessor);
   }
 }

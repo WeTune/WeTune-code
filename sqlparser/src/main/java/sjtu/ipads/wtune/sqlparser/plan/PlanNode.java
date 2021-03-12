@@ -40,7 +40,7 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
           && name.equals(attr.name())) return attr;
 
     for (AttributeDef attr : definedAttributes())
-      if (attr.isReferencedBy(qualification, name)) return attr;
+      if (attr.referencesTo(qualification, name)) return attr;
 
     return null;
   }
@@ -52,7 +52,7 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
   }
 
   default AttributeDef resolveAttribute(int id) {
-    for (AttributeDef outAttr : definedAttributes()) if (outAttr.isReferencedBy(id)) return outAttr;
+    for (AttributeDef outAttr : definedAttributes()) if (outAttr.referencesTo(id)) return outAttr;
     return null;
   }
 

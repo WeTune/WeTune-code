@@ -1,10 +1,10 @@
-package sjtu.ipads.wtune.superopt.internal;
+package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
-import static sjtu.ipads.wtune.superopt.internal.UniquenessInference.inferUniqueness;
+import static sjtu.ipads.wtune.superopt.optimization.internal.UniquenessInference.inferUniqueness;
 
 public class DistinctReducer {
   public static boolean reduceDistinct(PlanNode node) {

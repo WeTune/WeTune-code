@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -8,6 +9,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
@@ -72,6 +74,14 @@ public class TableImpl implements Table {
     for (String name : patch.columns()) {
       final ColumnImpl column = column(name);
       if (column != null) column.addPatch(patch);
+    }
+
+    if (patch.type() == SchemaPatch.Type.UNIQUE) {
+      final List<ColumnImpl> columns = listMap(this::column, patch.columns());
+      final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.UNIQUE, columns);
+
+      addConstraint(constraint);
+      columns.forEach(it -> it.addConstraint(constraint));
     }
   }
 

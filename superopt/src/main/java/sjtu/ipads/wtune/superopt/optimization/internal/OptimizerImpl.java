@@ -21,9 +21,10 @@ import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.constrainedInterpretations;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.derivedInterpretations;
-import static sjtu.ipads.wtune.superopt.internal.DistinctReducer.reduceDistinct;
-import static sjtu.ipads.wtune.superopt.internal.PlanNormalizer.normalize;
-import static sjtu.ipads.wtune.superopt.internal.SortReducer.reduceSort;
+import static sjtu.ipads.wtune.superopt.optimization.internal.DistinctReducer.reduceDistinct;
+import static sjtu.ipads.wtune.superopt.optimization.internal.PlanNormalizer.normalize;
+import static sjtu.ipads.wtune.superopt.optimization.internal.SortReducer.reduceSort;
+import static sjtu.ipads.wtune.superopt.optimization.internal.UniquenessInference.inferUniqueness;
 
 public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements Optimizer {
   private final SubstitutionBank repo;
@@ -51,8 +52,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final PlanNode normalized = normalize(root);
     assert normalized != null;
 
-    final List<PlanNode> planNodes = optimize0(normalized);
-    return planNodes;
+    return optimize0(normalized);
   }
 
   private String extractKey(PlanNode root) {
@@ -188,9 +188,10 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private List<PlanNode> transform(PlanNode n) {
     if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
-    //    if (!inferUniqueness(n)) {
-    //      return emptyList();
-    //    }
+    if (!inferUniqueness(n)) {
+      inferUniqueness(n);
+      return emptyList();
+    }
 
     final List<PlanNode> transformed = new MinCostList();
 
@@ -206,6 +207,9 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         // 3. generate new plan according to match
         final PlanNode newNode = normalize(match.substitute(substitution.g1()));
         if (newNode == null) continue; // invalid, abandon it
+        if (!inferUniqueness(newNode))
+          if (newNode.type() == Proj) ((ProjNode) newNode).setForcedUnique(true);
+          else continue;
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)

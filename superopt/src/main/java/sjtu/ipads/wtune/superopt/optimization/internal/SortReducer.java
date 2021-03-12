@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.internal;
+package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;

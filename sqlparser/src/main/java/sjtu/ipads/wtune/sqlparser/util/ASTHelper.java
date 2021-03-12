@@ -1,22 +1,28 @@
 package sjtu.ipads.wtune.sqlparser.util;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
+import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 
 public interface ASTHelper {
+  static ASTNode makeSelectItem(ASTNode expr) {
+    final ASTNode item = ASTNode.node(SELECT_ITEM);
+    item.set(SELECT_ITEM_EXPR, expr);
+    return item;
+  }
+
   static String simpleName(String name) {
     return name == null ? null : unquoted(unquoted(name, '"'), '`').toLowerCase();
   }
@@ -30,6 +36,17 @@ public interface ASTHelper {
     return COLUMN_REF.isInstance(expr) ? expr.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN) : null;
   }
 
+  static boolean isForcedDistinct(ASTNode querySpec) {
+    return querySpec.getOr(QUERY_SPEC_DISTINCT, false)
+        || querySpec.get(QUERY_SPEC_DISTINCT_ON) != null;
+  }
+
+  static boolean isGlobalWildcard(List<ASTNode> selectItems) {
+    if (selectItems.size() != 1) return false;
+    final ASTNode expr = selectItems.get(0).get(SELECT_ITEM_EXPR);
+    return WILDCARD.isInstance(expr) && expr.get(WILDCARD_TABLE) == null;
+  }
+
   static ASTNode locateQueryNode(Relation relation) {
     final ASTNode node = relation.node();
     if (QUERY.isInstance(node)) return node;
@@ -39,14 +56,6 @@ public interface ASTHelper {
 
   static ASTNode locateQuerySpecNode(Relation relation) {
     return locateQuerySpecNode0(relation.node());
-  }
-
-  static boolean isNullCheck(ASTNode expr) {
-    final BinaryOp op = expr.get(BINARY_OP);
-    final ASTNode right = expr.get(BINARY_RIGHT);
-    return op == BinaryOp.IS
-        && LITERAL.isInstance(right)
-        && right.get(LITERAL_TYPE) == LiteralType.NULL;
   }
 
   private static ASTNode locateQuerySpecNode0(ASTNode node) {

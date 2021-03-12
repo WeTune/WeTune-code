@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
 
 public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
   private final Fragment q;
@@ -164,15 +164,15 @@ public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
   }
 
   private TableSym tableSym(Placeholder placeholder) {
-    return tables.computeIfAbsent(placeholder, dumb(this::makeTable));
+    return tables.computeIfAbsent(placeholder, deaf(this::makeTable));
   }
 
   private PickSym pickSym(Placeholder placeholder) {
-    return picks.computeIfAbsent(placeholder, dumb(this::makePick));
+    return picks.computeIfAbsent(placeholder, deaf(this::makePick));
   }
 
   private PredicateSym predicateSym(Placeholder placeholder) {
-    return predicates.computeIfAbsent(placeholder, dumb(this::makePredicate));
+    return predicates.computeIfAbsent(placeholder, deaf(this::makePredicate));
   }
 
   private TableSym[][] makeViableSources(TableSym[] visible, boolean isJoinKey) {

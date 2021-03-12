@@ -1,19 +1,18 @@
-package sjtu.ipads.wtune.superopt.internal;
+package sjtu.ipads.wtune.superopt.optimization.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.plan.*;
-import sjtu.ipads.wtune.superopt.optimization.internal.TypeBasedAlgorithm;
+import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 import java.util.*;
 
 import static java.util.Collections.newSetFromMap;
 import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
@@ -101,24 +100,20 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   private static boolean isRedundantProj(ProjNode proj) {
     return proj.isWildcard()
-        && proj.successor() instanceof JoinNode
+        && (proj.successor() instanceof JoinNode || proj.successor() instanceof ProjNode)
         && !proj.predecessors()[0].type().isFilter();
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
     final List<ASTNode> exprs =
-        listMap(PlanNormalizer::makeSelectItem, predecessor.definedAttributes());
+        listMap(
+            func(AttributeDef::toColumnRef).andThen(ASTHelper::makeSelectItem),
+            predecessor.definedAttributes());
+
     final ProjNode proj = ProjNode.make(null, exprs);
     successor.replacePredecessor(predecessor, proj);
     proj.setWildcard(true);
     proj.setPredecessor(0, predecessor);
-  }
-
-  private static ASTNode makeSelectItem(AttributeDef def) {
-    final ASTNode expr = def.toColumnRef();
-    final ASTNode item = ASTNode.node(NodeType.SELECT_ITEM);
-    item.set(SELECT_ITEM_EXPR, expr);
-    return item;
   }
 
   private static boolean allowNullValue(ASTNode expr) {

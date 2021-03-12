@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
 
 public abstract class BaseProver implements Prover {
   protected final LogicCtx ctx;
@@ -103,7 +103,7 @@ public abstract class BaseProver implements Prover {
   }
 
   protected void addAssertion(DecidableConstraint constraint, Proposition assertion) {
-    assertions.computeIfAbsent(constraint, dumb(ArrayList::new)).add(assertion);
+    assertions.computeIfAbsent(constraint, deaf(ArrayList::new)).add(assertion);
   }
 
   private static Value[] pickTuples(Value[] tuples, TableSym[] sources, TableSym[] mask) {

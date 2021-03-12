@@ -141,7 +141,7 @@ public class InterpretationsImpl implements Interpretations {
 
     for (AttributeDef def : attrInter.object())
       outer:
-      for (int ref : def.references()) {
+      for (AttributeDef ref : def.references()) {
         for (PlanNode input : inputs) if (input.resolveAttribute(ref) != null) continue outer;
         return false;
       }
@@ -215,7 +215,7 @@ public class InterpretationsImpl implements Interpretations {
     final AttributeDef pivot = surface.resolveAttribute(attr);
     if (pivot == null) return null;
 
-    final AttributeDef source = pivot.nativeUpstream();
+    final AttributeDef source = pivot.nativeSource();
     if (source == null) return null;
 
     final PlanNode inputNode = source.definer();

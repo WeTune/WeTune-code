@@ -94,16 +94,23 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     else used = resolveUsed0(gatherColumnRefs(selectItems), input);
 
     final PlanNode succ = successor();
-    if ((succ == null && definedAttributes().equals(predecessors()[0].definedAttributes()))
-        || (succ != null && definedAttributes().containsAll(predecessors()[0].definedAttributes())))
+    final List<AttributeDef> definedAttrs = definedAttributes();
+    final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
+    if (!isWildcard
+        && ((succ == null && definedAttrs.equals(inputAttrs))
+            || (succ != null && definedAttrs.containsAll(inputAttrs)))) {
       isWildcard = true;
+    }
 
     dirty = true;
   }
 
   @Override
   protected PlanNode copy0() {
-    return new ProjNodeImpl(defined);
+    final ProjNodeImpl copy = new ProjNodeImpl(defined);
+    copy.setForcedUnique(isForcedUnique);
+    copy.setWildcard(isWildcard);
+    return copy;
   }
 
   @Override

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.common.attrs;
 
 import java.util.function.Supplier;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.dumb;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
 
 @FunctionalInterface
 public interface FieldKey<T> {
@@ -71,7 +71,7 @@ public interface FieldKey<T> {
 
   @SuppressWarnings("unchecked")
   static <T> T setIfAbsent0(Fields owner, FieldKey<T> key, Supplier<T> supplier) {
-    return (T) owner.directAttrs().computeIfAbsent(key, dumb(supplier));
+    return (T) owner.directAttrs().computeIfAbsent(key, deaf(supplier));
   }
 
   static <T> FieldKey<T> make(String name) {

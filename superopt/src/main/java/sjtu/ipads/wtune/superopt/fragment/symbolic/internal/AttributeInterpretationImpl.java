@@ -29,7 +29,7 @@ public class AttributeInterpretationImpl extends InterpretationBase<List<Attribu
     assert thisDef.equals(thatDef);
     if (thisDef.id() == thatDef.id()) return false;
     assert thisDef.isIdentity() || thatDef.isIdentity();
-    final int[] thisRefs = thisDef.references();
-    return thisRefs.length == 1 && thisRefs[0] == thatDef.id();
+    // should overrider if `thisDef` references `thatDef`
+    return thisDef.referencesTo(thatDef.id());
   }
 }

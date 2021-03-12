@@ -9,8 +9,12 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public interface FuncUtils {
-  static <T, R> IFunction<T, R> dumb(Supplier<R> supplier) {
+  static <T, R> IFunction<T, R> deaf(Supplier<R> supplier) {
     return t -> supplier.get();
+  }
+
+  static <T> IConsumer<T> dumb(Function<T, ?> func) {
+    return func::apply;
   }
 
   static <P> IConsumer<P> consumer(IConsumer<P> consumer) {
@@ -76,6 +80,14 @@ public interface FuncUtils {
     final Iterator<P1> it1 = l1.iterator();
     for (int i = 0; i < bound; i++) list.add(func.apply(it0.next(), it1.next()));
     return list;
+  }
+
+  static <P0, P1> void zipForEach(
+      BiConsumer<? super P0, ? super P1> func, Collection<P0> l0, Collection<P1> l1) {
+    final int bound = Math.min(l0.size(), l1.size());
+    final Iterator<P0> it0 = l0.iterator();
+    final Iterator<P1> it1 = l1.iterator();
+    for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
   }
 
   static <T> List<T> listFilter(Predicate<? super T> func, Iterable<T> os) {

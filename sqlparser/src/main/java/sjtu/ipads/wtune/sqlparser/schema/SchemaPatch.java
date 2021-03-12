@@ -10,7 +10,7 @@ public interface SchemaPatch {
     BOOLEAN,
     ENUM,
     UNIQUE,
-    FOREIGN_KEY
+    FOREIGN_KEY;
   }
 
   Type type();

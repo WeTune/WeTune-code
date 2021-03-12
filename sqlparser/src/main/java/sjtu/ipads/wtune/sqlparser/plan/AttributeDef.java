@@ -5,6 +5,8 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.internal.NativeAttributeDef;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
+import java.util.List;
+
 /**
  * This class describes a reference to an attribute.
  *
@@ -27,15 +29,30 @@ public interface AttributeDef {
 
   int id();
 
-  int[] references();
-
-  // invariant: isIdentity <=> upstream != null
+  /**
+   * Whether this Def is an identity function, i.e. a plain ColumnRef.
+   *
+   * <p>invariant: isIdentity <=> upstream != null
+   */
   boolean isIdentity();
 
+  /**
+   * All Defs referenced by this Def.
+   *
+   * <p>e.g. a.x + b.y AS `sum`, `sum`.references() => [a.x,b.y]
+   */
+  List<AttributeDef> references();
+
+  /**
+   * The single Def referenced by this Def.
+   *
+   * <p>This is a convenient and efficient version of {@link #references()} when this.{@link
+   * #isIdentity()} is true. If !this.{@link #isIdentity()}, null is returned.
+   */
   AttributeDef upstream();
 
-  // invariant: nativeUpstream != null <=> referredColumn != null
-  AttributeDef nativeUpstream();
+  /** The recursive upstream of this Def. */
+  AttributeDef source();
 
   AttributeDef copy();
 
@@ -49,9 +66,16 @@ public interface AttributeDef {
 
   void setDefiner(PlanNode definer);
 
-  boolean isReferencedBy(String qualification, String alias);
+  boolean referencesTo(String qualification, String alias);
 
-  boolean isReferencedBy(int id);
+  boolean referencesTo(int id);
+
+  // invariant: nativeUpstream != null <=> referredColumn != null
+  default AttributeDef nativeSource() {
+    final AttributeDef source = source();
+    if (source instanceof NativeAttributeDef) return source;
+    else return null;
+  }
 
   static AttributeDef fromColumn(int id, String tableAlias, Column c) {
     return NativeAttributeDef.fromColumn(id, tableAlias, c);

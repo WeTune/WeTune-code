@@ -80,6 +80,4 @@ public abstract class AttributeDefBase implements AttributeDef {
   public int hashCode() {
     return source().id();
   }
-
-  protected abstract AttributeDef source();
 }

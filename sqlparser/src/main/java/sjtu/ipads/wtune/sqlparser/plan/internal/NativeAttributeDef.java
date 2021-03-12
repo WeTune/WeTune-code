@@ -6,6 +6,9 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 
@@ -22,13 +25,13 @@ public class NativeAttributeDef extends AttributeDefBase {
   }
 
   @Override
-  public Column referredColumn() {
-    return column;
+  public boolean isIdentity() {
+    return true;
   }
 
   @Override
-  public int[] references() {
-    return new int[] {this.id()};
+  public List<AttributeDef> references() {
+    return singletonList(this);
   }
 
   @Override
@@ -37,23 +40,28 @@ public class NativeAttributeDef extends AttributeDefBase {
   }
 
   @Override
-  public AttributeDef nativeUpstream() {
+  public AttributeDef source() {
     return this;
   }
 
   @Override
-  public boolean isIdentity() {
-    return true;
+  public AttributeDef nativeSource() {
+    return this;
   }
 
   @Override
-  public boolean isReferencedBy(String qualification, String alias) {
+  public Column referredColumn() {
+    return column;
+  }
+
+  @Override
+  public boolean referencesTo(String qualification, String alias) {
     return (qualification == null || qualification.equals(this.qualification()))
         && alias.equals(this.name());
   }
 
   @Override
-  public boolean isReferencedBy(int id) {
+  public boolean referencesTo(int id) {
     return this.id() == id;
   }
 
@@ -81,10 +89,5 @@ public class NativeAttributeDef extends AttributeDefBase {
   @Override
   public AttributeDef copy() {
     return new NativeAttributeDef(this.id(), qualification(), referredColumn());
-  }
-
-  @Override
-  protected AttributeDef source() {
-    return this;
   }
 }

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
