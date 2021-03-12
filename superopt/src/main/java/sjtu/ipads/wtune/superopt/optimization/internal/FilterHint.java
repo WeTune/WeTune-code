@@ -83,7 +83,8 @@ public class FilterHint {
 
     assignments = sortAssignments(assignments, ops);
     final PlanNode matchPoint =
-        rebuildFilters0(listMap(FilterAssignment::assignment, assignments), copyOnTree(predecessor));
+        rebuildFilters0(
+            listMap(FilterAssignment::assignment, assignments), copyOnTree(predecessor));
 
     final PlanNode newHead;
     if (tail.op() == null) {

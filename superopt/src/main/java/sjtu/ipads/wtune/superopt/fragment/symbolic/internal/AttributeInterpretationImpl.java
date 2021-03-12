@@ -26,7 +26,6 @@ public class AttributeInterpretationImpl extends InterpretationBase<List<Attribu
   }
 
   private static boolean shouldOverride(AttributeDef thisDef, AttributeDef thatDef) {
-    if (!thisDef.equals(thatDef)) { }
     assert thisDef.equals(thatDef);
     if (thisDef.id() == thatDef.id()) return false;
     assert thisDef.isIdentity() || thatDef.isIdentity();

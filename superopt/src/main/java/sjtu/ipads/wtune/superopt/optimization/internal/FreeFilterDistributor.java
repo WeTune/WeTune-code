@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 import static com.google.common.collect.Collections2.orderedPermutations;
 import static com.google.common.collect.Sets.difference;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;

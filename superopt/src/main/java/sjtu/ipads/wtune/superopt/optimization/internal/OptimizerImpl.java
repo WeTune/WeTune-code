@@ -51,12 +51,12 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final PlanNode normalized = normalize(root);
     assert normalized != null;
 
-    return optimize0(normalized);
+    final List<PlanNode> planNodes = optimize0(normalized);
+    return planNodes;
   }
 
   private String extractKey(PlanNode root) {
-    if (root.type() != Input) return root.type().toString() + ":" + toAST(root);
-    else return root.type().toString() + "@" + ((InputNode) root).id() + ":" + toAST(root);
+    return PlanNode.toStringOnTree(root);
   }
 
   private List<PlanNode> optimize0(PlanNode node) {
@@ -188,6 +188,9 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private List<PlanNode> transform(PlanNode n) {
     if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
+    //    if (!inferUniqueness(n)) {
+    //      return emptyList();
+    //    }
 
     final List<PlanNode> transformed = new MinCostList();
 

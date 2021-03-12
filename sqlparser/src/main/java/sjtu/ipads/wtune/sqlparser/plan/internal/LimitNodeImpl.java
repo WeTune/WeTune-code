@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.Collections;
@@ -60,5 +60,10 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   @Override
   public int hashCode() {
     return Objects.hash(limit, offset);
+  }
+
+  @Override
+  public String toString() {
+    return "Limit<%s %s>".formatted(limit(), offset());
   }
 }

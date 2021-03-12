@@ -53,4 +53,9 @@ public class PlainFilterNodeImpl extends FilterNodeBase implements PlainFilterNo
     }
     return true;
   }
+
+  @Override
+  public String toString() {
+    return "PlainFilter<%s>".formatted(expr());
+  }
 }

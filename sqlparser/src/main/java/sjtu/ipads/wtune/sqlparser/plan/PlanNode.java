@@ -113,4 +113,20 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
     for (PlanNode predecessor : n0.predecessors()) hash = hash * 31 + hashCodeOnTree(predecessor);
     return hash;
   }
+
+  static String toStringOnTree(PlanNode n) {
+    return toStringOnTree(n, new StringBuilder()).toString();
+  }
+
+  private static StringBuilder toStringOnTree(PlanNode n, StringBuilder builder) {
+    builder.append(n);
+    builder.append('(');
+    if (n.type().numPredecessors() >= 1) toStringOnTree(n.predecessors()[0], builder);
+    if (n.type().numPredecessors() >= 2) {
+      builder.append(',');
+      toStringOnTree(n.predecessors()[1], builder);
+    }
+    builder.append(')');
+    return builder;
+  }
 }

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.lang.System.identityHashCode;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
@@ -22,7 +23,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SO
 import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.fromColumn;
 
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
-  private int id;
+  private final int id;
   private final Table table;
   private final List<AttributeDef> attributes;
   private String alias;
@@ -94,6 +95,11 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   @Override
   protected PlanNode copy0() {
     return new InputNodeImpl(id, table, alias, attributes);
+  }
+
+  @Override
+  public String toString() {
+    return "Input<%s AS %s>@%d".formatted(table.name(), coalesce(alias, table.name()), id);
   }
 
   @Override

@@ -20,7 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
-  protected final ASTNode onCondition;
+  protected ASTNode onCondition;
   // Indicates if ON-condition conforms to the form "col = col [AND col = col ...]"
   //
   // If true, then we can only remember which columns are used, and reconstruct the
@@ -32,6 +32,8 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   // `left` and `right` is used for normal-formed ON-condition.
   // `used` is used otherwise
   protected List<AttributeDef> left, right, used;
+
+  private boolean dirty = true;
 
   protected JoinNodeBase(
       ASTNode onCondition,
@@ -49,6 +51,9 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public ASTNode onCondition() {
+    if (!dirty) return onCondition.deepCopy();
+    dirty = false;
+
     if (isNormalForm) {
       // if normal formed, reconstruct the ON-condition from scratch
       final List<AttributeDef> leftKeys = leftAttributes(), rightKeys = rightAttributes();
@@ -73,13 +78,14 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
         }
       }
 
-      return onCondition;
+      return this.onCondition = onCondition;
 
     } else {
       // otherwise, copy the original expression (and rectify column refs)
       final ASTNode copy = onCondition.deepCopy();
       updateColumnRefs(gatherColumnRefs(copy), used);
-      return copy;
+
+      return this.onCondition = copy;
     }
   }
 
@@ -110,22 +116,14 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public void resolveUsed() {
-    if (used == null) {
-      used = resolveUsed0(gatherColumnRefs(onCondition), this);
-      if (used.contains(null)) {
-        new Object();
-      }
-    } else {
-      final List<AttributeDef> tmp = resolveUsed1(used, this);
-      if (tmp.contains(null)) {
-        new Object();
-      }
-      used = resolveUsed1(used, this);
-    }
+    if (used == null) used = resolveUsed0(gatherColumnRefs(onCondition), this);
+    else used = resolveUsed1(used, this);
 
     left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
     right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
     assert !isNormalForm || left.size() == right.size();
+
+    dirty = true;
   }
 
   @Override
@@ -150,6 +148,11 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
           && COLUMN_REF.isInstance(expr.get(BINARY_RIGHT));
 
     } else return false;
+  }
+
+  @Override
+  public String toString() {
+    return "%s<%s>".formatted(type(), onCondition());
   }
 
   @Override

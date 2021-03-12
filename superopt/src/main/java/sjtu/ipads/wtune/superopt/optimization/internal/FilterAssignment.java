@@ -20,7 +20,7 @@ public record FilterAssignment(Filter op, List<FilterNode> used) {
   public FilterNode assignment() {
     assert !used.isEmpty();
 
-    used.sort(Comparator.comparingInt(FilterNode::hashCode));
+    used.sort(Comparator.comparing(FilterNode::toString));
 
     if (used.size() == 1) {
       final FilterNode node = (FilterNode) Iterables.getOnlyElement(used).copy();

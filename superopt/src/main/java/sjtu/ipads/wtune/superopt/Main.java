@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
@@ -85,10 +84,10 @@ public class Main {
 
     final String sql =
         "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0\n";
-    final Statement stmt = Statement.findOne("diaspora", 478);
+    final Statement stmt = Statement.findOne("lobsters", 129);
 
-//    final ASTNode ast = stmt.parsed();
-            final ASTNode ast = ASTParser.mysql().parse(sql);
+    final ASTNode ast = stmt.parsed();
+    //    final ASTNode ast = ASTParser.mysql().parse(sql);
     //    final ASTNode ast = ASTParser.postgresql().parse(sql);
     final Schema schema = stmt.app().schema("base", true);
     //    final Schema schema = App.of("discourse").schema("base", true);

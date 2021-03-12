@@ -13,22 +13,24 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
-  private final List<ASTNode> selectItems;
   private final List<AttributeDef> defined;
+  private List<ASTNode> selectItems;
   private List<AttributeDef> used;
 
   private boolean isForcedUnique;
   private boolean isWildcard;
 
+  private boolean dirty = true;
+
   private ProjNodeImpl(String qualification, List<ASTNode> selectItems) {
-    this.selectItems = selectItems;
     this.defined = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
+    this.selectItems = listMap(AttributeDef::toSelectItem, defined);
     bindAttributes(defined, this);
   }
 
   private ProjNodeImpl(List<AttributeDef> defined) {
-    this.selectItems = listMap(AttributeDef::toSelectItem, defined);
     this.defined = listMap(this::rectifyAttribute, defined);
+    this.selectItems = listMap(AttributeDef::toSelectItem, defined);
     bindAttributes(this.defined, this);
   }
 
@@ -68,8 +70,11 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   @Override
   public List<ASTNode> selectItems() {
     final List<ASTNode> copy = listMap(ASTNode::deepCopy, selectItems);
+    if (!dirty) return copy;
+
+    dirty = false;
     updateColumnRefs(gatherColumnRefs(copy), used);
-    return copy;
+    return this.selectItems = copy;
   }
 
   @Override
@@ -92,6 +97,8 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     if ((succ == null && definedAttributes().equals(predecessors()[0].definedAttributes()))
         || (succ != null && definedAttributes().containsAll(predecessors()[0].definedAttributes())))
       isWildcard = true;
+
+    dirty = true;
   }
 
   @Override
@@ -110,5 +117,10 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   @Override
   public int hashCode() {
     return Objects.hash(selectItems);
+  }
+
+  @Override
+  public String toString() {
+    return "Proj<%s>".formatted(selectItems());
   }
 }

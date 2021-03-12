@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -9,7 +10,7 @@ import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 
 public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFilterNode {
   private SubqueryFilterNodeImpl(ASTNode expr) {
@@ -30,7 +31,9 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
 
   @Override
   public ASTNode leftExpr() {
-    return makeLeftExpr(usedAttrs);
+    final ASTNode expr = expr();
+    if (expr.get(BINARY_OP) == BinaryOp.IN_SUBQUERY) return expr.get(BINARY_LEFT);
+    else return expr;
   }
 
   @Override
@@ -46,5 +49,10 @@ public class SubqueryFilterNodeImpl extends FilterNodeBase implements SubqueryFi
       tuple.set(TUPLE_EXPRS, colRefs);
       return tuple;
     }
+  }
+
+  @Override
+  public String toString() {
+    return "SubqueryFilter<%s>".formatted(leftExpr());
   }
 }

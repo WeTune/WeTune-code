@@ -136,6 +136,11 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     return Objects.hash(groupKeys, selectItems);
   }
 
+  @Override
+  public String toString() {
+    return "Agg<%s %s>".formatted(groupKeys(), aggregations());
+  }
+
   private TIntList resolveUsedAttributes0(List<ASTNode> nodes) {
     final PlanNode input = predecessors()[0];
     final List<AttributeDef> inputAttrs = input.definedAttributes();

@@ -5,7 +5,6 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 import sjtu.ipads.wtune.superopt.fragment.internal.SubqueryFilterImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 
 public interface SubqueryFilter extends Filter {
   @Override

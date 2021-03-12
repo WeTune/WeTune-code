@@ -80,4 +80,9 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
   public int hashCode() {
     return Objects.hash(orderKeys);
   }
+
+  @Override
+  public String toString() {
+    return "Sort<%s>".formatted(orderKeys());
+  }
 }

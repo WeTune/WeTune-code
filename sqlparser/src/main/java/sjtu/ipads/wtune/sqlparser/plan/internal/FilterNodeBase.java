@@ -14,8 +14,10 @@ import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode {
-  protected final ASTNode expr;
+  protected ASTNode expr;
   protected List<AttributeDef> usedAttrs;
+
+  protected boolean dirty = true;
 
   protected FilterNodeBase(ASTNode expr, List<AttributeDef> usedAttrs) {
     this.expr = expr;
@@ -25,8 +27,11 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   @Override
   public ASTNode expr() {
     final ASTNode copy = expr.deepCopy();
+    if (!dirty) return copy;
+
+    dirty = true;
     updateColumnRefs(gatherColumnRefs(copy), usedAttrs);
-    return copy;
+    return this.expr = copy;
   }
 
   @Override
@@ -48,6 +53,8 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   public void resolveUsed() {
     if (usedAttrs == null) usedAttrs = resolveUsed0(gatherColumnRefs(expr), predecessors()[0]);
     else usedAttrs = resolveUsed1(usedAttrs, predecessors()[0]);
+
+    dirty = true;
   }
 
   @Override
