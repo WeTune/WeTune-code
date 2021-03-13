@@ -15,11 +15,14 @@ import static com.google.common.collect.Sets.cartesianProduct;
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 
 public class UniquenessInference extends TypeBasedAlgorithm<UniquenessCore> {
   private final EquivalentClasses<AttributeDef> eqAttrs = new EquivalentClasses<>();
 
   public static boolean inferUniqueness(PlanNode node) {
+    if (node.type() == Proj && ((ProjNode) node).isForcedUnique()) return true; // a short cut
+
     final UniquenessCore core = new UniquenessInference().dispatch(node);
     return core.isSingleton() || !core.attrs().isEmpty();
   }

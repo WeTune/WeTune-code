@@ -39,6 +39,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
   @Override
   public List<ASTNode> optimize(ASTNode root) {
+    root = root.deepCopy();
     return listMap(this::toAST, optimize(toPlan(root)));
   }
 
@@ -61,6 +62,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
   private List<PlanNode> optimize0(PlanNode node) {
     final String key = extractKey(node);
+
     final OptGroup<?> group = memo.get(key);
     // Note: to prevent redundant optimization, we check whether a plan is "optimized"
     // A plan is optimized if:
@@ -211,6 +213,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
         if (memo.get(newNode) == null) transformed.add(newNode);
+
         group.add(newNode);
       }
     }

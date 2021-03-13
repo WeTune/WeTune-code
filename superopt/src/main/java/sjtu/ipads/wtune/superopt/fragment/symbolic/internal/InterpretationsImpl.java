@@ -104,7 +104,7 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   private <T> boolean assign1(Placeholder placeholder, Interpretation<T> assignment) {
-    final Interpretation<T> existing = (Interpretation<T>) interpretations.get(placeholder);
+    final Interpretation<T> existing = (Interpretation<T>) get0(placeholder);
     if (existing != null) {
       if (!existing.isCompatible(assignment)) return false;
       if (!assignment.shouldOverride(existing)) return true;

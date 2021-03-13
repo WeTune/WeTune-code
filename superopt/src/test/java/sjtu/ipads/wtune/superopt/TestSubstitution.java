@@ -1,11 +1,9 @@
 package sjtu.ipads.wtune.superopt;
 
-import com.google.common.collect.Iterables;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.optimization.Optimizer;
@@ -38,12 +36,10 @@ public class TestSubstitution {
     final SubstitutionBank repo = SubstitutionBank.make().add(sub);
 
     final Optimizer opt = Optimizer.make(repo, schema);
-    final List<PlanNode> optimized = opt.optimize(ToPlanTranslator.toPlan(ast));
+    final List<ASTNode> optimized = opt.optimize(ast);
 
     assertEquals(1, optimized.size());
-    assertEquals(
-        "SELECT * FROM `a` AS `a` WHERE `a`.`i` = 1",
-        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
+    assertEquals("SELECT * FROM `a` AS `a` WHERE `a`.`i` = 1", optimized.get(0).toString());
   }
 
   @Test
@@ -66,11 +62,9 @@ public class TestSubstitution {
     final PlanNode plan = ToPlanTranslator.toPlan(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = Optimizer.make(repo, schema).optimize(plan);
+    final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
-    assertEquals(
-        "SELECT * FROM `b` AS `b`",
-        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
+    assertEquals("SELECT * FROM `b` AS `b`", optimized.get(0).toString());
   }
 
   @Test
@@ -90,13 +84,12 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final PlanNode plan = ToPlanTranslator.toPlan(ast);
     final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
 
-    final List<PlanNode> optimized = Optimizer.make(repo, schema).optimize(plan);
+    final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
-        ToASTTranslator.toAST(Iterables.getOnlyElement(optimized)).toString());
+        optimized.get(0).toString());
   }
 }

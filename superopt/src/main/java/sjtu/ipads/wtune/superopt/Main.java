@@ -84,7 +84,7 @@ public class Main {
 
     final String sql =
         "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0\n";
-    final Statement stmt = Statement.findOne("diaspora", 224);
+    final Statement stmt = Statement.findOne("discourse", 1361);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);

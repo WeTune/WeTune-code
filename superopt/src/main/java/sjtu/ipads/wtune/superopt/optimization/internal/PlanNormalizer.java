@@ -15,13 +15,13 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
 
 public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   public static PlanNode normalize(PlanNode node) {
-    final PlanNode ret = new PlanNormalizer().dispatch(node);
-    if (ret != null) PlanNode.resolveUsedOnTree(ret);
-    return ret;
+    return new PlanNormalizer().dispatch(node);
   }
 
   @Override
@@ -52,6 +52,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   @Override
   protected PlanNode onSubqueryFilter(SubqueryFilterNode filter) {
+    filter.resolveUsed();
     return filter;
   }
 
@@ -71,8 +72,10 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   protected PlanNode onProj(ProjNode proj) {
     if (isRedundantProj(proj)) {
       proj.successor().replacePredecessor(proj, proj.predecessors()[0]);
+      resolveUsedToRoot(proj.successor());
       return proj.predecessors()[0];
     }
+    proj.resolveUsed();
     return proj;
   }
 
@@ -84,16 +87,17 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     if (filters.size() != 1) {
       for (int i = 0, bound = filters.size() - 1; i < bound; i++)
         filters.get(i).setPredecessor(0, filters.get(i + 1));
+
       tail(filters).setPredecessor(0, filter.predecessors()[0]);
       filter.successor().replacePredecessor(filter, filters.get(0));
 
     } else assert filters.get(0) == filter;
 
-    for (FilterNode f : filters)
-      if (!allowNullValue(f.rawExpr())) {
-        f.resolveUsed();
+    for (FilterNode f : filters) {
+      f.resolveUsed();
+      if (!allowNullValue(f.rawExpr()))
         f.usedAttributes().forEach(PlanNormalizer::enforceEffectiveNonNull);
-      }
+    }
 
     return filters.get(0);
   }
@@ -141,20 +145,25 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   private static PlanNode handleJoin(JoinNode node) {
     final PlanNode[] predecessors = node.predecessors();
     // 1. insert proj if a filter directly precedes a join
-    if (predecessors[0].type().isFilter()) insertProj(node, predecessors[0]);
-    if (predecessors[1].type().isFilter()) insertProj(node, predecessors[1]);
+    final boolean insertProjOnLeft = predecessors[0].type().isFilter();
+    final boolean insertProjOnRight = predecessors[1].type().isFilter();
+    if (insertProjOnLeft) insertProj(node, predecessors[0]);
+    if (insertProjOnRight) insertProj(node, predecessors[1]);
+    if (insertProjOnLeft || insertProjOnRight) resolveUsedToRoot(node);
 
     // 2. enforce left-deep join tree
-    final PlanNode old = node;
     node = enforceLeftDeepJoin(node);
-    node.successor().replacePredecessor(old, node);
 
-    // 3. add qualification
-    rectifyQualification(node);
+    // 3. rectify qualification
+    if (!node.successor().type().isJoin()) {
+      resolveUsedOnTree(node);
+      rectifyQualification(node);
+    }
     return node;
   }
 
   private static JoinNode enforceLeftDeepJoin(JoinNode join) {
+    final PlanNode successor = join.successor();
     final PlanNode right = join.predecessors()[1];
     assert right.type() != LeftJoin;
 
@@ -171,6 +180,11 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
       join.setPredecessor(1, b);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, c);
+
+      join.resolveUsed();
+      newJoin.resolveUsed();
+
+      successor.replacePredecessor(join, newJoin);
       enforceLeftDeepJoin(join);
       return newJoin;
 
@@ -179,11 +193,18 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
       join.setPredecessor(1, c);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, b);
+
+      // CRITICAL: the side of children are swapped, must re-resolved here
+      newJoin.resolveUsed();
+
+      successor.replacePredecessor(join, newJoin);
       return enforceLeftDeepJoin(newJoin);
     }
   }
 
   private static void rectifyQualification(PlanNode node) {
+    // 1. add qualification to subquery (if absent)
+    // 2. add qualification to distinguish the table sources of same table
     if (!node.type().isJoin()) return;
 
     final PlanNode left = node.predecessors()[0], right = node.predecessors()[1];
@@ -212,7 +233,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   private static String makeQualification(Set<String> existing) {
     int i = 0;
     while (true) {
-      final String qualification = "sub" + i;
+      final String qualification = "q" + i;
       if (!existing.contains(qualification)) return qualification;
       ++i;
     }

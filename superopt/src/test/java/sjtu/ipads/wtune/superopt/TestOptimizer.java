@@ -927,7 +927,8 @@ public class TestOptimizer {
     final int stmtId = 72;
     final String[] expected =
         new String[] {
-          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4"
         };
     doTest(appName, stmtId, expected);
   }
@@ -1098,13 +1099,14 @@ public class TestOptimizer {
   //    doTest(appName, stmtId, expected);
   //  }
   //
+
   @Test // 124
   void testShopizer14() {
     final String appName = "shopizer";
     final int stmtId = 14;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `language2_`.`language_id` = 1 AND `category0_`.`depth` >= 0 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT * FROM `category` AS `category0_` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `category0_`.`depth` >= 0 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1138,7 +1140,7 @@ public class TestOptimizer {
     final int stmtId = 31;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `language2_`.`language_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT * FROM `category` AS `category0_` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC"
         };
     doTest(appName, stmtId, expected);
   }

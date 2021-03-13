@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 
 public class CostEstimator {
   public static int compareCost(PlanNode o1, PlanNode o2) {
-    return compareCost(computeComplexity(o1), computeComplexity(o2), false);
+    return compareCost(computeComplexity(o1), computeComplexity(o2), true);
   }
 
   public static int compareCost(Fragment g0, Fragment g1) {
