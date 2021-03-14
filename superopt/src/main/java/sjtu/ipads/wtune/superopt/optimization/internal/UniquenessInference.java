@@ -115,6 +115,7 @@ public class UniquenessInference extends TypeBasedAlgorithm<Uniqueness> {
 
     if (node.isForcedUnique()) newCores.add(newIdentitySet(projections));
     // no need to reduce core
+    //    printCores(newCores, node);
     return new Uniqueness(newCores, false);
   }
 
@@ -205,22 +206,23 @@ public class UniquenessInference extends TypeBasedAlgorithm<Uniqueness> {
     }
 
     reduceCores(cores);
+    //    printCores(cores, join);
     return new Uniqueness(cores, false);
   }
 
   private Collection<Set<AttributeDef>> calcSplitPivots(List<AttributeDef> oneSide) {
     final List<Set<AttributeDef>> pivots = new ArrayList<>(1 << oneSide.size());
-    calcSplitPivots(newIdentitySet(), oneSide, 0, pivots);
+    calcSplitPivots(oneSide, 0, newIdentitySet(), pivots);
     return pivots;
   }
 
   private void calcSplitPivots(
-      Set<AttributeDef> diff,
       List<AttributeDef> eqSide,
       int i,
-      Collection<Set<AttributeDef>> dest) {
+      Set<AttributeDef> diff,
+      Collection<Set<AttributeDef>> diffs) {
     if (i >= eqSide.size()) {
-      dest.add(diff);
+      diffs.add(diff);
       return;
     }
 
@@ -228,9 +230,9 @@ public class UniquenessInference extends TypeBasedAlgorithm<Uniqueness> {
     final Set<AttributeDef> eqDefs = equalAttrs.get(def);
 
     for (AttributeDef eqDef : eqDefs) {
-      final Set<AttributeDef> newDiff = eqDef == def ? diff : newIdentitySet(diff);
+      final Set<AttributeDef> newDiff = newIdentitySet(diff);
       newDiff.add(eqDef);
-      calcSplitPivots(newDiff, eqSide, i + 1, dest);
+      calcSplitPivots(eqSide, i + 1, newDiff, diffs);
     }
   }
 
@@ -256,5 +258,11 @@ public class UniquenessInference extends TypeBasedAlgorithm<Uniqueness> {
     }
 
     if (bound < totalSize) diff.subList(bound, totalSize).clear();
+  }
+
+  private static void printCores(List<Set<AttributeDef>> cores, PlanNode node) {
+    System.out.println("---- core of " + PlanNode.toStringOnTree(node));
+    cores.forEach(System.out::println);
+    System.out.println("----");
   }
 }

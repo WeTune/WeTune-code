@@ -209,9 +209,10 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         // 3. generate new plan according to match
         final PlanNode newNode = normalize(match.substitute(substitution.g1()));
         if (newNode == null) continue; // invalid, abandon it
-        if (!inferUniqueness(newNode))
+        if (!inferUniqueness(newNode)) {
           if (newNode.type() == Proj) ((ProjNode) newNode).setForcedUnique(true);
           else continue;
+        }
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
@@ -220,7 +221,6 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       }
     }
 
-    System.out.println(transformed.size());
     transformed.addAll(listFlatMap(this::transform, transformed));
     return transformed;
   }

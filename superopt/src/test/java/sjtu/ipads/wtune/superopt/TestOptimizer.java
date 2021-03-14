@@ -94,18 +94,16 @@ public class TestOptimizer {
     doTest("diaspora", 202, expected);
   }
 
-  // TODO: diaspora-224
+  // 6 diaspora-224 slow
 
-  //  @Test // 6
-  //  void testDiaspora224() {
-  //    doTest(
-  //        "diaspora",
-  //        224,
-  //        "SELECT COUNT(DISTINCT `contacts`.`id`) FROM `contacts` AS `contacts` WHERE
-  // `contacts`.`user_id` = 1945");
-  //  }
-
-  // TODO: diaspora-295
+  @Test // 7
+  void testDiaspora295() {
+    final String appName = "diaspora";
+    final int stmtId = 295;
+    final String expected =
+        "SELECT COUNT(`contacts`.`id`) FROM `contacts` AS `contacts` WHERE `contacts`.`user_id` = 1945";
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 8
   void testDiaspora460() {
@@ -165,8 +163,14 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 14
-  // TODO: discourse-207 too long
+  @Test // 14
+  void testDiscourse207() {
+    final String appName = "discourse";
+    final int stmtId = 207;
+    final String expected =
+        "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" = 16384 AND \"posts\".\"topic_id\" = 15601 AND (\"posts\".\"user_id\" = -1 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\"";
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 15
   void testDiscourse276() {
@@ -281,8 +285,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 26
-  // TODO: discourse-877 too long
+  // 26 discourse-877 slow
 
   @Test // 27
   void testDiscourse942() {
@@ -340,7 +343,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 31
+  @Test // 32
   void testDiscourse949() {
     final String appName = "discourse";
     final int stmtId = 949;
@@ -364,8 +367,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 34
-  // TODO: discourse-1000 too long
+  // 34 discourse-1000 slow
 
   @Test // 35
   void testDiscourse1003() {
@@ -400,34 +402,63 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 38
-  // TODO: discourse-1173 too long
-  // 39
-  // TODO: discourse-1174 too long
-  // 40
-  // TODO: discourse-1178 too long
-  // 41
-  // TODO: discourse-1179 too long
-  // 42
-  // TODO: discourse-1181 too long
-  // 43
-  // TODO: discourse-1182 too long
-  // 44
-  // TODO: discourse-1183 too long
-  // 45
-  // TODO: discourse-1186 too long
-  // 46
-  // TODO: discourse-1191 too long
-  // 47
-  // TODO: discourse-1196 too long
-  // 48
-  // TODO: discourse-1200 too long
-  // 49
-  // TODO: discourse-1213 too long
-  // 50
-  // TODO: discourse-1214 too long
-  // 51
-  // TODO: discourse-1216 too long
+  // 38 discourse 1173 slow
+  // 39 discourse 1174 slow
+
+  @Test // 40
+  void testDiscourse1178() {
+    final String appName = "discourse";
+    final int stmtId = 1178;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 2) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 2"
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 41
+  void testDiscourse1179() {
+    final String appName = "discourse";
+    final int stmtId = 1179;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 42 discourse 1181 wrong
+
+  @Test // 43
+  void testDiscourse1182() {
+    final String appName = "discourse";
+    final int stmtId = 1182;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"score\" >= 99 AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 44 discourse-1183 wrong
+
+  @Test // 45
+  void testDiscourse1186() {
+    final String appName = "discourse";
+    final int stmtId = 1186;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16810 AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 46 discourse-1191 slow
+  // 47 discourse-1196 slow
+  // 48 discourse-1200 slow
+  // 49 discourse-1213 slow
+  // 50 discourse-1214 slow
+  // 51 discourse-1216 slow
 
   @Test // 52
   void testDiscourse1291() {
@@ -484,12 +515,29 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 57
-  // TODO: discourse-2012 too long
-  // 58
-  // TODO: discourse-2016 too long
-  // 59
-  // TODO: discourse-2019 too long
+  @Test // 57
+  void testDiscourse2012() {
+    final String appName = "discourse";
+    final int stmtId = 2012;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 17616 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16515 ORDER BY \"sort_order\"",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 58 discourse-2016 wrong
+
+  @Test // 59
+  void testDiscourse2019() {
+    final String appName = "discourse";
+    final int stmtId = 2019;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16521 ORDER BY \"sort_order\"",
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 60
   void testDiscourse2291() {
@@ -579,18 +627,32 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 68
-  // TODO: discourse-3690 too long
-  // 69
-  // TODO: discourse-3691 too long
-  // 70
-  // TODO: discourse-3825 too long
-  // 71
-  // TODO: discourse-3829 too long
-  // 72
-  // TODO: discourse-3831 too long
-  // 73
-  // TODO: discourse-3842 too long
+  @Test // 68
+  void testDiscourse3690() {
+    final String appName = "discourse";
+    final int stmtId = 3690;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(\"directory_items\".\"id\") FROM \"directory_items\" AS \"directory_items\" LEFT JOIN \"users\" AS \"users\" ON \"directory_items\".\"user_id\" = \"users\".\"id\" INNER JOIN \"group_users\" AS \"group_users\" ON \"users\".\"id\" = \"group_users\".\"user_id\" WHERE \"directory_items\".\"period_type\" = 1 AND \"group_users\".\"group_id\" = 2898",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 69
+  void testDiscourse3691() {
+    final String appName = "discourse";
+    final int stmtId = 3691;
+    final String[] expected =
+        new String[] {
+          "SELECT \"directory_items\".\"likes_received\" AS \"alias_0\", \"directory_items\".\"id\" AS \"id\" FROM \"directory_items\" AS \"directory_items\" LEFT JOIN \"users\" AS \"users\" ON \"directory_items\".\"user_id\" = \"users\".\"id\" INNER JOIN \"group_users\" AS \"group_users\" ON \"users\".\"id\" = \"group_users\".\"user_id\" WHERE \"directory_items\".\"period_type\" = 1 AND \"group_users\".\"group_id\" = 2898 ORDER BY \"alias_0\" DESC LIMIT 50 OFFSET 0",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 70 discourse-3825 slow
+  // 71 discourse-3829 slow
+  // 72 discourse-3831 slow
+  // 73 discourse-3842 slow
 
   @Test // 74
   void testDiscourse4071() {
@@ -910,8 +972,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 107
-  @Test // 106
+  @Test // 107
   void testHomeland31() {
     final String appName = "homeland";
     final int stmtId = 31;
@@ -1089,18 +1150,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 123
-  //  void testShopizer3() {
-  //    final String appName = "shopizer";
-  //    final int stmtId = 3;
-  //    final String[] expected =
-  //        new String[] {
-  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
-  // `watchers`.`watchable_type` = 'Issue'",
-  //        };
-  //    doTest(appName, stmtId, expected);
-  //  }
-  //
+  // 123 shopizer-3 slow
 
   @Test // 124
   void testShopizer14() {
@@ -1124,17 +1174,7 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 126
-  //  void testShopizer24() {
-  //    final String appName = "shopizer";
-  //    final int stmtId = 24;
-  //    final String[] expected =
-  //        new String[] {
-  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
-  // `watchers`.`watchable_type` = 'Issue'",
-  //        };
-  //    doTest(appName, stmtId, expected);
-  //  }
+  // 126 shopizer-24 slow
 
   @Test // 127
   void testShopizer31() {
@@ -1146,18 +1186,8 @@ public class TestOptimizer {
         };
     doTest(appName, stmtId, expected);
   }
-  //
-  //  @Test // 128
-  //  void testShopizer39() {
-  //    final String appName = "shopizer";
-  //    final int stmtId = 39;
-  //    final String[] expected =
-  //        new String[] {
-  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
-  // `watchers`.`watchable_type` = 'Issue'",
-  //        };
-  //    doTest(appName, stmtId, expected);
-  //  }
+
+  // 128 shopizer-39 slow
 
   @Test // 129
   void testShopizer40() {
@@ -1182,26 +1212,30 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 131
-  //  void testShopizer57() {
-  //    final String appName = "shopizer";
-  //    final int stmtId = 57;
-  //    final String[] expected =
-  //        new String[] {
-  //          "SELECT COUNT(*) FROM `watchers` AS `watchers` WHERE `watchers`.`watchable_id` = 1 AND
-  // `watchers`.`watchable_type` = 'Issue'",
-  //        };
-  //    doTest(appName, stmtId, expected);
-  //  }
+  @Test // 132
+  void testShopizer67() {
+    final String appName = "shopizer";
+    final int stmtId = 67;
+    final String[] expected =
+        new String[] {
+          "SELECT COUNT(DISTINCT `product0_`.`product_id`) AS `col_0_0_` FROM `product` AS `product0_` INNER JOIN `product_category` AS `categories2_` ON `product0_`.`product_id` = `categories2_`.`product_id` INNER JOIN `product_description` AS `descriptio1_` ON `product0_`.`product_id` = `descriptio1_`.`product_id` WHERE `categories2_`.`category_id` IN (?) AND `descriptio1_`.`language_id` = 1 AND `product0_`.`available` = 1 AND `product0_`.`date_available` <= '2019-10-21 21:17:32.7' AND `product0_`.`manufacturer_id` = 1 AND `product0_`.`merchant_id` = 1",
+        };
+    doTest(appName, stmtId, expected);
+  }
 
-  // 132
-  // TODO: shopizer-67 too long
-  // 133
-  // TODO: shopizer-68 too long
-  // 134
-  // TODO: shopizer-119 too long
-  // 135
-  // TODO: solidus-126 too long
+  // 133 shopizer-68 slow
+  // 134 shopizer-119 slow
+
+  @Test // 135
+  void testShopizer126() {
+    final String appName = "shopizer";
+    final int stmtId = 126;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `sm_group` AS `group0_` LEFT JOIN `permission_group` AS `permission1_` ON `group0_`.`group_id` = `permission1_`.`group_id` LEFT JOIN `permission` AS `permission2_` ON `permission1_`.`permission_id` = `permission2_`.`permission_id` ORDER BY `group_id1_65_0_`",
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 136
   void testSolidus230() {
@@ -1312,9 +1346,6 @@ public class TestOptimizer {
         };
     doTest(appName, stmtId, expected);
   }
-
-  // 146
-  // TODO: solidus-551 too long
 
   @Test // 147
   void testSolidus649() {
@@ -1591,7 +1622,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 173
   void testSpree528() {
     final String app = "spree";
     final int stmtId = 528;
@@ -1601,7 +1632,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 174
   void testSpree585() {
     final String app = "spree";
     final int stmtId = 585;
@@ -1611,7 +1642,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 175
   void testSpree587() {
     final String app = "spree";
     final int stmtId = 587;
@@ -1621,7 +1652,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 176
   void testSpree589() {
     final String app = "spree";
     final int stmtId = 589;
@@ -1631,7 +1662,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 177
   void testSpree591() {
     final String app = "spree";
     final int stmtId = 591;
@@ -1641,7 +1672,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 178
   void testSpree614() {
     final String app = "spree";
     final int stmtId = 614;
@@ -1651,7 +1682,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 179
   void testSpree620() {
     final String app = "spree";
     final int stmtId = 620;
@@ -1661,7 +1692,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 180
   void testSpree632() {
     final String app = "spree";
     final int stmtId = 632;
@@ -1671,7 +1702,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 181
   void testSpree634() {
     final String app = "spree";
     final int stmtId = 634;
@@ -1681,7 +1712,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 182
   void testSpree657() {
     final String app = "spree";
     final int stmtId = 657;
@@ -1691,7 +1722,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 183
   void testSpree659() {
     final String app = "spree";
     final int stmtId = 659;
@@ -1701,7 +1732,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 184
   void testSpree662() {
     final String app = "spree";
     final int stmtId = 662;
@@ -1711,7 +1742,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 185
   void testSpree691() {
     final String app = "spree";
     final int stmtId = 691;
@@ -1721,7 +1752,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 186
   void testSpree693() {
     final String app = "spree";
     final int stmtId = 693;
@@ -1731,7 +1762,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 187
   void testSpree695() {
     final String app = "spree";
     final int stmtId = 695;
@@ -1741,7 +1772,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 188
   void testSpree712() {
     final String app = "spree";
     final int stmtId = 712;
@@ -1751,7 +1782,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 189
   void testSpree726() {
     final String app = "spree";
     final int stmtId = 726;
@@ -1761,7 +1792,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 190
   void testSpree729() {
     final String app = "spree";
     final int stmtId = 729;
@@ -1771,7 +1802,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 191
   void testSpree731() {
     final String app = "spree";
     final int stmtId = 731;
@@ -1781,7 +1812,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 192
   void testSpree766() {
     final String app = "spree";
     final int stmtId = 766;
@@ -1791,7 +1822,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 193
   void testSpree781() {
     final String app = "spree";
     final int stmtId = 781;
@@ -1801,7 +1832,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 194
   void testSpree783() {
     final String app = "spree";
     final int stmtId = 783;
@@ -1811,7 +1842,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 195
   void testSpree785() {
     final String app = "spree";
     final int stmtId = 785;
@@ -1821,7 +1852,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 196
   void testSpree787() {
     final String app = "spree";
     final int stmtId = 787;
@@ -1831,7 +1862,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 197
   void testSpree831() {
     final String app = "spree";
     final int stmtId = 831;
@@ -1841,7 +1872,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 198
   void testSpree1147() {
     final String app = "spree";
     final int stmtId = 1147;
@@ -1851,7 +1882,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 199
   void testSpree1150() {
     final String app = "spree";
     final int stmtId = 1150;
@@ -1861,7 +1892,7 @@ public class TestOptimizer {
     doTest(app, stmtId, expected);
   }
 
-  @Test
+  @Test // 200
   void testSpree1151() {
     final String app = "spree";
     final int stmtId = 1151;
