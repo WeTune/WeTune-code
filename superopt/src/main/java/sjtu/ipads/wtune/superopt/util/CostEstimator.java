@@ -11,20 +11,20 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 
 public class CostEstimator {
   public static int compareCost(PlanNode o1, PlanNode o2) {
-    return compareCost(computeComplexity(o1), computeComplexity(o2), true);
+    return compareCost(computeComplexity(o1), computeComplexity(o2));
   }
 
   public static int compareCost(Fragment g0, Fragment g1) {
-    return compareCost(computeComplexity(g0), computeComplexity(g1), true);
+    return compareCost(computeComplexity(g0), computeComplexity(g1));
   }
 
-  private static int compareCost(int[] opCount0, int[] opCount1, boolean preferInner) {
+  private static int compareCost(int[] opCount0, int[] opCount1) {
     int result = 0;
 
     for (int i = 0, bound = opCount0.length; i < bound; i++) {
       if (i == LeftJoin.ordinal() || i == InnerJoin.ordinal()) continue;
 
-      if (result < 0 && opCount0[i] > opCount1[i]) return 0;
+      if ((result < 0 && opCount0[i] > opCount1[i])) return 0;
       if (result > 0 && opCount0[i] < opCount1[i]) return 0;
       if (opCount0[i] > opCount1[i]) result = 1;
       else if (opCount0[i] < opCount1[i]) result = -1;
@@ -36,13 +36,12 @@ public class CostEstimator {
     final int numLeftJoin0 = opCount0[LeftJoin.ordinal()];
     final int numInnerJoin1 = opCount1[InnerJoin.ordinal()];
     final int numLeftJoin1 = opCount1[LeftJoin.ordinal()];
-    final int numJoin0 = numInnerJoin0 + numLeftJoin0, numJoin1 = numInnerJoin1 + numLeftJoin1;
+    final int numJoin0 = numInnerJoin0 + numLeftJoin0;
+    final int numJoin1 = numInnerJoin1 + numLeftJoin1;
 
     if (numJoin0 < numJoin1) return -1;
     if (numJoin0 > numJoin1) return 1;
-    // if `preferInner`, consider inner join is always better than left join
-    final int leftJoinDiff = Integer.signum(numLeftJoin0 - numLeftJoin1);
-    return preferInner ? leftJoinDiff : 0;
+    return Integer.signum(numLeftJoin0 - numLeftJoin1);
   }
 
   public static int[] computeComplexity(Fragment g0) {

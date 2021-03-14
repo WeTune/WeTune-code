@@ -143,6 +143,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static PlanNode handleJoin(JoinNode node) {
+    final PlanNode successor = node.successor();
     final PlanNode[] predecessors = node.predecessors();
     // 1. insert proj if a filter directly precedes a join
     final boolean insertProjOnLeft = predecessors[0].type().isFilter();
@@ -155,9 +156,13 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     node = enforceLeftDeepJoin(node);
 
     // 3. rectify qualification
-    if (!node.successor().type().isJoin()) {
+    if (!successor.type().isJoin()) {
       resolveUsedOnTree(node);
       rectifyQualification(node);
+
+      final JoinTree joinTree = JoinTree.make(node);
+      node = joinTree.sort().rebuild();
+      successor.replacePredecessor(joinTree.originalRoot(), node);
     }
     return node;
   }

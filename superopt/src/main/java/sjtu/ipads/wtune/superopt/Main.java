@@ -83,8 +83,8 @@ public class Main {
     bank.importFrom(singletonList(lines.get(lines.size() - 1)));
 
     final String sql =
-        "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`user_id` = 3 AND `contacts`.`receiving` = TRUE ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0\n";
-    final Statement stmt = Statement.findOne("discourse", 1361);
+        "SELECT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_groups\" AS \"tag_groups\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_groups\".\"id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_groups\".\"id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3";
+    final Statement stmt = Statement.findOne("solidus", 126);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);

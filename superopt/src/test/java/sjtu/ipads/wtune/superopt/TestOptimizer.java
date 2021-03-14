@@ -530,7 +530,7 @@ public class TestOptimizer {
     final int stmtId = 2832;
     final String[] expected =
         new String[] {
-          "SELECT \"categories\".\"name\" AS \"name\" FROM \"category_tag_groups\" AS \"category_tag_groups\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
+          "SELECT \"categories\".\"name\" AS \"name\" FROM \"category_tag_groups\" AS \"category_tag_groups\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
         };
     doTest(appName, stmtId, expected);
   }
@@ -905,6 +905,7 @@ public class TestOptimizer {
     final String[] expected =
         new String[] {
           "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_id\" = $1 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $4 AND \"actions\".\"user_type\" = $5",
+          "SELECT \"actions\".\"user_id\" AS \"user_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_id\" = $1 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_type\" = $5 AND \"actions\".\"user_type\" = $4"
         };
     doTest(appName, stmtId, expected);
   }
@@ -940,6 +941,7 @@ public class TestOptimizer {
     final String[] expected =
         new String[] {
           "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4",
+          "SELECT \"actions\".\"target_id\" AS \"target_id\" FROM \"actions\" AS \"actions\" WHERE \"actions\".\"action_type\" = $2 AND \"actions\".\"target_type\" = $5 AND \"actions\".\"target_type\" = $3 AND \"actions\".\"user_id\" = $1 AND \"actions\".\"user_type\" = $4"
         };
     doTest(appName, stmtId, expected);
   }
@@ -1117,7 +1119,7 @@ public class TestOptimizer {
     final int stmtId = 18;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `category0_`.`lineage` LIKE '%/1/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT * FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `category0_`.`merchant_id` = 1 AND `category0_`.`lineage` LIKE '%/1/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1164,6 +1166,7 @@ public class TestOptimizer {
     final String[] expected =
         new String[] {
           "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT * FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC"
         };
     doTest(appName, stmtId, expected);
   }

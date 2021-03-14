@@ -81,7 +81,9 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     if (group != null && stream(node.predecessors()).allMatch(it -> memo.get(it) != null))
       return group;
 
-    return dispatch(node);
+    final List<PlanNode> ret = dispatch(node);
+
+    return ret;
   }
 
   @Override
@@ -192,11 +194,12 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
     if (!inferUniqueness(n)) return emptyList();
 
-    final List<PlanNode> transformed = new MinCostList();
-
     final OptGroup<String> group = memo.get(n);
+
+    final List<PlanNode> transformed = new MinCostList();
     // 1. fast search for candidate substitution by fingerprint
     final List<Substitution> substitutions = repo.findByFingerprint(n);
+    outer:
     for (Substitution substitution : substitutions) {
       final Interpretations inter = constrainedInterpretations(substitution.constraints());
       // 2. full match
@@ -213,11 +216,11 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
         if (memo.get(newNode) == null) transformed.add(newNode);
-
         group.add(newNode);
       }
     }
 
+    System.out.println(transformed.size());
     transformed.addAll(listFlatMap(this::transform, transformed));
     return transformed;
   }

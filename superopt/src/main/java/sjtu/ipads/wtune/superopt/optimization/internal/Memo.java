@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class Memo<T> {
-  private final Map<T, OptGroup<T>> memo;
+  public final Map<T, OptGroup<T>> memo;
   private final Function<PlanNode, T> keyExtractor;
 
   public Memo(Function<PlanNode, T> keyExtractor) {
