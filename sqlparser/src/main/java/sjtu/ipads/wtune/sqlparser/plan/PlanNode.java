@@ -120,7 +120,7 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
 
   static boolean checkConformity(PlanNode n) {
     for (PlanNode predecessor : n.predecessors()) {
-      if (!checkConformity(n)) return false;
+      if (!checkConformity(predecessor)) return false;
       if (predecessor.successor() != n) return false;
     }
     return true;

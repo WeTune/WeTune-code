@@ -12,7 +12,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.optimization.internal.FilterHint.rearrangeFilter;
-import static sjtu.ipads.wtune.superopt.optimization.internal.JoinHint.rearrangeJoin;
+import static sjtu.ipads.wtune.superopt.optimization.internal.JoinHint.rearrangeJoinNew;
 
 public interface Hint {
   static Iterable<PlanNode> apply(PlanNode node, Operator op, Interpretations inter) {
@@ -33,7 +33,7 @@ public interface Hint {
 
     // Join rearrangement
     if (opType.isJoin() && node.type().isJoin())
-      return rearrangeJoin((JoinNode) node, (Join) op, inter);
+      return rearrangeJoinNew((JoinNode) node, (Join) op, inter);
 
     // Otherwise, the type of op and the type of node are required to be identical
     return opType != nodeType ? emptyList() : singletonList(node);

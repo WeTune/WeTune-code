@@ -161,7 +161,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
       rectifyQualification(node);
 
       final JoinTree joinTree = JoinTree.make(node);
-      node = joinTree.sort().rebuild();
+      node = joinTree.sorted().rebuild();
       successor.replacePredecessor(joinTree.originalRoot(), node);
     }
     return node;
