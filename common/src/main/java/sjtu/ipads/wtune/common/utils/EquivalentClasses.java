@@ -2,8 +2,10 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.util.*;
 
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
+
 public class EquivalentClasses<T> {
-  private final Map<T, EquivalentClass> classes = new HashMap<>();
+  private final Map<T, EquivalentClass> classes = new IdentityHashMap<>();
 
   public Set<T> makeClass(T x) {
     EquivalentClass cls = classes.get(x);
@@ -29,7 +31,7 @@ public class EquivalentClasses<T> {
   }
 
   private class EquivalentClass extends AbstractSet<T> {
-    private Set<T> elements = new HashSet<>();
+    private Set<T> elements = newIdentitySet();
 
     @Override
     public boolean add(T t) {

@@ -118,6 +118,14 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
     return toStringOnTree(n, new StringBuilder()).toString();
   }
 
+  static boolean checkConformity(PlanNode n) {
+    for (PlanNode predecessor : n.predecessors()) {
+      if (!checkConformity(n)) return false;
+      if (predecessor.successor() != n) return false;
+    }
+    return true;
+  }
+
   private static StringBuilder toStringOnTree(PlanNode n, StringBuilder builder) {
     builder.append(n);
     builder.append('(');

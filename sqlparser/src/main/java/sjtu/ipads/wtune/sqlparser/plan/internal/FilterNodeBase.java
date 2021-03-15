@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.*;
@@ -20,6 +21,9 @@ public abstract class FilterNodeBase extends PlanNodeBase implements FilterNode 
   protected boolean dirty = true;
 
   protected FilterNodeBase(ASTNode expr, List<AttributeDef> usedAttrs) {
+    if (expr == null) throw new IllegalArgumentException();
+    expr = ASTContext.unmanage(expr.deepCopy());
+
     this.expr = expr;
     this.usedAttrs = usedAttrs;
   }

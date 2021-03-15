@@ -403,7 +403,17 @@ public class TestOptimizer {
   }
 
   // 38 discourse 1173 slow
-  // 39 discourse 1174 slow
+
+  @Test // 39
+  void testDiscourse1174() {
+    final String appName = "discourse";
+    final int stmtId = 1174;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 40
   void testDiscourse1178() {
@@ -453,12 +463,61 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 46 discourse-1191 slow
-  // 47 discourse-1196 slow
-  // 48 discourse-1200 slow
-  // 49 discourse-1213 slow
-  // 50 discourse-1214 slow
-  // 51 discourse-1216 slow
+  @Test // 46
+  void testDiscourse1191() {
+    final String appName = "discourse";
+    final int stmtId = 1191;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 47
+  void testDiscourse1196() {
+    final String appName = "discourse";
+    final int stmtId = 1196;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"post_number\" AS \"post_number\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 48
+  void testDiscourse1200() {
+    final String appName = "discourse";
+    final int stmtId = 1200;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 912 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 49
+  void testDiscourse1213() {
+    final String appName = "discourse";
+    final int stmtId = 1213;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16887 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  // 50 discourse-1214 wrong
+  @Test // 51
+  void testDiscourse1216() {
+    final String appName = "discourse";
+    final int stmtId = 1216;
+    final String[] expected =
+        new String[] {
+          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"sort_order\" DESC"
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 52
   void testDiscourse1291() {

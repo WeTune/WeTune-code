@@ -42,6 +42,8 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
       List<AttributeDef> right) {
     if (onCondition == null && used == null) throw new IllegalArgumentException();
 
+    if (onCondition != null) onCondition = ASTContext.unmanage(onCondition.deepCopy());
+
     this.onCondition = onCondition;
     this.used = used;
     this.left = left;

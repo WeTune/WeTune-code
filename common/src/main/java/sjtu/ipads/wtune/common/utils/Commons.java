@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
@@ -185,6 +184,14 @@ public interface Commons {
   static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {
     arr.sort(comparator);
     return arr;
+  }
+
+  static int countOccurrences(String str, String target) {
+    int index = -1, occurrences = 0;
+    while ((index = str.indexOf(target, index + 1)) != -1) {
+      ++occurrences;
+    }
+    return occurrences;
   }
 
   static <T> T echo(T t) {

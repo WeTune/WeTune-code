@@ -135,7 +135,8 @@ public interface FuncUtils {
   }
 
   static <T> T find(Predicate<T> pred, Iterable<T> os) {
-    return stream(os).filter(pred).findFirst().orElse(null);
+    for (T o : os) if (pred.test(o)) return o;
+    return null;
   }
 
   @SafeVarargs

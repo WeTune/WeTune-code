@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
@@ -13,6 +14,9 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   private final ASTNode limit, offset;
 
   private LimitNodeImpl(ASTNode limit, ASTNode offset) {
+    if (limit != null) limit = ASTContext.unmanage(limit.deepCopy());
+    if (offset != null) offset = ASTContext.unmanage(offset.deepCopy());
+
     this.limit = limit;
     this.offset = offset;
   }

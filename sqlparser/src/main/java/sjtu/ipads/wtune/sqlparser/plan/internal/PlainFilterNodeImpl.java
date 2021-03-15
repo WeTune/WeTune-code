@@ -6,16 +6,17 @@ import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class PlainFilterNodeImpl extends FilterNodeBase implements PlainFilterNode {
+  private Set<AttributeDef> fixedValueAttributes;
+
   private PlainFilterNodeImpl(ASTNode expr, List<AttributeDef> usedAttrs) {
     super(expr, usedAttrs);
   }
@@ -35,10 +36,15 @@ public class PlainFilterNodeImpl extends FilterNodeBase implements PlainFilterNo
 
   @Override
   public Set<AttributeDef> fixedValueAttributes() {
-    final List<ASTNode> colRefs = gatherColumnRefs(expr);
+    if (!dirty && fixedValueAttributes != null) return fixedValueAttributes;
+
+    final List<ASTNode> colRefs = gatherColumnRefs(expr());
     final List<AttributeDef> used = usedAttributes();
-    final Set<AttributeDef> ret = Collections.newSetFromMap(new IdentityHashMap<>());
+    assert colRefs.size() == used.size();
+
+    final Set<AttributeDef> ret = newIdentitySet(colRefs.size());
     for (int i = 0; i < colRefs.size(); i++) if (isFixedValue(colRefs.get(i))) ret.add(used.get(i));
+
     return ret;
   }
 

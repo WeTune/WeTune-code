@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
@@ -23,6 +24,8 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private boolean dirty = true;
 
   private ProjNodeImpl(String qualification, List<ASTNode> selectItems) {
+    selectItems = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), selectItems);
+
     this.defined = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
     this.selectItems = listMap(AttributeDef::toSelectItem, defined);
     bindAttributes(defined, this);
@@ -74,7 +77,8 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
     dirty = false;
     updateColumnRefs(gatherColumnRefs(copy), used);
-    return this.selectItems = copy;
+    this.selectItems = copy;
+    return new ArrayList<>(copy);
   }
 
   @Override
@@ -128,6 +132,6 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   @Override
   public String toString() {
-    return "Proj<%s>".formatted(selectItems());
+    return "Proj%s<%s>".formatted(isForcedUnique ? "'" : "", selectItems());
   }
 }

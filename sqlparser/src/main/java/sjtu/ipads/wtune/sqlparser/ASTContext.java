@@ -30,4 +30,11 @@ public interface ASTContext extends MultiVersion {
     root.context().setSchema(schema);
     return root;
   }
+
+  static ASTNode unmanage(ASTNode root) {
+    if (root == null) return null;
+
+    root.accept(ASTVistor.topDownVisit(it -> it.setContext(null)));
+    return root;
+  }
 }

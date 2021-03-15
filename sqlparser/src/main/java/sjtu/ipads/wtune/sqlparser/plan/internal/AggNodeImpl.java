@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
@@ -12,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
@@ -29,6 +29,9 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   private TIntList aggUsedAttrs;
 
   private AggNodeImpl(String qualification, List<ASTNode> selectItems, List<ASTNode> groupKeys) {
+    selectItems = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), selectItems);
+    groupKeys = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), groupKeys);
+
     this.groupKeys = groupKeys;
     this.selectItems = selectItems;
     this.definedAttrs = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);

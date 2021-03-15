@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
@@ -17,8 +18,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
@@ -128,6 +128,13 @@ class NormalizeJoinCondition implements ASTVistor {
     }
 
     private void collectExprsToMove(ASTNode expr) {
+      if (UNARY.isInstance(expr)
+          && expr.get(UNARY_OP) == UnaryOp.NOT
+          && isPlainCondition(expr.get(UNARY_EXPR))) {
+        plainCondition.add(expr);
+        return;
+      }
+
       if (!BINARY.isInstance(expr)) return;
 
       final BinaryOp op = expr.get(BINARY_OP);
@@ -148,6 +155,13 @@ class NormalizeJoinCondition implements ASTVistor {
           LOG.log(WARNING, "Wierd join condition: {0}", expr.parent());
       }
     }
+  }
+
+  private static boolean isPlainCondition(ASTNode expr) {
+    return BINARY.isInstance(expr)
+        && !expr.get(BINARY_OP).isLogic()
+        && (!COLUMN_REF.isInstance(expr.get(BINARY_LEFT))
+            || !COLUMN_REF.isInstance(expr.get(BINARY_RIGHT)));
   }
 
   private static class JoinConditionCollector implements ASTVistor {

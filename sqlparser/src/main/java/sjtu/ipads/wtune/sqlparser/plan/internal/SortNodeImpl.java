@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
@@ -19,6 +21,8 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
   private TIntList usedAttrs;
 
   private SortNodeImpl(List<ASTNode> orderKeys, TIntList usedAttrs) {
+    orderKeys = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), orderKeys);
+
     this.orderKeys = orderKeys;
     this.usedAttrs = usedAttrs;
   }
