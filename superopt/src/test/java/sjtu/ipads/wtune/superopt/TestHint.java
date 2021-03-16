@@ -10,8 +10,8 @@ import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.optimization.Hint;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.Hint;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 
 import java.util.List;
 

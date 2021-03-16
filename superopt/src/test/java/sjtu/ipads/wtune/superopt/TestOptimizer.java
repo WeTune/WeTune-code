@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimization.Optimizer;
-import sjtu.ipads.wtune.superopt.optimization.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

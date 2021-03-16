@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 
 import java.io.IOException;
 import java.io.PrintWriter;

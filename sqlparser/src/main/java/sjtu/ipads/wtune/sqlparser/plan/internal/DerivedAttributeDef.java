@@ -73,7 +73,8 @@ public class DerivedAttributeDef extends AttributeDefBase {
 
   @Override
   public boolean referencesTo(int id) {
-    return this.id() == id || (isIdentity() && upstream().referencesTo(id));
+    return this.id() == id
+        || (isIdentity() && (references0()[0] == id || upstream().referencesTo(id)));
   }
 
   @Override
@@ -87,6 +88,50 @@ public class DerivedAttributeDef extends AttributeDefBase {
     item.set(SELECT_ITEM_EXPR, expr.deepCopy());
     item.set(SELECT_ITEM_ALIAS, name());
     return item;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof AttributeDef)) return false;
+    if (this.id() == ((AttributeDef) o).id()) return true;
+
+    if (o instanceof NativeAttributeDef) {
+      if (!isIdentity()) return false;
+      final int[] refs = references0();
+      if (refs[0] == ((NativeAttributeDef) o).id()) return true; // shortcut
+      return o.equals(nativeSource());
+    }
+
+    if (o instanceof DerivedAttributeDef) {
+      final DerivedAttributeDef that = (DerivedAttributeDef) o;
+      if (this.isIdentity()) {
+        final int[] refs = references0();
+        if (refs[0] == that.id()) return true; // shortcut
+      }
+      if (that.isIdentity()) {
+        final int[] refs = that.references0();
+        if (refs[0] == this.id()) return true; // shortcut
+      }
+      return this.source().id() == that.source().id();
+    }
+
+    return false;
+  }
+
+  // fast but not precisely check
+  // if this method returns true, then must have x.equals(y) == true
+  // if x.equals(y) == false, then this method must return false
+  public static boolean fastEquals(AttributeDef x, AttributeDef y) {
+    if (x.id() == y.id()) return true;
+    final boolean xIsNative = x instanceof NativeAttributeDef;
+    final boolean yIsNative = y instanceof NativeAttributeDef;
+    if (xIsNative && yIsNative) return x.equals(y);
+    final int xRef =
+        (!xIsNative && x.isIdentity()) ? ((DerivedAttributeDef) x).references0()[0] : -1;
+    final int yRef =
+        (!yIsNative && y.isIdentity()) ? ((DerivedAttributeDef) y).references0()[0] : -1;
+    return xRef == y.id() || yRef == x.id() || (xRef != -1 && xRef == yRef);
   }
 
   private int[] references0() {
@@ -112,6 +157,12 @@ public class DerivedAttributeDef extends AttributeDefBase {
   }
 
   private AttributeDef resolveReference(int id) {
+    // fast path
+    for (PlanNode predecessor : definer().predecessors())
+      for (AttributeDef outAttr : predecessor.definedAttributes())
+        if (outAttr.id() == id) return outAttr;
+
+    // slow path, should be rare case
     for (PlanNode predecessor : definer().predecessors()) {
       final AttributeDef resolved = predecessor.resolveAttribute(id);
       if (resolved != null) return resolved;

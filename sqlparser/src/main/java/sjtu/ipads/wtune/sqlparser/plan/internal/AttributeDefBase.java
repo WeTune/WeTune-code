@@ -71,8 +71,8 @@ public abstract class AttributeDefBase implements AttributeDef {
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
-    if (!(obj instanceof AttributeDefBase)) return false;
-    final AttributeDef thisSrc = this.source(), thatSrc = ((AttributeDefBase) obj).source();
+    if (!(obj instanceof AttributeDef that)) return false;
+    final AttributeDef thisSrc = this.source(), thatSrc = that.source();
     return thisSrc.id() == thatSrc.id();
   }
 

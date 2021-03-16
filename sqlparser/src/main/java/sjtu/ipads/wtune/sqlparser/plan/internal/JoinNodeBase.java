@@ -8,6 +8,7 @@ import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,6 +18,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef.fastEquals;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
@@ -118,11 +120,49 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
 
   @Override
   public void resolveUsed() {
-    if (used == null) used = resolveUsed0(gatherColumnRefs(onCondition), this);
-    else used = resolveUsed1(used, this);
+    if (used == null) {
+      used = resolveUsed0(gatherColumnRefs(onCondition), this);
+      left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
+      right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
 
-    left = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[0]));
-    right = listFilter(Objects::nonNull, resolveUsed1(used, predecessors()[1]));
+    } else {
+      // efficiency-critical part, so we have do some ugly things
+      final List<AttributeDef> inAttrs = definedAttributes();
+      final int boundary = predecessors()[0].definedAttributes().size();
+
+      final List<AttributeDef> newUsed = new ArrayList<>(used.size());
+      final List<AttributeDef> newLeft = new ArrayList<>(left.size());
+      final List<AttributeDef> newRight = new ArrayList<>(right.size());
+
+      outer:
+      for (AttributeDef usedAttr : used) {
+        // fast path
+        for (int i = 0; i < inAttrs.size(); i++) {
+          final AttributeDef resolved = inAttrs.get(i);
+          if (fastEquals(usedAttr, resolved)) {
+            newUsed.add(usedAttr);
+            if (i < boundary) newLeft.add(resolved);
+            else newRight.add(resolved);
+            continue outer;
+          }
+        }
+
+        // slow path, rare cases
+        for (int i = 0; i < inAttrs.size(); i++) {
+          final AttributeDef resolved = inAttrs.get(i);
+          if (usedAttr.equals(resolved)) {
+            newUsed.add(usedAttr);
+            if (i < boundary) newLeft.add(resolved);
+            else newRight.add(resolved);
+          }
+        }
+      }
+
+      used = newUsed;
+      left = newLeft;
+      right = newRight;
+    }
+
     assert !isNormalForm || left.size() == right.size();
 
     dirty = true;

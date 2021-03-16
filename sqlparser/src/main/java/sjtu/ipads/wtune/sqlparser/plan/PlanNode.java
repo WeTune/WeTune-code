@@ -6,12 +6,6 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import java.util.List;
 import java.util.Objects;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
 public interface PlanNode extends TypedTreeNode<OperatorType> {
   PlanNode successor();
 
@@ -31,40 +25,13 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
 
   void replacePredecessor(PlanNode target, PlanNode rep);
 
-  default AttributeDef resolveAttribute(String qualification, String name) {
-    qualification = simpleName(qualification);
-    name = simpleName(name);
+  AttributeDef resolveAttribute(String qualification, String name);
 
-    for (AttributeDef attr : definedAttributes())
-      if ((qualification == null || qualification.equals(attr.qualification()))
-          && name.equals(attr.name())) return attr;
+  AttributeDef resolveAttribute(ASTNode columnRef);
 
-    for (AttributeDef attr : definedAttributes())
-      if (attr.referencesTo(qualification, name)) return attr;
+  AttributeDef resolveAttribute(int attrId);
 
-    return null;
-  }
-
-  default AttributeDef resolveAttribute(ASTNode columnRef) {
-    if (!COLUMN_REF.isInstance(columnRef)) throw new IllegalArgumentException();
-    final ASTNode colName = columnRef.get(COLUMN_REF_COLUMN);
-    return resolveAttribute(colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN));
-  }
-
-  default AttributeDef resolveAttribute(int id) {
-    for (AttributeDef outAttr : definedAttributes()) if (outAttr.referencesTo(id)) return outAttr;
-    return null;
-  }
-
-  default AttributeDef resolveAttribute(AttributeDef attr) {
-    if (attr == null) return null;
-    final AttributeDef resolved = resolveAttribute(attr.id());
-    if (resolved == null && attr.isIdentity()) {
-      final AttributeDef upstream = attr.upstream();
-      assert upstream != null;
-      return upstream == attr ? null : resolveAttribute(upstream);
-    } else return resolved;
-  }
+  AttributeDef resolveAttribute(AttributeDef attr);
 
   static PlanNode rootOf(PlanNode node) {
     while (node.successor() != null) node = node.successor();

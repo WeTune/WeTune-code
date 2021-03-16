@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.internal.Prover;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 
 import java.util.Collection;
 

@@ -82,6 +82,15 @@ public class NativeAttributeDef extends AttributeDefBase {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (o == this) return true;
+    if (!(o instanceof AttributeDef)) return false;
+
+    if (o instanceof NativeAttributeDef) return ((NativeAttributeDef) o).id() == this.id();
+    else return o.equals(this);
+  }
+
+  @Override
   public String toString() {
     return column + " AS " + qualification() + "." + name();
   }

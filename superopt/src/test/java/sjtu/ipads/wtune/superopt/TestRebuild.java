@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
 import java.util.List;

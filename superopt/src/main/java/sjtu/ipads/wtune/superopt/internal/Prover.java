@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Semantic;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.superopt.optimization.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Solver;
 import sjtu.ipads.wtune.symsolver.core.Summary;

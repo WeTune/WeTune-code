@@ -8,8 +8,12 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef.fastEquals;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.selectItemAlias;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public abstract class PlanNodeBase implements PlanNode {
   private PlanNode successor;
@@ -58,6 +62,48 @@ public abstract class PlanNodeBase implements PlanNode {
     final PlanNode[] copiedPred = node.predecessors();
     for (int i = 0, bound = thisPred.length; i < bound; i++) copiedPred[i] = thisPred[i];
     return node;
+  }
+
+  @Override
+  public AttributeDef resolveAttribute(String qualification, String name) {
+    qualification = simpleName(qualification);
+    name = simpleName(name);
+
+    for (AttributeDef attr : definedAttributes())
+      if ((qualification == null || qualification.equals(attr.qualification()))
+          && name.equals(attr.name())) return attr;
+
+    for (AttributeDef attr : definedAttributes())
+      if (attr.referencesTo(qualification, name)) return attr;
+
+    return null;
+  }
+
+  @Override
+  public AttributeDef resolveAttribute(ASTNode columnRef) {
+    if (!COLUMN_REF.isInstance(columnRef)) throw new IllegalArgumentException();
+    final ASTNode colName = columnRef.get(COLUMN_REF_COLUMN);
+    return resolveAttribute(colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN));
+  }
+
+  @Override
+  public AttributeDef resolveAttribute(int attrId) {
+    // fast path
+    for (AttributeDef outAttr : definedAttributes()) if (outAttr.id() == attrId) return outAttr;
+    // slow path
+    for (AttributeDef outAttr : definedAttributes())
+      if (outAttr.referencesTo(attrId)) return outAttr;
+    return null;
+  }
+
+  @Override
+  public AttributeDef resolveAttribute(AttributeDef attr) {
+    if (attr == null) return null;
+    // fast path
+    for (AttributeDef outAttr : definedAttributes()) if (fastEquals(outAttr, attr)) return outAttr;
+    // slow path
+    for (AttributeDef outAttr : definedAttributes()) if (outAttr.equals(attr)) return outAttr;
+    return null;
   }
 
   protected abstract PlanNode copy0();
