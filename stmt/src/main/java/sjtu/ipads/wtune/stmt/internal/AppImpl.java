@@ -14,9 +14,9 @@ import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 public class AppImpl implements App {
   private final String name;
-  private final String dbType;
-
+  private String dbType;
   private final Map<String, Schema> schemas;
+  private Properties connProps;
 
   private AppImpl(String name, String dbType) {
     this.name = name;
@@ -44,6 +44,42 @@ public class AppImpl implements App {
     final Schema schema = schemas.computeIfAbsent(tag, this::readSchema);
     if (patched) schema.patch(SchemaPatchDao.instance().findByApp(name));
     return schema;
+  }
+
+  @Override
+  public Properties dbProps() {
+    if (connProps == null) {
+      connProps = new Properties();
+      if (MYSQL.equals(dbType)) {
+        connProps.setProperty("jdbcUrl", "jdbc:mysql://10.0.0.102:3307/" + name + "_base");
+        connProps.setProperty("username", "root");
+        connProps.setProperty("password", "admin");
+        connProps.setProperty("dbType", MYSQL);
+
+      } else if (POSTGRESQL.equals(dbType)) {
+        connProps.setProperty("jdbcUrl", "jdbc:postgresql://10.0.0.102:5432/" + name + "_base");
+        connProps.setProperty("username", "zxd");
+        connProps.setProperty("dbType", POSTGRESQL);
+
+      } else throw new IllegalArgumentException("unknown db type");
+    }
+
+    return connProps;
+  }
+
+  @Override
+  public void setDbType(String dbType) {
+    this.dbType = dbType;
+  }
+
+  @Override
+  public void setSchema(String tag, Schema schema) {
+    schemas.put(tag, schema);
+  }
+
+  @Override
+  public void setDbConnProps(Properties props) {
+    this.connProps = props;
   }
 
   private Schema readSchema(String tag) {

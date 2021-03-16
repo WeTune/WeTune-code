@@ -1,20 +1,19 @@
 package sjtu.ipads.wtune.superopt;
 
-import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 public class TestOptimizer {
   private static SubstitutionBank bank;
@@ -1284,17 +1283,7 @@ public class TestOptimizer {
 
   // 133 shopizer-68 slow
   // 134 shopizer-119 slow
-
-  @Test // 135
-  void testShopizer126() {
-    final String appName = "shopizer";
-    final int stmtId = 126;
-    final String[] expected =
-        new String[] {
-          "SELECT * FROM `sm_group` AS `group0_` LEFT JOIN `permission_group` AS `permission1_` ON `group0_`.`group_id` = `permission1_`.`group_id` LEFT JOIN `permission` AS `permission2_` ON `permission1_`.`permission_id` = `permission2_`.`permission_id` ORDER BY `group_id1_65_0_`",
-        };
-    doTest(appName, stmtId, expected);
-  }
+  // 135 solidus-126 slow
 
   @Test // 136
   void testSolidus230() {

@@ -1,20 +1,19 @@
 package sjtu.ipads.wtune.superopt;
 
-import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 public class TestOptimizerSlow {
   private static SubstitutionBank bank;
@@ -100,7 +99,7 @@ public class TestOptimizerSlow {
     final int stmtId = 3825;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"sort_order\" DESC"
+          "SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" INNER JOIN \"post_search_data\" AS \"post_search_data\" ON \"posts\".\"id\" = \"post_search_data\".\"post_id\" INNER JOIN \"topics\" AS \"topics\" ON \"posts\".\"topic_id\" = \"topics\".\"id\" INNER JOIN \"categories\" AS \"categories\" ON \"topics\".\"category_id\" = \"categories\".\"id\" INNER JOIN \"topic_tags\" AS \"tt\" ON \"topics\".\"id\" = \"tt\".\"topic_id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tt\".\"tag_id\" = \"tag_group_memberships\".\"tag_id\" WHERE \"tag_group_memberships\".\"tag_group_id\" = 504 AND NOT \"categories\".\"id\" IN (SELECT \"categories\".\"id\" WHERE \"categories\".\"search_priority\" = 1) AND NOT \"posts\".\"deleted_at\" IS NULL AND NOT \"posts\".\"topic_id\" IN ($1) AND NOT \"topics\".\"deleted_at\" IS NULL AND (\"categories\".\"id\" IS NULL OR NOT \"categories\".\"read_restricted\" IS TRUE) AND \"posts\".\"post_type\" IN ($1) AND \"topics\".\"archetype\" <> 'private_message' AND \"topics\".\"visible\" IS TRUE ORDER BY \"created_at\" DESC LIMIT 9 OFFSET 0"
         };
     doTest(appName, stmtId, expected);
   }
@@ -200,6 +199,17 @@ public class TestOptimizerSlow {
     final String[] expected =
         new String[] {
           "SELECT `productrel0_`.`product_relationship_id` AS `product_1_56_0_`, `product1_`.`product_id` AS `product_1_42_1_`, `product2_`.`product_id` AS `product_1_42_2_`, `descriptio3_`.`description_id` AS `descript1_46_3_`, `productrel0_`.`active` AS `active2_56_0_`, `productrel0_`.`code` AS `code3_56_0_`, `productrel0_`.`product_id` AS `product_4_56_0_`, `productrel0_`.`related_product_id` AS `related_5_56_0_`, `productrel0_`.`merchant_id` AS `merchant6_56_0_`, `product1_`.`date_created` AS `date_cre2_42_1_`, `product1_`.`date_modified` AS `date_mod3_42_1_`, `product1_`.`updt_id` AS `updt_id4_42_1_`, `product1_`.`available` AS `availabl5_42_1_`, `product1_`.`cond` AS `cond6_42_1_`, `product1_`.`date_available` AS `date_ava7_42_1_`, `product1_`.`manufacturer_id` AS `manufac25_42_1_`, `product1_`.`merchant_id` AS `merchan26_42_1_`, `product1_`.`customer_id` AS `custome27_42_1_`, `product1_`.`preorder` AS `preorder8_42_1_`, `product1_`.`product_height` AS `product_9_42_1_`, `product1_`.`product_free` AS `product10_42_1_`, `product1_`.`product_length` AS `product11_42_1_`, `product1_`.`quantity_ordered` AS `quantit12_42_1_`, `product1_`.`review_avg` AS `review_13_42_1_`, `product1_`.`review_count` AS `review_14_42_1_`, `product1_`.`product_ship` AS `product15_42_1_`, `product1_`.`product_virtual` AS `product16_42_1_`, `product1_`.`product_weight` AS `product17_42_1_`, `product1_`.`product_width` AS `product18_42_1_`, `product1_`.`ref_sku` AS `ref_sku19_42_1_`, `product1_`.`rental_duration` AS `rental_20_42_1_`, `product1_`.`rental_period` AS `rental_21_42_1_`, `product1_`.`rental_status` AS `rental_22_42_1_`, `product1_`.`sku` AS `sku23_42_1_`, `product1_`.`sort_order` AS `sort_or24_42_1_`, `product1_`.`tax_class_id` AS `tax_cla28_42_1_`, `product1_`.`product_type_id` AS `product29_42_1_`, `product2_`.`date_created` AS `date_cre2_42_2_`, `product2_`.`date_modified` AS `date_mod3_42_2_`, `product2_`.`updt_id` AS `updt_id4_42_2_`, `product2_`.`available` AS `availabl5_42_2_`, `product2_`.`cond` AS `cond6_42_2_`, `product2_`.`date_available` AS `date_ava7_42_2_`, `product2_`.`manufacturer_id` AS `manufac25_42_2_`, `product2_`.`merchant_id` AS `merchan26_42_2_`, `product2_`.`customer_id` AS `custome27_42_2_`, `product2_`.`preorder` AS `preorder8_42_2_`, `product2_`.`product_height` AS `product_9_42_2_`, `product2_`.`product_free` AS `product10_42_2_`, `product2_`.`product_length` AS `product11_42_2_`, `product2_`.`quantity_ordered` AS `quantit12_42_2_`, `product2_`.`review_avg` AS `review_13_42_2_`, `product2_`.`review_count` AS `review_14_42_2_`, `product2_`.`product_ship` AS `product15_42_2_`, `product2_`.`product_virtual` AS `product16_42_2_`, `product2_`.`product_weight` AS `product17_42_2_`, `product2_`.`product_width` AS `product18_42_2_`, `product2_`.`ref_sku` AS `ref_sku19_42_2_`, `product2_`.`rental_duration` AS `rental_20_42_2_`, `product2_`.`rental_period` AS `rental_21_42_2_`, `product2_`.`rental_status` AS `rental_22_42_2_`, `product2_`.`sku` AS `sku23_42_2_`, `product2_`.`sort_order` AS `sort_or24_42_2_`, `product2_`.`tax_class_id` AS `tax_cla28_42_2_`, `product2_`.`product_type_id` AS `product29_42_2_`, `descriptio3_`.`date_created` AS `date_cre2_46_3_`, `descriptio3_`.`date_modified` AS `date_mod3_46_3_`, `descriptio3_`.`updt_id` AS `updt_id4_46_3_`, `descriptio3_`.`description` AS `descript5_46_3_`, `descriptio3_`.`language_id` AS `languag14_46_3_`, `descriptio3_`.`name` AS `name6_46_3_`, `descriptio3_`.`title` AS `title7_46_3_`, `descriptio3_`.`meta_description` AS `meta_des8_46_3_`, `descriptio3_`.`meta_keywords` AS `meta_key9_46_3_`, `descriptio3_`.`meta_title` AS `meta_ti10_46_3_`, `descriptio3_`.`product_id` AS `product15_46_3_`, `descriptio3_`.`download_lnk` AS `downloa11_46_3_`, `descriptio3_`.`product_highlight` AS `product12_46_3_`, `descriptio3_`.`sef_url` AS `sef_url13_46_3_`, `descriptio3_`.`product_id` AS `product15_46_0__`, `descriptio3_`.`description_id` AS `descript1_46_0__` FROM `product_relationship` AS `productrel0_` INNER JOIN `product` AS `product2_` ON `productrel0_`.`related_product_id` = `product2_`.`product_id` INNER JOIN `product` AS `product1_` ON `productrel0_`.`product_id` = `product1_`.`product_id` INNER JOIN `product_description` AS `descriptio3_` ON `product2_`.`product_id` = `descriptio3_`.`product_id` WHERE `productrel0_`.`code` = 'RELATED_ITEM' AND `productrel0_`.`merchant_id` = 1 AND `product1_`.`product_id` = 2 AND `descriptio3_`.`language_id` = 1",
+        };
+    doTest(appName, stmtId, expected);
+  }
+
+  @Test // 135
+  void testSolidus126() {
+    final String appName = "solidus";
+    final int stmtId = 126;
+    final String[] expected =
+        new String[] {
+          "SELECT * FROM `sm_group` AS `group0_` LEFT JOIN `permission_group` AS `permission1_` ON `group0_`.`group_id` = `permission1_`.`group_id` LEFT JOIN `permission` AS `permission2_` ON `permission1_`.`permission_id` = `permission2_`.`permission_id` ORDER BY `group_id1_65_0_`",
         };
     doTest(appName, stmtId, expected);
   }

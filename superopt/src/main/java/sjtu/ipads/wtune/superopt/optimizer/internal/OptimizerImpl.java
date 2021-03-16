@@ -1,27 +1,17 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
-import sjtu.ipads.wtune.sqlparser.ASTContext;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.*;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.optimizer.*;
-import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
-import sjtu.ipads.wtune.superopt.optimizer.support.MinCostList;
-import sjtu.ipads.wtune.superopt.optimizer.support.OptGroup;
-import sjtu.ipads.wtune.superopt.optimizer.support.TypeBasedAlgorithm;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.google.common.collect.Lists.cartesianProduct;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.constrainedInterpretations;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.derivedInterpretations;
@@ -29,6 +19,34 @@ import static sjtu.ipads.wtune.superopt.optimizer.support.DistinctReducer.reduce
 import static sjtu.ipads.wtune.superopt.optimizer.support.PlanNormalizer.normalize;
 import static sjtu.ipads.wtune.superopt.optimizer.support.SortReducer.reduceSort;
 import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
+
+import java.util.ArrayList;
+import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
+import sjtu.ipads.wtune.superopt.optimizer.Hint;
+import sjtu.ipads.wtune.superopt.optimizer.Match;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
+import sjtu.ipads.wtune.superopt.optimizer.support.MinCostList;
+import sjtu.ipads.wtune.superopt.optimizer.support.OptGroup;
+import sjtu.ipads.wtune.superopt.optimizer.support.TypeBasedAlgorithm;
 
 public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements Optimizer {
   private final SubstitutionBank repo;
@@ -38,12 +56,13 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   public OptimizerImpl(SubstitutionBank repo, Schema schema) {
     this.repo = repo;
     this.schema = schema;
-    this.memo = new Memo<>(this::extractKey);
+    this.memo = new Memo<>(OptimizerImpl::extractKey);
   }
 
   @Override
   public List<ASTNode> optimize(ASTNode root) {
     root = root.deepCopy();
+    root.context().setSchema(schema);
     return listMap(this::toAST, optimize(toPlan(root)));
   }
 
@@ -51,43 +70,18 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   public List<PlanNode> optimize(PlanNode root) {
     memo.clear();
 
-    reduceSort(root);
-    reduceDistinct(root);
-
+    // preprocess
+    final boolean reduced = reduceSort(root) || reduceDistinct(root);
     final PlanNode normalized = normalize(root);
     assert normalized != null;
 
-    return optimize0(normalized);
-  }
+    final List<PlanNode> optimized = optimize0(normalized);
+    assert !optimized.isEmpty();
 
-  private String extractKey(PlanNode root) {
-    return PlanNode.toStringOnTree(root);
-  }
-
-  private List<PlanNode> optimize0(PlanNode node) {
-    final String key = extractKey(node);
-
-    final OptGroup<?> group = memo.get(key);
-    // Note: to prevent redundant optimization, we check whether a plan is "optimized"
-    // A plan is optimized if:
-    // 1. it self has be registered in memo, and
-    // 2. all its children has been registered in memo
-    //
-    // Note that the group of an "optimized" plan still has chance to be updated,
-    // since other plan in the same group may be further transformed.
-    // Consider this situation:
-    // P0(cost=2) -> P1(cost=2),P2(cost=2); P2 -> P3(cost=1)
-    // After trying, P1 cannot be further transformed (nor its children), thus "optimized"
-    // Obviously, P1 and P3 is equivalent. Thus P1 and P2 are in same OptGroup.
-    // Then, when P2 are transformed to P3, the group is accordingly updated.
-    //
-    // This mechanism can also prevent cyclic transformation, i.e. A -> B -> A
-    if (group != null && stream(node.predecessors()).allMatch(it -> memo.get(it) != null))
-      return group;
-
-    final List<PlanNode> ret = dispatch(node);
-
-    return ret;
+    // remove the original query from returned collection
+    if (!reduced && extractKey(optimized.get(0)).equals(extractKey(normalized)))
+      return optimized.subList(1, optimized.size());
+    else return optimized;
   }
 
   @Override
@@ -143,6 +137,30 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   @Override
   protected OptGroup<?> onAgg(AggNode agg) {
     return optimizeChild(agg);
+  }
+
+  private List<PlanNode> optimize0(PlanNode node) {
+    final String key = extractKey(node);
+
+    final OptGroup<?> group = memo.get(key);
+    // Note: to prevent redundant optimization, we check whether a plan is "optimized"
+    // A plan is optimized if:
+    // 1. it self has be registered in memo, and
+    // 2. all its children has been registered in memo
+    //
+    // Note that the group of an "optimized" plan still has chance to be updated,
+    // since other plan in the same group may be further transformed.
+    // Consider this situation:
+    // P0(cost=2) -> P1(cost=2),P2(cost=2); P2 -> P3(cost=1)
+    // After trying, P1 cannot be further transformed (nor its children), thus "optimized"
+    // Obviously, P1 and P3 is equivalent. Thus P1 and P2 are in same OptGroup.
+    // Then, when P2 are transformed to P3, the group is accordingly updated.
+    //
+    // This mechanism can also prevent cyclic transformation, i.e. A -> B -> A
+    if (group != null && stream(node.predecessors()).allMatch(it -> memo.get(it) != null))
+      return group;
+
+    return dispatch(node);
   }
 
   private List<PlanNode> optimizeChild0(PlanNode n) {
@@ -228,33 +246,6 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     return transformed;
   }
 
-  /**
-   * apply `childrenOpts` to `root` to build new plans.
-   *
-   * @param childrenOpts: the 1st dim is possibilities, the 2nd dim is the optimized children
-   * @return fresh new plan constructed
-   */
-  private static List<PlanNode> applyChildrenOpts(
-      PlanNode root, List<List<PlanNode>> childrenOpts) {
-    final List<PlanNode> ret = new ArrayList<>(childrenOpts.size());
-
-    for (List<PlanNode> optChildren : childrenOpts) {
-      if (optChildren.isEmpty()) continue;
-      assert optChildren.size() == root.type().numPredecessors();
-
-      final PlanNode copy = copyToRoot(root);
-      for (int i = 0, bound = optChildren.size(); i < bound; i++) {
-        final PlanNode optChild = optChildren.get(i);
-        copy.setPredecessor(i, copyOnTree(optChild));
-      }
-
-      resolveUsedOnTree(rootOf(copy));
-      ret.add(copy);
-    }
-
-    return ret;
-  }
-
   private static List<Match> match(PlanNode node, Operator op, Interpretations baseInter) {
     final List<Match> ret = new ArrayList<>();
 
@@ -286,5 +277,36 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     }
 
     return ret;
+  }
+
+  /**
+   * apply `childrenOpts` to `root` to build new plans.
+   *
+   * @param childrenOpts: the 1st dim is possibilities, the 2nd dim is the optimized children
+   * @return fresh new plan constructed
+   */
+  private static List<PlanNode> applyChildrenOpts(
+      PlanNode root, List<List<PlanNode>> childrenOpts) {
+    final List<PlanNode> ret = new ArrayList<>(childrenOpts.size());
+
+    for (List<PlanNode> optChildren : childrenOpts) {
+      if (optChildren.isEmpty()) continue;
+      assert optChildren.size() == root.type().numPredecessors();
+
+      final PlanNode copy = copyToRoot(root);
+      for (int i = 0, bound = optChildren.size(); i < bound; i++) {
+        final PlanNode optChild = optChildren.get(i);
+        copy.setPredecessor(i, copyOnTree(optChild));
+      }
+
+      resolveUsedOnTree(rootOf(copy));
+      ret.add(copy);
+    }
+
+    return ret;
+  }
+
+  private static String extractKey(PlanNode root) {
+    return PlanNode.toStringOnTree(root);
   }
 }

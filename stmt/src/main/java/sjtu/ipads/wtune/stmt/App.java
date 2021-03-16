@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.internal.AppImpl;
 
 import java.util.Collection;
+import java.util.Properties;
 
 /**
  * Basic information about an application. Also serve as the reader and cache for per-app
@@ -15,6 +16,14 @@ public interface App {
   String dbType();
 
   Schema schema(String tag, boolean patched);
+
+  Properties dbProps();
+
+  void setDbType(String dbType);
+
+  void setSchema(String tag, Schema schema);
+
+  void setDbConnProps(Properties props);
 
   default Schema schema(String tag) {
     return schema(tag, false);
