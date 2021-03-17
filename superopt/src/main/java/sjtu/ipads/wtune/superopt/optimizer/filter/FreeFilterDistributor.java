@@ -1,22 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.superopt.fragment.Filter;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import static com.google.common.collect.Collections2.orderedPermutations;
 import static com.google.common.collect.Sets.difference;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.superopt.fragment.Filter;
 
 public class FreeFilterDistributor extends FilterDistributorBase implements FilterDistributor {
   // "Free" means the filter is not involved in any constrained, thus never influence the match.

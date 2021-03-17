@@ -1,18 +1,17 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
-import sjtu.ipads.wtune.sqlparser.plan.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
-import java.util.HashSet;
-import java.util.Set;
-
 import static com.google.common.collect.Sets.cartesianProduct;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
 import static sjtu.ipads.wtune.superopt.optimizer.Fingerprint.charOf;
+
+import java.util.HashSet;
+import java.util.Set;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class PlanFingerprint {
   private static final int MAX_LENGTH = 4;

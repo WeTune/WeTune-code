@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic;
 
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-
 import java.util.Collection;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
 
 public interface Placeholders {
   Placeholder getPick(Operator node, int ordinal);
@@ -16,6 +15,8 @@ public interface Placeholders {
   Collection<Placeholder> predicates();
 
   Collection<Placeholder> tables();
+
+  void remove(Operator op);
 
   boolean contains(Placeholder placeholder);
 

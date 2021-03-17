@@ -24,7 +24,7 @@ public class TestOptimizerSlow {
     bank = SubstitutionBank.make();
 
     try {
-      bank.importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
+      bank.importFrom(Files.readAllLines(Paths.get("wtune_data", "filtered_bank")), false);
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }
@@ -137,7 +137,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 123
+  @Test // 123
   void testShopizer3() {
     final String appName = "shopizer";
     final int stmtId = 3;
@@ -148,7 +148,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 126
+  @Test // 126
   void testShopizer24() {
     final String appName = "shopizer";
     final int stmtId = 24;
@@ -159,7 +159,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 128
+  @Test // 128
   void testShopizer39() {
     final String appName = "shopizer";
     final int stmtId = 39;
@@ -170,7 +170,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 131
+  @Test // 131
   void testShopizer57() {
     final String appName = "shopizer";
     final int stmtId = 57;
@@ -181,7 +181,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 133
+  @Test // 133
   void testShopizer68() {
     final String appName = "shopizer";
     final int stmtId = 68;
@@ -192,7 +192,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  //  @Test // 134
+  @Test // 134
   void testShopizer119() {
     final String appName = "shopizer";
     final int stmtId = 119;
@@ -209,7 +209,7 @@ public class TestOptimizerSlow {
     final int stmtId = 126;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `sm_group` AS `group0_` LEFT JOIN `permission_group` AS `permission1_` ON `group0_`.`group_id` = `permission1_`.`group_id` LEFT JOIN `permission` AS `permission2_` ON `permission1_`.`permission_id` = `permission2_`.`permission_id` ORDER BY `group_id1_65_0_`",
+          "SELECT `spree_shipping_methods`.`id` AS `id`, `spree_shipping_methods`.`name` AS `name`, `spree_shipping_methods`.`deleted_at` AS `deleted_at`, `spree_shipping_methods`.`created_at` AS `created_at`, `spree_shipping_methods`.`updated_at` AS `updated_at`, `spree_shipping_methods`.`tracking_url` AS `tracking_url`, `spree_shipping_methods`.`admin_name` AS `admin_name`, `spree_shipping_methods`.`tax_category_id` AS `tax_category_id`, `spree_shipping_methods`.`code` AS `code`, `spree_shipping_methods`.`available_to_all` AS `available_to_all`, `spree_shipping_methods`.`carrier` AS `carrier`, `spree_shipping_methods`.`service_level` AS `service_level`, `spree_shipping_methods`.`available_to_users` AS `available_to_users` FROM `spree_shipping_method_zones` AS `spree_shipping_method_zones` INNER JOIN `spree_shipping_method_stock_locations` AS `spree_shipping_method_stock_locations` ON `spree_shipping_method_zones`.`shipping_method_id` = `spree_shipping_method_stock_locations`.`shipping_method_id` INNER JOIN `spree_shipping_methods` AS `spree_shipping_methods` ON `spree_shipping_method_zones`.`shipping_method_id` = `spree_shipping_methods`.`id` INNER JOIN `spree_zone_members` AS `spree_zone_members` ON `spree_shipping_method_zones`.`zone_id` = `spree_zone_members`.`zone_id` WHERE `spree_shipping_methods`.`id` IN (SELECT `spree_shipping_methods`.`id` FROM `spree_shipping_methods` INNER JOIN `spree_shipping_method_categories` ON `spree_shipping_method_categories`.`shipping_method_id` = `spree_shipping_methods`.`id` WHERE `spree_shipping_methods`.`deleted_at` IS NULL AND `spree_shipping_method_categories`.`shipping_category_id` = 874 GROUP BY `spree_shipping_methods`.`id` HAVING COUNT(DISTINCT `spree_shipping_method_categories`.`id`) = 1) AND (`spree_shipping_methods`.`available_to_all` = TRUE OR `spree_shipping_method_stock_locations`.`stock_location_id` = 1004) AND `spree_shipping_methods`.`deleted_at` IS NULL AND (`spree_zone_members`.`zoneable_type` = 'Spree::State' AND `spree_zone_members`.`zoneable_id` IN (?) OR `spree_zone_members`.`zoneable_type` = 'Spree::Country' AND `spree_zone_members`.`zoneable_id` IN (?))",
         };
     doTest(appName, stmtId, expected);
   }

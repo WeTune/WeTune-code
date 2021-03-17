@@ -1,5 +1,13 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.superopt.optimizer.filter.FilterHint.rearrangeFilter;
+import static sjtu.ipads.wtune.superopt.optimizer.join.JoinHint.rearrangeJoinNew;
+
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
@@ -7,12 +15,6 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Join;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
-import static sjtu.ipads.wtune.superopt.optimizer.filter.FilterHint.rearrangeFilter;
-import static sjtu.ipads.wtune.superopt.optimizer.join.JoinHint.rearrangeJoinNew;
 
 public interface Hint {
   static Iterable<PlanNode> apply(PlanNode node, Operator op, Interpretations inter) {

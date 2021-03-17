@@ -2,11 +2,10 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.sql.DataSource;
 
 public class DataSourceFactory {
   private final Map<String, DataSource> dataSources = new HashMap<>();

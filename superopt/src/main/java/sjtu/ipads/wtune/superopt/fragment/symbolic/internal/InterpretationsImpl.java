@@ -1,24 +1,28 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.*;
-import sjtu.ipads.wtune.superopt.util.Constraints;
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickFrom;
-import sjtu.ipads.wtune.symsolver.core.PickSub;
-import sjtu.ipads.wtune.symsolver.core.Reference;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.InputInterpretation;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretation;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.PredicateInterpretation;
+import sjtu.ipads.wtune.superopt.util.Constraints;
+import sjtu.ipads.wtune.symsolver.core.Constraint;
+import sjtu.ipads.wtune.symsolver.core.PickFrom;
+import sjtu.ipads.wtune.symsolver.core.PickSub;
+import sjtu.ipads.wtune.symsolver.core.Reference;
 
 public class InterpretationsImpl implements Interpretations {
   private final InterpretationsImpl base;

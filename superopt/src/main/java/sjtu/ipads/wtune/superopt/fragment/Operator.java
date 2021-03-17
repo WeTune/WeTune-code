@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import java.util.ArrayList;
+import java.util.List;
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.util.Hole;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operator> {
   Fragment fragment();

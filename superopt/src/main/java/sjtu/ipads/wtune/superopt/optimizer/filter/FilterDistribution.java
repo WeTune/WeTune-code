@@ -1,16 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
+import static com.google.common.collect.Sets.difference;
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-
-import java.util.*;
-
-import static com.google.common.collect.Sets.difference;
-import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
 
 public class FilterDistribution {
   private final Set<FilterNode> pool;

@@ -1,9 +1,6 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import com.google.common.collect.Lists;
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -14,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 
 public class ProofRunner {
   public static final System.Logger LOG = System.getLogger("superopt");

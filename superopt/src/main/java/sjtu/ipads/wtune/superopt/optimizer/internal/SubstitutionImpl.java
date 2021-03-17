@@ -1,5 +1,13 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
+import static sjtu.ipads.wtune.common.utils.Commons.listSort;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
+
+import java.util.List;
+import java.util.stream.Collectors;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
@@ -7,13 +15,6 @@ import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickFrom;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static sjtu.ipads.wtune.common.utils.Commons.listSort;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
 
 public class SubstitutionImpl implements Substitution {
   private final Fragment g0, g1;

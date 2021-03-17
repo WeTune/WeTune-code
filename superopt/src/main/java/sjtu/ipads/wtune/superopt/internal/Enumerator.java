@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import static java.util.Collections.singleton;
+import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
+
 import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.Operators;
@@ -10,14 +17,6 @@ import sjtu.ipads.wtune.superopt.util.rules.simplify.NonLeftDeepJoin;
 import sjtu.ipads.wtune.superopt.util.rules.support.AllJoin;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedJoin;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedSubqueryFilter;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
 
 public class Enumerator {
   public static final int MAX_FRAGMENT_SIZE = 4;

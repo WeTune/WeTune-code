@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class MinCostList extends AbstractList<PlanNode> {
   private final List<PlanNode> list = new ArrayList<>();

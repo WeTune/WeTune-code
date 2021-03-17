@@ -1,21 +1,23 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 
 public class FilterHint {
 

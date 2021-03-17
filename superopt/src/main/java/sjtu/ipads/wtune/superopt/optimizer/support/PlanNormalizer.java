@@ -1,23 +1,45 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
+import static java.util.Collections.newSetFromMap;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
+
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 import sjtu.ipads.wtune.superopt.optimizer.join.JoinTree;
-
-import java.util.*;
-
-import static java.util.Collections.newSetFromMap;
-import static sjtu.ipads.wtune.common.utils.Commons.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
 
 public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 

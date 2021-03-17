@@ -1,5 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer.join;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
+
+import java.util.ArrayList;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -7,14 +14,6 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.fragment.Join;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
 
 public class JoinHint {
   public static Iterable<PlanNode> rearrangeJoinNew(

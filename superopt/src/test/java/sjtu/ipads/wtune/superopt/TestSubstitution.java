@@ -1,19 +1,16 @@
 package sjtu.ipads.wtune.superopt;
 
+import static java.util.Collections.singleton;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 
 public class TestSubstitution {
   @Test
@@ -32,8 +29,7 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final Substitution sub = Substitution.rebuild(substitution);
-    final SubstitutionBank repo = SubstitutionBank.make().add(sub);
+    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
 
     final Optimizer opt = Optimizer.make(repo, schema);
     final List<ASTNode> optimized = opt.optimize(ast);
@@ -59,8 +55,7 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final PlanNode plan = ToPlanTranslator.toPlan(ast);
-    final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
+    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
 
     final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
@@ -84,7 +79,7 @@ public class TestSubstitution {
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
 
-    final SubstitutionBank repo = SubstitutionBank.make().add(Substitution.rebuild(substitution));
+    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
 
     final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());

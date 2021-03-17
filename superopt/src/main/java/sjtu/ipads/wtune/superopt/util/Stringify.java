@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Input;
+import sjtu.ipads.wtune.superopt.fragment.Join;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
+import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
+import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 

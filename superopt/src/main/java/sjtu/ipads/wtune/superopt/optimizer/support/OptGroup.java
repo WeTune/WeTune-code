@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
 import java.util.AbstractList;
 import java.util.List;
 import java.util.function.Function;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class OptGroup<T> extends AbstractList<PlanNode> {
   private final Memo<T> memo;

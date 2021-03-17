@@ -1,27 +1,37 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-import sjtu.ipads.wtune.common.utils.EquivalentClasses;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.plan.*;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 import static com.google.common.collect.Lists.cartesianProduct;
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import sjtu.ipads.wtune.common.utils.EquivalentClasses;
+import sjtu.ipads.wtune.common.utils.FuncUtils;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public class UniquenessInference extends TypeBasedAlgorithm<Uniqueness> {
   private final EquivalentClasses<AttributeDef> equalAttrs = new EquivalentClasses<>();

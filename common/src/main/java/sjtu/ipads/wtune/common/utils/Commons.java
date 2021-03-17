@@ -1,10 +1,19 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.lang.reflect.Array;
-import java.util.*;
-import java.util.function.Supplier;
-
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
 
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
@@ -178,7 +187,16 @@ public interface Commons {
 
   @SafeVarargs
   static <T> List<T> listJoin(List<T>... ts) {
-    return new ConcatenatedList<>(Arrays.asList(ts));
+    switch (ts.length) {
+      case 0:
+        return emptyList();
+      case 1:
+        return ts[0];
+      case 2:
+        return new BinaryJoinedList<>(ts[0], ts[1]);
+      default:
+        return new JoinedList<>(Arrays.asList(ts));
+    }
   }
 
   static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {

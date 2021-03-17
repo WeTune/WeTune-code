@@ -1,19 +1,24 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import static sjtu.ipads.wtune.common.utils.Commons.arrayConcat;
+import static sjtu.ipads.wtune.common.utils.Commons.asArray;
+import static sjtu.ipads.wtune.common.utils.Commons.maskArray;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
+
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.symsolver.core.*;
-import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
-import sjtu.ipads.wtune.symsolver.logic.Proposition;
-import sjtu.ipads.wtune.symsolver.logic.Value;
-
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.function.Function;
-
-import static sjtu.ipads.wtune.common.utils.Commons.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+import sjtu.ipads.wtune.symsolver.core.BaseQueryBuilder;
+import sjtu.ipads.wtune.symsolver.core.PickSym;
+import sjtu.ipads.wtune.symsolver.core.PredicateSym;
+import sjtu.ipads.wtune.symsolver.core.Sym;
+import sjtu.ipads.wtune.symsolver.core.TableSym;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
+import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
   private final Fragment q;

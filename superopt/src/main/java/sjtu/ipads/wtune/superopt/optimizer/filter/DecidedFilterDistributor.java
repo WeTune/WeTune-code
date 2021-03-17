@@ -1,6 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
+import static java.util.Collections.singletonList;
+
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
@@ -9,13 +15,6 @@ import sjtu.ipads.wtune.superopt.fragment.Filter;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
 import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import static java.util.Collections.singletonList;
 
 public class DecidedFilterDistributor extends FilterDistributorBase implements FilterDistributor {
   // "Decided" meaning what the filter should be has be decided according to existing assignment and

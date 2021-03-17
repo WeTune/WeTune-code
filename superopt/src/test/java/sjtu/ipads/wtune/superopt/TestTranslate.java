@@ -1,13 +1,17 @@
 package sjtu.ipads.wtune.superopt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.innerJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.leftJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.plainFilter;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.proj;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.subqueryFilter;
+
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
-import static sjtu.ipads.wtune.superopt.fragment.Operator.*;
 
 public class TestTranslate {
   @Test

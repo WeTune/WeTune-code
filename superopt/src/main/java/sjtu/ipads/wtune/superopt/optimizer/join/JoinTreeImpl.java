@@ -1,13 +1,18 @@
 package sjtu.ipads.wtune.superopt.optimizer.join;
 
-import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
-import java.util.*;
-
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.ListIterator;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
   // Assumption: no such wired join: a JOIN b ON .. JOIN c ON a.x = c.z AND b.y = c.w

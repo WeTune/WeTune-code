@@ -1,9 +1,8 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
 import java.util.List;
 import java.util.Properties;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public interface Profiler {
   List<ASTNode> pickOptimized(ASTNode baseline, List<ASTNode> candidates);

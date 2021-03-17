@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.optimizer.internal.MatchImpl;
-
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 
 public interface Match {
   PlanNode matchPoint();

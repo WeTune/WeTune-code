@@ -1,15 +1,14 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
-import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.superopt.fragment.Filter;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.superopt.util.Constraints;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
+import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import sjtu.ipads.wtune.superopt.fragment.Filter;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.util.Constraints;
 
 public abstract class FilterDistributorBase implements FilterDistributor {
   protected FilterDistributor next;

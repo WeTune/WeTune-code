@@ -1,10 +1,14 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import java.util.List;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-
-import java.util.List;
 
 public interface Join extends Operator {
   Placeholder leftFields();

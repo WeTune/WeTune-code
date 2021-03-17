@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.toStringOnTree;
+
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.InputInterpretation;
-
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.toStringOnTree;
 
 public class InputInterpretationImpl extends InterpretationBase<PlanNode>
     implements InputInterpretation {

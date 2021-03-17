@@ -1,17 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private final List<AttributeDef> defined;
@@ -93,9 +95,10 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   @Override
   public void resolveUsed() {
-    final PlanNode input = predecessors()[0];
-    if (used != null) used = resolveUsed1(used, input);
-    else used = resolveUsed0(gatherColumnRefs(selectItems), input);
+    used = listFlatMap(AttributeDef::references, defined);
+    //    final PlanNode input = predecessors()[0];
+    //    if (used != null) used = resolveUsed1(used, input);
+    //    else used = resolveUsed0(gatherColumnRefs(selectItems), input);
 
     final PlanNode succ = successor();
     final List<AttributeDef> definedAttrs = definedAttributes();

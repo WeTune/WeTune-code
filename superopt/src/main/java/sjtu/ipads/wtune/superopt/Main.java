@@ -1,13 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.internal.ProofRunner;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,9 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.logging.LogManager;
-
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
+import sjtu.ipads.wtune.superopt.internal.ProofRunner;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 public class Main {
 
@@ -43,6 +41,7 @@ public class Main {
 
     } else {
       test0();
+      //            cleanBank();
     }
   }
 
@@ -77,10 +76,8 @@ public class Main {
   }
 
   private static void test0() throws IOException {
-    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "substitution_bank"));
-    final SubstitutionBank bank =
-        SubstitutionBank.make().importFrom(lines.subList(0, lines.size() - 1));
-    bank.importFrom(singletonList(lines.get(lines.size() - 1)));
+    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
+    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
 
     final String sql =
         "SELECT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_groups\" AS \"tag_groups\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_groups\".\"id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_groups\".\"id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3";

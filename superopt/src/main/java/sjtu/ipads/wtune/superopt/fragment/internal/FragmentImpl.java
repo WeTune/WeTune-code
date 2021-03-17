@@ -1,15 +1,19 @@
 package sjtu.ipads.wtune.superopt.fragment.internal;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.*;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.internal.PlaceholdersImpl;
-import sjtu.ipads.wtune.superopt.util.Hole;
+import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-
-import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Input;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
+import sjtu.ipads.wtune.superopt.fragment.Operators;
+import sjtu.ipads.wtune.superopt.fragment.Semantic;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.internal.PlaceholdersImpl;
+import sjtu.ipads.wtune.superopt.util.Hole;
 
 public class FragmentImpl implements Fragment {
   private int id;

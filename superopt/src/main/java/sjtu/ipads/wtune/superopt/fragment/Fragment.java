@@ -1,18 +1,17 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
+
+import java.util.ArrayList;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.internal.FragmentImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
 import sjtu.ipads.wtune.superopt.util.Hole;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
-import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 public interface Fragment extends Comparable<Fragment> {
   void setId(int i);

@@ -1,17 +1,16 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class SortReducer {
   public static boolean reduceSort(PlanNode node) {

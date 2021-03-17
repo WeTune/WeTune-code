@@ -1,5 +1,11 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import static java.util.Comparator.comparingInt;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+
+import java.util.Arrays;
+import java.util.Collection;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Semantic;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
@@ -9,13 +15,6 @@ import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.Solver;
 import sjtu.ipads.wtune.symsolver.core.Summary;
 import sjtu.ipads.wtune.symsolver.core.Sym;
-
-import java.util.Arrays;
-import java.util.Collection;
-
-import static java.util.Comparator.comparingInt;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class Prover {
   private final Fragment g0, g1;
@@ -46,7 +45,7 @@ public class Prover {
   }
 
   private Substitution makeSubstitution(Summary summary) {
-    return Substitution.build(
+    return Substitution.make(
         g0, g1, numbering, listMap(this::makeConstraint, summary.constraints()));
   }
 

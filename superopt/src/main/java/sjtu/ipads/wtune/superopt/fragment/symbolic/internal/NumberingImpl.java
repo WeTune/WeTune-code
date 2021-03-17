@@ -3,7 +3,14 @@ package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.procedure.TObjectIntProcedure;
-import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.InnerJoin;
+import sjtu.ipads.wtune.superopt.fragment.Input;
+import sjtu.ipads.wtune.superopt.fragment.LeftJoin;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
+import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
+import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 

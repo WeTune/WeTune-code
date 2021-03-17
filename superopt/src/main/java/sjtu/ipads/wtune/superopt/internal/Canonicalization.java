@@ -1,6 +1,10 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
+import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
+import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
 
 public class Canonicalization implements OperatorVisitor {
   private Operator root;

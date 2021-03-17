@@ -1,6 +1,15 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 
 public class TypeBasedAlgorithm<T> {
   protected T dispatch(PlanNode node) {

@@ -1,9 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
-
-import java.util.List;
 
 public class AttributeInterpretationImpl extends InterpretationBase<List<AttributeDef>>
     implements AttributeInterpretation {

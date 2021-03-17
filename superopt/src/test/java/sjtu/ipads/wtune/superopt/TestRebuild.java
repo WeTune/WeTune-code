@@ -1,18 +1,20 @@
 package sjtu.ipads.wtune.superopt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.innerJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.proj;
+import static sjtu.ipads.wtune.symsolver.core.Constraint.pickEq;
+import static sjtu.ipads.wtune.symsolver.core.Constraint.pickFrom;
+import static sjtu.ipads.wtune.symsolver.core.Constraint.reference;
+import static sjtu.ipads.wtune.symsolver.core.Constraint.tableEq;
+
 import com.google.common.collect.Lists;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.superopt.fragment.Operator.innerJoin;
-import static sjtu.ipads.wtune.superopt.fragment.Operator.proj;
-import static sjtu.ipads.wtune.symsolver.core.Constraint.*;
 
 public class TestRebuild {
   @Test
@@ -36,7 +38,7 @@ public class TestRebuild {
                 numbering.placeholderOf("t1"),
                 numbering.placeholderOf("c2")));
 
-    final Substitution sub0 = Substitution.build(g0, g1, numbering, constraints);
+    final Substitution sub0 = Substitution.make(g0, g1, numbering, constraints);
     final String str0 = sub0.toString();
     assertEquals(
         "Proj<c0>(InnerJoin<c1 c2>(Input<t0>,Input<t1>))|Proj<c3>(Input<t2>)|TableEq(t0,t2);PickEq(c0,c2);PickEq(c1,c3);"

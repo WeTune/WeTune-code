@@ -1,14 +1,10 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import javax.sql.DataSource;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public class CostBasedProfiler implements Profiler {
   private static final DataSourceFactory FACTORY = new DataSourceFactory();

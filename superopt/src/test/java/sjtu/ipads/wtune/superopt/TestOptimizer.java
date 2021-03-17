@@ -24,7 +24,7 @@ public class TestOptimizer {
     bank = SubstitutionBank.make();
 
     try {
-      bank.importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
+      bank.importFrom(Files.readAllLines(Paths.get("wtune_data", "filtered_bank")), false);
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }

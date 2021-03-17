@@ -221,6 +221,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final List<PlanNode> transformed = new MinCostList();
     // 1. fast search for candidate substitution by fingerprint
     final List<Substitution> substitutions = repo.findByFingerprint(n);
+    outer:
     for (Substitution substitution : substitutions) {
       final Interpretations inter = constrainedInterpretations(substitution.constraints());
       // 2. full match

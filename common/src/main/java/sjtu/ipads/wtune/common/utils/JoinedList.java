@@ -7,10 +7,10 @@ import java.util.List;
  * A view of concatenated lists. If underlying list is modified, `get` and `size` will reflect the
  * modification accordingly, while iterator becomes undefined.
  */
-class ConcatenatedList<E> extends AbstractList<E> {
+class JoinedList<E> extends AbstractList<E> {
   private final List<List<E>> lists;
 
-  ConcatenatedList(List<List<E>> lists) {
+  JoinedList(List<List<E>> lists) {
     this.lists = lists;
   }
 

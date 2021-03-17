@@ -1,24 +1,20 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
+import static java.lang.System.Logger.Level.WARNING;
+import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
+import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
-import sjtu.ipads.wtune.superopt.internal.Generalization;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.util.Constraints;
-
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
-
-import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
-import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
-import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
-import static sjtu.ipads.wtune.symsolver.core.Constraint.Kind.*;
+import sjtu.ipads.wtune.superopt.internal.Generalization;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 public class SubstitutionBankImpl implements SubstitutionBank {
   private final Set<Substitution> substitutions;
@@ -34,16 +30,32 @@ public class SubstitutionBankImpl implements SubstitutionBank {
   }
 
   @Override
-  public SubstitutionBank importFrom(Iterable<String> lines) {
+  public SubstitutionBank importFrom(Iterable<String> lines, boolean withCheck) {
     for (String line : lines) {
       if (line.charAt(0) == '=') continue;
       try {
-        add(Substitution.rebuild(line));
+        final Substitution sub = Substitution.rebuild(line);
+        substitutions.add(sub);
+        if (withCheck) substitutions.add(sub.flip());
+
       } catch (Exception ex) {
         LOG.log(WARNING, "Malformed serialized substitution: {0}", line);
         LOG.log(WARNING, "Stacktrace: {0}", ex.toString());
       }
     }
+
+    if (withCheck) {
+      final List<Substitution> toRemove = new ArrayList<>(substitutions.size() >> 1);
+      final Generalization generalization = new Generalization(this);
+      for (Substitution substitution : substitutions)
+        if (!isEligible(substitution) || generalization.canGeneralize(substitution))
+          toRemove.add(substitution);
+      substitutions.removeAll(toRemove);
+    }
+
+    for (Substitution substitution : substitutions)
+      index.put(FragmentFingerprint.make(substitution.g0()), substitution);
+
     return this;
   }
 
@@ -58,29 +70,6 @@ public class SubstitutionBankImpl implements SubstitutionBank {
   }
 
   @Override
-  public SubstitutionBank add(Substitution sub) {
-    final Substitution flipped = sub.flip();
-    if (flipped.toString().equals(sub.toString())) return this;
-    if (Generalization.canGeneralize(sub, this)) return this;
-
-    if (isEligible(sub)) {
-      substitutions.add(sub);
-      index.put(FragmentFingerprint.make(sub.g0()), sub);
-    }
-
-    if (isEligible(flipped)) {
-      substitutions.add(flipped);
-      index.put(FragmentFingerprint.make(flipped.g0()), flipped);
-    }
-    return this;
-  }
-
-  @Override
-  public void remove(Substitution sub) {
-    substitutions.remove(sub);
-  }
-
-  @Override
   public Collection<Substitution> findByFingerprint(String fingerprint) {
     return index.get(fingerprint);
   }
@@ -91,23 +80,6 @@ public class SubstitutionBankImpl implements SubstitutionBank {
   }
 
   private static boolean isEligible(Substitution sub) {
-
-    final Placeholders placeholders = sub.g1().placeholders();
-    final Constraints constraints = sub.constraints();
-
-    for (Placeholder table : placeholders.tables())
-      if (stream(constraints).noneMatch(it -> it.kind() == TableEq && it.involves(table)))
-        return false;
-
-    for (Placeholder pick : placeholders.picks())
-      if (stream(constraints).noneMatch(it -> it.kind() == PickEq && it.involves(pick)))
-        return false;
-
-    for (Placeholder pred : placeholders.predicates())
-      if (stream(constraints).noneMatch(it -> it.kind() == PredicateEq && it.involves(pred)))
-        return false;
-
-    // complexity of target shouldn't be greater that source
-    return compareCost(sub.g1(), sub.g0()) <= 0;
+    return Substitution.isValid(sub) && compareCost(sub.g1(), sub.g0()) <= 0;
   }
 }

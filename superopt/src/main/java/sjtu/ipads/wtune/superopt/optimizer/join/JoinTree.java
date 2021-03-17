@@ -1,9 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimizer.join;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
-import java.util.List;
 
 public interface JoinTree extends List<JoinNode> {
   PlanNode originalRoot();

@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.superopt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+
 import com.google.common.collect.Iterables;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -12,14 +19,6 @@ import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.optimizer.Hint;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 
 public class TestHint {
   @Test

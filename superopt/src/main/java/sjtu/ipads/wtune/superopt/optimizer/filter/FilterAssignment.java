@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+
 import com.google.common.collect.Iterables;
+import java.util.Comparator;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -9,12 +16,6 @@ import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
-
-import java.util.Comparator;
-import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 
 public record FilterAssignment(Filter op, List<FilterNode> used) {
   public FilterNode assignment() {

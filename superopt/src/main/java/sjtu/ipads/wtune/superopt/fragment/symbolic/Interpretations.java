@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.internal.InterpretationsImpl;
 import sjtu.ipads.wtune.superopt.util.Constraints;
-
-import java.util.List;
 
 public interface Interpretations {
   Constraints constraints();

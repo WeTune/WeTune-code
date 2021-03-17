@@ -1,17 +1,20 @@
 package sjtu.ipads.wtune.superopt;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.innerJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.leftJoin;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.plainFilter;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.proj;
+import static sjtu.ipads.wtune.superopt.fragment.Operator.subqueryFilter;
+
+import java.util.Collection;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.internal.Prover;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-
-import java.util.Collection;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
-import static sjtu.ipads.wtune.superopt.fragment.Operator.*;
 
 public class TestProof {
   private static String makeSubString(

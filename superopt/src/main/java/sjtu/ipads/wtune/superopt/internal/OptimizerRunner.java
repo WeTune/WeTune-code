@@ -1,5 +1,9 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
@@ -7,11 +11,6 @@ import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.profiler.Profiler;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 
 public class OptimizerRunner {
   private final SubstitutionBank bank;

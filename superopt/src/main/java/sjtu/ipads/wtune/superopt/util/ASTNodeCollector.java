@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 
 public class ASTNodeCollector implements ASTVistor {
   private final Predicate<ASTNode> filter;

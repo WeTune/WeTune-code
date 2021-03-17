@@ -1,84 +1,131 @@
 package sjtu.ipads.wtune.superopt.internal;
 
+import static com.google.common.collect.Lists.cartesianProduct;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Input;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Predicate;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-
 public class Generalization {
-  // TODO: re-implement this
-  // 1. shrink both side of a substitution (recursively)
-  // 2. cartesian product them
-  // 3. for each new substitution, check if it contains by repo, or it's identical transformation
-  public static boolean canGeneralize(Substitution sub, SubstitutionBank repo) {
-    final Substitution copy = sub.copy();
-    return canGeneralize(copy, s -> s != copy && (repo.contains(s) || repo.contains(s.flip())));
+  private final SubstitutionBank bank;
+
+  public Generalization(SubstitutionBank bank) {
+    this.bank = bank;
   }
 
-  private static boolean canGeneralize(Substitution sub, Predicate<Substitution> continuation) {
-    if (continuation.test(sub)) return true;
+  public boolean canGeneralize(Substitution sub) {
+    final List<Operator> ops0 = operators(sub.g0().head(), new ArrayList<>(4));
+    final List<Operator> ops1 = operators(sub.g1().head(), new ArrayList<>(4));
 
-    final Fragment g0 = sub.g0(), g1 = sub.g1();
-    return shrink(g0, g -> canGeneralize(renewSubstitution(sub, g), continuation))
-        || shrink(g1, g -> canGeneralize(renewSubstitution(sub, g), continuation));
-  }
+    for (List<Operator> pair : cartesianProduct(ops0, ops1)) {
+      final Operator op0 = pair.get(0), op1 = pair.get(1);
 
-  private static boolean shrink(Fragment g, Predicate<Fragment> continuation) {
-    for (Input input : collectInputs(g)) {
-      final Operator parent = input.successor();
-      final Operator grandparent = parent.successor();
-      if (grandparent == null) continue;
+      if (op0.successor() == null
+          || op1.successor() == null
+          || op0.type() == OperatorType.Input
+          || op1.type() == OperatorType.Input) continue;
 
-      grandparent.replacePredecessor(parent, input);
-
-      if (continuation.test(g)) return true;
-
-      grandparent.replacePredecessor(input, parent);
+      final Pair<Substitution, Substitution> cut = cut(sub, op0, op1);
+      if (isProved(cut.getLeft()) && isProved(cut.getRight())) return true;
     }
 
     return false;
   }
 
-  private static Substitution renewSubstitution(Substitution sub, Fragment g) {
-    final Fragment g0 = sub.g0() == g ? g : sub.g0();
-    final Fragment g1 = sub.g1() == g ? g : sub.g1();
+  private static Pair<Substitution, Substitution> cut(
+      Substitution sub, Operator cutPoint0, Operator cutPoint1) {
+    final Input input0 = Input.create(), input1 = Input.create();
+    input0.setFragment(sub.g0());
+    input1.setFragment(sub.g1());
+    final Constraint extraConstraint = Constraint.tableEq(input0.table(), input1.table());
 
-    final Numbering numbering = Numbering.make().number(g0, g1);
-    return Substitution.build(
-        g0, g1, numbering, listFilter(it -> isValidConstraint(it, numbering), sub.constraints()));
+    cutPoint0.successor().replacePredecessor(cutPoint0, input0);
+    cutPoint1.successor().replacePredecessor(cutPoint1, input1);
+
+    final Substitution newSub0 = renew(sub.g0(), sub.g1(), sub.constraints(), extraConstraint);
+    final Substitution newSub1 = renew(wrap(cutPoint0), wrap(cutPoint1), sub.constraints());
+
+    // restore
+    cutPoint0.successor().replacePredecessor(input0, cutPoint0);
+    cutPoint1.successor().replacePredecessor(input1, cutPoint1);
+    sub.g0().placeholders().remove(input0);
+    sub.g1().placeholders().remove(input1);
+
+    return Pair.of(newSub0, newSub1);
   }
 
-  private static boolean isValidConstraint(Constraint constraint, Numbering numbering) {
+  private static Substitution renew(
+      Fragment g0, Fragment g1, Constraints constraints, Constraint... extra) {
+    final Numbering numbering = Numbering.make().number(g0, g1);
+    final List<Constraint> newConstraints = listFilter(it -> isPresent(it, numbering), constraints);
+    newConstraints.addAll(Arrays.asList(extra));
+    return Substitution.make(g0, g1, numbering, newConstraints).copy();
+  }
+
+  private static List<Operator> operators(Operator op, List<Operator> ops) {
+    ops.add(op);
+    for (Operator predecessor : op.predecessors()) operators(predecessor, ops);
+    return ops;
+  }
+
+  private static boolean isPresent(Constraint constraint, Numbering numbering) {
     return Arrays.stream(constraint.targets())
         .map(Placeholder.class::cast)
         .mapToInt(numbering::numberOf)
         .noneMatch(it -> it == -1);
   }
 
-  private static List<Input> collectInputs(Fragment g) {
-    final InputCollector collector = new InputCollector();
-    g.acceptVisitor(collector);
-    return collector.inputs;
+  private boolean isProved(Substitution sub) {
+    return isIdentity(sub) || bank.contains(sub);
   }
 
-  private static class InputCollector implements OperatorVisitor {
-    private final List<Input> inputs = new ArrayList<>();
+  private static boolean isIdentity(Substitution sub) {
+    return sub.equals(sub.flip()) && Substitution.isValid(sub);
+  }
 
-    @Override
-    public void leaveInput(Input input) {
-      inputs.add(input);
-    }
+  public static void main(String[] args) throws IOException {
+
+    //    final Substitution sub =
+    //        Substitution.rebuild(
+    //            "Proj<c0>(PlainFilter<p0 c1>(LeftJoin<c2
+    // c3>(Input<t0>,Input<t1>)))|Proj<c4>(PlainFilter<p1
+    // c5>(Input<t2>))|TableEq(t0,t2);PickEq(c0,c4);PickEq(c1,c3);PickEq(c2,c5);PredicateEq(p0,p1);Reference(t0,c2,t1,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t0]);PickFrom(c3,[t1]);PickFrom(c4,[t2]);PickFrom(c5,[t2])");
+    //    final Operator point0 = sub.g0().head().predecessors()[0];
+    //    final Operator point1 = sub.g1().head().predecessors()[0];
+    //    final Pair<Substitution, Substitution> cut = cut(sub, point0, point1);
+    //    System.out.println(sub);
+    //    System.out.println(cut.getLeft());
+    //    System.out.println(cut.getRight());
+
+    final SubstitutionBank bank =
+        SubstitutionBank.make()
+            .importFrom(Files.readAllLines(Paths.get("wtune_data/substitution_bank")), true);
+
+    System.out.println(bank.count());
+    //    final Generalization generalization = new Generalization(bank);
+    //    int i = 0;
+    //    for (Substitution substitution : bank) {
+    //      if (generalization.canGeneralize(substitution)) {
+    //        System.out.println(substitution);
+    //      }
+    //    }
+    //    System.out.println(i);
+    //    System.out.println(bank.count() - i);
   }
 }

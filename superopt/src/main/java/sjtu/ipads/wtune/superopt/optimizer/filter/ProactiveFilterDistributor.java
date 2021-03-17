@@ -1,7 +1,17 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
+import static com.google.common.base.Equivalence.identity;
+import static com.google.common.collect.Sets.combinations;
+import static java.util.Collections.singletonList;
+import static java.util.Comparator.comparing;
+import static sjtu.ipads.wtune.common.utils.Commons.listSort;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+
 import com.google.common.base.Equivalence;
 import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.Set;
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
@@ -12,17 +22,6 @@ import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.util.Constraints;
-
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.google.common.base.Equivalence.identity;
-import static com.google.common.collect.Sets.combinations;
-import static java.util.Collections.singletonList;
-import static java.util.Comparator.comparing;
-import static sjtu.ipads.wtune.common.utils.Commons.listSort;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.collectionMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public class ProactiveFilterDistributor extends FilterDistributorBase implements FilterDistributor {
   // "Proactive" means what the filter will influence the later matching

@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.TypedTreeNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
 import java.util.List;
 import java.util.Objects;
+import sjtu.ipads.wtune.common.utils.TypedTreeNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public interface PlanNode extends TypedTreeNode<OperatorType> {
   PlanNode successor();

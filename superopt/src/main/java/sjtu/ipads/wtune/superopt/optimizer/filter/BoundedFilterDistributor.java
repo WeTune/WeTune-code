@@ -1,22 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
-import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.Filter;
-import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
-import sjtu.ipads.wtune.superopt.util.Constraints;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import static com.google.common.collect.Collections2.orderedPermutations;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+
+import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.fragment.Filter;
+import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
+import sjtu.ipads.wtune.superopt.util.Constraints;
 
 public class BoundedFilterDistributor extends FilterDistributorBase implements FilterDistributor {
   // "Bounded" means what what the filter is bounded by constraints among filters.

@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class Memo<T> {
   public final Map<T, OptGroup<T>> memo;

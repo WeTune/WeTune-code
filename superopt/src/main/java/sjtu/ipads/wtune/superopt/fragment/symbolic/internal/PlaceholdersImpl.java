@@ -2,13 +2,12 @@ package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholders;
 
 public class PlaceholdersImpl implements Placeholders {
   private ListMultimap<Operator, Placeholder> tables;
@@ -60,6 +59,13 @@ public class PlaceholdersImpl implements Placeholders {
   @Override
   public Collection<Placeholder> predicates() {
     return predicates == null ? Collections.emptyList() : predicates.values();
+  }
+
+  @Override
+  public void remove(Operator op) {
+    if (tables != null) tables.removeAll(op);
+    if (predicates != null) predicates.removeAll(op);
+    if (picks != null) picks.removeAll(op);
   }
 
   @Override
