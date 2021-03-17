@@ -1,5 +1,21 @@
 package sjtu.ipads.wtune.stmt.support;
 
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type.FOREIGN_KEY;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.clean;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeBool;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeConstantTable;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeJoinCondition;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeParam;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeTuple;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
+
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
@@ -10,18 +26,6 @@ import sjtu.ipads.wtune.stmt.dao.TimingDao;
 import sjtu.ipads.wtune.stmt.rawlog.LogReader;
 import sjtu.ipads.wtune.stmt.rawlog.RawStmt;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
-
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type.FOREIGN_KEY;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.*;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
 
 public interface Workflow {
   static void inferForeignKeys(String appName) {
@@ -51,7 +55,7 @@ public interface Workflow {
     final Iterable<String> traceLines = FileUtils.readLines("logs", appName, "traces.log");
     final List<RawStmt> rawStmts = LogReader.forTaggedFormat().readFrom(stmtLines, traceLines);
     final List<Statement> stmts =
-        listMap(it -> Statement.build(appName, it.sql(), it.stackTrace().toString()), rawStmts);
+        listMap(it -> Statement.make(appName, it.sql(), it.stackTrace().toString()), rawStmts);
 
     final List<Statement> existing = Statement.findByApp(appName);
 
@@ -67,6 +71,10 @@ public interface Workflow {
         StatementDao.instance().save(stmt);
       }
     }
+  }
+
+  static void parameterize(ASTNode root) {
+    normalizeParam(root);
   }
 
   static void normalize(ASTNode root) {

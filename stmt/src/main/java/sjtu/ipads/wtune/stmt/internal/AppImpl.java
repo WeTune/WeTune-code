@@ -1,16 +1,20 @@
 package sjtu.ipads.wtune.stmt.internal;
 
+import static java.util.function.Function.identity;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.function.Function.identity;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 public class AppImpl implements App {
   private final String name;
@@ -51,7 +55,7 @@ public class AppImpl implements App {
     if (connProps == null) {
       connProps = new Properties();
       if (MYSQL.equals(dbType)) {
-        connProps.setProperty("jdbcUrl", "jdbc:mysql://10.0.0.102:3307/" + name + "_base");
+        connProps.setProperty("jdbcUrl", "jdbc:mysql://10.0.0.103:3306/" + name + "_base");
         connProps.setProperty("username", "root");
         connProps.setProperty("password", "admin");
         connProps.setProperty("dbType", MYSQL);

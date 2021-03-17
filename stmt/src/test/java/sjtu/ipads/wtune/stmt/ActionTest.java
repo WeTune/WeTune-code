@@ -13,7 +13,7 @@ public class ActionTest {
   @Test
   @DisplayName("[Stmt.Mutator] remove bool constant")
   void testSimple() {
-    final Function<String, Statement> makeStmt = sql -> Statement.build("test", sql, null);
+    final Function<String, Statement> makeStmt = sql -> Statement.make("test", sql, null);
     {
       final String sql = "select a from t where 1=1";
       final Statement stmt = makeStmt.apply(sql);
@@ -45,7 +45,7 @@ public class ActionTest {
   @Test
   @DisplayName("[Stmt.Mutator] join text constant")
   void testConcat() {
-    final Function<String, Statement> makeStmt = sql -> Statement.build("test", sql, null);
+    final Function<String, Statement> makeStmt = sql -> Statement.make("test", sql, null);
     {
       final String sql = ("select a from t where a like concat('%', concat('1', '%'))");
       final Statement stmt = makeStmt.apply(sql);
@@ -57,7 +57,7 @@ public class ActionTest {
   @Test
   @DisplayName("[Stmt.Mutator] normalize tuple")
   void testNormalizeTuple() {
-    final Function<String, Statement> makeStmt = sql -> Statement.build("test", sql, null);
+    final Function<String, Statement> makeStmt = sql -> Statement.make("test", sql, null);
     {
       final String sql = "select a from t where (a, b) in ((1,2),(3,4))";
       final Statement stmt = makeStmt.apply(sql);
@@ -70,7 +70,7 @@ public class ActionTest {
   @DisplayName("[Stmt.Mutator] normalize bool")
   void testNormalizeBool() {
     final Statement stmt =
-        Statement.build(
+        Statement.make(
             "test", "select * from a where a.i or (a.j is false and (a.j = a.i) is false)", null);
     Mutation.normalizeBool(stmt.parsed());
     assertEquals(
@@ -82,7 +82,7 @@ public class ActionTest {
   @DisplayName("[Stmt.Mutator] normalize join condition")
   void testNormalizeJoinCondition() {
     final Statement stmt =
-        Statement.build(
+        Statement.make(
             "test",
             "select * from a join b on a.i = b.x and a.j=3 join c on b.y=c.v and b.z=c.w and c.u<10 where a.j=b.y",
             null);

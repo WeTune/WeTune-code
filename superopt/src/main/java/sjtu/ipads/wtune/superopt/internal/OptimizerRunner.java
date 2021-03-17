@@ -1,8 +1,5 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -15,13 +12,8 @@ import sjtu.ipads.wtune.superopt.profiler.Profiler;
 public class OptimizerRunner {
   private final SubstitutionBank bank;
 
-  private OptimizerRunner(SubstitutionBank bank) {
+  public OptimizerRunner(SubstitutionBank bank) {
     this.bank = bank;
-  }
-
-  public static OptimizerRunner make(String bankFile, boolean skipCheck) throws IOException {
-    return new OptimizerRunner(
-        SubstitutionBank.make().importFrom(Files.readAllLines(Paths.get(bankFile))));
   }
 
   public List<ASTNode> optimize(Statement stmt) {

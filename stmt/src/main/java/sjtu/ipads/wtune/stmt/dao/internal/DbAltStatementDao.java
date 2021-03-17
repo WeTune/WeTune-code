@@ -37,7 +37,7 @@ public class DbAltStatementDao extends DbDao implements AltStatementDao {
           + " WHERE stmt_app_name = ? AND stmt_id = ?";
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
-    return Statement.build(
+    return Statement.make(
         rs.getString(KEY_APP_NAME),
         rs.getInt(KEY_STMT_ID),
         rs.getString(KEY_KIND),

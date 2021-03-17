@@ -7,13 +7,12 @@ import javax.sql.DataSource;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public class CostBasedProfiler implements Profiler {
-  private static final DataSourceFactory FACTORY = new DataSourceFactory();
   private final Properties connProps;
   private final DataSource dataSource;
 
   public CostBasedProfiler(Properties connProps) {
     this.connProps = connProps;
-    this.dataSource = FACTORY.make(connProps);
+    this.dataSource = DataSourceFactory.instance().make(connProps);
   }
 
   @Override

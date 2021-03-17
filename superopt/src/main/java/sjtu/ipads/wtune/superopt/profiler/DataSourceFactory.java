@@ -8,7 +8,12 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 public class DataSourceFactory {
+  private static final DataSourceFactory INSTANCE = new DataSourceFactory();
   private final Map<String, DataSource> dataSources = new HashMap<>();
+
+  public static DataSourceFactory instance() {
+    return INSTANCE;
+  }
 
   public DataSource make(Properties props) {
     return dataSources.computeIfAbsent(

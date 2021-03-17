@@ -31,7 +31,7 @@ public class AllStatementsTest {
         continue;
       }
       assertFalse(parsed.toString().contains("<??>"));
-      final Statement stmt1 = Statement.build(stmt.appName(), stmt.parsed().toString(), null);
+      final Statement stmt1 = Statement.make(stmt.appName(), stmt.parsed().toString(), null);
       assertNotNull(stmt1.parsed(), stmt.toString());
       assertEquals(stmt.parsed().toString(), stmt1.parsed().toString(), stmt.toString());
     }
