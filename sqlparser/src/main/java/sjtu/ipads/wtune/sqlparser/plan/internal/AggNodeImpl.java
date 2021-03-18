@@ -1,7 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
@@ -9,31 +21,26 @@ import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
-
 public class AggNodeImpl extends PlanNodeBase implements AggNode {
   private final List<ASTNode> groupKeys;
   private final List<ASTNode> selectItems;
+  private final ASTNode having;
 
   private final List<AttributeDef> definedAttrs;
 
   private TIntList keyUsedAttrs;
   private TIntList aggUsedAttrs;
+  private TIntList havingUsedAttrs;
 
-  private AggNodeImpl(String qualification, List<ASTNode> selectItems, List<ASTNode> groupKeys) {
+  private AggNodeImpl(
+      String qualification, List<ASTNode> selectItems, List<ASTNode> groupKeys, ASTNode having) {
     selectItems = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), selectItems);
     groupKeys = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), groupKeys);
+    having = having != null ? ASTContext.unmanage(having.deepCopy()) : null;
 
     this.groupKeys = groupKeys;
     this.selectItems = selectItems;
+    this.having = having;
     this.definedAttrs = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
     bindAttributes(definedAttrs, this);
   }
@@ -41,18 +48,23 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   private AggNodeImpl(
       List<AttributeDef> definedAttrs,
       List<ASTNode> groupKeys,
+      ASTNode having,
       TIntList keyUsedAttrs,
-      TIntList aggUsedAttrs) {
+      TIntList aggUsedAttrs,
+      TIntList havingUsedAttrs) {
     this.definedAttrs = listMap(AttributeDef::copy, definedAttrs);
     this.selectItems = listMap(AttributeDef::toSelectItem, definedAttrs);
     this.groupKeys = groupKeys;
+    this.having = having;
     this.keyUsedAttrs = keyUsedAttrs;
     this.aggUsedAttrs = aggUsedAttrs;
+    this.havingUsedAttrs = havingUsedAttrs;
     bindAttributes(this.definedAttrs, this);
   }
 
-  public static AggNode build(String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys) {
-    return new AggNodeImpl(qualification, aggs, groupKeys);
+  public static AggNode build(
+      String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys, ASTNode having) {
+    return new AggNodeImpl(qualification, aggs, groupKeys, having);
   }
 
   @Override
@@ -84,6 +96,15 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
+  public ASTNode having() {
+    if (having == null) return null;
+    final ASTNode copy = having.deepCopy();
+    updateColumnRefs(
+        gatherColumnRefs(copy), havingUsedAttrs, predecessors()[0].definedAttributes());
+    return copy;
+  }
+
+  @Override
   public List<AttributeDef> definedAttributes() {
     return definedAttrs;
   }
@@ -94,6 +115,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
     aggUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
     if (keyUsedAttrs != null) keyUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
+    if (having != null) havingUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
     return used;
   }
 
@@ -110,11 +132,13 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     // SQL_opt: SELECT COUNT(a.ref) FROM a JOIN b ON a.ref = b.id
     if (aggUsedAttrs == null) aggUsedAttrs = resolveUsedAttributes0(selectItems);
     if (groupKeys != null && keyUsedAttrs == null) keyUsedAttrs = resolveUsedAttributes0(groupKeys);
+    if (having != null && havingUsedAttrs == null)
+      havingUsedAttrs = resolveUsedAttributes0(singletonList(having));
   }
 
   @Override
   protected PlanNode copy0() {
-    return new AggNodeImpl(definedAttrs, groupKeys, keyUsedAttrs, aggUsedAttrs);
+    return new AggNodeImpl(definedAttrs, groupKeys, having, keyUsedAttrs, aggUsedAttrs, havingUsedAttrs);
   }
 
   @Override

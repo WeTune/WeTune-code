@@ -86,7 +86,7 @@ public class DaemonContextImpl implements DaemonContext {
     while (!stopped) {
       try {
         final byte[] packet = server.poll();
-        executor.execute(() -> new PacketHandlerImpl(this).handle(packet));
+        executor.execute(() -> new PacketHandler(this).handle(packet));
 
       } catch (InterruptedException ex) {
         break;

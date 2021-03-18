@@ -19,8 +19,15 @@ public class OptimizationsBase implements Optimizations {
 
   @Override
   public void register(Statement stmt, ASTNode optimized) {
-    // assume the the original and optimized queries are both parameterize
     final String query = stmt.parsed().toString();
+
+    if (optimized == null) {
+      // remember a query that is unable to optimize
+      registration.put(query, new Status(-1, System.currentTimeMillis() + TTL));
+      return;
+    }
+
+    // assume the the original and optimized queries are both parameterize
 
     final Status existing = registration.get(query);
     if (existing != null) uninstall(existing.id);

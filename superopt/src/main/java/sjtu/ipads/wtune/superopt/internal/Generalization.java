@@ -4,9 +4,6 @@ import static com.google.common.collect.Lists.cartesianProduct;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -97,35 +94,5 @@ public class Generalization {
 
   private static boolean isIdentity(Substitution sub) {
     return sub.equals(sub.flip()) && Substitution.isValid(sub);
-  }
-
-  public static void main(String[] args) throws IOException {
-
-    //    final Substitution sub =
-    //        Substitution.rebuild(
-    //            "Proj<c0>(PlainFilter<p0 c1>(LeftJoin<c2
-    // c3>(Input<t0>,Input<t1>)))|Proj<c4>(PlainFilter<p1
-    // c5>(Input<t2>))|TableEq(t0,t2);PickEq(c0,c4);PickEq(c1,c3);PickEq(c2,c5);PredicateEq(p0,p1);Reference(t0,c2,t1,c3);PickFrom(c0,[t0]);PickFrom(c1,[t1]);PickFrom(c2,[t0]);PickFrom(c3,[t1]);PickFrom(c4,[t2]);PickFrom(c5,[t2])");
-    //    final Operator point0 = sub.g0().head().predecessors()[0];
-    //    final Operator point1 = sub.g1().head().predecessors()[0];
-    //    final Pair<Substitution, Substitution> cut = cut(sub, point0, point1);
-    //    System.out.println(sub);
-    //    System.out.println(cut.getLeft());
-    //    System.out.println(cut.getRight());
-
-    final SubstitutionBank bank =
-        SubstitutionBank.make()
-            .importFrom(Files.readAllLines(Paths.get("wtune_data/substitution_bank")), true);
-
-    System.out.println(bank.count());
-    //    final Generalization generalization = new Generalization(bank);
-    //    int i = 0;
-    //    for (Substitution substitution : bank) {
-    //      if (generalization.canGeneralize(substitution)) {
-    //        System.out.println(substitution);
-    //      }
-    //    }
-    //    System.out.println(i);
-    //    System.out.println(bank.count() - i);
   }
 }

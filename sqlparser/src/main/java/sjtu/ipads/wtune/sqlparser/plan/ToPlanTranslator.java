@@ -1,36 +1,61 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.expr;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_ORDER_BY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_GROUP_BY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_OLAP_OPTION;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_SELECT_ITEMS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WINDOWS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.*;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isForcedDistinct;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isGlobalWildcard;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQueryNode;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateQuerySpecNode;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.makeSelectItem;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public class ToPlanTranslator {
   public static PlanNode toPlan(ASTNode node) {
+    if (!isSupported(node)) return null;
+
     final PlanNode plan = translate0(node);
     PlanNode.resolveUsedOnTree(plan);
     return plan;
@@ -50,8 +75,9 @@ public class ToPlanTranslator {
 
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
     final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);
-    final List<ASTNode> selectItems = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
+    final List<ASTNode> items = querySpec.get(QUERY_SPEC_SELECT_ITEMS);
     final List<ASTNode> groupBy = querySpec.get(QUERY_SPEC_GROUP_BY);
+    final ASTNode having = querySpec.get(QUERY_SPEC_HAVING);
     final List<ASTNode> orderBy = query.get(QUERY_ORDER_BY);
     final ASTNode limit = query.get(QUERY_LIMIT);
     final ASTNode offset = query.get(QUERY_OFFSET);
@@ -62,7 +88,7 @@ public class ToPlanTranslator {
     // filter
     prev = translateFilter(where, prev);
     // projection & aggregation
-    prev = translateProj(rel.alias(), isForcedDistinct(querySpec), selectItems, groupBy, prev);
+    prev = translateProj(rel.alias(), isForcedDistinct(querySpec), items, groupBy, having, prev);
     // sort
     prev = translateSort(orderBy, prev);
     // limit
@@ -78,6 +104,7 @@ public class ToPlanTranslator {
       boolean explicitDistinct,
       List<ASTNode> selectItems,
       List<ASTNode> grouping,
+      ASTNode having,
       PlanNode predecessor) {
     if (predecessor == null) return null;
 
@@ -98,7 +125,7 @@ public class ToPlanTranslator {
       // projSelections.addAll(expandWildcards(predecessor));
 
       final ProjNode proj = ProjNode.make(null, projSelections);
-      final AggNode agg = AggNode.make(qualification, selections, groupKeys);
+      final AggNode agg = AggNode.make(qualification, selections, groupKeys, having);
 
       proj.setPredecessor(0, predecessor);
       agg.setPredecessor(0, proj);
@@ -207,15 +234,6 @@ public class ToPlanTranslator {
         .anyMatch(it -> it.getOr(AGGREGATE_DISTINCT, false));
   }
 
-  private static boolean isWildcardAggregation(List<ASTNode> selectItems) {
-    return selectItems.stream()
-        .map(SELECT_ITEM_EXPR::get)
-        .map(AGGREGATE_ARGS::get)
-        .filter(Objects::nonNull)
-        .map(Commons::head)
-        .anyMatch(WILDCARD::isInstance);
-  }
-
   private static boolean isAggregation(ASTNode selectItem) {
     return AGGREGATE.isInstance(selectItem.get(SELECT_ITEM_EXPR));
   }
@@ -244,9 +262,42 @@ public class ToPlanTranslator {
     return ret;
   }
 
-  private static List<ASTNode> expandWildcards(PlanNode predecessor) {
-    final ASTNode item = node(SELECT_ITEM);
-    item.set(SELECT_ITEM_EXPR, expr(WILDCARD));
-    return expandWildcards(singletonList(item), predecessor);
+  private static boolean isSupported(ASTNode node) {
+    final Checker checker = new Checker();
+    node.accept(checker);
+    return checker.passed;
+  }
+
+  private static class Checker implements ASTVistor {
+    private boolean passed = true;
+
+    @Override
+    public boolean enter(ASTNode node) {
+      return passed;
+    }
+
+    @Override
+    public boolean enterQuery(ASTNode query) {
+      if (SET_OP.isInstance(query.get(QUERY_BODY))) {
+        passed = false;
+        return false;
+      } else return true;
+    }
+
+    @Override
+    public boolean enterQuerySpec(ASTNode querySpec) {
+      if (querySpec.get(QUERY_SPEC_WINDOWS) != null
+          || querySpec.get(QUERY_SPEC_OLAP_OPTION) != null) {
+        passed = false;
+        return false;
+      }
+      return true;
+    }
+
+    @Override
+    public boolean enterCreateTable(ASTNode createTable) {
+      passed = false;
+      return false;
+    }
   }
 }

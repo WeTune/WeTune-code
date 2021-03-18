@@ -53,6 +53,9 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   private final Schema schema;
   private final Memo<String> memo;
 
+  private long startTime = 0;
+  private static final long TIMEOUT = 10_000; // 10 second
+
   public OptimizerImpl(SubstitutionBank repo, Schema schema) {
     this.repo = repo;
     this.schema = schema;
@@ -68,12 +71,16 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
   @Override
   public List<PlanNode> optimize(PlanNode root) {
+    if (root == null) return emptyList();
+
     memo.clear();
 
     // preprocess
     final boolean reduced = reduceSort(root) || reduceDistinct(root);
     final PlanNode normalized = normalize(root);
     assert normalized != null;
+
+    startTime = System.currentTimeMillis();
 
     final List<PlanNode> optimized = optimize0(normalized);
     assert !optimized.isEmpty();
@@ -213,6 +220,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private List<PlanNode> transform(PlanNode n) {
+    if (System.currentTimeMillis() - startTime >= TIMEOUT) return emptyList();
     if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
     if (!inferUniqueness(n)) return emptyList();
 
