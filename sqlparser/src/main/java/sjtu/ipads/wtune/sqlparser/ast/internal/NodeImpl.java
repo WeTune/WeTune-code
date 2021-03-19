@@ -67,7 +67,10 @@ public class NodeImpl implements ASTNode {
     for (var pair : other.fields().entrySet())
       if (pair.getKey() != PARENT) set(pair.getKey(), pair.getValue());
 
-    other.set(PARENT, parent()); // extra care that make other.parent() != other
+    // extra care that make other.parent() != other
+    final ASTNode parent = parent();
+    if (parent == null) other.unset(PARENT);
+    else other.set(PARENT, parent());
   }
 
   @Override

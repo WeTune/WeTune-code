@@ -49,12 +49,12 @@ public class MessageSender {
 
             final MessageSender sender =
                 new MessageSender(Inet4Address.getByName(dest), port, appName, sock);
+
             final Thread thread = new Thread(sender::run);
             thread.setDaemon(true);
             thread.start();
 
-            MessageSender.instance = sender;
-
+            instance = sender;
           } catch (IOException ex) {
             failedInitialization++;
           }

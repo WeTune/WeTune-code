@@ -25,14 +25,15 @@ public class MySQL8TuneInterceptor implements QueryInterceptor {
 
       final String address = props.getProperty(CONFIG_MSG_DEST, "localhost");
       final int port = Integer.parseInt(props.getProperty(CONFIG_MSG_PORT, "9876"));
-      MessageSender.init(address, port, name);
+      sender = MessageSender.init(address, port, name);
     }
     return this;
   }
 
   @Override
   public <T extends Resultset> T preProcess(Supplier<String> sql, Query interceptedQuery) {
-    sender.enqueue(sql.get());
+    final String query = sql.get();
+    if (query.startsWith("select") || query.startsWith("SELECT")) sender.enqueue(query);
     return null;
   }
 

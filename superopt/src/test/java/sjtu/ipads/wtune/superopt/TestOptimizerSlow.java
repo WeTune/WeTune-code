@@ -93,7 +93,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 70
+  //  @Test // 70
   void testDiscourse3825() {
     final String appName = "discourse";
     final int stmtId = 3825;
@@ -126,7 +126,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 73
+  //  @Test // 73
   void testDiscourse3842() {
     final String appName = "discourse";
     final int stmtId = 3842;

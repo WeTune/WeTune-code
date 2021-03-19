@@ -1,4 +1,4 @@
 dependencies {
-    compileOnly('mysql:mysql-connector-java:8.0.21')
-    compileOnly('org.postgresql:postgresql:42.2.19')
+    implementation('mysql:mysql-connector-java:8.0.21')
+    implementation('org.postgresql:postgresql:42.2.19')
 }
