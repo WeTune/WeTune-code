@@ -137,7 +137,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 123
+  //  @Test // 123
   void testShopizer3() {
     final String appName = "shopizer";
     final int stmtId = 3;
@@ -148,7 +148,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 126
+  //  @Test // 126
   void testShopizer24() {
     final String appName = "shopizer";
     final int stmtId = 24;
@@ -159,7 +159,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 128
+  //  @Test // 128
   void testShopizer39() {
     final String appName = "shopizer";
     final int stmtId = 39;
@@ -170,7 +170,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 131
+  //  @Test // 131
   void testShopizer57() {
     final String appName = "shopizer";
     final int stmtId = 57;

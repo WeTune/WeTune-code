@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 
+import sjtu.ipads.wtune.sqlparser.plan.PlanException;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
@@ -18,7 +19,12 @@ public interface Match {
     else {
       final PlanNode matchPoint = PlanNode.copyToRoot(matchPoint());
       matchPoint.successor().replacePredecessor(matchPoint, newNode);
-      resolveUsedOnTree(PlanNode.rootOf(newNode));
+
+      try {
+        resolveUsedOnTree(PlanNode.rootOf(newNode));
+      } catch (PlanException ex) {
+        return null;
+      }
 
       if (!matchPoint.type().isFilter()) return newNode;
 

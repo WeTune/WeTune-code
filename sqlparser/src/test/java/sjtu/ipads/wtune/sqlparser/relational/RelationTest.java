@@ -48,7 +48,7 @@ public class RelationTest {
     final List<Relation> inputs = rel0.inputs();
     assertEquals(2, inputs.size());
     assertEquals(6, rel0.attributes().size());
-    assertNull(rel0.auxiliaryInput());
+    assertNull(rel0.foreignInput());
 
     assertSame(schema.table("a").column("x"), rel0.attributes().get(0).column(true));
     assertSame(schema.table("b").column("j"), rel0.attributes().get(4).column(true));
@@ -62,8 +62,8 @@ public class RelationTest {
     assertEquals(1, rel1.inputs().size());
     assertEquals(0, rel2.inputs().size());
 
-    assertNull(rel1.auxiliaryInput());
-    assertNull(rel2.auxiliaryInput());
+    assertNull(rel1.foreignInput());
+    assertNull(rel2.foreignInput());
 
     assertEquals(3, rel1.attributes().size());
     assertEquals(3, rel2.attributes().size());
@@ -75,7 +75,7 @@ public class RelationTest {
     assertSame(rel0, rel3.parent());
     assertEquals(1, rel3.inputs().size());
     assertEquals(7, rel3.attributes().size());
-    assertSame(rel0, rel3.auxiliaryInput());
+    assertSame(rel0, rel3.foreignInput());
     assertSame(schema.table("a").column("x"), rel3.attributes().get(3).column(true));
     assertSame(rel1.attributes().get(0), rel3.attributes().get(3).reference(false));
   }

@@ -11,8 +11,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerException;
 
 public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
   // Assumption: no such wired join: a JOIN b ON .. JOIN c ON a.x = c.z AND b.y = c.w
@@ -119,14 +121,22 @@ public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
 
     for (int i = -1, bound = joins.size() - 1; i < bound; i++) {
       final PlanNode source = i == -1 ? predecessor : joins.get(i).predecessors()[1];
-      for (int j = i + 1; j <= bound; j++)
-        if (source.definedAttributes().containsAll(joins.get(j).leftAttributes())) {
-          assert dependency[j] == -2;
-          dependency[j] = i;
-        }
+
+      outer:
+      for (int j = i + 1; j <= bound; j++) {
+        final List<AttributeDef> usedAttrs = joins.get(j).leftAttributes();
+        if (usedAttrs.isEmpty()) throw new OptimizerException();
+
+        for (AttributeDef usedAttr : usedAttrs)
+          if (source.definedAttributes().stream().noneMatch(it -> it == usedAttr)) continue outer;
+
+        assert dependency[j] == -2;
+        dependency[j] = i;
+      }
     }
 
-    assert Arrays.stream(dependency).noneMatch(it -> it == -2);
+    if (!checkDependency(dependency)) throw new OptimizerException();
+
     return this.dependency = dependency;
   }
 
@@ -170,5 +180,10 @@ public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
     tail.setPredecessor(0, rightMostLeaf);
     root.setPredecessor(1, leftMostLeaf);
     root.resolveUsed();
+  }
+
+  private static boolean checkDependency(int[] dependency) {
+    for (int i : dependency) if (i == -2) return false;
+    return true;
   }
 }

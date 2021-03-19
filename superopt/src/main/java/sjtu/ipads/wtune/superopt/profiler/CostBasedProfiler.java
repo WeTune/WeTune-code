@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import javax.sql.DataSource;
@@ -19,7 +20,8 @@ public class CostBasedProfiler implements Profiler {
   public List<ASTNode> pickOptimized(ASTNode baseline, List<ASTNode> candidates) {
     if (candidates.size() <= 1) return candidates;
 
-    double minCost = getCost(baseline.toString());
+    final double baselineCost = getCost(baseline.toString());
+    double minCost = baselineCost;
     final List<ASTNode> optimized = new ArrayList<>();
 
     for (ASTNode query : candidates) {
@@ -30,7 +32,8 @@ public class CostBasedProfiler implements Profiler {
       optimized.add(query);
     }
 
-    return optimized;
+    if (minCost <= baselineCost * 0.9) return optimized;
+    else return Collections.emptyList();
   }
 
   private double getCost(String query) {

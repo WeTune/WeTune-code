@@ -15,7 +15,7 @@ public class DataSourceFactory {
     return INSTANCE;
   }
 
-  public DataSource make(Properties props) {
+  public synchronized DataSource make(Properties props) {
     return dataSources.computeIfAbsent(
         props.getProperty("jdbcUrl"), ignored -> makeDataSource(props));
   }

@@ -40,7 +40,7 @@ public interface Attribute {
     final String tableName = column.get(COLUMN_NAME_TABLE);
     final String columnName = column.get(COLUMN_NAME_COLUMN);
 
-    // !Resolution rule!
+    // !Resolution Rule!
     // Take the enclosing relation of the node as reference, then
     // * Column in OrderBy will lookup in: output attributes -> input attributes
     // * Column in GroupBy will lookup in: input attributes -> output attributes

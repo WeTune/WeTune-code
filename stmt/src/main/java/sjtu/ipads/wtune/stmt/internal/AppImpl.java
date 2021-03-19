@@ -45,9 +45,13 @@ public class AppImpl implements App {
   }
 
   public Schema schema(String tag, boolean patched) {
-    final Schema schema = schemas.computeIfAbsent(tag, this::readSchema);
-    if (patched) schema.patch(SchemaPatchDao.instance().findByApp(name));
-    return schema;
+    final Schema existing = schemas.get(tag);
+    if (existing == null) {
+      final Schema schema = readSchema(tag);
+      if (patched) schema.patch(SchemaPatchDao.instance().findByApp(name));
+      schemas.put(tag, schema);
+      return schema;
+    } else return existing;
   }
 
   @Override
@@ -55,7 +59,8 @@ public class AppImpl implements App {
     if (connProps == null) {
       connProps = new Properties();
       if (MYSQL.equals(dbType)) {
-        connProps.setProperty("jdbcUrl", "jdbc:mysql://10.0.0.103:3306/" + name + "_base");
+        connProps.setProperty(
+            "jdbcUrl", "jdbc:mysql://10.0.0.103:3306/" + name + "_base?useSSL=false");
         connProps.setProperty("username", "root");
         connProps.setProperty("password", "admin");
         connProps.setProperty("dbType", MYSQL);

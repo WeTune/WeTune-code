@@ -1,21 +1,22 @@
 package sjtu.ipads.wtune.sqlparser.relational;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableNameOf;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.internal.RelationImpl.rootedBy;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
+import java.util.List;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.relational.internal.RelationField;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
-
-import java.util.List;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableNameOf;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.relational.internal.RelationImpl.rootedBy;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public interface Relation {
   FieldKey<Relation> RELATION = RelationField.INSTANCE;
@@ -59,12 +60,17 @@ public interface Relation {
   default Relation input(String name) {
     name = simpleName(name);
     for (Relation input : inputs()) if (name.equals(input.alias())) return input;
-    final Relation aux = auxiliaryInput();
-    return aux != null ? aux.input(name) : null;
+    final Relation foreign = foreignInput();
+    return foreign != null ? foreign.input(name) : null;
   }
 
-  default Relation auxiliaryInput() {
+  default Relation foreignInput() {
     return DERIVED_SOURCE.isInstance(node()) || SIMPLE_SOURCE.isInstance(node()) ? null : parent();
+  }
+
+  default boolean isForeignAttribute(Attribute attr) {
+    final Relation foreign = foreignInput();
+    return foreign != null && foreign.inputs().contains(attr.owner());
   }
 
   static boolean isRelationBoundary(ASTNode node) {

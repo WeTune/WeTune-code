@@ -1,5 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static java.lang.System.Logger.Level.WARNING;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef.fastEquals;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
@@ -7,19 +21,7 @@ import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef.fastEquals;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+import sjtu.ipads.wtune.sqlparser.plan.PlanException;
 
 public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
   protected ASTNode onCondition;
@@ -163,7 +165,7 @@ public abstract class JoinNodeBase extends PlanNodeBase implements JoinNode {
       right = newRight;
     }
 
-    assert !isNormalForm || left.size() == right.size();
+    if (isNormalForm && left.size() != right.size()) throw new PlanException();
 
     dirty = true;
   }

@@ -1,5 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NODE_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -8,14 +22,6 @@ import sjtu.ipads.wtune.sqlparser.ast.Formatter;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
-
-import java.util.*;
-
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 
 public class NodeImpl implements ASTNode {
   private final Map<FieldKey, Object> directAttrs;
@@ -52,13 +58,16 @@ public class NodeImpl implements ASTNode {
   @Override
   @SuppressWarnings("unchecked")
   public void update(ASTNode other) {
-    for (FieldKey fieldKey : fields0()) unset(fieldKey);
+    for (FieldKey fieldKey : fields0()) if (fieldKey != PARENT) unset(fieldKey);
 
     set(NODE_TYPE, other.nodeType());
     if (EXPR.isInstance(other)) set(EXPR_KIND, other.get(EXPR_KIND));
     else if (TABLE_SOURCE.isInstance(other)) set(TABLE_SOURCE_KIND, other.get(TABLE_SOURCE_KIND));
 
-    for (var pair : other.fields().entrySet()) set(pair.getKey(), pair.getValue());
+    for (var pair : other.fields().entrySet())
+      if (pair.getKey() != PARENT) set(pair.getKey(), pair.getValue());
+
+    other.set(PARENT, parent()); // extra care that make other.parent() != other
   }
 
   @Override

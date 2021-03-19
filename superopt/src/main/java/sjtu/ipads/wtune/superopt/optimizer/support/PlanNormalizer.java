@@ -11,6 +11,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
@@ -32,7 +33,6 @@ import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
@@ -44,6 +44,7 @@ import sjtu.ipads.wtune.superopt.optimizer.join.JoinTree;
 public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   public static PlanNode normalize(PlanNode node) {
+    if (node == null) return null;
     return new PlanNormalizer().dispatch(node);
   }
 
@@ -126,9 +127,13 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static boolean isRedundantProj(ProjNode proj) {
+    final PlanNode successor = proj.successor();
+    final PlanNode predecessor = proj.predecessors()[0];
+
     return proj.isWildcard()
-        && (proj.successor() instanceof JoinNode || proj.successor() instanceof ProjNode)
-        && !proj.predecessors()[0].type().isFilter();
+        && (successor instanceof JoinNode || successor instanceof ProjNode)
+        && !predecessor.type().isFilter()
+        && predecessor.type() != LeftJoin;
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
@@ -236,7 +241,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     if (!node.type().isJoin()) return;
 
     final PlanNode left = node.predecessors()[0], right = node.predecessors()[1];
-    assert right.type() == Proj || right.type() == OperatorType.Input;
+    assert !right.type().isJoin() && !right.type().isFilter();
 
     final Map<String, PlanNode> qualified = new HashMap<>();
     final Set<PlanNode> unqualified = newSetFromMap(new IdentityHashMap<>());
@@ -268,8 +273,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static void setQualification(PlanNode node, String qualification) {
-    assert node.type() == Proj || node.type() == OperatorType.Input;
-    if (node.type() == OperatorType.Input) ((InputNode) node).setAlias(qualification);
+    assert node.type() == Proj || node.type() == Input;
+    if (node.type() == Input) ((InputNode) node).setAlias(qualification);
     node.definedAttributes().forEach(it -> it.setQualification(qualification));
   }
 }

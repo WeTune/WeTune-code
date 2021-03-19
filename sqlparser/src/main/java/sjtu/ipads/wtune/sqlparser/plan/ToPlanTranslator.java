@@ -35,6 +35,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isForcedDistinct;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isGlobalWildcard;
@@ -50,6 +51,7 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public class ToPlanTranslator {
@@ -274,6 +276,16 @@ public class ToPlanTranslator {
     @Override
     public boolean enter(ASTNode node) {
       return passed;
+    }
+
+    @Override
+    public boolean enterColumnRef(ASTNode columnRef) {
+      final Attribute attr = columnRef.get(ATTRIBUTE);
+      if (attr != null && columnRef.get(RELATION).isForeignAttribute(attr)) {
+        passed = false;
+        return false;
+      }
+      return true;
     }
 
     @Override

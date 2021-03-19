@@ -30,6 +30,7 @@ import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanException;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
@@ -41,6 +42,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.optimizer.Hint;
 import sjtu.ipads.wtune.superopt.optimizer.Match;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerException;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
@@ -75,20 +77,27 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
     memo.clear();
 
-    // preprocess
-    final boolean reduced = reduceSort(root) || reduceDistinct(root);
-    final PlanNode normalized = normalize(root);
-    assert normalized != null;
+    try {
+      // preprocess
+      final boolean reduced = reduceSort(root) || reduceDistinct(root);
+      final PlanNode normalized = normalize(root);
+      assert normalized != null;
 
-    startTime = System.currentTimeMillis();
+      startTime = System.currentTimeMillis();
 
-    final List<PlanNode> optimized = optimize0(normalized);
-    assert !optimized.isEmpty();
+      final List<PlanNode> optimized = optimize0(normalized);
+      assert !optimized.isEmpty();
 
-    // remove the original query from returned collection
-    if (!reduced && extractKey(optimized.get(0)).equals(extractKey(normalized)))
-      return optimized.subList(1, optimized.size());
-    else return optimized;
+      // remove the original query from returned collection
+      if (!reduced && extractKey(optimized.get(0)).equals(extractKey(normalized)))
+        return optimized.subList(1, optimized.size());
+      else return optimized;
+
+    } catch (OptimizerException ex) {
+      // PlanException indicates the are something unsupported,
+      // so no need to throw out
+      return emptyList();
+    }
   }
 
   @Override
