@@ -184,7 +184,7 @@ public class InterpretationsImpl implements Interpretations {
       final ColumnRef refereeCol = columnRefOf(refereeAttr, refereeInputNode);
       final ColumnRef referredCol = columnRefOf(referredAttr, referredInputNode);
       if (refereeCol == null || referredCol == null) return false;
-      if (referredCol.filtered || referredCol.nullable) return false;
+      if (referredCol.filtered || refereeCol.nullable) return false;
       if (refereeCol.column == referredCol.column) continue;
 
       refereeCols.add(refereeCol.column);

@@ -15,7 +15,8 @@ import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 public class TestSubstitution {
   @Test
   void test0() {
-    final String schemaSQL = "create table b (j int);" + "create table a (i int references b(j));";
+    final String schemaSQL =
+        "create table b (j int);" + "create table a (i int not null references b(j));";
     final String sql = "select DISTINCT b.j from a inner join b on a.i = b.j where b.j = 1";
     final String substitution =
         "Proj<c0>(PlainFilter<p0 c1>(InnerJoin<c2 c3>(Input<t0>,Input<t1>)))"
@@ -35,14 +36,16 @@ public class TestSubstitution {
     final List<ASTNode> optimized = opt.optimize(ast);
 
     assertEquals(1, optimized.size());
-    assertEquals("SELECT * FROM `a` AS `a` WHERE `a`.`i` = 1", optimized.get(0).toString());
+    assertEquals(
+        "SELECT DISTINCT `a`.`i` AS `i` FROM `a` AS `a` WHERE `a`.`i` = 1",
+        optimized.get(0).toString());
   }
 
   @Test
   void test2() {
     final String schemaSQL =
         "create table a (i int); "
-            + "create table b (j int references a(i)); "
+            + "create table b (j int not null references a(i)); "
             + "create table c (k int)";
     final String sql = "select DISTINCT b.* from a join b on a.i = b.j";
     final String substitution =
@@ -59,14 +62,14 @@ public class TestSubstitution {
 
     final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
-    assertEquals("SELECT * FROM `b` AS `b`", optimized.get(0).toString());
+    assertEquals("SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b`", optimized.get(0).toString());
   }
 
   @Test
   void test3() {
     final String schemaSQL =
         "create table a (i int); "
-            + "create table b (j int references a(i)); "
+            + "create table b (j int not null references a(i)); "
             + "create table c (k int)";
     final String sql = "select DISTINCT b.* from a join b on a.i = b.j join c on b.j = c.k";
     final String substitution =
@@ -84,7 +87,7 @@ public class TestSubstitution {
     final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
+        "SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
         optimized.get(0).toString());
   }
 }

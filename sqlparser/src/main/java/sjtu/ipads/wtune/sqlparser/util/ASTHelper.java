@@ -1,20 +1,29 @@
 package sjtu.ipads.wtune.sqlparser.util;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-
-import java.util.List;
-import java.util.Set;
-
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+
+import java.util.List;
+import java.util.Set;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public interface ASTHelper {
   static ASTNode makeSelectItem(ASTNode expr) {
@@ -68,6 +77,21 @@ public interface ASTHelper {
 
   static boolean isAggFunc(String funcName) {
     return funcName != null && AGG_FUNCS.contains(simpleName(funcName));
+  }
+
+  static boolean isEnclosedBy(ASTNode node, FieldDomain type) {
+    while (node.parent() != null) {
+      if (type.isInstance(node)) return true;
+      node = node.parent();
+    }
+    return false;
+  }
+
+  static boolean isParentedBy(ASTNode node, FieldKey key) {
+    final ASTNode parent = node.parent();
+    if (parent == null) return false;
+    if (parent.get(key) == node) return true;
+    else return isParentedBy(parent, key);
   }
 
   Set<String> AGG_FUNCS =

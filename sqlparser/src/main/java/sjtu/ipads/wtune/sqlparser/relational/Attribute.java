@@ -1,23 +1,23 @@
 package sjtu.ipads.wtune.sqlparser.relational;
 
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.relational.internal.AttributeField;
-import sjtu.ipads.wtune.sqlparser.relational.internal.DerivedAttribute;
-import sjtu.ipads.wtune.sqlparser.relational.internal.NativeAttribute;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-
-import java.util.List;
-
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.GROUP_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.ORDER_ITEM;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isEnclosedBy;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isParentedBy;
+
+import java.util.List;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.relational.internal.AttributeField;
+import sjtu.ipads.wtune.sqlparser.relational.internal.DerivedAttribute;
+import sjtu.ipads.wtune.sqlparser.relational.internal.NativeAttribute;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 public interface Attribute {
   FieldKey<Attribute> ATTRIBUTE = AttributeField.INSTANCE;
@@ -57,7 +57,9 @@ public interface Attribute {
         for (Relation input : relation.inputs())
           if ((attribute = input.attribute(columnName)) != null) break;
 
-    if (attribute == null && tableName == null && isEnclosedBy(node, GROUP_ITEM))
+    if (attribute == null
+        && tableName == null
+        && (isEnclosedBy(node, GROUP_ITEM) || isParentedBy(node, QUERY_SPEC_HAVING)))
       attribute = relation.attribute(columnName);
 
     return attribute;
@@ -73,13 +75,5 @@ public interface Attribute {
 
   static Attribute of(ASTNode node) {
     return node.get(ATTRIBUTE);
-  }
-
-  private static boolean isEnclosedBy(ASTNode node, FieldDomain type) {
-    while (node.parent() != null) {
-      if (type.isInstance(node)) return true;
-      node = node.parent();
-    }
-    return false;
   }
 }

@@ -63,17 +63,6 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 26
-  void testDiscourse877() {
-    final String appName = "discourse";
-    final int stmtId = 877;
-    final String[] expected =
-        new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" INNER JOIN \"topics\" AS \"topics\" ON \"posts\".\"topic_id\" = \"topics\".\"id\" INNER JOIN \"group_users\" AS \"group_users\" ON \"posts\".\"user_id\" = \"group_users\".\"user_id\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND NOT \"topics\".\"deleted_at\" IS NULL AND \"group_users\".\"group_id\" = 2412 AND \"posts\".\"post_type\" = 1 AND \"topics\".\"archetype\" <> 'private_message' AND (\"topics\".\"category_id\" IS NULL OR \"topics\".\"category_id\" IN ($1)) AND \"topics\".\"visible\" IS TRUE ORDER BY \"created_at\" DESC LIMIT 50",
-        };
-    doTest(appName, stmtId, expected);
-  }
-
   @Test // 34
   void testDiscourse1000() {
     final String appName = "discourse";

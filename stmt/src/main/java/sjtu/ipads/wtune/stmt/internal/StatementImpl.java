@@ -34,12 +34,12 @@ public class StatementImpl implements Statement {
   }
 
   public static Statement build(String appName, int stmtId, String rawSql, String stackTrace) {
-    //    if (appName.equals("broadleaf_tmp")) appName = "broadleaf"; // TEMP
     return build(appName, stmtId, "main", rawSql, stackTrace);
   }
 
   public static Statement build(
       String appName, int stmtId, String tag, String rawSql, String stackTrace) {
+    if (appName.equals("broadleaf_tmp")) appName = "broadleaf"; // TEMP
     return new StatementImpl(appName, stmtId, tag, rawSql, stackTrace);
   }
 

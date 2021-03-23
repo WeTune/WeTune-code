@@ -1,15 +1,21 @@
 package sjtu.ipads.wtune.stmt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.clean;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeBool;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeConstantTable;
+import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeTuple;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamSimple;
+
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.stmt.TestHelper.fastRecycleIter;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.*;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.*;
 
 public class AllStatementsTest {
   @Test
@@ -24,7 +30,7 @@ public class AllStatementsTest {
   void testStatement() {
     final List<Statement> stmts = Statement.findAll();
 
-    for (Statement stmt : fastRecycleIter(stmts)) {
+    for (Statement stmt : stmts) {
       final ASTNode parsed = stmt.parsed();
       if (parsed == null) {
         System.out.println(stmt.toString());
@@ -41,7 +47,7 @@ public class AllStatementsTest {
   @DisplayName("[Stmt] mutate all statements")
   void testMutate() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : fastRecycleIter(stmts)) {
+    for (Statement stmt : stmts) {
       if (stmt.parsed() == null) continue;
 
       final String original = stmt.parsed().toString();
@@ -64,8 +70,9 @@ public class AllStatementsTest {
   @DisplayName("[Stmt] resolve all statements")
   void testResolve() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : fastRecycleIter(stmts)) {
+    for (Statement stmt : stmts) {
       if (stmt.parsed() != null) {
+        stmt.parsed().context().setSchema(stmt.app().schema("base", false));
         resolveBoolExpr(stmt.parsed());
         resolveParamSimple(stmt.parsed());
         assertFalse(stmt.parsed().toString().contains("<??>"));
@@ -77,8 +84,9 @@ public class AllStatementsTest {
   @DisplayName("[Stmt] resolve all statements")
   void testResolveFull() {
     final List<Statement> stmts = Statement.findAll();
-    for (Statement stmt : fastRecycleIter(stmts)) {
+    for (Statement stmt : stmts) {
       if (stmt.parsed() != null) {
+        stmt.parsed().context().setSchema(stmt.app().schema("base", false));
         resolveParamFull(stmt.parsed());
         assertFalse(stmt.parsed().toString().contains("<??>"));
       }

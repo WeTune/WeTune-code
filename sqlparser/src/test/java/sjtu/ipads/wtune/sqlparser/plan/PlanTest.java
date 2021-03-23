@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 
 public class PlanTest {
   @Test
@@ -33,7 +33,7 @@ public class PlanTest {
     final PlanNode plan = ToPlanTranslator.toPlan(node);
     final ASTNode ast = ToASTTranslator.toAST(plan);
     assertEquals(
-        "SELECT * FROM (SELECT * FROM `a` AS `a`) AS `a` INNER JOIN `b` AS `b` ON `a`.`x` = `b`.`i` WHERE `b`.`j` IN (SELECT `c`.`p` AS `p` FROM `c` AS `c`)",
+        "SELECT `a`.`x` AS `x`, `a`.`y` AS `y`, `a`.`z` AS `z`, `b`.`i` AS `i`, `b`.`j` AS `j` FROM (SELECT * FROM `a` AS `a`) AS `a` INNER JOIN `b` AS `b` ON `a`.`x` = `b`.`i` WHERE `b`.`j` IN (SELECT `c`.`p` AS `p` FROM `c` AS `c`)",
         ast.toString());
   }
 }

@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-
 import java.util.List;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
 
 public interface FieldDomain {
   String name();

@@ -137,6 +137,7 @@ public class ColumnImpl implements Column {
     if (patches == null) patches = new ArrayList<>(2);
     patches.add(patch);
     switch (patch.type()) {
+      case NOT_NULL -> flags.add(NOT_NULL);
       case INDEX -> flags.add(INDEXED);
       case BOOLEAN -> flags.add(IS_BOOLEAN);
       case ENUM -> flags.add(IS_ENUM);

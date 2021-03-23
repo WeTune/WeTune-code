@@ -19,7 +19,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
@@ -44,6 +49,25 @@ public interface Workflow {
     }
     dao.endBatch();
     //    inferred.forEach(System.out::println);
+  }
+
+  static void inferNotNull(String appName) {
+
+    final SchemaPatchDao dao = SchemaPatchDao.instance();
+
+    dao.beginBatch();
+    for (Table table : App.of(appName).schema("base", true).tables()) {
+      for (Constraint constraint : table.constraints()) {
+        for (Column column : constraint.columns()) {
+          if (column.isFlag(Flag.NOT_NULL)) continue;
+          final SchemaPatch patch =
+              SchemaPatch.build(Type.NOT_NULL, appName, table.name(), singletonList(column.name()));
+          dao.save(patch);
+        }
+      }
+    }
+
+    dao.endBatch();
   }
 
   static void loadTiming(String appName, String tag) {

@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt;
 
 import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.stmt.support.Workflow.inferNotNull;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 import java.io.ByteArrayInputStream;
@@ -45,10 +46,13 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
+      for (App app : App.all()) {
+        inferNotNull(app.name());
+      }
       //            test0();
-//            test1();
+      //            test1();
       //            cleanBank();
-//      for (Statement statement : Statement.findByApp("broadleaf_tmp")) test2(statement);
+      //      for (Statement statement : Statement.findByApp("broadleaf_tmp")) test2(statement);
       //      test2(Statement.findOne("broadleaf_tmp", 46));
     }
   }

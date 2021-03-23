@@ -83,7 +83,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       final PlanNode normalized = normalize(root);
       assert normalized != null;
 
-      startTime = System.currentTimeMillis();
+      startTime = Long.MAX_VALUE; // System.currentTimeMillis();
 
       final List<PlanNode> optimized = optimize0(normalized);
       assert !optimized.isEmpty();
