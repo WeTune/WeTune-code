@@ -14,3 +14,4 @@
 14. update schema patches
 15. update statements, add DISTINCT
 16. update statements, add DISTINCT
+17. update schema patches, add NOT NULL
