@@ -1,17 +1,38 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_AUTOINCREMENT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DATATYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DATATYPE_RAW;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DEFAULT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_GENERATED;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.GENERATED;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.HAS_CHECK;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.HAS_DEFAULT;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.INDEXED;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.IS_BOOLEAN;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.IS_ENUM;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.NOT_NULL;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.PRIMARY;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.UNIQUE;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
-
-import java.util.*;
-
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.*;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class ColumnImpl implements Column {
   private final String table;
@@ -94,6 +115,7 @@ public class ColumnImpl implements Column {
       switch (constraint.type()) {
         case PRIMARY:
           flags.add(PRIMARY);
+          flags.add(NOT_NULL);
         case UNIQUE:
           flags.add(UNIQUE);
           flags.add(INDEXED);

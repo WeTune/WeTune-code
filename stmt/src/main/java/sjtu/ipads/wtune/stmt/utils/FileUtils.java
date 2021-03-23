@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 public class FileUtils {
   public static final String CSV_SEP = ";";
@@ -21,6 +22,12 @@ public class FileUtils {
     return dataDir;
   }
 
+  public static Path dataFile(String... paths) {
+    Path file = dataDir();
+    for (String path : paths) file = file.resolve(path);
+    return file;
+  }
+
   public static Path testScriptDir() {
     return dataDir().resolve("tests");
   }
@@ -34,9 +41,9 @@ public class FileUtils {
     return safeIO(() -> Files.readString(filePath));
   }
 
-  public static Iterable<String> readLines(String first, String... remaining) {
+  public static Stream<String> readLines(String first, String... remaining) {
     final Path filePath = dataDir().resolve(Paths.get(first, remaining));
-    return safeIO(() -> Files.readAllLines(filePath));
+    return safeIO(() -> Files.lines(filePath));
   }
 
   private static <T> T safeIO(IO<T> io) {

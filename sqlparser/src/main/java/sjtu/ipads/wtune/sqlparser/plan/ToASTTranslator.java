@@ -92,6 +92,7 @@ public class ToASTTranslator {
 
     } else q.setProjection(node.selectItems());
     q.setQualification(qualificationOf(node.definedAttributes()));
+    q.setForcedDistinct(node.isForcedUnique());
   }
 
   private void translateFilter(FilterNode node) {
@@ -216,6 +217,7 @@ public class ToASTTranslator {
 
     private void setAggregation(List<ASTNode> aggregation) {
       this.projection = aggregation;
+      this.forcedDistinct = false;
     }
 
     private void setGroupKeys(List<ASTNode> groupKeys) {
@@ -229,6 +231,10 @@ public class ToASTTranslator {
 
     private void setLimit(ASTNode limit) {
       this.limit = limit;
+    }
+
+    private void setForcedDistinct(boolean flag) {
+      forcedDistinct = flag;
     }
 
     public void setOffset(ASTNode offset) {

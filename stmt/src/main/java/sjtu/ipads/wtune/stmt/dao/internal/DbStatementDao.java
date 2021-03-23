@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.dao.StatementDao;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
 
 public class DbStatementDao extends DbDao implements StatementDao {
   private static final StatementDao INSTANCE = new DbStatementDao();
@@ -25,7 +24,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
 
   private static final String INSERT =
       "INSERT INTO wtune_stmts (stmt_app_name, stmt_id, stmt_raw_sql, stmt_trace) "
-          + "VALUES (%s, %s, %s, %s)";
+          + "VALUES (?, ?, ?, ?)";
 
   private static final String SELECT_ITEMS =
       String.format(
@@ -134,5 +133,15 @@ public class DbStatementDao extends DbDao implements StatementDao {
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }
+  }
+
+  @Override
+  public void beginBatch() {
+    begin();
+  }
+
+  @Override
+  public void endBatch() {
+    commit();
   }
 }

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -12,6 +13,7 @@ import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.AttributeInterpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.InputInterpretation;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretation;
@@ -164,8 +166,10 @@ public class InterpretationsImpl implements Interpretations {
 
     if (refereeRefs.size() != referredRefs.size()) return false;
 
-    final InputInterpretation input = getInput(constraint.ty());
-    final PlanNode inputNode = input == null ? null : input.object();
+    final InputInterpretation refereeInput = getInput(constraint.tx());
+    final PlanNode refereeInputNode = refereeInput == null ? null : refereeInput.object();
+    final InputInterpretation referredInput = getInput(constraint.ty());
+    final PlanNode referredInputNode = referredInput == null ? null : referredInput.object();
 
     final List<Column> refereeCols = new ArrayList<>(refereeRefs.size());
     final List<Column> referredCols = new ArrayList<>(referredRefs.size());
@@ -177,13 +181,14 @@ public class InterpretationsImpl implements Interpretations {
       if (refereeAttr == null || referredAttr == null) return false;
       if (refereeAttr == referredAttr) continue;
 
-      final Column refereeCol = refereeAttr.referredColumn();
-      final Column referredCol = nativeColumnOf(referredAttr, inputNode);
+      final ColumnRef refereeCol = columnRefOf(refereeAttr, refereeInputNode);
+      final ColumnRef referredCol = columnRefOf(referredAttr, referredInputNode);
       if (refereeCol == null || referredCol == null) return false;
-      if (refereeCol == referredCol) continue;
+      if (referredCol.filtered || referredCol.nullable) return false;
+      if (refereeCol.column == referredCol.column) continue;
 
-      refereeCols.add(refereeCol);
-      referredCols.add(referredCol);
+      refereeCols.add(refereeCol.column);
+      referredCols.add(referredCol.column);
     }
 
     if (refereeCols.size() != referredCols.size()) return false;
@@ -206,7 +211,7 @@ public class InterpretationsImpl implements Interpretations {
     return true;
   }
 
-  private static Column nativeColumnOf(AttributeDef attr, PlanNode surface) {
+  private static ColumnRef columnRefOf(AttributeDef attr, PlanNode surface) {
     // Retrieve the native column of given `attr`, from the perspective of `surface` node.
     // If there are filters between the native input node and `surface` node, then returns null.
     // Example:
@@ -214,7 +219,7 @@ public class InterpretationsImpl implements Interpretations {
     // plan: Proj<t.id>(Filter(Input<t>)), nativeColumnOf(t.id,Proj) -> null
     // plan: Proj<t.id>(Filter(Input<t>)), nativeColumnOf(t.id,Input) -> Column{`t`.`id`}
 
-    if (surface == null) return attr.referredColumn();
+    if (surface == null) return new ColumnRef(attr.referredColumn(), false, false);
 
     final AttributeDef pivot = surface.resolveAttribute(attr);
     if (pivot == null) return null;
@@ -226,11 +231,27 @@ public class InterpretationsImpl implements Interpretations {
     assert inputNode.type() == OperatorType.Input;
 
     PlanNode pathNode = inputNode;
+    boolean filtered = false, nullable = false;
     while (pathNode != surface) {
-      if (pathNode.type().isFilter()) return null;
-      pathNode = pathNode.successor();
+      if (pathNode.type().isFilter()) filtered = true;
+
+      final PlanNode successor = pathNode.successor();
+      if (successor.type() == LeftJoin && successor.predecessors()[1] == pathNode) nullable = true;
+
+      pathNode = successor;
     }
 
-    return source.referredColumn();
+    return new ColumnRef(source.referredColumn(), filtered, nullable);
+  }
+
+  private static class ColumnRef {
+    private final Column column;
+    private final boolean filtered, nullable;
+
+    private ColumnRef(Column column, boolean filtered, boolean nullable) {
+      this.column = column;
+      this.filtered = filtered;
+      this.nullable = nullable || !column.isFlag(Flag.NOT_NULL);
+    }
   }
 }

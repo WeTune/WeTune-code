@@ -1,20 +1,17 @@
-package sjtu.ipads.wtune.stmt.resolver.internal;
+package sjtu.ipads.wtune.stmt.resolver;
 
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.resolver.Param;
-import sjtu.ipads.wtune.stmt.resolver.ParamManager;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
-public class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements ParamManager {
+class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements ParamManager {
   private ParamManagerImpl() {
-    current = new HashMap<>();
+    current = new IdentityHashMap<>();
   }
 
   private ParamManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, Param> prev) {
@@ -43,7 +40,7 @@ public class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements Par
   private Map<ASTNode, Param> params0() {
     final Map<ASTNode, Param> params;
 
-    if (prev == null) params = new HashMap<>();
+    if (prev == null) params = new IdentityHashMap<>();
     else params = ((ParamManagerImpl) prev).params0();
 
     for (var pair : current.entrySet())

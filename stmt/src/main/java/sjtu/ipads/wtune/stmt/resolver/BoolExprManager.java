@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.resolver.internal.BoolExprManagerImpl;
 
 public interface BoolExprManager {
   FieldKey<BoolExpr> BOOL_EXPR = BoolExprManagerImpl.fieldKey();

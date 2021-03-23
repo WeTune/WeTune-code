@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
+import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 import java.io.ByteArrayInputStream;
@@ -13,12 +14,14 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.daemon.MySQLOptimizations;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
 import sjtu.ipads.wtune.superopt.internal.OptimizerRunner;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
 
 public class Main {
 
@@ -42,14 +45,11 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      //      final Statement stmt = Statement.findOne("broadleaf", 415);
-      //      final ASTNode ast = stmt.parsed();
-      //      ast.context().setSchema(stmt.app().schema("base", true));
-      //      normalize(ast);
-      //      System.out.println(ast.toString(false));
-      //      test0();
-      test1();
+      //            test0();
+//            test1();
       //            cleanBank();
+//      for (Statement statement : Statement.findByApp("broadleaf_tmp")) test2(statement);
+      //      test2(Statement.findOne("broadleaf_tmp", 46));
     }
   }
 
@@ -90,7 +90,7 @@ public class Main {
     final String sql =
         "SELECT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_groups\" AS \"tag_groups\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_groups\".\"id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_groups\".\"id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3";
     //    final Statement stmt = Statement.findOne("diaspora", 460);
-    final Statement stmt = Statement.findOne("guns", 60);
+    final Statement stmt = Statement.findOne("solidus", 126);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
@@ -122,7 +122,20 @@ public class Main {
 
     App.all().forEach(it -> it.schema("base", true));
 
-    Statement.findAll().parallelStream().forEach(it -> doOptimize(it, runner));
+    //            doOptimize(Statement.findOne("solidus", 126), runner);
+    //        Statement.findByApp("broadleaf").parallelStream().forEach(it -> doOptimize(it,
+    // runner));
+    Statement.findByApp("broadleaf_tmp").parallelStream().forEach(it -> doOptimize(it, runner));
+  }
+
+  private static void test2(Statement stmt) throws IOException {
+    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
+    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
+    final OptimizerRunner runner = new OptimizerRunner(bank);
+    final MySQLOptimizations reg =
+        new MySQLOptimizations(
+            "broadleaf_trace", DataSourceFactory.instance().make(stmt.app().dbProps()));
+    reg.register(stmt, head(runner.optimize(stmt)));
   }
 
   private static PrintWriter out, err;

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.support;
 
+import java.util.stream.Stream;
 import sjtu.ipads.wtune.stmt.support.internal.TimingImpl;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public interface Timing {
 
   long p99();
 
-  static List<Timing> fromLines(String appName, String tag, Iterable<String> lines) {
+  static List<Timing> fromLines(String appName, String tag, Stream<String> lines) {
     return TimingImpl.fromLines(appName, tag, lines);
   }
 }

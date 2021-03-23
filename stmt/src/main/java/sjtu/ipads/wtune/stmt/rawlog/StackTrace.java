@@ -49,7 +49,7 @@ public class StackTrace {
 
     for (int i = 0, bound = frames.size(); i < bound; i++) {
       final List<String> segment = frames.get(i);
-      for (String frame : segment) builder.append(frame);
+      for (String frame : segment) builder.append(frame).append('\n');
       if (i != bound - 1) builder.append("...");
     }
 

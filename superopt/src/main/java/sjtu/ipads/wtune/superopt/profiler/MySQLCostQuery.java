@@ -18,16 +18,20 @@ public class MySQLCostQuery extends CostQueryBase {
       final Statement stmt = conn.createStatement();
       final ResultSet rs = stmt.executeQuery("EXPLAIN FORMAT=JSON (" + query + ");");
 
-      if (rs.next()) {
-        final String json = rs.getString(1);
-        final int idx = json.indexOf(LABEL);
-        if (idx == -1) return Double.MAX_VALUE;
+      if (!rs.next()) return Double.MAX_VALUE;
 
-        final int start = idx + LABEL.length();
-        final int end = json.indexOf("\"", start);
-        return end == -1 ? Double.MAX_VALUE : Double.parseDouble(json.substring(start, end));
+      final String json = rs.getString(1);
+      double cost = 0.0;
+      int idx, start, end = 0;
 
-      } else return Double.MAX_VALUE;
+      while ((idx = json.indexOf(LABEL, end)) != -1) {
+        start = idx + LABEL.length();
+        end = json.indexOf("\"", start);
+        if (end == -1) continue;
+        cost += Double.parseDouble(json.substring(start, end));
+      }
+
+      return end == 0 ? Double.MAX_VALUE : cost;
     }
   }
 }

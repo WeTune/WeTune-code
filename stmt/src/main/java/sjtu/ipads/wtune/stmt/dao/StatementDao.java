@@ -1,11 +1,14 @@
 package sjtu.ipads.wtune.stmt.dao;
 
+import java.util.List;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.internal.DbStatementDao;
 
-import java.util.List;
-
 public interface StatementDao {
+  void beginBatch();
+
+  void endBatch();
+
   Statement findOne(String appName, int stmtId);
 
   List<Statement> findByApp(String appName);

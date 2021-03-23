@@ -56,7 +56,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   private final Memo<String> memo;
 
   private long startTime = 0;
-  private static final long TIMEOUT = 10_000; // 10 second
+  private static final long TIMEOUT = 20_000; // 20 second
 
   public OptimizerImpl(SubstitutionBank repo, Schema schema) {
     this.repo = repo;

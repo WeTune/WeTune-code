@@ -12,6 +12,7 @@ import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
@@ -64,7 +65,9 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   @Override
   public boolean isWildcard() {
-    return isWildcard;
+    return isWildcard
+        && successor() != null
+        && (successor().type().isJoin() || successor().type() == OperatorType.SubqueryFilter);
   }
 
   @Override
@@ -103,11 +106,8 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     final PlanNode succ = successor();
     final List<AttributeDef> definedAttrs = definedAttributes();
     final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
-    if (!isWildcard
-        && ((succ == null && definedAttrs.equals(inputAttrs))
-            || (succ != null && definedAttrs.containsAll(inputAttrs)))) {
-      isWildcard = true;
-    }
+
+    if (!isWildcard && succ != null && definedAttrs.containsAll(inputAttrs)) isWildcard = true;
 
     dirty = true;
   }

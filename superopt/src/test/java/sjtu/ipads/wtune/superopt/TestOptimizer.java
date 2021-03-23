@@ -109,7 +109,7 @@ public class TestOptimizer {
     final String appName = "diaspora";
     final int stmtId = 460;
     final String expected =
-        "SELECT `contacts`.`person_id` AS `person_id` FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id`";
+        "SELECT DISTINCT `contacts`.`person_id` AS `person_id` FROM `contacts` AS `contacts` INNER JOIN `aspect_memberships` AS `aspect_memberships` ON `contacts`.`id` = `aspect_memberships`.`contact_id`";
     doTest(appName, stmtId, expected);
   }
 
@@ -118,7 +118,7 @@ public class TestOptimizer {
     final String appName = "diaspora";
     final int stmtId = 478;
     final String[] expected = {
-      "SELECT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`receiving` = TRUE AND `contacts`.`user_id` = 3 ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0"
+      "SELECT DISTINCT `profiles`.`last_name` AS `alias_0`, `contacts`.`id` AS `id` FROM `contacts` AS `contacts` LEFT JOIN `people` AS `people` ON `contacts`.`person_id` = `people`.`id` LEFT JOIN `profiles` AS `profiles` ON `people`.`id` = `profiles`.`person_id` WHERE `contacts`.`receiving` = TRUE AND `contacts`.`user_id` = 3 ORDER BY `alias_0` ASC LIMIT 25 OFFSET 0"
     };
 
     doTest(appName, stmtId, expected);
@@ -140,7 +140,7 @@ public class TestOptimizer {
     final String appName = "discourse";
     final int stmtId = 123;
     final String expected =
-        "SELECT \"category_groups\".\"category_id\" AS \"category_id\" FROM \"category_groups\" AS \"category_groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"category_groups\".\"group_id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 86";
+        "SELECT DISTINCT \"category_groups\".\"category_id\" AS \"category_id\" FROM \"category_groups\" AS \"category_groups\" INNER JOIN \"group_users\" AS \"group_users\" ON \"category_groups\".\"group_id\" = \"group_users\".\"group_id\" WHERE \"group_users\".\"user_id\" = 86";
     doTest(appName, stmtId, expected);
   }
 
@@ -167,7 +167,7 @@ public class TestOptimizer {
     final String appName = "discourse";
     final int stmtId = 207;
     final String expected =
-        "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" = 16384 AND \"posts\".\"topic_id\" = 15601 AND (\"posts\".\"user_id\" = -1 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\"";
+        "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" = 16384 AND \"posts\".\"topic_id\" = 15601 AND (\"posts\".\"user_id\" = -1 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\"";
     doTest(appName, stmtId, expected);
   }
 
@@ -401,7 +401,16 @@ public class TestOptimizer {
     doTest(appName, stmtId, expected);
   }
 
-  // 38 discourse 1173 slow
+  @Test // 38
+  void testDiscourse1173() {
+    final String appName = "discourse";
+    final int stmtId = 1173;
+    final String[] expected =
+        new String[] {
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 913 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+        };
+    doTest(appName, stmtId, expected);
+  }
 
   @Test // 39
   void testDiscourse1174() {
@@ -409,7 +418,7 @@ public class TestOptimizer {
     final int stmtId = 1174;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -420,7 +429,7 @@ public class TestOptimizer {
     final int stmtId = 1178;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 2) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 2"
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 2) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 2"
         };
     doTest(appName, stmtId, expected);
   }
@@ -431,7 +440,7 @@ public class TestOptimizer {
     final int stmtId = 1179;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
         };
     doTest(appName, stmtId, expected);
   }
@@ -444,7 +453,7 @@ public class TestOptimizer {
     final int stmtId = 1182;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"score\" >= 99 AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"score\" >= 99 AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
         };
     doTest(appName, stmtId, expected);
   }
@@ -457,7 +466,7 @@ public class TestOptimizer {
     final int stmtId = 1186;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT * FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16810 AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
+          "SELECT \"posts\".\"id\" AS \"id\" FROM (SELECT \"posts\".\"id\" AS \"id\", \"posts\".\"user_id\" AS \"user_id\", \"posts\".\"topic_id\" AS \"topic_id\", \"posts\".\"post_number\" AS \"post_number\", \"posts\".\"raw\" AS \"raw\", \"posts\".\"cooked\" AS \"cooked\", \"posts\".\"created_at\" AS \"created_at\", \"posts\".\"updated_at\" AS \"updated_at\", \"posts\".\"reply_to_post_number\" AS \"reply_to_post_number\", \"posts\".\"reply_count\" AS \"reply_count\", \"posts\".\"quote_count\" AS \"quote_count\", \"posts\".\"deleted_at\" AS \"deleted_at\", \"posts\".\"off_topic_count\" AS \"off_topic_count\", \"posts\".\"like_count\" AS \"like_count\", \"posts\".\"incoming_link_count\" AS \"incoming_link_count\", \"posts\".\"bookmark_count\" AS \"bookmark_count\", \"posts\".\"avg_time\" AS \"avg_time\", \"posts\".\"score\" AS \"score\", \"posts\".\"reads\" AS \"reads\", \"posts\".\"post_type\" AS \"post_type\", \"posts\".\"sort_order\" AS \"sort_order\", \"posts\".\"last_editor_id\" AS \"last_editor_id\", \"posts\".\"hidden\" AS \"hidden\", \"posts\".\"hidden_reason_id\" AS \"hidden_reason_id\", \"posts\".\"notify_moderators_count\" AS \"notify_moderators_count\", \"posts\".\"spam_count\" AS \"spam_count\", \"posts\".\"illegal_count\" AS \"illegal_count\", \"posts\".\"inappropriate_count\" AS \"inappropriate_count\", \"posts\".\"last_version_at\" AS \"last_version_at\", \"posts\".\"user_deleted\" AS \"user_deleted\", \"posts\".\"reply_to_user_id\" AS \"reply_to_user_id\", \"posts\".\"percent_rank\" AS \"percent_rank\", \"posts\".\"notify_user_count\" AS \"notify_user_count\", \"posts\".\"like_score\" AS \"like_score\", \"posts\".\"deleted_by_id\" AS \"deleted_by_id\", \"posts\".\"edit_reason\" AS \"edit_reason\", \"posts\".\"word_count\" AS \"word_count\", \"posts\".\"version\" AS \"version\", \"posts\".\"cook_method\" AS \"cook_method\", \"posts\".\"wiki\" AS \"wiki\", \"posts\".\"baked_at\" AS \"baked_at\", \"posts\".\"baked_version\" AS \"baked_version\", \"posts\".\"hidden_at\" AS \"hidden_at\", \"posts\".\"self_edits\" AS \"self_edits\", \"posts\".\"reply_quoted\" AS \"reply_quoted\", \"posts\".\"via_email\" AS \"via_email\", \"posts\".\"raw_email\" AS \"raw_email\", \"posts\".\"public_version\" AS \"public_version\", \"posts\".\"action_code\" AS \"action_code\", \"posts\".\"image_url\" AS \"image_url\", \"posts\".\"locked_by_id\" AS \"locked_by_id\" FROM \"posts\" AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16810 AND \"posts\".\"post_number\" > 1 AND \"posts\".\"post_type\" = 1 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"posts\".\"percent_rank\" ASC, \"posts\".\"sort_order\" ASC LIMIT 99) AS \"posts\" WHERE NOT \"posts\".\"deleted_at\" IS NULL ORDER BY \"posts\".\"post_number\" ASC LIMIT 99"
         };
     doTest(appName, stmtId, expected);
   }
@@ -468,7 +477,7 @@ public class TestOptimizer {
     final int stmtId = 1191;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"sort_order\""
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 15986 ORDER BY \"sort_order\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -479,7 +488,7 @@ public class TestOptimizer {
     final int stmtId = 1196;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"post_number\" AS \"post_number\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+          "SELECT DISTINCT \"posts\".\"post_number\" AS \"post_number\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -490,7 +499,7 @@ public class TestOptimizer {
     final int stmtId = 1200;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 912 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 912 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -501,7 +510,7 @@ public class TestOptimizer {
     final int stmtId = 1213;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16887 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 16887 AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"sort_order\""
         };
     doTest(appName, stmtId, expected);
   }
@@ -513,7 +522,7 @@ public class TestOptimizer {
     final int stmtId = 1216;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"sort_order\" DESC"
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" IN ($1) AND \"posts\".\"topic_id\" = 15986 AND (\"posts\".\"user_id\" = 915 OR \"posts\".\"post_type\" IN ($1)) ORDER BY \"posts\".\"sort_order\" DESC"
         };
     doTest(appName, stmtId, expected);
   }
@@ -524,7 +533,7 @@ public class TestOptimizer {
     final int stmtId = 1291;
     final String[] expected =
         new String[] {
-          "SELECT \"child_themes\".\"parent_theme_id\" AS \"parent_theme_id\" FROM \"child_themes\" AS \"child_themes\" WHERE \"child_themes\".\"child_theme_id\" IN ($1)",
+          "SELECT DISTINCT \"child_themes\".\"parent_theme_id\" AS \"parent_theme_id\" FROM \"child_themes\" AS \"child_themes\" WHERE \"child_themes\".\"child_theme_id\" IN ($1)",
         };
     doTest(appName, stmtId, expected);
   }
@@ -535,7 +544,7 @@ public class TestOptimizer {
     final int stmtId = 1361;
     final String[] expected =
         new String[] {
-          "SELECT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3",
+          "SELECT DISTINCT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3",
         };
     doTest(appName, stmtId, expected);
   }
@@ -579,7 +588,7 @@ public class TestOptimizer {
     final int stmtId = 2012;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 17616 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16515 ORDER BY \"sort_order\"",
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"id\" = 17616 AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16515 ORDER BY \"sort_order\"",
         };
     doTest(appName, stmtId, expected);
   }
@@ -592,7 +601,7 @@ public class TestOptimizer {
     final int stmtId = 2019;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16521 ORDER BY \"sort_order\"",
+          "SELECT DISTINCT \"posts\".\"id\" AS \"id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE NOT \"posts\".\"deleted_at\" IS NULL AND \"posts\".\"post_type\" IN ($1) AND \"posts\".\"topic_id\" = 16521 ORDER BY \"sort_order\"",
         };
     doTest(appName, stmtId, expected);
   }
@@ -614,7 +623,7 @@ public class TestOptimizer {
     final int stmtId = 2407;
     final String[] expected =
         new String[] {
-          "SELECT \"child_themes\".\"parent_theme_id\" AS \"parent_theme_id\" FROM \"child_themes\" AS \"child_themes\"",
+          "SELECT DISTINCT \"child_themes\".\"parent_theme_id\" AS \"parent_theme_id\" FROM \"child_themes\" AS \"child_themes\"",
         };
     doTest(appName, stmtId, expected);
   }
@@ -636,7 +645,7 @@ public class TestOptimizer {
     final int stmtId = 2832;
     final String[] expected =
         new String[] {
-          "SELECT \"categories\".\"name\" AS \"name\" FROM \"category_tag_groups\" AS \"category_tag_groups\" INNER JOIN \"categories\" AS \"categories\" ON \"category_tag_groups\".\"category_id\" = \"categories\".\"id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
+          "SELECT DISTINCT \"categories\".\"name\" AS \"name\" FROM \"categories\" AS \"categories\" INNER JOIN \"category_tag_groups\" AS \"category_tag_groups\" ON \"categories\".\"id\" = \"category_tag_groups\".\"category_id\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"category_tag_groups\".\"tag_group_id\" = \"tag_group_memberships\".\"tag_group_id\" WHERE \"categories\".\"id\" IN ($1) AND \"tag_group_memberships\".\"tag_id\" = 1771",
         };
     doTest(appName, stmtId, expected);
   }
@@ -729,7 +738,7 @@ public class TestOptimizer {
     final int stmtId = 4156;
     final String[] expected =
         new String[] {
-          "SELECT \"posts\".\"topic_id\" AS \"topic_id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"user_id\" = 7304 ORDER BY \"posts\".\"created_at\" DESC"
+          "SELECT DISTINCT \"posts\".\"topic_id\" AS \"topic_id\" FROM \"posts\" AS \"posts\" LEFT JOIN \"topics\" AS \"topics\" ON \"topics\".\"id\" = \"posts\".\"topic_id\" AND NOT \"topics\".\"deleted_at\" IS NULL WHERE \"posts\".\"user_id\" = 7304 ORDER BY \"posts\".\"created_at\" DESC"
         };
     doTest(appName, stmtId, expected);
   }
@@ -750,7 +759,9 @@ public class TestOptimizer {
     final String appName = "eladmin";
     final int stmtId = 104;
     final String[] expected =
-        new String[] {"SELECT * FROM `job` AS `job0_` ORDER BY `sort5_6_` ASC LIMIT 10"};
+        new String[] {
+          "SELECT `job0_`.`id` AS `id1_6_`, `job0_`.`create_time` AS `create_t2_6_`, `job0_`.`dept_id` AS `dept_id6_6_`, `job0_`.`enabled` AS `enabled3_6_`, `job0_`.`name` AS `name4_6_`, `job0_`.`sort` AS `sort5_6_` FROM `job` AS `job0_` ORDER BY `sort5_6_` ASC LIMIT 10"
+        };
     doTest(appName, stmtId, expected);
   }
 
@@ -760,7 +771,7 @@ public class TestOptimizer {
     final int stmtId = 105;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `job` AS `job0_` WHERE `job0_`.`name` LIKE '%d%' ORDER BY `sort5_6_` ASC LIMIT 10",
+          "SELECT `job0_`.`id` AS `id1_6_`, `job0_`.`create_time` AS `create_t2_6_`, `job0_`.`dept_id` AS `dept_id6_6_`, `job0_`.`enabled` AS `enabled3_6_`, `job0_`.`name` AS `name4_6_`, `job0_`.`sort` AS `sort5_6_` FROM `job` AS `job0_` WHERE `job0_`.`name` LIKE '%d%' ORDER BY `sort5_6_` ASC LIMIT 10",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1216,7 +1227,7 @@ public class TestOptimizer {
     final int stmtId = 14;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `category0_`.`depth` >= 0 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT `category0_`.`category_id` AS `category1_0_0_`, `descriptio1_`.`description_id` AS `descript1_1_1_`, `language2_`.`language_id` AS `language1_21_2_`, `merchantst3_`.`merchant_id` AS `merchant1_27_3_`, `category0_`.`date_created` AS `date_cre2_0_0_`, `category0_`.`date_modified` AS `date_mod3_0_0_`, `category0_`.`updt_id` AS `updt_id4_0_0_`, `category0_`.`category_image` AS `category5_0_0_`, `category0_`.`category_status` AS `category6_0_0_`, `category0_`.`code` AS `code7_0_0_`, `category0_`.`depth` AS `depth8_0_0_`, `category0_`.`featured` AS `featured9_0_0_`, `category0_`.`lineage` AS `lineage10_0_0_`, `category0_`.`merchant_id` AS `merchan13_0_0_`, `category0_`.`parent_id` AS `parent_14_0_0_`, `category0_`.`sort_order` AS `sort_or11_0_0_`, `category0_`.`visible` AS `visible12_0_0_`, `descriptio1_`.`date_created` AS `date_cre2_1_1_`, `descriptio1_`.`date_modified` AS `date_mod3_1_1_`, `descriptio1_`.`updt_id` AS `updt_id4_1_1_`, `descriptio1_`.`description` AS `descript5_1_1_`, `descriptio1_`.`language_id` AS `languag13_1_1_`, `descriptio1_`.`name` AS `name6_1_1_`, `descriptio1_`.`title` AS `title7_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_1_`, `descriptio1_`.`category_highlight` AS `category8_1_1_`, `descriptio1_`.`meta_description` AS `meta_des9_1_1_`, `descriptio1_`.`meta_keywords` AS `meta_ke10_1_1_`, `descriptio1_`.`meta_title` AS `meta_ti11_1_1_`, `descriptio1_`.`sef_url` AS `sef_url12_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_0__`, `descriptio1_`.`description_id` AS `descript1_1_0__`, `language2_`.`date_created` AS `date_cre2_21_2_`, `language2_`.`date_modified` AS `date_mod3_21_2_`, `language2_`.`updt_id` AS `updt_id4_21_2_`, `language2_`.`code` AS `code5_21_2_`, `language2_`.`sort_order` AS `sort_ord6_21_2_`, `merchantst3_`.`date_created` AS `date_cre2_27_3_`, `merchantst3_`.`date_modified` AS `date_mod3_27_3_`, `merchantst3_`.`updt_id` AS `updt_id4_27_3_`, `merchantst3_`.`store_code` AS `store_co5_27_3_`, `merchantst3_`.`continueshoppingurl` AS `continue6_27_3_`, `merchantst3_`.`country_id` AS `country23_27_3_`, `merchantst3_`.`currency_id` AS `currenc24_27_3_`, `merchantst3_`.`currency_format_national` AS `currency7_27_3_`, `merchantst3_`.`language_id` AS `languag25_27_3_`, `merchantst3_`.`domain_name` AS `domain_n8_27_3_`, `merchantst3_`.`in_business_since` AS `in_busin9_27_3_`, `merchantst3_`.`invoice_template` AS `invoice10_27_3_`, `merchantst3_`.`seizeunitcode` AS `seizeun11_27_3_`, `merchantst3_`.`store_email` AS `store_e12_27_3_`, `merchantst3_`.`store_logo` AS `store_l13_27_3_`, `merchantst3_`.`store_template` AS `store_t14_27_3_`, `merchantst3_`.`store_address` AS `store_a15_27_3_`, `merchantst3_`.`store_city` AS `store_c16_27_3_`, `merchantst3_`.`store_name` AS `store_n17_27_3_`, `merchantst3_`.`store_phone` AS `store_p18_27_3_`, `merchantst3_`.`store_postal_code` AS `store_p19_27_3_`, `merchantst3_`.`store_state_prov` AS `store_s20_27_3_`, `merchantst3_`.`use_cache` AS `use_cac21_27_3_`, `merchantst3_`.`weightunitcode` AS `weightu22_27_3_`, `merchantst3_`.`zone_id` AS `zone_id26_27_3_` FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `category0_`.`depth` >= 0 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1227,7 +1238,7 @@ public class TestOptimizer {
     final int stmtId = 18;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `category0_`.`merchant_id` = 1 AND `category0_`.`lineage` LIKE '%/1/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
+          "SELECT `category0_`.`category_id` AS `category1_0_0_`, `descriptio1_`.`description_id` AS `descript1_1_1_`, `language2_`.`language_id` AS `language1_21_2_`, `merchantst3_`.`merchant_id` AS `merchant1_27_3_`, `category0_`.`date_created` AS `date_cre2_0_0_`, `category0_`.`date_modified` AS `date_mod3_0_0_`, `category0_`.`updt_id` AS `updt_id4_0_0_`, `category0_`.`category_image` AS `category5_0_0_`, `category0_`.`category_status` AS `category6_0_0_`, `category0_`.`code` AS `code7_0_0_`, `category0_`.`depth` AS `depth8_0_0_`, `category0_`.`featured` AS `featured9_0_0_`, `category0_`.`lineage` AS `lineage10_0_0_`, `category0_`.`merchant_id` AS `merchan13_0_0_`, `category0_`.`parent_id` AS `parent_14_0_0_`, `category0_`.`sort_order` AS `sort_or11_0_0_`, `category0_`.`visible` AS `visible12_0_0_`, `descriptio1_`.`date_created` AS `date_cre2_1_1_`, `descriptio1_`.`date_modified` AS `date_mod3_1_1_`, `descriptio1_`.`updt_id` AS `updt_id4_1_1_`, `descriptio1_`.`description` AS `descript5_1_1_`, `descriptio1_`.`language_id` AS `languag13_1_1_`, `descriptio1_`.`name` AS `name6_1_1_`, `descriptio1_`.`title` AS `title7_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_1_`, `descriptio1_`.`category_highlight` AS `category8_1_1_`, `descriptio1_`.`meta_description` AS `meta_des9_1_1_`, `descriptio1_`.`meta_keywords` AS `meta_ke10_1_1_`, `descriptio1_`.`meta_title` AS `meta_ti11_1_1_`, `descriptio1_`.`sef_url` AS `sef_url12_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_0__`, `descriptio1_`.`description_id` AS `descript1_1_0__`, `language2_`.`date_created` AS `date_cre2_21_2_`, `language2_`.`date_modified` AS `date_mod3_21_2_`, `language2_`.`updt_id` AS `updt_id4_21_2_`, `language2_`.`code` AS `code5_21_2_`, `language2_`.`sort_order` AS `sort_ord6_21_2_`, `merchantst3_`.`date_created` AS `date_cre2_27_3_`, `merchantst3_`.`date_modified` AS `date_mod3_27_3_`, `merchantst3_`.`updt_id` AS `updt_id4_27_3_`, `merchantst3_`.`store_code` AS `store_co5_27_3_`, `merchantst3_`.`continueshoppingurl` AS `continue6_27_3_`, `merchantst3_`.`country_id` AS `country23_27_3_`, `merchantst3_`.`currency_id` AS `currenc24_27_3_`, `merchantst3_`.`currency_format_national` AS `currency7_27_3_`, `merchantst3_`.`language_id` AS `languag25_27_3_`, `merchantst3_`.`domain_name` AS `domain_n8_27_3_`, `merchantst3_`.`in_business_since` AS `in_busin9_27_3_`, `merchantst3_`.`invoice_template` AS `invoice10_27_3_`, `merchantst3_`.`seizeunitcode` AS `seizeun11_27_3_`, `merchantst3_`.`store_email` AS `store_e12_27_3_`, `merchantst3_`.`store_logo` AS `store_l13_27_3_`, `merchantst3_`.`store_template` AS `store_t14_27_3_`, `merchantst3_`.`store_address` AS `store_a15_27_3_`, `merchantst3_`.`store_city` AS `store_c16_27_3_`, `merchantst3_`.`store_name` AS `store_n17_27_3_`, `merchantst3_`.`store_phone` AS `store_p18_27_3_`, `merchantst3_`.`store_postal_code` AS `store_p19_27_3_`, `merchantst3_`.`store_state_prov` AS `store_s20_27_3_`, `merchantst3_`.`use_cache` AS `use_cac21_27_3_`, `merchantst3_`.`weightunitcode` AS `weightu22_27_3_`, `merchantst3_`.`zone_id` AS `zone_id26_27_3_` FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `merchantst3_`.`merchant_id` = 1 AND `category0_`.`lineage` LIKE '%/1/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1240,7 +1251,7 @@ public class TestOptimizer {
     final int stmtId = 31;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC"
+          "SELECT `category0_`.`category_id` AS `category1_0_0_`, `descriptio1_`.`description_id` AS `descript1_1_1_`, `language2_`.`language_id` AS `language1_21_2_`, `merchantst3_`.`merchant_id` AS `merchant1_27_3_`, `category0_`.`date_created` AS `date_cre2_0_0_`, `category0_`.`date_modified` AS `date_mod3_0_0_`, `category0_`.`updt_id` AS `updt_id4_0_0_`, `category0_`.`category_image` AS `category5_0_0_`, `category0_`.`category_status` AS `category6_0_0_`, `category0_`.`code` AS `code7_0_0_`, `category0_`.`depth` AS `depth8_0_0_`, `category0_`.`featured` AS `featured9_0_0_`, `category0_`.`lineage` AS `lineage10_0_0_`, `category0_`.`merchant_id` AS `merchan13_0_0_`, `category0_`.`parent_id` AS `parent_14_0_0_`, `category0_`.`sort_order` AS `sort_or11_0_0_`, `category0_`.`visible` AS `visible12_0_0_`, `descriptio1_`.`date_created` AS `date_cre2_1_1_`, `descriptio1_`.`date_modified` AS `date_mod3_1_1_`, `descriptio1_`.`updt_id` AS `updt_id4_1_1_`, `descriptio1_`.`description` AS `descript5_1_1_`, `descriptio1_`.`language_id` AS `languag13_1_1_`, `descriptio1_`.`name` AS `name6_1_1_`, `descriptio1_`.`title` AS `title7_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_1_`, `descriptio1_`.`category_highlight` AS `category8_1_1_`, `descriptio1_`.`meta_description` AS `meta_des9_1_1_`, `descriptio1_`.`meta_keywords` AS `meta_ke10_1_1_`, `descriptio1_`.`meta_title` AS `meta_ti11_1_1_`, `descriptio1_`.`sef_url` AS `sef_url12_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_0__`, `descriptio1_`.`description_id` AS `descript1_1_0__`, `language2_`.`date_created` AS `date_cre2_21_2_`, `language2_`.`date_modified` AS `date_mod3_21_2_`, `language2_`.`updt_id` AS `updt_id4_21_2_`, `language2_`.`code` AS `code5_21_2_`, `language2_`.`sort_order` AS `sort_ord6_21_2_`, `merchantst3_`.`date_created` AS `date_cre2_27_3_`, `merchantst3_`.`date_modified` AS `date_mod3_27_3_`, `merchantst3_`.`updt_id` AS `updt_id4_27_3_`, `merchantst3_`.`store_code` AS `store_co5_27_3_`, `merchantst3_`.`continueshoppingurl` AS `continue6_27_3_`, `merchantst3_`.`country_id` AS `country23_27_3_`, `merchantst3_`.`currency_id` AS `currenc24_27_3_`, `merchantst3_`.`currency_format_national` AS `currency7_27_3_`, `merchantst3_`.`language_id` AS `languag25_27_3_`, `merchantst3_`.`domain_name` AS `domain_n8_27_3_`, `merchantst3_`.`in_business_since` AS `in_busin9_27_3_`, `merchantst3_`.`invoice_template` AS `invoice10_27_3_`, `merchantst3_`.`seizeunitcode` AS `seizeun11_27_3_`, `merchantst3_`.`store_email` AS `store_e12_27_3_`, `merchantst3_`.`store_logo` AS `store_l13_27_3_`, `merchantst3_`.`store_template` AS `store_t14_27_3_`, `merchantst3_`.`store_address` AS `store_a15_27_3_`, `merchantst3_`.`store_city` AS `store_c16_27_3_`, `merchantst3_`.`store_name` AS `store_n17_27_3_`, `merchantst3_`.`store_phone` AS `store_p18_27_3_`, `merchantst3_`.`store_postal_code` AS `store_p19_27_3_`, `merchantst3_`.`store_state_prov` AS `store_s20_27_3_`, `merchantst3_`.`use_cache` AS `use_cac21_27_3_`, `merchantst3_`.`weightunitcode` AS `weightu22_27_3_`, `merchantst3_`.`zone_id` AS `zone_id26_27_3_` FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` INNER JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `descriptio1_`.`language_id` = 1 AND `merchantst3_`.`merchant_id` = 1 ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC"
         };
     doTest(appName, stmtId, expected);
   }
@@ -1253,8 +1264,7 @@ public class TestOptimizer {
     final int stmtId = 40;
     final String[] expected =
         new String[] {
-          "SELECT * FROM `category` AS `category0_` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
-          "SELECT * FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC"
+          "SELECT `category0_`.`category_id` AS `category1_0_0_`, `descriptio1_`.`description_id` AS `descript1_1_1_`, `language2_`.`language_id` AS `language1_21_2_`, `merchantst3_`.`merchant_id` AS `merchant1_27_3_`, `category0_`.`date_created` AS `date_cre2_0_0_`, `category0_`.`date_modified` AS `date_mod3_0_0_`, `category0_`.`updt_id` AS `updt_id4_0_0_`, `category0_`.`category_image` AS `category5_0_0_`, `category0_`.`category_status` AS `category6_0_0_`, `category0_`.`code` AS `code7_0_0_`, `category0_`.`depth` AS `depth8_0_0_`, `category0_`.`featured` AS `featured9_0_0_`, `category0_`.`lineage` AS `lineage10_0_0_`, `category0_`.`merchant_id` AS `merchan13_0_0_`, `category0_`.`parent_id` AS `parent_14_0_0_`, `category0_`.`sort_order` AS `sort_or11_0_0_`, `category0_`.`visible` AS `visible12_0_0_`, `descriptio1_`.`date_created` AS `date_cre2_1_1_`, `descriptio1_`.`date_modified` AS `date_mod3_1_1_`, `descriptio1_`.`updt_id` AS `updt_id4_1_1_`, `descriptio1_`.`description` AS `descript5_1_1_`, `descriptio1_`.`language_id` AS `languag13_1_1_`, `descriptio1_`.`name` AS `name6_1_1_`, `descriptio1_`.`title` AS `title7_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_1_`, `descriptio1_`.`category_highlight` AS `category8_1_1_`, `descriptio1_`.`meta_description` AS `meta_des9_1_1_`, `descriptio1_`.`meta_keywords` AS `meta_ke10_1_1_`, `descriptio1_`.`meta_title` AS `meta_ti11_1_1_`, `descriptio1_`.`sef_url` AS `sef_url12_1_1_`, `descriptio1_`.`category_id` AS `categor14_1_0__`, `descriptio1_`.`description_id` AS `descript1_1_0__`, `language2_`.`date_created` AS `date_cre2_21_2_`, `language2_`.`date_modified` AS `date_mod3_21_2_`, `language2_`.`updt_id` AS `updt_id4_21_2_`, `language2_`.`code` AS `code5_21_2_`, `language2_`.`sort_order` AS `sort_ord6_21_2_`, `merchantst3_`.`date_created` AS `date_cre2_27_3_`, `merchantst3_`.`date_modified` AS `date_mod3_27_3_`, `merchantst3_`.`updt_id` AS `updt_id4_27_3_`, `merchantst3_`.`store_code` AS `store_co5_27_3_`, `merchantst3_`.`continueshoppingurl` AS `continue6_27_3_`, `merchantst3_`.`country_id` AS `country23_27_3_`, `merchantst3_`.`currency_id` AS `currenc24_27_3_`, `merchantst3_`.`currency_format_national` AS `currency7_27_3_`, `merchantst3_`.`language_id` AS `languag25_27_3_`, `merchantst3_`.`domain_name` AS `domain_n8_27_3_`, `merchantst3_`.`in_business_since` AS `in_busin9_27_3_`, `merchantst3_`.`invoice_template` AS `invoice10_27_3_`, `merchantst3_`.`seizeunitcode` AS `seizeun11_27_3_`, `merchantst3_`.`store_email` AS `store_e12_27_3_`, `merchantst3_`.`store_logo` AS `store_l13_27_3_`, `merchantst3_`.`store_template` AS `store_t14_27_3_`, `merchantst3_`.`store_address` AS `store_a15_27_3_`, `merchantst3_`.`store_city` AS `store_c16_27_3_`, `merchantst3_`.`store_name` AS `store_n17_27_3_`, `merchantst3_`.`store_phone` AS `store_p18_27_3_`, `merchantst3_`.`store_postal_code` AS `store_p19_27_3_`, `merchantst3_`.`store_state_prov` AS `store_s20_27_3_`, `merchantst3_`.`use_cache` AS `use_cac21_27_3_`, `merchantst3_`.`weightunitcode` AS `weightu22_27_3_`, `merchantst3_`.`zone_id` AS `zone_id26_27_3_` FROM `category` AS `category0_` INNER JOIN `merchant_store` AS `merchantst3_` ON `category0_`.`merchant_id` = `merchantst3_`.`merchant_id` LEFT JOIN `category_description` AS `descriptio1_` ON `category0_`.`category_id` = `descriptio1_`.`category_id` INNER JOIN `language` AS `language2_` ON `descriptio1_`.`language_id` = `language2_`.`language_id` WHERE `merchantst3_`.`store_code` = 'DEFAULT' AND `category0_`.`lineage` LIKE '%/2/%' ORDER BY `lineage10_0_0_`, `sort_or11_0_0_` ASC",
         };
     doTest(appName, stmtId, expected);
   }
@@ -1626,7 +1636,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 393;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:53.713734') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:53.714089') AND `spree_products`.`available_on` <= '2020-05-01 07:05:53.714072' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT DISTINCT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:53.713734') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:53.714089') AND `spree_products`.`available_on` <= '2020-05-01 07:05:53.714072' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1636,7 +1646,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 396;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:55.179498') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:55.179826') AND `spree_products`.`available_on` <= '2020-05-01 07:05:55.179810' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
+      "SELECT COUNT(*) FROM (SELECT DISTINCT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`deleted_at` IS NULL OR `spree_products`.`deleted_at` >= '2020-05-01 07:05:55.179498') AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:05:55.179826') AND `spree_products`.`available_on` <= '2020-05-01 07:05:55.179810' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`"
     };
     doTest(app, stmtId, expected);
   }
@@ -1836,7 +1846,7 @@ public class TestOptimizer {
     final String app = "spree";
     final int stmtId = 712;
     final String[] expected = {
-      "SELECT COUNT(*) FROM (SELECT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:07:42.906418') AND `spree_products`.`available_on` <= '2020-05-01 07:07:42.906389' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`",
+      "SELECT COUNT(*) FROM (SELECT DISTINCT `spree_products`.`id` AS `id`, `spree_products`.`name` AS `name`, `spree_products`.`description` AS `description`, `spree_products`.`available_on` AS `available_on`, `spree_products`.`discontinue_on` AS `discontinue_on`, `spree_products`.`deleted_at` AS `deleted_at`, `spree_products`.`slug` AS `slug`, `spree_products`.`meta_description` AS `meta_description`, `spree_products`.`meta_keywords` AS `meta_keywords`, `spree_products`.`tax_category_id` AS `tax_category_id`, `spree_products`.`shipping_category_id` AS `shipping_category_id`, `spree_products`.`created_at` AS `created_at`, `spree_products`.`updated_at` AS `updated_at`, `spree_products`.`promotionable` AS `promotionable`, `spree_products`.`meta_title` AS `meta_title` FROM `spree_products` AS `spree_products` INNER JOIN `spree_variants` AS `spree_variants` ON `spree_products`.`id` = `spree_variants`.`product_id` INNER JOIN `spree_prices` AS `spree_prices` ON `spree_variants`.`id` = `spree_prices`.`variant_id` WHERE `spree_products`.`deleted_at` IS NULL AND (`spree_products`.`discontinue_on` IS NULL OR `spree_products`.`discontinue_on` >= '2020-05-01 07:07:42.906418') AND `spree_products`.`available_on` <= '2020-05-01 07:07:42.906389' AND `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`is_master` = TRUE AND `spree_prices`.`deleted_at` IS NULL LIMIT 25 OFFSET 0) AS `subquery_for_count`",
     };
     doTest(app, stmtId, expected);
   }

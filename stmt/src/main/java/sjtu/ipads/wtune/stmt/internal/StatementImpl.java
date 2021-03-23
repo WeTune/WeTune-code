@@ -1,14 +1,13 @@
 package sjtu.ipads.wtune.stmt.internal;
 
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
-
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class StatementImpl implements Statement {
   private final String appName;
@@ -35,6 +34,7 @@ public class StatementImpl implements Statement {
   }
 
   public static Statement build(String appName, int stmtId, String rawSql, String stackTrace) {
+    //    if (appName.equals("broadleaf_tmp")) appName = "broadleaf"; // TEMP
     return build(appName, stmtId, "main", rawSql, stackTrace);
   }
 

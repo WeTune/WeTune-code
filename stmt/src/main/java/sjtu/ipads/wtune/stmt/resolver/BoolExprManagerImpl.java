@@ -1,17 +1,17 @@
-package sjtu.ipads.wtune.stmt.resolver.internal;
+package sjtu.ipads.wtune.stmt.resolver;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.common.multiversion.Catalog;
 import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.resolver.BoolExpr;
-import sjtu.ipads.wtune.stmt.resolver.BoolExprManager;
 
-import java.util.Map;
-
-public class BoolExprManagerImpl extends CatalogBase<ASTNode, BoolExpr> implements BoolExprManager {
-  private BoolExprManagerImpl() {}
+class BoolExprManagerImpl extends CatalogBase<ASTNode, BoolExpr> implements BoolExprManager {
+  private BoolExprManagerImpl() {
+    current = new IdentityHashMap<>();
+  }
 
   private BoolExprManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, BoolExpr> prev) {
     super(current, prev);

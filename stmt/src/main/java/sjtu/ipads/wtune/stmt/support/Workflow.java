@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.stmt.support;
 
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type.FOREIGN_KEY;
 import static sjtu.ipads.wtune.stmt.mutator.Mutation.clean;
 import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeBool;
@@ -12,10 +11,12 @@ import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeTuple;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
 
-import java.util.Comparator;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
@@ -23,7 +24,7 @@ import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.dao.TimingDao;
-import sjtu.ipads.wtune.stmt.rawlog.LogReader;
+import sjtu.ipads.wtune.stmt.rawlog.RawLog;
 import sjtu.ipads.wtune.stmt.rawlog.RawStmt;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
@@ -46,31 +47,53 @@ public interface Workflow {
   }
 
   static void loadTiming(String appName, String tag) {
-    final Iterable<String> records = FileUtils.readLines("timing", appName + "." + tag + ".timing");
+    final Stream<String> records = FileUtils.readLines("timing", appName + "." + tag + ".timing");
     Timing.fromLines(appName, tag, records).forEach(TimingDao.instance()::save);
   }
 
-  static void loadSQL(String appName) {
-    final Iterable<String> stmtLines = FileUtils.readLines("logs", appName, "stmts.log");
-    final Iterable<String> traceLines = FileUtils.readLines("logs", appName, "traces.log");
-    final List<RawStmt> rawStmts = LogReader.forTaggedFormat().readFrom(stmtLines, traceLines);
-    final List<Statement> stmts =
-        listMap(it -> Statement.make(appName, it.sql(), it.stackTrace().toString()), rawStmts);
+  static void loadSQL(String appName, Path logPath, Path tracePath, int rangeStart, int rangeEnd)
+      throws IOException {
+    final RawLog logs = RawLog.open(appName, logPath, tracePath).skip(rangeStart);
+    final int total = rangeEnd - rangeStart;
 
-    final List<Statement> existing = Statement.findByApp(appName);
+    final StatementDao dao = StatementDao.instance();
+    final List<Statement> existing = dao.findByApp(appName);
 
     final Set<String> keys = new HashSet<>();
     for (Statement stmt : existing) keys.add(normalizeParam(stmt.parsed()).toString());
 
     int nextId = maxId(existing);
-    for (Statement stmt : stmts) {
+    int count = 0, added = 0;
+
+    dao.beginBatch();
+
+    for (RawStmt log : logs) {
+      ++count;
+      if (count > total) break;
+      if (count % 1000 == 0) System.out.println("~ " + count);
+
+      final String sql = log.sql();
+      if (!sql.startsWith("select") && !sql.startsWith("SELECT")) continue;
+
+      final String stackTrace = log.stackTrace() == null ? "" : log.stackTrace().toString();
+      final Statement stmt = Statement.make(appName, sql, stackTrace);
       final String key = normalizeParam(stmt.parsed()).toString();
-      if (!keys.contains(key)) {
-        keys.add(key);
+
+      if (keys.add(key)) {
         stmt.setStmtId(++nextId);
-        StatementDao.instance().save(stmt);
+        dao.save(stmt);
+        ++added;
+        if (added % 100 == 0) {
+          dao.endBatch();
+          dao.beginBatch();
+        }
       }
     }
+
+    dao.endBatch();
+    logs.close();
+
+    System.out.println(added + " statements added to " + appName);
   }
 
   static void parameterize(ASTNode root) {
@@ -92,9 +115,6 @@ public interface Workflow {
   }
 
   private static int maxId(List<Statement> stmts) {
-    return stmts.stream()
-        .max(Comparator.comparing(Statement::appName))
-        .map(Statement::stmtId)
-        .orElse(0);
+    return stmts.stream().mapToInt(Statement::stmtId).max().orElse(0);
   }
 }
