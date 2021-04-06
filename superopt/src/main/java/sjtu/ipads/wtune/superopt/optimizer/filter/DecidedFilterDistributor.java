@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
@@ -64,13 +64,13 @@ public class DecidedFilterDistributor extends FilterDistributorBase implements F
     if (op.type() == OperatorType.PlainFilter) {
       final PlainFilter filterOp = (PlainFilter) op;
 
-      final ASTNode expr = dist.interpretations().interpretPredicate(filterOp.predicate());
+      final Expr expr = dist.interpretations().interpretPredicate(filterOp.predicate());
       final List<AttributeDef> attrs =
           dist.interpretations().interpretAttributes(filterOp.fields());
 
       for (FilterNode node : unused)
         if ((attrs == null || attrs.equals(node.usedAttributes()))
-            && (expr == null || expr.equals(node.expr()))) candidates.add(node);
+            && (expr == null || expr.equals(node.predicate()))) candidates.add(node);
       // TODO: support the case where several filter nodes collectively satisfy the constraint
       return candidates;
 

@@ -1,5 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.NoMode;
+
+import java.util.Properties;
+import java.util.function.Function;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -8,12 +13,6 @@ import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
-
-import java.util.Properties;
-import java.util.function.Function;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.NoMode;
 
 public class MySQLASTParser implements ASTParser {
   private long serverVersion = 0;
@@ -45,8 +44,12 @@ public class MySQLASTParser implements ASTParser {
 
   public ASTNode parse(String str, boolean managed, Function<MySQLParser, ParserRuleContext> rule) {
     try {
-      final ASTNode raw = parse0(str, rule).accept(new MySQLASTBuilder());
-      return raw == null ? null : managed ? ASTContext.manage(MYSQL, raw) : raw;
+      final ASTNode root = parse0(str, rule).accept(new MySQLASTBuilder());
+      if (root != null && managed){
+        ASTContext.manage(root, ASTContext.build());
+        root.context().setDbType(MYSQL);
+      }
+      return root;
 
     } catch (Exception exception) {
       return null;

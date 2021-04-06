@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
 import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.internal.JoinNodeImpl;
 
 public interface JoinNode extends PlanNode {
   ASTNode onCondition();
@@ -13,7 +13,13 @@ public interface JoinNode extends PlanNode {
 
   List<AttributeDef> rightAttributes();
 
-  JoinNode toInnerJoin();
+  void setJoinType(OperatorType type);
 
-  JoinNode toLeftJoin();
+  static JoinNode make(OperatorType type, ASTNode onCondition) {
+    return JoinNodeImpl.build(type, onCondition);
+  }
+
+  static JoinNode make(OperatorType type, List<AttributeDef> left, List<AttributeDef> right) {
+    return JoinNodeImpl.build(type, left, right);
+  }
 }

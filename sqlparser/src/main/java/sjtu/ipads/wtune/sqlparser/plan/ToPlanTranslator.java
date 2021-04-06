@@ -5,7 +5,6 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
@@ -29,12 +28,17 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IN_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.plan.FilterNode.makePlainFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.FilterNode.makeSubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.isForcedDistinct;
@@ -47,19 +51,20 @@ import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRef
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
+import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 public class ToPlanTranslator {
   public static PlanNode toPlan(ASTNode node) {
     if (!isSupported(node)) return null;
-
     final PlanNode plan = translate0(node);
-    PlanNode.resolveUsedOnTree(plan);
+    resolveUsedOnTree(plan);
     return plan;
   }
 
@@ -113,18 +118,17 @@ public class ToPlanTranslator {
     final List<ASTNode> selections = expandWildcards(selectItems, predecessor);
     final List<ASTNode> groupKeys = coalesce(grouping, emptyList());
 
-    if (!groupKeys.isEmpty() || selections.stream().anyMatch(ToPlanTranslator::isAggregation)) {
-      // Aggregation. The structure should be Agg(Proj(..)). Proj's definedAttrs are all attributes
-      // used in group keys and aggregations
+    if (!groupKeys.isEmpty() || selections.stream().anyMatch(ASTHelper::isAggSelection)) {
+      // Aggregation. The structure should be Agg(Proj(..)). Proj's definedAttrs are all used
+      // attributes in group keys and aggregations
       final List<ASTNode> projSelections = new ArrayList<>(selections.size() + groupKeys.size());
       for (ASTNode ref : listJoin(gatherColumnRefs(groupKeys), gatherColumnRefs(selections))) {
         final ASTNode item = node(SELECT_ITEM);
+        ASTContext.manage(item, ref.context()); // `item` is dangling, manually attach the context
         item.set(SELECT_ITEM_EXPR, ref);
+
         projSelections.add(item);
       }
-
-      //      if (isWildcardAggregation(selections))
-      // projSelections.addAll(expandWildcards(predecessor));
 
       final ProjNode proj = ProjNode.make(null, projSelections);
       final AggNode agg = AggNode.make(qualification, selections, groupKeys, having);
@@ -132,7 +136,7 @@ public class ToPlanTranslator {
       proj.setPredecessor(0, predecessor);
       agg.setPredecessor(0, proj);
 
-      proj.setForcedUnique(isDistinctAggregation(selections));
+      proj.setForcedUnique(selections.stream().anyMatch(ASTHelper::isAggSelectionWithDistinct));
 
       return agg;
 
@@ -156,10 +160,7 @@ public class ToPlanTranslator {
       final ASTNode onCondition = tableSource.get(JOINED_ON);
       final JoinType joinType = tableSource.get(JOINED_TYPE);
 
-      final PlanNode op;
-      if (joinType.isInner()) op = InnerJoinNode.make(onCondition);
-      else if (joinType.isOuter()) op = LeftJoinNode.make(onCondition);
-      else return null;
+      final PlanNode op = JoinNode.make(joinType.isInner() ? InnerJoin : LeftJoin, onCondition);
 
       final PlanNode left = translateTableSource(tableSource.get(JOINED_LEFT));
       final PlanNode right = translateTableSource(tableSource.get(JOINED_RIGHT));
@@ -220,24 +221,14 @@ public class ToPlanTranslator {
       translateFilter0(expr.get(BINARY_RIGHT), filters);
       translateFilter0(expr.get(BINARY_LEFT), filters);
 
-    } else if (binaryOp == BinaryOp.IN_SUBQUERY) {
-      final SubqueryFilterNode filter = SubqueryFilterNode.make(expr);
+    } else if (binaryOp == IN_SUBQUERY) {
+      final FilterNode filter = makeSubqueryFilter(expr.get(BINARY_LEFT));
       final PlanNode subquery = translate0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
       filter.setPredecessor(1, subquery);
 
       filters.add(filter);
 
-    } else filters.add(PlainFilterNode.make(expr));
-  }
-
-  private static boolean isDistinctAggregation(List<ASTNode> selectItems) {
-    return selectItems.stream()
-        .map(SELECT_ITEM_EXPR::get)
-        .anyMatch(it -> it.getOr(AGGREGATE_DISTINCT, false));
-  }
-
-  private static boolean isAggregation(ASTNode selectItem) {
-    return AGGREGATE.isInstance(selectItem.get(SELECT_ITEM_EXPR));
+    } else filters.add(makePlainFilter(expr));
   }
 
   private static List<ASTNode> expandWildcards(List<ASTNode> selectItems, PlanNode predecessor) {
@@ -257,8 +248,12 @@ public class ToPlanTranslator {
 
       for (AttributeDef inAttr : predecessor.definedAttributes())
         if (inAttr.name() != null
-            && (tableName == null || tableName.equals(inAttr.qualification())))
-          ret.add(makeSelectItem(inAttr.toColumnRef()));
+            && (tableName == null || tableName.equals(inAttr.qualification()))) {
+          final ASTNode expandedItem = makeSelectItem(inAttr.makeColumnRef());
+          ASTContext.manage(expandedItem, item.context());
+
+          ret.add(expandedItem);
+        }
     }
 
     return ret;

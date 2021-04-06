@@ -1,5 +1,5 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 
-public interface PredicateInterpretation extends Interpretation<ASTNode> {}
+public interface PredicateInterpretation extends Interpretation<Expr> {}

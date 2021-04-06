@@ -1,5 +1,70 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_ARGS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLLATE_COLLATION;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLLATE_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_ARGS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.GROUPING_OP_EXPRS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_UNIT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.SYMBOL_TEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.VARIABLE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.VARIABLE_SCOPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_AUTOINCREMENT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_CONS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DATATYPE_RAW;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DEFAULT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_GENERATED;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_SCHEMA;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_COLUMNS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_CONSTRAINTS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_ENGINE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_CONS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_KEYS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_REFS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.KEY_PART_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.KEY_PART_DIRECTION;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.KEY_PART_LEN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NAME_2_1;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.REFERENCES_COLUMNS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.REFERENCES_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_SCHEMA;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLLATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.FUNC_CALL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.GROUPING_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
+import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.PipesAsConcat;
+
+import java.util.List;
+import java.util.function.Function;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,18 +74,14 @@ import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.*;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.VariableScope;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
-
-import java.util.List;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.mysql.MySQLRecognizerCommon.PipesAsConcat;
 
 public class MySQLASTBuilderTest {
   private static final MySQLASTParser PARSER = new MySQLASTParser();
@@ -923,52 +984,49 @@ public class MySQLASTBuilderTest {
     final ASTContext ctx = node.context();
 
     assertEquals("1 = 1 AND `b` AND `c`", node.toString());
-    final Snapshot snapshot0 = ctx.snapshot();
 
     final ASTNode oneEqOne = node.get(BINARY_LEFT).get(BINARY_LEFT);
-    ctx.derive();
+    final Snapshot snapshot0 = ctx.derive();
+
     node.get(BINARY_LEFT).update(node.get(BINARY_LEFT).get(BINARY_RIGHT));
     assertEquals("`b` AND `c`", node.toString(true));
-    final Snapshot snapshot1 = ctx.snapshot();
+    final Snapshot snapshot1 = ctx.derive();
 
-    ctx.derive();
     node.update(node.get(BINARY_RIGHT));
     assertEquals("`c`", node.toString());
-    final Snapshot snapshot2 = ctx.snapshot();
+    final Snapshot snapshot2 = ctx.derive();
 
-    ctx.derive();
     final ASTNode binary = ASTNode.expr(BINARY);
     binary.set(BINARY_OP, BinaryOp.OR);
     binary.set(BINARY_LEFT, node.deepCopy());
     binary.set(BINARY_RIGHT, oneEqOne);
     node.update(binary);
     assertEquals("`c` OR 1 = 1", node.toString());
-    final Snapshot snapshot3 = ctx.snapshot();
+    final Snapshot snapshot3 = ctx.derive();
 
-    ctx.derive();
     final ASTNode literal = ASTNode.expr(LITERAL);
     literal.set(LITERAL_TYPE, LiteralType.BOOL);
     literal.set(LITERAL_VALUE, true);
     node.set(BINARY_RIGHT, literal);
     assertEquals("`c` OR TRUE", node.toString());
-    final Snapshot snapshot4 = ctx.snapshot();
+    final Snapshot snapshot4 = ctx.derive();
 
-    ctx.setSnapshot(snapshot1);
+    ctx.rollback(snapshot1);
     assertEquals("`b` AND `c`", node.toString());
 
-    ctx.setSnapshot(snapshot2);
+    ctx.rollback(snapshot2);
     assertEquals("`c`", node.toString());
 
-    ctx.setSnapshot(snapshot0);
+    ctx.rollback(snapshot0);
     assertEquals("1 = 1 AND `b` AND `c`", node.toString());
 
-    ctx.setSnapshot(snapshot4);
+    ctx.rollback(snapshot4);
     assertEquals("`c` OR TRUE", node.toString());
 
-    ctx.setSnapshot(snapshot1);
+    ctx.rollback(snapshot1);
     assertEquals("`b` AND `c`", node.toString());
 
-    ctx.setSnapshot(snapshot3);
+    ctx.rollback(snapshot3);
     assertEquals("`c` OR 1 = 1", node.toString());
   }
 }

@@ -1,48 +1,34 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import static java.util.Collections.newSetFromMap;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IS;
+import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.locateDefiner;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
 
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
-import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
-import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 import sjtu.ipads.wtune.superopt.optimizer.join.JoinTree;
 
 public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
-
   public static PlanNode normalize(PlanNode node) {
     if (node == null) return null;
     return new PlanNormalizer().dispatch(node);
@@ -75,20 +61,14 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   @Override
-  protected PlanNode onSubqueryFilter(SubqueryFilterNode filter) {
-    filter.resolveUsed();
-    return filter;
-  }
-
-  @Override
-  protected PlanNode onLeftJoin(LeftJoinNode leftJoin) {
+  protected PlanNode onLeftJoin(JoinNode leftJoin) {
     final PlanNode successor = leftJoin.successor();
     if (successor.type().isJoin() && successor.predecessors()[1] == leftJoin) return null;
     return handleJoin(leftJoin);
   }
 
   @Override
-  protected PlanNode onInnerJoin(InnerJoinNode innerJoin) {
+  protected PlanNode onInnerJoin(JoinNode innerJoin) {
     return handleJoin(innerJoin);
   }
 
@@ -99,31 +79,32 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
       resolveUsedToRoot(proj.successor());
       return proj.predecessors()[0];
     }
-    proj.resolveUsed();
+
     return proj;
   }
 
   @Override
-  protected PlanNode onPlainFilter(PlainFilterNode filter) {
-    final List<FilterNode> filters = filter.breakDown();
-    assert !filters.isEmpty();
+  protected PlanNode onSubqueryFilter(FilterNode filter) {
+    return filter;
+  }
 
-    if (filters.size() != 1) {
-      for (int i = 0, bound = filters.size() - 1; i < bound; i++)
-        filters.get(i).setPredecessor(0, filters.get(i + 1));
+  @Override
+  protected PlanNode onPlainFilter(FilterNode filter) {
+    final List<FilterNode> chain = filter.breakDown();
+    assert !chain.isEmpty();
+    // memo: there is such situation: a subquery filter is coerced to a plain filter
 
-      tail(filters).setPredecessor(0, filter.predecessors()[0]);
-      filter.successor().replacePredecessor(filter, filters.get(0));
+    // link the chain
+    filter.successor().replacePredecessor(filter, chain.get(0));
+    for (int i = 0, bound = chain.size() - 1; i < bound; i++)
+      chain.get(i).setPredecessor(0, chain.get(i + 1));
+    tail(chain).setPredecessor(0, filter.predecessors()[0]);
 
-    } else assert filters.get(0) == filter;
+    for (FilterNode f : chain)
+      for (AttributeDef nonNullAttr : f.nonNullAttributes())
+        enforceEffectiveNonNull(locateDefiner(nonNullAttr, f));
 
-    for (FilterNode f : filters) {
-      f.resolveUsed();
-      if (!allowNullValue(f.rawExpr()))
-        f.usedAttributes().forEach(PlanNormalizer::enforceEffectiveNonNull);
-    }
-
-    return filters.get(0);
+    return chain.get(0);
   }
 
   private static boolean isRedundantProj(ProjNode proj) {
@@ -137,37 +118,15 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
-    final List<ASTNode> exprs =
-        listMap(
-            func(AttributeDef::toColumnRef).andThen(ASTHelper::makeSelectItem),
-            predecessor.definedAttributes());
-
-    final ProjNode proj = ProjNode.make(null, exprs);
+    final ProjNode proj = ProjNode.makeWildcard(predecessor.definedAttributes());
     successor.replacePredecessor(predecessor, proj);
-    proj.setWildcard(true);
     proj.setPredecessor(0, predecessor);
   }
 
-  private static boolean allowNullValue(ASTNode expr) {
-    final BinaryOp op = expr.get(BINARY_OP);
-    return op == null
-        || (op == IS && expr.get(BINARY_RIGHT).get(LITERAL_TYPE) == LiteralType.NULL)
-        || !op.isRelation();
-  }
-
-  private static void enforceEffectiveNonNull(AttributeDef attr) {
-    final PlanNode definer = attr.definer();
+  private static void enforceEffectiveNonNull(PlanNode definer) {
     final PlanNode successor = definer.successor();
     if (successor.type() == LeftJoin && successor.predecessors()[1] == definer)
-      enforceEffectiveInnerJoin(successor);
-  }
-
-  private static void enforceEffectiveInnerJoin(PlanNode leftJoin) {
-    assert leftJoin.type() == LeftJoin;
-    final JoinNode innerJoin = ((JoinNode) leftJoin).toInnerJoin();
-    leftJoin.successor().replacePredecessor(leftJoin, innerJoin);
-    innerJoin.setPredecessor(0, leftJoin.predecessors()[0]);
-    innerJoin.setPredecessor(1, leftJoin.predecessors()[1]);
+      ((JoinNode) successor).setJoinType(InnerJoin);
   }
 
   private static PlanNode handleJoin(JoinNode node) {
@@ -183,10 +142,11 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     // 2. enforce left-deep join tree
     node = enforceLeftDeepJoin(node);
 
-    // 3. rectify qualification
+    // extra operator at join root
     if (!successor.type().isJoin()) {
-      resolveUsedOnTree(node);
-      rectifyQualification(node);
+      // 3. rectify qualification
+      //      resolveUsedOnTree(node); // necessary?
+      if (rectifyQualification(node)) resolveUsedOnTree(rootOf(node));
 
       final JoinTree joinTree = JoinTree.make(node);
       node = joinTree.sorted().rebuild();
@@ -209,20 +169,20 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     assert !c.type().isJoin();
 
     if (b.definedAttributes().containsAll(join.rightAttributes())) {
-      // 1. join<a.x=b.y>(a,join<b.z=c.w>(b,c)) => join<b.z=c.w>(join<a.x=b.y>(a,b),c)
+      // 1. join<a.x=b.y>(a,newJoin<b.z=c.w>(b,c)) => newJoin<b.z=c.w>(join<a.x=b.y>(a,b),c)
       join.setPredecessor(1, b);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, c);
 
-      join.resolveUsed();
-      newJoin.resolveUsed();
+      //      join.resolveUsed(); // necessary?
+      //      newJoin.resolveUsed(); // necessary?
 
       successor.replacePredecessor(join, newJoin);
       enforceLeftDeepJoin(join);
       return newJoin;
 
     } else {
-      // 2. join<a.x=c.y>(a,join<b.z=c.w>(b,c)) => join<b.z=c.w>(join<a.x=c.y>(a,c),b)
+      // 2. join<a.x=c.y>(a,newJoin<b.z=c.w>(b,c)) => newJoin<b.z=c.w>(join<a.x=c.y>(a,c),b)
       join.setPredecessor(1, c);
       newJoin.setPredecessor(0, join);
       newJoin.setPredecessor(1, b);
@@ -235,32 +195,36 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     }
   }
 
-  private static void rectifyQualification(PlanNode node) {
-    // 1. add qualification to subquery (if absent)
-    // 2. add qualification to distinguish the table sources of same table
-    if (!node.type().isJoin()) return;
+  private static boolean rectifyQualification(PlanNode node) {
+    // target:
+    // 1. add the qualification to an unqualified subquery
+    // 2. change the qualification to ensure non-duplicated
+    if (!node.type().isJoin()) return false;
 
     final PlanNode left = node.predecessors()[0], right = node.predecessors()[1];
     assert !right.type().isJoin() && !right.type().isFilter();
 
     final Map<String, PlanNode> qualified = new HashMap<>();
-    final Set<PlanNode> unqualified = newSetFromMap(new IdentityHashMap<>());
+    final Set<PlanNode> unqualified = newIdentitySet();
 
     // Classify attributes by whether qualified, group unqualified ones by definer
     for (AttributeDef attr : listJoin(left.definedAttributes(), right.definedAttributes())) {
       final String qualification = attr.qualification();
-      final PlanNode definer = attr.definer();
+      final PlanNode definer = locateDefiner(attr, node);
       if (qualification == null
           || qualified.compute(qualification, (s, n) -> coalesce(n, definer)) != definer)
         unqualified.add(definer);
     }
 
-    // set unique qualification to qualified ones
+    if (unqualified.isEmpty()) return false;
+
+    // set unique qualification to unqualified ones
     for (PlanNode n : unqualified) {
       final String qualification = makeQualification(qualified.keySet());
       setQualification(n, qualification);
       qualified.put(qualification, n);
     }
+    return true;
   }
 
   private static String makeQualification(Set<String> existing) {
@@ -275,6 +239,6 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   private static void setQualification(PlanNode node, String qualification) {
     assert node.type() == Proj || node.type() == Input;
     if (node.type() == Input) ((InputNode) node).setAlias(qualification);
-    node.definedAttributes().forEach(it -> it.setQualification(qualification));
+    else if (node.type() == Proj) ((ProjNode) node).setQualification(qualification);
   }
 }

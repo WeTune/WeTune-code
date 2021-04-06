@@ -1,25 +1,14 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.common.multiversion.Catalog;
-import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
 
-class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements ParamManager {
-  private ParamManagerImpl() {
-    current = new IdentityHashMap<>();
-  }
-
-  private ParamManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, Param> prev) {
-    super(current, prev);
-  }
-
-  public static ParamManager build() {
-    return new ParamManagerImpl();
+class ParamManagerImpl extends AttributeManagerBase<Param> implements ParamManager {
+  ParamManagerImpl() {
+    super(true);
   }
 
   @Override
@@ -29,35 +18,25 @@ class ParamManagerImpl extends CatalogBase<ASTNode, Param> implements ParamManag
 
   @Override
   public Param setParam(ASTNode node, Param param) {
-    return put(node, param);
+    return set(node, param);
   }
 
   @Override
   public Collection<Param> params() {
-    return params0().values();
+    return attributes().values();
   }
 
-  private Map<ASTNode, Param> params0() {
-    final Map<ASTNode, Param> params;
+  public static FieldKey<Param> field() {
+    return ParamField.INSTANCE;
+  }
 
-    if (prev == null) params = new IdentityHashMap<>();
-    else params = ((ParamManagerImpl) prev).params0();
-
-    for (var pair : current.entrySet())
-      if (pair.getValue() == REMOVED) params.remove(pair.getKey());
-      else params.put(pair.getKey(), (Param) pair.getValue());
-
-    return params;
+  public FieldKey<Param> fieldKey() {
+    return ParamField.INSTANCE;
   }
 
   @Override
-  protected Catalog<ASTNode, Param> makePrev(
-      Map<ASTNode, Object> current, Catalog<ASTNode, Param> prev) {
-    return new ParamManagerImpl(current, prev);
-  }
-
-  public static FieldKey<Param> fieldKey() {
-    return ParamField.INSTANCE;
+  public Class<?> key() {
+    return ParamManager.class;
   }
 }
 

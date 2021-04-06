@@ -28,8 +28,8 @@ public interface Fields {
     return key.setIfAbsent(this, obj);
   }
 
-  default void unset(FieldKey<?> key) {
-    key.unset(this);
+  default <T> T unset(FieldKey<T> key) {
+    return key.unset(this);
   }
 
   default void flag(FieldKey<Boolean> key) {

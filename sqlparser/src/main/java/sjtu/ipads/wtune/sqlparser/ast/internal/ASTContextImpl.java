@@ -1,31 +1,24 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
-import sjtu.ipads.wtune.common.multiversion.MultiVersion;
+import java.util.HashMap;
+import java.util.Map;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ast.AttributeManager;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ASTContextImpl implements ASTContext {
-  private final String dbType;
-  private final FieldManager attrMgr;
-
+  private String dbType;
   private Schema schema;
+
+  private FieldManager fieldMgr;
   private Map<Class<?>, Object> mgrs;
 
-  private Snapshot snapshot;
-  private int versionNumber;
+  private ASTContextImpl() {}
 
-  private ASTContextImpl(String dbType) {
-    this.dbType = dbType;
-    this.attrMgr = FieldManager.empty();
-  }
-
-  public static ASTContext build(String dbType) {
-    return new ASTContextImpl(dbType);
+  public static ASTContext build() {
+    return new ASTContextImpl();
   }
 
   @Override
@@ -39,65 +32,58 @@ public class ASTContextImpl implements ASTContext {
   }
 
   @Override
+  public void setDbType(String dbType) {
+    this.dbType = dbType;
+  }
+
+  @Override
   public void setSchema(Schema schema) {
     this.schema = schema;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <M> M manager(Class<M> mgrClazz) {
-    if (mgrClazz == FieldManager.class) return (M) attrMgr;
+  public <T> T manager(Class<T> mgrClazz) {
+    if (mgrClazz == FieldManager.class) return (T) fieldMgr;
     else if (mgrs == null) return null;
-    else return (M) mgrs.get(mgrClazz);
+    else return (T) mgrs.get(mgrClazz);
   }
 
   @Override
-  public <M> void addManager(Class<? super M> cls, M mgr) {
+  public void addManager(AttributeManager<?> mgr) {
     if (mgrs == null) mgrs = new HashMap<>();
-    mgrs.put(cls, mgr);
+    mgrs.put(mgr.key(), mgr);
   }
 
   @Override
-  public void derive() {
-    ++versionNumber;
-    snapshot = null;
+  public Snapshot derive() {
+    final Snapshot snapshot = Snapshot.make();
+    snapshot.put(FieldManager.class, fieldMgr);
 
-    attrMgr.derive();
+    fieldMgr = FieldManager.make(fieldMgr);
 
     if (mgrs != null)
-      for (Object value : mgrs.values())
-        if (value instanceof MultiVersion) ((MultiVersion) value).derive();
+      for (Object value : mgrs.values()) {
+        final AttributeManager<?> mgr = (AttributeManager<?>) value;
+        snapshot.put(mgr.key(), mgr.derive());
+      }
+
+    return snapshot;
   }
 
   @Override
-  public Snapshot snapshot() {
-    if (snapshot != null && snapshot.versionNumber() == versionNumber) return snapshot;
+  public void rollback(Snapshot snapshot) {
+    fieldMgr = (FieldManager) snapshot.get(FieldManager.class);
 
-    Snapshot snapshot = attrMgr.snapshot();
+    if (mgrs == null) return;
 
-    if (mgrs != null)
-      for (Object value : mgrs.values())
-        if (value instanceof MultiVersion)
-          snapshot = snapshot.merge(((MultiVersion) value).snapshot());
+    final Map<Class<?>, Object> currentMgrs = this.mgrs;
+    this.mgrs = new HashMap<>();
 
-    snapshot.setVersionNumber(versionNumber);
-    return this.snapshot = snapshot;
-  }
-
-  @Override
-  public int versionNumber() {
-    return versionNumber;
-  }
-
-  @Override
-  public void setSnapshot(Snapshot snapshot) {
-    this.versionNumber = snapshot.versionNumber();
-    this.snapshot = snapshot;
-
-    attrMgr.setSnapshot(snapshot);
-
-    if (mgrs != null)
-      for (Object value : mgrs.values())
-        if (value instanceof MultiVersion) ((MultiVersion) value).setSnapshot(snapshot);
+    for (Class<?> key : snapshot.objs().keySet()) {
+      final AttributeManager<?> mgr = (AttributeManager<?>) currentMgrs.get(key);
+      mgr.rollback(snapshot);
+      mgrs.put(key, mgr);
+    }
   }
 }

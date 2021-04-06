@@ -1,19 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.selectItemAlias;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import java.util.ArrayList;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
-import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef.fastEquals;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.selectItemAlias;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public abstract class PlanNodeBase implements PlanNode {
   private PlanNode successor;
@@ -21,6 +20,10 @@ public abstract class PlanNodeBase implements PlanNode {
 
   protected PlanNodeBase() {
     predecessors = new PlanNode[type().numPredecessors()];
+  }
+
+  protected PlanNodeBase(OperatorType type) {
+    predecessors = new PlanNode[type.numPredecessors()];
   }
 
   @Override
@@ -64,69 +67,45 @@ public abstract class PlanNodeBase implements PlanNode {
     return node;
   }
 
-  @Override
-  public AttributeDef resolveAttribute(String qualification, String name) {
-    qualification = simpleName(qualification);
-    name = simpleName(name);
-
-    for (AttributeDef attr : definedAttributes())
-      if ((qualification == null || qualification.equals(attr.qualification()))
-          && name.equals(attr.name())) return attr;
-
-    for (AttributeDef attr : definedAttributes())
-      if (attr.referencesTo(qualification, name)) return attr;
-
-    return null;
-  }
-
-  @Override
-  public AttributeDef resolveAttribute(ASTNode columnRef) {
-    if (!COLUMN_REF.isInstance(columnRef)) throw new IllegalArgumentException();
-    final ASTNode colName = columnRef.get(COLUMN_REF_COLUMN);
-    return resolveAttribute(colName.get(COLUMN_NAME_TABLE), colName.get(COLUMN_NAME_COLUMN));
-  }
-
-  @Override
-  public AttributeDef resolveAttribute(int attrId) {
-    // fast path
-    for (AttributeDef outAttr : definedAttributes()) if (outAttr.id() == attrId) return outAttr;
-    // slow path
-    for (AttributeDef outAttr : definedAttributes())
-      if (outAttr.referencesTo(attrId)) return outAttr;
-    return null;
-  }
-
-  @Override
-  public AttributeDef resolveAttribute(AttributeDef attr) {
-    if (attr == null) return null;
-    // fast path
-    for (AttributeDef outAttr : definedAttributes()) if (fastEquals(outAttr, attr)) return outAttr;
-    // slow path
-    for (AttributeDef outAttr : definedAttributes()) if (outAttr.equals(attr)) return outAttr;
-    return null;
-  }
-
   protected abstract PlanNode copy0();
 
-  protected AttributeDef makeAttribute(String qualification, ASTNode selectItem) {
-    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
-    final String name = selectItemAlias(selectItem);
-    final int id = System.identityHashCode(this) * 31 + selectItem.hashCode();
-    return AttributeDef.fromExpr(id, qualification, name, expr);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    return this.toString().equals(o.toString());
   }
 
-  protected static List<AttributeDef> resolveUsed0(List<ASTNode> columnRefs, PlanNode lookup) {
-    return listMap(lookup::resolveAttribute, columnRefs);
+  @Override
+  public int hashCode() {
+    return toString().hashCode();
   }
 
-  protected static List<AttributeDef> resolveUsed1(List<AttributeDef> attr, PlanNode lookup) {
-    return listMap(lookup::resolveAttribute, attr);
+  // helper method user in AggNode & ProjNode
+  protected static AttributeDefBag makeAttributes(String qualification, List<ASTNode> selectItems) {
+    final Object key = new Object();
+    final List<AttributeDef> attrs = new ArrayList<>(selectItems.size());
+    for (ASTNode selectItem : selectItems) {
+      final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
+      final String name = selectItemAlias(selectItem);
+      final int id = System.identityHashCode(key) * 31 + selectItem.hashCode();
+      attrs.add(AttributeDef.fromExpr(id, qualification, name, expr));
+    }
+    return AttributeDefBag.makeBag(attrs);
+  }
+
+  // helper method used in AggNode & SortNode
+  protected static TIntList resolveUsed(List<ASTNode> nodes, AttributeDefBag bag) {
+    final TIntList used = new TIntArrayList(nodes.size());
+    for (ASTNode node : nodes)
+      for (ASTNode colRef : gatherColumnRefs(node)) used.add(bag.locate(colRef));
+    return used;
   }
 
   protected static void updateColumnRefs(List<ASTNode> refs, List<AttributeDef> usedAttrs) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
       final AttributeDef usedAttr = usedAttrs.get(i);
-      if (usedAttr != null) refs.get(i).update(usedAttr.toColumnRef());
+      if (usedAttr != null) refs.get(i).update(usedAttr.makeColumnRef());
     }
   }
 
@@ -134,11 +113,7 @@ public abstract class PlanNodeBase implements PlanNode {
       List<ASTNode> refs, TIntList usedAttrs, List<AttributeDef> inputAttrs) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
       final int attrIdx = usedAttrs.get(i);
-      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).toColumnRef());
+      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).makeColumnRef());
     }
-  }
-
-  protected static void bindAttributes(List<AttributeDef> attrs, PlanNode node) {
-    attrs.forEach(it -> it.setDefiner(node));
   }
 }

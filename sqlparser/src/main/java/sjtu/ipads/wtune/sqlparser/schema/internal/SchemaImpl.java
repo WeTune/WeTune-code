@@ -1,22 +1,31 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_SEQUENCE_OPERATION;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_SEQUENCE_PAYLOAD;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_TABLE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.ALTER_SEQUENCE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.ALTER_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.INDEX_DEF;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+import sjtu.ipads.wtune.sqlparser.ASTParser;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public class SchemaImpl implements Schema {
   private final String dbType;
@@ -81,7 +90,8 @@ public class SchemaImpl implements Schema {
   private void buildRef() {
     for (TableImpl table : tables.values())
       if (table.constraints() != null)
-        for (ConstraintImpl constraint : table.constraints()) {
+        for (Constraint constraint0 : table.constraints()) {
+          final ConstraintImpl constraint = (ConstraintImpl) constraint0;
           final ASTNode refTableName = constraint.refTableName();
           if (refTableName != null) {
             final Table ref = table(refTableName.get(TABLE_NAME_TABLE));

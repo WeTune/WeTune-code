@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.expr;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.tableSource;
@@ -11,6 +12,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
@@ -18,6 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_ORDER_BY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_GROUP_BY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_SELECT_ITEMS;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
@@ -33,6 +36,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.OR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.INNER_JOIN;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.LEFT_JOIN;
@@ -41,6 +45,14 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -66,43 +78,53 @@ public class ToASTTranslator {
   private void translate0(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) translate0(predecessor);
 
-    if (node instanceof InputNode) translateInput((InputNode) node);
-    else if (node instanceof JoinNode) translateJoin((JoinNode) node);
-    else if (node instanceof ProjNode) translateProj((ProjNode) node);
-    else if (node instanceof PlainFilterNode) translateFilter((PlainFilterNode) node);
-    else if (node instanceof SubqueryFilterNode) translateFilter((SubqueryFilterNode) node);
-    else if (node instanceof AggNode) translateAgg((AggNode) node);
-    else if (node instanceof SortNode) translateSort((SortNode) node);
-    else if (node instanceof LimitNode) translateLimit((LimitNode) node);
+    if (node.type() == Input) translateInput((InputNode) node);
+    else if (node.type().isJoin()) translateJoin((JoinNode) node);
+    else if (node.type() == Proj) translateProj((ProjNode) node);
+    else if (node.type() == PlainFilter) translatePlainFilter((FilterNode) node);
+    else if (node.type() == SubqueryFilter) translateSubqueryFilter((FilterNode) node);
+    else if (node.type() == Agg) translateAgg((AggNode) node);
+    else if (node.type() == Sort) translateSort((SortNode) node);
+    else if (node.type() == Limit) translateLimit((LimitNode) node);
     else assert false;
   }
 
   private void translateInput(InputNode input) {
-    stack.push(Query.from(input.toTableSource()));
+    stack.push(Query.from(input.tableSource()));
   }
 
   private void translateProj(ProjNode node) {
     assert !stack.isEmpty();
     final Query q = stack.peek();
-    if (node.isWildcard()) {
+    if (node.isWildcard() && node.successor() == null) {
       final ASTNode item = node(SELECT_ITEM);
       final ASTNode wildcard = expr(WILDCARD);
       item.set(SELECT_ITEM_EXPR, wildcard);
       q.setProjection(singletonList(item));
 
-    } else q.setProjection(node.selectItems());
+    } else q.setProjection(node.selections());
     q.setQualification(qualificationOf(node.definedAttributes()));
     q.setForcedDistinct(node.isForcedUnique());
   }
 
-  private void translateFilter(FilterNode node) {
+  private void translatePlainFilter(FilterNode node) {
     assert !stack.isEmpty();
-    stack.peek().appendFilter(node.expr(), true);
+    final Query q = stack.peek();
+    node.expr().forEach(it -> q.appendFilter(it, true));
   }
 
-  private void translateFilter(SubqueryFilterNode node) {
+  private void translateSubqueryFilter(FilterNode node) {
     final ASTNode subquery = stack.pop().assembleAsQuery();
-    final ASTNode column = node.leftExpr();
+    final List<AttributeDef> attrs = node.usedAttributes();
+    assert !attrs.isEmpty();
+
+    final ASTNode column;
+    if (attrs.size() == 1) column = attrs.get(0).makeColumnRef();
+    else {
+      final List<ASTNode> refs = listMap(AttributeDef::makeColumnRef, attrs);
+      column = expr(TUPLE);
+      column.set(TUPLE_EXPRS, refs);
+    }
 
     final ASTNode queryExpr = expr(QUERY_EXPR);
     queryExpr.set(QUERY_EXPR_QUERY, subquery);
@@ -124,7 +146,7 @@ public class ToASTTranslator {
     join.set(JOINED_LEFT, leftSource);
     join.set(JOINED_RIGHT, rightSource);
     join.set(JOINED_ON, node.onCondition());
-    join.set(JOINED_TYPE, node instanceof InnerJoinNode ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_TYPE, node.type() == InnerJoin ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }
@@ -132,8 +154,9 @@ public class ToASTTranslator {
   private void translateAgg(AggNode agg) {
     assert !stack.isEmpty();
     final Query q = stack.peek();
-    q.setGroupKeys(agg.groupKeys());
-    q.setAggregation(agg.aggregations());
+    q.setGroupKeys(agg.groups());
+    q.setAggregation(agg.selections());
+    q.setHaving(agg.having());
     q.setQualification(qualificationOf(agg.definedAttributes()));
   }
 
@@ -166,6 +189,7 @@ public class ToASTTranslator {
     private ASTNode source;
     private List<ASTNode> groupKeys;
     private List<ASTNode> orderKeys;
+    private ASTNode having;
     private ASTNode limit;
     private ASTNode offset;
     private String qualification;
@@ -245,6 +269,10 @@ public class ToASTTranslator {
       this.qualification = qualification;
     }
 
+    public void setHaving(ASTNode having) {
+      this.having = having;
+    }
+
     private ASTNode assembleAsQuery() {
       if (projection == null && filter == null && QUERY.isInstance(source)) return source;
 
@@ -254,6 +282,7 @@ public class ToASTTranslator {
       if (forcedDistinct) querySpec.set(QUERY_SPEC_DISTINCT, true);
       if (filter != null) querySpec.set(QUERY_SPEC_WHERE, filter);
       if (!isEmpty(groupKeys)) querySpec.set(QUERY_SPEC_GROUP_BY, groupKeys);
+      if (having != null) querySpec.set(QUERY_SPEC_HAVING, having);
 
       final ASTNode query = node(QUERY);
       query.set(QUERY_BODY, querySpec);

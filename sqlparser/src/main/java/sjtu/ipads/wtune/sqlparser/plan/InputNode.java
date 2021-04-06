@@ -5,13 +5,11 @@ import sjtu.ipads.wtune.sqlparser.plan.internal.InputNodeImpl;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public interface InputNode extends PlanNode {
-  ASTNode toTableSource();
-
   Table table();
 
-  int id();
-
   void setAlias(String alias);
+
+  ASTNode tableSource();
 
   @Override
   default OperatorType type() {

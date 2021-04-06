@@ -1,19 +1,14 @@
 package sjtu.ipads.wtune.superopt.optimizer.filter;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.util.Comparator;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
 
@@ -21,7 +16,7 @@ public record FilterAssignment(Filter op, List<FilterNode> used) {
   public FilterNode assignment() {
     assert !used.isEmpty();
 
-    used.sort(Comparator.comparing(FilterNode::toString));
+    used.sort(Comparator.comparing(it -> it.predicate().toString()));
 
     if (used.size() == 1) {
       final FilterNode node = (FilterNode) Iterables.getOnlyElement(used).copy();
@@ -30,15 +25,13 @@ public record FilterAssignment(Filter op, List<FilterNode> used) {
         node.setPredecessor(1, PlanNode.copyOnTree(node.predecessors()[1]));
       return node;
 
-    } else return used.stream().reduce(FilterAssignment::combineFilters).get();
+    } else return Lists.reverse(used).stream().reduce(FilterAssignment::combineFilters).get();
   }
 
   private static FilterNode combineFilters(FilterNode f0, FilterNode f1) {
-    final ASTNode binary = ASTNode.expr(ExprKind.BINARY);
-    binary.set(BINARY_LEFT, f0.expr()); // no need to copy(), expr() always returns a fresh AST
-    binary.set(BINARY_RIGHT, f1.expr());
-    binary.set(BINARY_OP, BinaryOp.AND);
+    final Expr expr0 = f0.predicate();
+    final Expr expr1 = f1.predicate();
 
-    return PlainFilterNode.make(binary, listJoin(f0.usedAttributes(), f1.usedAttributes()));
+    return FilterNode.makePlainFilter(Expr.combine(expr0, expr1), listConcat(f0.usedAttributes(), f1.usedAttributes()));
   }
 }

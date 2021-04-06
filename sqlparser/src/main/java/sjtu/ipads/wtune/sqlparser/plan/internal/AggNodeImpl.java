@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
@@ -10,112 +9,142 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
 public class AggNodeImpl extends PlanNodeBase implements AggNode {
-  private final List<ASTNode> groupKeys;
-  private final List<ASTNode> selectItems;
-  private final ASTNode having;
+  private final AttributeDefBag definedAttrs;
 
-  private final List<AttributeDef> definedAttrs;
+  private List<ASTNode> groups;
+  private List<ASTNode> selections;
+  private ASTNode having;
 
-  private TIntList keyUsedAttrs;
-  private TIntList aggUsedAttrs;
-  private TIntList havingUsedAttrs;
+  private TIntList attrsInGroups;
+  private TIntList attrsInSelections;
+  private TIntList attrsInHaving;
 
-  private AggNodeImpl(
-      String qualification, List<ASTNode> selectItems, List<ASTNode> groupKeys, ASTNode having) {
-    selectItems = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), selectItems);
-    groupKeys = listMap(func(ASTNode::deepCopy).andThen(ASTContext::unmanage), groupKeys);
-    having = having != null ? ASTContext.unmanage(having.deepCopy()) : null;
-
-    this.groupKeys = groupKeys;
-    this.selectItems = selectItems;
-    this.having = having;
-    this.definedAttrs = listMap(func2(this::makeAttribute).bind0(qualification), selectItems);
-    bindAttributes(definedAttrs, this);
-  }
+  private boolean isASTUpdated;
 
   private AggNodeImpl(
-      List<AttributeDef> definedAttrs,
-      List<ASTNode> groupKeys,
+      List<ASTNode> selections,
+      List<ASTNode> groups,
       ASTNode having,
-      TIntList keyUsedAttrs,
-      TIntList aggUsedAttrs,
-      TIntList havingUsedAttrs) {
-    this.definedAttrs = listMap(AttributeDef::copy, definedAttrs);
-    this.selectItems = listMap(AttributeDef::toSelectItem, definedAttrs);
-    this.groupKeys = groupKeys;
+      AttributeDefBag definedAttrs,
+      TIntList attrsInSelections,
+      TIntList attrsInGroups,
+      TIntList attrsInHaving,
+      boolean isASTUpdated) {
+    this.selections = selections;
+    this.groups = groups;
     this.having = having;
-    this.keyUsedAttrs = keyUsedAttrs;
-    this.aggUsedAttrs = aggUsedAttrs;
-    this.havingUsedAttrs = havingUsedAttrs;
-    bindAttributes(this.definedAttrs, this);
+    this.definedAttrs = definedAttrs;
+
+    this.attrsInSelections = attrsInSelections;
+    this.attrsInGroups = attrsInGroups;
+    this.attrsInHaving = attrsInHaving;
+
+    this.isASTUpdated = isASTUpdated;
   }
 
   public static AggNode build(
-      String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys, ASTNode having) {
-    return new AggNodeImpl(qualification, aggs, groupKeys, having);
+      String qualification, List<ASTNode> selections, List<ASTNode> groups, ASTNode having) {
+    return new AggNodeImpl(
+        selections,
+        groups,
+        having,
+        makeAttributes(qualification, selections),
+        null,
+        null,
+        null,
+        false);
   }
 
-  @Override
-  public List<ASTNode> groupKeys() {
-    if (groupKeys == null) return null;
-    final List<ASTNode> keys = listMap(ASTNode::deepCopy, groupKeys);
-    updateColumnRefs(gatherColumnRefs(keys), keyUsedAttrs, predecessors()[0].definedAttributes());
-    return keys;
+  private void updateAST() {
+    this.selections = updateSelections();
+    this.groups = updateGroups();
+    this.having = updateHaving();
+    this.isASTUpdated = true;
   }
 
-  @Override
-  public List<ASTNode> aggregations() {
-    final List<ASTNode> aggs = listMap(ASTNode::deepCopy, selectItems);
-    final List<ASTNode> refs = gatherColumnRefs(aggs);
+  private List<ASTNode> updateSelections() {
+    final List<ASTNode> selections = listMap(ASTNode::deepCopy, this.selections);
+    final List<ASTNode> colRefs = gatherColumnRefs(selections);
     final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
-    for (int i = 0, bound = refs.size(); i < bound; i++) {
-      final int attrIdx = aggUsedAttrs.get(i);
-      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).upstream().toColumnRef());
+
+    for (int i = 0, bound = colRefs.size(); i < bound; i++) {
+      final int attrIdx = attrsInSelections.get(i);
+      if (attrIdx == -1) continue;
+      final AttributeDef inputAttr = inputAttrs.get(attrIdx);
+      final AttributeDef refAttr = inputAttr.upstream();
+      colRefs.get(i).update(coalesce(refAttr, inputAttr).makeColumnRef());
     }
 
-    final ProjNode proj = (ProjNode) predecessors()[0];
-    if (!proj.isForcedUnique())
-      for (ASTNode agg : aggs) {
-        final ASTNode expr = agg.get(SELECT_ITEM_EXPR);
-        if (AGGREGATE.isInstance(expr)) expr.set(AGGREGATE_DISTINCT, false);
-      }
+    final boolean forcedUnique = ((ProjNode) predecessors()[0]).isForcedUnique();
+    for (ASTNode agg : selections) {
+      final ASTNode expr = agg.get(SELECT_ITEM_EXPR);
+      if (AGGREGATE.isInstance(expr)) expr.set(AGGREGATE_DISTINCT, forcedUnique);
+    }
+    return selections;
+  }
 
-    return aggs;
+  private List<ASTNode> updateGroups() {
+    if (groups == null) return null;
+    final List<ASTNode> groups = listMap(ASTNode::deepCopy, this.groups);
+    updateColumnRefs(
+        gatherColumnRefs(groups), attrsInGroups, predecessors()[0].definedAttributes());
+    return groups;
+  }
+
+  private ASTNode updateHaving() {
+    if (having == null) return null;
+    final ASTNode having = this.having.deepCopy();
+    updateColumnRefs(
+        gatherColumnRefs(having), attrsInHaving, predecessors()[0].definedAttributes());
+    return having;
+  }
+
+  @Override
+  public List<ASTNode> selections() {
+    if (isASTUpdated) return listMap(ASTNode::deepCopy, selections);
+
+    updateAST();
+    return selections;
+  }
+
+  @Override
+  public List<ASTNode> groups() {
+    if (groups == null) return null;
+    if (isASTUpdated) return listMap(ASTNode::deepCopy, groups);
+    updateAST();
+    return groups;
   }
 
   @Override
   public ASTNode having() {
     if (having == null) return null;
-    final ASTNode copy = having.deepCopy();
-    updateColumnRefs(
-        gatherColumnRefs(copy), havingUsedAttrs, predecessors()[0].definedAttributes());
-    return copy;
+    if (isASTUpdated) return having.deepCopy();
+    updateAST();
+    return having;
   }
 
   @Override
-  public List<AttributeDef> definedAttributes() {
+  public AttributeDefBag definedAttributes() {
     return definedAttrs;
   }
 
   @Override
   public List<AttributeDef> usedAttributes() {
-    final List<AttributeDef> used = new ArrayList<>(aggUsedAttrs.size());
+    final List<AttributeDef> used = new ArrayList<>(attrsInSelections.size());
     final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
-    aggUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
-    if (keyUsedAttrs != null) keyUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
-    if (having != null) havingUsedAttrs.forEach(it -> used.add(inputAttrs.get(it)));
+    attrsInSelections.forEach(it -> used.add(inputAttrs.get(it)));
+    if (attrsInGroups != null) attrsInGroups.forEach(it -> used.add(inputAttrs.get(it)));
+    if (attrsInHaving != null) attrsInHaving.forEach(it -> used.add(inputAttrs.get(it)));
     return used;
   }
 
@@ -130,56 +159,32 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     // Plan: Agg<[0]>(Proj<b.id>(InnerJoin<a.ref=b.id>(Input<a>, Input<b>)))
     // Plan_opt: Agg<[0]>(Proj<a.ref>(Input<a>))
     // SQL_opt: SELECT COUNT(a.ref) FROM a JOIN b ON a.ref = b.id
-    if (aggUsedAttrs == null) aggUsedAttrs = resolveUsedAttributes0(selectItems);
-    if (groupKeys != null && keyUsedAttrs == null) keyUsedAttrs = resolveUsedAttributes0(groupKeys);
-    if (having != null && havingUsedAttrs == null)
-      havingUsedAttrs = resolveUsedAttributes0(singletonList(having));
+
+    this.isASTUpdated = false;
+    if (attrsInSelections != null) return;
+
+    final AttributeDefBag inAttrs = predecessors()[0].definedAttributes();
+    attrsInSelections = resolveUsed(selections, inAttrs);
+    if (groups != null) attrsInGroups = resolveUsed(groups, inAttrs);
+    if (having != null) attrsInHaving = resolveUsed(singletonList(having), inAttrs);
   }
 
   @Override
   protected PlanNode copy0() {
     return new AggNodeImpl(
-        definedAttrs, groupKeys, having, keyUsedAttrs, aggUsedAttrs, havingUsedAttrs);
-  }
-
-  @Override
-  public void setPredecessor(int idx, PlanNode op) {
-    if (op != null && !(op instanceof ProjNode))
-      throw new IllegalArgumentException("AggNode should only be preceded by ProjNode");
-
-    super.setPredecessor(idx, op);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    AggNodeImpl aggNode = (AggNodeImpl) o;
-    return Objects.equals(groupKeys, aggNode.groupKeys)
-        && Objects.equals(selectItems, aggNode.selectItems);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(groupKeys, selectItems);
+        selections,
+        groups,
+        having,
+        definedAttrs,
+        attrsInSelections,
+        attrsInGroups,
+        attrsInHaving,
+        isASTUpdated);
   }
 
   @Override
   public String toString() {
-    return "Agg<%s %s>".formatted(groupKeys(), aggregations());
-  }
-
-  private TIntList resolveUsedAttributes0(List<ASTNode> nodes) {
-    final PlanNode input = predecessors()[0];
-    final List<AttributeDef> inputAttrs = input.definedAttributes();
-    assert input instanceof ProjNode;
-
-    final TIntList usedAttrs = new TIntArrayList(nodes.size());
-    for (ASTNode node : nodes)
-      for (ASTNode colRef : gatherColumnRefs(node)) {
-        final AttributeDef resolved = input.resolveAttribute(colRef);
-        usedAttrs.add(resolved != null ? inputAttrs.indexOf(resolved) : -1);
-      }
-    return usedAttrs;
+    if (!isASTUpdated) updateAST();
+    return "Agg<%s %s %s>".formatted(selections, groups, having);
   }
 }

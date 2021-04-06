@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
 import java.lang.System.Logger;
-import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;

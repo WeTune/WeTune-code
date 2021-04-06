@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 import sjtu.ipads.wtune.superopt.fragment.internal.SubqueryFilterImpl;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
@@ -20,7 +20,7 @@ public interface SubqueryFilter extends Filter {
   default PlanNode instantiate(Interpretations inter) {
     final PlanNode pred0 = predecessors()[0].instantiate(inter);
     final PlanNode pred1 = predecessors()[1].instantiate(inter);
-    final PlanNode node = SubqueryFilterNode.make(inter.getAttributes(fields()).object());
+    final PlanNode node = FilterNode.makeSubqueryFilter(inter.getAttributes(fields()).object());
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
     return node;

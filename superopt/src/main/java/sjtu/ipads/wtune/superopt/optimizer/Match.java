@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
 
 import sjtu.ipads.wtune.sqlparser.plan.PlanException;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -15,19 +17,23 @@ public interface Match {
 
   default PlanNode substitute(Fragment fragment) {
     final PlanNode newNode = fragment.instantiate(assignments());
-    if (matchPoint().successor() == null) return newNode;
-    else {
-      final PlanNode matchPoint = PlanNode.copyToRoot(matchPoint());
+    if (matchPoint().successor() == null) {
+      resolveUsedOnTree(newNode);
+      return newNode;
+
+    } else {
+      final PlanNode matchPoint = copyToRoot(matchPoint());
       matchPoint.successor().replacePredecessor(matchPoint, newNode);
 
       try {
-        resolveUsedOnTree(PlanNode.rootOf(newNode));
+        resolveUsedOnTree(rootOf(newNode));
       } catch (PlanException ex) {
         return null;
       }
 
       if (!matchPoint.type().isFilter()) return newNode;
 
+      // always returns the filter chain's head
       PlanNode succ = newNode;
       while (succ.successor().type().isFilter()) succ = succ.successor();
       return succ;

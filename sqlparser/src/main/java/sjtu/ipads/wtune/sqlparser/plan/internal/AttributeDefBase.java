@@ -1,22 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+
 public abstract class AttributeDefBase implements AttributeDef {
   private final int id;
-  private String qualification;
+  private final String qualification;
   private final String name;
-
-  private PlanNode definer;
 
   public AttributeDefBase(int id, String qualification, String name) {
     this.id = id == -1 ? 0 : id;
@@ -40,22 +37,12 @@ public abstract class AttributeDefBase implements AttributeDef {
   }
 
   @Override
-  public PlanNode definer() {
-    return definer;
+  public AttributeDef copy() {
+    return copyWithQualification(qualification());
   }
 
   @Override
-  public void setDefiner(PlanNode definer) {
-    this.definer = definer;
-  }
-
-  @Override
-  public void setQualification(String qualification) {
-    this.qualification = qualification;
-  }
-
-  @Override
-  public ASTNode toColumnRef() {
+  public ASTNode makeColumnRef() {
     if (name() == null) throw new IllegalStateException("anonymous attribute cannot be referenced");
 
     final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);

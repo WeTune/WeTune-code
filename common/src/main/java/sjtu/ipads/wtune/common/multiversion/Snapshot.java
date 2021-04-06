@@ -1,25 +1,17 @@
 package sjtu.ipads.wtune.common.multiversion;
 
-import sjtu.ipads.wtune.common.multiversion.internal.SnapshotImpl;
-
-import java.util.Collection;
+import java.util.Map;
 
 public interface Snapshot {
-  int versionNumber();
+  Object get(Class<?> key);
 
-  void setVersionNumber(int versionNumber);
+  void put(Class<?> key, Object obj);
 
-  <T> T get(Class<T> keyClazz);
+  void merge(Snapshot other);
 
-  Collection<Object> keys();
+  Map<Class<?>, Object> objs();
 
-  Snapshot merge(Snapshot snapshot);
-
-  static Snapshot singleton(Object key) {
-    return SnapshotImpl.build(key);
-  }
-
-  static Snapshot empty() {
-    return SnapshotImpl.build();
+  static Snapshot make() {
+    return new SnapshotImpl();
   }
 }

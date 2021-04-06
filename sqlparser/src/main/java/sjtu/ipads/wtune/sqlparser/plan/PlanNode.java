@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import java.util.List;
 import java.util.Objects;
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public interface PlanNode extends TypedTreeNode<OperatorType> {
   PlanNode successor();
@@ -14,23 +13,15 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
 
   void setSuccessor(PlanNode successor);
 
-  void resolveUsed();
-
-  List<AttributeDef> definedAttributes();
+  AttributeDefBag definedAttributes();
 
   List<AttributeDef> usedAttributes();
+
+  void resolveUsed();
 
   PlanNode copy();
 
   void replacePredecessor(PlanNode target, PlanNode rep);
-
-  AttributeDef resolveAttribute(String qualification, String name);
-
-  AttributeDef resolveAttribute(ASTNode columnRef);
-
-  AttributeDef resolveAttribute(int attrId);
-
-  AttributeDef resolveAttribute(AttributeDef attr);
 
   static PlanNode rootOf(PlanNode node) {
     while (node.successor() != null) node = node.successor();

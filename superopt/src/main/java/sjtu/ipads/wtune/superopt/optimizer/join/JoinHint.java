@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.optimizer.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,7 @@ public class JoinHint {
     final JoinNode newTree = tree.withRoot(rootIdx).copyAndRebuild();
     final PlanNode successor = copyToRoot(tree.originalRoot().successor());
     successor.replacePredecessor(tree.originalRoot(), newTree);
-    resolveUsedToRoot(successor);
+    //    resolveUsedToRoot(successor); // necessary?
     return newTree;
   }
 

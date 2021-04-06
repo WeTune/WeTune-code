@@ -1,21 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
-import sjtu.ipads.wtune.sqlparser.ASTContext;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
+import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   private final ASTNode limit, offset;
 
   private LimitNodeImpl(ASTNode limit, ASTNode offset) {
-    if (limit != null) limit = ASTContext.unmanage(limit.deepCopy());
-    if (offset != null) offset = ASTContext.unmanage(offset.deepCopy());
+    if (limit != null) limit = limit.deepCopy();
+    if (offset != null) offset = offset.deepCopy();
 
     this.limit = limit;
     this.offset = offset;
@@ -27,16 +25,16 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
 
   @Override
   public ASTNode limit() {
-    return limit;
+    return limit.deepCopy();
   }
 
   @Override
   public ASTNode offset() {
-    return offset;
+    return offset == null ? null : offset.deepCopy();
   }
 
   @Override
-  public List<AttributeDef> definedAttributes() {
+  public AttributeDefBag definedAttributes() {
     return predecessors()[0].definedAttributes();
   }
 
@@ -54,20 +52,7 @@ public class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    LimitNodeImpl limitNode = (LimitNodeImpl) o;
-    return Objects.equals(limit, limitNode.limit) && Objects.equals(offset, limitNode.offset);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(limit, offset);
-  }
-
-  @Override
   public String toString() {
-    return "Limit<%s %s>".formatted(limit(), offset());
+    return "Limit<%s %s>".formatted(limit, offset);
   }
 }

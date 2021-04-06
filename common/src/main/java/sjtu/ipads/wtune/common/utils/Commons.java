@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.common.utils;
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.Contract;
 
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
@@ -44,6 +47,11 @@ public interface Commons {
 
   static String surround(String str, char quota) {
     return quota + str + quota;
+  }
+
+  @Contract("!null, _ -> param1; null, !null -> param2; null, null -> null")
+  static <T> T coalesce(T val0, T val1) {
+    return val0 != null ? val0 : val1;
   }
 
   @SafeVarargs
@@ -174,6 +182,11 @@ public interface Commons {
     else return xs.get(xs.size() - 1);
   }
 
+  static <T> T safeGet(List<T> xs, int index) {
+    if (index < 0 || index >= xs.size()) return null;
+    else return xs.get(index);
+  }
+
   static boolean isEmpty(Collection<?> xs) {
     return xs == null || xs.isEmpty();
   }
@@ -212,6 +225,12 @@ public interface Commons {
     return occurrences;
   }
 
+  static int max(int[] arr) {
+    int max = Integer.MIN_VALUE;
+    for (int i : arr) if (i > max) max = i;
+    return max;
+  }
+
   static <T> T echo(T t) {
     System.out.println(t);
     return t;
@@ -229,5 +248,9 @@ public interface Commons {
     final Set<T> set = Collections.newSetFromMap(new IdentityHashMap<>(xs.size()));
     set.addAll(xs);
     return set;
+  }
+
+  static TIntList newIntList(int expectedSize) {
+    return new TIntArrayList(expectedSize);
   }
 }

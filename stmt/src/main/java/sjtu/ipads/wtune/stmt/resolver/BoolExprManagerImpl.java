@@ -1,24 +1,13 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.common.multiversion.Catalog;
-import sjtu.ipads.wtune.common.multiversion.CatalogBase;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
 
-class BoolExprManagerImpl extends CatalogBase<ASTNode, BoolExpr> implements BoolExprManager {
-  private BoolExprManagerImpl() {
-    current = new IdentityHashMap<>();
-  }
-
-  private BoolExprManagerImpl(Map<ASTNode, Object> current, Catalog<ASTNode, BoolExpr> prev) {
-    super(current, prev);
-  }
-
-  public static BoolExprManager build() {
-    return new BoolExprManagerImpl();
+class BoolExprManagerImpl extends AttributeManagerBase<BoolExpr> implements BoolExprManager {
+  BoolExprManagerImpl() {
+    super(true);
   }
 
   @Override
@@ -28,17 +17,21 @@ class BoolExprManagerImpl extends CatalogBase<ASTNode, BoolExpr> implements Bool
 
   @Override
   public BoolExpr setBool(ASTNode node, BoolExpr expr) {
-    return put(node, expr);
+    return set(node, expr);
+  }
+
+  public static FieldKey<BoolExpr> field() {
+    return BoolExprField.INSTANCE;
   }
 
   @Override
-  protected Catalog<ASTNode, BoolExpr> makePrev(
-      Map<ASTNode, Object> current, Catalog<ASTNode, BoolExpr> prev) {
-    return new BoolExprManagerImpl(current, prev);
+  protected FieldKey<BoolExpr> fieldKey() {
+    return BoolExprField.INSTANCE;
   }
 
-  public static FieldKey<BoolExpr> fieldKey() {
-    return BoolExprField.INSTANCE;
+  @Override
+  public Class<?> key() {
+    return BoolExprManager.class;
   }
 }
 

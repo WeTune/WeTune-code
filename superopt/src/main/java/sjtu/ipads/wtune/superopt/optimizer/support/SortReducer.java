@@ -1,11 +1,10 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Set;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
@@ -19,7 +18,7 @@ public class SortReducer {
 
   private static Set<PlanNode> significantSortOf(PlanNode node) {
     final SortSpec sortChain = resolveSort(node);
-    final Set<PlanNode> ret = Collections.newSetFromMap(new IdentityHashMap<>());
+    final Set<PlanNode> ret = newIdentitySet();
     significantSortOf0(sortChain, ret);
     return ret;
   }
@@ -73,7 +72,7 @@ public class SortReducer {
   }
 
   private static boolean isCount(AggNode node) {
-    for (ASTNode selectItem : node.aggregations()) {
+    for (ASTNode selectItem : node.selections()) {
       assert SELECT_ITEM.isInstance(selectItem);
       final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
       if ("count".equalsIgnoreCase(expr.get(AGGREGATE_NAME))) return true;

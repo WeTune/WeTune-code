@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.superopt.util.Stringify.stringify;
 
 import java.util.ArrayList;
@@ -51,9 +50,7 @@ public interface Fragment extends Comparable<Fragment> {
   }
 
   default PlanNode instantiate(Interpretations interpretations) {
-    final PlanNode instantiated = head().instantiate(interpretations);
-    resolveUsedOnTree(instantiated);
-    return instantiated;
+    return head().instantiate(interpretations);
   }
 
   @Override

@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.util;
 
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
@@ -10,6 +13,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT_ON;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
@@ -26,14 +31,14 @@ import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public interface ASTHelper {
+  static String simpleName(String name) {
+    return name == null ? null : unquoted(unquoted(name, '"'), '`').toLowerCase();
+  }
+
   static ASTNode makeSelectItem(ASTNode expr) {
     final ASTNode item = ASTNode.node(SELECT_ITEM);
     item.set(SELECT_ITEM_EXPR, expr);
     return item;
-  }
-
-  static String simpleName(String name) {
-    return name == null ? null : unquoted(unquoted(name, '"'), '`').toLowerCase();
   }
 
   static String selectItemAlias(ASTNode selectItem) {
@@ -54,6 +59,15 @@ public interface ASTHelper {
     if (selectItems.size() != 1) return false;
     final ASTNode expr = selectItems.get(0).get(SELECT_ITEM_EXPR);
     return WILDCARD.isInstance(expr) && expr.get(WILDCARD_TABLE) == null;
+  }
+
+  static ASTNode locateOtherSide(ASTNode binaryExpr, ASTNode thisSide) {
+    if (!BINARY.isInstance(binaryExpr)) return null;
+    final ASTNode left = binaryExpr.get(BINARY_LEFT);
+    final ASTNode right = binaryExpr.get(BINARY_RIGHT);
+    if (left == thisSide) return right;
+    if (right == thisSide) return left;
+    return null;
   }
 
   static ASTNode locateQueryNode(Relation relation) {
@@ -92,6 +106,15 @@ public interface ASTHelper {
     if (parent == null) return false;
     if (parent.get(key) == node) return true;
     else return isParentedBy(parent, key);
+  }
+
+  static boolean isAggSelection(ASTNode selectItem) {
+    return AGGREGATE.isInstance(selectItem.get(SELECT_ITEM_EXPR));
+  }
+
+  static boolean isAggSelectionWithDistinct(ASTNode selectItem) {
+    final ASTNode expr = selectItem.get(SELECT_ITEM_EXPR);
+    return AGGREGATE.isInstance(expr) && expr.isFlag(AGGREGATE_DISTINCT);
   }
 
   Set<String> AGG_FUNCS =

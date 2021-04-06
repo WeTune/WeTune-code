@@ -1,17 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NODE_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
+
+import java.util.Map;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
-import sjtu.ipads.wtune.sqlparser.ast.internal.NodeImpl;
-
-import java.util.Map;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeImpl;
 
 public interface ASTNode extends Fields {
   String POSTGRESQL = "postgresql";
@@ -101,7 +102,7 @@ public interface ASTNode extends Fields {
   }
 
   static ASTNode node(NodeType nodeType) {
-    return NodeImpl.build(nodeType);
+    return ASTNodeImpl.build(nodeType);
   }
 
   static ASTNode expr(ExprKind exprKind) {
@@ -119,10 +120,5 @@ public interface ASTNode extends Fields {
   static void setParent(Object obj, ASTNode parent) {
     if (obj instanceof ASTNode) ((ASTNode) obj).set(PARENT, parent);
     else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setParent(it, parent));
-  }
-
-  static void setContext(Object obj, ASTContext ctx) {
-    if (obj instanceof ASTNode) ((ASTNode) obj).accept(topDownVisit(it -> it.setContext(ctx)));
-    else if (obj instanceof Iterable) ((Iterable<?>) obj).forEach(it -> setContext(it, ctx));
   }
 }

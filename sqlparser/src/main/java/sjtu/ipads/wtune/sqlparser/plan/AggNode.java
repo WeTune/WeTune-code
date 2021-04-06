@@ -5,9 +5,9 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.internal.AggNodeImpl;
 
 public interface AggNode extends PlanNode {
-  List<ASTNode> groupKeys();
+  List<ASTNode> groups();
 
-  List<ASTNode> aggregations();
+  List<ASTNode> selections();
 
   ASTNode having();
 
@@ -16,7 +16,8 @@ public interface AggNode extends PlanNode {
     return OperatorType.Agg;
   }
 
-  static AggNode make(String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys, ASTNode having) {
+  static AggNode make(
+      String qualification, List<ASTNode> aggs, List<ASTNode> groupKeys, ASTNode having) {
     return AggNodeImpl.build(qualification, aggs, groupKeys, having);
   }
 }

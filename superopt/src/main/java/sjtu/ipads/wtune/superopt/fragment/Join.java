@@ -2,10 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment;
 
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
@@ -23,8 +20,7 @@ public interface Join extends Operator {
     final List<AttributeDef> l = interpretations.getAttributes(leftFields()).object();
     final List<AttributeDef> r = interpretations.getAttributes(rightFields()).object();
 
-    final PlanNode node =
-        type() == OperatorType.LeftJoin ? LeftJoinNode.make(l, r) : InnerJoinNode.make(l, r);
+    final PlanNode node = JoinNode.make(type(), l, r);
 
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);

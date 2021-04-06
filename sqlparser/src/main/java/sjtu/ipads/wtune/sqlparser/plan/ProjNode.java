@@ -1,20 +1,21 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.internal.ProjNodeImpl;
 
-import java.util.List;
-
 public interface ProjNode extends PlanNode {
-  List<ASTNode> selectItems();
+  List<ASTNode> selections();
 
   boolean isForcedUnique();
 
-  void setForcedUnique(boolean flag);
-
   boolean isWildcard();
 
+  void setForcedUnique(boolean flag);
+
   void setWildcard(boolean flag);
+
+  void setQualification(String qualification);
 
   @Override
   default OperatorType type() {
@@ -27,5 +28,9 @@ public interface ProjNode extends PlanNode {
 
   static ProjNode make(String qualification, List<ASTNode> selectItems) {
     return ProjNodeImpl.build(qualification, selectItems);
+  }
+
+  static ProjNode makeWildcard(List<AttributeDef> usedAttrs) {
+    return ProjNodeImpl.buildWildcard(usedAttrs);
   }
 }

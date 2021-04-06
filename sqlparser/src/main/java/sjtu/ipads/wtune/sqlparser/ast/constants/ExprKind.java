@@ -1,14 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.ast.constants;
 
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+
+import java.util.ArrayList;
+import java.util.List;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ExprFieldImpl;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 
 public enum ExprKind implements FieldDomain {
   UNKNOWN,
@@ -47,7 +46,7 @@ public enum ExprKind implements FieldDomain {
   private final List<FieldKey> fields = new ArrayList<>(5);
 
   public boolean isInstance(ASTNode node) {
-    return EXPR_KIND.get(node) == this;
+    return node != null && EXPR_KIND.get(node) == this;
   }
 
   @Override

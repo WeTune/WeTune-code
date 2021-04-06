@@ -5,8 +5,6 @@ import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -37,7 +35,7 @@ public class FilterHint {
     final List<PlanNode> ret = new ArrayList<>(dist.results().size());
     for (List<FilterAssignment> result : dist.results()) {
       final PlanNode matchPoint = rebuildFilters(result, slots, chainHead, predecessor);
-      resolveUsedOnTree(rootOf(matchPoint));
+      //      resolveUsedOnTree(rootOf(matchPoint));
       ret.add(matchPoint);
     }
 

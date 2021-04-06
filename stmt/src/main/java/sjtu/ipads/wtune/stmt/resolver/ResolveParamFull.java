@@ -1,31 +1,83 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.*;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CAST_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CAST_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_ARGS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_NAME;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.MATCH_COLS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_NUMBER;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.SYMBOL_TEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_MIDDLE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.ARRAY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.CAST;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.FUNC_CALL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.MATCH;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.SYMBOL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TERNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.NOT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.UNARY_MINUS;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.resolver.ParamManager.PARAM;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ADD;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ARRAY_ELEMENT;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.COLUMN_VALUE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DECREASE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIRECT_VALUE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIVIDE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.GEN_OFFSET;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.GUESS;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INCREASE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVERSE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVOKE_AGG;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVOKE_FUNC;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.KEEP;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.MAKE_TUPLE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.MATCHING;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.SUBTRACT;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TIMES;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TUPLE_ELEMENT;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.fromBinaryOp;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
+
+import com.google.common.collect.Lists;
+import java.util.LinkedList;
+import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 /**
  * Mark parameter in a statement.
@@ -265,8 +317,7 @@ class ResolveParamFull implements ASTVistor {
   public static ParamManager resolve(ASTNode node) {
     if (node.manager(BoolExprManager.class) == null) resolveBoolExpr(node);
 
-    if (node.manager(ParamManager.class) == null)
-      node.context().addManager(ParamManager.class, ParamManager.build());
+    if (node.manager(ParamManager.class) == null) node.context().addManager(ParamManager.build());
 
     node.accept(new ResolveParamFull());
     return node.manager(ParamManager.class);

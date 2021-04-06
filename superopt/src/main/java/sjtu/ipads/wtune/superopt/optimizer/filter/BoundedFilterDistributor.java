@@ -109,7 +109,7 @@ public class BoundedFilterDistributor extends FilterDistributorBase implements F
   private List<List<FilterNode>> eqClassesByPredicate(Set<FilterNode> nodes) {
     return listFilter(
         it -> it.size() > 1,
-        nodes.stream().collect(Collectors.groupingBy(FilterNode::expr)).values());
+        nodes.stream().collect(Collectors.groupingBy(FilterNode::predicate)).values());
   }
 
   private List<List<Filter>> eqClassesByAttributes(List<Filter> ops, Constraints constraints) {

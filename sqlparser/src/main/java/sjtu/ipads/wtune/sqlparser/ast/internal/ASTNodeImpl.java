@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
@@ -8,9 +9,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,21 +23,21 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
 
-public class NodeImpl implements ASTNode {
+public class ASTNodeImpl implements ASTNode {
   private final Map<FieldKey, Object> directAttrs;
   private ASTContext context;
 
-  private NodeImpl(NodeType type) {
+  private ASTNodeImpl(NodeType type) {
     this(type, new HashMap<>(8));
   }
 
-  private NodeImpl(NodeType type, Map<FieldKey, Object> directAttrs) {
+  private ASTNodeImpl(NodeType type, Map<FieldKey, Object> directAttrs) {
     this.directAttrs = directAttrs;
     this.directAttrs.put(NODE_TYPE, type);
   }
 
   public static ASTNode build(NodeType nodeType) {
-    return new NodeImpl(nodeType);
+    return new ASTNodeImpl(nodeType);
   }
 
   @Override
@@ -48,7 +47,11 @@ public class NodeImpl implements ASTNode {
 
   @Override
   public ASTContext context() {
-    return context;
+    // don't use parent(), otherwise StackOverflow
+    final ASTNode parent = FieldKey.get0(this, PARENT);
+    // parent's context always overrider `this`'s context
+    if (parent == null) return context;
+    else return parent.context();
   }
 
   @Override
@@ -59,34 +62,45 @@ public class NodeImpl implements ASTNode {
   @Override
   @SuppressWarnings("unchecked")
   public void update(ASTNode other) {
-    for (FieldKey fieldKey : fields0()) if (fieldKey != PARENT) unset(fieldKey);
+    assert other instanceof ASTNodeImpl;
+    final ASTNodeImpl otherNode = (ASTNodeImpl) other;
 
-    set(NODE_TYPE, other.nodeType());
-    if (EXPR.isInstance(other)) set(EXPR_KIND, other.get(EXPR_KIND));
-    else if (TABLE_SOURCE.isInstance(other)) set(TABLE_SOURCE_KIND, other.get(TABLE_SOURCE_KIND));
+    // unset all current fields
+    for (FieldKey fieldKey : fields0()) unset(fieldKey);
 
-    for (var pair : other.fields().entrySet())
-      if (pair.getKey() != PARENT) set(pair.getKey(), pair.getValue());
+    // first set type & kind (otherwise, the other field are refused to be set)
+    final NodeType nodeType = otherNode.nodeType();
+    set(NODE_TYPE, nodeType);
+    if (nodeType == EXPR) set(EXPR_KIND, otherNode.get(EXPR_KIND));
+    if (nodeType == TABLE_SOURCE) set(TABLE_SOURCE_KIND, otherNode.get(TABLE_SOURCE_KIND));
 
-    // extra care that make other.parent() != other
+    // set all fields from otherNode
+    for (FieldKey fieldKey : otherNode.fields0()) set(fieldKey, otherNode.get(fieldKey));
+
+    // extra care to ensure other.parent() != other
     final ASTNode parent = parent();
-    if (parent == null) other.unset(PARENT);
-    else other.set(PARENT, parent());
+    if (parent == null) otherNode.unset(PARENT);
+    else otherNode.set(PARENT, parent);
   }
 
   @Override
   public ASTNode shallowCopy() {
-    return new NodeImpl(nodeType(), new HashMap<>(fields()));
+    return new ASTNodeImpl(nodeType(), new HashMap<>(fields()));
   }
 
   @Override
   public ASTNode deepCopy() {
-    final ASTNode copy = shallowCopy();
-    for (var kv : copy.fields().entrySet())
-      if (kv.getKey() != PARENT) copy.set(kv.getKey(), deepCopy0(kv.getValue()));
+    final ASTNodeImpl copy = new ASTNodeImpl(nodeType());
+    for (FieldKey key : fields0()) {
+      final Object value = deepCopy0(get(key));
+      if (value != null) {
+        FieldKey.set0(copy, key, value);
+        ASTNode.setParent(value, copy);
+      }
+    }
 
-    copy.unset(RELATION);
-    ASTNode.setContext(copy, context);
+    ASTContext.manage(copy, this.context());
+
     return copy;
   }
 
@@ -101,7 +115,7 @@ public class NodeImpl implements ASTNode {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    final NodeImpl other = (NodeImpl) o;
+    final ASTNodeImpl other = (ASTNodeImpl) o;
 
     final NodeType type = nodeType();
     if (other.nodeType() != type) return false;
@@ -120,17 +134,16 @@ public class NodeImpl implements ASTNode {
   }
 
   private Iterable<FieldKey> fields0() {
+    // collect all fields that belongs to current node type/kind
     final List<FieldKey> nodeFields = nodeType().fields();
 
     final ExprKind exprKind = get(EXPR_KIND);
-    final List<FieldKey> exprFields =
-        exprKind == null ? Collections.emptyList() : exprKind.fields();
+    final List<FieldKey> exprFields = exprKind == null ? emptyList() : exprKind.fields();
 
-    final TableSourceKind tableSourceKind = get(TABLE_SOURCE_KIND);
-    final List<FieldKey> tableSourceFields =
-        tableSourceKind == null ? Collections.emptyList() : tableSourceKind.fields();
+    final TableSourceKind sourceKind = get(TABLE_SOURCE_KIND);
+    final List<FieldKey> sourceFields = sourceKind == null ? emptyList() : sourceKind.fields();
 
-    return listJoin(nodeFields, exprFields, tableSourceFields);
+    return listJoin(nodeFields, exprFields, sourceFields);
   }
 
   @Override
@@ -146,8 +159,9 @@ public class NodeImpl implements ASTNode {
   }
 
   private static Object deepCopy0(Object obj) {
+    // recursively copy AST (according to obj's class)
     if (obj instanceof ASTNode) return ((ASTNode) obj).deepCopy();
-    else if (obj instanceof Iterable) return listMap(NodeImpl::deepCopy0, (Iterable<?>) obj);
+    else if (obj instanceof Iterable) return listMap(ASTNodeImpl::deepCopy0, (Iterable<?>) obj);
     else return obj;
   }
 }

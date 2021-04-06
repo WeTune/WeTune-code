@@ -1,15 +1,19 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic.internal;
 
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.localeInput;
+import static sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag.makeBag;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -84,7 +88,7 @@ public class InterpretationsImpl implements Interpretations {
   }
 
   @Override
-  public boolean assignPredicate(Placeholder placeholder, ASTNode expr) {
+  public boolean assignPredicate(Placeholder placeholder, Expr expr) {
     return assign0(placeholder, new PredicateInterpretationImpl(expr));
   }
 
@@ -138,19 +142,20 @@ public class InterpretationsImpl implements Interpretations {
     if (attrInter == null) return true;
 
     final Placeholder[] ts = constraint.ts();
-    final PlanNode[] inputs = new PlanNode[ts.length];
+    final AttributeDefBag[] bags = new AttributeDefBag[ts.length];
     for (int i = 0; i < ts.length; i++) {
       final InputInterpretation inter = getInput(ts[i]);
       if (inter == null) return true;
-      inputs[i] = inter.object();
+      bags[i] = inter.object().definedAttributes();
     }
+    final AttributeDefBag bag = makeBag(listJoin(bags)); // aggregated bag
 
-    for (AttributeDef def : attrInter.object())
-      outer:
-      for (AttributeDef ref : def.references()) {
-        for (PlanNode input : inputs) if (input.resolveAttribute(ref) != null) continue outer;
-        return false;
-      }
+    for (AttributeDef attr : attrInter.object())
+      for (AttributeDef ref : attr.references())
+        // by definition, we check the used attributes of `attr` instead of itself
+        // example: select a.i + a.j as k from a
+        // here `k` (a.i + a.j) are still considered belongs to table `a`
+        if (bag.locate(ref) == -1) return false;
 
     return true;
   }
@@ -221,13 +226,11 @@ public class InterpretationsImpl implements Interpretations {
 
     if (surface == null) return new ColumnRef(attr.referredColumn(), false, false);
 
-    final AttributeDef pivot = surface.resolveAttribute(attr);
+    final AttributeDef pivot = surface.definedAttributes().lookup(attr);
     if (pivot == null) return null;
 
-    final AttributeDef source = pivot.nativeSource();
-    if (source == null) return null;
-
-    final PlanNode inputNode = source.definer();
+    final PlanNode inputNode = localeInput(pivot, surface);
+    if (inputNode == null) return null;
     assert inputNode.type() == OperatorType.Input;
 
     PlanNode pathNode = inputNode;
@@ -241,7 +244,7 @@ public class InterpretationsImpl implements Interpretations {
       pathNode = successor;
     }
 
-    return new ColumnRef(source.referredColumn(), filtered, nullable);
+    return new ColumnRef(pivot.referredColumn(), filtered, nullable);
   }
 
   private static class ColumnRef {

@@ -52,8 +52,7 @@ class ResolveParamSimple implements ASTVistor {
   }
 
   public static ParamManager resolve(ASTNode node) {
-    if (node.manager(ParamManager.class) == null)
-      node.context().addManager(ParamManager.class, ParamManager.build());
+    if (node.manager(ParamManager.class) == null) node.context().addManager(ParamManager.build());
 
     node.accept(new ResolveParamSimple());
     return node.manager(ParamManager.class);

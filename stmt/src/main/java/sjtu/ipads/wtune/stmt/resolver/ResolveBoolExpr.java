@@ -22,7 +22,7 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 class ResolveBoolExpr implements ASTVistor {
   public static BoolExprManager resolve(ASTNode node) {
     if (node.manager(BoolExprManager.class) == null)
-      node.context().addManager(BoolExprManager.class, BoolExprManager.build());
+      node.context().addManager(BoolExprManager.build());
 
     node.accept(new ResolveBoolExpr());
     return node.manager(BoolExprManager.class);

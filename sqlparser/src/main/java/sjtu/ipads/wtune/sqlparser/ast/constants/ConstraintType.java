@@ -5,5 +5,9 @@ public enum ConstraintType {
   PRIMARY,
   NOT_NULL,
   FOREIGN,
-  CHECK
+  CHECK;
+
+  public static boolean isUnique(ConstraintType type) {
+    return type == UNIQUE || type == PRIMARY;
+  }
 }

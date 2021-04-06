@@ -1,13 +1,7 @@
 package sjtu.ipads.wtune.common.multiversion;
 
 public interface MultiVersion {
-  void derive();
+  Snapshot derive();
 
-  Snapshot snapshot();
-
-  void setSnapshot(Snapshot snapshot);
-
-  default int versionNumber() {
-    return snapshot().versionNumber();
-  }
+  void rollback(Snapshot snapshot);
 }

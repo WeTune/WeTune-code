@@ -1,17 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
+import static java.lang.System.Logger.Level.WARNING;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
+
+import java.util.function.Supplier;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
-
-import java.util.function.Supplier;
-
-import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 
 public class NodeFieldBase<T> implements FieldKey<T> {
   public static final String SQL_ATTR_PREFIX = "sql.attr.";
@@ -46,10 +45,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
     if (mgr != null) old = mgr.setField(node, this, obj);
     else old = FieldKey.super.set(node, obj);
 
-    if (this == PARENT) return old;
-
-    ASTNode.setParent(obj, node);
-    ASTNode.setContext(obj, node.context());
+    if (this != PARENT) ASTNode.setParent(obj, node);
 
     return old;
   }

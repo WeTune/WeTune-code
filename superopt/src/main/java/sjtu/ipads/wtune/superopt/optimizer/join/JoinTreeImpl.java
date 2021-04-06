@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.optimizer.join;
 
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -76,7 +75,7 @@ public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
     }
 
     if (swapLeaf) swapLeaf((JoinNode) root);
-    resolveUsedOnTree(root);
+    //    resolveUsedOnTree(root); // necessary?
     return (JoinNode) root;
   }
 
@@ -171,15 +170,12 @@ public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
   }
 
   private static void swapLeaf(JoinNode root) {
-    //    if (root.predecessors()[0].type().isJoin()) {
-    //      new Object();
-    //    }
     final PlanNode leftMostLeaf = JoinTree.predecessorOfTree(root);
     final PlanNode rightMostLeaf = root.predecessors()[1];
     final PlanNode tail = leftMostLeaf.successor();
     tail.setPredecessor(0, rightMostLeaf);
     root.setPredecessor(1, leftMostLeaf);
-    root.resolveUsed();
+    root.resolveUsed(); // the two-side attributes are swapped, re-resolve
   }
 
   private static boolean checkDependency(int[] dependency) {

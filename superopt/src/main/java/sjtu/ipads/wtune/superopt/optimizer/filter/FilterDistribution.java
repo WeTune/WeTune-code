@@ -6,8 +6,6 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -38,8 +36,8 @@ public class FilterDistribution {
     this.slots = newIdentitySet(slots);
     this.interpretations = interpretations;
     this.forceFullMatch = forceFullMatch;
-    this.used = Collections.newSetFromMap(new IdentityHashMap<>());
-    this.assigned = Collections.newSetFromMap(new IdentityHashMap<>());
+    this.used = newIdentitySet();
+    this.assigned = newIdentitySet();
     this.assignments = new LinkedList<>();
     this.results = new LinkedList<>();
   }
@@ -86,9 +84,10 @@ public class FilterDistribution {
   }
 
   public void rollback() {
+    assert !assignments.isEmpty();
     final FilterAssignment assignment = assignments.pollLast();
     assigned.remove(assignment.op());
-    used.removeAll(assignment.used());
+    assignment.used().forEach(used::remove);
   }
 
   public void saveResult() {

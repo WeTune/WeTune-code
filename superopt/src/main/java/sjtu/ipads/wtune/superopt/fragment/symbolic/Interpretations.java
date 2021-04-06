@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment.symbolic;
 
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.internal.InterpretationsImpl;
 import sjtu.ipads.wtune.superopt.util.Constraints;
@@ -20,7 +20,7 @@ public interface Interpretations {
 
   boolean assignInput(Placeholder placeholder, PlanNode planNode);
 
-  boolean assignPredicate(Placeholder placeholder, ASTNode expr);
+  boolean assignPredicate(Placeholder placeholder, Expr expr);
 
   boolean hasAssignment(Placeholder placeholder);
 
@@ -34,7 +34,7 @@ public interface Interpretations {
     return inter == null ? null : inter.object();
   }
 
-  default ASTNode interpretPredicate(Placeholder placeholder) {
+  default Expr interpretPredicate(Placeholder placeholder) {
     final PredicateInterpretation inter = getPredicate(placeholder);
     return inter == null ? null : inter.object();
   }

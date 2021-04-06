@@ -1,11 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.internal.DerivedAttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.internal.NativeAttributeDef;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
-
-import java.util.List;
 
 /**
  * This class describes a reference to an attribute.
@@ -21,13 +20,13 @@ import java.util.List;
  * <p>Each attribute-def appears in a query plan is uniquely identified ({@link #id()}.
  */
 public interface AttributeDef {
-  PlanNode definer();
+  int id();
 
   String qualification();
 
   String name();
 
-  int id();
+  boolean isNative();
 
   /**
    * Whether this Def is an identity function, i.e. a plain ColumnRef.
@@ -58,13 +57,13 @@ public interface AttributeDef {
 
   Column referredColumn();
 
-  ASTNode toColumnRef();
+  ASTNode makeColumnRef();
 
-  ASTNode toSelectItem();
+  ASTNode makeSelectItem();
 
-  void setQualification(String qualification);
+  AttributeDef copyWithQualification(String qualification);
 
-  void setDefiner(PlanNode definer);
+  void setReferences(List<AttributeDef> references);
 
   boolean referencesTo(String qualification, String alias);
 
@@ -77,11 +76,58 @@ public interface AttributeDef {
     else return null;
   }
 
+  static PlanNode locateDefiner(AttributeDef attr, PlanNode root) {
+    final PlanNode definer = locateDefiner0(attr, root);
+    if (definer == null) throw new PlanException("cannot find definer");
+    return definer;
+  }
+
+  static PlanNode localeInput(AttributeDef attr, PlanNode root) {
+    if (attr.nativeSource() == null) return null;
+
+    final PlanNode definer = locateDefiner(attr, root);
+    if (definer == null) return null;
+    if (definer.type() == OperatorType.Input) return definer;
+
+    assert definer.type() == OperatorType.Agg || definer.type() == OperatorType.Proj;
+    return localeInput(attr.upstream(), definer.predecessors()[0]);
+  }
+
+  private static PlanNode locateDefiner0(AttributeDef attr, PlanNode root) {
+    switch (root.type()) {
+      case PlainFilter:
+      case SubqueryFilter:
+      case Sort:
+      case Limit:
+        return locateDefiner0(attr, root.predecessors()[0]);
+
+      case Input:
+      case Agg:
+      case Proj:
+        if (isDefinedBy(attr, root)) return root;
+        else return null;
+
+      case InnerJoin:
+      case LeftJoin:
+        final PlanNode leftDefiner = locateDefiner0(attr, root.predecessors()[0]);
+        return leftDefiner != null ? leftDefiner : locateDefiner0(attr, root.predecessors()[1]);
+
+      default:
+        throw new IllegalArgumentException();
+    }
+  }
+
+  private static boolean isDefinedBy(AttributeDef attr, PlanNode node) {
+    for (AttributeDef defined : node.definedAttributes())
+      if (defined.id() == attr.id()) return true;
+    return false;
+  }
+
   static AttributeDef fromColumn(int id, String tableAlias, Column c) {
-    return NativeAttributeDef.fromColumn(id, tableAlias, c);
+    return NativeAttributeDef.build(id, tableAlias, c);
   }
 
   static AttributeDef fromExpr(int id, String qualification, String name, ASTNode expr) {
-    return DerivedAttributeDef.fromExpr(id, qualification, name, expr);
+    return DerivedAttributeDef.build(id, qualification, name, expr);
   }
 }

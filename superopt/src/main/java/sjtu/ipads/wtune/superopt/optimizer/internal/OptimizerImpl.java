@@ -27,15 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
-import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
@@ -68,7 +66,8 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   public List<ASTNode> optimize(ASTNode root) {
     root = root.deepCopy();
     root.context().setSchema(schema);
-    return listMap(plan -> manage(toAST(plan), schema), optimize(toPlan(root)));
+    root.context().setDbType(null); // temporary fix
+    return listMap(p -> manage(toAST(p), schema), optimize(toPlan(root)));
   }
 
   @Override
@@ -83,7 +82,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       final PlanNode normalized = normalize(root);
       assert normalized != null;
 
-      startTime = System.currentTimeMillis(); // begin timing
+      startTime = Long.MAX_VALUE; // System.currentTimeMillis(); // begin timing
 
       final List<PlanNode> optimized = optimize0(normalized);
       assert !optimized.isEmpty();
@@ -106,7 +105,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   @Override
-  protected List<PlanNode> onPlainFilter(PlainFilterNode filter) {
+  protected List<PlanNode> onPlainFilter(FilterNode filter) {
     assert filter.successor() != null;
     // only do full optimization at filter chain head
     if (filter.successor().type().isFilter()) return optimizeChild0(filter);
@@ -114,7 +113,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   @Override
-  protected List<PlanNode> onSubqueryFilter(SubqueryFilterNode filter) {
+  protected List<PlanNode> onSubqueryFilter(FilterNode filter) {
     assert filter.successor() != null;
     // only do full optimization at filter chain head
     if (filter.successor().type().isFilter()) return optimizeChild0(filter);
@@ -127,14 +126,14 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   @Override
-  protected List<PlanNode> onInnerJoin(InnerJoinNode innerJoin) {
+  protected List<PlanNode> onInnerJoin(JoinNode innerJoin) {
     // only do full optimization at join tree root
     if (innerJoin.successor().type().isJoin()) return optimizeChild0(innerJoin);
     else return optimizeFull(innerJoin);
   }
 
   @Override
-  protected List<PlanNode> onLeftJoin(LeftJoinNode leftJoin) {
+  protected List<PlanNode> onLeftJoin(JoinNode leftJoin) {
     // only do full optimization at join tree root
     if (leftJoin.successor().type().isJoin()) return optimizeChild0(leftJoin);
     else return optimizeFull(leftJoin);

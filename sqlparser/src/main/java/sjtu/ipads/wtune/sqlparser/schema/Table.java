@@ -11,7 +11,7 @@ public interface Table {
 
   Column column(String name);
 
-  Collection<? extends Column> columns();
+  Collection<Column> columns();
 
-  Collection<? extends Constraint> constraints();
+  Collection<Constraint> constraints();
 }
