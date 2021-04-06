@@ -7,19 +7,18 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import javax.sql.DataSource;
+import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 
-public class MySQLOptimizations extends OptimizationsBase {
-  private final DataSource dataSource;
+public class MySQLRegistration extends RegistrationBase {
+  private final ConnectionProvider connPool;
 
-  public MySQLOptimizations(String database, DataSource dataSource) {
-    super(database);
-    this.dataSource = dataSource;
+  public MySQLRegistration(ConnectionProvider connPool) {
+    this.connPool = connPool;
   }
 
   @Override
   protected void uninstall(int id) {
-    try (final Connection conn = dataSource.getConnection()) {
+    try (final Connection conn = connPool.get()) {
       conn.createStatement()
           .executeUpdate("DELETE FROM query_rewrite.rewrite_rules WHERE id=" + id);
 
@@ -29,13 +28,13 @@ public class MySQLOptimizations extends OptimizationsBase {
   }
 
   @Override
-  protected int install(String originalQuery, String optimizedQuery) {
-    try (final Connection conn = dataSource.getConnection()) {
+  protected int install(String dbName, String originalQuery, String optimizedQuery) {
+    try (final Connection conn = connPool.get()) {
       final Statement stmt = conn.createStatement();
       final String sql =
           "INSERT INTO query_rewrite.rewrite_rules (pattern_database, pattern, replacement) VALUES ('%s','%s','%s')";
       stmt.executeUpdate(
-          sql.formatted(database, originalQuery, optimizedQuery), Statement.RETURN_GENERATED_KEYS);
+          sql.formatted(dbName, originalQuery, optimizedQuery), Statement.RETURN_GENERATED_KEYS);
 
       final ResultSet idResult = stmt.getGeneratedKeys();
       if (idResult.next()) {

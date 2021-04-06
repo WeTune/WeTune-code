@@ -7,15 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.Statement;
 
-public class OptimizationsBase implements Optimizations {
+public class RegistrationBase implements Registration {
   private static final long TTL = 50 * 60 * 1000; // 50 min
 
-  protected final String database;
   private final Map<String, Status> registration = new ConcurrentHashMap<>();
-
-  public OptimizationsBase(String database) {
-    this.database = database;
-  }
 
   @Override
   public void register(Statement stmt, ASTNode optimized) {
@@ -32,7 +27,7 @@ public class OptimizationsBase implements Optimizations {
     final Status existing = registration.get(query);
     if (existing != null) uninstall(existing.id);
 
-    final int id = install(query, optimized.toString());
+    final int id = install(stmt.appName(), query, optimized.toString());
     if (id != -1) registration.put(query, new Status(id, System.currentTimeMillis() + TTL));
   }
 
@@ -43,7 +38,7 @@ public class OptimizationsBase implements Optimizations {
     return status != null && status.expiration <= System.currentTimeMillis();
   }
 
-  protected int install(String originalQuery, String optimizedQuery) {
+  protected int install(String dbName, String originalQuery, String optimizedQuery) {
     return 0;
   }
 

@@ -138,7 +138,8 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
 
   @Override
   protected PlanNode copy0() {
-    return new AggNodeImpl(definedAttrs, groupKeys, having, keyUsedAttrs, aggUsedAttrs, havingUsedAttrs);
+    return new AggNodeImpl(
+        definedAttrs, groupKeys, having, keyUsedAttrs, aggUsedAttrs, havingUsedAttrs);
   }
 
   @Override

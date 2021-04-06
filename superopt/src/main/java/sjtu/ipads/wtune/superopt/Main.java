@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt;
 
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.stmt.support.Workflow.inferNotNull;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.optimize;
+import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.pickMinCost;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -15,14 +15,10 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.daemon.MySQLOptimizations;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.internal.OptimizerRunner;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
 
 public class Main {
 
@@ -46,11 +42,8 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      for (App app : App.all()) {
-        inferNotNull(app.name());
-      }
-      //            test0();
-      //            test1();
+      //      test0();
+      test1();
       //            cleanBank();
       //      for (Statement statement : Statement.findByApp("broadleaf_tmp")) test2(statement);
       //      test2(Statement.findOne("broadleaf_tmp", 46));
@@ -94,7 +87,7 @@ public class Main {
     final String sql =
         "SELECT \"tags\".\"name\" AS \"name\" FROM \"tags\" AS \"tags\" INNER JOIN \"tag_group_memberships\" AS \"tag_group_memberships\" ON \"tags\".\"id\" = \"tag_group_memberships\".\"tag_id\" INNER JOIN \"tag_groups\" AS \"tag_groups\" ON \"tag_group_memberships\".\"tag_group_id\" = \"tag_groups\".\"id\" INNER JOIN \"tag_group_permissions\" AS \"tag_group_permissions\" ON \"tag_groups\".\"id\" = \"tag_group_permissions\".\"tag_group_id\" WHERE \"tag_group_permissions\".\"group_id\" = 0 AND \"tag_group_permissions\".\"permission_type\" = 3";
     //    final Statement stmt = Statement.findOne("diaspora", 460);
-    final Statement stmt = Statement.findOne("solidus", 126);
+    final Statement stmt = Statement.findOne("broadleaf", 201);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
@@ -107,52 +100,42 @@ public class Main {
     System.out.println(stmt);
     System.out.println(ast.toString(false));
 
-    //    final PlanNode plan = ToPlanTranslator.toPlan(ast);
-    //    System.out.println(UniquenessInference.inferUniqueness(plan));
-    final List<ASTNode> optimized = Optimizer.make(bank, schema).optimize(ast);
-    System.out.println(optimized.size());
+    final List<ASTNode> transformed = optimize(stmt, bank);
+    System.out.println(transformed.size());
 
-    for (ASTNode opt : optimized) System.out.println(opt);
+    for (ASTNode opt : transformed) System.out.println(opt);
     System.out.println(stmt);
-  }
-
-  private static void test1() throws IOException {
-    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
-    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
-    final OptimizerRunner runner = new OptimizerRunner(bank);
-
-    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "optimizations")));
-    err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
-
-    App.all().forEach(it -> it.schema("base", true));
-
-    //            doOptimize(Statement.findOne("solidus", 126), runner);
-    //        Statement.findByApp("broadleaf").parallelStream().forEach(it -> doOptimize(it,
-    // runner));
-    Statement.findByApp("broadleaf_tmp").parallelStream().forEach(it -> doOptimize(it, runner));
-  }
-
-  private static void test2(Statement stmt) throws IOException {
-    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
-    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
-    final OptimizerRunner runner = new OptimizerRunner(bank);
-    final MySQLOptimizations reg =
-        new MySQLOptimizations(
-            "broadleaf_trace", DataSourceFactory.instance().make(stmt.app().dbProps()));
-    reg.register(stmt, head(runner.optimize(stmt)));
   }
 
   private static PrintWriter out, err;
 
-  private static void doOptimize(Statement stmt, OptimizerRunner runner) {
+  private static void test1() throws IOException {
+    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
+    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
+
+    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "optimizations")));
+    err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
+
+    App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
+    //        doOptimize(Statement.findOne("broadleaf", 200), bank);
+    Statement.findByApp("diaspora").parallelStream().forEach(it -> doOptimize(it, bank));
+  }
+
+  private static void doOptimize(Statement stmt, SubstitutionBank bank) {
     try {
       System.out.println(stmt);
-      final List<ASTNode> optimized = runner.optimize(stmt);
+      final List<ASTNode> candidates = optimize(stmt, bank);
+      final var result = pickMinCost(stmt.parsed(), candidates, stmt.app().dbProps());
+      if (result == null) return;
+
       synchronized (out) {
-        for (int i = 0; i < optimized.size(); i++)
-          out.printf(
-              "%s;%d;%d;%s;%s\n",
-              stmt.appName(), stmt.stmtId(), i, stmt.parsed(), optimized.get(i));
+        out.printf(
+            "%s;%d;%s;%f;%f\n",
+            stmt.appName(),
+            stmt.stmtId(),
+            result.getLeft(),
+            result.getRight()[0],
+            result.getRight()[1]);
         out.flush();
       }
 

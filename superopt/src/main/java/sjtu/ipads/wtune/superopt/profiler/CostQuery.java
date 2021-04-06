@@ -14,7 +14,7 @@ public interface CostQuery {
     return new PGCostQuery(provider, query);
   }
 
-  static CostQuery of(String dbType, ConnectionProvider provider, String query) {
+  static CostQuery make(String dbType, ConnectionProvider provider, String query) {
     switch (dbType) {
       case MYSQL:
         return mysql(provider, query);

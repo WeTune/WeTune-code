@@ -1,63 +1,79 @@
-package sjtu.ipads.wtune.superopt.profiler;
+package sjtu.ipads.wtune.superopt.internal;
 
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
+import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Properties;
 import javax.sql.DataSource;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.resolver.Param;
 import sjtu.ipads.wtune.stmt.resolver.ParamManager;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
 import sjtu.ipads.wtune.stmt.resolver.Resolution;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.profiler.CostQuery;
+import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
 
-public class CostBasedProfiler implements Profiler {
-  private final Properties connProps;
-  private final DataSource dataSource;
-
-  public CostBasedProfiler(Properties connProps) {
-    this.connProps = connProps;
-    this.dataSource = DataSourceFactory.instance().make(connProps);
+public class WeTuneHelper {
+  public static List<ASTNode> optimize(Statement stmt, SubstitutionBank bank) {
+    final ASTNode ast = stmt.parsed();
+    final Schema schema = stmt.app().schema("base", true);
+    ast.context().setSchema(schema);
+    normalize(ast);
+    return Optimizer.make(bank, schema).optimize(ast);
   }
 
-  @Override
-  public List<ASTNode> pickOptimized(ASTNode baseline, List<ASTNode> candidates) {
-    final List<ASTNode> filled0 = fillParamMarker(baseline);
+  public static Pair<ASTNode, double[]> pickMinCost(
+      ASTNode baseline, List<ASTNode> candidates, Properties dbProps) {
+    if (candidates.isEmpty()) return null;
 
-    final double baselineCost = getCost(baseline.toString());
-    if (baselineCost == Double.MAX_VALUE) return Collections.emptyList();
+    // MySQL doesn't correctly estimate some simplification (e.g. remove JOIN),
+    // so let's do it ourself.
+    final ASTNode candidate0 = candidates.get(0);
+    final int comparison = compareCost(toPlan(candidate0), toPlan(baseline), false);
+    if (comparison < 0) return Pair.of(candidate0, new double[] {-1, -2});
+    assert comparison == 0;
 
-    double minCost = baselineCost;
-    final List<ASTNode> optimized = new ArrayList<>();
+    final double baseCost = getCost(baseline, dbProps);
+    if (baseCost == Double.MAX_VALUE) return null;
 
-    final List<ASTNode> filled1 = listFlatMap(CostBasedProfiler::fillParamMarker, candidates);
-
-    for (ASTNode query : candidates) {
-      final double cost = getCost(query.toString());
-      if (cost > minCost) continue;
-      if (cost < minCost) optimized.clear();
+    double minCost = baseCost;
+    ASTNode minCostCandidate = null;
+    for (ASTNode candidate : candidates) {
+      final double cost = getCost(candidate, dbProps);
+      if (cost >= minCost) continue;
       minCost = cost;
-      optimized.add(query);
+      minCostCandidate = candidate;
     }
 
-    unFillParamMarker(filled0);
-    unFillParamMarker(filled1);
+    if (minCostCandidate == null) return null;
+    else return Pair.of(minCostCandidate, new double[] {baseCost, minCost});
+  }
 
-    System.out.println(minCost + " " + baselineCost);
-    if (minCost <= baselineCost * 0.9) return optimized;
-    else return Collections.emptyList();
+  public static double getCost(ASTNode ast, Properties dbProps) {
+    final List<ASTNode> filled = fillParamMarker(ast);
+    final String query = ast.toString();
+    unFillParamMarker(filled);
+
+    final DataSource dataSource = DataSourceFactory.instance().make(dbProps);
+    final String dbType = dbProps.getProperty("dbType");
+
+    return CostQuery.make(dbType, dataSource::getConnection, query).getCost();
   }
 
   private static List<ASTNode> fillParamMarker(ASTNode ast) {
@@ -111,10 +127,5 @@ public class CostBasedProfiler implements Profiler {
       final ASTNode marker = ASTNode.expr(PARAM_MARKER);
       n.update(marker);
     }
-  }
-
-  private double getCost(String query) {
-    return CostQuery.of(connProps.getProperty("dbType"), dataSource::getConnection, query)
-        .getCost();
   }
 }

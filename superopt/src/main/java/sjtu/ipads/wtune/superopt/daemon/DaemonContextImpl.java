@@ -1,37 +1,43 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
+import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.pickMinCost;
+
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.superopt.internal.OptimizerRunner;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.internal.WeTuneHelper;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
 
 public class DaemonContextImpl implements DaemonContext {
-  private final OptimizerRunner optimizer;
+  private final SubstitutionBank bank;
   private final Map<String, App> appMap;
-  private final Map<String, Optimizations> optimizationsMap;
+  private final Map<String, Registration> regs;
 
   private final Server server;
   private final ExecutorService executor;
 
   private boolean stopped;
 
-  private DaemonContextImpl(OptimizerRunner optimizer, Server server, ExecutorService executor) {
-    this.optimizer = optimizer;
+  private DaemonContextImpl(SubstitutionBank bank, Server server, ExecutorService executor) {
+    this.bank = bank;
     this.executor = executor;
     this.appMap = new HashMap<>();
-    this.optimizationsMap = new HashMap<>();
+    this.regs = new HashMap<>();
     this.server = server;
   }
 
@@ -55,7 +61,7 @@ public class DaemonContextImpl implements DaemonContext {
     final ThreadPoolExecutor executor =
         new ThreadPoolExecutor(1, maxWorkers, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1024));
 
-    return new DaemonContextImpl(new OptimizerRunner(bank), server, executor);
+    return new DaemonContextImpl(bank, server, executor);
   }
 
   @Override
@@ -64,18 +70,23 @@ public class DaemonContextImpl implements DaemonContext {
   }
 
   @Override
-  public OptimizerRunner optimizer() {
-    return optimizer;
+  public Registration registrationOf(String contextName) {
+    final App app = appOf(contextName);
+    return regs.computeIfAbsent(contextName, ignored -> makeRegistration(app));
   }
 
   @Override
-  public Optimizations optimizationsOf(String contextName) {
-    final App app = appOf(contextName);
-    return optimizationsMap.computeIfAbsent(contextName, ignored -> makeOptimizations(app));
+  public ASTNode optimize(Statement stmt) {
+    final List<ASTNode> candidates = WeTuneHelper.optimize(stmt, bank);
+    final var result = pickMinCost(stmt.parsed(), candidates, stmt.app().dbProps());
+    return result == null ? null : result.getLeft();
   }
 
-  private static Optimizations makeOptimizations(App app) {
-    return new MySQLOptimizations(app.name(), DataSourceFactory.instance().make(app.dbProps()));
+  private static Registration makeRegistration(App app) {
+    final String dbType = app.dbType();
+    final ConnectionProvider connPool =
+        DataSourceFactory.instance().make(app.dbProps())::getConnection;
+    return Registration.make(dbType, connPool);
   }
 
   @Override

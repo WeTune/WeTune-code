@@ -8,6 +8,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -84,6 +85,7 @@ public class NodeImpl implements ASTNode {
     for (var kv : copy.fields().entrySet())
       if (kv.getKey() != PARENT) copy.set(kv.getKey(), deepCopy0(kv.getValue()));
 
+    copy.unset(RELATION);
     ASTNode.setContext(copy, context);
     return copy;
   }

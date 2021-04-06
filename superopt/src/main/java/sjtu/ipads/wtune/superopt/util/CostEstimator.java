@@ -7,18 +7,23 @@ import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.common.utils.TypedTreeVisitor;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 
 public class CostEstimator {
   public static int compareCost(PlanNode o1, PlanNode o2) {
-    return compareCost(computeComplexity(o1), computeComplexity(o2));
+    return compareCost(computeComplexity(o1), computeComplexity(o2), true);
+  }
+
+  public static int compareCost(PlanNode o1, PlanNode o2, boolean preferInnerJoin) {
+    return compareCost(computeComplexity(o1), computeComplexity(o2), preferInnerJoin);
   }
 
   public static int compareCost(Fragment g0, Fragment g1) {
-    return compareCost(computeComplexity(g0), computeComplexity(g1));
+    return compareCost(computeComplexity(g0), computeComplexity(g1), true);
   }
 
-  private static int compareCost(int[] opCount0, int[] opCount1) {
+  private static int compareCost(int[] opCount0, int[] opCount1, boolean preferInnerJoin) {
     int result = 0;
 
     for (int i = 0, bound = opCount0.length; i < bound; i++) {
@@ -32,6 +37,7 @@ public class CostEstimator {
 
     if (result != 0) return result;
 
+    // prefer inner join
     final int numInnerJoin0 = opCount0[InnerJoin.ordinal()];
     final int numLeftJoin0 = opCount0[LeftJoin.ordinal()];
     final int numInnerJoin1 = opCount1[InnerJoin.ordinal()];
@@ -41,7 +47,7 @@ public class CostEstimator {
 
     if (numJoin0 < numJoin1) return -1;
     if (numJoin0 > numJoin1) return 1;
-    return Integer.signum(numLeftJoin0 - numLeftJoin1);
+    return preferInnerJoin ? Integer.signum(numLeftJoin0 - numLeftJoin1) : 0;
   }
 
   public static int[] computeComplexity(Fragment g0) {
@@ -58,11 +64,14 @@ public class CostEstimator {
 
   private static class OperatorCounter
       implements TypedTreeVisitor<OperatorType, TypedTreeNode<OperatorType>> {
-    private final int[] counters = new int[OperatorType.values().length];
+    private final int[] counters = new int[OperatorType.values().length + 1];
 
     @Override
     public boolean on(TypedTreeNode<OperatorType> n) {
       counters[n.type().ordinal()]++;
+
+      if (n instanceof ProjNode && ((ProjNode) n).isForcedUnique()) counters[counters.length - 1]++;
+
       return true;
     }
 

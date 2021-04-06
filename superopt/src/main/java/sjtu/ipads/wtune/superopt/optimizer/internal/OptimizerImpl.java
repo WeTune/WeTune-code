@@ -6,12 +6,15 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.sqlparser.ASTContext.manage;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.toStringOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.constrainedInterpretations;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.derivedInterpretations;
@@ -22,7 +25,6 @@ import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.in
 
 import java.util.ArrayList;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.InnerJoinNode;
@@ -30,12 +32,10 @@ import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan.LeftJoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlainFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanException;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
 import sjtu.ipads.wtune.sqlparser.plan.SubqueryFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
@@ -55,20 +55,20 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   private final Schema schema;
   private final Memo<String> memo;
 
-  private long startTime = 0;
   private static final long TIMEOUT = 20_000; // 20 second
+  private long startTime = 0;
 
   public OptimizerImpl(SubstitutionBank repo, Schema schema) {
     this.repo = repo;
     this.schema = schema;
-    this.memo = new Memo<>(OptimizerImpl::extractKey);
+    this.memo = new Memo<>(PlanNode::toStringOnTree);
   }
 
   @Override
   public List<ASTNode> optimize(ASTNode root) {
     root = root.deepCopy();
     root.context().setSchema(schema);
-    return listMap(this::toAST, optimize(toPlan(root)));
+    return listMap(plan -> manage(toAST(plan), schema), optimize(toPlan(root)));
   }
 
   @Override
@@ -83,13 +83,13 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       final PlanNode normalized = normalize(root);
       assert normalized != null;
 
-      startTime = Long.MAX_VALUE; // System.currentTimeMillis();
+      startTime = System.currentTimeMillis(); // begin timing
 
       final List<PlanNode> optimized = optimize0(normalized);
       assert !optimized.isEmpty();
 
-      // remove the original query from returned collection
-      if (!reduced && extractKey(optimized.get(0)).equals(extractKey(normalized)))
+      // exclude the original query (if it is included, it must be the head of the list)
+      if (!reduced && toStringOnTree(optimized.get(0)).equals(toStringOnTree(normalized)))
         return optimized.subList(1, optimized.size());
       else return optimized;
 
@@ -156,27 +156,24 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   private List<PlanNode> optimize0(PlanNode node) {
-    final String key = extractKey(node);
-
+    final String key = toStringOnTree(node);
     final OptGroup<?> group = memo.get(key);
-    // Note: to prevent redundant optimization, we check whether a plan is "optimized"
-    // A plan is optimized if:
-    // 1. it self has be registered in memo, and
-    // 2. all its children has been registered in memo
+    // A plan is "fully optimized" if:
+    // 1. itself has been registered in memo, and
+    // 2. all its children have been registered in memo.
+    // Such a plan won't be transformed again.
     //
-    // Note that the group of an "optimized" plan still has chance to be updated,
-    // since other plan in the same group may be further transformed.
-    // Consider this situation:
+    // Note that the other plans in the same group of a fully-optimized
+    // plan still have chance to be transformed.
+    //
+    // Example:
     // P0(cost=2) -> P1(cost=2),P2(cost=2); P2 -> P3(cost=1)
-    // After trying, P1 cannot be further transformed (nor its children), thus "optimized"
-    // Obviously, P1 and P3 is equivalent. Thus P1 and P2 are in same OptGroup.
+    // Now, P1 cannot be further transformed (nor its children), thus "fully-optimized"
+    // Obviously, P1 and P3 is equivalent. P1 and P2 thus reside in the same OptGroup.
     // Then, when P2 are transformed to P3, the group is accordingly updated.
-    //
-    // This mechanism can also prevent cyclic transformation, i.e. A -> B -> A
     if (group != null && stream(node.predecessors()).allMatch(it -> memo.get(it) != null))
       return group;
-
-    return dispatch(node);
+    else return dispatch(node);
   }
 
   private List<PlanNode> optimizeChild0(PlanNode n) {
@@ -184,10 +181,10 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final List<List<PlanNode>> childOpts;
     if (n.type().numPredecessors() == 1)
       childOpts = cartesianProduct(optimize0(n.predecessors()[0]));
-    else
-      childOpts = cartesianProduct(optimize0(n.predecessors()[0]), optimize0(n.predecessors()[1]));
+    else // assert n.type.numPredecessors() == 2
+    childOpts = cartesianProduct(optimize0(n.predecessors()[0]), optimize0(n.predecessors()[1]));
 
-    // 2. Combined optimized children with this node
+    // 2. Attach optimized children with this node
     final List<PlanNode> candidates = applyChildrenOpts(n, childOpts);
     assert !candidates.isEmpty();
 
@@ -211,8 +208,9 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     // 3. Register the candidates. See `optimized0` for explanation.
     final OptGroup<String> group = memo.makeGroup(n);
     group.addAll(candidates);
-    // Note: `group` may contain plans that has been transformed. To get rid of duplicated
-    // calculation, don't pass whole `group` to `transform`, pass `candidates` instead.
+    // Note: `group` may contain plans that has been fully-optimized.
+    // To get rid of duplicated calculation, don't pass the whole `group` to `transform`,
+    // pass the `candidates` instead.
 
     // 4. do transformation
     final List<PlanNode> transformed = listFlatMap(this::transform, candidates);
@@ -221,10 +219,6 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     for (PlanNode p : transformed) optimize0(p);
 
     return group;
-  }
-
-  private ASTNode toAST(PlanNode plan) {
-    return ASTContext.manage(schema, ToASTTranslator.toAST(plan));
   }
 
   /* find eligible substitutions and use them to transform `n` and generate new plans */
@@ -238,7 +232,6 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final List<PlanNode> transformed = new MinCostList();
     // 1. fast search for candidate substitution by fingerprint
     final List<Substitution> substitutions = repo.findByFingerprint(n);
-    outer:
     for (Substitution substitution : substitutions) {
       final Interpretations inter = constrainedInterpretations(substitution.constraints());
       // 2. full match
@@ -250,7 +243,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         if (newNode == null) continue; // invalid, abandon it
         if (!inferUniqueness(newNode)) {
           if (newNode.type() == Proj) ((ProjNode) newNode).setForcedUnique(true);
-          else continue;
+          else continue; // unable to enforce uniqueness
         }
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
@@ -273,17 +266,17 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
       if (!op.match(n, inter)) continue;
 
-      final PlanNode[] nodePreds = n.predecessors();
-      final Operator[] opPreds = op.predecessors();
+      final PlanNode[] nodePredecessors = n.predecessors();
+      final Operator[] opPredecessors = op.predecessors();
 
       // Note:
       // 1. Each child may have multiple matches
       // 2. Following matches can be affected by previous matches.
       // Thus, `matches` remembers the match results so far, and is passed to next match attempt.
       List<Match> matches = singletonList(Match.make(n, inter));
-      for (int i = 0, bound = opPreds.length; i < bound; i++) {
-        final PlanNode nextNode = nodePreds[i];
-        final Operator nextOp = opPreds[i];
+      for (int i = 0, bound = opPredecessors.length; i < bound; i++) {
+        final PlanNode nextNode = nodePredecessors[i];
+        final Operator nextOp = opPredecessors[i];
 
         matches = listFlatMap(it -> match(nextNode, nextOp, it.assignments()), matches);
         if (matches.isEmpty()) break;
@@ -322,9 +315,5 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     }
 
     return ret;
-  }
-
-  private static String extractKey(PlanNode root) {
-    return PlanNode.toStringOnTree(root);
   }
 }

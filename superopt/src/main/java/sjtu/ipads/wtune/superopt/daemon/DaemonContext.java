@@ -1,17 +1,19 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
 import java.lang.System.Logger;
+import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.superopt.internal.OptimizerRunner;
+import sjtu.ipads.wtune.stmt.Statement;
 
 public interface DaemonContext {
   Logger LOG = System.getLogger("WeTune");
 
   App appOf(String contextName);
 
-  OptimizerRunner optimizer();
+  Registration registrationOf(String contextName);
 
-  Optimizations optimizationsOf(String contextName);
+  ASTNode optimize(Statement stmt);
 
   void run();
 
