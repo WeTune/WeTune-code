@@ -52,8 +52,13 @@ public interface Attribute {
       attribute = relation.attribute(columnName);
 
     if (attribute == null)
-      if (tableName != null) attribute = relation.input(tableName).attribute(columnName);
-      else
+      if (tableName != null) {
+        final Relation table = relation.input(tableName);
+        if (table == null) return null;
+
+        attribute = table.attribute(columnName);
+
+      } else
         for (Relation input : relation.inputs())
           if ((attribute = input.attribute(columnName)) != null) break;
 

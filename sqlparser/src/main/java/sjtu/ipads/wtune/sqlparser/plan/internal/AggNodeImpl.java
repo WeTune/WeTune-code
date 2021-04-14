@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -43,6 +44,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     this.selections = selections;
     this.groups = groups;
     this.having = having;
+
     this.definedAttrs = definedAttrs;
 
     this.attrsInSelections = attrsInSelections;
@@ -167,6 +169,8 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     attrsInSelections = resolveUsed(selections, inAttrs);
     if (groups != null) attrsInGroups = resolveUsed(groups, inAttrs);
     if (having != null) attrsInHaving = resolveUsed(singletonList(having), inAttrs);
+
+    this.definedAttrs.forEach(it -> it.setReferences(emptyList()));
   }
 
   @Override

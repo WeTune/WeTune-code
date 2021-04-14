@@ -214,6 +214,13 @@ public class ToASTTranslator {
       else {
         source = this.assembleAsSource();
         projection = null;
+        groupKeys = null;
+        having = null;
+        orderKeys = null;
+        limit = null;
+        offset = null;
+        qualification = null;
+        forcedDistinct = false;
         filter = filterNode;
       }
     }

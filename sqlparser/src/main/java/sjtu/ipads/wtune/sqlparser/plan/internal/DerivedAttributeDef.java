@@ -5,7 +5,6 @@ import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
-import java.util.Collections;
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
@@ -55,7 +54,7 @@ public class DerivedAttributeDef extends AttributeDefBase {
       throw new IllegalStateException(
           "cannot call `upstream` on DerivedAttributeDef before `setReferences` are called");
 
-    if (isIdentity()) return references.get(0);
+    if (isIdentity() && !references.isEmpty()) return references.get(0);
     else return null;
   }
 

@@ -42,33 +42,8 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      test0();
-
-      //      test1();
-      //            cleanBank();
-      //      for (Statement statement : Statement.findByApp("broadleaf_tmp")) test2(statement);
-      //      test2(Statement.findOne("broadleaf_tmp", 46));
-      //      final String from = "lobsters";
-      //      final int id = 93;
-      //
-      //      boolean open = false;
-      //      for (Statement statement : Statement.findAll()) {
-      //        if (from.equals(statement.appName()) && id == statement.stmtId()) open = true;
-      //        if (!open) continue;
-      //
-      //      final Statement statement = Statement.findOne("lobsters", 93);
-      //      System.out.println(statement);
-      //
-      //      final ASTNode parsed = statement.parsed();
-      //      parsed.context().setSchema(statement.app().schema("base", true));
-      //      normalize(parsed);
-      //      final PlanNode plan = ToPlanTranslator.toPlan(parsed);
-
-      //              if (plan == null) continue;
-      //              reduceSort(plan);
-      //      reduceDistinct(plan);
-      //        PlanNormalizer.normalize(plan);
-      //      }
+      //            test0();
+      test1();
     }
   }
 
@@ -110,7 +85,7 @@ public class Main {
         "SELECT COUNT(`product0_`.`product_id`) AS `col_0_0_` FROM `product` AS `product0_` INNER JOIN `product_category` AS `categories2_` ON `product0_`.`product_id` = `categories2_`.`product_id` INNER JOIN `product_description` AS `descriptio1_` ON `product0_`.`product_id` = `descriptio1_`.`product_id` INNER JOIN `category` AS `category3_` ON `categories2_`.`category_id` = `category3_`.`category_id` WHERE `category3_`.`category_id` IN (?) AND `descriptio1_`.`language_id` = 1 AND `product0_`.`manufacturer_id` = 1 AND `product0_`.`available` = 1 AND `product0_`.`date_available` <= '2019-10-21 21:17:32.7' AND `product0_`.`merchant_id` = 1";
 
     //        final Statement stmt = Statement.findOne("diaspora", 460);
-    final Statement stmt = Statement.findOne("solidus", 551);
+    final Statement stmt = Statement.findOne("gitlab", 794);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
@@ -130,6 +105,8 @@ public class Main {
 
     for (ASTNode opt : transformed) System.out.println(opt);
     System.out.println(stmt);
+
+    //    System.out.println(pickMinCost(stmt.parsed(), transformed, stmt.app().dbProps()));
   }
 
   private static PrintWriter out, err;
@@ -143,7 +120,7 @@ public class Main {
 
     App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
     //        doOptimize(Statement.findOne("broadleaf", 200), bank);
-    Statement.findByApp("diaspora").parallelStream().forEach(it -> doOptimize(it, bank));
+    Statement.findByApp("shopizer").parallelStream().forEach(it -> doOptimize(it, bank));
   }
 
   private static void doOptimize(Statement stmt, SubstitutionBank bank) {

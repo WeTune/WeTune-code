@@ -22,15 +22,38 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 
 import java.util.List;
 import java.util.Set;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public interface ASTHelper {
+  class ColumnRefChecker implements ASTVistor {
+    boolean passed = true;
+
+    @Override
+    public boolean enter(ASTNode node) {
+      return passed;
+    }
+
+    @Override
+    public boolean enterColumnRef(ASTNode columnRef) {
+      if (columnRef.get(ATTRIBUTE) == null) return passed = false;
+      return true;
+    }
+  }
+
+  static boolean validateColumnRefs(ASTNode node) {
+    final ColumnRefChecker checker = new ColumnRefChecker();
+    node.accept(checker);
+    return checker.passed;
+  }
+
   static String simpleName(String name) {
     return name == null ? null : unquoted(unquoted(name, '"'), '`').toLowerCase();
   }

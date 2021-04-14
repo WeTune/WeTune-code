@@ -1,16 +1,14 @@
 package sjtu.ipads.wtune.superopt.optimizer.support;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -320,90 +318,6 @@ class JoinStage extends InferenceStage {
 
     return splitPivot;
   }
-
-  private Collection<Set<AttributeDef>> calcSplitPivots() {
-    final JoinNode join = (JoinNode) this.node;
-    if (!join.isNormalForm()) return emptyList();
-
-    final List<AttributeDef> left = join.leftAttributes();
-    final List<AttributeDef> right = join.rightAttributes();
-
-    zipForEach(this::addEqualPair, left, right);
-
-    /*
-     Assume: A JOIN B on a.x = b.y. Ua is A's unique core, Ub is B's unique core
-
-     After cartesian product, the core is
-         Ua \cup Ub.
-
-     We can add a.x and b.y to the core:
-         Ua \cup Ub \cup {a.x} \cup {b.y},
-     this is still a unique (although not minimal).
-
-     Since we know the value of a.x must equals to b.y in each tuple,
-     it can be reduced to:
-         (Ua \cup Ub \cup {a.x} \cup {b.y}) - {a.x}
-       = (Ua - {a.x}) \cup Ub \cup {b.y}
-     and symmetrically:
-         Ua \cup (Ub - {b.y}) \cup {a.x}
-
-     Moreover, since Ua/Ub is the original unique core, then the value of a.x/b.y
-     can be uniquely determined by Ua in each tuple. Thus {a.x}/{b.y} can also be reduced.
-
-     The final new core should be:
-       (Ua \cup Ub) - {a.x}  or  (Ua \cup Ub) - {b.y}
-    */
-    /*
-     Based on the induction above, we use `splitPivots` to calculate the new cores.
-
-     We defines the attributes whose value is inferred equal to another attributes
-     (according to equi-join key) as "equi-attributes".
-     Each equi-attribute belongs to a equi-closure.
-
-     The `splitPivots` is a set of `splitPivot`.
-     Each `splitPivot` is a set of attributes, containing exact one attribute of
-     every equi-closure.
-
-     Example-1: A JOIN B ON A.x = B.y, the splitPivots is { {A.x}, {B.y} }
-     Example-2: A JOIN B ON A.x = B.y JOIN C ON B.y = C.z JOIN D ON C.u = D.w
-     the splitPivots is { {A.x,C.u}, {B.y,C.u}, {C.z,C.u}, {A.x,D.w}, {B.y,D.w}, {C.u,D.w}}
-
-     Afterwards, each splitPivot are removed from $leftCores \cup rightCores$, the resultant
-     sets are new cores.
-    */
-
-    final Collection<Set<AttributeDef>> splitPivots = calcSplitPivots0(left);
-    assert splitPivots.size() > 1;
-
-    return splitPivots;
-  }
-
-  private Collection<Set<AttributeDef>> calcSplitPivots0(List<AttributeDef> oneSide) {
-    final List<Set<AttributeDef>> pivots = new ArrayList<>(1 << oneSide.size());
-    return calcSplitPivots0(oneSide, 0, newIdentitySet(), pivots);
-  }
-
-  private Collection<Set<AttributeDef>> calcSplitPivots0(
-      List<AttributeDef> oneSide,
-      int i,
-      Set<AttributeDef> diff,
-      Collection<Set<AttributeDef>> diffs) {
-    if (i >= oneSide.size()) {
-      diffs.add(diff);
-      return diffs;
-    }
-
-    final AttributeDef def = oneSide.get(i);
-    final Set<AttributeDef> eqDefs = equiClosures.get(def);
-
-    for (AttributeDef eqDef : eqDefs) {
-      final Set<AttributeDef> newDiff = newIdentitySet(diff);
-      newDiff.add(eqDef);
-      calcSplitPivots0(oneSide, i + 1, newDiff, diffs);
-    }
-
-    return diffs;
-  }
 }
 
 class PlainFilterStage extends InferenceStage {
@@ -440,22 +354,24 @@ class SubqueryFilterStage extends InferenceStage {
 }
 
 class ProjStage extends InferenceStage {
-  private TIntList retained;
+  private TIntObjectMap<AttributeDef> retained;
   private boolean firstTime = true;
 
   protected ProjStage(PlanNode node, InferenceStage[] prev) {
     super(node, prev);
   }
 
-  private TIntList retained() {
+  private TIntObjectMap<AttributeDef> retained() {
     if (retained != null) return retained;
 
     final List<AttributeDef> projections = node.definedAttributes();
-    final TIntList retained = new TIntArrayList(projections.size());
-    for (AttributeDef projection : projections) {
+    final TIntObjectMap<AttributeDef> retained = new TIntObjectHashMap<>(projections.size());
+
+    for (final AttributeDef projection : projections) {
       final AttributeDef upstream = projection.upstream();
-      retained.add(upstream == null ? -1 : upstream.id());
+      if (upstream != null) retained.put(upstream.id(), projection);
     }
+
     return this.retained = retained;
   }
 
@@ -473,12 +389,16 @@ class ProjStage extends InferenceStage {
     if (core == SINGLETON_RESULT_SET) return core;
     if (proj.usedAttributes().isEmpty()) return SINGLETON_RESULT_SET; // heuristic for COUNT(1)
 
-    final TIntList retained = retained();
-    for (AttributeDef coreAttr : core)
-      if (!retained.contains(coreAttr.id()))
-        return RETRY; // the outer loop (in InferenceStage::next) will retry
+    final TIntObjectMap<AttributeDef> retained = retained();
+    final Set<AttributeDef> newCore = newIdentitySet(core.size());
 
-    return core;
+    for (AttributeDef coreAttr : core) {
+      final AttributeDef projected = retained.get(coreAttr.id());
+      if (projected == null) return RETRY; // the outer loop (in InferenceStage::next) will retry
+      newCore.add(projected);
+    }
+
+    return newCore;
   }
 }
 
