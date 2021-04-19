@@ -124,6 +124,7 @@ public class SchemaImpl implements Schema {
       final TableImpl table = table(patch.table());
       if (table != null) table.addPatch(patch);
     }
+    buildRef();
   }
 
   private void addTable(TableImpl table) {

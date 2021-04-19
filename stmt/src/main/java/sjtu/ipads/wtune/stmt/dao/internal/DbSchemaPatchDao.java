@@ -1,14 +1,13 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
-import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 
 public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
   private static final SchemaPatchDao INSTANCE = new DbSchemaPatchDao();
@@ -24,25 +23,28 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
   private static final String KEY_TYPE = "type";
   private static final String KEY_TABLE_NAME = "tableName";
   private static final String KEY_SOURCE = "source";
+  private static final String KEY_REFERENCE = "reference";
 
   private static final String FIND_BY_APP =
       String.format(
-          "SELECT patch_app AS %s, patch_type AS %s, patch_table_name AS %s, patch_columns_name AS %s, patch_source AS %s "
+          "SELECT patch_app AS %s, patch_type AS %s, patch_table_name AS %s, patch_columns_name AS %s, patch_source AS %s, patch_reference AS %s "
               + "FROM wtune_schema_patches "
               + "WHERE patch_app = ?",
-          KEY_APP, KEY_TYPE, KEY_TABLE_NAME, KEY_COLUMNS, KEY_SOURCE);
+          KEY_APP, KEY_TYPE, KEY_TABLE_NAME, KEY_COLUMNS, KEY_SOURCE, KEY_REFERENCE);
   private static final String DELETE_GENERATED =
       "DELETE FROM wtune_schema_patches WHERE patch_source <> 'manual' AND patch_app = ?";
   private static final String INSERT =
-      "INSERT OR REPLACE INTO wtune_schema_patches (patch_app, patch_type, patch_table_name, patch_columns_name, patch_source) "
-          + "VALUES (?, ?, ?, ?, ?)";
+      "INSERT OR REPLACE INTO wtune_schema_patches (patch_app, patch_type, patch_table_name, patch_columns_name, patch_source, patch_reference) "
+          + "VALUES (?, ?, ?, ?, ?, ?)";
 
   private static SchemaPatch inflate(ResultSet set) throws SQLException {
     final SchemaPatch.Type type = SchemaPatch.Type.valueOf(set.getString(KEY_TYPE));
     final String app = set.getString(KEY_APP);
     final String table = set.getString(KEY_TABLE_NAME);
     final List<String> columns = Arrays.asList(set.getString(KEY_COLUMNS).split(","));
-    return SchemaPatch.build(type, app, table, columns);
+    final String reference = set.getString(KEY_REFERENCE);
+
+    return SchemaPatch.build(type, app, table, columns, reference);
   }
 
   @Override
@@ -94,6 +96,7 @@ public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {
       ps.setString(3, patch.table());
       ps.setString(4, String.join(",", patch.columns()));
       ps.setString(5, null);
+      ps.setString(6, patch.reference());
 
       ps.executeUpdate();
 

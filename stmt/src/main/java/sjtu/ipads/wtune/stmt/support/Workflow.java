@@ -13,8 +13,10 @@ import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -35,20 +37,29 @@ import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
 public interface Workflow {
   static void inferForeignKeys(String appName) {
-    final Set<Column> inferred = new HashSet<>();
+    final Map<Column, Column> inferred = new HashMap<>();
     for (Statement statement : Statement.findByApp(appName)) {
       statement.parsed().context().setSchema(statement.app().schema("base"));
-      inferred.addAll(InferForeignKey.analyze(statement.parsed()));
+      inferred.putAll(InferForeignKey.analyze(statement.parsed()));
     }
     final SchemaPatchDao dao = SchemaPatchDao.instance();
     dao.beginBatch();
-    for (Column column : inferred) {
+    for (var pair : inferred.entrySet()) {
+      final Column referee = pair.getKey();
+      final Column referred = pair.getValue();
       final SchemaPatch patch =
-          SchemaPatch.build(FOREIGN_KEY, appName, column.tableName(), singletonList(column.name()));
+          SchemaPatch.build(
+              FOREIGN_KEY,
+              appName,
+              referee.tableName(),
+              singletonList(referee.name()),
+              referred.tableName() + "." + referred.name());
       dao.save(patch);
     }
     dao.endBatch();
-    //    inferred.forEach(System.out::println);
+    //    inferred.entrySet().forEach(System.out::println);
+    //    System.out.println(inferred.size());
+    //        inferred.forEach(System.out::println);
   }
 
   static void inferNotNull(String appName) {
@@ -61,7 +72,8 @@ public interface Workflow {
         for (Column column : constraint.columns()) {
           if (column.isFlag(Flag.NOT_NULL)) continue;
           final SchemaPatch patch =
-              SchemaPatch.build(Type.NOT_NULL, appName, table.name(), singletonList(column.name()));
+              SchemaPatch.build(
+                  Type.NOT_NULL, appName, table.name(), singletonList(column.name()), null);
           dao.save(patch);
         }
       }

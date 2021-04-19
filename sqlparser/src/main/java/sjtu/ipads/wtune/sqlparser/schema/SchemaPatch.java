@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import sjtu.ipads.wtune.sqlparser.schema.internal.SchemaPatchImpl;
-
 import java.util.List;
+import sjtu.ipads.wtune.sqlparser.schema.internal.SchemaPatchImpl;
 
 public interface SchemaPatch {
   enum Type {
@@ -22,7 +21,10 @@ public interface SchemaPatch {
 
   List<String> columns();
 
-  static SchemaPatch build(Type type, String schema, String table, List<String> columns) {
-    return new SchemaPatchImpl(type, schema, table, columns);
+  String reference();
+
+  static SchemaPatch build(
+      Type type, String schema, String table, List<String> columns, String reference) {
+    return new SchemaPatchImpl(type, schema, table, columns, reference);
   }
 }

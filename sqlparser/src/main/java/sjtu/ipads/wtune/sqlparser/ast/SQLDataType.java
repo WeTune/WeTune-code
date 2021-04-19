@@ -22,6 +22,8 @@ public interface SQLDataType {
 
   int storageSize();
 
+  int[] dimensions();
+
   void formatAsDataType(StringBuilder builder, String dbType);
 
   void formatAsCastType(StringBuilder builder, String dbType);

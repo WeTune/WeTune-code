@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
@@ -8,10 +9,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
-import java.util.List;
-
 public class ConstraintImpl implements Constraint {
-
   private final ConstraintType type;
   private final List<? extends Column> columns;
   private List<KeyDirection> directions;

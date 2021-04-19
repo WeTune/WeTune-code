@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.schema.internal;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_ENGINE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_SCHEMA;
@@ -18,9 +19,11 @@ import java.util.Map;
 import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public class TableImpl implements Table {
@@ -88,6 +91,25 @@ public class TableImpl implements Table {
     if (patch.type() == SchemaPatch.Type.UNIQUE) {
       final List<ColumnImpl> columns = listMap(this::column, patch.columns());
       final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.UNIQUE, columns);
+
+      addConstraint(constraint);
+      columns.forEach(it -> it.addConstraint(constraint));
+    }
+
+    if (patch.type() == Type.FOREIGN_KEY) {
+      final List<ColumnImpl> columns = listMap(this::column, patch.columns());
+      final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.FOREIGN, columns);
+
+      final String[] split = patch.reference().split("\\.");
+      if (split.length != 2) throw new IllegalArgumentException("illegal patch: " + patch);
+
+      final ASTNode tableName = ASTNode.node(NodeType.TABLE_NAME);
+      tableName.set(TABLE_NAME_TABLE, split[0]);
+      constraint.setRefTableName(tableName);
+
+      final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
+      colName.set(COLUMN_NAME_COLUMN, split[1]);
+      constraint.setRefColNames(Collections.singletonList(colName));
 
       addConstraint(constraint);
       columns.forEach(it -> it.addConstraint(constraint));

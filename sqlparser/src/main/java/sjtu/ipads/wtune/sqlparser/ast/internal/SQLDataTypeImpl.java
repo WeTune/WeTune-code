@@ -1,14 +1,59 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BIGINT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BIGSERIAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BIGTEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BIT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BIT_VARYING;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BLOB;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.BOOLEAN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.CHAR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.CIDR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DATETIME;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DECIMAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DOUBLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.ENUM;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FIXED;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FLOAT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.INET;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.INT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.INTEGER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.INTERVAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.JSON;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.LONGBLOB;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.MACADDR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.MEDIUMBLOB;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.MEDIUMINT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.MEDIUMTEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.MONEY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.NUMERIC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.REAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.SERIAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.SET;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.SMALLINT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.SMALLSERIAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TIME;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TIMESTAMP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TIMESTAMPTZ;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TIMETZ;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TINYBLOB;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TINYINT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.TINYTEXT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.UUID;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.VARBINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.VARCHAR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.XML;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.YEAR;
 
 import java.util.Collections;
 import java.util.List;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
+import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 
 public class SQLDataTypeImpl implements SQLDataType {
   private final Category category;
@@ -151,6 +196,11 @@ public class SQLDataTypeImpl implements SQLDataType {
       default:
         return 128;
     }
+  }
+
+  @Override
+  public int[] dimensions() {
+    return dimensions;
   }
 
   @Override
