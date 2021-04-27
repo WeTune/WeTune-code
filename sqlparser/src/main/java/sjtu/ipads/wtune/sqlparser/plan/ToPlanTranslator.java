@@ -74,11 +74,12 @@ public class ToPlanTranslator {
 
   private static PlanNode translate0(Relation rel) {
     // input
-    if (rel.isTable()) return InputNode.make(rel.table(), rel.alias());
+    if (rel.isTable()) return InputNode.make(rel.node(), rel.table(), rel.alias());
 
     final ASTNode querySpec = locateQuerySpecNode(rel);
     final ASTNode query = locateQueryNode(rel);
-    if (querySpec == null) return InputNode.make(rel.table(), rel.alias()); // TODO: UNION operator
+    if (querySpec == null)
+      return InputNode.make(rel.node(), rel.table(), rel.alias()); // TODO: UNION operator
 
     final ASTNode from = querySpec.get(QUERY_SPEC_FROM);
     final ASTNode where = querySpec.get(QUERY_SPEC_WHERE);

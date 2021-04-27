@@ -39,7 +39,9 @@ public interface Workflow {
   static void inferForeignKeys(String appName) {
     final Map<Column, Column> inferred = new HashMap<>();
     for (Statement statement : Statement.findByApp(appName)) {
-      statement.parsed().context().setSchema(statement.app().schema("base"));
+      final ASTNode ast = statement.parsed();
+      ast.context().setSchema(statement.app().schema("base", true));
+      //      normalize(ast);
       inferred.putAll(InferForeignKey.analyze(statement.parsed()));
     }
     final SchemaPatchDao dao = SchemaPatchDao.instance();
@@ -63,12 +65,11 @@ public interface Workflow {
   }
 
   static void inferNotNull(String appName) {
-
     final SchemaPatchDao dao = SchemaPatchDao.instance();
 
     dao.beginBatch();
-    for (Table table : App.of(appName).schema("base", true).tables()) {
-      for (Constraint constraint : table.constraints()) {
+    for (Table table : App.of(appName).schema("base", true).tables())
+      for (Constraint constraint : table.constraints())
         for (Column column : constraint.columns()) {
           if (column.isFlag(Flag.NOT_NULL)) continue;
           final SchemaPatch patch =
@@ -76,9 +77,6 @@ public interface Workflow {
                   Type.NOT_NULL, appName, table.name(), singletonList(column.name()), null);
           dao.save(patch);
         }
-      }
-    }
-
     dao.endBatch();
   }
 

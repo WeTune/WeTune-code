@@ -56,7 +56,8 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
     if (isASTUpdated) return listMap(ASTNode::deepCopy, keys);
 
     final List<ASTNode> keys = listMap(ASTNode::deepCopy, this.keys);
-    updateColumnRefs(gatherColumnRefs(keys), attrsInKeys, predecessors()[0].definedAttributes());
+    updateColumnRefs(
+        gatherColumnRefs(keys), attrsInKeys, predecessors()[0].definedAttributes(), false);
 
     return this.keys = keys;
   }

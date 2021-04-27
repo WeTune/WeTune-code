@@ -1,13 +1,11 @@
 package sjtu.ipads.wtune.stmt.internal;
 
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.dao.AltStatementDao;
+import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
+import sjtu.ipads.wtune.stmt.dao.StatementDao;
 
 public class StatementImpl implements Statement {
   private final String appName;
@@ -16,17 +14,15 @@ public class StatementImpl implements Statement {
 
   private int stmtId;
   private ASTNode parsed;
-  private String tag;
 
-  private Map<String, Statement> alternatives;
+  private boolean isRewritten;
+  private Statement otherVersion;
 
-  protected StatementImpl(
-      String appName, int stmtId, String tag, String rawSql, String stackTrace) {
+  protected StatementImpl(String appName, int stmtId, String rawSql, String stackTrace) {
     this.appName = appName;
     this.stmtId = stmtId;
     this.rawSql = rawSql;
     this.stackTrace = stackTrace;
-    this.tag = tag;
   }
 
   public static Statement build(String appName, String rawSql, String stackTrace) {
@@ -34,13 +30,7 @@ public class StatementImpl implements Statement {
   }
 
   public static Statement build(String appName, int stmtId, String rawSql, String stackTrace) {
-    return build(appName, stmtId, "main", rawSql, stackTrace);
-  }
-
-  public static Statement build(
-      String appName, int stmtId, String tag, String rawSql, String stackTrace) {
-    if (appName.equals("broadleaf_tmp")) appName = "broadleaf"; // TEMP
-    return new StatementImpl(appName, stmtId, tag, rawSql, stackTrace);
+    return new StatementImpl(appName, stmtId, rawSql, stackTrace);
   }
 
   @Override
@@ -64,6 +54,11 @@ public class StatementImpl implements Statement {
   }
 
   @Override
+  public boolean isRewritten() {
+    return isRewritten;
+  }
+
+  @Override
   public ASTNode parsed() {
     if (parsed == null) {
       parsed = ASTParser.ofDb(App.of(appName).dbType()).parse(rawSql());
@@ -73,28 +68,27 @@ public class StatementImpl implements Statement {
   }
 
   @Override
+  public Statement rewritten() {
+    if (isRewritten) return this;
+    if (otherVersion == null) otherVersion = OptStatementDao.instance().findOne(appName, stmtId);
+    return otherVersion;
+  }
+
+  @Override
+  public Statement original() {
+    if (!isRewritten) return this;
+    if (otherVersion == null) otherVersion = StatementDao.instance().findOne(appName, stmtId);
+    return otherVersion;
+  }
+
+  @Override
   public void setStmtId(int stmtId) {
     this.stmtId = stmtId;
   }
 
   @Override
-  public void setTag(String tag) {
-    this.tag = tag;
-  }
-
-  @Override
-  public String tag() {
-    return tag;
-  }
-
-  @Override
-  public Statement alternative(String tag) {
-    if (alternatives == null)
-      alternatives =
-          AltStatementDao.instance().findByStmt(appName(), stmtId()).stream()
-              .collect(Collectors.toMap(Statement::tag, Function.identity()));
-
-    return alternatives.get(tag);
+  public void setRewritten(boolean isRewritten) {
+    this.isRewritten = isRewritten;
   }
 
   @Override

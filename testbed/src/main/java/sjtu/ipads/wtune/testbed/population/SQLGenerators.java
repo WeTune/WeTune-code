@@ -1,19 +1,18 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static java.lang.Integer.numberOfLeadingZeros;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DECIMAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DOUBLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FIXED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FLOAT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.NUMERIC;
 import static sjtu.ipads.wtune.testbed.util.MathHelper.base10;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.isPow10;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.isPow2;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.GLOBAL_SEED;
 
 import com.google.common.collect.Iterables;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
@@ -25,12 +24,17 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.testbed.common.Element;
 
 class SQLGenerators implements Generators {
-  private final Config config;
+  private final PopulationConfig config;
   private final Map<Element, Generator> generators;
 
-  SQLGenerators(Config config) {
+  SQLGenerators(PopulationConfig config) {
     this.config = config;
     this.generators = new HashMap<>();
+  }
+
+  @Override
+  public PopulationConfig config() {
+    return config;
   }
 
   @Override
@@ -46,55 +50,27 @@ class SQLGenerators implements Generators {
     final Column referred = getReferencedColumn(column);
     final Constraint uk = getUniqueKey(column);
 
-    Generator generator;
-    if (referred == null) generator = Converter.makeConverter(column.dataType());
+    Generator gen;
+    if (referred == null) gen = Converter.makeConverter(column);
     else {
-      generator = makeGenerator(Element.ofColumn(referred));
-      generator = new ForeignKeyModifier(generator, config.getUnitCount(referred.tableName()));
+      gen = makeGenerator(Element.ofColumn(referred));
+      gen = new ForeignKeyModifier(gen, config.getUnitCount(referred.tableName()));
     }
 
-    if (uk == null)
-      generator =
-          new RandomModifier(
-              column, config.getRandomGen(column.tableName(), column.name()), generator);
-    else {
-      int totalDigits = 0, totalBits = 0;
-      boolean useDigits = true;
-      int start = -1, end = -1;
-      for (Column component : uk.columns()) {
-        final int digits = getRequiredDigits(component);
-        final int bits = getRequiredBits(component);
-        assert bits >= 0 ^ digits >= 0;
-        if (digits > 0) totalDigits += digits;
-        if (bits > 0) totalBits += bits;
-        if (component == column) {
-          useDigits = digits >= 0;
-          start = useDigits ? (totalDigits - digits) : (totalBits - bits);
-          end = useDigits ? totalDigits : totalBits;
-        }
-      }
+    final String tableName = column.tableName();
+    final String colName = column.name();
 
-      assert start >= 0 && end >= start;
-      final String ukStr =
-          uk.columns().stream().map(Object::toString).collect(Collectors.joining());
-      final int sharedLocalSeed = GLOBAL_SEED + ukStr.hashCode();
+    if (uk == null) {
+      // non-unique column, just use a random gen
+      gen = new RandomModifier(column, config.getRandomGen(tableName, colName), gen);
 
-      if (useDigits) {
-        final int[] adjusted = adjustRange(totalDigits, start, end, 9);
-        totalDigits = adjusted[0];
-        start = adjusted[1];
-        end = adjusted[2];
-        generator = new UniqueKeyModifierDec(sharedLocalSeed, totalDigits, start, end, generator);
-      } else {
-        final int[] adjusted = adjustRange(totalBits, start, end, 30);
-        totalBits = adjusted[0];
-        start = adjusted[1];
-        end = adjusted[2];
-        generator = new UniqueKeyModifierBin(sharedLocalSeed, totalBits, start, end, generator);
-      }
+    } else {
+      final UniqueKeyDist dist = new UniqueKeyDist(uk.columns());
+      final int colIdx = uk.columns().indexOf(column);
+      gen = dist.generatorOf(colIdx, gen);
     }
 
-    return generator;
+    return gen;
   }
 
   private static Column getReferencedColumn(Column column) {
@@ -117,71 +93,144 @@ class SQLGenerators implements Generators {
     return shortestUk;
   }
 
-  private int getRequiredBits(Column column) {
-    final Column referenced = getReferencedColumn(column);
+  private class UniqueKeyDist {
+    private final int unitCount;
+    private final List<? extends Column> columns;
+    private final int[] digitsDist;
+    private final int totalDigits;
+    private final int sharedSeed;
 
-    // for foreign key, returns bits of the row count of referenced table's size
-    // (if it is power of 2)
-    if (referenced != null) {
-      final int rowCount = config.getUnitCount(referenced.tableName());
-      if (isPow2(rowCount)) return 32 - numberOfLeadingZeros(rowCount);
-      else return -1;
+    private UniqueKeyDist(List<? extends Column> columns) {
+      assert !columns.isEmpty();
+
+      this.unitCount = config.getUnitCount(columns.get(0).tableName());
+      this.columns = columns;
+      this.digitsDist = new int[columns.size()];
+      this.totalDigits = distributeDigits();
+
+      final String ukStr = columns.stream().map(Object::toString).collect(Collectors.joining());
+      this.sharedSeed = GLOBAL_SEED + ukStr.hashCode();
     }
 
-    final SQLDataType dataType = column.dataType();
-    // otherwise, returns the bits that is required by the data type
-    switch (dataType.category()) {
-      case INTEGRAL:
-        return dataType.storageSize() << 3; // bits = bytes * 8
+    private int distributeDigits() {
+      final int[] digitsDist = this.digitsDist;
 
-      case FRACTION:
-        if (DOUBLE.equals(dataType.name()) || FLOAT.equals(dataType.name())) return 32;
-        else return -1; // decimal type (DECIMAL,NUMERIC,FIXED) should use digits
-
-      case BOOLEAN:
-        return 1;
-
-      case ENUM:
-        final int cardinality = dataType.valuesList().size();
-        assert cardinality > 0;
-        return 32 - numberOfLeadingZeros(cardinality - 1);
-
-      default:
-        return 32;
-    }
-  }
-
-  private int getRequiredDigits(Column column) {
-    final Column referenced = getReferencedColumn(column);
-    if (referenced != null) {
-      final int rowCount = config.getUnitCount(referenced.tableName());
-      if (isPow10(rowCount)) return base10(rowCount);
-      else return -1;
-    }
-
-    final SQLDataType dataType = column.dataType();
-    if (dataType.category() == Category.FRACTION)
-      switch (dataType.name()) {
-        case FIXED:
-        case NUMERIC:
-        case DECIMAL:
-          return dataType.width() + dataType.precision();
+      int totalDigits = 0;
+      for (int i = 0, bound = columns.size(); i < bound; i++) {
+        final Column column = columns.get(i);
+        totalDigits += digitsDist[i] = getRequiredDigits(column, unitCount);
       }
 
-    return -1;
-  }
+      final int cardinality = pow10(Math.min(9, totalDigits));
+      if (cardinality < unitCount) {
+        throw new IllegalArgumentException(
+            "the units (%d) is too large to enforce the uniqueness on %s"
+                .formatted(unitCount, columns));
+      }
 
-  private int[] adjustRange(int range, int start, int end, int limit) {
-    if (range <= limit) return new int[] {range, start, end};
+      return shrinkDigits(base10(unitCount), totalDigits);
+    }
 
-    final int width = Math.min(end - start, limit);
-    final int rightPadding = range - end;
-    final int adjustedRightPadding = (int) (rightPadding * (range / (double) limit));
+    private int shrinkDigits(int requiredDigits, int providedDigits) {
+      if (requiredDigits >= providedDigits) return requiredDigits;
 
-    range = limit;
-    start = Math.max(0, range - adjustedRightPadding - width);
-    end = Math.min(range, start + width);
+      final int[] digitsDist = this.digitsDist;
+      for (int i = 0, bound = columns.size(); i < bound; i++) {
+        final Column column = columns.get(i);
+        if (column.dataType().category() != Category.STRING || digitsDist[i] <= 4) continue;
 
-    return new int[] {range, start, end};
+        final int shrunk = providedDigits - digitsDist[i] + 4;
+        if (shrunk < requiredDigits) break;
+        else {
+          providedDigits = shrunk;
+          digitsDist[i] = 4;
+        }
+      }
+
+      return providedDigits;
+    }
+
+    private Generator generatorOf(int index, Generator nextStep) {
+      final int start0 = startDigitOf(index);
+      final int end0 = start0 + digitsDist[index];
+      final int[] adjusted = adjustRange(totalDigits, start0, end0);
+      final int totalDigits1 = adjusted[0], start = adjusted[1], end = adjusted[2];
+
+      if (pow10(totalDigits1) >= unitCount) {
+        return new UniqueKeyModifier(sharedSeed, totalDigits1, start, end, nextStep);
+      } else {
+        // If the digits is too few for the required row count, then just use a random gen.
+        // For example, a unique key <Int(FK),Bool>, the Int column is bound to some digits, thus
+        // leave the Bool bound to a single bit. Obviously it is impossible to enforce the uniques
+        // for that poor little bit for any row count > 2. In such case, the Int column itself
+        // will
+        // ensure the uniqueness.
+        final Column col = columns.get(index);
+        return new RandomModifier(col, config.getRandomGen(col.tableName(), col.name()), nextStep);
+      }
+    }
+
+    private int startDigitOf(int index) {
+      final int[] digitsDist = this.digitsDist;
+      int start = 0;
+      for (int i = 0; i < index; i++) if (digitsDist[i] >= 0) start += digitsDist[i];
+      return start;
+    }
+
+    private int getRequiredDigits(Column column, int unitCount) {
+      final Column referenced = getReferencedColumn(column);
+      if (referenced != null) return base10(config.getUnitCount(referenced.tableName()));
+
+      if (column.isFlag(Flag.IS_BOOLEAN)) return 1;
+      if (column.isFlag(Flag.IS_ENUM)) return 1;
+
+      final int cardinalityRequirement = base10(unitCount);
+
+      final SQLDataType dataType = column.dataType();
+      final int storageRequirement;
+      switch (dataType.category()) {
+        case INTEGRAL:
+          if (dataType.storageSize() <= 3) storageRequirement = dataType.storageSize() << 1;
+          else storageRequirement = 9;
+          break;
+
+        case BOOLEAN:
+        case ENUM:
+          storageRequirement = 1;
+          break;
+
+        case FRACTION:
+          if (FIXED.equals(dataType.name())
+              || NUMERIC.equals(dataType.name())
+              || DECIMAL.equals(dataType.name()))
+            storageRequirement = dataType.width() - dataType.precision();
+          else storageRequirement = 9;
+          break;
+
+        case STRING:
+          storageRequirement = dataType.width() == -1 ? 9 : dataType.width();
+          break;
+
+        default:
+          storageRequirement = 9;
+          break;
+      }
+
+      return Math.min(storageRequirement, cardinalityRequirement);
+    }
+
+    private static int[] adjustRange(int range, int start, int end) {
+      if (range <= 9) return new int[] {range, start, end};
+
+      final int width = min(end - start, 9);
+      final int rightPadding = range - end;
+      final int adjustedRightPadding = (int) (rightPadding * (9 / (double) range));
+
+      range = 9;
+      start = max(0, range - adjustedRightPadding - width);
+      end = min(range, start + width);
+
+      return new int[] {range, start, end};
+    }
   }
 }

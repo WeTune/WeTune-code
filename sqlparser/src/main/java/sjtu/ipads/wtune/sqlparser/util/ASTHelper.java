@@ -26,6 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
@@ -34,24 +35,64 @@ import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public interface ASTHelper {
   class ColumnRefChecker implements ASTVistor {
-    boolean passed = true;
+    ASTNode invalidNode = null;
 
     @Override
     public boolean enter(ASTNode node) {
-      return passed;
+      return invalidNode == null;
     }
 
     @Override
     public boolean enterColumnRef(ASTNode columnRef) {
-      if (columnRef.get(ATTRIBUTE) == null) return passed = false;
+      if (columnRef.get(ATTRIBUTE) == null) {
+        invalidNode = columnRef;
+        return false;
+      }
       return true;
     }
   }
 
-  static boolean validateColumnRefs(ASTNode node) {
+  class ConformityChecker implements ASTVistor {
+    Pair<ASTNode, ASTNode> invalidPair = null;
+
+    @Override
+    public boolean enter(ASTNode node) {
+      return invalidPair == null;
+    }
+
+    @Override
+    public boolean enterChild(ASTNode parent, FieldKey<ASTNode> key, ASTNode child) {
+      if (child != null && child.parent() != parent) {
+        invalidPair = Pair.of(parent, child);
+        return false;
+      }
+      return true;
+    }
+
+    @Override
+    public boolean enterChildren(
+        ASTNode parent, FieldKey<List<ASTNode>> key, List<ASTNode> children) {
+      if (children != null)
+        for (ASTNode child : children)
+          if (child.parent() != parent) {
+            invalidPair = Pair.of(parent, child);
+            return false;
+          }
+
+      return true;
+    }
+  }
+
+  static ASTNode findInvalidColumnRefs(ASTNode node) {
     final ColumnRefChecker checker = new ColumnRefChecker();
     node.accept(checker);
-    return checker.passed;
+    return checker.invalidNode;
+  }
+
+  static Pair<ASTNode, ASTNode> findDanglingNode(ASTNode node) {
+    final ConformityChecker checker = new ConformityChecker();
+    node.accept(checker);
+    return checker.invalidPair;
   }
 
   static String simpleName(String name) {

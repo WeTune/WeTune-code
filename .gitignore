@@ -16,3 +16,4 @@ out
 */*.dll
 data/
 *.log
+*.tar.gz

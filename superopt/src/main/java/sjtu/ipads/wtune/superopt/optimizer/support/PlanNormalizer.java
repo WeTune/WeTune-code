@@ -26,6 +26,7 @@ import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.TypeBasedAlgorithm;
 import sjtu.ipads.wtune.superopt.optimizer.join.JoinTree;
 
 public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
@@ -35,7 +36,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   @Override
-  protected PlanNode dispatch(PlanNode node) {
+  public PlanNode dispatch(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) if (dispatch(predecessor) == null) return null;
     return super.dispatch(node);
   }

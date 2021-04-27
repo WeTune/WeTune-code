@@ -1,16 +1,28 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.MATCH;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TERNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.stmt.utils.BoolCollector;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
 class NormalizeBool {
   public static ASTNode normalize(ASTNode node) {
@@ -29,24 +41,24 @@ class NormalizeBool {
 
       final ASTNode binary = ASTNode.expr(BINARY);
       binary.set(BINARY_LEFT, expr.shallowCopy());
-      binary.set(BINARY_OP, BinaryOp.IS);
+      binary.set(BINARY_OP, BinaryOp.EQUAL);
       binary.set(BINARY_RIGHT, trueLiteral);
 
       expr.update(binary);
 
     } else if (expr.get(BINARY_OP) == BinaryOp.IS) {
       final ASTNode right = expr.get(BINARY_RIGHT);
-      if (LITERAL.isInstance(right)
-          && right.get(LITERAL_TYPE) == LiteralType.BOOL
-          && right.get(LITERAL_VALUE).equals(Boolean.FALSE)) {
+      if (LITERAL.isInstance(right) && right.get(LITERAL_TYPE) == LiteralType.BOOL) {
+        expr.set(BINARY_OP, BinaryOp.EQUAL);
 
-        normalizeExpr(expr.get(BINARY_LEFT));
+        if (right.get(LITERAL_VALUE).equals(Boolean.FALSE)) {
+          normalizeExpr(expr.get(BINARY_LEFT));
 
-        final ASTNode unary = ASTNode.expr(UNARY);
-        unary.set(UNARY_OP, UnaryOp.NOT);
-        unary.set(UNARY_EXPR, expr.get(BINARY_LEFT));
-
-        expr.update(unary);
+          final ASTNode unary = ASTNode.expr(UNARY);
+          unary.set(UNARY_OP, UnaryOp.NOT);
+          unary.set(UNARY_EXPR, expr.get(BINARY_LEFT));
+          expr.update(unary);
+        }
       }
 
     } else if (BINARY.isInstance(expr) && expr.get(BINARY_OP).isLogic()) {

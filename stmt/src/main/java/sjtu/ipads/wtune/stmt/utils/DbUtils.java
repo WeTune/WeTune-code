@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-
 public class DbUtils {
   private static Connection conn;
 
@@ -15,7 +13,7 @@ public class DbUtils {
         synchronized (DbUtils.class) {
           Class.forName("org.sqlite.JDBC");
           if (conn == null || conn.isClosed())
-            conn = DriverManager.getConnection("jdbc:sqlite://" + FileUtils.dbPath().toString());
+            conn = DriverManager.getConnection("jdbc:sqlite://" + FileUtils.dbPath());
         }
 
       return conn;
@@ -23,10 +21,5 @@ public class DbUtils {
     } catch (SQLException | ClassNotFoundException ex) {
       throw new RuntimeException(ex);
     }
-  }
-
-  public static String quoteName(String name, String dbType) {
-    if (MYSQL.equals(dbType)) return String.format("`%s`", name);
-    else return String.format("\"%s\"", name);
   }
 }

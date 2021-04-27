@@ -11,6 +11,10 @@ public interface Optimizer {
 
   List<ASTNode> optimize(ASTNode root);
 
+  void setTracing(boolean flag);
+
+  List<List<Substitution>> getTraces();
+
   static Optimizer make(SubstitutionBank repo, Schema schema) {
     return new OptimizerImpl(repo, schema);
   }

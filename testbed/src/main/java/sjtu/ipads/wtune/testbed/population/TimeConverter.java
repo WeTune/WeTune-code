@@ -2,12 +2,15 @@ package sjtu.ipads.wtune.testbed.population;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.NotImplementedException;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 class TimeConverter implements Converter {
-  private static final LocalDateTime TIME_BASE = LocalDateTime.of(2021, 1, 1, 0, 0, 0);
+  private static final LocalDateTime TIME_BASE = LocalDateTime.of(2004, 1, 1, 0, 0, 0);
   private static final LocalDateTime TIME_MIN = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
   private static final LocalDateTime TIME_MAX = LocalDateTime.of(2038, 1, 1, 0, 0, 0);
   private final SQLDataType dataType;
@@ -18,24 +21,38 @@ class TimeConverter implements Converter {
   }
 
   @Override
-  public void convert(int seed, Actuator actuator) {
+  public void convert(int seed, BatchActuator actuator) {
     // mysql datatype
     if (dataType.name().equals(DataTypeName.YEAR)) actuator.appendInt(1901 + (seed % 155));
     else {
-      LocalDateTime datetime = TIME_BASE.plus(seed, ChronoUnit.SECONDS);
-      if (datetime.isAfter(TIME_MAX)) datetime = TIME_MAX;
-      if (datetime.isBefore(TIME_MIN)) datetime = TIME_MIN;
-
       switch (dataType.name()) {
         case DataTypeName.DATE:
-          actuator.appendDate(datetime.toLocalDate());
+          actuator.appendDate(coerceIntoRange(TIME_BASE.plus(seed, ChronoUnit.DAYS)).toLocalDate());
           break;
         case DataTypeName.TIME:
-          actuator.appendTime(datetime.toLocalTime());
+        case DataTypeName.TIMETZ:
+          actuator.appendTime(
+              coerceIntoRange(TIME_BASE.plus(seed, ChronoUnit.SECONDS)).toLocalTime());
           break;
-        default:
-          actuator.appendDateTime(datetime);
+        case DataTypeName.DATETIME:
+          actuator.appendDateTime(coerceIntoRange(TIME_BASE.plus(seed, ChronoUnit.SECONDS)));
+          break;
+        case DataTypeName.TIMESTAMP:
+        case DataTypeName.TIMESTAMPTZ:
+          actuator.appendDateTime(coerceIntoRange(TIME_BASE.plus(seed, ChronoUnit.MILLIS)));
+          break;
       }
     }
+  }
+
+  @Override
+  public IntStream locate(Object value) {
+    throw new NotImplementedException();
+  }
+
+  private static LocalDateTime coerceIntoRange(LocalDateTime t) {
+    if (t.isAfter(TIME_MAX)) return TIME_MAX;
+    if (t.isBefore(TIME_MIN)) return TIME_MIN;
+    return t;
   }
 }

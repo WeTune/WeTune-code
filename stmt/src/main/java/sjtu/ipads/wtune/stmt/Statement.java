@@ -1,14 +1,12 @@
 package sjtu.ipads.wtune.stmt;
 
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
 
-import java.util.List;
-
 public interface Statement {
-  String TAG_OPT = "opt";
-
   String appName();
 
   int stmtId();
@@ -17,19 +15,17 @@ public interface Statement {
 
   String stackTrace();
 
-  ASTNode parsed();
+  boolean isRewritten();
 
-  String tag();
+  ASTNode parsed();
 
   void setStmtId(int stmtId);
 
-  void setTag(String tag);
+  void setRewritten(boolean rewritten);
 
-  Statement alternative(String tag);
+  Statement rewritten();
 
-  default boolean isMain() {
-    return "main".equals(tag());
-  }
+  Statement original();
 
   default App app() {
     return App.of(appName());
@@ -43,10 +39,6 @@ public interface Statement {
     return StatementImpl.build(appName, stmtId, rawSql, stackTrace);
   }
 
-  static Statement make(String appName, int stmtId, String tag, String rawSql, String stackTrace) {
-    return StatementImpl.build(appName, stmtId, tag, rawSql, stackTrace);
-  }
-
   static Statement findOne(String appName, int stmtId) {
     return StatementDao.instance().findOne(appName, stmtId);
   }
@@ -55,7 +47,15 @@ public interface Statement {
     return StatementDao.instance().findByApp(appName);
   }
 
+  static List<Statement> findRewrittenByApp(String appName) {
+    return OptStatementDao.instance().findByApp(appName);
+  }
+
   static List<Statement> findAll() {
     return StatementDao.instance().findAll();
+  }
+
+  static List<Statement> findAllRewritten() {
+    return OptStatementDao.instance().findAll();
   }
 }

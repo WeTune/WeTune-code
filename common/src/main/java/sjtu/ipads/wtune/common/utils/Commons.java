@@ -231,6 +231,12 @@ public interface Commons {
     return max;
   }
 
+  static int sum(int[] arr, int start, int end) {
+    int sum = 0;
+    for (int i = start; i < end; ++i) sum += arr[i];
+    return sum;
+  }
+
   static <T> T echo(T t) {
     System.out.println(t);
     return t;

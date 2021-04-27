@@ -7,6 +7,7 @@ public enum LiteralType {
   FRACTIONAL,
   TEMPORAL,
   NULL,
+  NOT_NULL,
   BOOL,
   HEX,
   UNKNOWN

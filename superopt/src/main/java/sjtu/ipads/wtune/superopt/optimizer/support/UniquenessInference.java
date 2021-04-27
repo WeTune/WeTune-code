@@ -28,6 +28,7 @@ import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.TypeBasedAlgorithm;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 

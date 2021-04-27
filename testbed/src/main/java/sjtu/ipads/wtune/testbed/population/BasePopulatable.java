@@ -4,6 +4,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 import java.util.List;
 import java.util.Objects;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 
 class BasePopulatable implements Populatable {
@@ -23,7 +24,7 @@ class BasePopulatable implements Populatable {
   }
 
   @Override
-  public boolean populateOne(Actuator actuator) {
+  public boolean populateOne(BatchActuator actuator) {
     actuator.beginOne(collection);
     for (Generator generator : generators) generator.generate(nextRowId, actuator);
     actuator.endOne();

@@ -1,17 +1,16 @@
 package sjtu.ipads.wtune.stmt.utils;
 
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CASE_COND;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WHEN_COND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
+
+import java.util.ArrayList;
+import java.util.List;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 
 public class BoolCollector implements ASTVistor {
   private final List<ASTNode> boolExprs = new ArrayList<>();
@@ -34,7 +33,6 @@ public class BoolCollector implements ASTVistor {
     if (child != null
         && (key == JOINED_ON || key == QUERY_SPEC_WHERE || key == QUERY_SPEC_HAVING)) {
       boolExprs.add(child);
-      return false;
     }
     return true;
   }

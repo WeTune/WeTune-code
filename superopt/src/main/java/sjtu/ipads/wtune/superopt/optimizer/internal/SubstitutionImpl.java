@@ -21,6 +21,8 @@ public class SubstitutionImpl implements Substitution {
   private final Constraints constraints;
   private final Numbering numbering;
 
+  private int index;
+
   private SubstitutionImpl(
       Fragment g0, Fragment g1, Numbering numbering, List<Constraint> constraints) {
     this.g0 = g0;
@@ -50,6 +52,16 @@ public class SubstitutionImpl implements Substitution {
 
     final Numbering canonicalNumbering = Numbering.make().number(g0, g1);
     return new SubstitutionImpl(g0, g1, canonicalNumbering, constraints);
+  }
+
+  @Override
+  public int index() {
+    return index;
+  }
+
+  @Override
+  public void setIndex(int index) {
+    this.index = index;
   }
 
   @Override

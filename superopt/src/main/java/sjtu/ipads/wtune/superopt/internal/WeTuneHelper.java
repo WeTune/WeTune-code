@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
@@ -9,8 +9,11 @@ import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 
+import com.google.common.collect.Iterables;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.tuple.Pair;
@@ -19,12 +22,13 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.resolver.Param;
-import sjtu.ipads.wtune.stmt.resolver.ParamManager;
+import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
+import sjtu.ipads.wtune.stmt.resolver.Params;
 import sjtu.ipads.wtune.stmt.resolver.Resolution;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.profiler.CostQuery;
 import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
@@ -38,13 +42,34 @@ public class WeTuneHelper {
     return Optimizer.make(bank, schema).optimize(ast);
   }
 
+  public static Map<ASTNode, List<Substitution>> optimizeWithTrace(
+      Statement stmt, SubstitutionBank bank) {
+    final ASTNode ast = stmt.parsed();
+    final Schema schema = stmt.app().schema("base", true);
+
+    ast.context().setSchema(schema);
+    normalize(ast);
+
+    final Optimizer optimizer = Optimizer.make(bank, schema);
+    optimizer.setTracing(true);
+
+    final List<ASTNode> transformed = optimizer.optimize(ast);
+    final List<List<Substitution>> traces = optimizer.getTraces();
+
+    assert transformed.size() == traces.size();
+    final Map<ASTNode, List<Substitution>> traceMap = new IdentityHashMap<>();
+    zipForEach(traceMap::put, transformed, traces);
+
+    return traceMap;
+  }
+
   public static Pair<ASTNode, double[]> pickMinCost(
-      ASTNode baseline, List<ASTNode> candidates, Properties dbProps) {
-    if (candidates.isEmpty()) return null;
+      ASTNode baseline, Iterable<ASTNode> candidates, Properties dbProps) {
+    final ASTNode candidate0 = Iterables.getFirst(candidates, null);
+    if (candidate0 == null) return null;
 
     // MySQL doesn't correctly estimate some simplification (e.g. remove JOIN),
     // so let's do it ourself.
-    final ASTNode candidate0 = candidates.get(0);
     final int comparison = compareCost(toPlan(candidate0), toPlan(baseline), false);
     if (comparison < 0) return Pair.of(candidate0, new double[] {-1, -2});
     assert comparison == 0;
@@ -77,13 +102,13 @@ public class WeTuneHelper {
   }
 
   private static List<ASTNode> fillParamMarker(ASTNode ast) {
-    final ParamManager mgr = Resolution.resolveParamFull(ast);
+    final Params mgr = Resolution.resolveParamFull(ast);
     final List<ASTNode> filled = new ArrayList<>();
-    for (Param param : mgr.params()) {
+    for (ParamDesc param : mgr.params()) {
       final ASTNode node = param.node();
       if (!PARAM_MARKER.isInstance(node)) continue;
 
-      final ParamModifier modifier = tail(param.modifiers());
+      final ParamModifier modifier = param.modifiers().getLast();
       if (modifier == null || modifier.type() != Type.COLUMN_VALUE) continue;
 
       final Schema schema = ast.context().schema();

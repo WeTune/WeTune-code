@@ -1,8 +1,17 @@
 package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -70,6 +79,18 @@ public interface FuncUtils {
 
   static <T, R> List<R> listFlatMap(Function<? super T, ? extends Iterable<R>> func, T... os) {
     return listFlatMap(func, Arrays.asList(os));
+  }
+
+  static <T> boolean all(Predicate<T> check, Iterable<T> xs) {
+    return stream(xs).allMatch(check);
+  }
+
+  static <T> boolean any(Predicate<T> check, Iterable<T> xs) {
+    return stream(xs).anyMatch(check);
+  }
+
+  static <T> boolean none(Predicate<T> check, Iterable<T> xs) {
+    return stream(xs).noneMatch(check);
   }
 
   static <P0, P1, R> List<R> zipMap(

@@ -137,4 +137,9 @@ public class TableImpl implements Table {
   public int hashCode() {
     return Objects.hash(schema, name);
   }
+
+  @Override
+  public String toString() {
+    return name;
+  }
 }

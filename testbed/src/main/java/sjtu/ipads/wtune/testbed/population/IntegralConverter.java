@@ -1,7 +1,9 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import java.util.stream.IntStream;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 public class IntegralConverter implements Converter {
   private final String typeName;
@@ -19,9 +21,20 @@ public class IntegralConverter implements Converter {
   }
 
   @Override
-  public void convert(int seed, Actuator actuator) {
+  public void convert(int seed, BatchActuator actuator) {
     final int value = seed % max;
-    if (isArray) actuator.appendArray(typeName, new Integer[] {value});
+    if (isArray) actuator.appendArray(new Integer[] {value}, typeName);
     else actuator.appendInt(value);
+  }
+
+  @Override
+  public IntStream locate(Object value) {
+    if (!(value instanceof Integer))
+      throw new IllegalArgumentException("cannot decode non-integer value");
+
+    final int max = this.max;
+    final int i = (Integer) value;
+    if (i < 0 || i >= max) return IntStream.empty();
+    else return IntStream.iterate(i, x -> x > 0, x -> x + max);
   }
 }

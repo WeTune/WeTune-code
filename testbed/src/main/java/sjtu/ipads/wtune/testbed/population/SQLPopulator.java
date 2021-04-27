@@ -4,18 +4,20 @@ import java.lang.System.Logger.Level;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
+import sjtu.ipads.wtune.testbed.common.Element;
 
 public class SQLPopulator implements Populator {
-  private Config config;
+  private PopulationConfig config;
   private Generators generators;
   private boolean showProgressBar;
 
   @Override
-  public void setConfig(Config config) {
+  public void setConfig(PopulationConfig config) {
     if (this.config == config) return;
     this.config = config;
-    this.generators = Generators.makeForSQL(config);
+    this.generators = Generators.make(config);
     this.showProgressBar = config.showProgressBar();
   }
 
@@ -24,17 +26,19 @@ public class SQLPopulator implements Populator {
     final Populatable populatable = Populatable.ofCollection(collection);
     if (!populatable.bindGen(generators)) return false;
 
-    final Actuator actuator = config.getActuatorFactory().get();
+    final BatchActuator actuator = config.getActuatorFactory().make(collection.collectionName());
     final int unitCount = config.getUnitCount(collection.collectionName());
 
     actuator.begin(collection);
     LOG.log(Level.INFO, "begin: {0}", collection.collectionName());
     final boolean showProgressBar = this.showProgressBar;
+    final int progressSeg = unitCount / 20;
+    final int progressBlk = progressSeg * 5;
 
     for (int i = 0; i < unitCount; i++) {
       if (showProgressBar && i > 0)
-        if (i % 10000 == 0) System.out.print(i);
-        else if (i % 2000 == 0) System.out.print('.');
+        if (i % progressBlk == 0) System.out.print(i);
+        else if (i % progressSeg == 0) System.out.print('.');
 
       if (!populatable.populateOne(actuator)) return false;
     }
@@ -46,17 +50,25 @@ public class SQLPopulator implements Populator {
     return true;
   }
 
+  @Override
+  public Generator getGenerator(Element element) {
+    return generators.bind(element);
+  }
+
   public static void main(String[] args) {
     final App discourse = App.of("discourse");
     final Schema schema = discourse.schema("base", true);
-    final Table tablePosts = schema.table("topic_allowed_groups");
+    final Table table = schema.table("api_keys");
 
-    final SQLConfig config = new SQLConfig();
+    final SQLPopulationConfig config = new SQLPopulationConfig();
     config.setDefaultUnitCount(100);
 
     final SQLPopulator populator = new SQLPopulator();
     populator.setConfig(config);
 
-    populator.populate(Collection.ofTable(tablePosts));
+    populator.populate(Collection.ofTable(table));
+
+    final Generator generator = populator.getGenerator(Element.ofColumn(table.column("user_id")));
+    generator.locate(53).filter(it -> it < 100).limit(1).forEach(System.out::println);
   }
 }

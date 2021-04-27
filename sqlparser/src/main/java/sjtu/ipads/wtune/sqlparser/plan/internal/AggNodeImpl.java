@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
@@ -77,15 +76,8 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   private List<ASTNode> updateSelections() {
     final List<ASTNode> selections = listMap(ASTNode::deepCopy, this.selections);
     final List<ASTNode> colRefs = gatherColumnRefs(selections);
-    final List<AttributeDef> inputAttrs = predecessors()[0].definedAttributes();
 
-    for (int i = 0, bound = colRefs.size(); i < bound; i++) {
-      final int attrIdx = attrsInSelections.get(i);
-      if (attrIdx == -1) continue;
-      final AttributeDef inputAttr = inputAttrs.get(attrIdx);
-      final AttributeDef refAttr = inputAttr.upstream();
-      colRefs.get(i).update(coalesce(refAttr, inputAttr).makeColumnRef());
-    }
+    updateColumnRefs(colRefs, attrsInSelections, predecessors()[0].definedAttributes(), true);
 
     final boolean forcedUnique = ((ProjNode) predecessors()[0]).isForcedUnique();
     for (ASTNode agg : selections) {
@@ -99,7 +91,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     if (groups == null) return null;
     final List<ASTNode> groups = listMap(ASTNode::deepCopy, this.groups);
     updateColumnRefs(
-        gatherColumnRefs(groups), attrsInGroups, predecessors()[0].definedAttributes());
+        gatherColumnRefs(groups), attrsInGroups, predecessors()[0].definedAttributes(), true);
     return groups;
   }
 
@@ -107,7 +99,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
     if (having == null) return null;
     final ASTNode having = this.having.deepCopy();
     updateColumnRefs(
-        gatherColumnRefs(having), attrsInHaving, predecessors()[0].definedAttributes());
+        gatherColumnRefs(having), attrsInHaving, predecessors()[0].definedAttributes(), true);
     return having;
   }
 

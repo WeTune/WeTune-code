@@ -1,15 +1,14 @@
 package sjtu.ipads.wtune.sqlparser;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser;
-import sjtu.ipads.wtune.sqlparser.pg.PGASTParser;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser;
+import sjtu.ipads.wtune.sqlparser.pg.PGASTParser;
 
 public interface ASTParser {
 
@@ -49,6 +48,7 @@ public interface ASTParser {
 
     for (int i = 0; i < str.length(); i++) {
       final char c = str.charAt(i);
+
       if (!inSql) {
         if (Character.isSpaceChar(c) || c == '\n' || c == '\r') continue;
         else {
@@ -74,7 +74,10 @@ public interface ASTParser {
       escape = false;
     }
 
-    if (inSql) list.add(str.substring(start));
+    if (inSql) {
+      final String sql = str.substring(start);
+      if (!sql.startsWith("--")) list.add(sql);
+    }
 
     return list;
   }

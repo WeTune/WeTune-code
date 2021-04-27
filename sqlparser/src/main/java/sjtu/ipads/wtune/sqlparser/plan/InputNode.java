@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 public interface InputNode extends PlanNode {
   Table table();
 
+  ASTNode node();
+
   void setAlias(String alias);
 
   ASTNode tableSource();
@@ -19,7 +21,7 @@ public interface InputNode extends PlanNode {
   @Override
   default void resolveUsed() {}
 
-  static InputNode make(Table table, String alias) {
-    return InputNodeImpl.build(table, alias);
+  static InputNode make(ASTNode node, Table table, String alias) {
+    return InputNodeImpl.build(node, table, alias);
   }
 }

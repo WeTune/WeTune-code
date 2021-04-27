@@ -3,12 +3,12 @@ package sjtu.ipads.wtune.stmt.resolver;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 public interface Resolution {
-  static ParamManager resolveParamSimple(ASTNode node) {
-    return ResolveParamSimple.resolve(node);
+  static Params resolveParamSimple(ASTNode node) {
+    return ParamsImpl.simpleBuild(node);
   }
 
-  static ParamManager resolveParamFull(ASTNode node) {
-    return ResolveParamFull.resolve(node);
+  static Params resolveParamFull(ASTNode node) {
+    return ParamsImpl.build(node);
   }
 
   static BoolExprManager resolveBoolExpr(ASTNode node) {

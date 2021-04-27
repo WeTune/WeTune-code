@@ -38,6 +38,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.MATCH_COLS;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.MATCH_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.MATCH_OPTION;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_FORCE_QUESTION;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_NUMBER;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.SYMBOL_TEXT;
@@ -438,6 +439,7 @@ public class Formatter implements ASTVistor {
       case INTEGER, LONG, FRACTIONAL, HEX -> append(value);
       case BOOL -> append(value.toString().toUpperCase());
       case NULL -> append("NULL");
+      case NOT_NULL -> append("NOT NULL");
       case UNKNOWN -> append("UNKNOWN");
       case TEMPORAL -> builder
           .append(literal.get(LITERAL_UNIT).toUpperCase())
@@ -568,7 +570,8 @@ public class Formatter implements ASTVistor {
 
   @Override
   public boolean enterParamMarker(ASTNode paramMarker) {
-    if (ASTNode.POSTGRESQL.equals(paramMarker.dbType())) {
+    if (ASTNode.POSTGRESQL.equals(paramMarker.dbType())
+      && !paramMarker.isFlag(PARAM_MARKER_FORCE_QUESTION)) {
       append('$').append(paramMarker.getOr(PARAM_MARKER_NUMBER, 1));
     } else {
       append('?');

@@ -1,10 +1,14 @@
 package sjtu.ipads.wtune.testbed.util;
 
+import static java.lang.Math.abs;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.hash;
 import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10Factor;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import java.util.Arrays;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
 public abstract class RandomHelper {
@@ -15,20 +19,12 @@ public abstract class RandomHelper {
   private static final long MASK = (1L << 48) - 1;
   private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53)
 
-  private static int hash(int x) {
-    // https://stackoverflow.com/a/12996028
-    x = ((x >>> 16) ^ x) * 0x45d9f3b;
-    x = ((x >>> 16) ^ x) * 0x45d9f3b;
-    x = (x >>> 16) ^ x;
-    return x;
-  }
-
   private static int uniform(int seed, int bits) {
     return (int) (((seed * MULTIPLIER + ADDEND) & MASK) >>> (48 - bits));
   }
 
   public static int uniformRandomInt(int seed) {
-    return uniform(hash(seed), 32) & (~Integer.MIN_VALUE);
+    return uniform(hash(seed), 31);
   }
 
   public static double uniformRandomDouble(int seed) {
@@ -36,9 +32,9 @@ public abstract class RandomHelper {
     return (((long) (uniform(seed, 26)) << 27) + uniform(seed, 27)) * DOUBLE_UNIT;
   }
 
-  public static int uniqueRandomIntBin(int seed, int index, int bits) {
+  public static int randUniqueIntBin(int seed, int index, int bits) {
     // here `seed` needn't to be hash
-    if (index < 0 || index >= (1 << bits))
+    if (index < 0 || index > (1 << bits) - 1)
       throw new IllegalArgumentException("impossible to generate unique random integer");
 
     final int half1 = bits / 2;
@@ -46,15 +42,35 @@ public abstract class RandomHelper {
     final int mask1 = (1 << half1) - 1;
     final int mask2 = (1 << half2) - 1;
 
-    for (int round = 0; round < 5; ++round) {
-      final int mod = ((index >> half1) << 4) + round;
-      index ^= (uniformRandomInt(seed + mod) & mask1);
+    for (int round = 0; round < 3; ++round) {
+      final int mod = ((index >> half1) << 4) | round;
+      index ^= (hash(seed + mod) & mask1);
       index = ((index & mask2) << half1) | ((index >> half2) & mask1);
     }
+
     return index;
   }
 
-  public static int uniqueRandomIntDec(int seed, int index, int digits) {
+  public static int deRandUniqueIntBin(int seed, int i, int bits) {
+    if (i < 0 || i > (1 << bits) - 1)
+      throw new IllegalArgumentException("impossible to decode unique random integer");
+
+    // bits = 7
+    final int half1 = bits / 2; // 3
+    final int half2 = (bits + 1) / 2; // 4
+    final int mask1 = (1 << half1) - 1; // 0b0000111
+    final int mask2 = (1 << half2) - 1; // 0b0001111
+
+    for (int round = 2; round >= 0; round--) {
+      i = ((i & mask1) << half2) | ((i >> half1) & mask2);
+      final int mod = (((i & ~mask1) >> half1) << 4) | round;
+      i ^= hash(seed + mod) & mask1;
+    }
+
+    return i;
+  }
+
+  public static int randUniqueIntDec(int seed, int index, int digits) {
     // here `seed` needn't to be hash
     if (index < 0 || digits > 9 || index >= MathHelper.pow10(digits))
       throw new IllegalArgumentException("impossible to generate unique random integer");
@@ -62,29 +78,74 @@ public abstract class RandomHelper {
     final int[] factors = pow10Factor(digits);
     final int firstFactor = factors[0], secondFactor = factors[1];
 
-    for (int round = 0; round < 5; ++round) {
+    for (int round = 0; round < 3; ++round) {
       final int left = index / secondFactor;
       final int right = index % secondFactor;
+      final int mod = abs(hash(seed + right + round));
 
-      index = firstFactor * right + ((left + uniformRandomInt(seed + right + round)) % firstFactor);
+      index = firstFactor * right + ((left + mod) % firstFactor);
     }
     return index;
   }
 
-  public static RandGen makeUniformRand() {
-    return RandomHelper::uniformRandomInt;
+  public static int deRandUniqueIntDec(int seed, int i, int digits) {
+
+    final int[] factors = pow10Factor(digits);
+    final int firstFactor = factors[0], secondFactor = factors[1];
+
+    for (int round = 2; round >= 0; --round) {
+      final int right = i / firstFactor;
+      final int m = abs(hash(seed + right + round)) % firstFactor;
+      final int n = i % firstFactor;
+      final int left = n >= m ? (n - m) : (firstFactor - m + n);
+      i = secondFactor * left + right;
+    }
+
+    return i;
   }
 
-  public static RandGen makeZipfRand(int skew) {
+  public static RandGen makeUniformRand() {
+    return UniformRand.INSTANCE;
+  }
+
+  public static RandGen makeZipfRand(double skew) {
     return new ZipfRand(skew);
+  }
+
+  private static class UniformRand implements RandGen {
+    private static final RandGen INSTANCE = new UniformRand();
+
+    @Override
+    public int random(int index) {
+      if (index < 0) throw new IllegalArgumentException();
+      return randUniqueIntBin(GLOBAL_SEED, index, 31);
+    }
+
+    @Override
+    public int reverse(int value) {
+      return deRandUniqueIntBin(GLOBAL_SEED, value, 31);
+    }
+
+    @Override
+    public int max() {
+      return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public int min() {
+      return 0;
+    }
   }
 
   private static class ZipfRand implements RandGen {
     private static final double EPSILON = 1E-3;
     private final NavigableMap<Double, Integer> histogram;
+    private final int[] cache;
 
     private ZipfRand(double skew) {
-      histogram = makeHistogram(skew);
+      this.histogram = makeHistogram(skew);
+      this.cache = new int[histogram.size()];
+      Arrays.fill(cache, -1);
     }
 
     private static NavigableMap<Double, Integer> makeHistogram(double skew) {
@@ -102,7 +163,6 @@ public abstract class RandomHelper {
 
       double acc = 0;
       int i = 0;
-      System.out.println(bars.size());
       for (int bound = bars.size(); i < bound; i++) {
         final double p = bars.get(i) / sum;
         acc += p;
@@ -114,8 +174,34 @@ public abstract class RandomHelper {
     }
 
     @Override
-    public int random(int seed) {
-      return histogram.ceilingEntry(uniformRandomDouble(seed)).getValue();
+    public int random(int index) {
+      final Integer value =
+          histogram.ceilingEntry(uniformRandomDouble(GLOBAL_SEED + index)).getValue();
+      assert value != null;
+
+      if (cache[value] != -1) cache[value] = index;
+
+      return value;
+    }
+
+    @Override
+    public int reverse(int value) {
+      if (value >= cache.length) throw new NoSuchElementException();
+
+      final int index = cache[value];
+      if (index >= 0) return index;
+
+      throw new NoSuchElementException();
+    }
+
+    @Override
+    public int min() {
+      return 0;
+    }
+
+    @Override
+    public int max() {
+      return histogram.lastEntry().getValue();
     }
   }
 }

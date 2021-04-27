@@ -25,7 +25,9 @@ import static sjtu.ipads.wtune.superopt.optimizer.support.SortReducer.reduceSort
 import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
@@ -35,6 +37,7 @@ import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan.SortNode;
+import sjtu.ipads.wtune.sqlparser.plan.TypeBasedAlgorithm;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.fragment.Operator;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
@@ -47,20 +50,35 @@ import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
 import sjtu.ipads.wtune.superopt.optimizer.support.MinCostList;
 import sjtu.ipads.wtune.superopt.optimizer.support.OptGroup;
-import sjtu.ipads.wtune.superopt.optimizer.support.TypeBasedAlgorithm;
 
 public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements Optimizer {
+  private static final long TIMEOUT = 20_000; // 20 second
+
   private final SubstitutionBank repo;
   private final Schema schema;
   private final Memo<String> memo;
 
-  private static final long TIMEOUT = 20_000; // 20 second
   private long startTime = 0;
+
+  private boolean tracing;
+  private Map<String, Step> traces;
+  private List<List<Substitution>> optimizationTraces;
 
   public OptimizerImpl(SubstitutionBank repo, Schema schema) {
     this.repo = repo;
     this.schema = schema;
     this.memo = new Memo<>(PlanNode::toStringOnTree);
+  }
+
+  @Override
+  public void setTracing(boolean logging) {
+    this.tracing = logging;
+    if (this.traces == null) this.traces = new HashMap<>();
+  }
+
+  @Override
+  public List<List<Substitution>> getTraces() {
+    return optimizationTraces;
   }
 
   @Override
@@ -84,6 +102,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     if (root == null) return emptyList();
 
     memo.clear();
+    if (tracing) traces.clear();
 
     try {
       // preprocess
@@ -93,14 +112,16 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
       startTime = System.currentTimeMillis(); // begin timing
 
-      final List<PlanNode> optimized = optimize0(normalized);
+      List<PlanNode> optimized = optimize0(normalized);
       assert !optimized.isEmpty();
 
       // exclude the original query (if it is included, it must be the head of the list)
       if (!reduced && toStringOnTree(optimized.get(0)).equals(toStringOnTree(normalized)))
-        return optimized.subList(1, optimized.size());
-      else return optimized;
+        optimized = optimized.subList(1, optimized.size());
 
+      if (tracing) optimizationTraces = listMap(this::collectTrace, optimized);
+
+      return optimized;
     } catch (OptimizerException ex) {
       // PlanException indicates the are something unsupported,
       // so no need to throw out
@@ -256,7 +277,10 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
-        if (memo.get(newNode) == null) transformed.add(newNode);
+        if (memo.get(newNode) == null) {
+          transformed.add(newNode);
+          traceStep(n, newNode, substitution);
+        }
         group.add(newNode);
       }
     }
@@ -323,5 +347,35 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     }
 
     return ret;
+  }
+
+  private void traceStep(PlanNode original, PlanNode transformed, Substitution substitution) {
+    if (!tracing) return;
+    final String originalKey = toStringOnTree(rootOf(original));
+    final String newKey = toStringOnTree(rootOf(transformed));
+    traces.putIfAbsent(newKey, new Step(originalKey, substitution));
+  }
+
+  private List<Substitution> collectTrace(PlanNode node) {
+    return collectTrace0(toStringOnTree(rootOf(node)), 0);
+  }
+
+  private List<Substitution> collectTrace0(String key, int depth) {
+    final Step step = traces.get(key);
+    if (step == null) return new ArrayList<>(depth);
+
+    final List<Substitution> trace = collectTrace0(step.original, depth + 1);
+    trace.add(step.substitution);
+    return trace;
+  }
+
+  private static class Step {
+    private final String original;
+    private final Substitution substitution;
+
+    private Step(String original, Substitution substitution) {
+      this.original = original;
+      this.substitution = substitution;
+    }
   }
 }

@@ -5,8 +5,11 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FIXED;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.NUMERIC;
 
 import java.math.BigDecimal;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.NotImplementedException;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.util.MathHelper;
 
 class FractionConverter implements Converter {
@@ -33,8 +36,13 @@ class FractionConverter implements Converter {
   }
 
   @Override
-  public void convert(int seed, Actuator actuator) {
+  public void convert(int seed, BatchActuator actuator) {
     if (isDecimal) actuator.appendDecimal(BigDecimal.valueOf(seed % max));
     else actuator.appendFraction(seed % max);
+  }
+
+  @Override
+  public IntStream locate(Object value) {
+    throw new NotImplementedException();
   }
 }

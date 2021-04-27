@@ -2,17 +2,31 @@ package sjtu.ipads.wtune.testbed.population;
 
 import org.apache.commons.lang3.NotImplementedException;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 public interface Converter extends Generator {
-  void convert(int seed, Actuator actuator);
+  void convert(int seed, BatchActuator actuator);
 
   @Override
-  default void generate(int seed, Actuator actuator) {
+  default void generate(int seed, BatchActuator actuator) {
     convert(seed, actuator);
   }
 
-  static Converter makeConverter(SQLDataType dataType) {
+  static Converter makeConverter(Column column) {
+    final SQLDataType dataType = column.dataType();
+    if (column.isFlag(Flag.IS_BOOLEAN)
+        && dataType.category() != Category.BOOLEAN
+        && dataType.category() != Category.BIT_STRING) {
+      return new EffectiveEnumConverter(2, dataType);
+    }
+
+    if (column.isFlag(Flag.IS_ENUM) && dataType.category() != Category.ENUM)
+      return new EffectiveEnumConverter(10, dataType);
+
     switch (dataType.category()) {
       case INTEGRAL:
         return new IntegralConverter(dataType);

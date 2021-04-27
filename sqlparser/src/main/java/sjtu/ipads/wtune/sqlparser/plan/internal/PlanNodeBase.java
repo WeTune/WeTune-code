@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan.internal;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.selectItemAlias;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
@@ -110,10 +112,21 @@ public abstract class PlanNodeBase implements PlanNode {
   }
 
   protected static void updateColumnRefs(
-      List<ASTNode> refs, TIntList usedAttrs, List<AttributeDef> inputAttrs) {
+      List<ASTNode> refs,
+      TIntList usedAttrs,
+      List<AttributeDef> inputAttrs,
+      boolean preferReferenceAttr) {
     for (int i = 0, bound = refs.size(); i < bound; i++) {
       final int attrIdx = usedAttrs.get(i);
-      if (attrIdx != -1) refs.get(i).update(inputAttrs.get(attrIdx).makeColumnRef());
+      if (attrIdx < 0) continue;
+
+      final ASTNode ref = refs.get(i);
+      final AttributeDef attr = inputAttrs.get(attrIdx);
+      final AttributeDef upstream = attr.upstream();
+      if (upstream != null
+          && (preferReferenceAttr || ref.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_TABLE) != null))
+        ref.update(upstream.makeColumnRef());
+      else ref.update(attr.makeColumnRef());
     }
   }
 }

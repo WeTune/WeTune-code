@@ -29,14 +29,18 @@ public class SubstitutionBankImpl implements SubstitutionBank {
     return new SubstitutionBankImpl();
   }
 
+  private void add0(Substitution sub) {
+    if (substitutions.add(sub)) sub.setIndex(substitutions.size());
+  }
+
   @Override
   public SubstitutionBank importFrom(Iterable<String> lines, boolean withCheck) {
     for (String line : lines) {
       if (line.charAt(0) == '=') continue;
       try {
         final Substitution sub = Substitution.rebuild(line);
-        substitutions.add(sub);
-        if (withCheck) substitutions.add(sub.flip());
+        add0(sub);
+        if (withCheck) add0(sub.flip());
 
       } catch (Exception ex) {
         LOG.log(WARNING, "Malformed serialized substitution: {0}", line);

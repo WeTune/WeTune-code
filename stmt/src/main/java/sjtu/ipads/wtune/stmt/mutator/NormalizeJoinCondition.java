@@ -8,6 +8,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_LEFT;
@@ -30,12 +31,13 @@ import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
-class NormalizeJoinCondition implements ASTVistor {
+class NormalizeJoinCondition {
   public static ASTNode normalize(ASTNode root) {
     Collector.collect(root, QUERY_SPEC::isInstance, false).forEach(NormalizeJoinCondition::process);
     return root;
@@ -90,11 +92,15 @@ class NormalizeJoinCondition implements ASTVistor {
     if (!BINARY.isInstance(parent)) return;
 
     final ASTNode left = parent.get(BINARY_LEFT), right = parent.get(BINARY_RIGHT);
-    if (left == node) parent.update(right);
-    else if (right == node) parent.update(left);
-    else if (left.equals(node)) parent.update(right); // slow but safe
-    else if (right.equals(node)) parent.update(left); // slow but safe
-    else assert false;
+    final ASTNode otherSide;
+    if (left == node) otherSide = right;
+    else if (right == node) otherSide = left;
+    else if (left.equals(node)) otherSide = right; // slow but safe
+    else if (right.equals(node)) otherSide = left; // slow but safe
+    else throw new IllegalStateException();
+
+    parent.update(otherSide.deepCopy());
+    otherSide.set(PARENT, parent.parent());
   }
 
   private static void addWhereCondition(ASTNode querySpec, ASTNode expr) {
@@ -105,8 +111,11 @@ class NormalizeJoinCondition implements ASTVistor {
 
   private static void addOnCondition(ASTNode join, ASTNode expr) {
     final ASTNode on = join.get(JOINED_ON);
+
     if (on == null) join.set(JOINED_ON, expr);
     else join.set(JOINED_ON, makeConjunction(on, expr));
+
+    if (join.get(JOINED_TYPE) == JoinType.CROSS_JOIN) join.set(JOINED_TYPE, JoinType.INNER_JOIN);
   }
 
   private static ASTNode makeConjunction(ASTNode left, ASTNode right) {

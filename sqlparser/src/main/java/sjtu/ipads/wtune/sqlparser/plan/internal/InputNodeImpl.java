@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
@@ -24,23 +23,25 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 public class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final int id;
   private final Table table;
+  private final ASTNode node;
   private AttributeDefBag definedAttrs;
   private String alias;
 
   // for `copy`
-  private InputNodeImpl(int id, Table table, String alias, AttributeDefBag attrs) {
+  private InputNodeImpl(ASTNode node, int id, Table table, String alias, AttributeDefBag attrs) {
+    this.node = node;
     this.id = id;
     this.table = table;
     this.alias = alias;
     this.definedAttrs = attrs;
   }
 
-  public static InputNode build(Table table, String alias) {
+  public static InputNode build(ASTNode node, Table table, String alias) {
     final String nonNullAlias = coalesce(alias, table.name());
     final int id = System.identityHashCode(new Object());
     final AttributeDefBag bag =
         makeBag(listMap(it -> makeAttribute(id, nonNullAlias, it), table.columns()));
-    return new InputNodeImpl(id, table, nonNullAlias, bag);
+    return new InputNodeImpl(node, id, table, nonNullAlias, bag);
   }
 
   protected static AttributeDef makeAttribute(int key, String qualification, Column column) {
@@ -53,8 +54,13 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
+  public ASTNode node() {
+    return node;
+  }
+
+  @Override
   public ASTNode tableSource() {
-    final ASTNode name = node(TABLE_NAME);
+    final ASTNode name = ASTNode.node(TABLE_NAME);
     name.set(TABLE_NAME_TABLE, table.name());
 
     final ASTNode tableSource = ASTNode.tableSource(SIMPLE_SOURCE);
@@ -82,7 +88,7 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
 
   @Override
   protected PlanNode copy0() {
-    return new InputNodeImpl(id, table, alias, definedAttrs);
+    return new InputNodeImpl(node, id, table, alias, definedAttrs);
   }
 
   @Override

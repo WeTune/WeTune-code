@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.relational.internal;
 
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.internal.NodeFieldBase;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
-
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 public class RelationField extends NodeFieldBase<Relation> {
   public static final RelationField INSTANCE = new RelationField();

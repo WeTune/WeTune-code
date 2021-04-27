@@ -8368,7 +8368,9 @@ CREATE INDEX idx_deployment_clusters_on_cluster_id_and_kubernetes_namespace ON p
 
 CREATE UNIQUE INDEX idx_deployment_merge_requests_unique_index ON public.deployment_merge_requests USING btree (deployment_id, merge_request_id);
 
-CREATE UNIQUE INDEX idx_environment_merge_requests_unique_index ON public.deployment_merge_requests USING btree (environment_id, merge_request_id);
+-- CREATE UNIQUE INDEX idx_environment_merge_requests_unique_index ON public.deployment_merge_requests USING btree (environment_id, merge_request_id);
+
+CREATE INDEX idx_environment_merge_requests_unique_index ON public.deployment_merge_requests USING btree (environment_id, merge_request_id);
 
 CREATE INDEX idx_geo_con_rep_updated_events_on_container_repository_id ON public.geo_container_repository_updated_events USING btree (container_repository_id);
 
@@ -9152,7 +9154,9 @@ CREATE INDEX index_internal_ids_on_project_id ON public.internal_ids USING btree
 
 CREATE UNIQUE INDEX index_internal_ids_on_usage_and_namespace_id ON public.internal_ids USING btree (usage, namespace_id) WHERE (namespace_id IS NOT NULL);
 
-CREATE UNIQUE INDEX index_internal_ids_on_usage_and_project_id ON public.internal_ids USING btree (usage, project_id) WHERE (project_id IS NOT NULL);
+-- CREATE UNIQUE INDEX index_internal_ids_on_usage_and_project_id ON public.internal_ids USING btree (usage, project_id) WHERE (project_id IS NOT NULL);
+
+CREATE INDEX index_internal_ids_on_usage_and_project_id ON public.internal_ids USING btree (usage, project_id) WHERE (project_id IS NOT NULL);
 
 CREATE INDEX index_ip_restrictions_on_group_id ON public.ip_restrictions USING btree (group_id);
 
@@ -9538,7 +9542,9 @@ CREATE INDEX index_pages_domain_acme_orders_on_pages_domain_id ON public.pages_d
 
 CREATE INDEX index_pages_domains_need_auto_ssl_renewal ON public.pages_domains USING btree (certificate_source, certificate_valid_not_after) WHERE (auto_ssl_enabled = true);
 
-CREATE UNIQUE INDEX index_pages_domains_on_domain_and_wildcard ON public.pages_domains USING btree (domain, wildcard);
+-- CREATE UNIQUE INDEX index_pages_domains_on_domain_and_wildcard ON public.pages_domains USING btree (domain, wildcard);
+
+CREATE INDEX index_pages_domains_on_domain_and_wildcard ON public.pages_domains USING btree (domain, wildcard);
 
 CREATE INDEX index_pages_domains_on_domain_lowercase ON public.pages_domains USING btree (lower((domain)::text));
 
@@ -9806,7 +9812,9 @@ CREATE INDEX index_redirect_routes_on_source_type_and_source_id ON public.redire
 
 CREATE UNIQUE INDEX index_release_links_on_release_id_and_name ON public.release_links USING btree (release_id, name);
 
-CREATE UNIQUE INDEX index_release_links_on_release_id_and_url ON public.release_links USING btree (release_id, url);
+-- CREATE UNIQUE INDEX index_release_links_on_release_id_and_url ON public.release_links USING btree (release_id, url);
+
+CREATE INDEX index_release_links_on_release_id_and_url ON public.release_links USING btree (release_id, url);
 
 CREATE INDEX index_releases_on_author_id ON public.releases USING btree (author_id);
 
@@ -9898,9 +9906,13 @@ CREATE INDEX index_services_on_type ON public.services USING btree (type);
 
 CREATE INDEX index_services_on_type_and_id_and_template_when_active ON public.services USING btree (type, id, template) WHERE (active = true);
 
-CREATE UNIQUE INDEX index_services_on_type_and_instance ON public.services USING btree (type, instance) WHERE (instance IS TRUE);
+-- CREATE UNIQUE INDEX index_services_on_type_and_instance ON public.services USING btree (type, instance) WHERE (instance IS TRUE);
 
-CREATE UNIQUE INDEX index_services_on_type_and_template ON public.services USING btree (type, template) WHERE (template IS TRUE);
+CREATE INDEX index_services_on_type_and_instance ON public.services USING btree (type, instance) WHERE (instance IS TRUE);
+
+-- CREATE UNIQUE INDEX index_services_on_type_and_template ON public.services USING btree (type, template) WHERE (template IS TRUE);
+
+CREATE INDEX index_services_on_type_and_template ON public.services USING btree (type, template) WHERE (template IS TRUE);
 
 CREATE UNIQUE INDEX index_shards_on_name ON public.shards USING btree (name);
 

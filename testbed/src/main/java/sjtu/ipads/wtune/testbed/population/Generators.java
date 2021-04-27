@@ -5,7 +5,9 @@ import sjtu.ipads.wtune.testbed.common.Element;
 public interface Generators {
   Generator bind(Element element);
 
-  static Generators makeForSQL(Config config) {
+  PopulationConfig config();
+
+  static Generators make(PopulationConfig config) {
     return new SQLGenerators(config);
   }
 }

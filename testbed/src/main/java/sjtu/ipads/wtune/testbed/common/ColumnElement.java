@@ -28,7 +28,7 @@ public class ColumnElement implements Element {
 
   @Override
   public String toString() {
-    return column.tableName() + "." + column.tableName();
+    return column.tableName() + "." + column.name();
   }
 
   @Override

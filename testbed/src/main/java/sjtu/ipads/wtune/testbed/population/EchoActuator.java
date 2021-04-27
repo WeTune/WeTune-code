@@ -6,14 +6,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 
-public class EchoActuator implements Actuator {
+public class EchoActuator implements BatchActuator {
   private final PrintWriter writer;
   private List<String> values;
+  private int index;
 
   public EchoActuator(PrintWriter writer) {
     this.writer = writer;
@@ -23,11 +25,15 @@ public class EchoActuator implements Actuator {
   public void begin(Collection collection) {}
 
   @Override
-  public void end() {}
+  public void end() {
+    writer.flush();
+    writer.close();
+  }
 
   @Override
   public void beginOne(Collection collection) {
-    this.values = new ArrayList<>(collection.elements().size());
+    this.values = Arrays.asList(new String[collection.elements().size()]);
+    this.index = 0;
   }
 
   @Override
@@ -37,67 +43,74 @@ public class EchoActuator implements Actuator {
   }
 
   @Override
-  public void appendInt(int i) {
-    values.add(String.valueOf(i));
+  public int getAndForwardIndex() {
+    return index++;
   }
 
   @Override
-  public void appendFraction(double d) {
-    values.add(String.valueOf(d));
+  public void setInt(int index, int i) {
+    values.set(index, String.valueOf(i));
   }
 
   @Override
-  public void appendDecimal(BigDecimal d) {
-    values.add(String.valueOf(d));
+  public void setFraction(int index, double d) {
+    values.set(index, String.valueOf(d));
   }
 
   @Override
-  public void appendBool(boolean b) {
-    values.add(String.valueOf(b));
+  public void setDecimal(int index, BigDecimal d) {
+    values.set(index, String.valueOf(d));
   }
 
   @Override
-  public void appendString(String s) {
-    values.add("'" + s + "'");
+  public void setBool(int index, boolean b) {
+    values.set(index, String.valueOf(b));
   }
 
   @Override
-  public void appendDateTime(LocalDateTime t) {
-    values.add("'" + t + "'");
+  public void setString(int index, String s) {
+    values.set(index, "\"" + s + "\"");
   }
 
   @Override
-  public void appendTime(LocalTime t) {
-    values.add("'" + t + "'");
+  public void setDateTime(int index, LocalDateTime t) {
+    values.set(index, "\"" + t + "\"");
   }
 
   @Override
-  public void appendDate(LocalDate t) {
-    values.add("'" + t + "'");
+  public void setTime(int index, LocalTime t) {
+    values.set(index, "\"" + t + "\"");
   }
 
   @Override
-  public void appendBlob(InputStream in) {
+  public void setDate(int index, LocalDate t) {
+    values.set(index, "\"" + t + "\"");
+  }
+
+  @Override
+  public void setBlob(int index, InputStream in, int length) {
     try {
-      values.add(Arrays.toString(in.readAllBytes()));
+      values.set(index, Arrays.toString(in.readAllBytes()));
 
     } catch (Exception ex) {
-      values.add("<EXCEPTION>");
+      values.set(index, "<EXCEPTION>");
     }
   }
 
   @Override
-  public void appendBytes(byte[] bs) {
-    values.add(Arrays.toString(bs));
+  public void setBytes(int index, byte[] bs) {
+    values.set(index, Arrays.toString(bs));
   }
 
   @Override
-  public void appendObject(Object obj, int typeId) {
-    values.add(obj.toString());
+  public void setObject(int index, Object obj, int typeId) {
+    values.set(index, obj.toString());
   }
 
   @Override
-  public void appendArray(String type, Object[] array) {
-    values.add(Arrays.toString(array));
+  public void setArray(int index, Object[] array, String type) {
+    final String str =
+        Arrays.stream(array).map(Object::toString).collect(Collectors.joining(",", "{", "}"));
+    values.set(index, str);
   }
 }

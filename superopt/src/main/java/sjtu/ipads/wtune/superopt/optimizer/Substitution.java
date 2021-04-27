@@ -17,6 +17,10 @@ import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.EqConstraint;
 
 public interface Substitution {
+  int index();
+
+  void setIndex(int i);
+
   Fragment g0();
 
   Fragment g1();

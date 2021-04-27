@@ -1,13 +1,49 @@
 package sjtu.ipads.wtune.sqlparser.ast;
 
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.constants.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.ARRAY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.CASE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.CAST;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLLATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COMPARISON_MOD;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.CONVERT_USING;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.DATETIME_OVERLAP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.DEFAULT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.FUNC_CALL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.GROUPING_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.INDIRECTION;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.INDIRECTION_COMP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.INTERVAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.MATCH;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.SYMBOL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TERNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TYPE_COERCION;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.VALUES;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.VARIABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WHEN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 
 import java.util.List;
-
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.ast.constants.IntervalUnit;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sqlparser.ast.constants.MatchOption;
+import sjtu.ipads.wtune.sqlparser.ast.constants.SubqueryOption;
+import sjtu.ipads.wtune.sqlparser.ast.constants.TernaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.VariableScope;
 
 public interface ExprFields {
   // Variable
@@ -97,6 +133,7 @@ public interface ExprFields {
   FieldKey<ASTNode> INDIRECTION_COMP_END = INDIRECTION_COMP.nodeAttr("end");
   // ParamMarker
   FieldKey<Integer> PARAM_MARKER_NUMBER = PARAM_MARKER.attr("number", Integer.class);
+  FieldKey<Boolean> PARAM_MARKER_FORCE_QUESTION = PARAM_MARKER.boolAttr("forceQuestion");
   // ComparisonMod
   FieldKey<SubqueryOption> COMPARISON_MOD_OPTION =
       COMPARISON_MOD.attr("option", SubqueryOption.class);

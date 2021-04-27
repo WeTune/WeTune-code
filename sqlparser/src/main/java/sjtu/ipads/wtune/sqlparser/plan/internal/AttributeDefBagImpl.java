@@ -47,6 +47,12 @@ public class AttributeDefBagImpl extends AbstractList<AttributeDef> implements A
     qualification = simpleName(qualification);
     name = simpleName(name);
 
+    for (int i = 0; i < attrs.size(); i++) {
+      final AttributeDef attr = attrs.get(i);
+      if ((qualification == null || qualification.equals(attr.qualification()))
+          && name.equals(attr.name())) return i;
+    }
+
     for (int i = 0; i < attrs.size(); i++)
       if (attrs.get(i).referencesTo(qualification, name)) return i;
 

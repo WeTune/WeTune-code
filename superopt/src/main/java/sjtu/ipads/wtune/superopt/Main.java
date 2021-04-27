@@ -1,7 +1,9 @@
 package sjtu.ipads.wtune.superopt;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.optimize;
+import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.optimizeWithTrace;
 import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.pickMinCost;
 
 import java.io.ByteArrayInputStream;
@@ -9,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -42,8 +45,21 @@ public class Main {
       ProofRunner.build(args).run();
 
     } else {
-      //            test0();
-      test1();
+      //      for (App app : App.all()) Workflow.inferForeignKeys(app.name());
+      //      getOptimizedTrace(Statement.findOne("solidus", 560), loadBank());
+      //      test0();
+      //      test1();
+      //      test2();
+      final int[] targets = {
+        4, 5, 6, 402, 403, 406, 407, 511, 680, 681, 849, 850, 941, 945, 946, 947, 948, 949, 950,
+        951, 952, 953
+      };
+      final SubstitutionBank bank = loadBank();
+      for (Substitution substitution : bank) {
+        if (Arrays.binarySearch(targets, substitution.index()) >= 0) {
+          System.out.println(substitution.index() + ";" + substitution.constraints().size());
+        }
+      }
     }
   }
 
@@ -77,15 +93,18 @@ public class Main {
     }
   }
 
-  private static void test0() throws IOException {
+  private static SubstitutionBank loadBank() throws IOException {
     final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
-    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
+    return SubstitutionBank.make().importFrom(lines, false);
+  }
 
+  private static void test0() throws IOException {
+    final SubstitutionBank bank = loadBank();
     final String sql =
         "SELECT COUNT(`product0_`.`product_id`) AS `col_0_0_` FROM `product` AS `product0_` INNER JOIN `product_category` AS `categories2_` ON `product0_`.`product_id` = `categories2_`.`product_id` INNER JOIN `product_description` AS `descriptio1_` ON `product0_`.`product_id` = `descriptio1_`.`product_id` INNER JOIN `category` AS `category3_` ON `categories2_`.`category_id` = `category3_`.`category_id` WHERE `category3_`.`category_id` IN (?) AND `descriptio1_`.`language_id` = 1 AND `product0_`.`manufacturer_id` = 1 AND `product0_`.`available` = 1 AND `product0_`.`date_available` <= '2019-10-21 21:17:32.7' AND `product0_`.`merchant_id` = 1";
 
     //        final Statement stmt = Statement.findOne("diaspora", 460);
-    final Statement stmt = Statement.findOne("gitlab", 794);
+    final Statement stmt = Statement.findOne("solidus", 560);
 
     final ASTNode ast = stmt.parsed();
     //    final ASTNode ast = ASTParser.mysql().parse(sql);
@@ -112,9 +131,7 @@ public class Main {
   private static PrintWriter out, err;
 
   private static void test1() throws IOException {
-    final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
-    final SubstitutionBank bank = SubstitutionBank.make().importFrom(lines, false);
-
+    final SubstitutionBank bank = loadBank();
     out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "optimizations")));
     err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
 
@@ -147,6 +164,35 @@ public class Main {
         ex.printStackTrace(err);
         err.flush();
       }
+    }
+  }
+
+  private static void test2() throws IOException {
+    final SubstitutionBank bank = loadBank();
+    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "traces")));
+    err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
+
+    App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
+    //    getOptimizedTrace(Statement.findOne("discourse", 2596), bank);
+
+    final List<Statement> targets = listMap(Statement::original, Statement.findAllRewritten());
+    targets.parallelStream().map(Statement::original).forEach(it -> getOptimizedTrace(it, bank));
+  }
+
+  private static void getOptimizedTrace(Statement stmt, SubstitutionBank bank) {
+    System.out.println(stmt);
+
+    final var optResult = optimizeWithTrace(stmt, bank);
+    final var costResult = pickMinCost(stmt.parsed(), optResult.keySet(), stmt.app().dbProps());
+
+    if (costResult == null) return;
+
+    final List<Substitution> trace = optResult.get(costResult.getLeft());
+
+    synchronized (out) {
+      for (Substitution substitution : trace)
+        out.printf("%s;%d;%d\n", stmt.appName(), stmt.stmtId(), substitution.index());
+      out.flush();
     }
   }
 }

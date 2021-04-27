@@ -2,10 +2,13 @@ package sjtu.ipads.wtune.testbed.population;
 
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.NotImplementedException;
 import org.postgresql.util.PGobject;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 public class NetConverter implements Converter {
   private final boolean isArray;
@@ -17,21 +20,27 @@ public class NetConverter implements Converter {
   }
 
   @Override
-  public void convert(int seed, Actuator actuator) {
+  public void convert(int seed, BatchActuator actuator) {
     final int _0 = seed & 255;
     final int _1 = (seed >>> 8) & 255;
     final int _2 = (seed >>> 16) & 255;
+    final int _3 = (seed >>> 24) & 255;
 
     try {
       final PGobject obj = new PGobject();
       obj.setType("inet");
-      obj.setValue("127.%d.%d.%d".formatted(_2, _1, _0));
+      obj.setValue("%d.%d.%d.%d".formatted(_3, _2, _1, _0));
 
-      if (isArray) actuator.appendArray("INET", new Object[] {obj});
+      if (isArray) actuator.appendArray(new Object[] {obj}, "INET");
       else actuator.appendObject(obj, Types.OTHER);
 
     } catch (SQLException ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  @Override
+  public IntStream locate(Object value) {
+    throw new NotImplementedException();
   }
 }

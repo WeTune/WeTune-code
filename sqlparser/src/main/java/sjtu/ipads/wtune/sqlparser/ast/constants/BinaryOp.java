@@ -69,7 +69,7 @@ public enum BinaryOp {
     return null;
   }
 
-  public BinaryOp standard() {
+  public BinaryOp toStandardOp() {
     return standard == null ? this : standard;
   }
 

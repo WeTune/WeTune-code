@@ -1,16 +1,26 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-
-import java.util.Arrays;
-
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ADD;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_BOOL;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_BOOL_NOT;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_NULL_NOT;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DECREASE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIVIDE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INCREASE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.LIKE;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.NEQ;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.REGEX;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.SUBTRACT;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TIMES;
+
+import java.util.Arrays;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 
 public class ParamModifier {
   public enum Type {
@@ -72,7 +82,7 @@ public class ParamModifier {
   private static ParamModifier fromIs(ASTNode param, boolean not) {
     if (LITERAL.isInstance(param)) {
       if (param.get(LITERAL_TYPE) == LiteralType.NULL)
-        return not ? modifier(CHECK_NULL_NOT) : modifier(CHECK_NULL);
+        return not ? modifier(CHECK_NULL_NOT) : modifier(Type.CHECK_NULL);
       else if (param.get(LITERAL_TYPE) == LiteralType.BOOL)
         return not ? modifier(CHECK_BOOL_NOT) : modifier(CHECK_BOOL);
       else return assertFalse();
@@ -80,7 +90,7 @@ public class ParamModifier {
     } else return assertFalse();
   }
 
-  private static final ParamModifier KEEP_STILL = modifier(KEEP);
+  private static final ParamModifier KEEP_STILL = modifier(Type.KEEP);
 
   public static ParamModifier fromBinaryOp(
       BinaryOp op, ASTNode target, boolean inverse, boolean not) {
@@ -100,7 +110,7 @@ public class ParamModifier {
 
     if (op == BinaryOp.IS) return fromIs(target, not);
 
-    if (op.standard() == BinaryOp.REGEXP) return not ? modifier(NEQ) : modifier(REGEX);
+    if (op.toStandardOp() == BinaryOp.REGEXP) return not ? modifier(NEQ) : modifier(REGEX);
 
     if (op == BinaryOp.PLUS) return modifier(SUBTRACT);
     if (op == BinaryOp.MINUS) return modifier(ADD);
