@@ -74,7 +74,7 @@ public class ActionTest {
             "test", "select * from a where a.i or (a.j is false and (a.j = a.i) is false)", null);
     Mutation.normalizeBool(stmt.parsed());
     assertEquals(
-        "SELECT * FROM `a` WHERE `a`.`i` IS TRUE OR NOT `a`.`j` IS TRUE AND NOT `a`.`j` = `a`.`i`",
+        "SELECT * FROM `a` WHERE `a`.`i` = TRUE OR NOT `a`.`j` = TRUE AND NOT `a`.`j` = `a`.`i`",
         stmt.parsed().toString());
   }
 

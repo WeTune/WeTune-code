@@ -8930,7 +8930,8 @@ CREATE INDEX index_environments_on_name_varchar_pattern_ops ON public.environmen
 
 CREATE UNIQUE INDEX index_environments_on_project_id_and_name ON public.environments USING btree (project_id, name);
 
-CREATE UNIQUE INDEX index_environments_on_project_id_and_slug ON public.environments USING btree (project_id, slug);
+-- CREATE UNIQUE INDEX index_environments_on_project_id_and_slug ON public.environments USING btree (project_id, slug);
+CREATE INDEX index_environments_on_project_id_and_slug ON public.environments USING btree (project_id, slug);
 
 CREATE INDEX index_environments_on_project_id_state_environment_type ON public.environments USING btree (project_id, state, environment_type);
 

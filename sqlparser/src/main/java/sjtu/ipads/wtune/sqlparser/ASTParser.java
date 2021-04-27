@@ -67,7 +67,10 @@ public interface ASTParser {
           if (!escape) inQuote = !inQuote;
           break;
         case ';':
-          if (!inQuote) list.add(str.substring(start, i));
+          if (!inQuote) {
+            final String sql = str.substring(start);
+            if (!sql.startsWith("--")) list.add(sql);
+          }
           inSql = false;
           break;
       }

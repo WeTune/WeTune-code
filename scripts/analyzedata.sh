@@ -56,39 +56,22 @@ findDataDir() {
   dataDir=${dataDir:?"$path not found"}
 }
 
-doImportData() {
+doAnalyzeData() {
   cd "$dataDir" || exit
-  echo "gonna import $(find . -maxdepth 1 -name '*.csv' | wc -l) tables in $dataDir to $dbName@$host:$port"
 
-  if [ "$dbType" = "$MYSQL" ]; then
-    mysql -u"$username" -p"$password" -h"$host" -P"$port" -e 'SET GLOBAL FOREIGN_KEY_CHECKS=0' 2>/dev/null
-    for fileName in ./*.csv; do
-      fileName=$(basename -- "$fileName")
-      local tableName="${fileName%.*}"
-      echo "importing $fileName"
-      mysqlimport --local --fields-terminated-by=';' -d -u"$username" -p"$password" -h"$host" -P"$port" "$dbName" "${fileName}.csv" 2>/dev/null
-    done
-    mysql -u"$username" -p"$password" -h"$host" -P"$port" -e 'SET GLOBAL FOREIGN_KEY_CHECKS=1' 2>/dev/null
-  else
-    for fileName in ./*.csv; do
-      fileName=$(basename -- "$fileName")
-      local tableName="${fileName%.*}"
+  for fileName in ./*.csv; do
+    fileName=$(basename -- "$fileName")
+    local tableName="${fileName%.*}"
+    if [ "$dbType" = "$MYSQL" ]; then
+      mysql -u"$username" -p"$password" -h"$host" -P"$port" -D"$dbName" -N -B -e "analyze table \`${tableName}\`" 2>/dev/null | cut -f1,4
+    else
       PGPASSWORD="$password" psql -U "$username" -h "$host" -p "$port" -d "$dbName" \
-        -c "truncate table ${tableName} cascade"
-    done
-    for fileName in ./*.csv; do
-      fileName=$(basename -- "$fileName")
-      local tableName="${fileName%.*}"
-      echo "importing ${tableName}"
-      PGPASSWORD="$password" psql -U "$username" -h "$host" -p "$port" -d "$dbName" <<EOF
-      set session_replication_role='replica';
-      \copy ${tableName} from ${fileName} delimiter ';' csv
-EOF
-    done
-  fi
+        -c "analyze \"${tableName}\"" -t >/dev/null && printf "%s\tOK\n" "${tableName}"
+    fi
+  done
 }
 
 dbType "$1" "$2"
 getConnProp "$3" "$4" "$5" "$6"
 findDataDir
-doImportData
+doAnalyzeData

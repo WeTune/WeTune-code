@@ -63,10 +63,10 @@ doCheckData() {
     fileName=$(basename -- "$fileName")
     local tableName="${fileName%.*}"
     if [ "$dbType" = "$MYSQL" ]; then
-      echo "$tableName" "$(mysql -u"$username" -p"$password" -h"$host" -P"$port" -D"$dbName" -N -B -e "SELECT COUNT(1) FROM ${tableName}" 2>/dev/null)"
+      echo "$tableName" "$(mysql -u"$username" -p"$password" -h"$host" -P"$port" -D"$dbName" -N -B -e "SELECT COUNT(1) FROM \`${tableName}\`" 2>/dev/null)"
     else
       echo "${tableName}" "$(PGPASSWORD="$password" psql -U "$username" -h "$host" -p "$port" -d "$dbName" \
-        -c "SELECT COUNT(1) FROM ${tableName}" -t)"
+        -c "SELECT COUNT(1) FROM \"${tableName}\"" -t)"
     fi
   done
 }

@@ -30,6 +30,7 @@ public class StatementImpl implements Statement {
   }
 
   public static Statement build(String appName, int stmtId, String rawSql, String stackTrace) {
+    if ("broadleaf_tmp".equals(appName)) appName = "broadleaf";
     return new StatementImpl(appName, stmtId, rawSql, stackTrace);
   }
 

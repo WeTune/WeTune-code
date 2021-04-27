@@ -21,7 +21,6 @@ public class AllStatementsTest {
   @Test
   @DisplayName("[Stmt] parsing all schema")
   void testSchema() {
-    Statement.findAll().forEach(Statement::app);
     for (App app : App.all()) app.schema("base");
   }
 

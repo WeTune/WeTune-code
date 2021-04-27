@@ -133,10 +133,10 @@ class ExtractParam implements ASTVistor {
     final BoolExpr boolExpr = node.get(BOOL_EXPR);
     if (boolExpr == null || !boolExpr.isPrimitive()) return true;
 
-    final List<ParamDesc> paramDesc = ResolveParam.resolve(node);
-    if (paramDesc == null) return true;
+    final List<ParamDesc> paramDescs = ResolveParam.resolve(node);
+    if (paramDescs.contains(null)) return false;
 
-    for (ParamDesc desc : paramDesc) {
+    for (ParamDesc desc : paramDescs) {
       if (!desc.isCheckNull()) desc.setIndex(nextIndex++);
       params.put(desc.node(), desc);
     }

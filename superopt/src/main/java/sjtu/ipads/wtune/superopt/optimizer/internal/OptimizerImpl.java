@@ -16,7 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.toStringOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.validateColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.findInvalidColumnRefs;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.constrainedInterpretations;
 import static sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations.derivedInterpretations;
 import static sjtu.ipads.wtune.superopt.optimizer.support.DistinctReducer.reduceDistinct;
@@ -91,7 +91,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     final List<ASTNode> nodes = new ArrayList<>(optimizedPlans.size());
     for (PlanNode optimizedPlan : optimizedPlans) {
       final ASTNode ast = manage(toAST(optimizedPlan), schema);
-      if (validateColumnRefs(ast)) nodes.add(ast);
+      if (findInvalidColumnRefs(ast) == null) nodes.add(ast);
     }
 
     return nodes;

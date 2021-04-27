@@ -4,6 +4,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
@@ -12,6 +13,7 @@ import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -40,6 +42,7 @@ class JoinGraphBuilder implements ASTVistor {
   public void leaveBinary(ASTNode binary) {
     final BoolExpr boolExpr = binary.get(BOOL_EXPR);
     if (boolExpr == null || !boolExpr.isPrimitive()) return;
+    if (binary.parent().get(UNARY_OP) == UnaryOp.NOT) return;
 
     final Attribute leftAttr, rightAttr;
     if (binary.get(BINARY_OP) == BinaryOp.IN_SUBQUERY) {

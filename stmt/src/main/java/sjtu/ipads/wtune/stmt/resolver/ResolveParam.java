@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
@@ -79,7 +80,7 @@ class ResolveParam {
       throw new IllegalArgumentException("only accept primitive predicate");
 
     final List<ASTNode> params = collectParams(expr);
-    if (params.isEmpty()) return null;
+    if (params.isEmpty()) return emptyList();
 
     return listMap(it -> resolve0(expr, it), params);
   }
@@ -166,6 +167,12 @@ class ResolveParam {
           if (cols.size() > 1) return false;
           stack.offerFirst(modifier(MATCHING));
           return induce(parent.get(MATCH_COLS).get(0));
+        }
+
+      case FUNC_CALL:
+        {
+          final String funcName = parent.get(FUNC_CALL_NAME).get(NAME_2_1).toLowerCase();
+          if ("to_days".equals(funcName)) return true;
         }
 
       default:
