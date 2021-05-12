@@ -5,7 +5,7 @@ public interface RandGen {
 
   int reverse(int value);
 
-  int max();
+  int range();
 
-  int min();
+  boolean isPrePopulated();
 }

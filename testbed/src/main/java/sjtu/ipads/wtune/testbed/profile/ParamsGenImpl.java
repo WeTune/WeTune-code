@@ -35,6 +35,7 @@ public class ParamsGenImpl implements ParamsGen {
     this.generators = generators;
     this.joinGraph = params.joinGraph();
     this.populationConfig = generators.config();
+    this.populationConfig.setNeedPrePopulation(true);
   }
 
   @Override
@@ -112,7 +113,7 @@ public class ParamsGenImpl implements ParamsGen {
       final Generator leftGen = generators.bind(Element.ofColumn(leftCol));
       final Generator rightGen = generators.bind(Element.ofColumn(rightCol));
 
-      final int rightUnits = populationConfig.getUnitCount(joinKey.rightTable().table().name());
+      final int rightUnits = populationConfig.unitCountOf(joinKey.rightTable().table().name());
       final Object target = leftGen.generate(seed);
       final int rightSeed =
           rightGen.locate(target).filter(it -> it >= 0 && it < rightUnits).findFirst().orElse(-1);

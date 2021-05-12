@@ -21,6 +21,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Element;
 
 class SQLGenerators implements Generators {
@@ -54,7 +55,7 @@ class SQLGenerators implements Generators {
     if (referred == null) gen = Converter.makeConverter(column);
     else {
       gen = makeGenerator(Element.ofColumn(referred));
-      gen = new ForeignKeyModifier(gen, config.getUnitCount(referred.tableName()));
+      gen = new ForeignKeyModifier(gen, config.unitCountOf(referred.tableName()));
     }
 
     final String tableName = column.tableName();
@@ -62,12 +63,16 @@ class SQLGenerators implements Generators {
 
     if (uk == null) {
       // non-unique column, just use a random gen
-      gen = new RandomModifier(column, config.getRandomGen(tableName, colName), gen);
+      gen = new RandomModifier(column, config.randomGenOf(tableName, colName), gen);
 
     } else {
       final UniqueKeyDist dist = new UniqueKeyDist(uk.columns());
       final int colIdx = uk.columns().indexOf(column);
       gen = dist.generatorOf(colIdx, gen);
+    }
+
+    if (config.needPrePopulation() && !gen.isPrePopulated()) {
+      prePopulate(gen, config.unitCountOf(element.collectionName()));
     }
 
     return gen;
@@ -93,6 +98,12 @@ class SQLGenerators implements Generators {
     return shortestUk;
   }
 
+  private void prePopulate(Generator gen, int count) {
+    final BatchActuator noOp = () -> 0;
+
+    for (int i = 0; i < count; i++) gen.generate(i, noOp);
+  }
+
   private class UniqueKeyDist {
     private final int unitCount;
     private final List<? extends Column> columns;
@@ -103,7 +114,7 @@ class SQLGenerators implements Generators {
     private UniqueKeyDist(List<? extends Column> columns) {
       assert !columns.isEmpty();
 
-      this.unitCount = config.getUnitCount(columns.get(0).tableName());
+      this.unitCount = config.unitCountOf(columns.get(0).tableName());
       this.columns = columns;
       this.digitsDist = new int[columns.size()];
       this.totalDigits = distributeDigits();
@@ -166,7 +177,7 @@ class SQLGenerators implements Generators {
         // will
         // ensure the uniqueness.
         final Column col = columns.get(index);
-        return new RandomModifier(col, config.getRandomGen(col.tableName(), col.name()), nextStep);
+        return new RandomModifier(col, config.randomGenOf(col.tableName(), col.name()), nextStep);
       }
     }
 
@@ -179,7 +190,7 @@ class SQLGenerators implements Generators {
 
     private int getRequiredDigits(Column column, int unitCount) {
       final Column referenced = getReferencedColumn(column);
-      if (referenced != null) return base10(config.getUnitCount(referenced.tableName()));
+      if (referenced != null) return base10(config.unitCountOf(referenced.tableName()));
 
       if (column.isFlag(Flag.IS_BOOLEAN)) return 1;
       if (column.isFlag(Flag.IS_ENUM)) return 1;

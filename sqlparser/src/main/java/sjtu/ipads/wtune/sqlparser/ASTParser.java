@@ -43,11 +43,19 @@ public interface ASTParser {
 
     boolean inSql = false;
     boolean inQuote = false;
+    boolean inComment = false;
     boolean escape = false;
+    boolean hyphen = false;
     int start = 0;
 
     for (int i = 0; i < str.length(); i++) {
       final char c = str.charAt(i);
+
+      if (inComment) {
+        assert !inSql;
+        if (c == '\n' || c == '\r') inComment = false;
+        continue;
+      }
 
       if (!inSql) {
         if (Character.isSpaceChar(c) || c == '\n' || c == '\r') continue;
@@ -57,30 +65,40 @@ public interface ASTParser {
         }
       }
 
+      if (c != '-') hyphen = false;
+
       switch (c) {
         case '\\':
           escape = true;
           continue;
+
         case '`':
         case '"':
         case '\'':
           if (!escape) inQuote = !inQuote;
           break;
-        case ';':
+
+        case '-':
           if (!inQuote) {
-            final String sql = str.substring(start);
-            if (!sql.startsWith("--")) list.add(sql);
+            if (!hyphen) hyphen = true;
+            else {
+              if (start < i - 1) list.add(str.substring(start, i - 1));
+              inComment = true;
+              inSql = false;
+              hyphen = false;
+            }
           }
+          continue;
+
+        case ';':
+          if (!inQuote) list.add(str.substring(start, i));
           inSql = false;
           break;
       }
       escape = false;
     }
 
-    if (inSql) {
-      final String sql = str.substring(start);
-      if (!sql.startsWith("--")) list.add(sql);
-    }
+    if (inSql) list.add(str.substring(start));
 
     return list;
   }

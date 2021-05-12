@@ -39,7 +39,8 @@ public class UniquenessInference extends TypeBasedAlgorithm<InferenceStage> {
   public static boolean inferUniqueness(PlanNode node) {
     final InferenceStage stage = new UniquenessInference().dispatch(node);
     final Set<AttributeDef> next = stage.next();
-    return next != null && !stage.isDrained();
+    //    return next != null && !stage.isDrained();
+    return next != null;
   }
 
   @Override
@@ -415,7 +416,7 @@ class AggStage extends InferenceStage {
       isDrained = true;
       return SINGLETON_RESULT_SET;
     }
-    return null;
+    return newIdentitySet(node.definedAttributes());
   }
 }
 

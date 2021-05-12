@@ -112,6 +112,7 @@ public class SearchCtxImpl implements SearchCtx {
     stat.timeTotal += t1 - t0;
 
     //    System.out.println(stat);
+    System.out.println(stat.numProveCall);
     return survivors;
   }
 

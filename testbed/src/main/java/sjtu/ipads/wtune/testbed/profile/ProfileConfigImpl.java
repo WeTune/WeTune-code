@@ -1,13 +1,23 @@
 package sjtu.ipads.wtune.testbed.profile;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.function.Function;
+import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.testbed.population.Generators;
 
 class ProfileConfigImpl implements ProfileConfig {
   private int warmupCycles, profileCycles;
   private int randomSeed;
+  private boolean dryRun;
   private Generators generators;
   private ExecutorFactory factory;
+  private Function<Statement, String> paramSaveFile;
 
   ProfileConfigImpl(Generators generators) {
     this.warmupCycles = 100;
@@ -33,6 +43,11 @@ class ProfileConfigImpl implements ProfileConfig {
   }
 
   @Override
+  public boolean dryRun() {
+    return dryRun;
+  }
+
+  @Override
   public Generators generators() {
     return generators;
   }
@@ -40,6 +55,35 @@ class ProfileConfigImpl implements ProfileConfig {
   @Override
   public ExecutorFactory executorFactory() {
     return factory;
+  }
+
+  @Override
+  public ObjectInputStream saveParamIn(Statement stmt) {
+    if (paramSaveFile == null) return null;
+
+    final String fileName = paramSaveFile.apply(stmt);
+    try {
+      final Path path = Paths.get(fileName);
+
+      if (Files.exists(path)) return new ObjectInputStream(Files.newInputStream(path));
+      else return null;
+
+    } catch (IOException ex) {
+      return null;
+    }
+  }
+
+  @Override
+  public ObjectOutputStream savedParamOut(Statement stmt) {
+    if (paramSaveFile == null) return null;
+    final String fileName = paramSaveFile.apply(stmt);
+    try {
+      final Path path = Paths.get(fileName);
+      Files.createDirectories(path.getParent());
+      return new ObjectOutputStream(Files.newOutputStream(path));
+    } catch (IOException ex) {
+      return null;
+    }
   }
 
   @Override
@@ -58,6 +102,11 @@ class ProfileConfigImpl implements ProfileConfig {
   }
 
   @Override
+  public void setDryRun(boolean dryRun) {
+    this.dryRun = dryRun;
+  }
+
+  @Override
   public void setGenerators(Generators generators) {
     this.generators = generators;
   }
@@ -66,5 +115,10 @@ class ProfileConfigImpl implements ProfileConfig {
   public void setDbProperties(Properties properties) {
     if (properties == null) this.factory = ignored -> new NoOpExecutor();
     else this.factory = new ExecutorFactoryImpl(properties);
+  }
+
+  @Override
+  public void setParamSaveFile(Function<Statement, String> mapFunc) {
+    this.paramSaveFile = mapFunc;
   }
 }

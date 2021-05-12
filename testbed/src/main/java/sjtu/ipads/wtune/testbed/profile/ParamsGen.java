@@ -5,6 +5,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
 
 import com.google.common.collect.Iterables;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,12 @@ import sjtu.ipads.wtune.testbed.population.Generators;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 
 public interface ParamsGen {
-  Object NOT_NULL = new Object();
-  Object IS_NULL = new Object();
+  Object NOT_NULL = new NotNull();
+  Object IS_NULL = new IsNull();
+
+  class NotNull implements Serializable {}
+
+  class IsNull implements Serializable {}
 
   Params params();
 
@@ -152,11 +157,11 @@ public interface ParamsGen {
   private static int seedLimitOf(ParamsGen gen) {
     final PopulationConfig config = gen.generators().config();
     final List<Relation> pivots = gen.pivotRelations();
-    if (pivots.size() == 1) return config.getUnitCount(pivots.get(0).table().name());
+    if (pivots.size() == 1) return config.unitCountOf(pivots.get(0).table().name());
     else
       return pivots.stream()
           .map(func(Relation::table).andThen(Table::name))
-          .mapToInt(config::getUnitCount)
+          .mapToInt(config::unitCountOf)
           .min()
           .orElseThrow();
   }

@@ -1,18 +1,26 @@
 package sjtu.ipads.wtune.symsolver.logic.impl.z3;
 
-import com.microsoft.z3.*;
+import static sjtu.ipads.wtune.common.utils.Commons.repeat;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+
+import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.Context;
+import com.microsoft.z3.Expr;
+import com.microsoft.z3.FuncDecl;
+import com.microsoft.z3.Global;
+import com.microsoft.z3.Sort;
+import java.util.HashMap;
+import java.util.Map;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.symsolver.core.PickSym;
 import sjtu.ipads.wtune.symsolver.core.PredicateSym;
 import sjtu.ipads.wtune.symsolver.core.Sym;
 import sjtu.ipads.wtune.symsolver.core.TableSym;
-import sjtu.ipads.wtune.symsolver.logic.*;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static sjtu.ipads.wtune.common.utils.Commons.repeat;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import sjtu.ipads.wtune.symsolver.logic.Func;
+import sjtu.ipads.wtune.symsolver.logic.LogicCtx;
+import sjtu.ipads.wtune.symsolver.logic.Proposition;
+import sjtu.ipads.wtune.symsolver.logic.SmtSolver;
+import sjtu.ipads.wtune.symsolver.logic.Value;
 
 public class Z3LogicCtx implements LogicCtx {
   static {

@@ -12,7 +12,7 @@ class UniqueKeyModifier implements Modifier {
   private final int localSeed;
   private final int totalDigits;
   private final int lowDigit, highDigit;
-  private final int mod, div;
+  private final int mod, div, max;
 
   private final Generator nextStep;
 
@@ -28,6 +28,7 @@ class UniqueKeyModifier implements Modifier {
     this.highDigit = endDigit;
     this.mod = pow10(endDigit);
     this.div = pow10(startDigit);
+    this.max = pow10(endDigit - startDigit);
     this.nextStep = nextStep;
   }
 
@@ -41,8 +42,8 @@ class UniqueKeyModifier implements Modifier {
 
   @Override
   public IntStream locate(Object value) {
-    final int mod = this.mod;
-    return nextStep.locate(value).filter(it -> it >= 0 && it < mod).flatMap(this::locate0);
+    final int max = this.max;
+    return nextStep.locate(value).filter(it -> it >= 0 && it < max).flatMap(this::locate0);
   }
 
   private IntStream locate0(int value) {
@@ -58,5 +59,10 @@ class UniqueKeyModifier implements Modifier {
             i ->
                 range(0, highRoom)
                     .map(j -> deRandUniqueIntDec(localSeed, mod * j + mid + i, totalDigits)));
+  }
+
+  @Override
+  public boolean isPrePopulated() {
+    return nextStep.isPrePopulated();
   }
 }

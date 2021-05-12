@@ -26,7 +26,7 @@ public class Operators {
         create(OperatorType.Proj),
         //        Sort.create(),
         create(OperatorType.SubqueryFilter)
-        //        Union.create()
+        , create(OperatorType.Union)
         );
   }
 

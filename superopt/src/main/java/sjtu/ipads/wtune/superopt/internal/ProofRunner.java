@@ -3,8 +3,6 @@ package sjtu.ipads.wtune.superopt.internal;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,13 +26,15 @@ public class ProofRunner {
     this.estimatedTotal = estimatedTotal;
     this.i = new AtomicInteger(0);
 
-    this.out =
-        new PrintWriter(
-            Files.newOutputStream(Paths.get(System.getProperty("wetune.superopt.outFile"))));
-
-    this.err =
-        new PrintWriter(
-            Files.newOutputStream(Paths.get(System.getProperty("wetune.superopt.errFile"))));
+    this.out = new PrintWriter(System.out);
+    this.err = new PrintWriter(System.err);
+    //    this.out =
+    //        new PrintWriter(
+    //            Files.newOutputStream(Paths.get(System.getProperty("wetune.superopt.outFile"))));
+    //
+    //    this.err =
+    //        new PrintWriter(
+    //            Files.newOutputStream(Paths.get(System.getProperty("wetune.superopt.errFile"))));
   }
 
   public static ProofRunner build(String[] args) {

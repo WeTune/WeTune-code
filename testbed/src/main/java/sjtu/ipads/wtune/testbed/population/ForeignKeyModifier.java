@@ -27,4 +27,9 @@ class ForeignKeyModifier implements Modifier {
         .filter(it -> it >= 0 && it < delegationRowCount)
         .flatMap(it -> iterate(it, x -> x > 0, x -> x + delegationRowCount));
   }
+
+  @Override
+  public boolean isPrePopulated() {
+    return delegation.isPrePopulated();
+  }
 }

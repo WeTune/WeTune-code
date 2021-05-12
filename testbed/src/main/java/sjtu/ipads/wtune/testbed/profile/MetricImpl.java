@@ -21,6 +21,7 @@ public class MetricImpl implements Metric {
   @Override
   public long atPercentile(double percentile) {
     if (percentile < 0.0 || percentile > 1.0) throw new IllegalArgumentException();
+    if (records.isEmpty()) return -1L;
     if (!sorted) records.sort();
     return records.get((int) (percentile * records.size()));
   }

@@ -17,6 +17,7 @@ import sjtu.ipads.wtune.superopt.util.rules.simplify.NonLeftDeepJoin;
 import sjtu.ipads.wtune.superopt.util.rules.support.AllJoin;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedJoin;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedSubqueryFilter;
+import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedUnion;
 
 public class Enumerator {
   public static final int MAX_FRAGMENT_SIZE = 4;
@@ -44,15 +45,17 @@ public class Enumerator {
   }
 
   private static boolean prune(Fragment fragment) {
-    return //        !Rule.match(MalformedDistinct.class, graph) &&
-    !Rule.match(MalformedSubqueryFilter.class, fragment)
+    return true
+        && //        !Rule.match(MalformedDistinct.class, graph) &&
+        !Rule.match(MalformedSubqueryFilter.class, fragment)
         //        && !Rule.match(MalformedSort.class, graph)
-        && !Rule.match(MalformedJoin.class, fragment)
+//        && !Rule.match(MalformedJoin.class, fragment)
         //        && !Rule.match(MalformedLimit.class, graph)
-        //        && !Rule.match(MalformedUnion.class, graph)
+        && !Rule.match(MalformedUnion.class, fragment)
         //        && !Rule.match(DoubleProj.class, graph)
         && !Rule.match(NonLeftDeepJoin.class, fragment)
         //                && !Rule.match(AllUnion.class, graph)
-        && !Rule.match(AllJoin.class, fragment);
+        && !Rule.match(AllJoin.class, fragment)
+        && true;
   }
 }

@@ -10,9 +10,9 @@ public interface ParamDesc {
 
   ASTNode node();
 
-  ASTNode expr();
-
   boolean isCheckNull();
+
+  boolean isElement();
 
   Deque<ParamModifier> modifiers();
 }

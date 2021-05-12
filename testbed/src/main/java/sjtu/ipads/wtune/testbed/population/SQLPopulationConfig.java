@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
 import sjtu.ipads.wtune.testbed.util.RandGen;
 import sjtu.ipads.wtune.testbed.util.RandomHelper;
@@ -16,26 +17,31 @@ import sjtu.ipads.wtune.testbed.util.RandomHelper;
 public class SQLPopulationConfig implements PopulationConfig {
   private static final int DEFAULT_ROW_COUNT = 10000;
   private static final int DEFAULT_BATCH_SIZE = 500;
-  private static final RandGen DEFAULT_RAND_GEN = RandomHelper.makeUniformRand();
   private static final BatchActuatorFactory DEFAULT_ACTUATOR =
       ignored -> new EchoActuator(new PrintWriter(System.out));
 
   private int defaultRowCount = DEFAULT_ROW_COUNT;
   private final TObjectIntMap<String> rowCountMap = new TObjectIntHashMap<>();
 
-  private RandGen defaultRandGen = DEFAULT_RAND_GEN;
+  private Supplier<RandGen> defaultRandGen = RandomHelper::makeUniformRand;
   private final Map<String, RandGen> randGenMap = new HashMap<>();
 
   private BatchActuatorFactory actuatorFactory = DEFAULT_ACTUATOR;
   private Properties dbProperties;
-  private Function<String, PrintWriter> dumpWriterFactory = ignored -> new PrintWriter(System.out);
+  private Function<String, PrintWriter> dumpDestinations = ignored -> new PrintWriter(System.out);
 
   private int batchSize = DEFAULT_BATCH_SIZE;
   private boolean showProgressBar = true;
+  private boolean needPrePopulation = false;
 
   private static void checkRowCount(int rowCount) {
     if (!isPow10(rowCount))
       throw new IllegalArgumentException("row count should be either power of 10");
+  }
+
+  @Override
+  public int randomSeed() {
+    return RandomHelper.GLOBAL_SEED;
   }
 
   @Override
@@ -44,7 +50,7 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public int getUnitCount(String collectionName) {
+  public int unitCountOf(String collectionName) {
     if (rowCountMap.containsKey(collectionName)) return rowCountMap.get(collectionName);
     else return defaultRowCount;
   }
@@ -62,8 +68,10 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public RandGen getRandomGen(String collectionName, String elementName) {
-    return randGenMap.getOrDefault(collectionName + elementName, defaultRandGen);
+  public RandGen randomGenOf(String collectionName, String elementName) {
+    final RandGen customGen = randGenMap.get(collectionName + elementName);
+    if (customGen == null) return defaultRandGen.get();
+    else return customGen;
   }
 
   @Override
@@ -72,18 +80,28 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public void setDefaultRandGen(RandGen defaultRandGen) {
+  public void setDefaultRandGen(Supplier<RandGen> defaultRandGen) {
     this.defaultRandGen = defaultRandGen;
   }
 
   @Override
-  public BatchActuatorFactory getActuatorFactory() {
+  public BatchActuatorFactory actuatorFactory() {
     return actuatorFactory;
   }
 
   @Override
   public boolean showProgressBar() {
     return showProgressBar;
+  }
+
+  @Override
+  public boolean needPrePopulation() {
+    return needPrePopulation;
+  }
+
+  @Override
+  public void setNeedPrePopulation(boolean needPrePopulation) {
+    this.needPrePopulation = needPrePopulation;
   }
 
   @Override
@@ -98,19 +116,17 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public void setDryRun(boolean flag) {
-    if (flag)
-      if (dumpWriterFactory == null)
-        actuatorFactory = ignored -> new EchoActuator(new PrintWriter(System.out));
-      else
-        actuatorFactory = name -> new EchoActuator(new PrintWriter(dumpWriterFactory.apply(name)));
-    else actuatorFactory = new BatchActuatorFactoryImpl(dbProperties, batchSize);
+  public void setDump(Function<String, PrintWriter> factory) {
+    this.dumpDestinations = factory;
+    setDryRun(true);
   }
 
-  @Override
-  public void setDump(Function<String, PrintWriter> factory) {
-    this.dumpWriterFactory = factory;
-    setDryRun(true);
+  private void setDryRun(boolean flag) {
+    if (flag)
+      if (dumpDestinations == null) actuatorFactory = DEFAULT_ACTUATOR;
+      else
+        actuatorFactory = name -> new EchoActuator(new PrintWriter(dumpDestinations.apply(name)));
+    else actuatorFactory = new BatchActuatorFactoryImpl(dbProperties, batchSize);
   }
 
   @Override

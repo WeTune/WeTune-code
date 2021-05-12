@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -114,8 +115,8 @@ class ParamGen {
         if (modifierArgs.length > 0) {
           assert modifierArgs.length == 2;
           String str = (String) stack.pop();
-          if ((boolean) modifierArgs[0]) str = '%' + str;
-          if ((boolean) modifierArgs[1]) str = str + '%';
+          if ((boolean) modifierArgs[0]) str = '%' + str.substring(0, 1);
+          if ((boolean) modifierArgs[1]) str = str.substring(0, 1) + '%';
           stack.push(str);
         }
         return true;
@@ -142,7 +143,7 @@ class ParamGen {
           final Object top = stack.pop();
           assert top instanceof String;
           final String s = (String) top;
-          stack.push(((String) top).substring(1, Math.min(4, s.length())));
+          stack.push(((String) top).substring(0, Math.max(1, s.indexOf('-'))));
           return true;
         }
       case CHECK_NULL: // do nothing
@@ -161,9 +162,13 @@ class ParamGen {
           return true;
         }
 
+      case TUPLE_ELEMENT:
+      case ARRAY_ELEMENT:
+        final Object top = stack.pop(); // duplicate the element
+        stack.push(List.of(top, top));
+        return true;
+
       case CHECK_BOOL: // do nothing
-      case TUPLE_ELEMENT: // not longer used
-      case ARRAY_ELEMENT: // not longer used
       case MAKE_TUPLE: // not longer used
       case GEN_OFFSET: // not longer used
         return true;

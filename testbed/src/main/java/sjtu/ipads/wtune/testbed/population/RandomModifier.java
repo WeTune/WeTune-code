@@ -26,6 +26,16 @@ class RandomModifier implements Modifier {
   @Override
   public IntStream locate(Object value) {
     final int localSeed = this.localSeed;
-    return nextStep.locate(value).map(it -> gen.reverse(it) ^ localSeed);
+    final RandGen gen = this.gen;
+
+    return nextStep
+        .locate(value)
+        .filter(it -> it <= gen.range())
+        .map(it -> gen.reverse(it) ^ localSeed);
+  }
+
+  @Override
+  public boolean isPrePopulated() {
+    return gen.isPrePopulated();
   }
 }

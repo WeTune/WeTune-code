@@ -256,6 +256,32 @@ public interface Commons {
     return set;
   }
 
+  static String joining(String sep, Iterable<?> objs) {
+    return joining("", "", sep, "", "", objs);
+  }
+
+  static String joining(
+      String headOrPrefix, String sep, String tailOrSuffix, boolean asFixture, Iterable<?> objs) {
+    if (asFixture) return joining("", headOrPrefix, sep, tailOrSuffix, "", objs);
+    else return joining(headOrPrefix, "", sep, "", tailOrSuffix, objs);
+  }
+
+  static String joining(
+      String head, String prefix, String sep, String suffix, String tail, Iterable<?> objs) {
+    final StringBuilder builder = new StringBuilder();
+    builder.append(head);
+    boolean isFirst = true;
+    for (Object obj : objs) {
+      if (!isFirst) builder.append(sep);
+      isFirst = false;
+      builder.append(prefix);
+      builder.append(obj);
+      builder.append(suffix);
+    }
+    builder.append(tail);
+    return builder.toString();
+  }
+
   static TIntList newIntList(int expectedSize) {
     return new TIntArrayList(expectedSize);
   }

@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogManager;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -19,6 +18,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
+import sjtu.ipads.wtune.superopt.internal.Enumerator;
 import sjtu.ipads.wtune.superopt.internal.ProofRunner;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
@@ -40,28 +40,7 @@ public class Main {
     }
   }
 
-  public static void main(String[] args) throws IOException {
-    if (args.length >= 1 && "run".equals(args[0])) {
-      ProofRunner.build(args).run();
-
-    } else {
-      //      for (App app : App.all()) Workflow.inferForeignKeys(app.name());
-      //      getOptimizedTrace(Statement.findOne("solidus", 560), loadBank());
-      //      test0();
-      //      test1();
-      //      test2();
-      final int[] targets = {
-        4, 5, 6, 402, 403, 406, 407, 511, 680, 681, 849, 850, 941, 945, 946, 947, 948, 949, 950,
-        951, 952, 953
-      };
-      final SubstitutionBank bank = loadBank();
-      for (Substitution substitution : bank) {
-        if (Arrays.binarySearch(targets, substitution.index()) >= 0) {
-          System.out.println(substitution.index() + ";" + substitution.constraints().size());
-        }
-      }
-    }
-  }
+  private static PrintWriter out, err;
 
   private static void cleanBank() throws IOException {
     final SubstitutionBank bank =
@@ -98,6 +77,7 @@ public class Main {
     return SubstitutionBank.make().importFrom(lines, false);
   }
 
+  // optimize single
   private static void test0() throws IOException {
     final SubstitutionBank bank = loadBank();
     final String sql =
@@ -128,8 +108,7 @@ public class Main {
     //    System.out.println(pickMinCost(stmt.parsed(), transformed, stmt.app().dbProps()));
   }
 
-  private static PrintWriter out, err;
-
+  // optimize batch
   private static void test1() throws IOException {
     final SubstitutionBank bank = loadBank();
     out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "optimizations")));
@@ -137,10 +116,35 @@ public class Main {
 
     App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
     //        doOptimize(Statement.findOne("broadleaf", 200), bank);
-    Statement.findByApp("shopizer").parallelStream().forEach(it -> doOptimize(it, bank));
+    Statement.findByApp("shopizer").parallelStream().forEach(it -> getOptimization(it, bank));
   }
 
-  private static void doOptimize(Statement stmt, SubstitutionBank bank) {
+  // optimization trace
+  private static void test2() throws IOException {
+    final SubstitutionBank bank = loadBank();
+    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "traces")));
+    err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
+
+    App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
+    //    getOptimizedTrace(Statement.findOne("discourse", 2596), bank);
+
+    final List<Statement> targets = listMap(Statement::original, Statement.findAllRewritten());
+    targets.parallelStream().map(Statement::original).forEach(it -> getOptimizationTrace(it, bank));
+  }
+
+  // optimization time
+  private static void test3() throws IOException {
+    final SubstitutionBank bank = loadBank();
+    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "timing.csv")));
+
+    for (Statement stmt : Statement.findAllRewritten()) {
+      getOptimizationTime(stmt, bank);
+    }
+
+    out.close();
+  }
+
+  private static void getOptimization(Statement stmt, SubstitutionBank bank) {
     try {
       System.out.println(stmt);
       final List<ASTNode> candidates = optimize(stmt, bank);
@@ -167,19 +171,7 @@ public class Main {
     }
   }
 
-  private static void test2() throws IOException {
-    final SubstitutionBank bank = loadBank();
-    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "traces")));
-    err = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "err")));
-
-    App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
-    //    getOptimizedTrace(Statement.findOne("discourse", 2596), bank);
-
-    final List<Statement> targets = listMap(Statement::original, Statement.findAllRewritten());
-    targets.parallelStream().map(Statement::original).forEach(it -> getOptimizedTrace(it, bank));
-  }
-
-  private static void getOptimizedTrace(Statement stmt, SubstitutionBank bank) {
+  private static void getOptimizationTrace(Statement stmt, SubstitutionBank bank) {
     System.out.println(stmt);
 
     final var optResult = optimizeWithTrace(stmt, bank);
@@ -193,6 +185,30 @@ public class Main {
       for (Substitution substitution : trace)
         out.printf("%s;%d;%d\n", stmt.appName(), stmt.stmtId(), substitution.index());
       out.flush();
+    }
+  }
+
+  private static void getOptimizationTime(Statement stmt, SubstitutionBank bank) {
+    final long startTime = System.currentTimeMillis();
+    optimize(stmt, bank);
+    final long end = System.currentTimeMillis();
+    synchronized (out) {
+      System.out.println(stmt + " " + (end - startTime));
+      out.printf("%s;%d;%d", stmt.appName(), stmt.stmtId(), end - startTime);
+      out.flush();
+    }
+  }
+
+  public static void main(String[] args) throws IOException {
+    if (args.length >= 1 && "run".equals(args[0])) {
+      ProofRunner.build(args).run();
+
+    } else {
+      //      test0();
+      //      test1();
+      //      test2();
+      //      test3();
+      System.out.println(Enumerator.enumPlans().size());
     }
   }
 }

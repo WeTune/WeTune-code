@@ -21,10 +21,10 @@ SET row_security = off;
 CREATE SCHEMA discourse_functions;
 
 CREATE
-EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
+    EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
 
 CREATE
-EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+    EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 SET default_tablespace = '';
 
@@ -32,56 +32,56 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.anonymous_users
 (
-    id             bigint  NOT NULL,
-    user_id        integer NOT NULL,
-    master_user_id integer NOT NULL,
-    active         boolean NOT NULL,
+    id             bigint                      NOT NULL,
+    user_id        integer                     NOT NULL,
+    master_user_id integer                     NOT NULL,
+    active         boolean                     NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.anonymous_users_id_seq
+    SEQUENCE public.anonymous_users_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.anonymous_users_id_seq OWNED BY public.anonymous_users.id;
+    SEQUENCE public.anonymous_users_id_seq OWNED BY public.anonymous_users.id;
 
 CREATE TABLE public.api_keys
 (
-    id            integer               NOT NULL,
+    id            integer                     NOT NULL,
     user_id       integer,
     created_by_id integer,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
-    allowed_ips inet[],
-    hidden        boolean DEFAULT false NOT NULL,
+    allowed_ips   inet[],
+    hidden        boolean DEFAULT false       NOT NULL,
     last_used_at  timestamp without time zone,
     revoked_at    timestamp without time zone,
     description   text,
-    key_hash      character varying     NOT NULL,
-    truncated_key character varying     NOT NULL
+    key_hash      character varying           NOT NULL,
+    truncated_key character varying           NOT NULL
 );
 
 CREATE
-SEQUENCE public.api_keys_id_seq
+    SEQUENCE public.api_keys_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.api_keys_id_seq OWNED BY public.api_keys.id;
+    SEQUENCE public.api_keys_id_seq OWNED BY public.api_keys.id;
 
 CREATE TABLE public.application_requests
 (
@@ -92,22 +92,22 @@ CREATE TABLE public.application_requests
 );
 
 CREATE
-SEQUENCE public.application_requests_id_seq
+    SEQUENCE public.application_requests_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.application_requests_id_seq OWNED BY public.application_requests.id;
+    SEQUENCE public.application_requests_id_seq OWNED BY public.application_requests.id;
 
 CREATE TABLE public.ar_internal_metadata
 (
-    key character varying NOT NULL,
+    key        character varying              NOT NULL,
     value      character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
@@ -115,48 +115,48 @@ CREATE TABLE public.ar_internal_metadata
 
 CREATE TABLE public.backup_draft_posts
 (
-    id         bigint  NOT NULL,
-    user_id    integer NOT NULL,
-    post_id    integer NOT NULL,
-    key character varying NOT NULL,
+    id         bigint                         NOT NULL,
+    user_id    integer                        NOT NULL,
+    post_id    integer                        NOT NULL,
+    key        character varying              NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.backup_draft_posts_id_seq
+    SEQUENCE public.backup_draft_posts_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.backup_draft_posts_id_seq OWNED BY public.backup_draft_posts.id;
+    SEQUENCE public.backup_draft_posts_id_seq OWNED BY public.backup_draft_posts.id;
 
 CREATE TABLE public.backup_draft_topics
 (
-    id         bigint  NOT NULL,
-    user_id    integer NOT NULL,
-    topic_id   integer NOT NULL,
+    id         bigint                         NOT NULL,
+    user_id    integer                        NOT NULL,
+    topic_id   integer                        NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.backup_draft_topics_id_seq
+    SEQUENCE public.backup_draft_topics_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.backup_draft_topics_id_seq OWNED BY public.backup_draft_topics.id;
+    SEQUENCE public.backup_draft_topics_id_seq OWNED BY public.backup_draft_topics.id;
 
 CREATE TABLE public.backup_metadata
 (
@@ -166,61 +166,61 @@ CREATE TABLE public.backup_metadata
 );
 
 CREATE
-SEQUENCE public.backup_metadata_id_seq
+    SEQUENCE public.backup_metadata_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.backup_metadata_id_seq OWNED BY public.backup_metadata.id;
+    SEQUENCE public.backup_metadata_id_seq OWNED BY public.backup_metadata.id;
 
 CREATE TABLE public.badge_groupings
 (
-    id          integer           NOT NULL,
-    name        character varying NOT NULL,
+    id          integer                     NOT NULL,
+    name        character varying           NOT NULL,
     description text,
-    "position"  integer           NOT NULL,
+    "position"  integer                     NOT NULL,
     created_at  timestamp without time zone NOT NULL,
     updated_at  timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.badge_groupings_id_seq
+    SEQUENCE public.badge_groupings_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.badge_groupings_id_seq OWNED BY public.badge_groupings.id;
+    SEQUENCE public.badge_groupings_id_seq OWNED BY public.badge_groupings.id;
 
 CREATE TABLE public.categories
 (
-    id                                integer                             NOT NULL,
-    name                              character varying(50)               NOT NULL,
+    id                                integer                                                    NOT NULL,
+    name                              character varying(50)                                      NOT NULL,
     color                             character varying(6)  DEFAULT '0088CC':: character varying NOT NULL,
     topic_id                          integer,
-    topic_count                       integer               DEFAULT 0     NOT NULL,
-    created_at                        timestamp without time zone NOT NULL,
-    updated_at                        timestamp without time zone NOT NULL,
-    user_id                           integer                             NOT NULL,
+    topic_count                       integer               DEFAULT 0                            NOT NULL,
+    created_at                        timestamp without time zone                                NOT NULL,
+    updated_at                        timestamp without time zone                                NOT NULL,
+    user_id                           integer                                                    NOT NULL,
     topics_year                       integer               DEFAULT 0,
     topics_month                      integer               DEFAULT 0,
     topics_week                       integer               DEFAULT 0,
-    slug                              character varying                   NOT NULL,
+    slug                              character varying                                          NOT NULL,
     description                       text,
     text_color                        character varying(6)  DEFAULT 'FFFFFF':: character varying NOT NULL,
-    read_restricted                   boolean               DEFAULT false NOT NULL,
+    read_restricted                   boolean               DEFAULT false                        NOT NULL,
     auto_close_hours                  double precision,
-    post_count                        integer               DEFAULT 0     NOT NULL,
+    post_count                        integer               DEFAULT 0                            NOT NULL,
     latest_post_id                    integer,
     latest_topic_id                   integer,
     "position"                        integer,
@@ -232,8 +232,8 @@ CREATE TABLE public.categories
     email_in_allow_strangers          boolean               DEFAULT false,
     topics_day                        integer               DEFAULT 0,
     posts_day                         integer               DEFAULT 0,
-    allow_badges                      boolean               DEFAULT true  NOT NULL,
-    name_lower                        character varying(50)               NOT NULL,
+    allow_badges                      boolean               DEFAULT true                         NOT NULL,
+    name_lower                        character varying(50)                                      NOT NULL,
     auto_close_based_on_last_post     boolean               DEFAULT false,
     topic_template                    text,
     contains_messages                 boolean,
@@ -242,20 +242,20 @@ CREATE TABLE public.categories
     uploaded_logo_id                  integer,
     uploaded_background_id            integer,
     topic_featured_link_allowed       boolean               DEFAULT true,
-    all_topics_wiki                   boolean               DEFAULT false NOT NULL,
+    all_topics_wiki                   boolean               DEFAULT false                        NOT NULL,
     show_subcategory_list             boolean               DEFAULT false,
     num_featured_topics               integer               DEFAULT 3,
     default_view                      character varying(50),
     subcategory_list_style            character varying(50) DEFAULT 'rows_with_featured_topics':: character varying,
     default_top_period                character varying(20) DEFAULT 'all':: character varying,
-    mailinglist_mirror                boolean               DEFAULT false NOT NULL,
-    minimum_required_tags             integer               DEFAULT 0     NOT NULL,
-    navigate_to_first_post_after_read boolean               DEFAULT false NOT NULL,
+    mailinglist_mirror                boolean               DEFAULT false                        NOT NULL,
+    minimum_required_tags             integer               DEFAULT 0                            NOT NULL,
+    navigate_to_first_post_after_read boolean               DEFAULT false                        NOT NULL,
     search_priority                   integer               DEFAULT 0,
-    allow_global_tags                 boolean               DEFAULT false NOT NULL,
+    allow_global_tags                 boolean               DEFAULT false                        NOT NULL,
     reviewable_by_group_id            integer,
     required_tag_group_id             integer,
-    min_tags_from_required_group      integer               DEFAULT 1     NOT NULL
+    min_tags_from_required_group      integer               DEFAULT 1                            NOT NULL
 );
 
 CREATE TABLE public.posts
@@ -266,8 +266,8 @@ CREATE TABLE public.posts
     post_number             integer                        NOT NULL,
     raw                     text                           NOT NULL,
     cooked                  text                           NOT NULL,
-    created_at              timestamp without time zone NOT NULL,
-    updated_at              timestamp without time zone NOT NULL,
+    created_at              timestamp without time zone    NOT NULL,
+    updated_at              timestamp without time zone    NOT NULL,
     reply_to_post_number    integer,
     reply_count             integer          DEFAULT 0     NOT NULL,
     quote_count             integer          DEFAULT 0     NOT NULL,
@@ -288,7 +288,7 @@ CREATE TABLE public.posts
     spam_count              integer          DEFAULT 0     NOT NULL,
     illegal_count           integer          DEFAULT 0     NOT NULL,
     inappropriate_count     integer          DEFAULT 0     NOT NULL,
-    last_version_at         timestamp without time zone NOT NULL,
+    last_version_at         timestamp without time zone    NOT NULL,
     user_deleted            boolean          DEFAULT false NOT NULL,
     reply_to_user_id        integer,
     percent_rank            double precision DEFAULT 1.0,
@@ -315,51 +315,51 @@ CREATE TABLE public.posts
 
 CREATE TABLE public.topics
 (
-    id                        integer                         NOT NULL,
-    title                     character varying               NOT NULL,
+    id                        integer                                                 NOT NULL,
+    title                     character varying                                       NOT NULL,
     last_posted_at            timestamp without time zone,
-    created_at                timestamp without time zone NOT NULL,
-    updated_at                timestamp without time zone NOT NULL,
-    views                     integer           DEFAULT 0     NOT NULL,
-    posts_count               integer           DEFAULT 0     NOT NULL,
+    created_at                timestamp without time zone                             NOT NULL,
+    updated_at                timestamp without time zone                             NOT NULL,
+    views                     integer           DEFAULT 0                             NOT NULL,
+    posts_count               integer           DEFAULT 0                             NOT NULL,
     user_id                   integer,
-    last_post_user_id         integer                         NOT NULL,
-    reply_count               integer           DEFAULT 0     NOT NULL,
+    last_post_user_id         integer                                                 NOT NULL,
+    reply_count               integer           DEFAULT 0                             NOT NULL,
     featured_user1_id         integer,
     featured_user2_id         integer,
     featured_user3_id         integer,
     avg_time                  integer,
     deleted_at                timestamp without time zone,
-    highest_post_number       integer           DEFAULT 0     NOT NULL,
+    highest_post_number       integer           DEFAULT 0                             NOT NULL,
     image_url                 character varying,
-    like_count                integer           DEFAULT 0     NOT NULL,
-    incoming_link_count       integer           DEFAULT 0     NOT NULL,
+    like_count                integer           DEFAULT 0                             NOT NULL,
+    incoming_link_count       integer           DEFAULT 0                             NOT NULL,
     category_id               integer,
-    visible                   boolean           DEFAULT true  NOT NULL,
-    moderator_posts_count     integer           DEFAULT 0     NOT NULL,
-    closed                    boolean           DEFAULT false NOT NULL,
-    archived                  boolean           DEFAULT false NOT NULL,
-    bumped_at                 timestamp without time zone NOT NULL,
-    has_summary               boolean           DEFAULT false NOT NULL,
+    visible                   boolean           DEFAULT true                          NOT NULL,
+    moderator_posts_count     integer           DEFAULT 0                             NOT NULL,
+    closed                    boolean           DEFAULT false                         NOT NULL,
+    archived                  boolean           DEFAULT false                         NOT NULL,
+    bumped_at                 timestamp without time zone                             NOT NULL,
+    has_summary               boolean           DEFAULT false                         NOT NULL,
     archetype                 character varying DEFAULT 'regular':: character varying NOT NULL,
     featured_user4_id         integer,
-    notify_moderators_count   integer           DEFAULT 0     NOT NULL,
-    spam_count                integer           DEFAULT 0     NOT NULL,
+    notify_moderators_count   integer           DEFAULT 0                             NOT NULL,
+    spam_count                integer           DEFAULT 0                             NOT NULL,
     pinned_at                 timestamp without time zone,
     score                     double precision,
-    percent_rank              double precision  DEFAULT 1.0   NOT NULL,
+    percent_rank              double precision  DEFAULT 1.0                           NOT NULL,
     subtype                   character varying,
     slug                      character varying,
     deleted_by_id             integer,
     participant_count         integer           DEFAULT 1,
     word_count                integer,
     excerpt                   character varying(1000),
-    pinned_globally           boolean           DEFAULT false NOT NULL,
+    pinned_globally           boolean           DEFAULT false                         NOT NULL,
     pinned_until              timestamp without time zone,
     fancy_title               character varying(400),
-    highest_staff_post_number integer           DEFAULT 0     NOT NULL,
+    highest_staff_post_number integer           DEFAULT 0                             NOT NULL,
     featured_link             character varying,
-    reviewable_score          double precision  DEFAULT 0.0   NOT NULL,
+    reviewable_score          double precision  DEFAULT 0.0                           NOT NULL,
     CONSTRAINT has_category_id CHECK (((category_id IS NOT NULL) OR
                                        ((archetype):: text <> 'regular':: text))),
     CONSTRAINT pm_has_no_category CHECK (((category_id IS NULL) OR
@@ -422,29 +422,29 @@ FROM ((public.posts p
     JOIN public.topics t ON ((t.id = p.topic_id)))
          JOIN public.categories c ON ((c.id = t.category_id)))
 WHERE (c.allow_badges AND (p.deleted_at IS NULL) AND (t.deleted_at IS NULL) AND
-       (NOT c.read_restricted) AND t.visible AND (p.post_type = ANY (ARRAY[1, 2, 3])));
+       (NOT c.read_restricted) AND t.visible AND (p.post_type = ANY (ARRAY [1, 2, 3])));
 
 CREATE TABLE public.badge_types
 (
-    id         integer           NOT NULL,
-    name       character varying NOT NULL,
+    id         integer                     NOT NULL,
+    name       character varying           NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.badge_types_id_seq
+    SEQUENCE public.badge_types_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.badge_types_id_seq OWNED BY public.badge_types.id;
+    SEQUENCE public.badge_types_id_seq OWNED BY public.badge_types.id;
 
 CREATE TABLE public.badges
 (
@@ -453,8 +453,8 @@ CREATE TABLE public.badges
     description       text,
     badge_type_id     integer                         NOT NULL,
     grant_count       integer           DEFAULT 0     NOT NULL,
-    created_at        timestamp without time zone NOT NULL,
-    updated_at        timestamp without time zone NOT NULL,
+    created_at        timestamp without time zone     NOT NULL,
+    updated_at        timestamp without time zone     NOT NULL,
     allow_title       boolean           DEFAULT false NOT NULL,
     multiple_grant    boolean           DEFAULT false NOT NULL,
     icon              character varying DEFAULT 'fa-certificate':: character varying,
@@ -472,25 +472,25 @@ CREATE TABLE public.badges
 );
 
 CREATE
-SEQUENCE public.badges_id_seq
+    SEQUENCE public.badges_id_seq
     AS integer
     START
-WITH 100
+        WITH 100
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.badges_id_seq OWNED BY public.badges.id;
+    SEQUENCE public.badges_id_seq OWNED BY public.badges.id;
 
 CREATE TABLE public.bookmarks
 (
-    id                    bigint NOT NULL,
-    user_id               bigint NOT NULL,
-    topic_id              bigint NOT NULL,
-    post_id               bigint NOT NULL,
+    id                    bigint                         NOT NULL,
+    user_id               bigint                         NOT NULL,
+    topic_id              bigint                         NOT NULL,
+    post_id               bigint                         NOT NULL,
     name                  character varying,
     reminder_type         integer,
     reminder_at           timestamp without time zone,
@@ -501,31 +501,31 @@ CREATE TABLE public.bookmarks
 );
 
 CREATE
-SEQUENCE public.bookmarks_id_seq
+    SEQUENCE public.bookmarks_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.bookmarks_id_seq OWNED BY public.bookmarks.id;
+    SEQUENCE public.bookmarks_id_seq OWNED BY public.bookmarks.id;
 
 CREATE
-SEQUENCE public.categories_id_seq
+    SEQUENCE public.categories_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.categories_id_seq OWNED BY public.categories.id;
+    SEQUENCE public.categories_id_seq OWNED BY public.categories.id;
 
 CREATE TABLE public.categories_web_hooks
 (
@@ -535,75 +535,75 @@ CREATE TABLE public.categories_web_hooks
 
 CREATE TABLE public.category_custom_fields
 (
-    id          integer                NOT NULL,
-    category_id integer                NOT NULL,
-    name        character varying(256) NOT NULL,
+    id          integer                     NOT NULL,
+    category_id integer                     NOT NULL,
+    name        character varying(256)      NOT NULL,
     value       text,
     created_at  timestamp without time zone NOT NULL,
     updated_at  timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.category_custom_fields_id_seq
+    SEQUENCE public.category_custom_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_custom_fields_id_seq OWNED BY public.category_custom_fields.id;
+    SEQUENCE public.category_custom_fields_id_seq OWNED BY public.category_custom_fields.id;
 
 CREATE TABLE public.category_featured_topics
 (
-    category_id integer           NOT NULL,
-    topic_id    integer           NOT NULL,
+    category_id integer                     NOT NULL,
+    topic_id    integer                     NOT NULL,
     created_at  timestamp without time zone NOT NULL,
     updated_at  timestamp without time zone NOT NULL,
-    rank        integer DEFAULT 0 NOT NULL,
-    id          integer           NOT NULL
+    rank        integer DEFAULT 0           NOT NULL,
+    id          integer                     NOT NULL
 );
 
 CREATE
-SEQUENCE public.category_featured_topics_id_seq
+    SEQUENCE public.category_featured_topics_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_featured_topics_id_seq OWNED BY public.category_featured_topics.id;
+    SEQUENCE public.category_featured_topics_id_seq OWNED BY public.category_featured_topics.id;
 
 CREATE TABLE public.category_groups
 (
-    id              integer NOT NULL,
-    category_id     integer NOT NULL,
-    group_id        integer NOT NULL,
+    id              integer                     NOT NULL,
+    category_id     integer                     NOT NULL,
+    group_id        integer                     NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL,
     permission_type integer DEFAULT 1
 );
 
 CREATE
-SEQUENCE public.category_groups_id_seq
+    SEQUENCE public.category_groups_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_groups_id_seq OWNED BY public.category_groups.id;
+    SEQUENCE public.category_groups_id_seq OWNED BY public.category_groups.id;
 
 CREATE TABLE public.category_search_data
 (
@@ -616,26 +616,26 @@ CREATE TABLE public.category_search_data
 
 CREATE TABLE public.category_tag_groups
 (
-    id           integer NOT NULL,
-    category_id  integer NOT NULL,
-    tag_group_id integer NOT NULL,
+    id           integer                     NOT NULL,
+    category_id  integer                     NOT NULL,
+    tag_group_id integer                     NOT NULL,
     created_at   timestamp without time zone NOT NULL,
     updated_at   timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.category_tag_groups_id_seq
+    SEQUENCE public.category_tag_groups_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_tag_groups_id_seq OWNED BY public.category_tag_groups.id;
+    SEQUENCE public.category_tag_groups_id_seq OWNED BY public.category_tag_groups.id;
 
 CREATE TABLE public.category_tag_stats
 (
@@ -646,40 +646,40 @@ CREATE TABLE public.category_tag_stats
 );
 
 CREATE
-SEQUENCE public.category_tag_stats_id_seq
+    SEQUENCE public.category_tag_stats_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_tag_stats_id_seq OWNED BY public.category_tag_stats.id;
+    SEQUENCE public.category_tag_stats_id_seq OWNED BY public.category_tag_stats.id;
 
 CREATE TABLE public.category_tags
 (
-    id          integer NOT NULL,
-    category_id integer NOT NULL,
-    tag_id      integer NOT NULL,
+    id          integer                     NOT NULL,
+    category_id integer                     NOT NULL,
+    tag_id      integer                     NOT NULL,
     created_at  timestamp without time zone NOT NULL,
     updated_at  timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.category_tags_id_seq
+    SEQUENCE public.category_tags_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_tags_id_seq OWNED BY public.category_tags.id;
+    SEQUENCE public.category_tags_id_seq OWNED BY public.category_tags.id;
 
 CREATE TABLE public.category_users
 (
@@ -691,22 +691,22 @@ CREATE TABLE public.category_users
 );
 
 CREATE
-SEQUENCE public.category_users_id_seq
+    SEQUENCE public.category_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.category_users_id_seq OWNED BY public.category_users.id;
+    SEQUENCE public.category_users_id_seq OWNED BY public.category_users.id;
 
 CREATE TABLE public.child_themes
 (
-    id              integer NOT NULL,
+    id              integer                     NOT NULL,
     parent_theme_id integer,
     child_theme_id  integer,
     created_at      timestamp without time zone NOT NULL,
@@ -714,91 +714,91 @@ CREATE TABLE public.child_themes
 );
 
 CREATE
-SEQUENCE public.child_themes_id_seq
+    SEQUENCE public.child_themes_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.child_themes_id_seq OWNED BY public.child_themes.id;
+    SEQUENCE public.child_themes_id_seq OWNED BY public.child_themes.id;
 
 CREATE TABLE public.color_scheme_colors
 (
-    id              integer           NOT NULL,
-    name            character varying NOT NULL,
-    hex             character varying NOT NULL,
-    color_scheme_id integer           NOT NULL,
+    id              integer                     NOT NULL,
+    name            character varying           NOT NULL,
+    hex             character varying           NOT NULL,
+    color_scheme_id integer                     NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.color_scheme_colors_id_seq
+    SEQUENCE public.color_scheme_colors_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.color_scheme_colors_id_seq OWNED BY public.color_scheme_colors.id;
+    SEQUENCE public.color_scheme_colors_id_seq OWNED BY public.color_scheme_colors.id;
 
 CREATE TABLE public.color_schemes
 (
-    id             integer               NOT NULL,
-    name           character varying     NOT NULL,
-    version        integer DEFAULT 1     NOT NULL,
+    id             integer                     NOT NULL,
+    name           character varying           NOT NULL,
+    version        integer DEFAULT 1           NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL,
-    via_wizard     boolean DEFAULT false NOT NULL,
+    via_wizard     boolean DEFAULT false       NOT NULL,
     base_scheme_id character varying,
     theme_id       integer
 );
 
 CREATE
-SEQUENCE public.color_schemes_id_seq
+    SEQUENCE public.color_schemes_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.color_schemes_id_seq OWNED BY public.color_schemes.id;
+    SEQUENCE public.color_schemes_id_seq OWNED BY public.color_schemes.id;
 
 CREATE TABLE public.custom_emojis
 (
-    id         integer           NOT NULL,
-    name       character varying NOT NULL,
-    upload_id  integer           NOT NULL,
+    id         integer                     NOT NULL,
+    name       character varying           NOT NULL,
+    upload_id  integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.custom_emojis_id_seq
+    SEQUENCE public.custom_emojis_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.custom_emojis_id_seq OWNED BY public.custom_emojis.id;
+    SEQUENCE public.custom_emojis_id_seq OWNED BY public.custom_emojis.id;
 
 CREATE TABLE public.developers
 (
@@ -807,18 +807,18 @@ CREATE TABLE public.developers
 );
 
 CREATE
-SEQUENCE public.developers_id_seq
+    SEQUENCE public.developers_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.developers_id_seq OWNED BY public.developers.id;
+    SEQUENCE public.developers_id_seq OWNED BY public.developers.id;
 
 CREATE TABLE public.directory_items
 (
@@ -837,18 +837,18 @@ CREATE TABLE public.directory_items
 );
 
 CREATE
-SEQUENCE public.directory_items_id_seq
+    SEQUENCE public.directory_items_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.directory_items_id_seq OWNED BY public.directory_items.id;
+    SEQUENCE public.directory_items_id_seq OWNED BY public.directory_items.id;
 
 CREATE TABLE public.draft_sequences
 (
@@ -859,132 +859,132 @@ CREATE TABLE public.draft_sequences
 );
 
 CREATE
-SEQUENCE public.draft_sequences_id_seq
+    SEQUENCE public.draft_sequences_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.draft_sequences_id_seq OWNED BY public.draft_sequences.id;
+    SEQUENCE public.draft_sequences_id_seq OWNED BY public.draft_sequences.id;
 
 CREATE TABLE public.drafts
 (
-    id         integer           NOT NULL,
-    user_id    integer           NOT NULL,
-    draft_key  character varying NOT NULL,
-    data       text              NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    draft_key  character varying           NOT NULL,
+    data       text                        NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    sequence   integer DEFAULT 0 NOT NULL,
-    revisions  integer DEFAULT 1 NOT NULL,
+    sequence   integer DEFAULT 0           NOT NULL,
+    revisions  integer DEFAULT 1           NOT NULL,
     owner      character varying
 );
 
 CREATE
-SEQUENCE public.drafts_id_seq
+    SEQUENCE public.drafts_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.drafts_id_seq OWNED BY public.drafts.id;
+    SEQUENCE public.drafts_id_seq OWNED BY public.drafts.id;
 
 CREATE TABLE public.email_change_requests
 (
-    id                 integer           NOT NULL,
-    user_id            integer           NOT NULL,
-    old_email          character varying NOT NULL,
-    new_email          character varying NOT NULL,
+    id                 integer                     NOT NULL,
+    user_id            integer                     NOT NULL,
+    old_email          character varying           NOT NULL,
+    new_email          character varying           NOT NULL,
     old_email_token_id integer,
     new_email_token_id integer,
-    change_state       integer           NOT NULL,
+    change_state       integer                     NOT NULL,
     created_at         timestamp without time zone NOT NULL,
     updated_at         timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.email_change_requests_id_seq
+    SEQUENCE public.email_change_requests_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.email_change_requests_id_seq OWNED BY public.email_change_requests.id;
+    SEQUENCE public.email_change_requests_id_seq OWNED BY public.email_change_requests.id;
 
 CREATE TABLE public.email_logs
 (
-    id         integer               NOT NULL,
-    to_address character varying     NOT NULL,
-    email_type character varying     NOT NULL,
+    id         integer                     NOT NULL,
+    to_address character varying           NOT NULL,
+    email_type character varying           NOT NULL,
     user_id    integer,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     post_id    integer,
     bounce_key uuid,
-    bounced    boolean DEFAULT false NOT NULL,
+    bounced    boolean DEFAULT false       NOT NULL,
     message_id character varying
 );
 
 CREATE
-SEQUENCE public.email_logs_id_seq
+    SEQUENCE public.email_logs_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.email_logs_id_seq OWNED BY public.email_logs.id;
+    SEQUENCE public.email_logs_id_seq OWNED BY public.email_logs.id;
 
 CREATE TABLE public.email_tokens
 (
-    id         integer               NOT NULL,
-    user_id    integer               NOT NULL,
-    email      character varying     NOT NULL,
-    token      character varying     NOT NULL,
-    confirmed  boolean DEFAULT false NOT NULL,
-    expired    boolean DEFAULT false NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    email      character varying           NOT NULL,
+    token      character varying           NOT NULL,
+    confirmed  boolean DEFAULT false       NOT NULL,
+    expired    boolean DEFAULT false       NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.email_tokens_id_seq
+    SEQUENCE public.email_tokens_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.email_tokens_id_seq OWNED BY public.email_tokens.id;
+    SEQUENCE public.email_tokens_id_seq OWNED BY public.email_tokens.id;
 
 CREATE TABLE public.embeddable_hosts
 (
-    id             integer           NOT NULL,
-    host           character varying NOT NULL,
-    category_id    integer           NOT NULL,
+    id             integer                     NOT NULL,
+    host           character varying           NOT NULL,
+    category_id    integer                     NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL,
     path_whitelist character varying,
@@ -992,42 +992,42 @@ CREATE TABLE public.embeddable_hosts
 );
 
 CREATE
-SEQUENCE public.embeddable_hosts_id_seq
+    SEQUENCE public.embeddable_hosts_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.embeddable_hosts_id_seq OWNED BY public.embeddable_hosts.id;
+    SEQUENCE public.embeddable_hosts_id_seq OWNED BY public.embeddable_hosts.id;
 
 CREATE TABLE public.github_user_infos
 (
-    id             integer           NOT NULL,
-    user_id        integer           NOT NULL,
-    screen_name    character varying NOT NULL,
-    github_user_id integer           NOT NULL,
+    id             integer                     NOT NULL,
+    user_id        integer                     NOT NULL,
+    screen_name    character varying           NOT NULL,
+    github_user_id integer                     NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.github_user_infos_id_seq
+    SEQUENCE public.github_user_infos_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.github_user_infos_id_seq OWNED BY public.github_user_infos.id;
+    SEQUENCE public.github_user_infos_id_seq OWNED BY public.github_user_infos.id;
 
 CREATE TABLE public.given_daily_likes
 (
@@ -1039,58 +1039,58 @@ CREATE TABLE public.given_daily_likes
 
 CREATE TABLE public.group_archived_messages
 (
-    id         integer NOT NULL,
-    group_id   integer NOT NULL,
-    topic_id   integer NOT NULL,
+    id         integer                     NOT NULL,
+    group_id   integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.group_archived_messages_id_seq
+    SEQUENCE public.group_archived_messages_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_archived_messages_id_seq OWNED BY public.group_archived_messages.id;
+    SEQUENCE public.group_archived_messages_id_seq OWNED BY public.group_archived_messages.id;
 
 CREATE TABLE public.group_custom_fields
 (
-    id         integer                NOT NULL,
-    group_id   integer                NOT NULL,
-    name       character varying(256) NOT NULL,
+    id         integer                     NOT NULL,
+    group_id   integer                     NOT NULL,
+    name       character varying(256)      NOT NULL,
     value      text,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.group_custom_fields_id_seq
+    SEQUENCE public.group_custom_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_custom_fields_id_seq OWNED BY public.group_custom_fields.id;
+    SEQUENCE public.group_custom_fields_id_seq OWNED BY public.group_custom_fields.id;
 
 CREATE TABLE public.group_histories
 (
-    id             integer NOT NULL,
-    group_id       integer NOT NULL,
-    acting_user_id integer NOT NULL,
+    id             integer                     NOT NULL,
+    group_id       integer                     NOT NULL,
+    acting_user_id integer                     NOT NULL,
     target_user_id integer,
-    action         integer NOT NULL,
+    action         integer                     NOT NULL,
     subject        character varying,
     prev_value     text,
     new_value      text,
@@ -1099,22 +1099,22 @@ CREATE TABLE public.group_histories
 );
 
 CREATE
-SEQUENCE public.group_histories_id_seq
+    SEQUENCE public.group_histories_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_histories_id_seq OWNED BY public.group_histories.id;
+    SEQUENCE public.group_histories_id_seq OWNED BY public.group_histories.id;
 
 CREATE TABLE public.group_mentions
 (
-    id         integer NOT NULL,
+    id         integer                     NOT NULL,
     post_id    integer,
     group_id   integer,
     created_at timestamp without time zone NOT NULL,
@@ -1122,22 +1122,22 @@ CREATE TABLE public.group_mentions
 );
 
 CREATE
-SEQUENCE public.group_mentions_id_seq
+    SEQUENCE public.group_mentions_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_mentions_id_seq OWNED BY public.group_mentions.id;
+    SEQUENCE public.group_mentions_id_seq OWNED BY public.group_mentions.id;
 
 CREATE TABLE public.group_requests
 (
-    id         bigint NOT NULL,
+    id         bigint                      NOT NULL,
     group_id   integer,
     user_id    integer,
     reason     text,
@@ -1146,89 +1146,89 @@ CREATE TABLE public.group_requests
 );
 
 CREATE
-SEQUENCE public.group_requests_id_seq
+    SEQUENCE public.group_requests_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_requests_id_seq OWNED BY public.group_requests.id;
+    SEQUENCE public.group_requests_id_seq OWNED BY public.group_requests.id;
 
 CREATE TABLE public.group_users
 (
-    id                 integer               NOT NULL,
-    group_id           integer               NOT NULL,
-    user_id            integer               NOT NULL,
+    id                 integer                     NOT NULL,
+    group_id           integer                     NOT NULL,
+    user_id            integer                     NOT NULL,
     created_at         timestamp without time zone NOT NULL,
     updated_at         timestamp without time zone NOT NULL,
-    owner              boolean DEFAULT false NOT NULL,
-    notification_level integer DEFAULT 2     NOT NULL
+    owner              boolean DEFAULT false       NOT NULL,
+    notification_level integer DEFAULT 2           NOT NULL
 );
 
 CREATE
-SEQUENCE public.group_users_id_seq
+    SEQUENCE public.group_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.group_users_id_seq OWNED BY public.group_users.id;
+    SEQUENCE public.group_users_id_seq OWNED BY public.group_users.id;
 
 CREATE TABLE public.groups
 (
-    id                                 integer               NOT NULL,
-    name                               character varying     NOT NULL,
+    id                                 integer                     NOT NULL,
+    name                               character varying           NOT NULL,
     created_at                         timestamp without time zone NOT NULL,
     updated_at                         timestamp without time zone NOT NULL,
-    automatic                          boolean DEFAULT false NOT NULL,
-    user_count                         integer DEFAULT 0     NOT NULL,
+    automatic                          boolean DEFAULT false       NOT NULL,
+    user_count                         integer DEFAULT 0           NOT NULL,
     automatic_membership_email_domains text,
     automatic_membership_retroactive   boolean DEFAULT false,
-    primary_group                      boolean DEFAULT false NOT NULL,
+    primary_group                      boolean DEFAULT false       NOT NULL,
     title                              character varying,
     grant_trust_level                  integer,
     incoming_email                     character varying,
-    has_messages                       boolean DEFAULT false NOT NULL,
+    has_messages                       boolean DEFAULT false       NOT NULL,
     flair_url                          character varying,
     flair_bg_color                     character varying,
     flair_color                        character varying,
     bio_raw                            text,
     bio_cooked                         text,
-    allow_membership_requests          boolean DEFAULT false NOT NULL,
+    allow_membership_requests          boolean DEFAULT false       NOT NULL,
     full_name                          character varying,
-    default_notification_level         integer DEFAULT 3     NOT NULL,
-    visibility_level                   integer DEFAULT 0     NOT NULL,
-    public_exit                        boolean DEFAULT false NOT NULL,
-    public_admission                   boolean DEFAULT false NOT NULL,
+    default_notification_level         integer DEFAULT 3           NOT NULL,
+    visibility_level                   integer DEFAULT 0           NOT NULL,
+    public_exit                        boolean DEFAULT false       NOT NULL,
+    public_admission                   boolean DEFAULT false       NOT NULL,
     membership_request_template        text,
     messageable_level                  integer DEFAULT 0,
     mentionable_level                  integer DEFAULT 0,
-    publish_read_state                 boolean DEFAULT false NOT NULL,
-    members_visibility_level           integer DEFAULT 0     NOT NULL
+    publish_read_state                 boolean DEFAULT false       NOT NULL,
+    members_visibility_level           integer DEFAULT 0           NOT NULL
 );
 
 CREATE
-SEQUENCE public.groups_id_seq
+    SEQUENCE public.groups_id_seq
     AS integer
     START
-WITH 100
+        WITH 100
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.groups_id_seq OWNED BY public.groups.id;
+    SEQUENCE public.groups_id_seq OWNED BY public.groups.id;
 
 CREATE TABLE public.groups_web_hooks
 (
@@ -1238,9 +1238,9 @@ CREATE TABLE public.groups_web_hooks
 
 CREATE TABLE public.ignored_users
 (
-    id              bigint  NOT NULL,
-    user_id         integer NOT NULL,
-    ignored_user_id integer NOT NULL,
+    id              bigint                      NOT NULL,
+    user_id         integer                     NOT NULL,
+    ignored_user_id integer                     NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL,
     summarized_at   timestamp without time zone,
@@ -1248,17 +1248,17 @@ CREATE TABLE public.ignored_users
 );
 
 CREATE
-SEQUENCE public.ignored_users_id_seq
+    SEQUENCE public.ignored_users_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.ignored_users_id_seq OWNED BY public.ignored_users.id;
+    SEQUENCE public.ignored_users_id_seq OWNED BY public.ignored_users.id;
 
 CREATE TABLE public.incoming_domains
 (
@@ -1269,22 +1269,22 @@ CREATE TABLE public.incoming_domains
 );
 
 CREATE
-SEQUENCE public.incoming_domains_id_seq
+    SEQUENCE public.incoming_domains_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.incoming_domains_id_seq OWNED BY public.incoming_domains.id;
+    SEQUENCE public.incoming_domains_id_seq OWNED BY public.incoming_domains.id;
 
 CREATE TABLE public.incoming_emails
 (
-    id                integer               NOT NULL,
+    id                integer                     NOT NULL,
     user_id           integer,
     topic_id          integer,
     post_id           integer,
@@ -1299,47 +1299,47 @@ CREATE TABLE public.incoming_emails
     updated_at        timestamp without time zone NOT NULL,
     rejection_message text,
     is_auto_generated boolean DEFAULT false,
-    is_bounce         boolean DEFAULT false NOT NULL
+    is_bounce         boolean DEFAULT false       NOT NULL
 );
 
 CREATE
-SEQUENCE public.incoming_emails_id_seq
+    SEQUENCE public.incoming_emails_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.incoming_emails_id_seq OWNED BY public.incoming_emails.id;
+    SEQUENCE public.incoming_emails_id_seq OWNED BY public.incoming_emails.id;
 
 CREATE TABLE public.incoming_links
 (
-    id                  integer NOT NULL,
+    id                  integer                     NOT NULL,
     created_at          timestamp without time zone NOT NULL,
     user_id             integer,
-    ip_address inet,
+    ip_address          inet,
     current_user_id     integer,
-    post_id             integer NOT NULL,
+    post_id             integer                     NOT NULL,
     incoming_referer_id integer
 );
 
 CREATE
-SEQUENCE public.incoming_links_id_seq
+    SEQUENCE public.incoming_links_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.incoming_links_id_seq OWNED BY public.incoming_links.id;
+    SEQUENCE public.incoming_links_id_seq OWNED BY public.incoming_links.id;
 
 CREATE TABLE public.incoming_referers
 (
@@ -1349,22 +1349,22 @@ CREATE TABLE public.incoming_referers
 );
 
 CREATE
-SEQUENCE public.incoming_referers_id_seq
+    SEQUENCE public.incoming_referers_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.incoming_referers_id_seq OWNED BY public.incoming_referers.id;
+    SEQUENCE public.incoming_referers_id_seq OWNED BY public.incoming_referers.id;
 
 CREATE TABLE public.invited_groups
 (
-    id         integer NOT NULL,
+    id         integer                     NOT NULL,
     group_id   integer,
     invite_id  integer,
     created_at timestamp without time zone NOT NULL,
@@ -1372,25 +1372,25 @@ CREATE TABLE public.invited_groups
 );
 
 CREATE
-SEQUENCE public.invited_groups_id_seq
+    SEQUENCE public.invited_groups_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.invited_groups_id_seq OWNED BY public.invited_groups.id;
+    SEQUENCE public.invited_groups_id_seq OWNED BY public.invited_groups.id;
 
 CREATE TABLE public.invites
 (
-    id             integer               NOT NULL,
-    invite_key     character varying(32) NOT NULL,
+    id             integer                     NOT NULL,
+    invite_key     character varying(32)       NOT NULL,
     email          character varying,
-    invited_by_id  integer               NOT NULL,
+    invited_by_id  integer                     NOT NULL,
     user_id        integer,
     redeemed_at    timestamp without time zone,
     created_at     timestamp without time zone NOT NULL,
@@ -1398,53 +1398,53 @@ CREATE TABLE public.invites
     deleted_at     timestamp without time zone,
     deleted_by_id  integer,
     invalidated_at timestamp without time zone,
-    moderator      boolean DEFAULT false NOT NULL,
+    moderator      boolean DEFAULT false       NOT NULL,
     custom_message text,
     emailed_status integer
 );
 
 CREATE
-SEQUENCE public.invites_id_seq
+    SEQUENCE public.invites_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.invites_id_seq OWNED BY public.invites.id;
+    SEQUENCE public.invites_id_seq OWNED BY public.invites.id;
 
 CREATE TABLE public.javascript_caches
 (
-    id             bigint NOT NULL,
+    id             bigint                      NOT NULL,
     theme_field_id bigint,
     digest         character varying,
-    content        text   NOT NULL,
+    content        text                        NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL,
     theme_id       bigint
-    -- , CONSTRAINT enforce_theme_or_theme_field CHECK ((((theme_id IS NOT NULL) AND (theme_field_id IS NULL)) OR ((theme_id IS NULL) AND (theme_field_id IS NOT NULL))))
 );
+-- , CONSTRAINT enforce_theme_or_theme_field CHECK ((((theme_id IS NOT NULL) AND (theme_field_id IS NULL)) OR ((theme_id IS NULL) AND (theme_field_id IS NOT NULL))))
 
 CREATE
-SEQUENCE public.javascript_caches_id_seq
+    SEQUENCE public.javascript_caches_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.javascript_caches_id_seq OWNED BY public.javascript_caches.id;
+    SEQUENCE public.javascript_caches_id_seq OWNED BY public.javascript_caches.id;
 
 CREATE TABLE public.message_bus
 (
-    id         integer NOT NULL,
+    id         integer                     NOT NULL,
     name       character varying,
     context    character varying,
     data       text,
@@ -1452,49 +1452,49 @@ CREATE TABLE public.message_bus
 );
 
 CREATE
-SEQUENCE public.message_bus_id_seq
+    SEQUENCE public.message_bus_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.message_bus_id_seq OWNED BY public.message_bus.id;
+    SEQUENCE public.message_bus_id_seq OWNED BY public.message_bus.id;
 
 CREATE TABLE public.muted_users
 (
-    id            integer NOT NULL,
-    user_id       integer NOT NULL,
-    muted_user_id integer NOT NULL,
+    id            integer                     NOT NULL,
+    user_id       integer                     NOT NULL,
+    muted_user_id integer                     NOT NULL,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.muted_users_id_seq
+    SEQUENCE public.muted_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.muted_users_id_seq OWNED BY public.muted_users.id;
+    SEQUENCE public.muted_users_id_seq OWNED BY public.muted_users.id;
 
 CREATE TABLE public.notifications
 (
-    id                integer                 NOT NULL,
-    notification_type integer                 NOT NULL,
-    user_id           integer                 NOT NULL,
-    data              character varying(1000) NOT NULL,
-    read              boolean DEFAULT false   NOT NULL,
+    id                integer                     NOT NULL,
+    notification_type integer                     NOT NULL,
+    user_id           integer                     NOT NULL,
+    data              character varying(1000)     NOT NULL,
+    read              boolean DEFAULT false       NOT NULL,
     created_at        timestamp without time zone NOT NULL,
     updated_at        timestamp without time zone NOT NULL,
     topic_id          integer,
@@ -1503,25 +1503,25 @@ CREATE TABLE public.notifications
 );
 
 CREATE
-SEQUENCE public.notifications_id_seq
+    SEQUENCE public.notifications_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+    SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 CREATE TABLE public.oauth2_user_infos
 (
-    id         integer           NOT NULL,
-    user_id    integer           NOT NULL,
-    uid        character varying NOT NULL,
-    provider   character varying NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    uid        character varying           NOT NULL,
+    provider   character varying           NOT NULL,
     email      character varying,
     name       character varying,
     created_at timestamp without time zone NOT NULL,
@@ -1529,40 +1529,40 @@ CREATE TABLE public.oauth2_user_infos
 );
 
 CREATE
-SEQUENCE public.oauth2_user_infos_id_seq
+    SEQUENCE public.oauth2_user_infos_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.oauth2_user_infos_id_seq OWNED BY public.oauth2_user_infos.id;
+    SEQUENCE public.oauth2_user_infos_id_seq OWNED BY public.oauth2_user_infos.id;
 
 CREATE TABLE public.onceoff_logs
 (
-    id         integer NOT NULL,
+    id         integer                     NOT NULL,
     job_name   character varying,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.onceoff_logs_id_seq
+    SEQUENCE public.onceoff_logs_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.onceoff_logs_id_seq OWNED BY public.onceoff_logs.id;
+    SEQUENCE public.onceoff_logs_id_seq OWNED BY public.onceoff_logs.id;
 
 CREATE TABLE public.optimized_images
 (
@@ -1579,23 +1579,23 @@ CREATE TABLE public.optimized_images
 );
 
 CREATE
-SEQUENCE public.optimized_images_id_seq
+    SEQUENCE public.optimized_images_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.optimized_images_id_seq OWNED BY public.optimized_images.id;
+    SEQUENCE public.optimized_images_id_seq OWNED BY public.optimized_images.id;
 
 CREATE TABLE public.permalinks
 (
-    id           integer                 NOT NULL,
-    url          character varying(1000) NOT NULL,
+    id           integer                     NOT NULL,
+    url          character varying(1000)     NOT NULL,
     topic_id     integer,
     post_id      integer,
     category_id  integer,
@@ -1605,65 +1605,65 @@ CREATE TABLE public.permalinks
 );
 
 CREATE
-SEQUENCE public.permalinks_id_seq
+    SEQUENCE public.permalinks_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.permalinks_id_seq OWNED BY public.permalinks.id;
+    SEQUENCE public.permalinks_id_seq OWNED BY public.permalinks.id;
 
 CREATE TABLE public.plugin_store_rows
 (
     id          integer           NOT NULL,
     plugin_name character varying NOT NULL,
-    key character varying NOT NULL,
+    key         character varying NOT NULL,
     type_name   character varying NOT NULL,
     value       text
 );
 
 CREATE
-SEQUENCE public.plugin_store_rows_id_seq
+    SEQUENCE public.plugin_store_rows_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.plugin_store_rows_id_seq OWNED BY public.plugin_store_rows.id;
+    SEQUENCE public.plugin_store_rows_id_seq OWNED BY public.plugin_store_rows.id;
 
 CREATE TABLE public.poll_options
 (
-    id              bigint            NOT NULL,
+    id              bigint                      NOT NULL,
     poll_id         bigint,
-    digest          character varying NOT NULL,
-    html            text              NOT NULL,
+    digest          character varying           NOT NULL,
+    html            text                        NOT NULL,
     anonymous_votes integer,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.poll_options_id_seq
+    SEQUENCE public.poll_options_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.poll_options_id_seq OWNED BY public.poll_options.id;
+    SEQUENCE public.poll_options_id_seq OWNED BY public.poll_options.id;
 
 CREATE TABLE public.poll_votes
 (
@@ -1676,44 +1676,44 @@ CREATE TABLE public.poll_votes
 
 CREATE TABLE public.polls
 (
-    id               bigint                      NOT NULL,
+    id               bigint                                               NOT NULL,
     post_id          bigint,
     name             character varying DEFAULT 'poll':: character varying NOT NULL,
     close_at         timestamp without time zone,
-    type             integer           DEFAULT 0 NOT NULL,
-    status           integer           DEFAULT 0 NOT NULL,
-    results          integer           DEFAULT 0 NOT NULL,
-    visibility       integer           DEFAULT 0 NOT NULL,
+    type             integer           DEFAULT 0                          NOT NULL,
+    status           integer           DEFAULT 0                          NOT NULL,
+    results          integer           DEFAULT 0                          NOT NULL,
+    visibility       integer           DEFAULT 0                          NOT NULL,
     min              integer,
     max              integer,
     step             integer,
     anonymous_voters integer,
-    created_at       timestamp without time zone NOT NULL,
-    updated_at       timestamp without time zone NOT NULL,
-    chart_type       integer           DEFAULT 0 NOT NULL,
+    created_at       timestamp without time zone                          NOT NULL,
+    updated_at       timestamp without time zone                          NOT NULL,
+    chart_type       integer           DEFAULT 0                          NOT NULL,
     groups           character varying
 );
 
 CREATE
-SEQUENCE public.polls_id_seq
+    SEQUENCE public.polls_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.polls_id_seq OWNED BY public.polls.id;
+    SEQUENCE public.polls_id_seq OWNED BY public.polls.id;
 
 CREATE TABLE public.post_action_types
 (
     name_key            character varying(50)          NOT NULL,
     is_flag             boolean          DEFAULT false NOT NULL,
     icon                character varying(20),
-    created_at          timestamp without time zone NOT NULL,
-    updated_at          timestamp without time zone NOT NULL,
+    created_at          timestamp without time zone    NOT NULL,
+    updated_at          timestamp without time zone    NOT NULL,
     id                  integer                        NOT NULL,
     "position"          integer          DEFAULT 0     NOT NULL,
     score_bonus         double precision DEFAULT 0.0   NOT NULL,
@@ -1721,33 +1721,33 @@ CREATE TABLE public.post_action_types
 );
 
 CREATE
-SEQUENCE public.post_action_types_id_seq
+    SEQUENCE public.post_action_types_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_action_types_id_seq OWNED BY public.post_action_types.id;
+    SEQUENCE public.post_action_types_id_seq OWNED BY public.post_action_types.id;
 
 CREATE TABLE public.post_actions
 (
-    id                  integer               NOT NULL,
-    post_id             integer               NOT NULL,
-    user_id             integer               NOT NULL,
-    post_action_type_id integer               NOT NULL,
+    id                  integer                     NOT NULL,
+    post_id             integer                     NOT NULL,
+    user_id             integer                     NOT NULL,
+    post_action_type_id integer                     NOT NULL,
     deleted_at          timestamp without time zone,
     created_at          timestamp without time zone NOT NULL,
     updated_at          timestamp without time zone NOT NULL,
     deleted_by_id       integer,
     related_post_id     integer,
-    staff_took_action   boolean DEFAULT false NOT NULL,
+    staff_took_action   boolean DEFAULT false       NOT NULL,
     deferred_by_id      integer,
-    targets_topic       boolean DEFAULT false NOT NULL,
+    targets_topic       boolean DEFAULT false       NOT NULL,
     agreed_at           timestamp without time zone,
     agreed_by_id        integer,
     deferred_at         timestamp without time zone,
@@ -1756,48 +1756,48 @@ CREATE TABLE public.post_actions
 );
 
 CREATE
-SEQUENCE public.post_actions_id_seq
+    SEQUENCE public.post_actions_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_actions_id_seq OWNED BY public.post_actions.id;
+    SEQUENCE public.post_actions_id_seq OWNED BY public.post_actions.id;
 
 CREATE TABLE public.post_custom_fields
 (
-    id         integer                NOT NULL,
-    post_id    integer                NOT NULL,
-    name       character varying(256) NOT NULL,
+    id         integer                     NOT NULL,
+    post_id    integer                     NOT NULL,
+    name       character varying(256)      NOT NULL,
     value      text,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.post_custom_fields_id_seq
+    SEQUENCE public.post_custom_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_custom_fields_id_seq OWNED BY public.post_custom_fields.id;
+    SEQUENCE public.post_custom_fields_id_seq OWNED BY public.post_custom_fields.id;
 
 CREATE TABLE public.post_details
 (
-    id         integer NOT NULL,
+    id         integer                     NOT NULL,
     post_id    integer,
-    key character varying,
+    key        character varying,
     value      character varying,
     extra      text,
     created_at timestamp without time zone NOT NULL,
@@ -1805,18 +1805,18 @@ CREATE TABLE public.post_details
 );
 
 CREATE
-SEQUENCE public.post_details_id_seq
+    SEQUENCE public.post_details_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_details_id_seq OWNED BY public.post_details.id;
+    SEQUENCE public.post_details_id_seq OWNED BY public.post_details.id;
 
 CREATE TABLE public.post_replies
 (
@@ -1828,65 +1828,65 @@ CREATE TABLE public.post_replies
 
 CREATE TABLE public.post_reply_keys
 (
-    id         bigint  NOT NULL,
-    user_id    integer NOT NULL,
-    post_id    integer NOT NULL,
-    reply_key uuid NOT NULL,
+    id         bigint                      NOT NULL,
+    user_id    integer                     NOT NULL,
+    post_id    integer                     NOT NULL,
+    reply_key  uuid                        NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.post_reply_keys_id_seq
+    SEQUENCE public.post_reply_keys_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_reply_keys_id_seq OWNED BY public.post_reply_keys.id;
+    SEQUENCE public.post_reply_keys_id_seq OWNED BY public.post_reply_keys.id;
 
 CREATE TABLE public.post_revisions
 (
-    id            integer               NOT NULL,
+    id            integer                     NOT NULL,
     user_id       integer,
     post_id       integer,
     modifications text,
     number        integer,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
-    hidden        boolean DEFAULT false NOT NULL
+    hidden        boolean DEFAULT false       NOT NULL
 );
 
 CREATE
-SEQUENCE public.post_revisions_id_seq
+    SEQUENCE public.post_revisions_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_revisions_id_seq OWNED BY public.post_revisions.id;
+    SEQUENCE public.post_revisions_id_seq OWNED BY public.post_revisions.id;
 
 CREATE TABLE public.post_search_data
 (
-    post_id  integer NOT NULL,
+    post_id     integer NOT NULL,
     search_data tsvector,
-    raw_data text,
-    locale   character varying,
-    version  integer DEFAULT 0
+    raw_data    text,
+    locale      character varying,
+    version     integer DEFAULT 0
 );
 
 CREATE TABLE public.post_stats
 (
-    id                           integer NOT NULL,
+    id                           integer                     NOT NULL,
     post_id                      integer,
     drafts_saved                 integer,
     typing_duration_msecs        integer,
@@ -1896,18 +1896,18 @@ CREATE TABLE public.post_stats
 );
 
 CREATE
-SEQUENCE public.post_stats_id_seq
+    SEQUENCE public.post_stats_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_stats_id_seq OWNED BY public.post_stats.id;
+    SEQUENCE public.post_stats_id_seq OWNED BY public.post_stats.id;
 
 CREATE TABLE public.post_timings
 (
@@ -1925,82 +1925,82 @@ CREATE TABLE public.post_uploads
 );
 
 CREATE
-SEQUENCE public.post_uploads_id_seq
+    SEQUENCE public.post_uploads_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.post_uploads_id_seq OWNED BY public.post_uploads.id;
+    SEQUENCE public.post_uploads_id_seq OWNED BY public.post_uploads.id;
 
 CREATE
-SEQUENCE public.posts_id_seq
+    SEQUENCE public.posts_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
+    SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
 
 CREATE TABLE public.push_subscriptions
 (
-    id         bigint            NOT NULL,
-    user_id    integer           NOT NULL,
-    data       character varying NOT NULL,
+    id         bigint                      NOT NULL,
+    user_id    integer                     NOT NULL,
+    data       character varying           NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.push_subscriptions_id_seq
+    SEQUENCE public.push_subscriptions_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.push_subscriptions_id_seq OWNED BY public.push_subscriptions.id;
+    SEQUENCE public.push_subscriptions_id_seq OWNED BY public.push_subscriptions.id;
 
 CREATE TABLE public.quoted_posts
 (
-    id             integer NOT NULL,
-    post_id        integer NOT NULL,
-    quoted_post_id integer NOT NULL,
+    id             integer                     NOT NULL,
+    post_id        integer                     NOT NULL,
+    quoted_post_id integer                     NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.quoted_posts_id_seq
+    SEQUENCE public.quoted_posts_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.quoted_posts_id_seq OWNED BY public.quoted_posts.id;
+    SEQUENCE public.quoted_posts_id_seq OWNED BY public.quoted_posts.id;
 
 CREATE TABLE public.remote_themes
 (
-    id                        integer           NOT NULL,
-    remote_url                character varying NOT NULL,
+    id                        integer                     NOT NULL,
+    remote_url                character varying           NOT NULL,
     remote_version            character varying,
     local_version             character varying,
     about_url                 character varying,
@@ -2019,65 +2019,65 @@ CREATE TABLE public.remote_themes
 );
 
 CREATE
-SEQUENCE public.remote_themes_id_seq
+    SEQUENCE public.remote_themes_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.remote_themes_id_seq OWNED BY public.remote_themes.id;
+    SEQUENCE public.remote_themes_id_seq OWNED BY public.remote_themes.id;
 
 CREATE TABLE public.reviewable_claimed_topics
 (
-    id         bigint  NOT NULL,
-    user_id    integer NOT NULL,
-    topic_id   integer NOT NULL,
+    id         bigint                      NOT NULL,
+    user_id    integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.reviewable_claimed_topics_id_seq
+    SEQUENCE public.reviewable_claimed_topics_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.reviewable_claimed_topics_id_seq OWNED BY public.reviewable_claimed_topics.id;
+    SEQUENCE public.reviewable_claimed_topics_id_seq OWNED BY public.reviewable_claimed_topics.id;
 
 CREATE TABLE public.reviewable_histories
 (
-    id                      bigint  NOT NULL,
-    reviewable_id           integer NOT NULL,
-    reviewable_history_type integer NOT NULL,
-    status                  integer NOT NULL,
-    created_by_id           integer NOT NULL,
+    id                      bigint                      NOT NULL,
+    reviewable_id           integer                     NOT NULL,
+    reviewable_history_type integer                     NOT NULL,
+    status                  integer                     NOT NULL,
+    created_by_id           integer                     NOT NULL,
     edited                  json,
     created_at              timestamp without time zone NOT NULL,
     updated_at              timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.reviewable_histories_id_seq
+    SEQUENCE public.reviewable_histories_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.reviewable_histories_id_seq OWNED BY public.reviewable_histories.id;
+    SEQUENCE public.reviewable_histories_id_seq OWNED BY public.reviewable_histories.id;
 
 CREATE TABLE public.reviewable_scores
 (
@@ -2091,24 +2091,24 @@ CREATE TABLE public.reviewable_scores
     reviewed_by_id        integer,
     reviewed_at           timestamp without time zone,
     meta_topic_id         integer,
-    created_at            timestamp without time zone NOT NULL,
-    updated_at            timestamp without time zone NOT NULL,
+    created_at            timestamp without time zone  NOT NULL,
+    updated_at            timestamp without time zone  NOT NULL,
     reason                character varying,
     user_accuracy_bonus   double precision DEFAULT 0.0 NOT NULL
 );
 
 CREATE
-SEQUENCE public.reviewable_scores_id_seq
+    SEQUENCE public.reviewable_scores_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.reviewable_scores_id_seq OWNED BY public.reviewable_scores.id;
+    SEQUENCE public.reviewable_scores_id_seq OWNED BY public.reviewable_scores.id;
 
 CREATE TABLE public.reviewables
 (
@@ -2128,29 +2128,29 @@ CREATE TABLE public.reviewables
     payload                 json,
     version                 integer          DEFAULT 0     NOT NULL,
     latest_score            timestamp without time zone,
-    created_at              timestamp without time zone NOT NULL,
-    updated_at              timestamp without time zone NOT NULL
+    created_at              timestamp without time zone    NOT NULL,
+    updated_at              timestamp without time zone    NOT NULL
 );
 
 CREATE
-SEQUENCE public.reviewables_id_seq
+    SEQUENCE public.reviewables_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.reviewables_id_seq OWNED BY public.reviewables.id;
+    SEQUENCE public.reviewables_id_seq OWNED BY public.reviewables.id;
 
 CREATE TABLE public.scheduler_stats
 (
-    id                integer           NOT NULL,
-    name              character varying NOT NULL,
-    hostname          character varying NOT NULL,
-    pid               integer           NOT NULL,
+    id                integer                     NOT NULL,
+    name              character varying           NOT NULL,
+    hostname          character varying           NOT NULL,
+    pid               integer                     NOT NULL,
     duration_ms       integer,
     live_slots_start  integer,
     live_slots_finish integer,
@@ -2160,23 +2160,23 @@ CREATE TABLE public.scheduler_stats
 );
 
 CREATE
-SEQUENCE public.scheduler_stats_id_seq
+    SEQUENCE public.scheduler_stats_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.scheduler_stats_id_seq OWNED BY public.scheduler_stats.id;
+    SEQUENCE public.scheduler_stats_id_seq OWNED BY public.scheduler_stats.id;
 
 CREATE TABLE public.schema_migration_details
 (
-    id            integer           NOT NULL,
-    version       character varying NOT NULL,
+    id            integer                     NOT NULL,
+    version       character varying           NOT NULL,
     name          character varying,
     hostname      character varying,
     git_version   character varying,
@@ -2187,18 +2187,18 @@ CREATE TABLE public.schema_migration_details
 );
 
 CREATE
-SEQUENCE public.schema_migration_details_id_seq
+    SEQUENCE public.schema_migration_details_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.schema_migration_details_id_seq OWNED BY public.schema_migration_details.id;
+    SEQUENCE public.schema_migration_details_id_seq OWNED BY public.schema_migration_details.id;
 
 CREATE TABLE public.schema_migrations
 (
@@ -2207,136 +2207,136 @@ CREATE TABLE public.schema_migrations
 
 CREATE TABLE public.screened_emails
 (
-    id            integer           NOT NULL,
-    email         character varying NOT NULL,
-    action_type   integer           NOT NULL,
-    match_count   integer DEFAULT 0 NOT NULL,
+    id            integer                     NOT NULL,
+    email         character varying           NOT NULL,
+    action_type   integer                     NOT NULL,
+    match_count   integer DEFAULT 0           NOT NULL,
     last_match_at timestamp without time zone,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
-    ip_address inet
+    ip_address    inet
 );
 
 CREATE
-SEQUENCE public.screened_emails_id_seq
+    SEQUENCE public.screened_emails_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.screened_emails_id_seq OWNED BY public.screened_emails.id;
+    SEQUENCE public.screened_emails_id_seq OWNED BY public.screened_emails.id;
 
 CREATE TABLE public.screened_ip_addresses
 (
-    id            integer           NOT NULL,
-    ip_address inet NOT NULL,
-    action_type   integer           NOT NULL,
-    match_count   integer DEFAULT 0 NOT NULL,
+    id            integer                     NOT NULL,
+    ip_address    inet                        NOT NULL,
+    action_type   integer                     NOT NULL,
+    match_count   integer DEFAULT 0           NOT NULL,
     last_match_at timestamp without time zone,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.screened_ip_addresses_id_seq
+    SEQUENCE public.screened_ip_addresses_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.screened_ip_addresses_id_seq OWNED BY public.screened_ip_addresses.id;
+    SEQUENCE public.screened_ip_addresses_id_seq OWNED BY public.screened_ip_addresses.id;
 
 CREATE TABLE public.screened_urls
 (
-    id            integer           NOT NULL,
-    url           character varying NOT NULL,
-    domain        character varying NOT NULL,
-    action_type   integer           NOT NULL,
-    match_count   integer DEFAULT 0 NOT NULL,
+    id            integer                     NOT NULL,
+    url           character varying           NOT NULL,
+    domain        character varying           NOT NULL,
+    action_type   integer                     NOT NULL,
+    match_count   integer DEFAULT 0           NOT NULL,
     last_match_at timestamp without time zone,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
-    ip_address inet
+    ip_address    inet
 );
 
 CREATE
-SEQUENCE public.screened_urls_id_seq
+    SEQUENCE public.screened_urls_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.screened_urls_id_seq OWNED BY public.screened_urls.id;
+    SEQUENCE public.screened_urls_id_seq OWNED BY public.screened_urls.id;
 
 CREATE TABLE public.search_logs
 (
-    id                 integer           NOT NULL,
-    term               character varying NOT NULL,
+    id                 integer                     NOT NULL,
+    term               character varying           NOT NULL,
     user_id            integer,
-    ip_address inet,
+    ip_address         inet,
     search_result_id   integer,
-    search_type        integer           NOT NULL,
+    search_type        integer                     NOT NULL,
     created_at         timestamp without time zone NOT NULL,
     search_result_type integer
 );
 
 CREATE
-SEQUENCE public.search_logs_id_seq
+    SEQUENCE public.search_logs_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.search_logs_id_seq OWNED BY public.search_logs.id;
+    SEQUENCE public.search_logs_id_seq OWNED BY public.search_logs.id;
 
 CREATE TABLE public.shared_drafts
 (
-    topic_id    integer NOT NULL,
-    category_id integer NOT NULL,
+    topic_id    integer                     NOT NULL,
+    category_id integer                     NOT NULL,
     created_at  timestamp without time zone NOT NULL,
     updated_at  timestamp without time zone NOT NULL,
-    id          bigint  NOT NULL
+    id          bigint                      NOT NULL
 );
 
 CREATE
-SEQUENCE public.shared_drafts_id_seq
+    SEQUENCE public.shared_drafts_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.shared_drafts_id_seq OWNED BY public.shared_drafts.id;
+    SEQUENCE public.shared_drafts_id_seq OWNED BY public.shared_drafts.id;
 
 CREATE TABLE public.single_sign_on_records
 (
-    id                              integer           NOT NULL,
-    user_id                         integer           NOT NULL,
-    external_id                     character varying NOT NULL,
-    last_payload                    text              NOT NULL,
+    id                              integer                     NOT NULL,
+    user_id                         integer                     NOT NULL,
+    external_id                     character varying           NOT NULL,
+    last_payload                    text                        NOT NULL,
     created_at                      timestamp without time zone NOT NULL,
     updated_at                      timestamp without time zone NOT NULL,
     external_username               character varying,
@@ -2348,145 +2348,145 @@ CREATE TABLE public.single_sign_on_records
 );
 
 CREATE
-SEQUENCE public.single_sign_on_records_id_seq
+    SEQUENCE public.single_sign_on_records_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.single_sign_on_records_id_seq OWNED BY public.single_sign_on_records.id;
+    SEQUENCE public.single_sign_on_records_id_seq OWNED BY public.single_sign_on_records.id;
 
 CREATE TABLE public.site_settings
 (
-    id         integer           NOT NULL,
-    name       character varying NOT NULL,
-    data_type  integer           NOT NULL,
+    id         integer                     NOT NULL,
+    name       character varying           NOT NULL,
+    data_type  integer                     NOT NULL,
     value      text,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.site_settings_id_seq
+    SEQUENCE public.site_settings_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.site_settings_id_seq OWNED BY public.site_settings.id;
+    SEQUENCE public.site_settings_id_seq OWNED BY public.site_settings.id;
 
 CREATE TABLE public.skipped_email_logs
 (
-    id            bigint            NOT NULL,
-    email_type    character varying NOT NULL,
-    to_address    character varying NOT NULL,
+    id            bigint                      NOT NULL,
+    email_type    character varying           NOT NULL,
+    to_address    character varying           NOT NULL,
     user_id       integer,
     post_id       integer,
-    reason_type   integer           NOT NULL,
+    reason_type   integer                     NOT NULL,
     custom_reason text,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.skipped_email_logs_id_seq
+    SEQUENCE public.skipped_email_logs_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.skipped_email_logs_id_seq OWNED BY public.skipped_email_logs.id;
+    SEQUENCE public.skipped_email_logs_id_seq OWNED BY public.skipped_email_logs.id;
 
 CREATE TABLE public.stylesheet_cache
 (
-    id         integer           NOT NULL,
-    target     character varying NOT NULL,
-    digest     character varying NOT NULL,
-    content    text              NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    id         integer                        NOT NULL,
+    target     character varying              NOT NULL,
+    digest     character varying              NOT NULL,
+    content    text                           NOT NULL,
+    created_at timestamp without time zone    NOT NULL,
+    updated_at timestamp without time zone    NOT NULL,
     theme_id   integer DEFAULT '-1':: integer NOT NULL,
     source_map text
 );
 
 CREATE
-SEQUENCE public.stylesheet_cache_id_seq
+    SEQUENCE public.stylesheet_cache_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.stylesheet_cache_id_seq OWNED BY public.stylesheet_cache.id;
+    SEQUENCE public.stylesheet_cache_id_seq OWNED BY public.stylesheet_cache.id;
 
 CREATE TABLE public.tag_group_memberships
 (
-    id           integer NOT NULL,
-    tag_id       integer NOT NULL,
-    tag_group_id integer NOT NULL,
+    id           integer                     NOT NULL,
+    tag_id       integer                     NOT NULL,
+    tag_group_id integer                     NOT NULL,
     created_at   timestamp without time zone NOT NULL,
     updated_at   timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.tag_group_memberships_id_seq
+    SEQUENCE public.tag_group_memberships_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tag_group_memberships_id_seq OWNED BY public.tag_group_memberships.id;
+    SEQUENCE public.tag_group_memberships_id_seq OWNED BY public.tag_group_memberships.id;
 
 CREATE TABLE public.tag_group_permissions
 (
-    id              bigint            NOT NULL,
-    tag_group_id    bigint            NOT NULL,
-    group_id        bigint            NOT NULL,
-    permission_type integer DEFAULT 1 NOT NULL,
+    id              bigint                      NOT NULL,
+    tag_group_id    bigint                      NOT NULL,
+    group_id        bigint                      NOT NULL,
+    permission_type integer DEFAULT 1           NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.tag_group_permissions_id_seq
+    SEQUENCE public.tag_group_permissions_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tag_group_permissions_id_seq OWNED BY public.tag_group_permissions.id;
+    SEQUENCE public.tag_group_permissions_id_seq OWNED BY public.tag_group_permissions.id;
 
 CREATE TABLE public.tag_groups
 (
-    id            integer           NOT NULL,
-    name          character varying NOT NULL,
+    id            integer                     NOT NULL,
+    name          character varying           NOT NULL,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
     parent_tag_id integer,
@@ -2494,90 +2494,90 @@ CREATE TABLE public.tag_groups
 );
 
 CREATE
-SEQUENCE public.tag_groups_id_seq
+    SEQUENCE public.tag_groups_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tag_groups_id_seq OWNED BY public.tag_groups.id;
+    SEQUENCE public.tag_groups_id_seq OWNED BY public.tag_groups.id;
 
 CREATE TABLE public.tag_search_data
 (
-    tag_id   integer NOT NULL,
+    tag_id      integer NOT NULL,
     search_data tsvector,
-    raw_data text,
-    locale   text,
-    version  integer DEFAULT 0
+    raw_data    text,
+    locale      text,
+    version     integer DEFAULT 0
 );
 
 CREATE
-SEQUENCE public.tag_search_data_tag_id_seq
+    SEQUENCE public.tag_search_data_tag_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tag_search_data_tag_id_seq OWNED BY public.tag_search_data.tag_id;
+    SEQUENCE public.tag_search_data_tag_id_seq OWNED BY public.tag_search_data.tag_id;
 
 CREATE TABLE public.tag_users
 (
-    id                 integer NOT NULL,
-    tag_id             integer NOT NULL,
-    user_id            integer NOT NULL,
-    notification_level integer NOT NULL,
+    id                 integer                     NOT NULL,
+    tag_id             integer                     NOT NULL,
+    user_id            integer                     NOT NULL,
+    notification_level integer                     NOT NULL,
     created_at         timestamp without time zone NOT NULL,
     updated_at         timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.tag_users_id_seq
+    SEQUENCE public.tag_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tag_users_id_seq OWNED BY public.tag_users.id;
+    SEQUENCE public.tag_users_id_seq OWNED BY public.tag_users.id;
 
 CREATE TABLE public.tags
 (
-    id             integer           NOT NULL,
-    name           character varying NOT NULL,
-    topic_count    integer DEFAULT 0 NOT NULL,
+    id             integer                     NOT NULL,
+    name           character varying           NOT NULL,
+    topic_count    integer DEFAULT 0           NOT NULL,
     created_at     timestamp without time zone NOT NULL,
     updated_at     timestamp without time zone NOT NULL,
-    pm_topic_count integer DEFAULT 0 NOT NULL,
+    pm_topic_count integer DEFAULT 0           NOT NULL,
     target_tag_id  integer
 );
 
 CREATE
-SEQUENCE public.tags_id_seq
+    SEQUENCE public.tags_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
+    SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
 
 CREATE TABLE public.tags_web_hooks
 (
@@ -2593,8 +2593,8 @@ CREATE TABLE public.theme_fields
     name             character varying(255)          NOT NULL,
     value            text                            NOT NULL,
     value_baked      text,
-    created_at       timestamp without time zone NOT NULL,
-    updated_at       timestamp without time zone NOT NULL,
+    created_at       timestamp without time zone     NOT NULL,
+    updated_at       timestamp without time zone     NOT NULL,
     compiler_version character varying(50) DEFAULT 0 NOT NULL,
     error            character varying,
     upload_id        integer,
@@ -2602,18 +2602,18 @@ CREATE TABLE public.theme_fields
 );
 
 CREATE
-SEQUENCE public.theme_fields_id_seq
+    SEQUENCE public.theme_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.theme_fields_id_seq OWNED BY public.theme_fields.id;
+    SEQUENCE public.theme_fields_id_seq OWNED BY public.theme_fields.id;
 
 CREATE TABLE public.theme_modifier_sets
 (
@@ -2625,95 +2625,95 @@ CREATE TABLE public.theme_modifier_sets
 );
 
 CREATE
-SEQUENCE public.theme_modifier_sets_id_seq
+    SEQUENCE public.theme_modifier_sets_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.theme_modifier_sets_id_seq OWNED BY public.theme_modifier_sets.id;
+    SEQUENCE public.theme_modifier_sets_id_seq OWNED BY public.theme_modifier_sets.id;
 
 CREATE TABLE public.theme_settings
 (
-    id         bigint                 NOT NULL,
-    name       character varying(255) NOT NULL,
-    data_type  integer                NOT NULL,
+    id         bigint                      NOT NULL,
+    name       character varying(255)      NOT NULL,
+    data_type  integer                     NOT NULL,
     value      text,
-    theme_id   integer                NOT NULL,
+    theme_id   integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.theme_settings_id_seq
+    SEQUENCE public.theme_settings_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.theme_settings_id_seq OWNED BY public.theme_settings.id;
+    SEQUENCE public.theme_settings_id_seq OWNED BY public.theme_settings.id;
 
 CREATE TABLE public.theme_translation_overrides
 (
-    id              bigint            NOT NULL,
-    theme_id        integer           NOT NULL,
-    locale          character varying NOT NULL,
-    translation_key character varying NOT NULL,
-    value           character varying NOT NULL,
+    id              bigint                      NOT NULL,
+    theme_id        integer                     NOT NULL,
+    locale          character varying           NOT NULL,
+    translation_key character varying           NOT NULL,
+    value           character varying           NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.theme_translation_overrides_id_seq
+    SEQUENCE public.theme_translation_overrides_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.theme_translation_overrides_id_seq OWNED BY public.theme_translation_overrides.id;
+    SEQUENCE public.theme_translation_overrides_id_seq OWNED BY public.theme_translation_overrides.id;
 
 CREATE TABLE public.themes
 (
-    id               integer               NOT NULL,
-    name             character varying     NOT NULL,
-    user_id          integer               NOT NULL,
+    id               integer                     NOT NULL,
+    name             character varying           NOT NULL,
+    user_id          integer                     NOT NULL,
     created_at       timestamp without time zone NOT NULL,
     updated_at       timestamp without time zone NOT NULL,
-    compiler_version integer DEFAULT 0     NOT NULL,
-    user_selectable  boolean DEFAULT false NOT NULL,
-    hidden           boolean DEFAULT false NOT NULL,
+    compiler_version integer DEFAULT 0           NOT NULL,
+    user_selectable  boolean DEFAULT false       NOT NULL,
+    hidden           boolean DEFAULT false       NOT NULL,
     color_scheme_id  integer,
     remote_theme_id  integer,
-    component        boolean DEFAULT false NOT NULL,
-    enabled          boolean DEFAULT true  NOT NULL
+    component        boolean DEFAULT false       NOT NULL,
+    enabled          boolean DEFAULT true        NOT NULL
 );
 
 CREATE
-SEQUENCE public.themes_id_seq
+    SEQUENCE public.themes_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.themes_id_seq OWNED BY public.themes.id;
+    SEQUENCE public.themes_id_seq OWNED BY public.themes.id;
 
 CREATE TABLE public.top_topics
 (
@@ -2748,18 +2748,18 @@ CREATE TABLE public.top_topics
 );
 
 CREATE
-SEQUENCE public.top_topics_id_seq
+    SEQUENCE public.top_topics_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.top_topics_id_seq OWNED BY public.top_topics.id;
+    SEQUENCE public.top_topics_id_seq OWNED BY public.top_topics.id;
 
 CREATE TABLE public.topic_allowed_groups
 (
@@ -2769,72 +2769,72 @@ CREATE TABLE public.topic_allowed_groups
 );
 
 CREATE
-SEQUENCE public.topic_allowed_groups_id_seq
+    SEQUENCE public.topic_allowed_groups_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_allowed_groups_id_seq OWNED BY public.topic_allowed_groups.id;
+    SEQUENCE public.topic_allowed_groups_id_seq OWNED BY public.topic_allowed_groups.id;
 
 CREATE TABLE public.topic_allowed_users
 (
-    id         integer NOT NULL,
-    user_id    integer NOT NULL,
-    topic_id   integer NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.topic_allowed_users_id_seq
+    SEQUENCE public.topic_allowed_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_allowed_users_id_seq OWNED BY public.topic_allowed_users.id;
+    SEQUENCE public.topic_allowed_users_id_seq OWNED BY public.topic_allowed_users.id;
 
 CREATE TABLE public.topic_custom_fields
 (
-    id         integer                NOT NULL,
-    topic_id   integer                NOT NULL,
-    name       character varying(256) NOT NULL,
+    id         integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
+    name       character varying(256)      NOT NULL,
     value      text,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.topic_custom_fields_id_seq
+    SEQUENCE public.topic_custom_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_custom_fields_id_seq OWNED BY public.topic_custom_fields.id;
+    SEQUENCE public.topic_custom_fields_id_seq OWNED BY public.topic_custom_fields.id;
 
 CREATE TABLE public.topic_embeds
 (
-    id            integer                 NOT NULL,
-    topic_id      integer                 NOT NULL,
-    post_id       integer                 NOT NULL,
-    embed_url     character varying(1000) NOT NULL,
+    id            integer                     NOT NULL,
+    topic_id      integer                     NOT NULL,
+    post_id       integer                     NOT NULL,
+    embed_url     character varying(1000)     NOT NULL,
     content_sha1  character varying(40),
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
@@ -2843,178 +2843,178 @@ CREATE TABLE public.topic_embeds
 );
 
 CREATE
-SEQUENCE public.topic_embeds_id_seq
+    SEQUENCE public.topic_embeds_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_embeds_id_seq OWNED BY public.topic_embeds.id;
+    SEQUENCE public.topic_embeds_id_seq OWNED BY public.topic_embeds.id;
 
 CREATE TABLE public.topic_groups
 (
-    id                    bigint            NOT NULL,
-    group_id              integer           NOT NULL,
-    topic_id              integer           NOT NULL,
-    last_read_post_number integer DEFAULT 0 NOT NULL,
+    id                    bigint                      NOT NULL,
+    group_id              integer                     NOT NULL,
+    topic_id              integer                     NOT NULL,
+    last_read_post_number integer DEFAULT 0           NOT NULL,
     created_at            timestamp without time zone NOT NULL,
     updated_at            timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.topic_groups_id_seq
+    SEQUENCE public.topic_groups_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_groups_id_seq OWNED BY public.topic_groups.id;
+    SEQUENCE public.topic_groups_id_seq OWNED BY public.topic_groups.id;
 
 CREATE TABLE public.topic_invites
 (
-    id         integer NOT NULL,
-    topic_id   integer NOT NULL,
-    invite_id  integer NOT NULL,
+    id         integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
+    invite_id  integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.topic_invites_id_seq
+    SEQUENCE public.topic_invites_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_invites_id_seq OWNED BY public.topic_invites.id;
+    SEQUENCE public.topic_invites_id_seq OWNED BY public.topic_invites.id;
 
 CREATE TABLE public.topic_link_clicks
 (
-    id            integer NOT NULL,
-    topic_link_id integer NOT NULL,
+    id            integer                     NOT NULL,
+    topic_link_id integer                     NOT NULL,
     user_id       integer,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
-    ip_address inet
+    ip_address    inet
 );
 
 CREATE
-SEQUENCE public.topic_link_clicks_id_seq
+    SEQUENCE public.topic_link_clicks_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_link_clicks_id_seq OWNED BY public.topic_link_clicks.id;
+    SEQUENCE public.topic_link_clicks_id_seq OWNED BY public.topic_link_clicks.id;
 
 CREATE TABLE public.topic_links
 (
-    id            integer                NOT NULL,
-    topic_id      integer                NOT NULL,
+    id            integer                     NOT NULL,
+    topic_id      integer                     NOT NULL,
     post_id       integer,
-    user_id       integer                NOT NULL,
-    url           character varying(500) NOT NULL,
-    domain        character varying(100) NOT NULL,
-    internal      boolean DEFAULT false  NOT NULL,
+    user_id       integer                     NOT NULL,
+    url           character varying(500)      NOT NULL,
+    domain        character varying(100)      NOT NULL,
+    internal      boolean DEFAULT false       NOT NULL,
     link_topic_id integer,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL,
     reflection    boolean DEFAULT false,
-    clicks        integer DEFAULT 0      NOT NULL,
+    clicks        integer DEFAULT 0           NOT NULL,
     link_post_id  integer,
     title         character varying,
     crawled_at    timestamp without time zone,
-    quote         boolean DEFAULT false  NOT NULL,
+    quote         boolean DEFAULT false       NOT NULL,
     extension     character varying(10)
 );
 
 CREATE
-SEQUENCE public.topic_links_id_seq
+    SEQUENCE public.topic_links_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_links_id_seq OWNED BY public.topic_links.id;
+    SEQUENCE public.topic_links_id_seq OWNED BY public.topic_links.id;
 
 CREATE TABLE public.topic_search_data
 (
-    topic_id integer           NOT NULL,
-    raw_data text,
-    locale   character varying NOT NULL,
+    topic_id    integer           NOT NULL,
+    raw_data    text,
+    locale      character varying NOT NULL,
     search_data tsvector,
-    version  integer DEFAULT 0
+    version     integer DEFAULT 0
 );
 
 CREATE
-SEQUENCE public.topic_search_data_topic_id_seq
+    SEQUENCE public.topic_search_data_topic_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_search_data_topic_id_seq OWNED BY public.topic_search_data.topic_id;
+    SEQUENCE public.topic_search_data_topic_id_seq OWNED BY public.topic_search_data.topic_id;
 
 CREATE TABLE public.topic_tags
 (
-    id         integer NOT NULL,
-    topic_id   integer NOT NULL,
-    tag_id     integer NOT NULL,
+    id         integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
+    tag_id     integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.topic_tags_id_seq
+    SEQUENCE public.topic_tags_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_tags_id_seq OWNED BY public.topic_tags.id;
+    SEQUENCE public.topic_tags_id_seq OWNED BY public.topic_tags.id;
 
 CREATE TABLE public.topic_timers
 (
-    id                 integer               NOT NULL,
+    id                 integer                     NOT NULL,
     execute_at         timestamp without time zone NOT NULL,
-    status_type        integer               NOT NULL,
-    user_id            integer               NOT NULL,
-    topic_id           integer               NOT NULL,
-    based_on_last_post boolean DEFAULT false NOT NULL,
+    status_type        integer                     NOT NULL,
+    user_id            integer                     NOT NULL,
+    topic_id           integer                     NOT NULL,
+    based_on_last_post boolean DEFAULT false       NOT NULL,
     deleted_at         timestamp without time zone,
     deleted_by_id      integer,
     created_at         timestamp without time zone NOT NULL,
@@ -3025,18 +3025,18 @@ CREATE TABLE public.topic_timers
 );
 
 CREATE
-SEQUENCE public.topic_timers_id_seq
+    SEQUENCE public.topic_timers_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_timers_id_seq OWNED BY public.topic_timers.id;
+    SEQUENCE public.topic_timers_id_seq OWNED BY public.topic_timers.id;
 
 CREATE TABLE public.topic_users
 (
@@ -3059,70 +3059,70 @@ CREATE TABLE public.topic_users
 );
 
 CREATE
-SEQUENCE public.topic_users_id_seq
+    SEQUENCE public.topic_users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topic_users_id_seq OWNED BY public.topic_users.id;
+    SEQUENCE public.topic_users_id_seq OWNED BY public.topic_users.id;
 
 CREATE TABLE public.topic_views
 (
-    topic_id  integer NOT NULL,
-    viewed_at date    NOT NULL,
-    user_id   integer,
+    topic_id   integer NOT NULL,
+    viewed_at  date    NOT NULL,
+    user_id    integer,
     ip_address inet
 );
 
 CREATE
-SEQUENCE public.topics_id_seq
+    SEQUENCE public.topics_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.topics_id_seq OWNED BY public.topics.id;
+    SEQUENCE public.topics_id_seq OWNED BY public.topics.id;
 
 CREATE TABLE public.translation_overrides
 (
-    id              integer           NOT NULL,
-    locale          character varying NOT NULL,
-    translation_key character varying NOT NULL,
-    value           character varying NOT NULL,
+    id              integer                     NOT NULL,
+    locale          character varying           NOT NULL,
+    translation_key character varying           NOT NULL,
+    value           character varying           NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL,
     compiled_js     text
 );
 
 CREATE
-SEQUENCE public.translation_overrides_id_seq
+    SEQUENCE public.translation_overrides_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.translation_overrides_id_seq OWNED BY public.translation_overrides.id;
+    SEQUENCE public.translation_overrides_id_seq OWNED BY public.translation_overrides.id;
 
 CREATE TABLE public.unsubscribe_keys
 (
-    key character varying (64) NOT NULL,
-    user_id              integer NOT NULL,
+    key                  character varying(64)       NOT NULL,
+    user_id              integer                     NOT NULL,
     created_at           timestamp without time zone NOT NULL,
     updated_at           timestamp without time zone NOT NULL,
     unsubscribe_key_type character varying,
@@ -3132,13 +3132,13 @@ CREATE TABLE public.unsubscribe_keys
 
 CREATE TABLE public.uploads
 (
-    id                     integer               NOT NULL,
-    user_id                integer               NOT NULL,
-    original_filename      character varying     NOT NULL,
-    filesize               integer               NOT NULL,
+    id                     integer                     NOT NULL,
+    user_id                integer                     NOT NULL,
+    original_filename      character varying           NOT NULL,
+    filesize               integer                     NOT NULL,
     width                  integer,
     height                 integer,
-    url                    character varying     NOT NULL,
+    url                    character varying           NOT NULL,
     created_at             timestamp without time zone NOT NULL,
     updated_at             timestamp without time zone NOT NULL,
     sha1                   character varying(40),
@@ -3148,30 +3148,30 @@ CREATE TABLE public.uploads
     thumbnail_width        integer,
     thumbnail_height       integer,
     etag                   character varying,
-    secure                 boolean DEFAULT false NOT NULL,
+    secure                 boolean DEFAULT false       NOT NULL,
     access_control_post_id bigint,
     original_sha1          character varying
 );
 
 CREATE
-SEQUENCE public.uploads_id_seq
+    SEQUENCE public.uploads_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.uploads_id_seq OWNED BY public.uploads.id;
+    SEQUENCE public.uploads_id_seq OWNED BY public.uploads.id;
 
 CREATE TABLE public.user_actions
 (
-    id              integer NOT NULL,
-    action_type     integer NOT NULL,
-    user_id         integer NOT NULL,
+    id              integer                     NOT NULL,
+    action_type     integer                     NOT NULL,
+    user_id         integer                     NOT NULL,
     target_topic_id integer,
     target_post_id  integer,
     target_user_id  integer,
@@ -3181,97 +3181,97 @@ CREATE TABLE public.user_actions
 );
 
 CREATE
-SEQUENCE public.user_actions_id_seq
+    SEQUENCE public.user_actions_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_actions_id_seq OWNED BY public.user_actions.id;
+    SEQUENCE public.user_actions_id_seq OWNED BY public.user_actions.id;
 
 CREATE TABLE public.user_api_keys
 (
-    id               integer           NOT NULL,
-    user_id          integer           NOT NULL,
-    client_id        character varying NOT NULL,
-    key character varying NOT NULL,
-    application_name character varying NOT NULL,
+    id               integer                                               NOT NULL,
+    user_id          integer                                               NOT NULL,
+    client_id        character varying                                     NOT NULL,
+    key              character varying                                     NOT NULL,
+    application_name character varying                                     NOT NULL,
     push_url         character varying,
-    created_at       timestamp without time zone NOT NULL,
-    updated_at       timestamp without time zone NOT NULL,
+    created_at       timestamp without time zone                           NOT NULL,
+    updated_at       timestamp without time zone                           NOT NULL,
     revoked_at       timestamp without time zone,
-    scopes           text[] DEFAULT '{}':: text [] NOT NULL,
+    scopes           text[]                      DEFAULT '{}':: text[]     NOT NULL,
     last_used_at     timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_api_keys_id_seq
+    SEQUENCE public.user_api_keys_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_api_keys_id_seq OWNED BY public.user_api_keys.id;
+    SEQUENCE public.user_api_keys_id_seq OWNED BY public.user_api_keys.id;
 
 CREATE TABLE public.user_archived_messages
 (
-    id         integer NOT NULL,
-    user_id    integer NOT NULL,
-    topic_id   integer NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    topic_id   integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_archived_messages_id_seq
+    SEQUENCE public.user_archived_messages_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_archived_messages_id_seq OWNED BY public.user_archived_messages.id;
+    SEQUENCE public.user_archived_messages_id_seq OWNED BY public.user_archived_messages.id;
 
 CREATE TABLE public.user_associated_accounts
 (
-    id            bigint            NOT NULL,
-    provider_name character varying NOT NULL,
-    provider_uid  character varying NOT NULL,
+    id            bigint                                                NOT NULL,
+    provider_name character varying                                     NOT NULL,
+    provider_uid  character varying                                     NOT NULL,
     user_id       integer,
     last_used     timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    info jsonb DEFAULT '{}'::jsonb NOT NULL,
-    credentials jsonb DEFAULT '{}'::jsonb NOT NULL,
-    extra jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at    timestamp without time zone NOT NULL,
-    updated_at    timestamp without time zone NOT NULL
+    info          jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    credentials   jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    extra         jsonb                       DEFAULT '{}'::jsonb       NOT NULL,
+    created_at    timestamp without time zone                           NOT NULL,
+    updated_at    timestamp without time zone                           NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_associated_accounts_id_seq
+    SEQUENCE public.user_associated_accounts_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_associated_accounts_id_seq OWNED BY public.user_associated_accounts.id;
+    SEQUENCE public.user_associated_accounts_id_seq OWNED BY public.user_associated_accounts.id;
 
 CREATE TABLE public.user_auth_token_logs
 (
@@ -3279,7 +3279,7 @@ CREATE TABLE public.user_auth_token_logs
     action             character varying NOT NULL,
     user_auth_token_id integer,
     user_id            integer,
-    client_ip inet,
+    client_ip          inet,
     user_agent         character varying,
     auth_token         character varying,
     created_at         timestamp without time zone,
@@ -3287,28 +3287,28 @@ CREATE TABLE public.user_auth_token_logs
 );
 
 CREATE
-SEQUENCE public.user_auth_token_logs_id_seq
+    SEQUENCE public.user_auth_token_logs_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_auth_token_logs_id_seq OWNED BY public.user_auth_token_logs.id;
+    SEQUENCE public.user_auth_token_logs_id_seq OWNED BY public.user_auth_token_logs.id;
 
 CREATE TABLE public.user_auth_tokens
 (
-    id              integer               NOT NULL,
-    user_id         integer               NOT NULL,
-    auth_token      character varying     NOT NULL,
-    prev_auth_token character varying     NOT NULL,
+    id              integer                     NOT NULL,
+    user_id         integer                     NOT NULL,
+    auth_token      character varying           NOT NULL,
+    prev_auth_token character varying           NOT NULL,
     user_agent      character varying,
-    auth_token_seen boolean DEFAULT false NOT NULL,
-    client_ip inet,
+    auth_token_seen boolean DEFAULT false       NOT NULL,
+    client_ip       inet,
     rotated_at      timestamp without time zone NOT NULL,
     created_at      timestamp without time zone NOT NULL,
     updated_at      timestamp without time zone NOT NULL,
@@ -3316,23 +3316,23 @@ CREATE TABLE public.user_auth_tokens
 );
 
 CREATE
-SEQUENCE public.user_auth_tokens_id_seq
+    SEQUENCE public.user_auth_tokens_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_auth_tokens_id_seq OWNED BY public.user_auth_tokens.id;
+    SEQUENCE public.user_auth_tokens_id_seq OWNED BY public.user_auth_tokens.id;
 
 CREATE TABLE public.user_avatars
 (
-    id                             integer NOT NULL,
-    user_id                        integer NOT NULL,
+    id                             integer                     NOT NULL,
+    user_id                        integer                     NOT NULL,
     custom_upload_id               integer,
     gravatar_upload_id             integer,
     last_gravatar_download_attempt timestamp without time zone,
@@ -3341,99 +3341,99 @@ CREATE TABLE public.user_avatars
 );
 
 CREATE
-SEQUENCE public.user_avatars_id_seq
+    SEQUENCE public.user_avatars_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_avatars_id_seq OWNED BY public.user_avatars.id;
+    SEQUENCE public.user_avatars_id_seq OWNED BY public.user_avatars.id;
 
 CREATE TABLE public.user_badges
 (
-    id              integer           NOT NULL,
-    badge_id        integer           NOT NULL,
-    user_id         integer           NOT NULL,
+    id              integer                     NOT NULL,
+    badge_id        integer                     NOT NULL,
+    user_id         integer                     NOT NULL,
     granted_at      timestamp without time zone NOT NULL,
-    granted_by_id   integer           NOT NULL,
+    granted_by_id   integer                     NOT NULL,
     post_id         integer,
     notification_id integer,
-    seq             integer DEFAULT 0 NOT NULL,
+    seq             integer DEFAULT 0           NOT NULL,
     featured_rank   integer
 );
 
 CREATE
-SEQUENCE public.user_badges_id_seq
+    SEQUENCE public.user_badges_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_badges_id_seq OWNED BY public.user_badges.id;
+    SEQUENCE public.user_badges_id_seq OWNED BY public.user_badges.id;
 
 CREATE TABLE public.user_custom_fields
 (
-    id         integer                NOT NULL,
-    user_id    integer                NOT NULL,
-    name       character varying(256) NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    name       character varying(256)      NOT NULL,
     value      text,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_custom_fields_id_seq
+    SEQUENCE public.user_custom_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_custom_fields_id_seq OWNED BY public.user_custom_fields.id;
+    SEQUENCE public.user_custom_fields_id_seq OWNED BY public.user_custom_fields.id;
 
 CREATE TABLE public.user_emails
 (
-    id         integer                NOT NULL,
-    user_id    integer                NOT NULL,
-    email      character varying(513) NOT NULL,
-    "primary"  boolean DEFAULT false  NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    email      character varying(513)      NOT NULL,
+    "primary"  boolean DEFAULT false       NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_emails_id_seq
+    SEQUENCE public.user_emails_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_emails_id_seq OWNED BY public.user_emails.id;
+    SEQUENCE public.user_emails_id_seq OWNED BY public.user_emails.id;
 
 CREATE TABLE public.user_exports
 (
-    id         integer           NOT NULL,
-    file_name  character varying NOT NULL,
-    user_id    integer           NOT NULL,
+    id         integer                     NOT NULL,
+    file_name  character varying           NOT NULL,
+    user_id    integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     upload_id  integer,
@@ -3441,77 +3441,77 @@ CREATE TABLE public.user_exports
 );
 
 CREATE
-SEQUENCE public.user_exports_id_seq
+    SEQUENCE public.user_exports_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_exports_id_seq OWNED BY public.user_exports.id;
+    SEQUENCE public.user_exports_id_seq OWNED BY public.user_exports.id;
 
 CREATE TABLE public.user_field_options
 (
-    id            integer           NOT NULL,
-    user_field_id integer           NOT NULL,
-    value         character varying NOT NULL,
+    id            integer                     NOT NULL,
+    user_field_id integer                     NOT NULL,
+    value         character varying           NOT NULL,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_field_options_id_seq
+    SEQUENCE public.user_field_options_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_field_options_id_seq OWNED BY public.user_field_options.id;
+    SEQUENCE public.user_field_options_id_seq OWNED BY public.user_field_options.id;
 
 CREATE TABLE public.user_fields
 (
-    id                integer               NOT NULL,
-    name              character varying     NOT NULL,
-    field_type        character varying     NOT NULL,
+    id                integer                     NOT NULL,
+    name              character varying           NOT NULL,
+    field_type        character varying           NOT NULL,
     created_at        timestamp without time zone NOT NULL,
     updated_at        timestamp without time zone NOT NULL,
-    editable          boolean DEFAULT false NOT NULL,
-    description       character varying     NOT NULL,
-    required          boolean DEFAULT true  NOT NULL,
-    show_on_profile   boolean DEFAULT false NOT NULL,
+    editable          boolean DEFAULT false       NOT NULL,
+    description       character varying           NOT NULL,
+    required          boolean DEFAULT true        NOT NULL,
+    show_on_profile   boolean DEFAULT false       NOT NULL,
     "position"        integer DEFAULT 0,
-    show_on_user_card boolean DEFAULT false NOT NULL,
+    show_on_user_card boolean DEFAULT false       NOT NULL,
     external_name     character varying,
     external_type     character varying
 );
 
 CREATE
-SEQUENCE public.user_fields_id_seq
+    SEQUENCE public.user_fields_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_fields_id_seq OWNED BY public.user_fields.id;
+    SEQUENCE public.user_fields_id_seq OWNED BY public.user_fields.id;
 
 CREATE TABLE public.user_histories
 (
-    id             integer NOT NULL,
-    action         integer NOT NULL,
+    id             integer                     NOT NULL,
+    action         integer                     NOT NULL,
     acting_user_id integer,
     target_user_id integer,
     details        text,
@@ -3531,100 +3531,100 @@ CREATE TABLE public.user_histories
 );
 
 CREATE
-SEQUENCE public.user_histories_id_seq
+    SEQUENCE public.user_histories_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_histories_id_seq OWNED BY public.user_histories.id;
+    SEQUENCE public.user_histories_id_seq OWNED BY public.user_histories.id;
 
 CREATE TABLE public.user_open_ids
 (
-    id         integer           NOT NULL,
-    user_id    integer           NOT NULL,
-    email      character varying NOT NULL,
-    url        character varying NOT NULL,
+    id         integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
+    email      character varying           NOT NULL,
+    url        character varying           NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    active     boolean           NOT NULL
+    active     boolean                     NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_open_ids_id_seq
+    SEQUENCE public.user_open_ids_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_open_ids_id_seq OWNED BY public.user_open_ids.id;
+    SEQUENCE public.user_open_ids_id_seq OWNED BY public.user_open_ids.id;
 
 CREATE TABLE public.user_options
 (
-    user_id                          integer               NOT NULL,
-    mailing_list_mode                boolean DEFAULT false NOT NULL,
+    user_id                          integer                            NOT NULL,
+    mailing_list_mode                boolean   DEFAULT false            NOT NULL,
     email_digests                    boolean,
-    external_links_in_new_tab        boolean DEFAULT false NOT NULL,
-    enable_quoting                   boolean DEFAULT true  NOT NULL,
-    dynamic_favicon                  boolean DEFAULT false NOT NULL,
-    disable_jump_reply               boolean DEFAULT false NOT NULL,
-    automatically_unpin_topics       boolean DEFAULT true  NOT NULL,
+    external_links_in_new_tab        boolean   DEFAULT false            NOT NULL,
+    enable_quoting                   boolean   DEFAULT true             NOT NULL,
+    dynamic_favicon                  boolean   DEFAULT false            NOT NULL,
+    disable_jump_reply               boolean   DEFAULT false            NOT NULL,
+    automatically_unpin_topics       boolean   DEFAULT true             NOT NULL,
     digest_after_minutes             integer,
     auto_track_topics_after_msecs    integer,
     new_topic_duration_minutes       integer,
     last_redirected_to_top_at        timestamp without time zone,
-    email_previous_replies           integer DEFAULT 2     NOT NULL,
-    email_in_reply_to                boolean DEFAULT true  NOT NULL,
-    like_notification_frequency      integer DEFAULT 1     NOT NULL,
-    mailing_list_mode_frequency      integer DEFAULT 1     NOT NULL,
-    include_tl0_in_digests           boolean DEFAULT false,
+    email_previous_replies           integer   DEFAULT 2                NOT NULL,
+    email_in_reply_to                boolean   DEFAULT true             NOT NULL,
+    like_notification_frequency      integer   DEFAULT 1                NOT NULL,
+    mailing_list_mode_frequency      integer   DEFAULT 1                NOT NULL,
+    include_tl0_in_digests           boolean   DEFAULT false,
     notification_level_when_replying integer,
-    theme_key_seq                    integer DEFAULT 0     NOT NULL,
-    allow_private_messages           boolean DEFAULT true  NOT NULL,
+    theme_key_seq                    integer   DEFAULT 0                NOT NULL,
+    allow_private_messages           boolean   DEFAULT true             NOT NULL,
     homepage_id                      integer,
-    theme_ids                        integer[] DEFAULT '{}':: integer [] NOT NULL,
-    hide_profile_and_presence        boolean DEFAULT false NOT NULL,
-    text_size_key                    integer DEFAULT 0     NOT NULL,
-    text_size_seq                    integer DEFAULT 0     NOT NULL,
-    email_level                      integer DEFAULT 1     NOT NULL,
-    email_messages_level             integer DEFAULT 0     NOT NULL,
-    title_count_mode_key             integer DEFAULT 0     NOT NULL,
-    enable_defer                     boolean DEFAULT false NOT NULL,
+    theme_ids                        integer[] DEFAULT '{}':: integer[] NOT NULL,
+    hide_profile_and_presence        boolean   DEFAULT false            NOT NULL,
+    text_size_key                    integer   DEFAULT 0                NOT NULL,
+    text_size_seq                    integer   DEFAULT 0                NOT NULL,
+    email_level                      integer   DEFAULT 1                NOT NULL,
+    email_messages_level             integer   DEFAULT 0                NOT NULL,
+    title_count_mode_key             integer   DEFAULT 0                NOT NULL,
+    enable_defer                     boolean   DEFAULT false            NOT NULL,
     timezone                         character varying
 );
 
 CREATE TABLE public.user_profile_views
 (
-    id              integer NOT NULL,
-    user_profile_id integer NOT NULL,
+    id              integer                     NOT NULL,
+    user_profile_id integer                     NOT NULL,
     viewed_at       timestamp without time zone NOT NULL,
-    ip_address inet,
+    ip_address      inet,
     user_id         integer
 );
 
 CREATE
-SEQUENCE public.user_profile_views_id_seq
+    SEQUENCE public.user_profile_views_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_profile_views_id_seq OWNED BY public.user_profile_views.id;
+    SEQUENCE public.user_profile_views_id_seq OWNED BY public.user_profile_views.id;
 
 CREATE TABLE public.user_profiles
 (
@@ -3645,20 +3645,20 @@ CREATE TABLE public.user_profiles
 
 CREATE TABLE public.user_search_data
 (
-    user_id  integer NOT NULL,
+    user_id     integer NOT NULL,
     search_data tsvector,
-    raw_data text,
-    locale   text,
-    version  integer DEFAULT 0
+    raw_data    text,
+    locale      text,
+    version     integer DEFAULT 0
 );
 
 CREATE TABLE public.user_second_factors
 (
-    id         bigint                NOT NULL,
-    user_id    integer               NOT NULL,
-    method     integer               NOT NULL,
-    data       character varying     NOT NULL,
-    enabled    boolean DEFAULT false NOT NULL,
+    id         bigint                      NOT NULL,
+    user_id    integer                     NOT NULL,
+    method     integer                     NOT NULL,
+    data       character varying           NOT NULL,
+    enabled    boolean DEFAULT false       NOT NULL,
     last_used  timestamp without time zone,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
@@ -3666,89 +3666,89 @@ CREATE TABLE public.user_second_factors
 );
 
 CREATE
-SEQUENCE public.user_second_factors_id_seq
+    SEQUENCE public.user_second_factors_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_second_factors_id_seq OWNED BY public.user_second_factors.id;
+    SEQUENCE public.user_second_factors_id_seq OWNED BY public.user_second_factors.id;
 
 CREATE TABLE public.user_security_keys
 (
-    id            bigint               NOT NULL,
-    user_id       bigint               NOT NULL,
-    credential_id character varying    NOT NULL,
-    public_key    character varying    NOT NULL,
-    factor_type   integer DEFAULT 0    NOT NULL,
-    enabled       boolean DEFAULT true NOT NULL,
-    name          character varying    NOT NULL,
+    id            bigint                      NOT NULL,
+    user_id       bigint                      NOT NULL,
+    credential_id character varying           NOT NULL,
+    public_key    character varying           NOT NULL,
+    factor_type   integer DEFAULT 0           NOT NULL,
+    enabled       boolean DEFAULT true        NOT NULL,
+    name          character varying           NOT NULL,
     last_used     timestamp without time zone,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_security_keys_id_seq
+    SEQUENCE public.user_security_keys_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_security_keys_id_seq OWNED BY public.user_security_keys.id;
+    SEQUENCE public.user_security_keys_id_seq OWNED BY public.user_security_keys.id;
 
 CREATE TABLE public.user_stats
 (
-    user_id                  integer                    NOT NULL,
-    topics_entered           integer          DEFAULT 0 NOT NULL,
-    time_read                integer          DEFAULT 0 NOT NULL,
-    days_visited             integer          DEFAULT 0 NOT NULL,
-    posts_read_count         integer          DEFAULT 0 NOT NULL,
-    likes_given              integer          DEFAULT 0 NOT NULL,
-    likes_received           integer          DEFAULT 0 NOT NULL,
-    topic_reply_count        integer          DEFAULT 0 NOT NULL,
-    new_since                timestamp without time zone NOT NULL,
+    user_id                  integer                                               NOT NULL,
+    topics_entered           integer                     DEFAULT 0                 NOT NULL,
+    time_read                integer                     DEFAULT 0                 NOT NULL,
+    days_visited             integer                     DEFAULT 0                 NOT NULL,
+    posts_read_count         integer                     DEFAULT 0                 NOT NULL,
+    likes_given              integer                     DEFAULT 0                 NOT NULL,
+    likes_received           integer                     DEFAULT 0                 NOT NULL,
+    topic_reply_count        integer                     DEFAULT 0                 NOT NULL,
+    new_since                timestamp without time zone                           NOT NULL,
     read_faq                 timestamp without time zone,
     first_post_created_at    timestamp without time zone,
-    post_count               integer          DEFAULT 0 NOT NULL,
-    topic_count              integer          DEFAULT 0 NOT NULL,
-    bounce_score             double precision DEFAULT 0 NOT NULL,
+    post_count               integer                     DEFAULT 0                 NOT NULL,
+    topic_count              integer                     DEFAULT 0                 NOT NULL,
+    bounce_score             double precision            DEFAULT 0                 NOT NULL,
     reset_bounce_score_after timestamp without time zone,
-    flags_agreed             integer          DEFAULT 0 NOT NULL,
-    flags_disagreed          integer          DEFAULT 0 NOT NULL,
-    flags_ignored            integer          DEFAULT 0 NOT NULL,
+    flags_agreed             integer                     DEFAULT 0                 NOT NULL,
+    flags_disagreed          integer                     DEFAULT 0                 NOT NULL,
+    flags_ignored            integer                     DEFAULT 0                 NOT NULL,
     first_unread_at          timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    distinct_badge_count     integer          DEFAULT 0 NOT NULL
+    distinct_badge_count     integer                     DEFAULT 0                 NOT NULL
 );
 
 CREATE TABLE public.user_uploads
 (
-    id         bigint  NOT NULL,
-    upload_id  integer NOT NULL,
-    user_id    integer NOT NULL,
+    id         bigint                      NOT NULL,
+    upload_id  integer                     NOT NULL,
+    user_id    integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_uploads_id_seq
+    SEQUENCE public.user_uploads_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_uploads_id_seq OWNED BY public.user_uploads.id;
+    SEQUENCE public.user_uploads_id_seq OWNED BY public.user_uploads.id;
 
 CREATE TABLE public.user_visits
 (
@@ -3761,77 +3761,77 @@ CREATE TABLE public.user_visits
 );
 
 CREATE
-SEQUENCE public.user_visits_id_seq
+    SEQUENCE public.user_visits_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_visits_id_seq OWNED BY public.user_visits.id;
+    SEQUENCE public.user_visits_id_seq OWNED BY public.user_visits.id;
 
 CREATE TABLE public.user_warnings
 (
-    id            integer NOT NULL,
-    topic_id      integer NOT NULL,
-    user_id       integer NOT NULL,
-    created_by_id integer NOT NULL,
+    id            integer                     NOT NULL,
+    topic_id      integer                     NOT NULL,
+    user_id       integer                     NOT NULL,
+    created_by_id integer                     NOT NULL,
     created_at    timestamp without time zone NOT NULL,
     updated_at    timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.user_warnings_id_seq
+    SEQUENCE public.user_warnings_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.user_warnings_id_seq OWNED BY public.user_warnings.id;
+    SEQUENCE public.user_warnings_id_seq OWNED BY public.user_warnings.id;
 
 CREATE TABLE public.users
 (
-    id                        integer               NOT NULL,
-    username                  character varying(60) NOT NULL,
+    id                        integer                     NOT NULL,
+    username                  character varying(60)       NOT NULL,
     created_at                timestamp without time zone NOT NULL,
     updated_at                timestamp without time zone NOT NULL,
     name                      character varying,
-    seen_notification_id      integer DEFAULT 0     NOT NULL,
+    seen_notification_id      integer DEFAULT 0           NOT NULL,
     last_posted_at            timestamp without time zone,
     password_hash             character varying(64),
     salt                      character varying(32),
-    active                    boolean DEFAULT false NOT NULL,
-    username_lower            character varying(60) NOT NULL,
+    active                    boolean DEFAULT false       NOT NULL,
+    username_lower            character varying(60)       NOT NULL,
     last_seen_at              timestamp without time zone,
-    admin                     boolean DEFAULT false NOT NULL,
+    admin                     boolean DEFAULT false       NOT NULL,
     last_emailed_at           timestamp without time zone,
-    trust_level               integer               NOT NULL,
-    approved                  boolean DEFAULT false NOT NULL,
+    trust_level               integer                     NOT NULL,
+    approved                  boolean DEFAULT false       NOT NULL,
     approved_by_id            integer,
     approved_at               timestamp without time zone,
     previous_visit_at         timestamp without time zone,
     suspended_at              timestamp without time zone,
     suspended_till            timestamp without time zone,
     date_of_birth             date,
-    views                     integer DEFAULT 0     NOT NULL,
-    flag_level                integer DEFAULT 0     NOT NULL,
-    ip_address inet,
+    views                     integer DEFAULT 0           NOT NULL,
+    flag_level                integer DEFAULT 0           NOT NULL,
+    ip_address                inet,
     moderator                 boolean DEFAULT false,
     title                     character varying,
     uploaded_avatar_id        integer,
     locale                    character varying(10),
     primary_group_id          integer,
-    registration_ip_address inet,
-    staged                    boolean DEFAULT false NOT NULL,
+    registration_ip_address   inet,
+    staged                    boolean DEFAULT false       NOT NULL,
     first_seen_at             timestamp without time zone,
     silenced_till             timestamp without time zone,
     group_locked_trust_level  integer,
@@ -3840,41 +3840,41 @@ CREATE TABLE public.users
 );
 
 CREATE
-SEQUENCE public.users_id_seq
+    SEQUENCE public.users_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.users_id_seq OWNED BY public.users.id;
+    SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 CREATE TABLE public.watched_words
 (
-    id         integer           NOT NULL,
-    word       character varying NOT NULL,
-    action     integer           NOT NULL,
+    id         integer                     NOT NULL,
+    word       character varying           NOT NULL,
+    action     integer                     NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
 );
 
 CREATE
-SEQUENCE public.watched_words_id_seq
+    SEQUENCE public.watched_words_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.watched_words_id_seq OWNED BY public.watched_words.id;
+    SEQUENCE public.watched_words_id_seq OWNED BY public.watched_words.id;
 
 CREATE TABLE public.web_crawler_requests
 (
@@ -3885,17 +3885,17 @@ CREATE TABLE public.web_crawler_requests
 );
 
 CREATE
-SEQUENCE public.web_crawler_requests_id_seq
+    SEQUENCE public.web_crawler_requests_id_seq
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.web_crawler_requests_id_seq OWNED BY public.web_crawler_requests.id;
+    SEQUENCE public.web_crawler_requests_id_seq OWNED BY public.web_crawler_requests.id;
 
 CREATE TABLE public.web_hook_event_types
 (
@@ -3910,23 +3910,23 @@ CREATE TABLE public.web_hook_event_types_hooks
 );
 
 CREATE
-SEQUENCE public.web_hook_event_types_id_seq
+    SEQUENCE public.web_hook_event_types_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.web_hook_event_types_id_seq OWNED BY public.web_hook_event_types.id;
+    SEQUENCE public.web_hook_event_types_id_seq OWNED BY public.web_hook_event_types.id;
 
 CREATE TABLE public.web_hook_events
 (
-    id               integer NOT NULL,
-    web_hook_id      integer NOT NULL,
+    id               integer                     NOT NULL,
+    web_hook_id      integer                     NOT NULL,
     headers          character varying,
     payload          text,
     status           integer DEFAULT 0,
@@ -3938,18 +3938,18 @@ CREATE TABLE public.web_hook_events
 );
 
 CREATE
-SEQUENCE public.web_hook_events_id_seq
+    SEQUENCE public.web_hook_events_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.web_hook_events_id_seq OWNED BY public.web_hook_events.id;
+    SEQUENCE public.web_hook_events_id_seq OWNED BY public.web_hook_events.id;
 
 CREATE TABLE public.web_hooks
 (
@@ -3962,297 +3962,434 @@ CREATE TABLE public.web_hooks
     wildcard_web_hook    boolean           DEFAULT false NOT NULL,
     verify_certificate   boolean           DEFAULT true  NOT NULL,
     active               boolean           DEFAULT false NOT NULL,
-    created_at           timestamp without time zone NOT NULL,
-    updated_at           timestamp without time zone NOT NULL
+    created_at           timestamp without time zone     NOT NULL,
+    updated_at           timestamp without time zone     NOT NULL
 );
 
 CREATE
-SEQUENCE public.web_hooks_id_seq
+    SEQUENCE public.web_hooks_id_seq
     AS integer
     START
-WITH 1
+        WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE
-1;
+        1;
 
 ALTER
-SEQUENCE public.web_hooks_id_seq OWNED BY public.web_hooks.id;
+    SEQUENCE public.web_hooks_id_seq OWNED BY public.web_hooks.id;
 
-ALTER TABLE ONLY public.anonymous_users ALTER COLUMN id SET DEFAULT nextval('public.anonymous_users_id_seq'::regclass);
+ALTER TABLE ONLY public.anonymous_users
+    ALTER COLUMN id SET DEFAULT nextval('public.anonymous_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.api_keys ALTER COLUMN id SET DEFAULT nextval('public.api_keys_id_seq'::regclass);
+ALTER TABLE ONLY public.api_keys
+    ALTER COLUMN id SET DEFAULT nextval('public.api_keys_id_seq'::regclass);
 
-ALTER TABLE ONLY public.application_requests ALTER COLUMN id SET DEFAULT nextval('public.application_requests_id_seq'::regclass);
+ALTER TABLE ONLY public.application_requests
+    ALTER COLUMN id SET DEFAULT nextval('public.application_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY public.backup_draft_posts ALTER COLUMN id SET DEFAULT nextval('public.backup_draft_posts_id_seq'::regclass);
+ALTER TABLE ONLY public.backup_draft_posts
+    ALTER COLUMN id SET DEFAULT nextval('public.backup_draft_posts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.backup_draft_topics ALTER COLUMN id SET DEFAULT nextval('public.backup_draft_topics_id_seq'::regclass);
+ALTER TABLE ONLY public.backup_draft_topics
+    ALTER COLUMN id SET DEFAULT nextval('public.backup_draft_topics_id_seq'::regclass);
 
-ALTER TABLE ONLY public.backup_metadata ALTER COLUMN id SET DEFAULT nextval('public.backup_metadata_id_seq'::regclass);
+ALTER TABLE ONLY public.backup_metadata
+    ALTER COLUMN id SET DEFAULT nextval('public.backup_metadata_id_seq'::regclass);
 
-ALTER TABLE ONLY public.badge_groupings ALTER COLUMN id SET DEFAULT nextval('public.badge_groupings_id_seq'::regclass);
+ALTER TABLE ONLY public.badge_groupings
+    ALTER COLUMN id SET DEFAULT nextval('public.badge_groupings_id_seq'::regclass);
 
-ALTER TABLE ONLY public.badge_types ALTER COLUMN id SET DEFAULT nextval('public.badge_types_id_seq'::regclass);
+ALTER TABLE ONLY public.badge_types
+    ALTER COLUMN id SET DEFAULT nextval('public.badge_types_id_seq'::regclass);
 
-ALTER TABLE ONLY public.badges ALTER COLUMN id SET DEFAULT nextval('public.badges_id_seq'::regclass);
+ALTER TABLE ONLY public.badges
+    ALTER COLUMN id SET DEFAULT nextval('public.badges_id_seq'::regclass);
 
-ALTER TABLE ONLY public.bookmarks ALTER COLUMN id SET DEFAULT nextval('public.bookmarks_id_seq'::regclass);
+ALTER TABLE ONLY public.bookmarks
+    ALTER COLUMN id SET DEFAULT nextval('public.bookmarks_id_seq'::regclass);
 
-ALTER TABLE ONLY public.categories ALTER COLUMN id SET DEFAULT nextval('public.categories_id_seq'::regclass);
+ALTER TABLE ONLY public.categories
+    ALTER COLUMN id SET DEFAULT nextval('public.categories_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_custom_fields ALTER COLUMN id SET DEFAULT nextval('public.category_custom_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.category_custom_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.category_custom_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_featured_topics ALTER COLUMN id SET DEFAULT nextval('public.category_featured_topics_id_seq'::regclass);
+ALTER TABLE ONLY public.category_featured_topics
+    ALTER COLUMN id SET DEFAULT nextval('public.category_featured_topics_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_groups ALTER COLUMN id SET DEFAULT nextval('public.category_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.category_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.category_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_tag_groups ALTER COLUMN id SET DEFAULT nextval('public.category_tag_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.category_tag_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.category_tag_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_tag_stats ALTER COLUMN id SET DEFAULT nextval('public.category_tag_stats_id_seq'::regclass);
+ALTER TABLE ONLY public.category_tag_stats
+    ALTER COLUMN id SET DEFAULT nextval('public.category_tag_stats_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_tags ALTER COLUMN id SET DEFAULT nextval('public.category_tags_id_seq'::regclass);
+ALTER TABLE ONLY public.category_tags
+    ALTER COLUMN id SET DEFAULT nextval('public.category_tags_id_seq'::regclass);
 
-ALTER TABLE ONLY public.category_users ALTER COLUMN id SET DEFAULT nextval('public.category_users_id_seq'::regclass);
+ALTER TABLE ONLY public.category_users
+    ALTER COLUMN id SET DEFAULT nextval('public.category_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.child_themes ALTER COLUMN id SET DEFAULT nextval('public.child_themes_id_seq'::regclass);
+ALTER TABLE ONLY public.child_themes
+    ALTER COLUMN id SET DEFAULT nextval('public.child_themes_id_seq'::regclass);
 
-ALTER TABLE ONLY public.color_scheme_colors ALTER COLUMN id SET DEFAULT nextval('public.color_scheme_colors_id_seq'::regclass);
+ALTER TABLE ONLY public.color_scheme_colors
+    ALTER COLUMN id SET DEFAULT nextval('public.color_scheme_colors_id_seq'::regclass);
 
-ALTER TABLE ONLY public.color_schemes ALTER COLUMN id SET DEFAULT nextval('public.color_schemes_id_seq'::regclass);
+ALTER TABLE ONLY public.color_schemes
+    ALTER COLUMN id SET DEFAULT nextval('public.color_schemes_id_seq'::regclass);
 
-ALTER TABLE ONLY public.custom_emojis ALTER COLUMN id SET DEFAULT nextval('public.custom_emojis_id_seq'::regclass);
+ALTER TABLE ONLY public.custom_emojis
+    ALTER COLUMN id SET DEFAULT nextval('public.custom_emojis_id_seq'::regclass);
 
-ALTER TABLE ONLY public.developers ALTER COLUMN id SET DEFAULT nextval('public.developers_id_seq'::regclass);
+ALTER TABLE ONLY public.developers
+    ALTER COLUMN id SET DEFAULT nextval('public.developers_id_seq'::regclass);
 
-ALTER TABLE ONLY public.directory_items ALTER COLUMN id SET DEFAULT nextval('public.directory_items_id_seq'::regclass);
+ALTER TABLE ONLY public.directory_items
+    ALTER COLUMN id SET DEFAULT nextval('public.directory_items_id_seq'::regclass);
 
-ALTER TABLE ONLY public.draft_sequences ALTER COLUMN id SET DEFAULT nextval('public.draft_sequences_id_seq'::regclass);
+ALTER TABLE ONLY public.draft_sequences
+    ALTER COLUMN id SET DEFAULT nextval('public.draft_sequences_id_seq'::regclass);
 
-ALTER TABLE ONLY public.drafts ALTER COLUMN id SET DEFAULT nextval('public.drafts_id_seq'::regclass);
+ALTER TABLE ONLY public.drafts
+    ALTER COLUMN id SET DEFAULT nextval('public.drafts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.email_change_requests ALTER COLUMN id SET DEFAULT nextval('public.email_change_requests_id_seq'::regclass);
+ALTER TABLE ONLY public.email_change_requests
+    ALTER COLUMN id SET DEFAULT nextval('public.email_change_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY public.email_logs ALTER COLUMN id SET DEFAULT nextval('public.email_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.email_logs
+    ALTER COLUMN id SET DEFAULT nextval('public.email_logs_id_seq'::regclass);
 
-ALTER TABLE ONLY public.email_tokens ALTER COLUMN id SET DEFAULT nextval('public.email_tokens_id_seq'::regclass);
+ALTER TABLE ONLY public.email_tokens
+    ALTER COLUMN id SET DEFAULT nextval('public.email_tokens_id_seq'::regclass);
 
-ALTER TABLE ONLY public.embeddable_hosts ALTER COLUMN id SET DEFAULT nextval('public.embeddable_hosts_id_seq'::regclass);
+ALTER TABLE ONLY public.embeddable_hosts
+    ALTER COLUMN id SET DEFAULT nextval('public.embeddable_hosts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.github_user_infos ALTER COLUMN id SET DEFAULT nextval('public.github_user_infos_id_seq'::regclass);
+ALTER TABLE ONLY public.github_user_infos
+    ALTER COLUMN id SET DEFAULT nextval('public.github_user_infos_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_archived_messages ALTER COLUMN id SET DEFAULT nextval('public.group_archived_messages_id_seq'::regclass);
+ALTER TABLE ONLY public.group_archived_messages
+    ALTER COLUMN id SET DEFAULT nextval('public.group_archived_messages_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_custom_fields ALTER COLUMN id SET DEFAULT nextval('public.group_custom_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.group_custom_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.group_custom_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_histories ALTER COLUMN id SET DEFAULT nextval('public.group_histories_id_seq'::regclass);
+ALTER TABLE ONLY public.group_histories
+    ALTER COLUMN id SET DEFAULT nextval('public.group_histories_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_mentions ALTER COLUMN id SET DEFAULT nextval('public.group_mentions_id_seq'::regclass);
+ALTER TABLE ONLY public.group_mentions
+    ALTER COLUMN id SET DEFAULT nextval('public.group_mentions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_requests ALTER COLUMN id SET DEFAULT nextval('public.group_requests_id_seq'::regclass);
+ALTER TABLE ONLY public.group_requests
+    ALTER COLUMN id SET DEFAULT nextval('public.group_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY public.group_users ALTER COLUMN id SET DEFAULT nextval('public.group_users_id_seq'::regclass);
+ALTER TABLE ONLY public.group_users
+    ALTER COLUMN id SET DEFAULT nextval('public.group_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.groups ALTER COLUMN id SET DEFAULT nextval('public.groups_id_seq'::regclass);
+ALTER TABLE ONLY public.groups
+    ALTER COLUMN id SET DEFAULT nextval('public.groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.ignored_users ALTER COLUMN id SET DEFAULT nextval('public.ignored_users_id_seq'::regclass);
+ALTER TABLE ONLY public.ignored_users
+    ALTER COLUMN id SET DEFAULT nextval('public.ignored_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.incoming_domains ALTER COLUMN id SET DEFAULT nextval('public.incoming_domains_id_seq'::regclass);
+ALTER TABLE ONLY public.incoming_domains
+    ALTER COLUMN id SET DEFAULT nextval('public.incoming_domains_id_seq'::regclass);
 
-ALTER TABLE ONLY public.incoming_emails ALTER COLUMN id SET DEFAULT nextval('public.incoming_emails_id_seq'::regclass);
+ALTER TABLE ONLY public.incoming_emails
+    ALTER COLUMN id SET DEFAULT nextval('public.incoming_emails_id_seq'::regclass);
 
-ALTER TABLE ONLY public.incoming_links ALTER COLUMN id SET DEFAULT nextval('public.incoming_links_id_seq'::regclass);
+ALTER TABLE ONLY public.incoming_links
+    ALTER COLUMN id SET DEFAULT nextval('public.incoming_links_id_seq'::regclass);
 
-ALTER TABLE ONLY public.incoming_referers ALTER COLUMN id SET DEFAULT nextval('public.incoming_referers_id_seq'::regclass);
+ALTER TABLE ONLY public.incoming_referers
+    ALTER COLUMN id SET DEFAULT nextval('public.incoming_referers_id_seq'::regclass);
 
-ALTER TABLE ONLY public.invited_groups ALTER COLUMN id SET DEFAULT nextval('public.invited_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.invited_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.invited_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.invites ALTER COLUMN id SET DEFAULT nextval('public.invites_id_seq'::regclass);
+ALTER TABLE ONLY public.invites
+    ALTER COLUMN id SET DEFAULT nextval('public.invites_id_seq'::regclass);
 
-ALTER TABLE ONLY public.javascript_caches ALTER COLUMN id SET DEFAULT nextval('public.javascript_caches_id_seq'::regclass);
+ALTER TABLE ONLY public.javascript_caches
+    ALTER COLUMN id SET DEFAULT nextval('public.javascript_caches_id_seq'::regclass);
 
-ALTER TABLE ONLY public.message_bus ALTER COLUMN id SET DEFAULT nextval('public.message_bus_id_seq'::regclass);
+ALTER TABLE ONLY public.message_bus
+    ALTER COLUMN id SET DEFAULT nextval('public.message_bus_id_seq'::regclass);
 
-ALTER TABLE ONLY public.muted_users ALTER COLUMN id SET DEFAULT nextval('public.muted_users_id_seq'::regclass);
+ALTER TABLE ONLY public.muted_users
+    ALTER COLUMN id SET DEFAULT nextval('public.muted_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+ALTER TABLE ONLY public.notifications
+    ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
 
-ALTER TABLE ONLY public.oauth2_user_infos ALTER COLUMN id SET DEFAULT nextval('public.oauth2_user_infos_id_seq'::regclass);
+ALTER TABLE ONLY public.oauth2_user_infos
+    ALTER COLUMN id SET DEFAULT nextval('public.oauth2_user_infos_id_seq'::regclass);
 
-ALTER TABLE ONLY public.onceoff_logs ALTER COLUMN id SET DEFAULT nextval('public.onceoff_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.onceoff_logs
+    ALTER COLUMN id SET DEFAULT nextval('public.onceoff_logs_id_seq'::regclass);
 
-ALTER TABLE ONLY public.optimized_images ALTER COLUMN id SET DEFAULT nextval('public.optimized_images_id_seq'::regclass);
+ALTER TABLE ONLY public.optimized_images
+    ALTER COLUMN id SET DEFAULT nextval('public.optimized_images_id_seq'::regclass);
 
-ALTER TABLE ONLY public.permalinks ALTER COLUMN id SET DEFAULT nextval('public.permalinks_id_seq'::regclass);
+ALTER TABLE ONLY public.permalinks
+    ALTER COLUMN id SET DEFAULT nextval('public.permalinks_id_seq'::regclass);
 
-ALTER TABLE ONLY public.plugin_store_rows ALTER COLUMN id SET DEFAULT nextval('public.plugin_store_rows_id_seq'::regclass);
+ALTER TABLE ONLY public.plugin_store_rows
+    ALTER COLUMN id SET DEFAULT nextval('public.plugin_store_rows_id_seq'::regclass);
 
-ALTER TABLE ONLY public.poll_options ALTER COLUMN id SET DEFAULT nextval('public.poll_options_id_seq'::regclass);
+ALTER TABLE ONLY public.poll_options
+    ALTER COLUMN id SET DEFAULT nextval('public.poll_options_id_seq'::regclass);
 
-ALTER TABLE ONLY public.polls ALTER COLUMN id SET DEFAULT nextval('public.polls_id_seq'::regclass);
+ALTER TABLE ONLY public.polls
+    ALTER COLUMN id SET DEFAULT nextval('public.polls_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_action_types ALTER COLUMN id SET DEFAULT nextval('public.post_action_types_id_seq'::regclass);
+ALTER TABLE ONLY public.post_action_types
+    ALTER COLUMN id SET DEFAULT nextval('public.post_action_types_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_actions ALTER COLUMN id SET DEFAULT nextval('public.post_actions_id_seq'::regclass);
+ALTER TABLE ONLY public.post_actions
+    ALTER COLUMN id SET DEFAULT nextval('public.post_actions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_custom_fields ALTER COLUMN id SET DEFAULT nextval('public.post_custom_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.post_custom_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.post_custom_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_details ALTER COLUMN id SET DEFAULT nextval('public.post_details_id_seq'::regclass);
+ALTER TABLE ONLY public.post_details
+    ALTER COLUMN id SET DEFAULT nextval('public.post_details_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_reply_keys ALTER COLUMN id SET DEFAULT nextval('public.post_reply_keys_id_seq'::regclass);
+ALTER TABLE ONLY public.post_reply_keys
+    ALTER COLUMN id SET DEFAULT nextval('public.post_reply_keys_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_revisions ALTER COLUMN id SET DEFAULT nextval('public.post_revisions_id_seq'::regclass);
+ALTER TABLE ONLY public.post_revisions
+    ALTER COLUMN id SET DEFAULT nextval('public.post_revisions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_stats ALTER COLUMN id SET DEFAULT nextval('public.post_stats_id_seq'::regclass);
+ALTER TABLE ONLY public.post_stats
+    ALTER COLUMN id SET DEFAULT nextval('public.post_stats_id_seq'::regclass);
 
-ALTER TABLE ONLY public.post_uploads ALTER COLUMN id SET DEFAULT nextval('public.post_uploads_id_seq'::regclass);
+ALTER TABLE ONLY public.post_uploads
+    ALTER COLUMN id SET DEFAULT nextval('public.post_uploads_id_seq'::regclass);
 
-ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
+ALTER TABLE ONLY public.posts
+    ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.push_subscriptions ALTER COLUMN id SET DEFAULT nextval('public.push_subscriptions_id_seq'::regclass);
+ALTER TABLE ONLY public.push_subscriptions
+    ALTER COLUMN id SET DEFAULT nextval('public.push_subscriptions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.quoted_posts ALTER COLUMN id SET DEFAULT nextval('public.quoted_posts_id_seq'::regclass);
+ALTER TABLE ONLY public.quoted_posts
+    ALTER COLUMN id SET DEFAULT nextval('public.quoted_posts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.remote_themes ALTER COLUMN id SET DEFAULT nextval('public.remote_themes_id_seq'::regclass);
+ALTER TABLE ONLY public.remote_themes
+    ALTER COLUMN id SET DEFAULT nextval('public.remote_themes_id_seq'::regclass);
 
-ALTER TABLE ONLY public.reviewable_claimed_topics ALTER COLUMN id SET DEFAULT nextval('public.reviewable_claimed_topics_id_seq'::regclass);
+ALTER TABLE ONLY public.reviewable_claimed_topics
+    ALTER COLUMN id SET DEFAULT nextval('public.reviewable_claimed_topics_id_seq'::regclass);
 
-ALTER TABLE ONLY public.reviewable_histories ALTER COLUMN id SET DEFAULT nextval('public.reviewable_histories_id_seq'::regclass);
+ALTER TABLE ONLY public.reviewable_histories
+    ALTER COLUMN id SET DEFAULT nextval('public.reviewable_histories_id_seq'::regclass);
 
-ALTER TABLE ONLY public.reviewable_scores ALTER COLUMN id SET DEFAULT nextval('public.reviewable_scores_id_seq'::regclass);
+ALTER TABLE ONLY public.reviewable_scores
+    ALTER COLUMN id SET DEFAULT nextval('public.reviewable_scores_id_seq'::regclass);
 
-ALTER TABLE ONLY public.reviewables ALTER COLUMN id SET DEFAULT nextval('public.reviewables_id_seq'::regclass);
+ALTER TABLE ONLY public.reviewables
+    ALTER COLUMN id SET DEFAULT nextval('public.reviewables_id_seq'::regclass);
 
-ALTER TABLE ONLY public.scheduler_stats ALTER COLUMN id SET DEFAULT nextval('public.scheduler_stats_id_seq'::regclass);
+ALTER TABLE ONLY public.scheduler_stats
+    ALTER COLUMN id SET DEFAULT nextval('public.scheduler_stats_id_seq'::regclass);
 
-ALTER TABLE ONLY public.schema_migration_details ALTER COLUMN id SET DEFAULT nextval('public.schema_migration_details_id_seq'::regclass);
+ALTER TABLE ONLY public.schema_migration_details
+    ALTER COLUMN id SET DEFAULT nextval('public.schema_migration_details_id_seq'::regclass);
 
-ALTER TABLE ONLY public.screened_emails ALTER COLUMN id SET DEFAULT nextval('public.screened_emails_id_seq'::regclass);
+ALTER TABLE ONLY public.screened_emails
+    ALTER COLUMN id SET DEFAULT nextval('public.screened_emails_id_seq'::regclass);
 
-ALTER TABLE ONLY public.screened_ip_addresses ALTER COLUMN id SET DEFAULT nextval('public.screened_ip_addresses_id_seq'::regclass);
+ALTER TABLE ONLY public.screened_ip_addresses
+    ALTER COLUMN id SET DEFAULT nextval('public.screened_ip_addresses_id_seq'::regclass);
 
-ALTER TABLE ONLY public.screened_urls ALTER COLUMN id SET DEFAULT nextval('public.screened_urls_id_seq'::regclass);
+ALTER TABLE ONLY public.screened_urls
+    ALTER COLUMN id SET DEFAULT nextval('public.screened_urls_id_seq'::regclass);
 
-ALTER TABLE ONLY public.search_logs ALTER COLUMN id SET DEFAULT nextval('public.search_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.search_logs
+    ALTER COLUMN id SET DEFAULT nextval('public.search_logs_id_seq'::regclass);
 
-ALTER TABLE ONLY public.shared_drafts ALTER COLUMN id SET DEFAULT nextval('public.shared_drafts_id_seq'::regclass);
+ALTER TABLE ONLY public.shared_drafts
+    ALTER COLUMN id SET DEFAULT nextval('public.shared_drafts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.single_sign_on_records ALTER COLUMN id SET DEFAULT nextval('public.single_sign_on_records_id_seq'::regclass);
+ALTER TABLE ONLY public.single_sign_on_records
+    ALTER COLUMN id SET DEFAULT nextval('public.single_sign_on_records_id_seq'::regclass);
 
-ALTER TABLE ONLY public.site_settings ALTER COLUMN id SET DEFAULT nextval('public.site_settings_id_seq'::regclass);
+ALTER TABLE ONLY public.site_settings
+    ALTER COLUMN id SET DEFAULT nextval('public.site_settings_id_seq'::regclass);
 
-ALTER TABLE ONLY public.skipped_email_logs ALTER COLUMN id SET DEFAULT nextval('public.skipped_email_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.skipped_email_logs
+    ALTER COLUMN id SET DEFAULT nextval('public.skipped_email_logs_id_seq'::regclass);
 
-ALTER TABLE ONLY public.stylesheet_cache ALTER COLUMN id SET DEFAULT nextval('public.stylesheet_cache_id_seq'::regclass);
+ALTER TABLE ONLY public.stylesheet_cache
+    ALTER COLUMN id SET DEFAULT nextval('public.stylesheet_cache_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tag_group_memberships ALTER COLUMN id SET DEFAULT nextval('public.tag_group_memberships_id_seq'::regclass);
+ALTER TABLE ONLY public.tag_group_memberships
+    ALTER COLUMN id SET DEFAULT nextval('public.tag_group_memberships_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tag_group_permissions ALTER COLUMN id SET DEFAULT nextval('public.tag_group_permissions_id_seq'::regclass);
+ALTER TABLE ONLY public.tag_group_permissions
+    ALTER COLUMN id SET DEFAULT nextval('public.tag_group_permissions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tag_groups ALTER COLUMN id SET DEFAULT nextval('public.tag_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.tag_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.tag_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tag_search_data ALTER COLUMN tag_id SET DEFAULT nextval('public.tag_search_data_tag_id_seq'::regclass);
+ALTER TABLE ONLY public.tag_search_data
+    ALTER COLUMN tag_id SET DEFAULT nextval('public.tag_search_data_tag_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tag_users ALTER COLUMN id SET DEFAULT nextval('public.tag_users_id_seq'::regclass);
+ALTER TABLE ONLY public.tag_users
+    ALTER COLUMN id SET DEFAULT nextval('public.tag_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id_seq'::regclass);
+ALTER TABLE ONLY public.tags
+    ALTER COLUMN id SET DEFAULT nextval('public.tags_id_seq'::regclass);
 
-ALTER TABLE ONLY public.theme_fields ALTER COLUMN id SET DEFAULT nextval('public.theme_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.theme_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.theme_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.theme_modifier_sets ALTER COLUMN id SET DEFAULT nextval('public.theme_modifier_sets_id_seq'::regclass);
+ALTER TABLE ONLY public.theme_modifier_sets
+    ALTER COLUMN id SET DEFAULT nextval('public.theme_modifier_sets_id_seq'::regclass);
 
-ALTER TABLE ONLY public.theme_settings ALTER COLUMN id SET DEFAULT nextval('public.theme_settings_id_seq'::regclass);
+ALTER TABLE ONLY public.theme_settings
+    ALTER COLUMN id SET DEFAULT nextval('public.theme_settings_id_seq'::regclass);
 
-ALTER TABLE ONLY public.theme_translation_overrides ALTER COLUMN id SET DEFAULT nextval('public.theme_translation_overrides_id_seq'::regclass);
+ALTER TABLE ONLY public.theme_translation_overrides
+    ALTER COLUMN id SET DEFAULT nextval('public.theme_translation_overrides_id_seq'::regclass);
 
-ALTER TABLE ONLY public.themes ALTER COLUMN id SET DEFAULT nextval('public.themes_id_seq'::regclass);
+ALTER TABLE ONLY public.themes
+    ALTER COLUMN id SET DEFAULT nextval('public.themes_id_seq'::regclass);
 
-ALTER TABLE ONLY public.top_topics ALTER COLUMN id SET DEFAULT nextval('public.top_topics_id_seq'::regclass);
+ALTER TABLE ONLY public.top_topics
+    ALTER COLUMN id SET DEFAULT nextval('public.top_topics_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_allowed_groups ALTER COLUMN id SET DEFAULT nextval('public.topic_allowed_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_allowed_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_allowed_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_allowed_users ALTER COLUMN id SET DEFAULT nextval('public.topic_allowed_users_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_allowed_users
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_allowed_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_custom_fields ALTER COLUMN id SET DEFAULT nextval('public.topic_custom_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_custom_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_custom_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_embeds ALTER COLUMN id SET DEFAULT nextval('public.topic_embeds_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_embeds
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_embeds_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_groups ALTER COLUMN id SET DEFAULT nextval('public.topic_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_groups
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_groups_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_invites ALTER COLUMN id SET DEFAULT nextval('public.topic_invites_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_invites
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_invites_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_link_clicks ALTER COLUMN id SET DEFAULT nextval('public.topic_link_clicks_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_link_clicks
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_link_clicks_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_links ALTER COLUMN id SET DEFAULT nextval('public.topic_links_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_links
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_links_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_search_data ALTER COLUMN topic_id SET DEFAULT nextval('public.topic_search_data_topic_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_search_data
+    ALTER COLUMN topic_id SET DEFAULT nextval('public.topic_search_data_topic_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_tags ALTER COLUMN id SET DEFAULT nextval('public.topic_tags_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_tags
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_tags_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_timers ALTER COLUMN id SET DEFAULT nextval('public.topic_timers_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_timers
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_timers_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topic_users ALTER COLUMN id SET DEFAULT nextval('public.topic_users_id_seq'::regclass);
+ALTER TABLE ONLY public.topic_users
+    ALTER COLUMN id SET DEFAULT nextval('public.topic_users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.topics ALTER COLUMN id SET DEFAULT nextval('public.topics_id_seq'::regclass);
+ALTER TABLE ONLY public.topics
+    ALTER COLUMN id SET DEFAULT nextval('public.topics_id_seq'::regclass);
 
-ALTER TABLE ONLY public.translation_overrides ALTER COLUMN id SET DEFAULT nextval('public.translation_overrides_id_seq'::regclass);
+ALTER TABLE ONLY public.translation_overrides
+    ALTER COLUMN id SET DEFAULT nextval('public.translation_overrides_id_seq'::regclass);
 
-ALTER TABLE ONLY public.uploads ALTER COLUMN id SET DEFAULT nextval('public.uploads_id_seq'::regclass);
+ALTER TABLE ONLY public.uploads
+    ALTER COLUMN id SET DEFAULT nextval('public.uploads_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_actions ALTER COLUMN id SET DEFAULT nextval('public.user_actions_id_seq'::regclass);
+ALTER TABLE ONLY public.user_actions
+    ALTER COLUMN id SET DEFAULT nextval('public.user_actions_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_api_keys ALTER COLUMN id SET DEFAULT nextval('public.user_api_keys_id_seq'::regclass);
+ALTER TABLE ONLY public.user_api_keys
+    ALTER COLUMN id SET DEFAULT nextval('public.user_api_keys_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_archived_messages ALTER COLUMN id SET DEFAULT nextval('public.user_archived_messages_id_seq'::regclass);
+ALTER TABLE ONLY public.user_archived_messages
+    ALTER COLUMN id SET DEFAULT nextval('public.user_archived_messages_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_associated_accounts ALTER COLUMN id SET DEFAULT nextval('public.user_associated_accounts_id_seq'::regclass);
+ALTER TABLE ONLY public.user_associated_accounts
+    ALTER COLUMN id SET DEFAULT nextval('public.user_associated_accounts_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_auth_token_logs ALTER COLUMN id SET DEFAULT nextval('public.user_auth_token_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.user_auth_token_logs
+    ALTER COLUMN id SET DEFAULT nextval('public.user_auth_token_logs_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_auth_tokens ALTER COLUMN id SET DEFAULT nextval('public.user_auth_tokens_id_seq'::regclass);
+ALTER TABLE ONLY public.user_auth_tokens
+    ALTER COLUMN id SET DEFAULT nextval('public.user_auth_tokens_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_avatars ALTER COLUMN id SET DEFAULT nextval('public.user_avatars_id_seq'::regclass);
+ALTER TABLE ONLY public.user_avatars
+    ALTER COLUMN id SET DEFAULT nextval('public.user_avatars_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_badges ALTER COLUMN id SET DEFAULT nextval('public.user_badges_id_seq'::regclass);
+ALTER TABLE ONLY public.user_badges
+    ALTER COLUMN id SET DEFAULT nextval('public.user_badges_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_custom_fields ALTER COLUMN id SET DEFAULT nextval('public.user_custom_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.user_custom_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.user_custom_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_emails ALTER COLUMN id SET DEFAULT nextval('public.user_emails_id_seq'::regclass);
+ALTER TABLE ONLY public.user_emails
+    ALTER COLUMN id SET DEFAULT nextval('public.user_emails_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_exports ALTER COLUMN id SET DEFAULT nextval('public.user_exports_id_seq'::regclass);
+ALTER TABLE ONLY public.user_exports
+    ALTER COLUMN id SET DEFAULT nextval('public.user_exports_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_field_options ALTER COLUMN id SET DEFAULT nextval('public.user_field_options_id_seq'::regclass);
+ALTER TABLE ONLY public.user_field_options
+    ALTER COLUMN id SET DEFAULT nextval('public.user_field_options_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_fields ALTER COLUMN id SET DEFAULT nextval('public.user_fields_id_seq'::regclass);
+ALTER TABLE ONLY public.user_fields
+    ALTER COLUMN id SET DEFAULT nextval('public.user_fields_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_histories ALTER COLUMN id SET DEFAULT nextval('public.user_histories_id_seq'::regclass);
+ALTER TABLE ONLY public.user_histories
+    ALTER COLUMN id SET DEFAULT nextval('public.user_histories_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_open_ids ALTER COLUMN id SET DEFAULT nextval('public.user_open_ids_id_seq'::regclass);
+ALTER TABLE ONLY public.user_open_ids
+    ALTER COLUMN id SET DEFAULT nextval('public.user_open_ids_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_profile_views ALTER COLUMN id SET DEFAULT nextval('public.user_profile_views_id_seq'::regclass);
+ALTER TABLE ONLY public.user_profile_views
+    ALTER COLUMN id SET DEFAULT nextval('public.user_profile_views_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_second_factors ALTER COLUMN id SET DEFAULT nextval('public.user_second_factors_id_seq'::regclass);
+ALTER TABLE ONLY public.user_second_factors
+    ALTER COLUMN id SET DEFAULT nextval('public.user_second_factors_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_security_keys ALTER COLUMN id SET DEFAULT nextval('public.user_security_keys_id_seq'::regclass);
+ALTER TABLE ONLY public.user_security_keys
+    ALTER COLUMN id SET DEFAULT nextval('public.user_security_keys_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_uploads ALTER COLUMN id SET DEFAULT nextval('public.user_uploads_id_seq'::regclass);
+ALTER TABLE ONLY public.user_uploads
+    ALTER COLUMN id SET DEFAULT nextval('public.user_uploads_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_visits ALTER COLUMN id SET DEFAULT nextval('public.user_visits_id_seq'::regclass);
+ALTER TABLE ONLY public.user_visits
+    ALTER COLUMN id SET DEFAULT nextval('public.user_visits_id_seq'::regclass);
 
-ALTER TABLE ONLY public.user_warnings ALTER COLUMN id SET DEFAULT nextval('public.user_warnings_id_seq'::regclass);
+ALTER TABLE ONLY public.user_warnings
+    ALTER COLUMN id SET DEFAULT nextval('public.user_warnings_id_seq'::regclass);
 
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public.users
+    ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
-ALTER TABLE ONLY public.watched_words ALTER COLUMN id SET DEFAULT nextval('public.watched_words_id_seq'::regclass);
+ALTER TABLE ONLY public.watched_words
+    ALTER COLUMN id SET DEFAULT nextval('public.watched_words_id_seq'::regclass);
 
-ALTER TABLE ONLY public.web_crawler_requests ALTER COLUMN id SET DEFAULT nextval('public.web_crawler_requests_id_seq'::regclass);
+ALTER TABLE ONLY public.web_crawler_requests
+    ALTER COLUMN id SET DEFAULT nextval('public.web_crawler_requests_id_seq'::regclass);
 
-ALTER TABLE ONLY public.web_hook_event_types ALTER COLUMN id SET DEFAULT nextval('public.web_hook_event_types_id_seq'::regclass);
+ALTER TABLE ONLY public.web_hook_event_types
+    ALTER COLUMN id SET DEFAULT nextval('public.web_hook_event_types_id_seq'::regclass);
 
-ALTER TABLE ONLY public.web_hook_events ALTER COLUMN id SET DEFAULT nextval('public.web_hook_events_id_seq'::regclass);
+ALTER TABLE ONLY public.web_hook_events
+    ALTER COLUMN id SET DEFAULT nextval('public.web_hook_events_id_seq'::regclass);
 
-ALTER TABLE ONLY public.web_hooks ALTER COLUMN id SET DEFAULT nextval('public.web_hooks_id_seq'::regclass);
+ALTER TABLE ONLY public.web_hooks
+    ALTER COLUMN id SET DEFAULT nextval('public.web_hooks_id_seq'::regclass);
 
 ALTER TABLE ONLY public.anonymous_users
     ADD CONSTRAINT anonymous_users_pkey PRIMARY KEY (id);
@@ -4709,7 +4846,8 @@ CREATE UNIQUE INDEX idx_category_users_user_id_category_id ON public.category_us
 
 CREATE INDEX idx_notifications_speedup_unread_count ON public.notifications USING btree (user_id, notification_type) WHERE (NOT read);
 
-CREATE INDEX idx_post_custom_fields_akismet ON public.post_custom_fields USING btree (post_id) WHERE (((name):: text = 'AKISMET_STATE':: text) AND (value = 'needs_review':: text));
+CREATE INDEX idx_post_custom_fields_akismet ON public.post_custom_fields USING btree (post_id) WHERE (
+        ((name):: text = 'AKISMET_STATE':: text) AND (value = 'needs_review':: text));
 
 CREATE INDEX idx_posts_created_at_topic_id ON public.posts USING btree (created_at, topic_id) WHERE (deleted_at IS NULL);
 
@@ -4737,13 +4875,19 @@ CREATE INDEX idx_topics_front_page ON public.topics USING btree (deleted_at, vis
 
 CREATE INDEX idx_topics_user_id_deleted_at ON public.topics USING btree (user_id) WHERE (deleted_at IS NULL);
 
-CREATE UNIQUE INDEX idx_unique_actions ON public.post_actions USING btree (user_id, post_action_type_id, post_id, targets_topic) WHERE ((deleted_at IS NULL) AND (disagreed_at IS NULL) AND (deferred_at IS NULL));
+CREATE UNIQUE INDEX idx_unique_actions ON public.post_actions USING btree (user_id, post_action_type_id, post_id, targets_topic) WHERE (
+        (deleted_at IS NULL) AND (disagreed_at IS NULL) AND (deferred_at IS NULL));
 
-CREATE UNIQUE INDEX idx_unique_flags ON public.post_actions USING btree (user_id, post_id, targets_topic) WHERE ((deleted_at IS NULL) AND (disagreed_at IS NULL) AND (deferred_at IS NULL) AND (post_action_type_id = ANY (ARRAY[3, 4, 7, 8])));
+CREATE UNIQUE INDEX idx_unique_flags ON public.post_actions USING btree (user_id, post_id, targets_topic) WHERE (
+        (deleted_at IS NULL) AND (disagreed_at IS NULL) AND (deferred_at IS NULL) AND
+        (post_action_type_id = ANY (ARRAY [3, 4, 7, 8])));
 
 CREATE UNIQUE INDEX idx_unique_post_uploads ON public.post_uploads USING btree (post_id, upload_id);
 
-CREATE UNIQUE INDEX idx_unique_rows ON public.user_actions USING btree (action_type, user_id, target_topic_id, target_post_id, acting_user_id);
+CREATE UNIQUE INDEX idx_unique_rows ON public.user_actions USING btree (action_type, user_id,
+                                                                        target_topic_id,
+                                                                        target_post_id,
+                                                                        acting_user_id);
 
 CREATE INDEX idx_user_actions_speed_up_user_all ON public.user_actions USING btree (user_id, created_at, action_type);
 
@@ -4807,7 +4951,10 @@ CREATE INDEX index_category_custom_fields_on_category_id_and_name ON public.cate
 
 CREATE INDEX index_category_featured_topics_on_category_id_and_rank ON public.category_featured_topics USING btree (category_id, rank);
 
-CREATE INDEX index_category_groups_on_group_id ON public.category_groups USING btree (group_id);
+-- CREATE INDEX index_category_groups_on_group_id ON public.category_groups USING btree (group_id);
+CREATE INDEX index_category_groups_on_category_id_and_group_id ON public.category_groups USING btree (category_id, group_id);
+
+CREATE INDEX index_category_groups_on_group_id_and_category_id ON public.category_groups USING btree (group_id, category_id);
 
 CREATE INDEX index_category_tag_stats_on_category_id ON public.category_tag_stats USING btree (category_id);
 
@@ -4867,7 +5014,8 @@ CREATE UNIQUE INDEX index_email_tokens_on_token ON public.email_tokens USING btr
 
 CREATE INDEX index_email_tokens_on_user_id ON public.email_tokens USING btree (user_id);
 
-CREATE INDEX index_for_rebake_old ON public.posts USING btree (id DESC) WHERE (((baked_version IS NULL) OR (baked_version < 2)) AND (deleted_at IS NULL));
+CREATE INDEX index_for_rebake_old ON public.posts USING btree (id DESC) WHERE (
+        ((baked_version IS NULL) OR (baked_version < 2)) AND (deleted_at IS NULL));
 
 CREATE UNIQUE INDEX index_github_user_infos_on_github_user_id ON public.github_user_infos USING btree (github_user_id);
 
@@ -5227,11 +5375,13 @@ CREATE INDEX index_topic_views_on_viewed_at_and_topic_id ON public.topic_views U
 
 CREATE INDEX index_topics_on_bumped_at ON public.topics USING btree (bumped_at DESC);
 
-CREATE INDEX index_topics_on_created_at_and_visible ON public.topics USING btree (created_at, visible) WHERE ((deleted_at IS NULL) AND ((archetype):: text <> 'private_message':: text));
+CREATE INDEX index_topics_on_created_at_and_visible ON public.topics USING btree (created_at, visible) WHERE (
+        (deleted_at IS NULL) AND ((archetype):: text <> 'private_message':: text));
 
 CREATE INDEX index_topics_on_id_and_deleted_at ON public.topics USING btree (id, deleted_at);
 
-CREATE UNIQUE INDEX index_topics_on_id_filtered_banner ON public.topics USING btree (id) WHERE (((archetype):: text = 'banner':: text) AND (deleted_at IS NULL));
+CREATE UNIQUE INDEX index_topics_on_id_filtered_banner ON public.topics USING btree (id) WHERE (
+        ((archetype):: text = 'banner':: text) AND (deleted_at IS NULL));
 
 CREATE INDEX index_topics_on_lower_title ON public.topics USING btree (lower((title):: text));
 
@@ -5239,7 +5389,12 @@ CREATE INDEX index_topics_on_pinned_at ON public.topics USING btree (pinned_at) 
 
 CREATE INDEX index_topics_on_pinned_globally ON public.topics USING btree (pinned_globally) WHERE pinned_globally;
 
-CREATE INDEX index_topics_on_updated_at_public ON public.topics USING btree (updated_at, visible, highest_staff_post_number, highest_post_number, category_id, created_at, id) WHERE (((archetype):: text <> 'private_message':: text) AND (deleted_at IS NULL));
+CREATE INDEX index_topics_on_updated_at_public ON public.topics USING btree (updated_at, visible,
+                                                                             highest_staff_post_number,
+                                                                             highest_post_number,
+                                                                             category_id,
+                                                                             created_at, id) WHERE (
+        ((archetype):: text <> 'private_message':: text) AND (deleted_at IS NULL));
 
 CREATE UNIQUE INDEX index_translation_overrides_on_locale_and_translation_key ON public.translation_overrides USING btree (locale, translation_key);
 
@@ -5304,7 +5459,7 @@ CREATE INDEX index_user_badges_on_user_id ON public.user_badges USING btree (use
 CREATE INDEX index_user_custom_fields_on_user_id_and_name ON public.user_custom_fields USING btree (user_id, name);
 
 -- CREATE UNIQUE INDEX index_user_emails_on_email ON public.user_emails USING btree (lower((email):: text));
-CREATE UNIQUE INDEX index_user_emails_on_email ON public.user_emails USING btree (email::text);
+CREATE UNIQUE INDEX index_user_emails_on_email ON public.user_emails USING btree (email);
 
 CREATE INDEX index_user_emails_on_user_id ON public.user_emails USING btree (user_id);
 
@@ -5405,9 +5560,9 @@ CREATE INDEX topic_custom_fields_value_key_idx ON public.topic_custom_fields USI
 
 CREATE UNIQUE INDEX uniq_ip_or_user_id_topic_views ON public.topic_views USING btree (user_id, ip_address, topic_id);
 
-CREATE UNIQUE INDEX unique_index_categories_on_name ON public.categories USING btree (COALESCE (parent_category_id, '-1':: integer), name);
+CREATE UNIQUE INDEX unique_index_categories_on_name ON public.categories USING btree (COALESCE(parent_category_id, '-1':: integer), name);
 
-CREATE UNIQUE INDEX unique_index_categories_on_slug ON public.categories USING btree (COALESCE (parent_category_id, '-1':: integer), slug) WHERE ((slug):: text <> '':: text);
+CREATE UNIQUE INDEX unique_index_categories_on_slug ON public.categories USING btree (COALESCE(parent_category_id, '-1':: integer), slug) WHERE ((slug):: text <> '':: text);
 
 CREATE UNIQUE INDEX unique_post_links ON public.topic_links USING btree (topic_id, post_id, url);
 
@@ -5416,49 +5571,49 @@ CREATE UNIQUE INDEX unique_profile_view_user_or_ip ON public.user_profile_views 
 CREATE UNIQUE INDEX web_hooks_tags ON public.tags_web_hooks USING btree (web_hook_id, tag_id);
 
 ALTER TABLE ONLY public.user_profiles
-    ADD CONSTRAINT fk_rails_1d362f2e97 FOREIGN KEY (profile_background_upload_id) REFERENCES public.uploads(id);
+    ADD CONSTRAINT fk_rails_1d362f2e97 FOREIGN KEY (profile_background_upload_id) REFERENCES public.uploads (id);
 
 ALTER TABLE ONLY public.bookmarks
-    ADD CONSTRAINT fk_rails_272c56774b FOREIGN KEY (topic_id) REFERENCES public.topics(id);
+    ADD CONSTRAINT fk_rails_272c56774b FOREIGN KEY (topic_id) REFERENCES public.topics (id);
 
 ALTER TABLE ONLY public.user_profiles
-    ADD CONSTRAINT fk_rails_38ea484ed4 FOREIGN KEY (granted_title_badge_id) REFERENCES public.badges(id);
+    ADD CONSTRAINT fk_rails_38ea484ed4 FOREIGN KEY (granted_title_badge_id) REFERENCES public.badges (id);
 
 ALTER TABLE ONLY public.javascript_caches
-    ADD CONSTRAINT fk_rails_58f94aecc4 FOREIGN KEY (theme_id) REFERENCES public.themes(id) ON
-DELETE CASCADE;
+    ADD CONSTRAINT fk_rails_58f94aecc4 FOREIGN KEY (theme_id) REFERENCES public.themes (id) ON
+        DELETE CASCADE;
 
 ALTER TABLE ONLY public.poll_votes
-    ADD CONSTRAINT fk_rails_848ece0184 FOREIGN KEY (poll_option_id) REFERENCES public.poll_options(id);
+    ADD CONSTRAINT fk_rails_848ece0184 FOREIGN KEY (poll_option_id) REFERENCES public.poll_options (id);
 
 ALTER TABLE ONLY public.uploads
-    ADD CONSTRAINT fk_rails_8b89adf296 FOREIGN KEY (access_control_post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT fk_rails_8b89adf296 FOREIGN KEY (access_control_post_id) REFERENCES public.posts (id);
 
 ALTER TABLE ONLY public.user_security_keys
-    ADD CONSTRAINT fk_rails_90999b0454 FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT fk_rails_90999b0454 FOREIGN KEY (user_id) REFERENCES public.users (id);
 
 ALTER TABLE ONLY public.poll_votes
-    ADD CONSTRAINT fk_rails_a6e6974b7e FOREIGN KEY (poll_id) REFERENCES public.polls(id);
+    ADD CONSTRAINT fk_rails_a6e6974b7e FOREIGN KEY (poll_id) REFERENCES public.polls (id);
 
 ALTER TABLE ONLY public.poll_options
-    ADD CONSTRAINT fk_rails_aa85becb42 FOREIGN KEY (poll_id) REFERENCES public.polls(id);
+    ADD CONSTRAINT fk_rails_aa85becb42 FOREIGN KEY (poll_id) REFERENCES public.polls (id);
 
 ALTER TABLE ONLY public.polls
-    ADD CONSTRAINT fk_rails_b50b782d08 FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT fk_rails_b50b782d08 FOREIGN KEY (post_id) REFERENCES public.posts (id);
 
 ALTER TABLE ONLY public.poll_votes
-    ADD CONSTRAINT fk_rails_b64de9b025 FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT fk_rails_b64de9b025 FOREIGN KEY (user_id) REFERENCES public.users (id);
 
 ALTER TABLE ONLY public.bookmarks
-    ADD CONSTRAINT fk_rails_c1ff6fa4ac FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT fk_rails_c1ff6fa4ac FOREIGN KEY (user_id) REFERENCES public.users (id);
 
 ALTER TABLE ONLY public.user_profiles
-    ADD CONSTRAINT fk_rails_ca64aa462b FOREIGN KEY (card_background_upload_id) REFERENCES public.uploads(id);
+    ADD CONSTRAINT fk_rails_ca64aa462b FOREIGN KEY (card_background_upload_id) REFERENCES public.uploads (id);
 
 ALTER TABLE ONLY public.bookmarks
-    ADD CONSTRAINT fk_rails_d8b54790ff FOREIGN KEY (post_id) REFERENCES public.posts(id);
+    ADD CONSTRAINT fk_rails_d8b54790ff FOREIGN KEY (post_id) REFERENCES public.posts (id);
 
 ALTER TABLE ONLY public.javascript_caches
-    ADD CONSTRAINT fk_rails_ed33506dbd FOREIGN KEY (theme_field_id) REFERENCES public.theme_fields(id) ON
-DELETE CASCADE;
+    ADD CONSTRAINT fk_rails_ed33506dbd FOREIGN KEY (theme_field_id) REFERENCES public.theme_fields (id) ON
+        DELETE CASCADE;
 

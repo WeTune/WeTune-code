@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.ARRAY;
@@ -22,6 +23,7 @@ import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 public class ParamsImpl extends AttributeManagerBase<ParamDesc> implements Params {
@@ -138,10 +140,11 @@ class ExtractParam implements ASTVistor {
 
     for (ParamDesc desc : paramDescs) {
       if (!desc.isCheckNull()) desc.setIndex(nextIndex++);
+      if (desc.isElement()) nextIndex++;
       params.put(desc.node(), desc);
     }
 
-    return false;
+    return node.get(BINARY_OP) == BinaryOp.IN_SUBQUERY;
   }
 }
 

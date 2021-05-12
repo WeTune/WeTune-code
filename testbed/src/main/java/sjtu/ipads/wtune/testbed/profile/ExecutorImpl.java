@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.testbed.profile.ParamsGen.IS_NULL;
-import static sjtu.ipads.wtune.testbed.profile.ParamsGen.NOT_NULL;
 import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
 
 import java.lang.System.Logger.Level;
@@ -13,11 +11,14 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 import sjtu.ipads.wtune.common.utils.ITriConsumer;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.testbed.common.Actuator;
 import sjtu.ipads.wtune.testbed.population.PreparedStatementActuator;
+import sjtu.ipads.wtune.testbed.profile.ParamsGen.IsNull;
+import sjtu.ipads.wtune.testbed.profile.ParamsGen.NotNull;
 
 class ExecutorImpl extends PreparedStatementActuator implements Executor {
   private final String sql;
@@ -46,6 +47,8 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   @Override
   public boolean execute() {
     try {
+      final String str = statement().toString();
+      System.out.println(str.substring(str.indexOf("SELECT")));
       resultSet = statement().executeQuery();
       return true;
 
@@ -148,12 +151,20 @@ class ParamInstaller {
   }
 
   public boolean install(ParamDesc param, Object value) {
-    if (value != NOT_NULL && value != IS_NULL) {
-      final var handle = DISPATCH.get(value.getClass());
-      if (handle == null) return false;
-
-      handle.accept(this, param.index() + 1, value);
+    if (value instanceof NotNull || value instanceof IsNull) return true;
+    if (value instanceof List) {
+      int i = param.index() + 1;
+      for (Object e : (List<?>) value) {
+        final var handle = DISPATCH.get(e.getClass());
+        if (handle == null) return false;
+        handle.accept(this, i++, e);
+      }
+      return true;
     }
+
+    final var handle = DISPATCH.get(value.getClass());
+    if (handle == null) return false;
+    handle.accept(this, param.index() + 1, value);
 
     return true;
   }

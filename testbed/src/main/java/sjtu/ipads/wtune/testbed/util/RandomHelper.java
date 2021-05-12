@@ -127,13 +127,13 @@ public abstract class RandomHelper {
     }
 
     @Override
-    public int max() {
-      return Integer.MAX_VALUE;
+    public boolean isPrePopulated() {
+      return true;
     }
 
     @Override
-    public int min() {
-      return 0;
+    public int range() {
+      return Integer.MAX_VALUE;
     }
   }
 
@@ -179,7 +179,7 @@ public abstract class RandomHelper {
           histogram.ceilingEntry(uniformRandomDouble(GLOBAL_SEED + index)).getValue();
       assert value != null;
 
-      if (cache[value] != -1) cache[value] = index;
+      if (cache[value] == -1) cache[value] = index;
 
       return value;
     }
@@ -195,13 +195,13 @@ public abstract class RandomHelper {
     }
 
     @Override
-    public int min() {
-      return 0;
+    public int range() {
+      return histogram.size() - 1;
     }
 
     @Override
-    public int max() {
-      return histogram.lastEntry().getValue();
+    public boolean isPrePopulated() {
+      return cache[0] >= 0;
     }
   }
 }

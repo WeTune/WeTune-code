@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 import gnu.trove.list.TIntList;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.System.Logger;
 import sjtu.ipads.wtune.stmt.Statement;
 
@@ -26,4 +29,8 @@ public interface Profiler {
   static Profiler make(Statement stmt, ProfileConfig config) {
     return new ProfilerImpl(stmt, config);
   }
+
+  void saveParams(ObjectOutputStream stream) throws IOException;
+
+  boolean readParams(ObjectInputStream stream) throws IOException, ClassNotFoundException;
 }

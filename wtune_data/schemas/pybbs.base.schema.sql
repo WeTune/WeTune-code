@@ -71,6 +71,7 @@ CREATE TABLE `collect` (
   `in_time` datetime NOT NULL,
   KEY `topic_id` (`topic_id`),
   KEY `user_id` (`user_id`),
+  KEY `in_time` (`in_time`),
   CONSTRAINT `collect_ibfk_1` FOREIGN KEY (`topic_id`) REFERENCES `topic` (`id`),
   CONSTRAINT `collect_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

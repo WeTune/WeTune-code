@@ -26,8 +26,8 @@ public class SQLPopulator implements Populator {
     final Populatable populatable = Populatable.ofCollection(collection);
     if (!populatable.bindGen(generators)) return false;
 
-    final BatchActuator actuator = config.getActuatorFactory().make(collection.collectionName());
-    final int unitCount = config.getUnitCount(collection.collectionName());
+    final BatchActuator actuator = config.actuatorFactory().make(collection.collectionName());
+    final int unitCount = config.unitCountOf(collection.collectionName());
 
     actuator.begin(collection);
     LOG.log(Level.INFO, "begin: {0}", collection.collectionName());

@@ -34,6 +34,7 @@ import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 import sjtu.ipads.wtune.testbed.population.SQLPopulator;
 import sjtu.ipads.wtune.testbed.util.DataSourceHelper;
+import sjtu.ipads.wtune.testbed.util.RandomHelper;
 
 public class PopulationMain {
   private static final String LOGGER_CONFIG =
@@ -50,6 +51,13 @@ public class PopulationMain {
     } catch (IOException ignored) {
     }
   }
+
+  private static String TAG;
+
+  private static final String BASE = "base";
+  private static final String ZIPF = "zipf";
+  private static final String LARGE = "large";
+  private static final String LARGE_ZIPF = "large_zipf";
 
   private static void populateOne(
       PopulationConfig config, String appName, String startFrom, boolean single) {
@@ -121,47 +129,42 @@ public class PopulationMain {
     return tables;
   }
 
+  private static PopulationConfig makeConfig(String appName, String tag) {
+    final PopulationConfig config = PopulationConfig.make();
+
+    if (tag.equals(LARGE) || tag.equals(LARGE_ZIPF)) config.setDefaultUnitCount(1_000_000);
+    else config.setDefaultUnitCount(10_000);
+
+    if (tag.equals(ZIPF) || tag.equals(LARGE_ZIPF))
+      config.setDefaultRandGen(() -> RandomHelper.makeZipfRand(1.5));
+    else config.setDefaultRandGen(RandomHelper::makeUniformRand);
+
+    config.setDump(fileDump(appName, tag));
+    return config;
+  }
+
   public static void main(String[] args) {
+    TAG = BASE;
+
     //    final App app = App.of("discourse");
-    //    final String table = "topic_users";
-    final String postfix = "large";
-    //    final PopulationConfig config = PopulationConfig.make();
-    //      config.setDump(fileDump(app.name(), postfix));
-    //    config.setDbProperties(dbProps(app, "base"));
-    //    populateOne(config, app.name(), table);
+    //    final String table = "users";
+
+    //    final PopulationConfig config = makeConfig(app.name(), TAG);
+    //    populateOne(config, app.name(), table, true);
+    //    populateOne(config, app.name(), null, false);
+
     final Map<String, Set<Table>> usedTables =
         getUsedTables(listMap(Statement::original, Statement.findAllRewritten()));
 
     for (var pair : usedTables.entrySet()) {
       final App app = App.of(pair.getKey());
-      if (!app.name().equals("homeland")) continue;
+      //      if (!app.name().equals("homeland")) continue;
 
-      final PopulationConfig config = PopulationConfig.make();
-      config.setDump(fileDump(app.name(), postfix));
-      config.setDefaultUnitCount(100_0000);
+      final PopulationConfig config = makeConfig(app.name(), TAG);
 
       for (Table table : pair.getValue()) {
         populateOne(config, app.name(), table.name(), true);
       }
     }
-
-    //    final String postfix = "large";
-    //    final String startPoint = "";
-    //    boolean started = startPoint.isEmpty();
-    //    for (App app : App.all()) {
-    //      if (!started && app.name().equals(startPoint)) started = true;
-    //      if (!started) continue;
-
-    //      final PopulationConfig config = PopulationConfig.make();
-    //      config.setDump(fileDump(app.name(), postfix));
-    //      config.setDbProperties(dbProps(app, postfix));
-    //      config.setDryRun(true);
-    //      config.setDefaultRandGen(RandomHelper.makeZipfRand(1.5));
-    //      config.setDefaultUnitCount(100_0000);
-
-    //      populateOne(config, app.name(), null);
-
-    //      break;
-    //    }
   }
 }
