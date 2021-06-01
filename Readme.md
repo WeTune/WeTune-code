@@ -1,29 +1,20 @@
-# WTune
+# WeTune
 
-WTune is project that automatically detects and 
-optimizes inefficient database access in Web-application.
+WeTune is a super-optimizer that automatically optimize SQL queries.
 
 ## File Structure
 ```
-/bootstrap: entry of executable
-/common: common utils used in other modules.
+/common: common utilities
 /sqlparser: AST parser
-/stmt: stmtImpl resolver
+/stmt: statements management
+/symsolver: SQL equivelence solver
+/superopt: generate rules & rewrite query with rules
+/testbed: query performance (latency) profiler
 ```
 
 ## Build
 ### Requirement
 ```
-jdk: version 14
-gradle: 6.5.0
-```
-### Command
-```shell script
-gradle assemble
-```
-Artifact will be found in bootstrap/build/libs/wtune.jar
-
-## Run
-```shell script
-java -jar wtune.jar
+jdk: version 16
+gradle: 7.0.1
 ```
