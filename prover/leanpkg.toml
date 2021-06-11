@@ -2,7 +2,7 @@
 name = "wetune"
 version = "0.1"
 lean_version = "leanprover-community/lean:3.30.0"
-path = "src"
+path = "lean"
 
 [dependencies]
 mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "6cffc9fe3fd4035a6364d99b15b8efd1fb902ceb"}

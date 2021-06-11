@@ -157,12 +157,72 @@ instance : topological_semiring U := {
   .. U.topological_space,
 }
 
-instance : canonically_ordered_add_monoid U := {
+@[simp] def U.le (x y : U) := x.value ≤ y.value
+@[simp] def U.lt (x y : U) := x.value < y.value
+
+instance : has_le U := ⟨U.le⟩
+instance : has_lt U := ⟨U.lt⟩
+instance : has_bot U := ⟨0⟩
+
+lemma U.le_refl {x : U} : x ≤ x := by unfold has_le.le; simp
+lemma U.le_trans {x y z: U} : x ≤ y → y ≤ z → x ≤ z := by unfold has_le.le; simp only [U.le]; exact le_trans 
+lemma U.lt_iff_le_not_le {x y : U}: x < y ↔ (x ≤ y ∧ ¬ y ≤ x) := by unfold has_le.le has_lt.lt; simp only [U.le, U.lt]; exact lt_iff_le_not_le
+lemma U.le_antisymm {x y : U}: x ≤ y → y ≤ x → x = y := by unfold has_le.le; simp *; exact le_antisymm 
+lemma U.add_le_add_left {x y : U} : x ≤ y → ∀ z : U, z + x ≤ z + y := by unfold has_le.le; simp *
+lemma U.lt_of_add_lt_add_left {x y z : U}: x + y < x + z → y < z := by unfold has_lt.lt; simp *
+lemma U.bot_le {x : U}: ⊥ ≤ x := by unfold has_bot.bot has_le.le; simp
+lemma U.le_iff_exists_add {x y : U}: x ≤ y ↔ ∃ z, y = x + z :=
+begin
+  unfold has_le.le,
+  simp,
+  split,
+  { intro h,
+    cases le_iff_exists_add.1 h with z g,
+    use ⟨z⟩,
+    simp *, },
+  { intro h,
+    apply le_iff_exists_add.2,
+    cases h with z g,
+    use z.value,
+    exact g, }
+end
+
+instance : preorder U := {
+  le_refl := @U.le_refl,
+  le_trans := @U.le_trans,
+  lt_iff_le_not_le := @U.lt_iff_le_not_le,
+  .. U.has_le,
+  .. U.has_lt,
+}
+
+instance : partial_order U := {
+  le_antisymm := @U.le_antisymm,
+  .. U.preorder,
+}
+
+instance : ordered_add_comm_monoid U := {
+  add_le_add_left := @U.add_le_add_left,
+  lt_of_add_lt_add_left := @U.lt_of_add_lt_add_left,
   .. U.add_comm_monoid,
+  .. U.partial_order
+}
+
+instance : order_bot U := {
+  bot_le := @U.bot_le,
+  .. U.partial_order,
+  .. U.has_bot
+}
+
+-- (add_le_add_left       : ∀ a b : α, a ≤ b → ∀ c : α, c + a ≤ c + b)
+-- (lt_of_add_lt_add_left : ∀ a b c : α, a + b < a + c → b < c)
+instance : canonically_ordered_add_monoid U := {
+  le_iff_exists_add := @U.le_iff_exists_add,
+  .. U.ordered_add_comm_monoid,
+  .. U.order_bot
 }
 
 instance : order_closed_topology U := {
-
+  is_closed_le' := by simp
 }
 
 variable {α : Type}
