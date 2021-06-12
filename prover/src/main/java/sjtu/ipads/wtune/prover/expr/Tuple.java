@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover;
+package sjtu.ipads.wtune.prover.expr;
 
 /**
  * A tuple that is either a variable or a projection on another tuple, e.g. 't', 't.x', 't.x.y'.
@@ -30,4 +30,14 @@ public interface Tuple {
    * </ul>
    */
   Tuple subst(Tuple target, Tuple replacement);
+
+  static Tuple make(String name) {
+    return new TupleImpl(null, new NameImpl(name));
+  }
+
+  default Tuple root() {
+    Tuple tuple = this, base;
+    while ((base = tuple.base()) != null) tuple = base;
+    return tuple;
+  }
 }

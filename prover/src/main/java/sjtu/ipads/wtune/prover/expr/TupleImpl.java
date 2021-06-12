@@ -1,12 +1,12 @@
-package sjtu.ipads.wtune.prover;
+package sjtu.ipads.wtune.prover.expr;
 
 import com.google.common.base.Objects;
 
-public class TupleImpl implements Tuple {
+class TupleImpl implements Tuple {
   private final Tuple base;
   private final Name name;
 
-  public TupleImpl(Tuple base, Name name) {
+  TupleImpl(Tuple base, Name name) {
     this.base = base;
     this.name = name;
   }
@@ -39,5 +39,11 @@ public class TupleImpl implements Tuple {
   @Override
   public int hashCode() {
     return Objects.hashCode(base, name);
+  }
+
+  @Override
+  public String toString() {
+    if (base == null) return name.toString();
+    else return base + "." + name;
   }
 }
