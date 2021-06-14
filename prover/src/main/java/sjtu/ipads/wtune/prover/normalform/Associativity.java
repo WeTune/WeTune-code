@@ -7,7 +7,7 @@ import java.util.List;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 
 // x3 * (x1 * x2) -> x3 * x1 * x2
-public class Associativity implements Transformation {
+public class Associativity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -24,6 +24,8 @@ public class Associativity implements Transformation {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
+
+    ctx.trace("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

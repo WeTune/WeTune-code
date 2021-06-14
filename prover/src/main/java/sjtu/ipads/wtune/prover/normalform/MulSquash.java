@@ -6,7 +6,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
 
 // squash(x1) * squash(x2) -> squash(x1 * x2)
-public class MulSquash implements Transformation {
+class MulSquash extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -20,6 +20,8 @@ public class MulSquash implements Transformation {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
+
+    ctx.trace("rw mul_squash (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

@@ -7,7 +7,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
 
 // let x2 = squash(...)
 // x1 * x2 -> x2 * x1 where x1 is not squash(..)
-public class SquashCommunity implements Transformation {
+class SquashCommunity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     if (point.kind() != MUL) return point;
@@ -19,6 +19,8 @@ public class SquashCommunity implements Transformation {
 
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
+
+    ctx.trace("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

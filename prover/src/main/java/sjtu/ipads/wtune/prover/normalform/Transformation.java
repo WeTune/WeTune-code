@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
@@ -16,25 +17,48 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.*;
 public interface Transformation {
   UExpr apply(UExpr point);
 
-  Collection<Transformation> PASS_1_TRANSFORMATIONS =
-      List.of(new Associativity(), new Distribution(), new MulSum(), new SumAdd(), new SumSum());
-
-  Collection<Transformation> PASS_2_TRANSFORMATIONS =
-      List.of(new SquashCommunity(), new Associativity(), new MulSquash());
+  void setContext(DecisionContext ctx);
 
   Collection<Transformation> PASS_3_TRANSFORMATIONS =
       List.of(new NotCommunity(), new Associativity(), new MulNot());
 
-  static UExpr transform(UExpr root) {
-    root = transform(suffixTraversal(root), PASS_1_TRANSFORMATIONS);
-    root = transform(suffixTraversal(root), PASS_2_TRANSFORMATIONS);
-    root = transform(suffixTraversal(root), PASS_3_TRANSFORMATIONS);
+  static UExpr transform(UExpr root, DecisionContext ctx) {
+    ctx.openTracer("spnf");
+
+    final String original = root.toString();
+
+    root = transform(suffixTraversal(root), transformationPass1(ctx));
+    root = transform(suffixTraversal(root), transformationPass2(ctx));
+    root = transform(suffixTraversal(root), transformationPass3(ctx));
+
+    ctx.currentTracer().setPrologue("lemma spnf : %s = %s := begin\n".formatted(original, root));
+    ctx.currentTracer().setEpilogue("\nend");
 
     return root;
   }
 
   static Disjunction toNormalForm(UExpr root) {
     return toDisjunction(root);
+  }
+
+  private static Collection<Transformation> transformationPass1(DecisionContext ctx) {
+    final List<Transformation> tfs =
+        List.of(new Associativity(), new Distribution(), new MulSum(), new SumAdd(), new SumSum());
+    for (Transformation tf : tfs) tf.setContext(ctx);
+    return tfs;
+  }
+
+  private static Collection<Transformation> transformationPass2(DecisionContext ctx) {
+    final List<Transformation> tfs =
+        List.of(new SquashCommunity(), new Associativity(), new MulSquash());
+    for (Transformation tf : tfs) tf.setContext(ctx);
+    return tfs;
+  }
+
+  private static Collection<Transformation> transformationPass3(DecisionContext ctx) {
+    final List<Transformation> tfs = List.of(new NotCommunity(), new Associativity(), new MulNot());
+    for (Transformation tf : tfs) tf.setContext(ctx);
+    return tfs;
   }
 
   private static Disjunction toDisjunction(UExpr root) {
@@ -87,6 +111,7 @@ public interface Transformation {
   }
 
   static void main(String[] args) {
+    final DecisionContext ctx = DecisionContext.make();
     final Tuple t = Tuple.make("t");
     final UExpr expr =
         mul(
@@ -95,9 +120,10 @@ public interface Transformation {
                 mul(
                     squash(table("S", t)),
                     mul(not(table("T", t)), (add(squash(table("U", t)), sum(table("V", t))))))));
-    final UExpr spnf = transform(expr);
+    final UExpr spnf = transform(expr, ctx);
     System.out.println(expr);
     System.out.println(spnf);
     System.out.println(toNormalForm(spnf));
+    System.out.println(ctx.currentTracer().getTrace());
   }
 }

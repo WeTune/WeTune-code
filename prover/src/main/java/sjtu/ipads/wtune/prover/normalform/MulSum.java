@@ -6,7 +6,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
 
 // x2 * sum(x1) -> sum(x1 * x2)
-public class MulSum implements Transformation {
+class MulSum extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -19,6 +19,8 @@ public class MulSum implements Transformation {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
+
+    ctx.trace("rw mul_sum (%s) (%s)".formatted(x2, x1));
 
     return newExpr;
   }

@@ -1,22 +1,15 @@
 package sjtu.ipads.wtune.common.utils;
 
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
-
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
+
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.function.Supplier;
+
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface Commons {
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
@@ -257,18 +250,44 @@ public interface Commons {
   }
 
   static String joining(String sep, Iterable<?> objs) {
-    return joining("", "", sep, "", "", objs);
+    return joining(sep, objs, new StringBuilder()).toString();
   }
 
   static String joining(
       String headOrPrefix, String sep, String tailOrSuffix, boolean asFixture, Iterable<?> objs) {
-    if (asFixture) return joining("", headOrPrefix, sep, tailOrSuffix, "", objs);
-    else return joining(headOrPrefix, "", sep, "", tailOrSuffix, objs);
+    return joining(headOrPrefix, sep, tailOrSuffix, asFixture, objs, new StringBuilder())
+        .toString();
   }
 
   static String joining(
       String head, String prefix, String sep, String suffix, String tail, Iterable<?> objs) {
-    final StringBuilder builder = new StringBuilder();
+    return joining(head, prefix, sep, suffix, tail, objs, new StringBuilder()).toString();
+  }
+
+  static StringBuilder joining(String sep, Iterable<?> objs, StringBuilder dest) {
+    return joining("", "", sep, "", "", objs, dest);
+  }
+
+  static StringBuilder joining(
+      String headOrPrefix,
+      String sep,
+      String tailOrSuffix,
+      boolean asFixture,
+      Iterable<?> objs,
+      StringBuilder dest) {
+    if (asFixture) return joining("", headOrPrefix, sep, tailOrSuffix, "", objs, dest);
+    else return joining(headOrPrefix, "", sep, "", tailOrSuffix, objs, dest);
+  }
+
+  static StringBuilder joining(
+      String head,
+      String prefix,
+      String sep,
+      String suffix,
+      String tail,
+      Iterable<?> objs,
+      StringBuilder dest) {
+    final StringBuilder builder = dest != null ? dest : new StringBuilder();
     builder.append(head);
     boolean isFirst = true;
     for (Object obj : objs) {
@@ -279,7 +298,7 @@ public interface Commons {
       builder.append(suffix);
     }
     builder.append(tail);
-    return builder.toString();
+    return builder;
   }
 
   static TIntList newIntList(int expectedSize) {

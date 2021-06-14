@@ -4,7 +4,8 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
 
-public class SumSum implements Transformation {
+// sum(sum(x1)) -> sum(x1)
+class SumSum extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -15,6 +16,7 @@ public class SumSum implements Transformation {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
+    ctx.trace("rw sum_sum (%s)".formatted(point.child(0)));
     return newExpr;
   }
 }
