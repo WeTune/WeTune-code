@@ -1,6 +1,10 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import sjtu.ipads.wtune.prover.expr.SumExpr;
+import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
+
+import java.util.List;
 
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
@@ -13,13 +17,15 @@ class SumAdd extends TransformationBase {
     if (parent == null || point.kind() != ADD || parent.kind() != SUM) return point;
 
     final UExpr x1 = point.child(0), x2 = point.child(1);
+    final List<Tuple> boundTuple = ((SumExpr) parent).boundTuples();
 
-    final UExpr newExpr = UExpr.add(UExpr.sum(x1.copy()), UExpr.sum(x2.copy()));
+    final UExpr newExpr =
+        UExpr.add(UExpr.sum(boundTuple, x1.copy()), UExpr.sum(boundTuple, x2.copy()));
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    ctx.trace("rw sum_add (%s) (%s)".formatted(x1, x2));
+    ctx.append("rw sum_add (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

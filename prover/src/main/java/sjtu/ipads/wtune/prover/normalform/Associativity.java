@@ -25,7 +25,7 @@ public class Associativity extends TransformationBase {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    ctx.trace("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
+    ctx.append("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

@@ -20,7 +20,7 @@ class SquashCommunity extends TransformationBase {
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
 
-    ctx.trace("rw mul_comm (%s) (%s)".formatted(x1, x2));
+    ctx.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

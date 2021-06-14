@@ -24,8 +24,17 @@ class TupleImpl implements Tuple {
   @Override
   public Tuple subst(Tuple target, Tuple replacement) {
     if (this.equals(target)) return replacement;
-    if (base != null) return base.subst(target, replacement);
+    if (base != null) {
+      final Tuple subst = base.subst(target, replacement);
+      if (subst == base) return this;
+      else return new TupleImpl(base, name);
+    }
     return this;
+  }
+
+  @Override
+  public Tuple proj(String attribute) {
+    return new TupleImpl(this, new NameImpl(attribute));
   }
 
   @Override

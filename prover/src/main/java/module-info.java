@@ -1,4 +1,4 @@
-module sjtu.ipads.wtune.provaer {
+module sjtu.ipads.wtune.prover {
   requires sjtu.ipads.wtune.common;
   requires com.google.common;
   requires org.apache.commons.lang3;

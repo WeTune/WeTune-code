@@ -43,7 +43,8 @@ abstract class UExprBase implements UExpr {
   @Override
   public UExpr copy() {
     final UExprBase copy = copy0();
-    System.arraycopy(children, 0, copy.children, 0, children.length);
+    final UExpr[] children = this.children;
+    for (int i = 0; i < children.length; i++) copy.setChild(i, children[i].copy());
     return copy;
   }
 

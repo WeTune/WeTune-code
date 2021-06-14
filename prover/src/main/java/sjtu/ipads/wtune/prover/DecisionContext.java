@@ -1,15 +1,9 @@
 package sjtu.ipads.wtune.prover;
 
 public interface DecisionContext {
-  Tracer currentTracer();
+  void addProof(String name, Proof proof);
 
-  Tracer openTracer(String name);
-
-  void closeTracer();
-
-  default void trace(String operation) {
-    currentTracer().trace(operation);
-  }
+  String makeProofName();
 
   static DecisionContext make() {
     return new DecisionContextImpl();

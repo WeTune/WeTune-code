@@ -5,8 +5,8 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
 
-// let x2 = not(...)
-// x1 * x2 -> x2 * x1 where x1 is not squash(..)
+// let x1 = not(...)
+// x1 * x2 -> x2 * x1 where x2 is not not(..)
 class NotCommunity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
@@ -20,7 +20,7 @@ class NotCommunity extends TransformationBase {
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
 
-    ctx.trace("rw mul_comm (%s) (%s)".formatted(x1, x2));
+    ctx.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

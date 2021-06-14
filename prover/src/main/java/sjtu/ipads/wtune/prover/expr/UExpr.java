@@ -1,12 +1,15 @@
 package sjtu.ipads.wtune.prover.expr;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public interface UExpr {
   enum Kind {
     TABLE(0),
+    UNINTERPRETED_PRED(0),
+    EQ_PRED(0),
     ADD(2),
     MUL(2),
     NOT(1),
@@ -17,6 +20,14 @@ public interface UExpr {
 
     Kind(int numChildren) {
       this.numChildren = numChildren;
+    }
+
+    public boolean isPred() {
+      return this == UNINTERPRETED_PRED || this == EQ_PRED;
+    }
+
+    public boolean isTerm() {
+      return this.numChildren == 0;
     }
   }
 
@@ -35,27 +46,10 @@ public interface UExpr {
 
   void setChild(int i, UExpr child);
 
-  void replace(Tuple v1, Tuple v2);
+  void subst(Tuple v1, Tuple v2);
 
   // Note: the copy's parent is not set.
   UExpr copy();
-
-  static UExpr make(Kind kind) {
-    switch (kind) {
-      case ADD:
-        return new AddExprImpl();
-      case MUL:
-        return new MulExprImpl();
-      case NOT:
-        return new NotExprImpl();
-      case SQUASH:
-        return new SquashExprImpl();
-      case SUM:
-        return new SumExprImpl();
-      default:
-        throw new IllegalArgumentException(kind + " expression need additional parameters");
-    }
-  }
 
   static UExpr mul(UExpr l, UExpr r) {
     final UExpr mul = new MulExprImpl();
@@ -77,8 +71,14 @@ public interface UExpr {
     return expr;
   }
 
-  static UExpr sum(UExpr x) {
-    final UExpr expr = new SumExprImpl();
+  static UExpr sum(Tuple boundTuple, UExpr x) {
+    final UExpr expr = new SumExprImpl(Collections.singletonList(boundTuple));
+    expr.setChild(0, x);
+    return expr;
+  }
+
+  static UExpr sum(List<Tuple> boundTuple, UExpr x) {
+    final UExpr expr = new SumExprImpl(boundTuple);
     expr.setChild(0, x);
     return expr;
   }
@@ -91,6 +91,14 @@ public interface UExpr {
 
   static UExpr table(String tableName, Tuple tuple) {
     return new TableTermImpl(new NameImpl(tableName), tuple);
+  }
+
+  static UExpr uninterpretedPred(String predName, Tuple tuple) {
+    return new UninterpretedPredTermImpl(new NameImpl(predName), tuple);
+  }
+
+  static UExpr eqPred(Tuple left, Tuple right) {
+    return new EqPredTermImpl(left, right);
   }
 
   static UExpr otherSide(UExpr binaryExpr, UExpr self) {
@@ -125,6 +133,17 @@ public interface UExpr {
     }
 
     if (!found) throw new IllegalStateException();
+  }
+
+  static UExpr validate(UExpr expr) {
+    for (UExpr child : expr.children()) {
+      if (child.parent() != expr) {
+        return expr;
+      }
+      final UExpr invalid = validate(child);
+      if (invalid != null) return invalid;
+    }
+    return null;
   }
 
   private static List<UExpr> suffixTraversal0(UExpr expr, List<UExpr> nodes) {

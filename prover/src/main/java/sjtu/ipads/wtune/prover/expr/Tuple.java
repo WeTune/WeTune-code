@@ -31,6 +31,8 @@ public interface Tuple {
    */
   Tuple subst(Tuple target, Tuple replacement);
 
+  Tuple proj(String attribute);
+
   static Tuple make(String name) {
     return new TupleImpl(null, new NameImpl(name));
   }

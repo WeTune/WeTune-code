@@ -21,7 +21,7 @@ class MulSquash extends TransformationBase {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    ctx.trace("rw mul_squash (%s) (%s)".formatted(x1, x2));
+    ctx.append("rw mul_squash (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

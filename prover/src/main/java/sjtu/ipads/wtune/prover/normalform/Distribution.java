@@ -24,8 +24,8 @@ class Distribution extends TransformationBase {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    if (point == parent.child(0)) ctx.trace("rw mul_distrib_right %s %s %s".formatted(x1, x2, x3));
-    else ctx.trace("rw mul_distrib_left (%s) (%s) (%s)".formatted(x3, x1, x2));
+    if (point == parent.child(0)) ctx.append("rw mul_distrib_right %s %s %s".formatted(x1, x2, x3));
+    else ctx.append("rw mul_distrib_left (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

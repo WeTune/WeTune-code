@@ -304,4 +304,10 @@ public interface Commons {
   static TIntList newIntList(int expectedSize) {
     return new TIntArrayList(expectedSize);
   }
+
+  static int[] toIntArray(List<Integer> list){
+    final int[] ints = new int[list.size()];
+    for (int i = 0; i < list.size(); i++) ints[i] = list.get(i);
+    return ints;
+  }
 }

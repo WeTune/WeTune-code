@@ -5,12 +5,12 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-class TableTermImpl extends UExprBase implements TableTerm {
-  private final Name table;
+class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTerm {
+  private final Name name;
   private Tuple tuple;
 
-  TableTermImpl(Name table, Tuple tuple) {
-    this.table = requireNonNull(table);
+  public UninterpretedPredTermImpl(Name name, Tuple tuple) {
+    this.name = requireNonNull(name);
     this.tuple = requireNonNull(tuple);
   }
 
@@ -27,22 +27,22 @@ class TableTermImpl extends UExprBase implements TableTerm {
   }
 
   @Override
+  protected UExprBase copy0() {
+    return new UninterpretedPredTermImpl(name, tuple);
+  }
+
+  @Override
+  public Name name() {
+    return name;
+  }
+
+  @Override
   public Tuple tuple() {
     return tuple;
   }
 
   @Override
-  public Name name() {
-    return table;
-  }
-
-  @Override
-  public UExprBase copy0() {
-    return new TableTermImpl(table, tuple);
-  }
-
-  @Override
   public String toString() {
-    return table + "(" + tuple + ")";
+    return "%s<%s>".formatted(name, tuple);
   }
 }
