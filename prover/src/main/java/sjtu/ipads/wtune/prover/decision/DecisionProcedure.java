@@ -1,72 +1,86 @@
 package sjtu.ipads.wtune.prover.decision;
 
-import com.google.common.collect.Collections2;
-import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.prover.Congruence;
-import sjtu.ipads.wtune.prover.DecisionContext;
-import sjtu.ipads.wtune.prover.Proof;
-import sjtu.ipads.wtune.prover.expr.*;
-import sjtu.ipads.wtune.prover.normalform.Conjunction;
-import sjtu.ipads.wtune.prover.normalform.Disjunction;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.Commons.toIntArray;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.EQ_PRED;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.UNINTERPRETED_PRED;
-import static sjtu.ipads.wtune.prover.expr.UExpr.*;
+import static sjtu.ipads.wtune.prover.expr.UExpr.eqPred;
+import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
+import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.expr.UExpr.table;
+import static sjtu.ipads.wtune.prover.expr.UExpr.uninterpretedPred;
 import static sjtu.ipads.wtune.prover.normalform.Transformation.toSpnf;
+
+import com.google.common.collect.Collections2;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.prover.Congruence;
+import sjtu.ipads.wtune.prover.DecisionContext;
+import sjtu.ipads.wtune.prover.Proof;
+import sjtu.ipads.wtune.prover.expr.EqPredTerm;
+import sjtu.ipads.wtune.prover.expr.TableTerm;
+import sjtu.ipads.wtune.prover.expr.Tuple;
+import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
+import sjtu.ipads.wtune.prover.normalform.Conjunction;
+import sjtu.ipads.wtune.prover.normalform.Disjunction;
 
 public class DecisionProcedure {
   public static List<Proof> decideEq(Disjunction x1, Disjunction x2, DecisionContext ctx) {
     List<Conjunction> conj1 = x1.conjunctions(), conj2 = x2.conjunctions();
     if (conj1.size() != conj2.size()) return emptyList();
 
-    final List<Proof> lemmas = new ArrayList<>();
-    final List<Proof> coreLemmas = new ArrayList<>();
+    final List<Proof> lemmas = new ArrayList<>(); // all involved lemma
+    final List<Proof> coreLemmas = new ArrayList<>(); // lemma that will be used in main theorem
     conj2 = new ArrayList<>(conj2);
 
+    // Memo: we don't need to permute as in UDP paper.
+    // Consider two queries:
+    //   E1 = T0 + T1
+    //   E2 = T2 + T3
+    // Permutation is meaningful only if T0 == T2 && T0 == T3 && T1 == T2 && T1 != T3,
+    // which is obviously impossible since equivalence relation is transitive.
+    // It's just required that the mapping is one-to-one.
     outer:
     for (Conjunction c1 : conj1) {
-
-      for (int i = 0; i < conj2.size(); i++) {
+      for (int i = 0, bound = conj2.size(); i < bound; i++) {
         final Conjunction c2 = conj2.get(i);
+
         final List<Proof> proofs = decideEq(c1, c2, ctx);
         if (!proofs.isEmpty()) {
           lemmas.addAll(proofs);
-          coreLemmas.add(tail(lemmas));
+          coreLemmas.add(tail(proofs));
           conj2.remove(i);
           continue outer;
         }
       }
 
-      return emptyList();
+      return emptyList(); // match no found, two queries must be nonequivalent
     }
 
-    final Proof mainTheorem = Proof.make(ctx.makeProofName());
-    mainTheorem.setConclusion("%s = %s".formatted(x1, x2));
+    final Proof theorem = Proof.make(ctx.makeProofName());
+    theorem.setConclusion("%s = %s".formatted(x1, x2));
 
-    for (Proof coreLemma : coreLemmas) mainTheorem.append("rw " + coreLemma.name());
-    mainTheorem.append("ring");
+    for (Proof coreLemma : coreLemmas) theorem.append("rw " + coreLemma.name());
+    theorem.append("ring");
 
-    lemmas.add(mainTheorem);
+    lemmas.add(theorem);
 
     return lemmas;
   }
 
   private static List<Proof> decideEq(Conjunction x1, Conjunction x2, DecisionContext ctx) {
-    if (x1.sumTuples().size() != x2.sumTuples().size()) return emptyList();
+    if (x1.boundedVars().size() != x2.boundedVars().size()) return emptyList();
     if (x1.negation() == null ^ x2.negation() == null) return emptyList();
     if (x1.squash() == null ^ x2.squash() == null) return emptyList();
     if (x1.tables().size() != x2.tables().size()) return emptyList();
     if (x1.predicates().size() != x2.predicates().size()) return emptyList();
 
     for (List<Integer> permutation :
-        Collections2.orderedPermutations(INTEGERS.get(x1.sumTuples().size()))) {
+        Collections2.orderedPermutations(INTEGERS.get(x1.boundedVars().size()))) {
       final List<Proof> proofs = decideEq0(x1, x2, ctx, toIntArray(permutation));
       if (!proofs.isEmpty()) return proofs;
     }
@@ -82,7 +96,7 @@ public class DecisionProcedure {
     x2 = x2.copy();
 
     final List<Tuple> tuples = makeFreshVariables(permutation.length);
-    final List<Tuple> sumTuples1 = x1.sumTuples(), sumTuples2 = x2.sumTuples();
+    final List<Tuple> sumTuples1 = x1.boundedVars(), sumTuples2 = x2.boundedVars();
 
     for (int i = 0; i < 1; i++) {
       x1.subst(sumTuples1.get(i), tuples.get(i));

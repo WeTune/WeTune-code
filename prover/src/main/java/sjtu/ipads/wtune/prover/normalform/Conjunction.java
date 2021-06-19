@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import java.util.List;
 
 public interface Conjunction {
-  List<Tuple> sumTuples();
+  List<Tuple> boundedVars();
 
   List<UExpr> predicates();
 

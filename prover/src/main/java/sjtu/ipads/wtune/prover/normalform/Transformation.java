@@ -50,6 +50,8 @@ public interface Transformation {
     return targets.get(targets.size() - 1);
   }
 
+  // select * from T where exists (select * from S where T.i = S.j)
+  // T(t) * || Sum{t'}(S(t') * [t'.i = t.j]) ||
   private static Collection<Transformation> transformationPass1(Proof proof) {
     final List<Transformation> tfs =
         List.of(new Associativity(), new Distribution(), new MulSum(), new SumAdd(), new SumSum());

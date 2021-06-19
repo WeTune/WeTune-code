@@ -44,7 +44,7 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public List<Tuple> sumTuples() {
+  public List<Tuple> boundedVars() {
     return sumTuples;
   }
 
