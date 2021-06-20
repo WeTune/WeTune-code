@@ -12,7 +12,7 @@ class WildcardValue implements Value {
 
   @Override
   public String qualification() {
-    return null;
+    return qualification;
   }
 
   @Override

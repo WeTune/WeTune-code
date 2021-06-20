@@ -21,4 +21,8 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
   void setPredecessor(int idx, PlanNode predecessor);
 
   PlanNode copy(PlanContext ctx);
+
+  static void resolveRefs(PlanNode plan) {
+    RefBinder.bind(plan);
+  }
 }

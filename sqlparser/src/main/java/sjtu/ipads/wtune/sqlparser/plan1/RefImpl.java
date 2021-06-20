@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
 class RefImpl implements Ref {
   private final String intrinsicQualification, intrinsicName;
 
   RefImpl(String intrinsicQualification, String intrinsicName) {
-    this.intrinsicQualification = intrinsicQualification;
-    this.intrinsicName = intrinsicName;
+    this.intrinsicQualification = simpleName(intrinsicQualification);
+    this.intrinsicName = simpleName(intrinsicName);
   }
 
   @Override

@@ -5,11 +5,9 @@ import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 
-import static java.util.Objects.requireNonNull;
-
 public class Main {
   public static void main(String[] args) {
-    final String latch = "diaspora-492";
+    final String latch = "";
     boolean start = latch.isEmpty();
 
     for (Statement rewritten : Statement.findAllRewritten()) {
@@ -23,10 +21,10 @@ public class Main {
       try {
         final PlanNode plan0 = PlanBuilder.buildPlan(original.parsed(), schema);
         final PlanNode plan1 = PlanBuilder.buildPlan(rewritten.parsed(), schema);
-        System.out.println(plan0);
-        System.out.println(plan1);
-//        requireNonNull(plan0);
-//        requireNonNull(plan1);
+        PlanNode.resolveRefs(plan0);
+        PlanNode.resolveRefs(plan1);
+//        System.out.println(plan0);
+//        System.out.println(plan1);
       } catch (Throwable ex) {
         System.out.println(original);
         throw ex;

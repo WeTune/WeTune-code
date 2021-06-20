@@ -2,12 +2,16 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
 class ColumnValue implements Value {
-  private String qualification;
   private final Column column;
+  private String qualification;
+  private final String name;
 
   ColumnValue(Column column) {
     this.column = column;
+    this.name = simpleName(column.name());
   }
 
   @Override
@@ -17,7 +21,7 @@ class ColumnValue implements Value {
 
   @Override
   public String name() {
-    return column.name();
+    return name;
   }
 
   @Override
@@ -42,7 +46,7 @@ class ColumnValue implements Value {
 
   @Override
   public String toString() {
-    return qualification + '.' + column.name();
+    return qualification + '.' + name;
   }
 
   // equivalence by identity

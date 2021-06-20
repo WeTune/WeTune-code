@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 public interface ProjNode extends PlanNode {
+  boolean containsWildcard();
+
   boolean isExplicitDistinct();
   // For wildcard resolution.
   // If there are no wildcard, the values are immutable.

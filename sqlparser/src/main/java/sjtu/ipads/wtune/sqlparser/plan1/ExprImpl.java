@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
@@ -22,6 +23,11 @@ class ExprImpl implements Expr {
   ExprImpl(RefBag refs, ASTNode template) {
     this.refs = refs;
     this.template = template;
+  }
+
+  static Expr buildColumnRef(String qualification, String name) {
+    return new ExprImpl(
+        new RefBagImpl(singletonList(new RefImpl(qualification, name))), makeAnonymousColumnRef());
   }
 
   static Expr build(ASTNode node) {
@@ -65,26 +71,23 @@ class ExprImpl implements Expr {
   }
 
   private static ASTNode makePrimitiveEquiCond() {
-    final ASTNode lhsName = ASTNode.node(NodeType.COLUMN_NAME);
-    lhsName.set(COLUMN_NAME_TABLE, "?");
-    lhsName.set(COLUMN_NAME_COLUMN, "?");
-
-    final ASTNode rhsName = ASTNode.node(NodeType.COLUMN_NAME);
-    rhsName.set(COLUMN_NAME_TABLE, "?");
-    rhsName.set(COLUMN_NAME_COLUMN, "?");
-
-    final ASTNode lhsRef = ASTNode.expr(ExprKind.COLUMN_REF);
-    lhsRef.set(COLUMN_REF_COLUMN, lhsName);
-
-    final ASTNode rhsRef = ASTNode.expr(ExprKind.COLUMN_REF);
-    rhsRef.set(COLUMN_REF_COLUMN, rhsName);
-
     final ASTNode expr = ASTNode.expr(ExprKind.BINARY);
     expr.set(BINARY_OP, BinaryOp.EQUAL);
-    expr.set(BINARY_LEFT, lhsRef);
-    expr.set(BINARY_RIGHT, rhsRef);
+    expr.set(BINARY_LEFT, makeAnonymousColumnRef());
+    expr.set(BINARY_RIGHT, makeAnonymousColumnRef());
 
     return expr;
+  }
+
+  private static ASTNode makeAnonymousColumnRef() {
+    final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
+    colName.set(COLUMN_NAME_TABLE, "?");
+    colName.set(COLUMN_NAME_COLUMN, "?");
+
+    final ASTNode colRef = ASTNode.expr(ExprKind.COLUMN_REF);
+    colRef.set(COLUMN_REF_COLUMN, colName);
+
+    return colRef;
   }
 
   @Override

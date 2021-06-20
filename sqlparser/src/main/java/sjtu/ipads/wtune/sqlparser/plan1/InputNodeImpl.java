@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 class InputNodeImpl extends PlanNodeBase implements InputNode {
   private final Table table;
@@ -16,7 +17,7 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
 
   InputNodeImpl(Table table, String alias) {
     this(table, new ValueBagImpl(listMap(ColumnValue::new, table.columns())));
-    values.setQualification(alias);
+    values.setQualification(simpleName(alias));
   }
 
   @Override
@@ -42,7 +43,8 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
     return copy;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "Input{%s}".formatted(table);
   }
 }

@@ -34,7 +34,7 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return predecessors[0].values();
   }
 
   @Override

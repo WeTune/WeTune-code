@@ -22,7 +22,7 @@ class PlainFilterNodeImpl extends PlanNodeBase implements PlainFilterNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return predecessors[0].values();
   }
 
   @Override

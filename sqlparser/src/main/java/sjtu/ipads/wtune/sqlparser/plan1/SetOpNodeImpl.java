@@ -18,7 +18,7 @@ class SetOpNodeImpl extends PlanNodeBase implements SetOpNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return predecessors[0].values();
   }
 
   @Override

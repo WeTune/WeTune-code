@@ -65,6 +65,11 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
+  public boolean containsWildcard() {
+    return containsWildcard;
+  }
+
+  @Override
   public boolean isExplicitDistinct() {
     return explicitDistinct;
   }

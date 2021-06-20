@@ -8,6 +8,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 class ExprValue implements Value {
   private String qualification;
@@ -15,7 +16,7 @@ class ExprValue implements Value {
   private final Expr expr;
 
   ExprValue(String name, Expr expr) {
-    this.name = requireNonNull(name);
+    this.name = requireNonNull(simpleName(name));
     this.expr = requireNonNull(expr);
   }
 

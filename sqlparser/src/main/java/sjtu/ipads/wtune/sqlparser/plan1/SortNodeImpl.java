@@ -23,7 +23,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return predecessors[0].values();
   }
 
   @Override

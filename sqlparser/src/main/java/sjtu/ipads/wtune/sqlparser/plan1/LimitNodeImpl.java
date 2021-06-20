@@ -28,7 +28,7 @@ class LimitNodeImpl extends PlanNodeBase implements LimitNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return predecessors[0].values();
   }
 
   @Override
