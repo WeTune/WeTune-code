@@ -1,19 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NODE_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -22,6 +8,18 @@ import sjtu.ipads.wtune.sqlparser.ast.Formatter;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 
 public class ASTNodeImpl implements ASTNode {
   private final Map<FieldKey, Object> directAttrs;
