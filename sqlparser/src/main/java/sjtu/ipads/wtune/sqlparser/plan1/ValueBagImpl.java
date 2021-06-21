@@ -1,8 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import java.util.*;
-
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.head;
+
+import java.util.AbstractList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Spliterator;
 
 class ValueBagImpl extends AbstractList<Value> implements ValueBag {
   private final List<Value> values;
@@ -11,6 +16,18 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
 
   ValueBagImpl(List<Value> values) {
     this.values = requireNonNull(values);
+  }
+
+  @Override
+  public String qualification() {
+    if (values.isEmpty()) return null;
+
+    final String qualification = head(values).qualification();
+    if (qualification == null) return null;
+
+    if (values.stream().map(Value::qualification).allMatch(qualification::equals))
+      return qualification;
+    else return null;
   }
 
   @Override

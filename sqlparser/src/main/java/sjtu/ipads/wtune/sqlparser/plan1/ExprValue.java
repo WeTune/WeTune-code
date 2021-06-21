@@ -1,14 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 class ExprValue implements Value {
   private String qualification;
@@ -26,6 +28,12 @@ class ExprValue implements Value {
 
     final String alias = selectItem.get(SELECT_ITEM_ALIAS);
     final ASTNode exprNode = selectItem.get(SELECT_ITEM_EXPR);
+
+    // "" indicates an anonymous attribute.
+    // Such an attribute can never be referenced by name in the query.
+    // e.g., SELECT sub.* FROM (SELECT T.x + 1 FROM T) sub.
+    // Here, "T.x+1" is anonymous. It can never be referenced elsewhere since it is unnamed.
+    // However, it can still be included in the wildcard.
 
     final String name =
         alias != null

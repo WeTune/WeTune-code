@@ -24,7 +24,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
-public class PlanBuilder {
+class PlanBuilder {
   private final ASTNode ast;
   private final Schema schema;
 

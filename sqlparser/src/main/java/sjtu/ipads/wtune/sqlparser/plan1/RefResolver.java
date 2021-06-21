@@ -10,18 +10,18 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.buildColumnRef;
 
-class RefBinder {
+class RefResolver {
   private final PlanNode plan;
   private final PlanContext ctx;
   private StackedLookup lookup;
 
-  private RefBinder(PlanNode plan, PlanContext ctx) {
+  private RefResolver(PlanNode plan, PlanContext ctx) {
     this.plan = plan;
     this.ctx = ctx;
   }
 
-  static void bind(PlanNode plan) {
-    new RefBinder(plan, PlanContext.build()).onNode(plan);
+  static void resolve(PlanNode plan) {
+    new RefResolver(plan, PlanContext.build()).onNode(plan);
   }
 
   private void onNode(PlanNode node) {
