@@ -3,15 +3,21 @@ package sjtu.ipads.wtune.prover;
 public interface Proof {
   String name();
 
-  void append(String operation);
+  Proof setName(String name);
 
-  void setConclusion(String conclusion);
+  Proof append(String operation);
 
-  void setPremise(String premise);
+  Proof setConclusion(String conclusion);
+
+  Proof setPremise(String premise);
 
   String stringify();
 
-  static Proof make(String name) {
-    return new SimpleProof(name);
+  static Proof make() {
+    return new SimpleProof();
+  }
+
+  static Proof makeNull() {
+    return new NullProof();
   }
 }

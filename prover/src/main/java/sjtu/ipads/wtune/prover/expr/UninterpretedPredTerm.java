@@ -3,10 +3,10 @@ package sjtu.ipads.wtune.prover.expr;
 public interface UninterpretedPredTerm extends PredTerm {
   Name name();
 
-  Tuple tuple();
+  Tuple[] tuple();
 
   @Override
   default Kind kind() {
-    return Kind.UNINTERPRETED_PRED;
+    return Kind.PRED;
   }
 }

@@ -63,6 +63,14 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
+  static <T, R, C extends Collection<R>> C collectionFlatMap(
+      Function<? super T, ? extends Iterable<R>> func, T[] arr, Supplier<C> supplier) {
+    return stream(Arrays.asList(arr))
+        .map(func)
+        .flatMap(FuncUtils::stream)
+        .collect(Collectors.toCollection(supplier));
+  }
+
   static <T, R> List<R> listMap(Function<? super T, ? extends R> func, Iterable<T> os) {
     return collectionMap(func, os, ArrayList::new);
   }
@@ -81,15 +89,15 @@ public interface FuncUtils {
     return listFlatMap(func, Arrays.asList(os));
   }
 
-  static <T> boolean all(Predicate<T> check, Iterable<T> xs) {
+  static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
     return stream(xs).allMatch(check);
   }
 
-  static <T> boolean any(Predicate<T> check, Iterable<T> xs) {
+  static <T> boolean any(Iterable<T> xs, Predicate<T> check) {
     return stream(xs).anyMatch(check);
   }
 
-  static <T> boolean none(Predicate<T> check, Iterable<T> xs) {
+  static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
     return stream(xs).noneMatch(check);
   }
 

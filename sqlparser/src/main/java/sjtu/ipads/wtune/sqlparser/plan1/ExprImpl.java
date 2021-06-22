@@ -1,20 +1,22 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 
 class ExprImpl implements Expr {
   private RefBag refs;
@@ -39,7 +41,7 @@ class ExprImpl implements Expr {
     final List<Ref> refs = new ArrayList<>(columnRefs.size());
     for (ASTNode columnRef : columnRefs) {
       final ASTNode columnName = columnRef.get(COLUMN_REF_COLUMN);
-      final String intrinsicQualification = columnName.set(COLUMN_NAME_TABLE, "?");
+      final String intrinsicQualification = columnName.set(COLUMN_NAME_TABLE, null);
       final String intrinsicName = columnName.set(COLUMN_NAME_COLUMN, "?");
       refs.add(new RefImpl(intrinsicQualification, intrinsicName));
     }

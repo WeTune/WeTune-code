@@ -1,9 +1,8 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import java.util.List;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
-
-import java.util.List;
 
 public interface Conjunction {
   List<Tuple> boundedVars();
@@ -12,9 +11,9 @@ public interface Conjunction {
 
   List<UExpr> tables();
 
-  UExpr negation();
+  Disjunction negation();
 
-  UExpr squash();
+  Disjunction squash();
 
   UExpr toExpr();
 

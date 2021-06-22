@@ -1,13 +1,15 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode {
   private final Expr lhsExpr;
@@ -40,6 +42,11 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
   @Override
   public RefBag refs() {
     return refs;
+  }
+
+  @Override
+  public Expr lhsExpr() {
+    return lhsExpr;
   }
 
   @Override

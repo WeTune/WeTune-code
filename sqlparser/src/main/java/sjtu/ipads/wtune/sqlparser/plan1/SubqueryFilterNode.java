@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 public interface SubqueryFilterNode extends FilterNode {
+  Expr lhsExpr();
+
   // RHS expression is the subquery expression.
   // e.g., a.id in (select x.id from x), RHS expr is (select x.id from x)
   // Since the subquery may depends on outer query's attributes (dependent subquery),

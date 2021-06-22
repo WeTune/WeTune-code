@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
@@ -9,7 +10,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
 // x1 * x2 -> x2 * x1 where x2 is not not(..)
 class NotCommunity extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point) {
+  public UExpr apply(UExpr point, Proof proof) {
     if (point.kind() != MUL) return point;
 
     final UExpr x1 = point.child(0), x2 = point.child(1);
@@ -20,7 +21,7 @@ class NotCommunity extends TransformationBase {
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
 
-    ctx.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
+    proof.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

@@ -3,9 +3,15 @@ package sjtu.ipads.wtune.prover;
 public final class NullProof implements Proof {
   public static final Proof NULL_PROOF = new NullProof();
 
-  private String conclusion;
+  private String name, conclusion, premise;
 
-  private NullProof() {}
+  NullProof() {}
+
+  @Override
+  public Proof setName(String name) {
+    this.name = name;
+    return this;
+  }
 
   @Override
   public String name() {
@@ -13,18 +19,33 @@ public final class NullProof implements Proof {
   }
 
   @Override
-  public void append(String operation) {}
-
-  @Override
-  public void setConclusion(String conclusion) {
-    this.conclusion = conclusion;
+  public Proof append(String operation) {
+    return this;
   }
 
   @Override
-  public void setPremise(String premise) {}
+  public Proof setConclusion(String conclusion) {
+    this.conclusion = conclusion;
+    return this;
+  }
+
+  @Override
+  public Proof setPremise(String premise) {
+    this.premise = premise;
+    return this;
+  }
 
   @Override
   public String stringify() {
-    return conclusion;
+    final StringBuilder builder = new StringBuilder();
+
+    if (name == null) builder.append("example ");
+    else builder.append("lemma ").append(name);
+
+    if (premise != null) builder.append(' ').append(premise);
+
+    builder.append(" : ").append(conclusion).append(" := sorry");
+
+    return builder.toString();
   }
 }

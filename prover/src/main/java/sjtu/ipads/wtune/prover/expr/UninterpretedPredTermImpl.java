@@ -1,34 +1,29 @@
 package sjtu.ipads.wtune.prover.expr;
 
-import java.util.Collections;
-import java.util.Set;
-
 import static java.util.Objects.requireNonNull;
+
+import sjtu.ipads.wtune.prover.utils.Util;
 
 class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTerm {
   private final Name name;
-  private Tuple tuple;
+  private Tuple[] args;
 
-  public UninterpretedPredTermImpl(Name name, Tuple tuple) {
+  public UninterpretedPredTermImpl(Name name, Tuple[] args) {
     this.name = requireNonNull(name);
-    this.tuple = requireNonNull(tuple);
+    this.args = requireNonNull(args);
   }
 
   @Override
-  public Set<Tuple> rootTuples() {
-    return Collections.singleton(tuple.root());
-  }
+  public void subst(Tuple t, Tuple rep) {
+    requireNonNull(t);
+    requireNonNull(rep);
 
-  @Override
-  public void subst(Tuple v1, Tuple v2) {
-    requireNonNull(v1);
-    requireNonNull(v2);
-    tuple = tuple.subst(v1, v2);
+    args = Util.subst(args, t, rep);
   }
 
   @Override
   protected UExprBase copy0() {
-    return new UninterpretedPredTermImpl(name, tuple);
+    return new UninterpretedPredTermImpl(name, args);
   }
 
   @Override
@@ -37,12 +32,12 @@ class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTe
   }
 
   @Override
-  public Tuple tuple() {
-    return tuple;
+  public Tuple[] tuple() {
+    return args;
   }
 
   @Override
   public String toString() {
-    return "%s<%s>".formatted(name, tuple);
+    return "[" + Util.interpolateToString(name.toString(), args) + "]";
   }
 }

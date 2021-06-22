@@ -5064,7 +5064,7 @@ CREATE TABLE public.prometheus_metrics (
     y_label character varying NOT NULL,
     unit character varying NOT NULL,
     legend character varying,
-    "group" integer NOT NULL,
+    "congruentClass" integer NOT NULL,
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     common boolean DEFAULT false NOT NULL,
@@ -9753,7 +9753,7 @@ CREATE INDEX index_prometheus_alerts_on_prometheus_metric_id ON public.prometheu
 
 CREATE INDEX index_prometheus_metrics_on_common ON public.prometheus_metrics USING btree (common);
 
-CREATE INDEX index_prometheus_metrics_on_group ON public.prometheus_metrics USING btree ("group");
+CREATE INDEX index_prometheus_metrics_on_group ON public.prometheus_metrics USING btree ("congruentClass");
 
 CREATE UNIQUE INDEX index_prometheus_metrics_on_identifier ON public.prometheus_metrics USING btree (identifier);
 

@@ -28,7 +28,7 @@ class SumExprImpl extends UnaryExpr implements SumExpr {
   }
 
   @Override
-  public List<Tuple> boundTuples() {
+  public List<Tuple> boundedVars() {
     return boundTuples;
   }
 }

@@ -1,8 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 
 import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 
 /**
  * Represents an arbitrary scalar expression.
@@ -37,5 +43,26 @@ public interface Expr {
 
   default void setRefs(List<Ref> refs) {
     setRefs(new RefBagImpl(refs));
+  }
+
+  default boolean isIdentity() {
+    return COLUMN_REF.isInstance(template());
+  }
+
+  default boolean isJoinCondition() {
+    final ASTNode template = template();
+    return template.get(BINARY_OP) == BinaryOp.EQUAL
+        && COLUMN_REF.isInstance(template.get(BINARY_LEFT))
+        && COLUMN_REF.isInstance(template.get(BINARY_RIGHT));
+  }
+
+  default boolean isEquiCondition() {
+    final ASTNode template = template();
+    final ASTNode lhs = template.get(BINARY_LEFT);
+    final ASTNode rhs = template.get(BINARY_RIGHT);
+    final BinaryOp op = template.get(BINARY_OP);
+    return (op == BinaryOp.EQUAL || op == BinaryOp.IS)
+        && ((COLUMN_REF.isInstance(lhs) && LITERAL.isInstance(rhs))
+            || (COLUMN_REF.isInstance(rhs) && LITERAL.isInstance(lhs)));
   }
 }

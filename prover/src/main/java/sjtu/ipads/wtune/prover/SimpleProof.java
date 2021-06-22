@@ -1,19 +1,18 @@
 package sjtu.ipads.wtune.prover;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SimpleProof implements Proof {
-  private final String name;
+  private String name;
   private final List<String> steps;
   private String premise;
   private String conclusion;
 
-  SimpleProof(String name) {
-    this.name = requireNonNull(name);
+  SimpleProof() {
     this.steps = new ArrayList<>();
   }
 
@@ -23,24 +22,34 @@ public class SimpleProof implements Proof {
   }
 
   @Override
-  public void append(String operation) {
+  public Proof setName(String name) {
+    this.name = requireNonNull(name);
+    return this;
+  }
+
+  @Override
+  public Proof append(String operation) {
     steps.add(operation);
+    return this;
   }
 
   @Override
-  public void setConclusion(String conclusion) {
+  public Proof setConclusion(String conclusion) {
     this.conclusion = conclusion;
+    return this;
   }
 
   @Override
-  public void setPremise(String premise) {
+  public Proof setPremise(String premise) {
     this.premise = premise;
+    return this;
   }
 
   @Override
   public String stringify() {
     final StringBuilder builder = new StringBuilder();
-    builder.append("lemma ").append(name);
+    if (name == null) builder.append("example ");
+    else builder.append("lemma ").append(name);
 
     if (premise != null) builder.append(' ').append(premise);
 

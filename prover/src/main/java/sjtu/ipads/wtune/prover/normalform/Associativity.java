@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 
 import java.util.List;
-
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
+import sjtu.ipads.wtune.prover.Proof;
+import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // x3 * (x1 * x2) -> x3 * x1 * x2
 public class Associativity extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point) {
+  public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();
     if (parent == null
         || point.kind() != MUL
@@ -25,7 +25,7 @@ public class Associativity extends TransformationBase {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    ctx.append("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
+    proof.append("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

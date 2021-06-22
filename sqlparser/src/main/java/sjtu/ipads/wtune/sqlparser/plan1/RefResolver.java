@@ -1,14 +1,19 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
+import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.buildColumnRef;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
-import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.buildColumnRef;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 class RefResolver {
   private final PlanNode plan;
@@ -21,7 +26,9 @@ class RefResolver {
   }
 
   static void resolve(PlanNode plan) {
-    new RefResolver(plan, PlanContext.build()).onNode(plan);
+    final PlanContext ctx = PlanContext.build();
+    new RefResolver(plan, ctx).onNode(plan);
+    PlanContext.installContext(ctx, plan);
   }
 
   private void onNode(PlanNode node) {
@@ -104,6 +111,7 @@ class RefResolver {
 
   private void onFilter(FilterNode node) {
     onNode(node.predecessors()[0]);
+    if (node.type().numPredecessors() >= 2) onNode(node.predecessors()[1]);
 
     final RefBag refs = node.refs();
     registerRefs(node, refs);
@@ -112,10 +120,6 @@ class RefResolver {
 
   private void onProj(ProjNode node) {
     onNode(node.predecessors()[0]);
-
-    final RefBag refs = node.refs();
-    registerRefs(node, refs);
-    resolveRefs(refs, false, true);
 
     if (node.containsWildcard()) {
       final ValueBag values = node.values();
@@ -133,6 +137,10 @@ class RefResolver {
       }
       node.setValues(new ValueBagImpl(expanded));
     }
+
+    final RefBag refs = node.refs();
+    registerRefs(node, refs);
+    resolveRefs(refs, false, true);
 
     lookup.swap();
     registerValues(node, node.values());

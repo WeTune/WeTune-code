@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+
 import java.util.Collection;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 
 public interface Table {
   String schema();
@@ -14,4 +17,8 @@ public interface Table {
   Collection<Column> columns();
 
   Collection<Constraint> constraints();
+
+  default Collection<Constraint> constraints(ConstraintType type) {
+    return listFilter(it -> it.type() == type, constraints());
+  }
 }

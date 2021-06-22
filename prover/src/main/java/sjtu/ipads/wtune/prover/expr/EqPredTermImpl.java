@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.prover.expr;
 
-import java.util.Set;
-
 import static java.util.Objects.requireNonNull;
 
 class EqPredTermImpl extends UExprBase implements EqPredTerm {
@@ -20,11 +18,6 @@ class EqPredTermImpl extends UExprBase implements EqPredTerm {
   @Override
   public Tuple right() {
     return right;
-  }
-
-  @Override
-  public Set<Tuple> rootTuples() {
-    return Set.of(left.root(), right.root());
   }
 
   @Override

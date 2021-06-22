@@ -6,17 +6,8 @@ package sjtu.ipads.wtune.prover.expr;
  * <p><b>Note: </b> This is a immutable value-based type.
  */
 public interface Tuple {
-  /**
-   * If the tuple is produced by projection on another tuple, then `base()` is that tuple, otherwise
-   * `base()` is null (in which case, the tuple itself is a variable).
-   */
-  Tuple base();
+  Tuple[] base();
 
-  /**
-   * `name()` represent the variable's name if base() == null, otherwise the attribute's name.
-   *
-   * <p>e.g., Tuple('t').name == 't'; Tuple('t.a').name == 'a';
-   */
   Name name();
 
   /**
@@ -31,15 +22,37 @@ public interface Tuple {
    */
   Tuple subst(Tuple target, Tuple replacement);
 
-  Tuple proj(String attribute);
+  Tuple root();
 
-  static Tuple make(String name) {
-    return new TupleImpl(null, new NameImpl(name));
+  default boolean isBase() {
+    return this instanceof BaseTuple;
   }
 
-  default Tuple root() {
-    Tuple tuple = this, base;
-    while ((base = tuple.base()) != null) tuple = base;
-    return tuple;
+  default boolean isProjected() {
+    return this instanceof ProjectedTuple;
+  }
+
+  default boolean isFunc() {
+    return this instanceof FuncTuple;
+  }
+
+  default boolean isConstant() {
+    return this instanceof ConstTuple;
+  }
+
+  default Tuple proj(String attribute) {
+    return new ProjectedTuple(this, new NameImpl(attribute));
+  }
+
+  static Tuple make(String name) {
+    return new BaseTuple(new NameImpl(name));
+  }
+
+  static Tuple constant(String expr) {
+    return new ConstTuple(new NameImpl(expr));
+  }
+
+  static Tuple func(String name, Tuple... args) {
+    return new FuncTuple(new NameImpl(name), args);
   }
 }

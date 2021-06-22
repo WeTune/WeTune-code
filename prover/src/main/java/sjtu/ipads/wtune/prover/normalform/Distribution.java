@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
-
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
+
+import sjtu.ipads.wtune.prover.Proof;
+import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // (x1 + x2) * x3 -> x1 * x3 + x2 * x3
 // x3 * (x1 + x2) -> x1 * x3 + x2 * x3
 class Distribution extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point) {
+  public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();
     if (parent == null || point.kind() != ADD || parent.kind() != MUL) return point;
 
@@ -24,8 +25,8 @@ class Distribution extends TransformationBase {
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
 
-    if (point == parent.child(0)) ctx.append("rw mul_distrib_right %s %s %s".formatted(x1, x2, x3));
-    else ctx.append("rw mul_distrib_left (%s) (%s) (%s)".formatted(x3, x1, x2));
+    if (point == parent.child(0)) proof.append("rw mul_distrib_right %s %s %s".formatted(x1, x2, x3));
+    else proof.append("rw mul_distrib_left (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

@@ -3,12 +3,11 @@ package sjtu.ipads.wtune.prover.expr;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public interface UExpr {
   enum Kind {
     TABLE(0),
-    UNINTERPRETED_PRED(0),
+    PRED(0),
     EQ_PRED(0),
     ADD(2),
     MUL(2),
@@ -23,7 +22,7 @@ public interface UExpr {
     }
 
     public boolean isPred() {
-      return this == UNINTERPRETED_PRED || this == EQ_PRED;
+      return this == PRED || this == EQ_PRED;
     }
 
     public boolean isTerm() {
@@ -32,8 +31,6 @@ public interface UExpr {
   }
 
   Kind kind();
-
-  Set<Tuple> rootTuples();
 
   UExpr parent();
 
@@ -93,7 +90,7 @@ public interface UExpr {
     return new TableTermImpl(new NameImpl(tableName), tuple);
   }
 
-  static UExpr uninterpretedPred(String predName, Tuple tuple) {
+  static UExpr uninterpretedPred(String predName, Tuple... tuple) {
     return new UninterpretedPredTermImpl(new NameImpl(predName), tuple);
   }
 

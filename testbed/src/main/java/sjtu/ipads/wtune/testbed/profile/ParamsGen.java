@@ -132,7 +132,7 @@ public interface ParamsGen {
     if (scc1.size() == 1) return scc1.get(0);
 
     for (Set<Relation> component1 : scc1)
-      if (all(t0 -> any(t1 -> t0.table().equals(t1.table()), component0), component1)) {
+      if (all(component1, t0 -> any(component0, t1 -> t0.table().equals(t1.table())))) {
         return component1;
       }
 

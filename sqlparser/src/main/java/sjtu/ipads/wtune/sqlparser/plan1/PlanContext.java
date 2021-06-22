@@ -16,4 +16,9 @@ public interface PlanContext {
   static PlanContext build() {
     return new PlanContextImpl();
   }
+
+  static void installContext(PlanContext ctx, PlanNode root) {
+    root.setContext(ctx);
+    for (PlanNode predecessor : root.predecessors()) installContext(ctx, predecessor);
+  }
 }
