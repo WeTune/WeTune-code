@@ -143,13 +143,13 @@ public class DecisionContextImpl implements DecisionContext {
   private Collection<Column> collectUsedColumns(UExpr expr) {
     final Schema schema = this.schema;
     final List<UExpr> terms = suffixTraversal(expr);
-
+    // each R(t) corresponds an entry t => R
     final Map<Tuple, Table> provence =
         terms.stream()
             .filter(it -> it.kind() == Kind.TABLE)
             .map(it -> (TableTerm) it)
             .collect(Collectors.toMap(TableTerm::tuple, it -> schema.table(it.name().toString())));
-
+    // `projTuple` contains all the tuples in the form "tup.attr" where "tup" is a base tuple
     final List<Tuple> projTuples = new ArrayList<>();
     for (UExpr term : terms) collectProjTuples(term, projTuples);
 
@@ -182,11 +182,13 @@ public class DecisionContextImpl implements DecisionContext {
     }
   }
 
+  // collect all tuples in the form "tup.attr" where "tup" is a base tuple and
+  // its name is not "t" ("t" is a special name denotes the only free variable)
   private void collectProjTuples(Tuple tuple, List<Tuple> dest) {
     if (tuple.isBase() || tuple.isConstant()) return;
     if (tuple.isProjected()) {
       final Tuple base = tuple.base()[0];
-      if (!base.isBase()) dest.add(tuple);
+      if (!base.isBase()) collectProjTuples(base.base()[0], dest);
       else if (!base.name().toString().equals("t")) dest.add(tuple);
       return;
     }

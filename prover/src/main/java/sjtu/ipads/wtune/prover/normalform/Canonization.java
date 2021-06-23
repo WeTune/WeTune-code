@@ -5,6 +5,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalize;
 import static sjtu.ipads.wtune.prover.expr.UExpr.suffixTraversal;
+import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
 
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.utils.Congruence;
+import sjtu.ipads.wtune.prover.utils.Counter;
 import sjtu.ipads.wtune.prover.utils.TupleCongruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -27,17 +29,18 @@ class Canonization {
   // Note: to be called before `Normalization::transform`
   static UExpr applyForeignKey(UExpr expr, Collection<Constraint> foreignKeys) {
     final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, suffixTraversal(expr));
+    final Counter counter = new Counter();
 
-    int idx = 0;
-    for (Constraint foreignKey : foreignKeys) {
-      final String tableName = foreignKey.columns().get(0).tableName();
-      for (UExpr tableTerm : tables) {
-        final TableTerm table = (TableTerm) tableTerm;
-        if (!table.name().toString().equals(tableName)) continue;
+    for (UExpr tableTerm : tables) {
+      final TableTerm table = (TableTerm) tableTerm;
+      final String tableName = table.name().toString();
+      final UExpr term =
+          foreignKeys.stream()
+              .filter(it -> tableName.equals(ownerTableOf(it)))
+              .map(it -> makeForeignKeyTerm(table, it, counter))
+              .reduce(table.copy(), UExpr::mul);
 
-        final UExpr term = makeForeignKeyTerm(table, foreignKey, idx++);
-        UExpr.replaceChild(table.parent(), table, term);
-      }
+      UExpr.replaceChild(table.parent(), table, term);
     }
 
     return expr;
@@ -158,12 +161,12 @@ class Canonization {
     return disjunction.conjunctions().get(0);
   }
 
-  private static UExpr makeForeignKeyTerm(TableTerm table, Constraint foreignKey, int idx) {
+  private static UExpr makeForeignKeyTerm(TableTerm table, Constraint foreignKey, Counter counter) {
     final List<Column> refColumns = foreignKey.refColumns();
     final List<? extends Column> columns = foreignKey.columns();
 
     final String refTable = refColumns.get(0).tableName();
-    final Tuple boundedTuple = Tuple.make("t_" + idx).proj(refTable);
+    final Tuple boundedTuple = Tuple.make("m" + counter.next());
     final Tuple tuple = table.tuple();
 
     final List<UExpr> eqPreds = new ArrayList<>(columns.size() + 1);
@@ -175,7 +178,7 @@ class Canonization {
     eqPreds.add(UExpr.table(refTable, boundedTuple));
 
     final UExpr expr = eqPreds.stream().reduce(UExpr::mul).orElse(null);
-    return UExpr.mul(table.copy(), UExpr.sum(boundedTuple.base()[0], expr));
+    return UExpr.sum(boundedTuple, expr);
   }
 
   private static boolean isConstantTuple(Tuple t) {

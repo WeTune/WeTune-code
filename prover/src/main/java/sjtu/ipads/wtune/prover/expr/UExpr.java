@@ -129,7 +129,8 @@ public interface UExpr {
       found = true;
     }
 
-    if (!found) throw new IllegalStateException();
+    if (!found)
+      throw new IllegalStateException();
   }
 
   static UExpr validate(UExpr expr) {

@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
@@ -16,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.Proof;
-import sjtu.ipads.wtune.prover.expr.SumExpr;
+import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
@@ -49,16 +48,14 @@ public class Normalization {
   public static Disjunction normalize(UExpr root, DecisionContext ctx) {
     final UExpr copy = root.copy();
     if (ctx != null) {
-      final UExpr expr = applyForeignKey(copy, ctx.foreignKeys());
-      final Proof proof = ctx.newProof();
-      final Disjunction normalForm = asDisjunction(new Normalization(proof).transform(expr));
-      final Disjunction canonicalForm = applyUniqueKey(normalForm, ctx.uniqueKeys());
-      proof.setConclusion("%s = %s".formatted(root, canonicalForm));
-      return canonicalForm;
+      final Disjunction normalForm = asDisjunction(new Normalization(null).transform(copy), "a");
+      final UExpr ukApplied = applyUniqueKey(normalForm, ctx.uniqueKeys()).toExpr();
+      final UExpr fkApplied = applyForeignKey(ukApplied, ctx.foreignKeys());
+      return asDisjunction(new Normalization(null).transform(fkApplied), "b");
 
     } else {
       final Proof proof = Proof.makeNull();
-      final Disjunction normalForm = asDisjunction(new Normalization(proof).transform(copy));
+      final Disjunction normalForm = asDisjunction(new Normalization(proof).transform(copy), "a");
       proof.setConclusion("%s = %s".formatted(root, normalForm));
       return normalForm;
     }
@@ -81,22 +78,21 @@ public class Normalization {
     return tail(targets);
   }
 
-  private static Disjunction asDisjunction(UExpr root) {
+  private static Disjunction asDisjunction(UExpr root, String varPrefix) {
     final List<UExpr> factors = listFactors(root, Kind.ADD);
-    return new DisjunctionImpl(listMap(Normalization::asConjunction, factors));
+    return new DisjunctionImpl(listMap(it -> asConjunction(it, varPrefix), factors));
   }
 
-  private static Conjunction asConjunction(UExpr root) {
+  private static Conjunction asConjunction(UExpr root, String varPrefix) {
     final boolean withSum = root.kind() == Kind.SUM;
     final UExpr expr = withSum ? root.child(0) : root;
     if (expr.kind() == Kind.SUM) throw new IllegalArgumentException("not a normal form: " + root);
 
+    final List<Tuple> boundedVars = splitVariables(expr, varPrefix);
     final List<UExpr> factors = listFactors(expr, Kind.MUL);
-
-    final List<Tuple> boundedVars = withSum ? ((SumExpr) root).boundedVars() : emptyList();
+    final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, factors);
     final List<UExpr> squashes = listFilter(it -> it.kind() == Kind.SQUASH, factors);
     final List<UExpr> negations = listFilter(it -> it.kind() == Kind.NOT, factors);
-    final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, factors);
     final List<UExpr> predicates = listFilter(it -> it.kind().isPred(), factors);
 
     if (squashes.size() >= 2 || negations.size() >= 2)
@@ -106,8 +102,8 @@ public class Normalization {
         boundedVars,
         tables,
         predicates,
-        squashes.isEmpty() ? null : asDisjunction(squashes.get(0).child(0)),
-        negations.isEmpty() ? null : asDisjunction(negations.get(0).child(0)));
+        squashes.isEmpty() ? null : asDisjunction(squashes.get(0).child(0), varPrefix + "s"),
+        negations.isEmpty() ? null : asDisjunction(negations.get(0).child(0), varPrefix + "n"));
   }
 
   private static List<UExpr> listFactors(UExpr root, Kind connection) {
@@ -124,6 +120,22 @@ public class Normalization {
     }
     factors.add(expr);
     return factors;
+  }
+
+  private static List<Tuple> splitVariables(UExpr expr, String varPrefix) {
+    final List<UExpr> tables =
+        listFilter(it -> it.kind() == Kind.TABLE, listFactors(expr, Kind.MUL));
+
+    final List<Tuple> variables = new ArrayList<>(tables.size());
+    int idx = 0;
+
+    for (UExpr table : tables) {
+      final Tuple variable = Tuple.make(varPrefix + (idx++));
+      expr.subst(((TableTerm) table).tuple(), variable);
+      variables.add(variable);
+    }
+
+    return variables;
   }
 
   private static void test0() {

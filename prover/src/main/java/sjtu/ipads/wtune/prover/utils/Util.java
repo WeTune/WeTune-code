@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
 public class Util {
   public static Tuple[] subst(Tuple[] args, Tuple t, Tuple rep) {
@@ -52,5 +53,9 @@ public class Util {
     return c.tables().stream()
         .map(it -> (TableTerm) it)
         .collect(Collectors.groupingBy(it -> it.name().toString()));
+  }
+
+  public static String ownerTableOf(Constraint constraint) {
+    return constraint.columns().get(0).tableName();
   }
 }

@@ -9,13 +9,11 @@ import static sjtu.ipads.wtune.prover.decision.Minimization.minimize;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.EQ_PRED;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.PRED;
 import static sjtu.ipads.wtune.prover.utils.Util.arrange;
-import static sjtu.ipads.wtune.prover.utils.Util.validateTableTerm;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.Triple;
 import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.EqPredTerm;
@@ -81,14 +79,11 @@ public class DecisionProcedure {
   }
 
   private Proof tdp0(Conjunction x, Conjunction y) {
-    final TableBijectionMatcher matcher = new TableBijectionMatcher(x, y);
-    if (matcher.match()) return matcher.proof();
-    else return null;
-  }
+    final TableBijectionMatcher tableMatcher = new TableBijectionMatcher(x.tables(), y.tables());
+    if (!tableMatcher.match()) return null;
 
-  private Proof tdp1(Conjunction x, Conjunction y) {
-    final PredMatcher matcher = new PredMatcher(x.predicates(), y.predicates());
-    if (!matcher.match()) return null;
+    final PredMatcher predMatcher = new PredMatcher(x.predicates(), y.predicates());
+    if (!predMatcher.match()) return null;
 
     final Proof negationLemma;
     final Disjunction xNeg = x.negation(), yNeg = y.negation();
@@ -135,11 +130,6 @@ public class DecisionProcedure {
     return copy;
   }
 
-  private RuntimeException failed(String reason) {
-    return new IllegalArgumentException(
-        "cannot determine equivalence [%s]\n%s\n%s".formatted(reason, x, y));
-  }
-
   private static final List<List<Integer>> INTEGERS;
   private static final List<List<Tuple>> FRESH_VARIABLES;
 
@@ -182,60 +172,19 @@ public class DecisionProcedure {
     }
   }
 
-  private class TableBijectionMatcher extends BijectionMatcher<UExpr> {
-    private final Conjunction cx, cy;
-    private final List<Triple<Tuple, Tuple, Tuple>> reAliasing;
-
-    private Proof proof;
-
-    private TableBijectionMatcher(Conjunction cx, Conjunction cy) {
-      super(cx.tables(), cy.tables());
-      this.cx = cx;
-      this.cy = cy;
-      this.reAliasing = new ArrayList<>(xs.size());
-    }
-
-    public Proof proof() {
-      return proof;
+  private static class TableBijectionMatcher extends BijectionMatcher<UExpr> {
+    protected TableBijectionMatcher(List<UExpr> xs, List<UExpr> ys) {
+      super(xs, ys);
     }
 
     @Override
     boolean tryMatch(UExpr x, UExpr y) {
       final TableTerm tx = (TableTerm) x, ty = (TableTerm) y;
-      if (!tx.name().equals(ty.name())) return false; // table name mismatch
-      if (!validateTableTerm(tx)) throw failed("unexpected table term " + x);
-      if (!validateTableTerm(ty)) throw failed("unexpected table term " + y);
-
-      // all table term should be in the from "T(t.alias)"
-      final Tuple vx = tx.tuple(), vy = ty.tuple();
-      final Tuple[] rx = vx.base(), ry = vy.base();
-
-      if (!rx[0].equals(ry[0])) return false; // base tuple mismatch
-      if (!vx.equals(vy)) { // aliasing mismatch, try re-aliasing
-        final Tuple newTuple = rx[0].proj("$" + vx.name());
-        cx.subst(vx, newTuple);
-        cy.subst(vy, newTuple);
-        reAliasing.add(Triple.of(vx, vy, newTuple));
-      } else reAliasing.add(null);
-
-      return true;
-    }
-
-    @Override
-    protected void revokeMatch() {
-      final var alias = reAliasing.remove(reAliasing.size() - 1);
-      if (alias != null) {
-        cx.subst(alias.getRight(), alias.getLeft());
-        cy.subst(alias.getRight(), alias.getMiddle());
-      }
+      return tx.name().equals(ty.name()) && tx.tuple().equals(ty.tuple());
     }
 
     @Override
     boolean onMatched(List<UExpr> xs, List<UExpr> ys) {
-      final Proof proof = tdp1(cx, cy);
-      if (proof == null) return false;
-
-      this.proof = proof;
       return true;
     }
   }
@@ -307,8 +256,8 @@ public class DecisionProcedure {
   }
 
   private static void test0() {
-    final Statement stmt0 = Statement.make("test", "SELECT DISTINCT c.u FROM d INNER JOIN c", null);
-    final Statement stmt1 = Statement.make("test", "SELECT c.u FROM c", null);
+    final Statement stmt0 = Statement.make("test", "SELECT DISTINCT d.p FROM d INNER JOIN c", null);
+    final Statement stmt1 = Statement.make("test", "SELECT DISTINCT d.p FROM d", null);
     final Schema schema = stmt0.app().schema("base");
 
     final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
@@ -326,8 +275,8 @@ public class DecisionProcedure {
     System.out.println(d0);
     System.out.println(d1);
 
-    //    final Proof proof = decide(ctx, d0, d1);
-    //    System.out.println(proof != null);
+    final Proof proof = decide(ctx, d0, d1);
+    System.out.println(proof != null);
   }
 
   public static void main(String[] args) {

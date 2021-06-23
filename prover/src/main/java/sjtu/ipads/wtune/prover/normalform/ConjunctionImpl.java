@@ -7,6 +7,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import sjtu.ipads.wtune.prover.expr.Tuple;
@@ -67,8 +68,12 @@ final class ConjunctionImpl implements Conjunction {
 
   @Override
   public void subst(Tuple v1, Tuple v2) {
-    final ListIterator<Tuple> iter = sumTuples.listIterator();
-    while (iter.hasNext()) iter.set(iter.next().subst(v1, v2));
+    if (sumTuples.contains(v2)) {
+      sumTuples.removeAll(Collections.singleton(v1));
+    } else {
+      final ListIterator<Tuple> iter = sumTuples.listIterator();
+      while (iter.hasNext()) iter.set(iter.next().subst(v1, v2));
+    }
 
     predicates.forEach(it -> it.subst(v1, v2));
     tables.forEach(it -> it.subst(v1, v2));
