@@ -4,7 +4,6 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.prover.ProverSupport.translateExpr;
 import static sjtu.ipads.wtune.prover.expr.UExpr.rootOf;
 import static sjtu.ipads.wtune.prover.expr.UExpr.suffixTraversal;
 import static sjtu.ipads.wtune.prover.normalform.Canonization.applyForeignKey;
@@ -19,10 +18,6 @@ import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.stmt.Statement;
 
 public class Normalization {
   // Section 3.3, Eq 1-9
@@ -49,9 +44,7 @@ public class Normalization {
     final UExpr copy = root.copy();
     if (ctx != null) {
       final Disjunction normalForm = asDisjunction(new Normalization(null).transform(copy), "a");
-      final UExpr ukApplied = applyUniqueKey(normalForm, ctx.uniqueKeys()).toExpr();
-      final UExpr fkApplied = applyForeignKey(ukApplied, ctx.foreignKeys());
-      return asDisjunction(new Normalization(null).transform(fkApplied), "b");
+      return applyForeignKey(applyUniqueKey(normalForm, ctx.uniqueKeys()), ctx.foreignKeys());
 
     } else {
       final Proof proof = Proof.makeNull();
@@ -137,34 +130,4 @@ public class Normalization {
 
     return variables;
   }
-
-  private static void test0() {
-    final Tuple t0 = Tuple.make("t0");
-    final Tuple t1 = Tuple.make("t1");
-    final Tuple t2 = Tuple.make("t2");
-
-    final UExpr expr =
-        UExpr.squash(
-            UExpr.mul(
-                UExpr.table("X", t0),
-                UExpr.squash(UExpr.add(UExpr.table("Y", t1), UExpr.table("Z", t2)))));
-    System.out.println(normalize(expr, null));
-  }
-
-  private static void test1() {
-    final Statement stmt0 =
-        Statement.make("test", "SELECT d0.p FROM d AS d0 JOIN c AS c1 WHERE d0.q = c1.v", null);
-    final Collection<Constraint> constraints =
-        stmt0.app().schema("base").table("d").column("q").constraints(ConstraintType.FOREIGN);
-
-    final UExpr originalExpr =
-        translateExpr(PlanSupport.assemblePlan(stmt0.parsed(), stmt0.app().schema("base")));
-    System.out.println(originalExpr);
-    System.out.println(applyForeignKey(originalExpr, constraints));
-    final Disjunction expr0 = normalize(originalExpr, null);
-    System.out.println(expr0);
-    //    System.out.println(applyUniqueKey(expr0, constraints));
-  }
-
-  public static void main(String[] args) {}
 }

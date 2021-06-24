@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.prover.expr;
 
-import java.util.List;
-
 import static java.util.Objects.requireNonNull;
+
+import java.util.List;
+import sjtu.ipads.wtune.common.utils.Commons;
 
 class SumExprImpl extends UnaryExpr implements SumExpr {
   private final List<Tuple> boundTuples;
@@ -24,7 +25,10 @@ class SumExprImpl extends UnaryExpr implements SumExpr {
 
   @Override
   public String toString() {
-    return "sum%s(%s)".formatted(boundTuples, children[0]);
+    final StringBuilder builder = new StringBuilder("sum");
+    Commons.joining("[", ",", "]", false, boundTuples, builder);
+    builder.append('(').append(children[0]).append(')');
+    return builder.toString();
   }
 
   @Override

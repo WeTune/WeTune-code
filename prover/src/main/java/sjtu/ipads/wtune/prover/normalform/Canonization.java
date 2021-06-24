@@ -4,7 +4,6 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalize;
-import static sjtu.ipads.wtune.prover.expr.UExpr.suffixTraversal;
 import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
 
 import com.google.common.collect.Iterables;
@@ -13,61 +12,69 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.utils.Congruence;
-import sjtu.ipads.wtune.prover.utils.Counter;
 import sjtu.ipads.wtune.prover.utils.TupleCongruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
 class Canonization {
-  // Definition 4.4: S(t) -> S(t) * Sum[t'](R(t') * [t.k=t'.k'], where S.k=>R.k' is a FK
-  // Note: to be called before `Normalization::transform`
-  static UExpr applyForeignKey(UExpr expr, Collection<Constraint> foreignKeys) {
-    final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, suffixTraversal(expr));
-    final Counter counter = new Counter();
-
-    for (UExpr tableTerm : tables) {
-      final TableTerm table = (TableTerm) tableTerm;
-      final String tableName = table.name().toString();
-      final UExpr term =
-          foreignKeys.stream()
-              .filter(it -> tableName.equals(ownerTableOf(it)))
-              .map(it -> makeForeignKeyTerm(table, it, counter))
-              .reduce(table.copy(), UExpr::mul);
-
-      UExpr.replaceChild(table.parent(), table, term);
-    }
-
-    return expr;
-  }
-
   // Note: to be called after `Normalization::transform`
   static Disjunction applyUniqueKey(Disjunction d, Collection<Constraint> uks) {
-    d = d.copy();
     applyUk1(d, uks);
     applyUk2(d, uks);
     return d;
   }
 
   private static void applyUk1(Disjunction d, Collection<Constraint> uks) {
-    final List<Conjunction> conjunctions = d.conjunctions();
-    for (int i = 0, bound = conjunctions.size(); i < bound; i++) {
-      final Conjunction conjunction = applyUk1(conjunctions.get(i), uks);
-      conjunctions.set(i, conjunction);
-    }
+    applyToEachConjunction(d, c -> applyUk1(c, uks));
   }
 
   private static void applyUk2(Disjunction d, Collection<Constraint> uks) {
-    final List<Conjunction> conjunctions = d.conjunctions();
-    for (int i = 0, bound = conjunctions.size(); i < bound; i++) {
-      final Conjunction conjunction = applyUk2(conjunctions.get(i), uks);
-      conjunctions.set(i, conjunction);
+    applyToEachConjunction(d, c -> applyUk2(c, uks));
+  }
+
+  // Definition 4.4: S(t) -> S(t) * Sum[t'](R(t') * [t.k=t'.k'], where S.k=>R.k' is a FK
+  // Note: to be called before `Normalization::transform`
+  static Disjunction applyForeignKey(Disjunction d, Collection<Constraint> fks) {
+    applyToEachConjunction(d, c -> applyFk(c, fks));
+    return d;
+  }
+
+  private static Conjunction applyFk(Conjunction c, Collection<Constraint> fks) {
+    final List<Tuple> vars = c.boundedVars();
+    final List<UExpr> predicates = c.predicates();
+    final List<UExpr> tables = c.tables();
+
+    int idx = 0;
+    for (int i = 0, bound = tables.size(); i < bound; ++i) {
+      final TableTerm table = (TableTerm) tables.get(i);
+      final String tableName = table.name().toString();
+      final Tuple tuple = table.tuple();
+
+      for (Constraint fk : listFilter(it -> tableName.equals(ownerTableOf(it)), fks)) {
+        final List<? extends Column> columns = fk.columns();
+        final List<Column> refColumns = fk.refColumns();
+
+        final Tuple newTuple = Tuple.make("ex" + idx++);
+        final UExpr newTable = UExpr.table(tableName, newTuple);
+
+        vars.add(newTuple);
+        tables.add(newTable);
+
+        for (int j = 0, limit = columns.size(); j < limit; ++j) {
+          final Column col = columns.get(j);
+          final Column refCol = refColumns.get(j);
+          predicates.add(UExpr.eqPred(tuple.proj(col.name()), newTuple.proj(refCol.name())));
+        }
+      }
     }
+
+    return c;
   }
 
   // Definition 4.1: [t.k=t'.k] * R(t) * R(t') -> [t=t'] * R(t), where R.k is a UK
@@ -161,24 +168,13 @@ class Canonization {
     return disjunction.conjunctions().get(0);
   }
 
-  private static UExpr makeForeignKeyTerm(TableTerm table, Constraint foreignKey, Counter counter) {
-    final List<Column> refColumns = foreignKey.refColumns();
-    final List<? extends Column> columns = foreignKey.columns();
-
-    final String refTable = refColumns.get(0).tableName();
-    final Tuple boundedTuple = Tuple.make("m" + counter.next());
-    final Tuple tuple = table.tuple();
-
-    final List<UExpr> eqPreds = new ArrayList<>(columns.size() + 1);
-    for (int i = 0, bound = refColumns.size(); i < bound; ++i) {
-      final Column column = columns.get(i);
-      final Column refColumn = refColumns.get(i);
-      eqPreds.add(UExpr.eqPred(tuple.proj(column.name()), boundedTuple.proj(refColumn.name())));
+  private static void applyToEachConjunction(
+      Disjunction d, Function<Conjunction, Conjunction> func) {
+    final List<Conjunction> conjunctions = d.conjunctions();
+    for (int i = 0, bound = conjunctions.size(); i < bound; i++) {
+      final Conjunction c = func.apply(conjunctions.get(i));
+      conjunctions.set(i, c);
     }
-    eqPreds.add(UExpr.table(refTable, boundedTuple));
-
-    final UExpr expr = eqPreds.stream().reduce(UExpr::mul).orElse(null);
-    return UExpr.sum(boundedTuple, expr);
   }
 
   private static boolean isConstantTuple(Tuple t) {
