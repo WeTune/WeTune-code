@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class CongruenceImpl<T> implements Congruence<T> {
+class CongruenceImpl<T> implements Congruence<T> {
   private final Map<T, CongruentClass<T>> classes;
 
   protected CongruenceImpl() {

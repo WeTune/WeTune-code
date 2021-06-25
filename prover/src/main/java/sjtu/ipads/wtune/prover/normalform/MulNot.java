@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // not(x1) * not(x2) -> not(x1 + x2)
-class MulNot extends TransformationBase {
+final class MulNot extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

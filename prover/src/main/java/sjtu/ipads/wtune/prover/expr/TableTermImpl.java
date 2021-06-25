@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.expr;
 
 import static java.util.Objects.requireNonNull;
 
-class TableTermImpl extends UExprBase implements TableTerm {
+final class TableTermImpl extends UExprBase implements TableTerm {
   private final Name table;
   private Tuple tuple;
 

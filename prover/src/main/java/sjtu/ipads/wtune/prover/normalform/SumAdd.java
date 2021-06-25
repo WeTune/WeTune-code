@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
 
 // sum(x1 + x2) -> sum(x1) + sum(x2)
-class SumAdd extends TransformationBase {
+final class SumAdd extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

@@ -29,7 +29,7 @@ public class PlanSupport {
     return plan;
   }
 
-  public static PlanNode disambiguate(PlanNode plan){
+  public static PlanNode disambiguate(PlanNode plan) {
     Disambiguation.disambiguate(plan);
     return plan;
   }

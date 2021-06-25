@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.expr;
 
 import com.google.common.base.Objects;
 
-class ConstTuple implements Tuple {
+final class ConstTuple implements Tuple {
   private final Name expr;
 
   ConstTuple(Name expr) {

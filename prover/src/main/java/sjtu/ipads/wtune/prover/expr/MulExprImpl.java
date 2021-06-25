@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.expr;
 
-class MulExprImpl extends BinaryExpr implements MulExpr {
+final class MulExprImpl extends BinaryExpr implements MulExpr {
   @Override
   protected UExprBase copy0() {
     return new MulExprImpl();

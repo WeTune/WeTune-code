@@ -8,7 +8,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
 
 // x2 * sum(x1) -> sum(x1 * x2)
-class MulSum extends TransformationBase {
+final class MulSum extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

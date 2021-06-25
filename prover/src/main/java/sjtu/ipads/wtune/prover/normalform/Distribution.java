@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // (x1 + x2) * x3 -> x1 * x3 + x2 * x3
 // x3 * (x1 + x2) -> x1 * x3 + x2 * x3
-class Distribution extends TransformationBase {
+final class Distribution extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

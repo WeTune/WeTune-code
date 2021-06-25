@@ -8,8 +8,8 @@ import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
-public class TupleCongruence extends CongruenceImpl<Tuple> {
-  public static Congruence<Tuple> make(List<UExpr> predicates) {
+final class TupleCongruence extends CongruenceImpl<Tuple> {
+  static Congruence<Tuple> make(List<UExpr> predicates) {
     final Congruence<Tuple> congruence = new TupleCongruence();
 
     for (UExpr predicate : predicates) {

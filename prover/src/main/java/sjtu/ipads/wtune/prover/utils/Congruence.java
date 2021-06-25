@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.prover.utils;
 
+import java.util.List;
 import java.util.Set;
+import sjtu.ipads.wtune.prover.expr.Tuple;
+import sjtu.ipads.wtune.prover.expr.UExpr;
 
 public interface Congruence<T> {
 
@@ -14,5 +17,9 @@ public interface Congruence<T> {
 
   static <T> Congruence<T> make() {
     return new CongruenceImpl<>();
+  }
+
+  static Congruence<Tuple> make(List<UExpr> predicates) {
+    return TupleCongruence.make(predicates);
   }
 }

@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 
-class ProofHelper {
+final class ProofHelper {
   private final DecisionContext ctx;
 
   ProofHelper(DecisionContext ctx) {

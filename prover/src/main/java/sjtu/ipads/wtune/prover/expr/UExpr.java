@@ -1,8 +1,11 @@
 package sjtu.ipads.wtune.prover.expr;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.tautology;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 public interface UExpr {
   enum Kind {
@@ -114,7 +117,11 @@ public interface UExpr {
   }
 
   static List<UExpr> suffixTraversal(UExpr root) {
-    return suffixTraversal0(root, new ArrayList<>());
+    return suffixTraversal0(root, tautology(), new ArrayList<>());
+  }
+
+  static List<UExpr> suffixTraversal(UExpr root, Kind kind) {
+    return suffixTraversal0(root, it -> it.kind() == kind, new ArrayList<>());
   }
 
   static void replaceChild(UExpr parent, UExpr child, UExpr rep) {
@@ -129,8 +136,7 @@ public interface UExpr {
       found = true;
     }
 
-    if (!found)
-      throw new IllegalStateException();
+    if (!found) throw new IllegalStateException();
   }
 
   static UExpr validate(UExpr expr) {
@@ -144,9 +150,10 @@ public interface UExpr {
     return null;
   }
 
-  private static List<UExpr> suffixTraversal0(UExpr expr, List<UExpr> nodes) {
-    for (UExpr child : expr.children()) suffixTraversal0(child, nodes);
-    nodes.add(expr);
+  private static List<UExpr> suffixTraversal0(
+      UExpr expr, Predicate<UExpr> filter, List<UExpr> nodes) {
+    for (UExpr child : expr.children()) suffixTraversal0(child, filter, nodes);
+    if (filter.test(expr)) nodes.add(expr);
     return nodes;
   }
 }

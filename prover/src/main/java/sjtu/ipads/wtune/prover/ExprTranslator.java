@@ -3,10 +3,16 @@ package sjtu.ipads.wtune.prover;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.prover.ProverSupport.normalize;
+import static sjtu.ipads.wtune.prover.expr.UExpr.add;
+import static sjtu.ipads.wtune.prover.expr.UExpr.eqPred;
+import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
+import static sjtu.ipads.wtune.prover.expr.UExpr.not;
+import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 
 import java.util.ArrayList;
@@ -14,7 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
 import sjtu.ipads.wtune.sqlparser.plan1.Expr;
@@ -23,7 +28,6 @@ import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlainFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Ref;
 import sjtu.ipads.wtune.sqlparser.plan1.RefBag;
@@ -31,7 +35,6 @@ import sjtu.ipads.wtune.sqlparser.plan1.SetOpNode;
 import sjtu.ipads.wtune.sqlparser.plan1.SubqueryFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Value;
 import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
-import sjtu.ipads.wtune.stmt.Statement;
 
 public class ExprTranslator {
   private final PlanNode plan;
@@ -106,7 +109,7 @@ public class ExprTranslator {
       final Tuple outer = coalesce(inSubqueryLhs, () -> projTuple(outerPivot(), value));
       final Tuple inner = makeTuple(expr);
 
-      factors.add(UExpr.eqPred(outer, inner));
+      factors.add(eqPred(outer, inner));
     }
 
     factors.add(onNode(proj.predecessors()[0])); // add sub-expression
@@ -127,14 +130,14 @@ public class ExprTranslator {
   private UExpr onPlainFilter(PlainFilterNode filter) {
     final Expr predicate = filter.predicate();
 
-    final UExpr uExpr;
+    final UExpr condExpr;
     if (predicate.isJoinCondition()) {
       final RefBag refs = predicate.refs();
       assert refs.size() == 2;
 
-      final Tuple lhsTuple = projTuple(refs.get(0));
-      final Tuple rhsTuple = projTuple(refs.get(1));
-      uExpr = UExpr.eqPred(lhsTuple, rhsTuple);
+      final Tuple lhs = projTuple(refs.get(0));
+      final Tuple rhs = projTuple(refs.get(1));
+      condExpr = mul(mul(eqPred(lhs, rhs), makeNonNullPred(lhs)), makeNonNullPred(rhs));
 
     } else if (predicate.isEquiCondition()) {
       final RefBag refs = predicate.refs();
@@ -148,14 +151,14 @@ public class ExprTranslator {
       if (LITERAL.isInstance(lhsExpr)) rhsTuple = Tuple.constant(lhsExpr.toString());
       else rhsTuple = Tuple.constant(rhsExpr.toString());
 
-      uExpr = UExpr.eqPred(lhsTuple, rhsTuple);
+      condExpr = eqPred(lhsTuple, rhsTuple);
 
     } else {
-      uExpr = makeUninterpretedPred(predicate);
+      condExpr = makeUninterpretedPred(predicate);
     }
 
     final UExpr remaining = onNode(filter.predecessors()[0]);
-    return UExpr.mul(uExpr, remaining);
+    return mul(condExpr, remaining);
   }
 
   private UExpr onSubqueryFilter(SubqueryFilterNode filter) {
@@ -165,7 +168,7 @@ public class ExprTranslator {
     final UExpr rhsExpr = onNode(filter.predecessors()[1]);
     inSubqueryLhs = null;
 
-    return UExpr.mul(lhsExpr, UExpr.squash(rhsExpr));
+    return mul(lhsExpr, UExpr.squash(rhsExpr));
   }
 
   private UExpr onJoin(JoinNode join) {
@@ -176,9 +179,11 @@ public class ExprTranslator {
 
       final List<UExpr> conditions = new ArrayList<>(lhsRefs.size());
       for (int i = 0, bound = lhsRefs.size(); i < bound; ++i) {
-        final Tuple lhsTuple = projTuple(lhsRefs.get(i));
-        final Tuple rhsTuple = projTuple(rhsRefs.get(i));
-        conditions.add(UExpr.eqPred(lhsTuple, rhsTuple));
+        final Tuple lhs = projTuple(lhsRefs.get(i));
+        final Tuple rhs = projTuple(rhsRefs.get(i));
+        conditions.add(eqPred(lhs, rhs));
+        conditions.add(makeNonNullPred(lhs));
+        conditions.add(makeNonNullPred(rhs));
       }
       condition = conditions.stream().reduce(UExpr::mul).orElse(null);
 
@@ -190,9 +195,15 @@ public class ExprTranslator {
     final UExpr lhsExpr = onNode(join.predecessors()[0]);
     final UExpr rhsExpr = onNode(join.predecessors()[1]);
 
-    final UExpr mul = UExpr.mul(lhsExpr, rhsExpr);
-    if (condition == null) return mul;
-    else return UExpr.mul(mul, condition);
+    if (condition == null) return mul(lhsExpr, rhsExpr);
+    else if (join.type() == InnerJoin) return mul(mul(condition, lhsExpr), rhsExpr);
+    else if (join.type() == LeftJoin) {
+      // symmetricPart + (L(x) * [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y']))
+      // = L(x) * (R(y) * [pred(x,y)] + [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y'])))
+      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
+      return mul(lhsExpr, add(mul(condition.copy(), rhsExpr.copy()), asymmPart));
+
+    } else throw failed("unsupported join type " + join.type());
   }
 
   private UExpr onUnion(SetOpNode setOp) {
@@ -255,9 +266,49 @@ public class ExprTranslator {
     }
   }
 
+  private UExpr makeNonNullPred(Tuple tuple) {
+    return UExpr.uninterpretedPred("`?` NOT NULL", tuple);
+  }
+
+  private UExpr makeIsNullPred(Tuple tuple) {
+    return UExpr.uninterpretedPred("`?` IS NULL", tuple);
+  }
+
   private UExpr makeUninterpretedPred(Expr expr) {
     final Tuple[] args = projTuples(expr.refs());
     return UExpr.uninterpretedPred(expr.template().toString(), args);
+  }
+
+  private UExpr makeAsymmetricJoin(PlanNode asymmJoin, UExpr cond, UExpr rhsExpr) {
+    // A LEFT JOIN B ON A.a = B.b =>
+    // Sum{x,y}(A(x) * B(y) * [x.a = y.b] * [NotNull(x.a)] * [NotNull(y.b)]) -- symmetric part
+    // + Sum{x}(A(x) * [IsNull(y)] * not(Sum{y}(B(y) * [x.a = y.b]))) -- asymmetric part
+
+    cond = cond.copy();
+    rhsExpr = rhsExpr.copy();
+
+    // Usually the RHS is a single source (a plain or a subquery),
+    // but we handle the most general case.
+    final List<String> rhsTables =
+        asymmJoin.values().stream().map(Value::qualification).distinct().toList();
+    if (rhsTables.isEmpty()) throw failed("invalid join: " + asymmJoin.successor());
+
+    final Tuple pivotVar = currentPivot();
+    final Tuple freeVar = Tuple.make("t" + nextTupleIdx++);
+
+    UExpr isNullPred = null;
+    for (String tableAlias : rhsTables) {
+      final Tuple oldTup = pivotVar.proj(tableAlias);
+      final Tuple newTup = freeVar.proj(tableAlias);
+
+      final UExpr isNullPred0 = makeIsNullPred(oldTup);
+      isNullPred = isNullPred == null ? isNullPred0 : mul(isNullPred, isNullPred0);
+
+      cond.subst(oldTup, newTup);
+      rhsExpr.subst(oldTup, newTup);
+    }
+
+    return mul(isNullPred, not(sum(freeVar, mul(cond, rhsExpr))));
   }
 
   private RuntimeException failed(String reason) {
@@ -273,28 +324,5 @@ public class ExprTranslator {
       scope = scope.successor();
     }
     throw failed("cannot find the scope of value " + value);
-  }
-
-  public static void main(String[] args) {
-    final Statement stmt =
-        Statement.make(
-            "test",
-            "SELECT a.z, c.v "
-                + "FROM (SELECT b.x, b.y + 1 AS z FROM b WHERE b.z > 10) a "
-                + "INNER JOIN c "
-                + "WHERE a.x = c.w "
-                + "AND c.v IN ("
-                + " SELECT d.q "
-                + " FROM d "
-                + " WHERE d.p IN ("
-                + "  SELECT b.y "
-                + "  FROM b "
-                + "  WHERE c.w = d.r and b.y = c.u))",
-            null);
-    final PlanNode plan = PlanSupport.assemblePlan(stmt.parsed(), stmt.app().schema("base"));
-    final UExpr uExpr = translate(plan);
-    System.out.println(uExpr);
-    final Disjunction spnf = normalize(uExpr, null);
-    System.out.println(spnf);
   }
 }

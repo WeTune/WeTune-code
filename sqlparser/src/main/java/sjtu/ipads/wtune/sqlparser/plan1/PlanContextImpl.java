@@ -2,13 +2,22 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 class PlanContextImpl implements PlanContext {
+  private final Schema schema;
   private final Map<Ref, Value> refTo = new IdentityHashMap<>();
   private final Map<Ref, PlanNode> refOwners = new IdentityHashMap<>();
   private final Map<Value, PlanNode> valueOwners = new IdentityHashMap<>();
 
-  PlanContextImpl() {}
+  PlanContextImpl(Schema schema) {
+    this.schema = schema;
+  }
+
+  @Override
+  public Schema schema() {
+    return schema;
+  }
 
   @Override
   public Value deRef(Ref ref) {

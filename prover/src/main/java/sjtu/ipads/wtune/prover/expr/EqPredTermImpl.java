@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.expr;
 
 import static java.util.Objects.requireNonNull;
 
-class EqPredTermImpl extends UExprBase implements EqPredTerm {
+final class EqPredTermImpl extends UExprBase implements EqPredTerm {
   private Tuple left, right;
 
   public EqPredTermImpl(Tuple left, Tuple right) {

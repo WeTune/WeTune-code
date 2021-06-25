@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.prover;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.prover.expr.UExpr.suffixTraversal;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.PRIMARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.UNIQUE;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,66 +18,46 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
+import sjtu.ipads.wtune.prover.normalform.Conjunction;
+import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
-public class DecisionContextImpl implements DecisionContext {
-  private final UExpr expr0, expr1;
-  private final List<Proof> proofStack;
-
-  private Schema schema;
+final class DecisionContextImpl extends ProofContextImpl implements DecisionContext {
+  private final Schema schema;
+  private Disjunction d0, d1;
+  private Provence provence0, provence1;
   private Collection<Table> usedTables;
   private Collection<Column> usedColumns;
   private Collection<Constraint> uniqueKeys, foreignKeys;
-  private int nextProofId = 0;
 
-  DecisionContextImpl(UExpr expr0, UExpr expr1) {
-    this.expr0 = requireNonNull(expr0);
-    this.expr1 = requireNonNull(expr1);
-    this.proofStack = new ArrayList<>();
-  }
-
-  @Override
-  public void setSchema(Schema schema) {
+  DecisionContextImpl(Schema schema) {
     this.schema = requireNonNull(schema);
   }
 
   @Override
-  public Proof newProof() {
-    final Proof proof = Proof.makeNull().setName("lemma_" + (nextProofId++));
-    proofStack.add(proof);
-    return proof;
+  public void setExpr0(Disjunction d) {
+    d0 = requireNonNull(d);
+    provence0 = new Provence(schema, d);
   }
 
   @Override
-  public Proof getProof(int idx) {
-    if (idx >= 0) return proofStack.get(idx);
-    else return proofStack.get(proofStack.size() - idx);
-  }
-
-  @Override
-  public Proof getProof(String name) {
-    if (name == null) return null;
-
-    for (Proof proof : proofStack)
-      if (name.equals(proof.name())) {
-        return proof;
-      }
-
-    return null;
+  public void setExpr1(Disjunction d) {
+    d1 = requireNonNull(d);
+    provence1 = new Provence(schema, d);
   }
 
   @Override
   public Collection<Table> usedTables() {
-    if (schema == null) return Collections.emptySet();
     if (usedTables != null) return usedTables;
 
     usedTables = new HashSet<>();
-    usedTables.addAll(collectUsedTables(expr0));
-    usedTables.addAll(collectUsedTables(expr1));
+    usedTables.addAll(provence0.tables());
+    usedTables.addAll(provence1.tables());
+
     return usedTables;
   }
 
@@ -87,8 +67,8 @@ public class DecisionContextImpl implements DecisionContext {
     if (usedColumns != null) return usedColumns;
 
     usedColumns = new HashSet<>();
-    usedColumns.addAll(collectUsedColumns(expr0));
-    usedColumns.addAll(collectUsedColumns(expr1));
+    usedColumns.addAll(provence0.columns());
+    usedColumns.addAll(provence1.columns());
     return usedColumns;
   }
 
@@ -129,74 +109,104 @@ public class DecisionContextImpl implements DecisionContext {
         .collect(Collectors.toList());
   }
 
-  private Collection<Table> collectUsedTables(UExpr expr) {
-    final Schema schema = this.schema;
-    return suffixTraversal(expr).stream()
-        .filter(it -> it.kind() == Kind.TABLE)
-        .map(it -> (TableTerm) it)
-        .map(TableTerm::name)
-        .map(Object::toString)
-        .map(schema::table)
-        .collect(Collectors.toSet());
-  }
+  private static class Provence {
+    private final Schema schema;
+    private final Disjunction disjunction;
+    private Map<Tuple, Table> tables;
+    private Map<Tuple, Column> columns;
 
-  private Collection<Column> collectUsedColumns(UExpr expr) {
-    final Schema schema = this.schema;
-    final List<UExpr> terms = suffixTraversal(expr);
-    // each R(t) corresponds an entry t => R
-    final Map<Tuple, Table> provence =
-        terms.stream()
-            .filter(it -> it.kind() == Kind.TABLE)
-            .map(it -> (TableTerm) it)
-            .collect(Collectors.toMap(TableTerm::tuple, it -> schema.table(it.name().toString())));
-    // `projTuple` contains all the tuples in the form "tup.attr" where "tup" is a base tuple
-    final List<Tuple> projTuples = new ArrayList<>();
-    for (UExpr term : terms) collectProjTuples(term, projTuples);
-
-    final List<Column> usedColumns = new ArrayList<>(provence.size());
-    for (Tuple tuple : projTuples) {
-      final Table table = provence.get(tuple.base()[0]);
-      if (table == null)
-        throw new IllegalArgumentException("unknown table " + tuple.base()[0].name());
-
-      final Column column = table.column(tuple.name().toString());
-      if (column == null)
-        throw new IllegalArgumentException(
-            "unknown column %s.%s".formatted(table.name(), tuple.name()));
-
-      usedColumns.add(column);
+    private Provence(Schema schema, Disjunction disjunction) {
+      this.schema = schema;
+      this.disjunction = disjunction;
     }
 
-    return usedColumns;
-  }
-
-  private void collectProjTuples(UExpr term, List<Tuple> dest) {
-    if (term.kind() == Kind.EQ_PRED) {
-      final EqPredTerm eqPred = (EqPredTerm) term;
-      collectProjTuples(eqPred.left(), dest);
-      collectProjTuples(eqPred.right(), dest);
-
-    } else if (term.kind() == Kind.PRED) {
-      final UninterpretedPredTerm predTerm = (UninterpretedPredTerm) term;
-      for (Tuple tuple : predTerm.tuple()) collectProjTuples(tuple, dest);
-    }
-  }
-
-  // collect all tuples in the form "tup.attr" where "tup" is a base tuple and
-  // its name is not "t" ("t" is a special name denotes the only free variable)
-  private void collectProjTuples(Tuple tuple, List<Tuple> dest) {
-    if (tuple.isBase() || tuple.isConstant()) return;
-    if (tuple.isProjected()) {
-      final Tuple base = tuple.base()[0];
-      if (!base.isBase()) collectProjTuples(base.base()[0], dest);
-      else if (!base.name().toString().equals("t")) dest.add(tuple);
-      return;
-    }
-    if (tuple.isFunc()) {
-      for (Tuple base : tuple.base()) collectProjTuples(base, dest);
-      return;
+    private Collection<Table> tables() {
+      if (tables != null) return tables.values();
+      collectTables(disjunction, tables = new HashMap<>());
+      return tables.values();
     }
 
-    throw new IllegalArgumentException("unexpected tuple " + tuple);
+    private Collection<Column> columns() {
+      if (columns != null) return columns.values();
+
+      tables(); // trigger assignment of tables
+      assert tables != null;
+
+      collectColumns(disjunction, columns = new HashMap<>());
+      return columns.values();
+    }
+
+    private void collectTables(Disjunction d, Map<Tuple, Table> dest) {
+      for (Conjunction c : d.conjunctions()) {
+        for (UExpr e : c.tables()) {
+          final TableTerm tableTerm = (TableTerm) e;
+          final String tableName = tableTerm.name().toString();
+          final Table table = schema.table(tableName);
+          if (table == null) throw new IllegalArgumentException("unknown table " + tableName);
+          dest.put(tableTerm.tuple(), table);
+        }
+
+        if (c.squash() != null) collectTables(c.squash(), dest);
+        if (c.negation() != null) collectTables(c.negation(), dest);
+      }
+    }
+
+    private void collectColumns(Disjunction d, Map<Tuple, Column> dest) {
+      final List<Tuple> buffer = new ArrayList<>(4);
+
+      for (Conjunction c : d.conjunctions()) {
+        for (UExpr e : c.predicates()) {
+          buffer.clear();
+          collectProjTuples(e, buffer);
+
+          for (Tuple tuple : buffer) {
+            final Table table = tables.get(tuple.base()[0]);
+            if (table == null)
+              throw new IllegalArgumentException("unknown table: " + tuple.base()[0].name());
+
+            final String colName = tuple.name().toString();
+            final Column column = table.column(colName);
+            if (column == null)
+              throw new IllegalArgumentException(
+                  "unknown column: %s.%s".formatted(table.name(), colName));
+
+            dest.put(tuple, column);
+          }
+
+          if (c.squash() != null) collectColumns(c.squash(), dest);
+          if (c.negation() != null) collectColumns(c.negation(), dest);
+        }
+      }
+    }
+
+    private static void collectProjTuples(UExpr term, List<Tuple> dest) {
+      if (term.kind() == Kind.EQ_PRED) {
+        final EqPredTerm eqPred = (EqPredTerm) term;
+        collectProjTuples(eqPred.left(), dest);
+        collectProjTuples(eqPred.right(), dest);
+
+      } else if (term.kind() == Kind.PRED) {
+        final UninterpretedPredTerm predTerm = (UninterpretedPredTerm) term;
+        for (Tuple tuple : predTerm.tuple()) collectProjTuples(tuple, dest);
+      }
+    }
+
+    // collect all tuples in the form "tup.table.attr" where "tup" is a base tuple and
+    // its name is not "t" ("t" is a special name denotes the only free variable)
+    private static void collectProjTuples(Tuple tuple, List<Tuple> dest) {
+      if (tuple.isBase() || tuple.isConstant()) return;
+      if (tuple.isProjected()) {
+        final Tuple base = tuple.base()[0];
+        if (!base.isBase()) collectProjTuples(base.base()[0], dest);
+        else if (!base.name().toString().equals("t")) dest.add(tuple);
+        return;
+      }
+      if (tuple.isFunc()) {
+        for (Tuple base : tuple.base()) collectProjTuples(base, dest);
+        return;
+      }
+
+      throw new IllegalArgumentException("unexpected tuple " + tuple);
+    }
   }
 }

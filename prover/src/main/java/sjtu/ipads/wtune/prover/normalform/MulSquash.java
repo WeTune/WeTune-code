@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // squash(x1) * squash(x2) -> squash(x1 * x2)
-class MulSquash extends TransformationBase {
+final class MulSquash extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

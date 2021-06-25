@@ -8,7 +8,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
 
 // let x1 = not(...)
 // x1 * x2 -> x2 * x1 where x2 is not not(..)
-class NotCommunity extends TransformationBase {
+final class NotCommunity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     if (point.kind() != MUL) return point;

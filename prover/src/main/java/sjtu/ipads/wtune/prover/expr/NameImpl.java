@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.expr;
 
 import java.util.Objects;
 
-class NameImpl implements Name {
+final class NameImpl implements Name {
   private final String name;
 
   NameImpl(String name) {

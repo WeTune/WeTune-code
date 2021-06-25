@@ -6,4 +6,8 @@ public interface ProofContext {
   Proof getProof(int idx);
 
   Proof getProof(String name);
+
+  void pushScope();
+
+  void popScope();
 }

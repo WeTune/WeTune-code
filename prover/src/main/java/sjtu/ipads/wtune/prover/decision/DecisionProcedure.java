@@ -3,8 +3,6 @@ package sjtu.ipads.wtune.prover.decision;
 import static com.google.common.collect.Collections2.permutations;
 import static java.lang.Math.max;
 import static sjtu.ipads.wtune.common.utils.Commons.toIntArray;
-import static sjtu.ipads.wtune.prover.ProverSupport.normalize;
-import static sjtu.ipads.wtune.prover.ProverSupport.translateExpr;
 import static sjtu.ipads.wtune.prover.decision.Minimization.minimize;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.EQ_PRED;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.PRED;
@@ -24,13 +22,8 @@ import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.utils.Congruence;
-import sjtu.ipads.wtune.prover.utils.TupleCongruence;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.stmt.Statement;
 
-public class DecisionProcedure {
+public final class DecisionProcedure {
   private final DecisionContext ctx;
   private final Disjunction x, y;
   private final ProofHelper helper;
@@ -42,7 +35,7 @@ public class DecisionProcedure {
     this.helper = new ProofHelper(ctx);
   }
 
-  public static Proof decide(DecisionContext ctx, Disjunction x, Disjunction y) {
+  public static Proof decide(Disjunction x, Disjunction y, DecisionContext ctx) {
     return new DecisionProcedure(ctx, x, y).decide();
   }
 
@@ -216,8 +209,8 @@ public class DecisionProcedure {
 
     protected PredMatcher(List<UExpr> xs, List<UExpr> ys) {
       super(xs, ys);
-      xCongruence = TupleCongruence.make(xs);
-      yCongruence = TupleCongruence.make(ys);
+      xCongruence = Congruence.make(xs);
+      yCongruence = Congruence.make(ys);
     }
 
     @Override
@@ -253,33 +246,5 @@ public class DecisionProcedure {
 
       return false;
     }
-  }
-
-  private static void test0() {
-    final Statement stmt0 = Statement.make("test", "SELECT DISTINCT d.p FROM d INNER JOIN c", null);
-    final Statement stmt1 = Statement.make("test", "SELECT DISTINCT d.p FROM d", null);
-    final Schema schema = stmt0.app().schema("base");
-
-    final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
-    final PlanNode plan1 = PlanSupport.assemblePlan(stmt1.parsed(), schema);
-
-    final UExpr e0 = translateExpr(plan0);
-    final UExpr e1 = translateExpr(plan1);
-
-    final DecisionContext ctx = DecisionContext.make(e0, e1);
-    ctx.setSchema(schema);
-
-    final Disjunction d0 = normalize(e0, ctx);
-    final Disjunction d1 = normalize(e1, ctx);
-
-    System.out.println(d0);
-    System.out.println(d1);
-
-    final Proof proof = decide(ctx, d0, d1);
-    System.out.println(proof != null);
-  }
-
-  public static void main(String[] args) {
-    test0();
   }
 }

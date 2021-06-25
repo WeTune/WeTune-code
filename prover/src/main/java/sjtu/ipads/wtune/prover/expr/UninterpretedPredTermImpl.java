@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import sjtu.ipads.wtune.prover.utils.Util;
 
-class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTerm {
+final class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTerm {
   private final Name name;
   private Tuple[] args;
 

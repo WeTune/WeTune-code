@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 
 // squash(...squash(x1)...) -> squash(...x1...)
-class ElimSquash extends TransformationBase {
+final class ElimSquash extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     if (point.kind() != Kind.SQUASH) return point;

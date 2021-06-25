@@ -8,7 +8,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
 
 // let x2 = squash(...)
 // x1 * x2 -> x2 * x1 where x1 is not squash(..)
-class SquashCommunity extends TransformationBase {
+final class SquashCommunity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     if (point.kind() != MUL) return point;

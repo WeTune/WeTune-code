@@ -11,7 +11,7 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // sum(sum(x1)) -> sum(x1)
-class SumSum extends TransformationBase {
+final class SumSum extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();

@@ -10,7 +10,9 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
-public class Util {
+public final class Util {
+  private Util() {}
+
   public static Tuple[] subst(Tuple[] args, Tuple t, Tuple rep) {
     final Tuple[] newArgs = Arrays.copyOf(args, args.length);
     boolean changed = false;
@@ -41,12 +43,6 @@ public class Util {
     final List<T> matching = new ArrayList<>(arrangement.length);
     for (int i : arrangement) matching.add(ts.get(i));
     return matching;
-  }
-
-  public static boolean validateTableTerm(TableTerm table) {
-    final Tuple vx = table.tuple();
-    final Tuple[] rx = vx.base();
-    return rx != null && rx.length == 1 && rx[0].base() == null && rx[0].root() != null;
   }
 
   public static Map<String, List<TableTerm>> groupTables(Conjunction c) {

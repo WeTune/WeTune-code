@@ -1,8 +1,6 @@
 package sjtu.ipads.wtune.prover;
 
-public final class NullProof implements Proof {
-  public static final Proof NULL_PROOF = new NullProof();
-
+final class NullProof implements Proof {
   private String name, conclusion, premise;
 
   NullProof() {}

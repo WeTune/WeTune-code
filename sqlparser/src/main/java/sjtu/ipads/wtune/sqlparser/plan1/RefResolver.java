@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
@@ -21,14 +22,12 @@ class RefResolver {
   private StackedLookup lookup;
 
   private RefResolver(PlanNode plan, PlanContext ctx) {
-    this.plan = plan;
-    this.ctx = ctx;
+    this.plan = requireNonNull(plan);
+    this.ctx = requireNonNull(ctx);
   }
 
   static void resolve(PlanNode plan) {
-    final PlanContext ctx = PlanContext.build();
-    new RefResolver(plan, ctx).onNode(plan);
-    PlanContext.installContext(ctx, plan);
+    new RefResolver(plan, plan.context()).onNode(plan);
   }
 
   private void onNode(PlanNode node) {
@@ -45,34 +44,15 @@ class RefResolver {
     if (needStackLookup) lookup = new StackedLookup(currentLookup);
 
     switch (node.type()) {
-      case Input:
-        onInput((InputNode) node);
-        break;
-      case InnerJoin:
-      case LeftJoin:
-        onJoin((JoinNode) node);
-        break;
-      case PlainFilter:
-      case SubqueryFilter:
-        onFilter((FilterNode) node);
-        break;
-      case Proj:
-        onProj((ProjNode) node);
-        break;
-      case Agg:
-        onAgg((AggNode) node);
-        break;
-      case Sort:
-        onSort((SortNode) node);
-        break;
-      case Limit:
-        onLimit((LimitNode) node);
-        break;
-      case Union:
-        onUnion((SetOpNode) node);
-        break;
-      default:
-        throw failed("unsupported operator " + node.type());
+      case Input -> onInput((InputNode) node);
+      case InnerJoin, LeftJoin -> onJoin((JoinNode) node);
+      case PlainFilter, SubqueryFilter -> onFilter((FilterNode) node);
+      case Proj -> onProj((ProjNode) node);
+      case Agg -> onAgg((AggNode) node);
+      case Sort -> onSort((SortNode) node);
+      case Limit -> onLimit((LimitNode) node);
+      case Union -> onUnion((SetOpNode) node);
+      default -> throw failed("unsupported operator " + node.type());
     }
 
     if (needMergeLookup) currentLookup.addAll(lookup.values);
@@ -187,9 +167,16 @@ class RefResolver {
     ctx.registerRefs(node, refs);
   }
 
-  private Value lookup(Ref ref, boolean useAux, boolean recursive) {
+  private void resolveRefs(Iterable<Ref> refs, boolean auxFirst, boolean recursive) {
+    for (Ref ref : refs) {
+      final Value value = lookup(ref, auxFirst, recursive);
+      setRef(ref, value);
+    }
+  }
+
+  private Value lookup(Ref ref, boolean auxFirst, boolean recursive) {
     final Value value =
-        lookup.lookup(ref.intrinsicQualification(), ref.intrinsicName(), useAux, recursive);
+        lookup.lookup(ref.intrinsicQualification(), ref.intrinsicName(), auxFirst, recursive);
     if (value == null) throw failed("unknown ref " + ref);
     return value;
   }
@@ -199,13 +186,6 @@ class RefResolver {
     if (values == null)
       throw failed("unknown ref " + (qualification == null ? "*" : qualification + "*"));
     return values;
-  }
-
-  private void resolveRefs(Iterable<Ref> refs, boolean auxFirst, boolean recursive) {
-    for (Ref ref : refs) {
-      final Value value = lookup(ref, auxFirst, recursive);
-      setRef(ref, value);
-    }
   }
 
   private boolean isLhs(PlanNode root, PlanNode descent) {

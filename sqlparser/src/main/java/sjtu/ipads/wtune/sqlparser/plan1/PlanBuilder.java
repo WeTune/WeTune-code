@@ -1,5 +1,53 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_ORDER_BY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_GROUP_BY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_SELECT_ITEMS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_OPTION;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_SOURCE_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_LEFT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
@@ -7,22 +55,6 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 class PlanBuilder {
   private final ASTNode ast;
@@ -34,7 +66,10 @@ class PlanBuilder {
   }
 
   public static PlanNode buildPlan(ASTNode ast, Schema schema) {
-    return new PlanBuilder(requireNonNull(schema), requireNonNull(ast)).build0(ast);
+    final PlanNode plan = new PlanBuilder(requireNonNull(schema), requireNonNull(ast)).build0(ast);
+    final PlanContext ctx = PlanContext.build(schema);
+    PlanContext.installContext(ctx, plan);
+    return plan;
   }
 
   public static PlanNode buildPlan(ASTNode ast) {

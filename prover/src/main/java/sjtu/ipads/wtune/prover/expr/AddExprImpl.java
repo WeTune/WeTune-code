@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.expr;
 
-class AddExprImpl extends BinaryExpr implements AddExpr {
+final class AddExprImpl extends BinaryExpr implements AddExpr {
   @Override
   protected UExprBase copy0() {
     return new AddExprImpl();

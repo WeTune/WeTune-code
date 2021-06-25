@@ -18,6 +18,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public interface FuncUtils {
+  static <T> Predicate<T> tautology() {
+    return ignored -> true;
+  }
+
   static <T, R> IFunction<T, R> deaf(Supplier<R> supplier) {
     return t -> supplier.get();
   }

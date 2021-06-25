@@ -1,6 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
 public interface PlanContext {
+  Schema schema();
+
   Value deRef(Ref ref);
 
   void registerValues(PlanNode node, ValueBag values);
@@ -13,8 +17,8 @@ public interface PlanContext {
 
   void setRef(Ref ref, Value value);
 
-  static PlanContext build() {
-    return new PlanContextImpl();
+  static PlanContext build(Schema schema) {
+    return new PlanContextImpl(schema);
   }
 
   static void installContext(PlanContext ctx, PlanNode root) {

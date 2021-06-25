@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.expr;
 
-class NotExprImpl extends UnaryExpr implements NotExpr {
+final class NotExprImpl extends UnaryExpr implements NotExpr {
   @Override
   protected UExprBase copy0() {
     return new NotExprImpl();

@@ -1,19 +1,18 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.expr.UExpr.rootOf;
 import static sjtu.ipads.wtune.prover.expr.UExpr.suffixTraversal;
-import static sjtu.ipads.wtune.prover.normalform.Canonization.applyForeignKey;
-import static sjtu.ipads.wtune.prover.normalform.Canonization.applyUniqueKey;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.Proof;
+import sjtu.ipads.wtune.prover.expr.SumExpr;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
@@ -40,18 +39,8 @@ public class Normalization {
     this.proof = coalesce(proof, Proof.makeNull());
   }
 
-  public static Disjunction normalize(UExpr root, DecisionContext ctx) {
-    final UExpr copy = root.copy();
-    if (ctx != null) {
-      final Disjunction normalForm = asDisjunction(new Normalization(null).transform(copy), "a");
-      return applyForeignKey(applyUniqueKey(normalForm, ctx.uniqueKeys()), ctx.foreignKeys());
-
-    } else {
-      final Proof proof = Proof.makeNull();
-      final Disjunction normalForm = asDisjunction(new Normalization(proof).transform(copy), "a");
-      proof.setConclusion("%s = %s".formatted(root, normalForm));
-      return normalForm;
-    }
+  public static Disjunction normalize(UExpr root) {
+    return asDisjunction(new Normalization(null).transform(root.copy()), "a");
   }
 
   private UExpr transform(UExpr root) {
@@ -62,6 +51,7 @@ public class Normalization {
   }
 
   private UExpr transform(List<UExpr> targets, Collection<Transformation> tfs) {
+    // not efficient, but safe
     for (UExpr target : targets)
       for (Transformation tf : tfs) {
         final UExpr applied = tf.apply(target, proof);
@@ -77,11 +67,19 @@ public class Normalization {
   }
 
   private static Conjunction asConjunction(UExpr root, String varPrefix) {
-    final boolean withSum = root.kind() == Kind.SUM;
-    final UExpr expr = withSum ? root.child(0) : root;
+    final UExpr expr;
+    final List<Tuple> originalBoundedVars;
+    if (root.kind() == Kind.SUM) {
+      expr = root.child(0);
+      originalBoundedVars = ((SumExpr) root).boundedVars();
+    } else {
+      expr = root;
+      originalBoundedVars = emptyList();
+    }
+
     if (expr.kind() == Kind.SUM) throw new IllegalArgumentException("not a normal form: " + root);
 
-    final List<Tuple> boundedVars = splitVariables(expr, varPrefix);
+    final List<Tuple> boundedVars = splitVariables(expr, varPrefix, originalBoundedVars);
     final List<UExpr> factors = listFactors(expr, Kind.MUL);
     final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, factors);
     final List<UExpr> squashes = listFilter(it -> it.kind() == Kind.SQUASH, factors);
@@ -115,16 +113,19 @@ public class Normalization {
     return factors;
   }
 
-  private static List<Tuple> splitVariables(UExpr expr, String varPrefix) {
-    final List<UExpr> tables =
-        listFilter(it -> it.kind() == Kind.TABLE, listFactors(expr, Kind.MUL));
-
+  private static List<Tuple> splitVariables(
+      UExpr expr, String varPrefix, List<Tuple> originalVars) {
+    final List<UExpr> tables = suffixTraversal(expr, Kind.TABLE);
     final List<Tuple> variables = new ArrayList<>(tables.size());
     int idx = 0;
 
-    for (UExpr table : tables) {
+    for (UExpr e : tables) {
+      final TableTerm tableTerm = (TableTerm) e;
+      final Tuple tuple = tableTerm.tuple();
+      if (tuple.isBase() || !originalVars.contains(tuple.base()[0])) continue;
+
       final Tuple variable = Tuple.make(varPrefix + (idx++));
-      expr.subst(((TableTerm) table).tuple(), variable);
+      expr.subst(tuple, variable);
       variables.add(variable);
     }
 

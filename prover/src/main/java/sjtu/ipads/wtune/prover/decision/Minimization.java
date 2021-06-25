@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.utils.Util;
 
-public class Minimization {
+final class Minimization {
   // Note: to be called from `DecisionProcedure::sdp`
   public static Conjunction minimize(Conjunction c) {
     final Collection<List<TableTerm>> groups = Util.groupTables(c).values();

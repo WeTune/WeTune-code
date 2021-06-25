@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 import sjtu.ipads.wtune.common.utils.Commons;
 
-class SumExprImpl extends UnaryExpr implements SumExpr {
+final class SumExprImpl extends UnaryExpr implements SumExpr {
   private final List<Tuple> boundTuples;
 
   SumExprImpl(List<Tuple> boundTuples) {
