@@ -5,7 +5,8 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 public interface Conjunction {
-  List<Tuple> boundedVars();
+
+  List<Tuple> vars();
 
   List<UExpr> predicates();
 
@@ -19,5 +20,16 @@ public interface Conjunction {
 
   void subst(Tuple v1, Tuple v2);
 
+  boolean uses(Tuple v);
+
   Conjunction copy();
+
+  static Conjunction make(
+      List<Tuple> sumTuples,
+      List<UExpr> tables,
+      List<UExpr> predicates,
+      Disjunction squash,
+      Disjunction negation) {
+    return new ConjunctionImpl(sumTuples, tables, predicates, squash, negation);
+  }
 }

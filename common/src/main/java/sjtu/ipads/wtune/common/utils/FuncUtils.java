@@ -94,15 +94,15 @@ public interface FuncUtils {
   }
 
   static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
-    return stream(xs).allMatch(check);
+    return xs == null || stream(xs).allMatch(check);
   }
 
   static <T> boolean any(Iterable<T> xs, Predicate<T> check) {
-    return stream(xs).anyMatch(check);
+    return xs != null && stream(xs).anyMatch(check);
   }
 
   static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
-    return stream(xs).noneMatch(check);
+    return xs == null || stream(xs).noneMatch(check);
   }
 
   static <P0, P1, R> List<R> zipMap(

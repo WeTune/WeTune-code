@@ -30,6 +30,11 @@ final class BaseTuple implements Tuple {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    return v.equals(this);
+  }
+
+  @Override
   public String toString() {
     return name.toString();
   }

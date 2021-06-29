@@ -19,6 +19,11 @@ final class SumExprImpl extends UnaryExpr implements SumExpr {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    return boundTuples.stream().noneMatch(v::equals) && super.uses(v);
+  }
+
+  @Override
   protected UExprBase copy0() {
     return new SumExprImpl(boundTuples);
   }

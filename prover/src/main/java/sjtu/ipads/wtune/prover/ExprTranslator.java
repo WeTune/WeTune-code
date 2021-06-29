@@ -3,16 +3,15 @@ package sjtu.ipads.wtune.prover;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.prover.expr.UExpr.add;
 import static sjtu.ipads.wtune.prover.expr.UExpr.eqPred;
 import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.expr.UExpr.not;
 import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
+import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 
 import java.util.ArrayList;
@@ -37,6 +36,8 @@ import sjtu.ipads.wtune.sqlparser.plan1.Value;
 import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
 
 public class ExprTranslator {
+  private static final String VAR_PREFIX = "t";
+
   private final PlanNode plan;
   private final PlanContext ctx;
 
@@ -53,7 +54,7 @@ public class ExprTranslator {
     this.ctx = requireNonNull(plan.context());
     this.scopes = new ArrayList<>(5);
     this.pivotTuples = new ArrayList<>(5);
-    this.pivotTuples.add(Tuple.make("t"));
+    this.pivotTuples.add(Tuple.make(FREE_VAR));
   }
 
   public static UExpr translate(PlanNode plan) {
@@ -196,14 +197,15 @@ public class ExprTranslator {
     final UExpr rhsExpr = onNode(join.predecessors()[1]);
 
     if (condition == null) return mul(lhsExpr, rhsExpr);
-    else if (join.type() == InnerJoin) return mul(mul(condition, lhsExpr), rhsExpr);
-    else if (join.type() == LeftJoin) {
-      // symmetricPart + (L(x) * [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y']))
-      // = L(x) * (R(y) * [pred(x,y)] + [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y'])))
-      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
-      return mul(lhsExpr, add(mul(condition.copy(), rhsExpr.copy()), asymmPart));
-
-    } else throw failed("unsupported join type " + join.type());
+    else return mul(mul(condition, lhsExpr), rhsExpr);
+    //    else if (join.type() == InnerJoin) return mul(mul(condition, lhsExpr), rhsExpr);
+    //    else if (join.type() == LeftJoin) {
+    //      // symmetricPart + (L(x) * [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y']))
+    //      // = L(x) * (R(y) * [pred(x,y)] + [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y'])))
+    //      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
+    //      return mul(lhsExpr, add(mul(condition.copy(), rhsExpr.copy()), asymmPart));
+    //
+    //    } else throw failed("unsupported join type " + join.type());
   }
 
   private UExpr onUnion(SetOpNode setOp) {
@@ -219,7 +221,7 @@ public class ExprTranslator {
 
   private void pushScope(ProjNode proj) {
     scopes.add(proj);
-    pivotTuples.add(Tuple.make("t" + nextTupleIdx++));
+    pivotTuples.add(Tuple.make(TRANSLATOR_VAR_PREFIX + nextTupleIdx++));
   }
 
   private void popScope() {
@@ -294,7 +296,7 @@ public class ExprTranslator {
     if (rhsTables.isEmpty()) throw failed("invalid join: " + asymmJoin.successor());
 
     final Tuple pivotVar = currentPivot();
-    final Tuple freeVar = Tuple.make("t" + nextTupleIdx++);
+    final Tuple freeVar = Tuple.make(TRANSLATOR_VAR_PREFIX + nextTupleIdx++);
 
     UExpr isNullPred = null;
     for (String tableAlias : rhsTables) {

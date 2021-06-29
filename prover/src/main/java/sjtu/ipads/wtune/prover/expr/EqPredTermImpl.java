@@ -30,6 +30,11 @@ final class EqPredTermImpl extends UExprBase implements EqPredTerm {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    return left.uses(v) || right.uses(v);
+  }
+
+  @Override
   protected UExprBase copy0() {
     return new EqPredTermImpl(left, right);
   }

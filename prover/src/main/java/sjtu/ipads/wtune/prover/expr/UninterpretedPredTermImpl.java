@@ -22,6 +22,12 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    for (Tuple arg : args) if (arg.uses(v)) return true;
+    return false;
+  }
+
+  @Override
   protected UExprBase copy0() {
     return new UninterpretedPredTermImpl(name, args);
   }

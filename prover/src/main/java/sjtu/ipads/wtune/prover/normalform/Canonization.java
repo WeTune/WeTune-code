@@ -4,20 +4,17 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
+import static sjtu.ipads.wtune.prover.utils.Constants.EXTRA_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
-import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
@@ -142,40 +139,41 @@ public final class Canonization {
   static Disjunction applyForeignKey(Disjunction d, Collection<Constraint> fks) {
     if (fks.isEmpty()) return d;
 
-    applyToEachConjunction(d, c -> applyFk1(c, fks));
+    //    applyToEachConjunction(d, c -> applyFk1(c, fks));
     applyToEachConjunction(d, c -> applyFk2(c, fks));
     return d;
   }
 
-  // Additional definition: S(t) * not(Sum[t'](R(t') * [t.k=t'.k']) -> 0, where S.k=>R.t' is a FK
-  private static Conjunction applyFk1(Conjunction c, Collection<Constraint> fks) {
-    final Disjunction negation = c.negation();
-    if (negation == null || c.tables().isEmpty()) return c;
-
-    final Set<Pair<String, String>> fkRelations = new HashSet<>();
-    for (Constraint fk : fks)
-      fkRelations.add(Pair.of(ownerTableOf(fk), fk.refColumns().get(0).tableName()));
-
-    boolean found = false;
-    loop:
-    for (Conjunction innerC : negation.conjunctions()) {
-      if (innerC.boundedVars().size() != 1 || innerC.tables().size() != 1) continue;
-      for (var pair : Lists.cartesianProduct(c.tables(), innerC.tables())) {
-        final String outerTable = ((TableTerm) pair.get(0)).name().toString();
-        final String innerTable = ((TableTerm) pair.get(1)).name().toString();
-        if (fkRelations.contains(Pair.of(outerTable, innerTable))) {
-          found = true;
-          break loop;
-        }
-      }
-    }
-
-    return found ? null : c;
-  }
+  //  // Additional definition: S(t) * not(Sum[t'](R(t') * [t.k=t'.k']) -> 0, where S.k=>R.t' is a
+  // FK
+  //  private static Conjunction applyFk1(Conjunction c, Collection<Constraint> fks) {
+  //    final Disjunction negation = c.negation();
+  //    if (negation == null || c.tables().isEmpty()) return c;
+  //
+  //    final Set<Pair<String, String>> fkRelations = new HashSet<>();
+  //    for (Constraint fk : fks)
+  //      fkRelations.add(Pair.of(ownerTableOf(fk), fk.refColumns().get(0).tableName()));
+  //
+  //    boolean found = false;
+  //    loop:
+  //    for (Conjunction innerC : negation.conjunctions()) {
+  //      if (innerC.boundedVars().size() != 1 || innerC.tables().size() != 1) continue;
+  //      for (var pair : Lists.cartesianProduct(c.tables(), innerC.tables())) {
+  //        final String outerTable = ((TableTerm) pair.get(0)).name().toString();
+  //        final String innerTable = ((TableTerm) pair.get(1)).name().toString();
+  //        if (fkRelations.contains(Pair.of(outerTable, innerTable))) {
+  //          found = true;
+  //          break loop;
+  //        }
+  //      }
+  //    }
+  //
+  //    return found ? null : c;
+  //  }
 
   // Definition 4.4: S(t) -> S(t) * Sum[t'](R(t') * [t.k=t'.k'], where S.k=>R.k' is a FK
   private static Conjunction applyFk2(Conjunction c, Collection<Constraint> fks) {
-    final List<Tuple> vars = c.boundedVars();
+    final List<Tuple> vars = c.vars();
     final List<UExpr> predicates = c.predicates();
     final List<UExpr> tables = c.tables();
 
@@ -190,7 +188,7 @@ public final class Canonization {
         final List<? extends Column> columns = fk.columns();
         final List<Column> refColumns = fk.refColumns();
 
-        final Tuple newTuple = Tuple.make("ex" + idx++);
+        final Tuple newTuple = Tuple.make(EXTRA_VAR_PREFIX + idx++);
         final UExpr newTable = UExpr.table(refTableName, newTuple);
 
         vars.add(newTuple);

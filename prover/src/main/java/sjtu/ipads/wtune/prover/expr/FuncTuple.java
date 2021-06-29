@@ -43,6 +43,12 @@ final class FuncTuple implements Tuple {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    for (Tuple arg : args) if (arg.uses(v)) return true;
+    return false;
+  }
+
+  @Override
   public Tuple root() {
     return null;
   }

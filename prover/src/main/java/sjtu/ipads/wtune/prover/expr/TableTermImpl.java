@@ -19,6 +19,11 @@ final class TableTermImpl extends UExprBase implements TableTerm {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    return tuple.uses(v);
+  }
+
+  @Override
   public Tuple tuple() {
     return tuple;
   }

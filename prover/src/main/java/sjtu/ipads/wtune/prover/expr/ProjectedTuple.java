@@ -37,6 +37,11 @@ final class ProjectedTuple implements Tuple {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    return this.equals(v) || base[0].uses(v);
+  }
+
+  @Override
   public Tuple root() {
     return base[0].root();
   }

@@ -1,27 +1,19 @@
 package sjtu.ipads.wtune.prover.decision;
 
-import static com.google.common.collect.Collections2.permutations;
 import static java.lang.Math.max;
-import static sjtu.ipads.wtune.common.utils.Commons.toIntArray;
 import static sjtu.ipads.wtune.prover.decision.Minimization.minimize;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.EQ_PRED;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.PRED;
+import static sjtu.ipads.wtune.prover.utils.Constants.DECISION_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.PermutationIter.permute;
 import static sjtu.ipads.wtune.prover.utils.Util.arrange;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.IntStream;
 import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.prover.Proof;
-import sjtu.ipads.wtune.prover.expr.EqPredTerm;
-import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
-import sjtu.ipads.wtune.prover.utils.Congruence;
+import sjtu.ipads.wtune.prover.utils.Util;
 
 public final class DecisionProcedure {
   private final DecisionContext ctx;
@@ -52,17 +44,18 @@ public final class DecisionProcedure {
   }
 
   private Proof tdp(Conjunction x, Conjunction y) {
-    if (x.boundedVars().size() != y.boundedVars().size()) return null;
+    if (x.vars().size() != y.vars().size()) return null;
     if (x.negation() == null ^ y.negation() == null) return null;
     if (x.squash() == null ^ y.squash() == null) return null;
     if (x.tables().size() != y.tables().size()) return null;
     if (x.predicates().size() != y.predicates().size()) return null;
 
-    final int numVars = x.boundedVars().size();
-    for (List<Integer> permutation : permutations(INTEGERS.get(numVars))) {
-      final List<Tuple> freeVars = makeFreshVars(numVars);
-      final Conjunction xRenamed = substBoundedVars(x, freeVars);
-      final Conjunction yRenamed = substBoundedVars(y, arrange(freeVars, toIntArray(permutation)));
+    final int numVars = x.vars().size();
+    final List<Tuple> freeVars = makeFreshVars(numVars);
+    final Conjunction xRenamed = Util.substBoundedVars(x, freeVars);
+
+    for (int[] permutation : permute(numVars, numVars)) {
+      final Conjunction yRenamed = Util.substBoundedVars(y, arrange(freeVars, permutation));
 
       final Proof proof = tdp0(xRenamed, yRenamed);
       if (proof != null) return proof;
@@ -111,32 +104,10 @@ public final class DecisionProcedure {
   }
 
   private static List<Tuple> makeFreshVars(int count) {
-    return FRESH_VARIABLES.get(count);
+    return FRESH_VARIABLES.subList(0, count);
   }
 
-  private static Conjunction substBoundedVars(Conjunction x, List<Tuple> tuples) {
-    final Conjunction copy = x.copy();
-    final List<Tuple> vars = copy.boundedVars();
-    for (int i = 0, bound = tuples.size(); i < bound; i++) {
-      copy.subst(vars.get(i), tuples.get(i));
-    }
-    return copy;
-  }
-
-  private static final List<List<Integer>> INTEGERS;
-  private static final List<List<Tuple>> FRESH_VARIABLES;
-
-  static {
-    INTEGERS =
-        IntStream.range(0, 10)
-            .mapToObj(count -> IntStream.range(0, count).boxed().toList())
-            .toList();
-    FRESH_VARIABLES =
-        IntStream.range(0, 10)
-            .mapToObj(
-                count -> IntStream.range(0, count).mapToObj(i -> Tuple.make("x" + i)).toList())
-            .toList();
-  }
+  private static final List<Tuple> FRESH_VARIABLES = Util.makeFreshVars(DECISION_VAR_PREFIX, 10);
 
   private class TermBijectionMatcher extends BijectionMatcher<Conjunction> {
     private final List<Proof> proofs;
@@ -151,33 +122,11 @@ public final class DecisionProcedure {
     }
 
     @Override
-    boolean tryMatch(Conjunction x, Conjunction y) {
+    protected boolean tryMatch(Conjunction x, Conjunction y) {
       final Proof proof = tdp(x, y);
       if (proof == null) return false;
 
       proofs.add(proof);
-      return true;
-    }
-
-    @Override
-    boolean onMatched(List<Conjunction> xs, List<Conjunction> ys) {
-      return true;
-    }
-  }
-
-  private static class TableBijectionMatcher extends BijectionMatcher<UExpr> {
-    protected TableBijectionMatcher(List<UExpr> xs, List<UExpr> ys) {
-      super(xs, ys);
-    }
-
-    @Override
-    boolean tryMatch(UExpr x, UExpr y) {
-      final TableTerm tx = (TableTerm) x, ty = (TableTerm) y;
-      return tx.name().equals(ty.name()) && tx.tuple().equals(ty.tuple());
-    }
-
-    @Override
-    boolean onMatched(List<UExpr> xs, List<UExpr> ys) {
       return true;
     }
   }
@@ -201,50 +150,6 @@ public final class DecisionProcedure {
 
       proofs.add(proof);
       return true;
-    }
-  }
-
-  private static class PredMatcher extends Matcher<UExpr> {
-    private final Congruence<Tuple> xCongruence, yCongruence;
-
-    protected PredMatcher(List<UExpr> xs, List<UExpr> ys) {
-      super(xs, ys);
-      xCongruence = Congruence.make(xs);
-      yCongruence = Congruence.make(ys);
-    }
-
-    @Override
-    boolean tryMatch(UExpr x, UExpr y) {
-      if (x.kind() == EQ_PRED && y.kind() == EQ_PRED) {
-        // For EqPred, we don't actually do matching.
-        // Instead, we check whether the eq relation is implied by the counterpart's congruence.
-        final EqPredTerm xEq = (EqPredTerm) x;
-        final EqPredTerm yEq = (EqPredTerm) y;
-        return yCongruence.isCongruent(xEq.left(), xEq.right())
-            && xCongruence.isCongruent(yEq.left(), yEq.right());
-      }
-
-      if (x.kind() == PRED && y.kind() == PRED) {
-        final UninterpretedPredTerm xPred = (UninterpretedPredTerm) x;
-        final UninterpretedPredTerm yPred = (UninterpretedPredTerm) y;
-
-        // x0 == y0 /\ x1 == y1 /\ ... -> pred(x0,x1,...) == pred(y0,y1,...)
-        if (Objects.equals(xPred.name(), yPred.name())) {
-          final Tuple[] xArgs = xPred.tuple(), yArgs = yPred.tuple();
-          if (xArgs.length != yArgs.length) return false;
-
-          for (int i = 0, bound = xArgs.length; i < bound; ++i)
-            if (!xCongruence.isCongruent(xArgs[i], yArgs[i])
-                || !yCongruence.isCongruent(xArgs[i], yArgs[i])) return false;
-
-          return true;
-
-        } else {
-          return false;
-        }
-      }
-
-      return false;
     }
   }
 }

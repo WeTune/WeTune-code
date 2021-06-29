@@ -48,6 +48,8 @@ public interface UExpr {
 
   void subst(Tuple v1, Tuple v2);
 
+  boolean uses(Tuple v);
+
   // Note: the copy's parent is not set.
   UExpr copy();
 
@@ -116,12 +118,16 @@ public interface UExpr {
     return expr;
   }
 
-  static List<UExpr> suffixTraversal(UExpr root) {
-    return suffixTraversal0(root, tautology(), new ArrayList<>());
+  static List<UExpr> postorderTraversal(UExpr root) {
+    return postorderTraversal0(root, tautology(), new ArrayList<>());
   }
 
-  static List<UExpr> suffixTraversal(UExpr root, Kind kind) {
-    return suffixTraversal0(root, it -> it.kind() == kind, new ArrayList<>());
+  static List<UExpr> preorderTraversal(UExpr root) {
+    return preorderTraversal0(root, tautology(), new ArrayList<>());
+  }
+
+  static List<UExpr> preorderTraversal(UExpr root, Kind kind) {
+    return preorderTraversal0(root, it -> it.kind() == kind, new ArrayList<>());
   }
 
   static void replaceChild(UExpr parent, UExpr child, UExpr rep) {
@@ -150,10 +156,17 @@ public interface UExpr {
     return null;
   }
 
-  private static List<UExpr> suffixTraversal0(
+  private static List<UExpr> preorderTraversal0(
       UExpr expr, Predicate<UExpr> filter, List<UExpr> nodes) {
-    for (UExpr child : expr.children()) suffixTraversal0(child, filter, nodes);
+    for (UExpr child : expr.children()) preorderTraversal0(child, filter, nodes);
     if (filter.test(expr)) nodes.add(expr);
+    return nodes;
+  }
+
+  private static List<UExpr> postorderTraversal0(
+      UExpr expr, Predicate<UExpr> filter, List<UExpr> nodes) {
+    if (filter.test(expr)) nodes.add(expr);
+    for (UExpr child : expr.children()) postorderTraversal0(child, filter, nodes);
     return nodes;
   }
 }

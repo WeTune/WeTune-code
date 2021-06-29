@@ -24,6 +24,8 @@ public interface Tuple {
 
   Tuple root();
 
+  boolean uses(Tuple v);
+
   default boolean isBase() {
     return this instanceof BaseTuple;
   }

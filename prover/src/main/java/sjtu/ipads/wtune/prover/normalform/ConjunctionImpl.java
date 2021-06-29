@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.prover.normalform;
 
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.TABLE;
 import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
@@ -14,27 +15,26 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 final class ConjunctionImpl implements Conjunction {
-  private final List<Tuple> sumTuples;
+  private final List<Tuple> vars;
   private final List<UExpr> predicates;
   private final Disjunction negation;
   private final Disjunction squash;
   private final List<UExpr> tables;
 
   ConjunctionImpl(
-      List<Tuple> sumTuples,
+      List<Tuple> vars,
       List<UExpr> tables,
       List<UExpr> predicates,
       Disjunction squash,
       Disjunction negation) {
-    if (sumTuples == null || predicates == null || tables == null)
-      throw new IllegalArgumentException();
+    if (vars == null || predicates == null || tables == null) throw new IllegalArgumentException();
     if (predicates.isEmpty() && negation == null && squash == null && tables.isEmpty())
       throw new IllegalArgumentException();
     if (predicates.stream().anyMatch(it -> !it.kind().isPred()))
       throw new IllegalArgumentException();
     if (tables.stream().anyMatch(it -> it.kind() != TABLE)) throw new IllegalArgumentException();
 
-    this.sumTuples = new ArrayList<>(sumTuples);
+    this.vars = new ArrayList<>(vars);
     this.predicates = predicates;
     this.negation = negation;
     this.squash = squash;
@@ -42,8 +42,8 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public List<Tuple> boundedVars() {
-    return sumTuples;
+  public List<Tuple> vars() {
+    return vars;
   }
 
   @Override
@@ -68,10 +68,10 @@ final class ConjunctionImpl implements Conjunction {
 
   @Override
   public void subst(Tuple v1, Tuple v2) {
-    if (sumTuples.contains(v2)) {
-      sumTuples.removeAll(Collections.singleton(v1));
+    if (vars.contains(v2)) {
+      vars.removeAll(Collections.singleton(v1));
     } else {
-      final ListIterator<Tuple> iter = sumTuples.listIterator();
+      final ListIterator<Tuple> iter = vars.listIterator();
       while (iter.hasNext()) iter.set(iter.next().subst(v1, v2));
     }
 
@@ -79,6 +79,15 @@ final class ConjunctionImpl implements Conjunction {
     tables.forEach(it -> it.subst(v1, v2));
     if (negation != null) negation.subst(v1, v2);
     if (squash != null) squash.subst(v1, v2);
+  }
+
+  @Override
+  public boolean uses(Tuple v) {
+    return !(any(vars, it -> it.uses(v)))
+        && (any(tables, it -> it.uses(v))
+            || any(predicates, it -> it.uses(v))
+            || (negation != null && negation.uses(v))
+            || (squash != null && squash.uses(v)));
   }
 
   @Override
@@ -94,14 +103,14 @@ final class ConjunctionImpl implements Conjunction {
 
     if (result == null) throw new IllegalStateException();
 
-    if (!sumTuples.isEmpty()) return sum(sumTuples, result);
+    if (!vars.isEmpty()) return sum(vars, result);
     else return result;
   }
 
   @Override
   public Conjunction copy() {
     return new ConjunctionImpl(
-        sumTuples,
+        vars,
         listMap(UExpr::copy, tables),
         listMap(UExpr::copy, predicates),
         squash == null ? null : squash.copy(),

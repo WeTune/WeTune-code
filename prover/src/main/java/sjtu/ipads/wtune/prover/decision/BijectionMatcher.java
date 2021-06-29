@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.prover.decision;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiPredicate;
 import sjtu.ipads.wtune.prover.utils.Util;
 
 abstract class BijectionMatcher<T> {
@@ -54,7 +55,18 @@ abstract class BijectionMatcher<T> {
 
   protected void revokeMatch() {}
 
-  abstract boolean tryMatch(T x, T y);
+  protected abstract boolean tryMatch(T x, T y);
 
-  abstract boolean onMatched(List<T> xs, List<T> ys);
+  protected boolean onMatched(List<T> xs, List<T> ys) {
+    return true;
+  }
+
+  static <T> BijectionMatcher<T> makeBijectionMatcher(List<T> xs, List<T> ys, BiPredicate<T, T> func) {
+    return new BijectionMatcher<T>(xs, ys) {
+      @Override
+      protected boolean tryMatch(T x, T y) {
+        return func.test(x, y);
+      }
+    };
+  }
 }

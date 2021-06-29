@@ -41,6 +41,12 @@ abstract class UExprBase implements UExpr {
   }
 
   @Override
+  public boolean uses(Tuple v) {
+    for (UExpr child : children) if (child.uses(v)) return true;
+    return false;
+  }
+
+  @Override
   public UExpr copy() {
     final UExprBase copy = copy0();
     final UExpr[] children = this.children;

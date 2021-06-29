@@ -21,7 +21,7 @@ public class Main {
     PlanSupport.disambiguate(plan0);
     PlanSupport.disambiguate(plan1);
 
-    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
+//    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
@@ -32,10 +32,11 @@ public class Main {
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);
 
-    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
-    System.out.println(eq);
+    //    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
+    //    System.out.println(eq);
 
-    return eq;
+    //    return eq;
+    return false;
   }
 
   private static void test0(String latch, boolean single) {
@@ -61,6 +62,7 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test0("broadleaf-199", true);
+    test0("", false);
+//    test0("broadleaf-199", true);
   }
 }
