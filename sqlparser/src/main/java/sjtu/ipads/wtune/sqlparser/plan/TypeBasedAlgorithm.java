@@ -7,7 +7,7 @@ public class TypeBasedAlgorithm<T> {
         return onInput((InputNode) node);
       case PlainFilter:
         return onPlainFilter((FilterNode) node);
-      case SubqueryFilter:
+      case InSubFilter:
         return onSubqueryFilter((FilterNode) node);
       case InnerJoin:
         return onInnerJoin((JoinNode) node);

@@ -8,7 +8,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateOtherSide;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
@@ -190,7 +190,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
         filter = new PlainFilterNode(PlainFilter, Expr.make(o), attrs);
 
       } else if (o instanceof FilterNode) {
-        assert ((FilterNode) o).type() == SubqueryFilter;
+        assert ((FilterNode) o).type() == InSubFilter;
         filter = new SubqueryFilterNode(null, attrs);
         filter.setPredecessor(1, PlanNode.copyOnTree((PlanNode) o).predecessors()[1]);
 

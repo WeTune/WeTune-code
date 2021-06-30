@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
@@ -11,25 +10,26 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
-class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode {
+class InSubFilterImpl extends PlanNodeBase implements InSubFilter {
   private final Expr lhsExpr;
+  private final RefBag lhsRefs;
   private Expr rhsExpr, predicate;
   private RefBag refs;
 
-  SubqueryFilterNodeImpl(Expr lhsExpr) {
+  InSubFilterImpl(Expr lhsExpr) {
     this.lhsExpr = lhsExpr;
-    this.refs = lhsExpr.refs();
+    this.lhsRefs = this.refs = lhsExpr.refs();
   }
 
-  static SubqueryFilterNode build(ASTNode node) {
-    return new SubqueryFilterNodeImpl(ExprImpl.build(node));
+  static InSubFilter build(ASTNode node) {
+    return new InSubFilterImpl(ExprImpl.build(node));
   }
 
   @Override
   public Expr predicate() {
     if (predicate == null)
       throw new IllegalStateException(
-          "SubqueryFilter.predicate() cannot be called before setRhsExpr() called");
+          "InSubFilter.predicate() cannot be called before setRhsExpr() called");
 
     return predicate;
   }
@@ -45,6 +45,11 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
   }
 
   @Override
+  public RefBag lhsRefs() {
+    return lhsRefs;
+  }
+
+  @Override
   public Expr lhsExpr() {
     return lhsExpr;
   }
@@ -57,8 +62,7 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
     this.rhsExpr = requireNonNull(rhsExpr);
 
     // update refs
-    if (!rhsExpr.refs().isEmpty())
-      this.refs = new RefBagImpl(listConcat(lhsExpr.refs(), rhsExpr.refs()));
+    if (!rhsExpr.refs().isEmpty()) this.refs = new RefBagImpl(listConcat(lhsRefs, rhsExpr.refs()));
 
     // update predicate
     final ASTNode predicateExpr = ASTNode.expr(ExprKind.BINARY);
@@ -72,7 +76,7 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
   protected PlanNode copy0(PlanContext ctx) {
     checkContextSet();
 
-    final SubqueryFilterNode copy = new SubqueryFilterNodeImpl(lhsExpr);
+    final InSubFilter copy = new InSubFilterImpl(lhsExpr);
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());
@@ -83,11 +87,11 @@ class SubqueryFilterNodeImpl extends PlanNodeBase implements SubqueryFilterNode 
 
   @Override
   public String toString() {
-    final StringBuilder builder = new StringBuilder("SubFilter{").append(lhsExpr);
+    final StringBuilder builder = new StringBuilder("InSub{").append(lhsExpr);
     if (!refs.isEmpty()) {
       builder.append(",refs=");
       if (context == null) builder.append(refs);
-      else builder.append(listMap(context::deRef, refs));
+      else builder.append(context.deRef(refs));
     }
     builder.append('}');
     if (predecessors[0] != null && predecessors[1] != null)

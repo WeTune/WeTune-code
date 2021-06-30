@@ -50,7 +50,7 @@ class PlainFilterNodeImpl extends PlanNodeBase implements PlainFilterNode {
     if (!refs.isEmpty()) {
       builder.append(",refs=");
       if (context == null) builder.append(refs);
-      else builder.append(listMap(context::deRef, refs));
+      else builder.append(context.deRef(refs));
     }
     builder.append('}');
     if (predecessors[0] != null) builder.append('(').append(predecessors[0]).append(')');

@@ -22,6 +22,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
 import sjtu.ipads.wtune.sqlparser.plan1.Expr;
+import sjtu.ipads.wtune.sqlparser.plan1.InSubFilter;
 import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlainFilterNode;
@@ -31,13 +32,10 @@ import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Ref;
 import sjtu.ipads.wtune.sqlparser.plan1.RefBag;
 import sjtu.ipads.wtune.sqlparser.plan1.SetOpNode;
-import sjtu.ipads.wtune.sqlparser.plan1.SubqueryFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Value;
 import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
 
-public class ExprTranslator {
-  private static final String VAR_PREFIX = "t";
-
+public class UExprTranslator {
   private final PlanNode plan;
   private final PlanContext ctx;
 
@@ -49,7 +47,7 @@ public class ExprTranslator {
   private int nextTupleIdx = 0;
   private int nextAnonAttrIdx = 0;
 
-  ExprTranslator(PlanNode plan) {
+  UExprTranslator(PlanNode plan) {
     this.plan = plan;
     this.ctx = requireNonNull(plan.context());
     this.scopes = new ArrayList<>(5);
@@ -58,7 +56,7 @@ public class ExprTranslator {
   }
 
   public static UExpr translate(PlanNode plan) {
-    return new ExprTranslator(plan).onNode(plan);
+    return new UExprTranslator(plan).onNode(plan);
   }
 
   private UExpr onNode(PlanNode node) {
@@ -72,8 +70,8 @@ public class ExprTranslator {
         return onJoin((JoinNode) node);
       case PlainFilter:
         return onPlainFilter((PlainFilterNode) node);
-      case SubqueryFilter:
-        return onSubqueryFilter((SubqueryFilterNode) node);
+      case InSubFilter:
+        return onSubqueryFilter((InSubFilter) node);
       case Union:
         return onUnion((SetOpNode) node);
       case Agg: // TODO: come up with how to deal Agg
@@ -162,7 +160,7 @@ public class ExprTranslator {
     return mul(condExpr, remaining);
   }
 
-  private UExpr onSubqueryFilter(SubqueryFilterNode filter) {
+  private UExpr onSubqueryFilter(InSubFilter filter) {
     final UExpr lhsExpr = onNode(filter.predecessors()[0]);
 
     inSubqueryLhs = makeTuple(filter.lhsExpr());
@@ -198,6 +196,7 @@ public class ExprTranslator {
 
     if (condition == null) return mul(lhsExpr, rhsExpr);
     else return mul(mul(condition, lhsExpr), rhsExpr);
+
     //    else if (join.type() == InnerJoin) return mul(mul(condition, lhsExpr), rhsExpr);
     //    else if (join.type() == LeftJoin) {
     //      // symmetricPart + (L(x) * [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y']))

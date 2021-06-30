@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 
 public class ProverSupport {
   public static UExpr translateToExpr(PlanNode plan) {
-    return ExprTranslator.translate(plan);
+    return UExprTranslator.translate(plan);
   }
 
   public static Disjunction normalizeExpr(UExpr uExpr) {

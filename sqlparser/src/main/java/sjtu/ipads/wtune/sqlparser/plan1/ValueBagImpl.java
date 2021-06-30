@@ -27,7 +27,8 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
 
     if (values.stream().map(Value::qualification).allMatch(qualification::equals))
       return qualification;
-    else return null;
+
+    return null;
   }
 
   @Override

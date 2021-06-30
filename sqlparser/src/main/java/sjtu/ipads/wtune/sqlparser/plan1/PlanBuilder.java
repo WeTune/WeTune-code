@@ -7,6 +7,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
@@ -36,6 +37,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
@@ -271,8 +273,15 @@ class PlanBuilder {
       buildFilters0(expr.get(BINARY_RIGHT), filters);
 
     } else if (op == BinaryOp.IN_SUBQUERY) {
-      final SubqueryFilterNode filter = SubqueryFilterNodeImpl.build(expr.get(BINARY_LEFT));
+      final InSubFilter filter = InSubFilterImpl.build(expr.get(BINARY_LEFT));
       final PlanNode subquery = build0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
+      filter.setPredecessor(1, subquery);
+
+      filters.add(filter);
+
+    } else if (EXISTS.isInstance(expr)) {
+      final ExistsFilter filter = new ExistsFilterImpl();
+      final PlanNode subquery = build0(expr.get(EXISTS_SUBQUERY_EXPR).get(QUERY_EXPR_QUERY));
       filter.setPredecessor(1, subquery);
 
       filters.add(filter);

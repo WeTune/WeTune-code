@@ -24,7 +24,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
  * <p>users.salary + 1000<br>
  * &nbsp;=> refs: [users.salary], template: ?.? + 1000
  *
- * <p>2. {@link #interpolate(ValueBag)} interpolate the placeholder with the values.
+ * <p>2. {@link #interpolate(List<Value>)} interpolate the placeholder with the values.
  *
  * <p><b>Example</b><br>
  * Expr(user.id = 1).interpolate([user_role.user_id])<br>
@@ -37,7 +37,7 @@ public interface Expr {
 
   ASTNode template();
 
-  ASTNode interpolate(ValueBag values);
+  ASTNode interpolate(List<Value> values);
 
   void setRefs(RefBag refs);
 
@@ -64,5 +64,9 @@ public interface Expr {
     return (op == BinaryOp.EQUAL || op == BinaryOp.IS)
         && ((COLUMN_REF.isInstance(lhs) && LITERAL.isInstance(rhs))
             || (COLUMN_REF.isInstance(rhs) && LITERAL.isInstance(lhs)));
+  }
+
+  default ASTNode interpolate(PlanContext ctx) {
+    return interpolate(ctx.deRef(refs()));
   }
 }

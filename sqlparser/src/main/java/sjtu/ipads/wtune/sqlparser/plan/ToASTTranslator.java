@@ -52,7 +52,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -82,7 +82,7 @@ public class ToASTTranslator {
     else if (node.type().isJoin()) translateJoin((JoinNode) node);
     else if (node.type() == Proj) translateProj((ProjNode) node);
     else if (node.type() == PlainFilter) translatePlainFilter((FilterNode) node);
-    else if (node.type() == SubqueryFilter) translateSubqueryFilter((FilterNode) node);
+    else if (node.type() == InSubFilter) translateSubqueryFilter((FilterNode) node);
     else if (node.type() == Agg) translateAgg((AggNode) node);
     else if (node.type() == Sort) translateSort((SortNode) node);
     else if (node.type() == Limit) translateLimit((LimitNode) node);

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -15,13 +16,29 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 final class ConjunctionImpl implements Conjunction {
+  private static final Conjunction EMPTY =
+      new ConjunctionImpl(emptyList(), emptyList(), emptyList(), null, null);
+
   private final List<Tuple> vars;
   private final List<UExpr> predicates;
   private final Disjunction negation;
   private final Disjunction squash;
   private final List<UExpr> tables;
 
-  ConjunctionImpl(
+  private ConjunctionImpl(
+      List<Tuple> vars,
+      List<UExpr> tables,
+      List<UExpr> predicates,
+      Disjunction squash,
+      Disjunction negation) {
+    this.vars = new ArrayList<>(vars);
+    this.predicates = predicates;
+    this.negation = negation;
+    this.squash = squash;
+    this.tables = tables;
+  }
+
+  static Conjunction make(
       List<Tuple> vars,
       List<UExpr> tables,
       List<UExpr> predicates,
@@ -34,11 +51,11 @@ final class ConjunctionImpl implements Conjunction {
       throw new IllegalArgumentException();
     if (tables.stream().anyMatch(it -> it.kind() != TABLE)) throw new IllegalArgumentException();
 
-    this.vars = new ArrayList<>(vars);
-    this.predicates = predicates;
-    this.negation = negation;
-    this.squash = squash;
-    this.tables = tables;
+    return new ConjunctionImpl(vars, tables, predicates, squash, negation);
+  }
+
+  static Conjunction empty() {
+    return EMPTY;
   }
 
   @Override
@@ -67,7 +84,13 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
+  public boolean isEmpty() {
+    return this == EMPTY;
+  }
+
+  @Override
   public void subst(Tuple v1, Tuple v2) {
+    if (v1.equals(v2)) return;
     if (vars.contains(v2)) {
       vars.removeAll(Collections.singleton(v1));
     } else {
@@ -83,11 +106,15 @@ final class ConjunctionImpl implements Conjunction {
 
   @Override
   public boolean uses(Tuple v) {
-    return !(any(vars, it -> it.uses(v)))
-        && (any(tables, it -> it.uses(v))
-            || any(predicates, it -> it.uses(v))
-            || (negation != null && negation.uses(v))
-            || (squash != null && squash.uses(v)));
+    return !(any(vars, it -> it.uses(v))) && usesInBody(v);
+  }
+
+  @Override
+  public boolean usesInBody(Tuple v) {
+    return (any(tables, it -> it.uses(v))
+        || any(predicates, it -> it.uses(v))
+        || (negation != null && negation.uses(v))
+        || (squash != null && squash.uses(v)));
   }
 
   @Override

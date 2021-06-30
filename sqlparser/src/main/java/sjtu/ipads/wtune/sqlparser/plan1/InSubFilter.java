@@ -2,7 +2,9 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-public interface SubqueryFilterNode extends FilterNode {
+public interface InSubFilter extends FilterNode {
+  RefBag lhsRefs();
+
   Expr lhsExpr();
 
   // RHS expression is the subquery expression.
@@ -15,6 +17,6 @@ public interface SubqueryFilterNode extends FilterNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.SubqueryFilter;
+    return OperatorType.InSubFilter;
   }
 }

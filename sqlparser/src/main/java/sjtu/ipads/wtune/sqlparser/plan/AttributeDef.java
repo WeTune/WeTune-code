@@ -96,7 +96,7 @@ public interface AttributeDef {
   private static PlanNode locateDefiner0(AttributeDef attr, PlanNode root) {
     switch (root.type()) {
       case PlainFilter:
-      case SubqueryFilter:
+      case InSubFilter:
       case Sort:
       case Limit:
         return locateDefiner0(attr, root.predecessors()[0]);

@@ -75,7 +75,7 @@ public class Stringify implements OperatorVisitor {
             .append(' ')
             .append(toString(plainFilter.fields()));
         break;
-      case SubqueryFilter:
+      case InSubFilter:
         builder.append(toString(((SubqueryFilter) op).fields()));
         break;
       case Proj:

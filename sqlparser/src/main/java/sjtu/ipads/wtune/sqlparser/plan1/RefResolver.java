@@ -3,11 +3,12 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.ExistsFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
 import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.buildColumnRef;
 
@@ -44,15 +45,34 @@ class RefResolver {
     if (needStackLookup) lookup = new StackedLookup(currentLookup);
 
     switch (node.type()) {
-      case Input -> onInput((InputNode) node);
-      case InnerJoin, LeftJoin -> onJoin((JoinNode) node);
-      case PlainFilter, SubqueryFilter -> onFilter((FilterNode) node);
-      case Proj -> onProj((ProjNode) node);
-      case Agg -> onAgg((AggNode) node);
-      case Sort -> onSort((SortNode) node);
-      case Limit -> onLimit((LimitNode) node);
-      case Union -> onUnion((SetOpNode) node);
-      default -> throw failed("unsupported operator " + node.type());
+      case Input:
+        onInput((InputNode) node);
+        break;
+      case InnerJoin:
+      case LeftJoin:
+        onJoin((JoinNode) node);
+        break;
+      case PlainFilter:
+      case InSubFilter:
+        onFilter((FilterNode) node);
+        break;
+      case Proj:
+        onProj((ProjNode) node);
+        break;
+      case Agg:
+        onAgg((AggNode) node);
+        break;
+      case Sort:
+        onSort((SortNode) node);
+        break;
+      case Limit:
+        onLimit((LimitNode) node);
+        break;
+      case Union:
+        onUnion((SetOpNode) node);
+        break;
+      default:
+        throw failed("unsupported operator " + node.type());
     }
 
     if (needMergeLookup) currentLookup.addAll(lookup.values);
@@ -96,6 +116,12 @@ class RefResolver {
     final RefBag refs = node.refs();
     registerRefs(node, refs);
     resolveRefs(refs, false, true);
+
+    if (node.type() == InSubFilter) {
+      ((InSubFilter) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
+    } else if (node.type() == ExistsFilter) {
+      ((ExistsFilter) node).setExpr(makeQueryExpr(node.predecessors()[1]));
+    }
   }
 
   private void onProj(ProjNode node) {
@@ -200,6 +226,10 @@ class RefResolver {
     throw failed("%s not a descent of %s".formatted(savedDescent, root));
   }
 
+  private Expr makeQueryExpr(PlanNode node) {
+    return AstBuilder.build(node, true);
+  }
+
   private RuntimeException failed(String reason) {
     throw new IllegalArgumentException(
         "failed to bind reference to value. [" + reason + "] " + plan);
@@ -213,8 +243,7 @@ class RefResolver {
     final OperatorType nodeType = node.type();
 
     if (succType == Union) return true;
-    if (succType == SubqueryFilter && successor.predecessors()[1] == node)
-      return false; // needStack
+    if (succType == InSubFilter && successor.predecessors()[1] == node) return false; // needStack
     if (nodeType == Input || nodeType.isJoin()) return false;
     if (nodeType.isFilter()) return succType.isJoin();
     if (nodeType == Proj) return succType != Agg && succType != Sort && succType != Limit;
@@ -226,7 +255,7 @@ class RefResolver {
   private static boolean needStackLookup(PlanNode node) {
     final PlanNode successor = node.successor();
     return successor != null
-        && successor.type() == SubqueryFilter
+        && successor.type() == InSubFilter
         && successor.predecessors()[1] == node;
   }
 

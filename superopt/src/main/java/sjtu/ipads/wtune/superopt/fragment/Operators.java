@@ -25,7 +25,7 @@ public class Operators {
         create(OperatorType.PlainFilter),
         create(OperatorType.Proj),
         //        Sort.create(),
-        create(OperatorType.SubqueryFilter)
+        create(OperatorType.InSubFilter)
         , create(OperatorType.Union)
         );
   }
@@ -36,7 +36,7 @@ public class Operators {
       case InnerJoin -> InnerJoinImpl.create();
       case LeftJoin -> LeftJoinImpl.create();
       case PlainFilter -> PlainFilterImpl.create();
-      case SubqueryFilter -> SubqueryFilterImpl.create();
+      case InSubFilter -> SubqueryFilterImpl.create();
       case Proj -> ProjImpl.create();
       case Agg -> AggImpl.create();
       case Sort -> SortImpl.create();

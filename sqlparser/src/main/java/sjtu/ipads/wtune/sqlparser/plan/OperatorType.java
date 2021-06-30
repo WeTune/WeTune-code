@@ -6,7 +6,8 @@ public enum OperatorType {
   InnerJoin(2),
   LeftJoin(2),
   PlainFilter(1),
-  SubqueryFilter(2),
+  InSubFilter(2),
+  ExistsFilter(2),
   Proj(1),
   Agg(1),
   Sort(1),
@@ -25,7 +26,7 @@ public enum OperatorType {
   }
 
   public boolean isValidOutput() {
-    return this != InnerJoin && this != LeftJoin && this != PlainFilter && this != SubqueryFilter;
+    return this != InnerJoin && this != LeftJoin && this != PlainFilter && this != InSubFilter;
   }
 
   public boolean isJoin() {
@@ -33,6 +34,6 @@ public enum OperatorType {
   }
 
   public boolean isFilter() {
-    return this == PlainFilter || this == SubqueryFilter;
+    return this == PlainFilter || this == InSubFilter;
   }
 }

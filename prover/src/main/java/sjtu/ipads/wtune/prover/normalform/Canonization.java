@@ -4,21 +4,27 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
+import static sjtu.ipads.wtune.prover.normalform.ExecludedMiddleEliminator.eliminateTautology;
 import static sjtu.ipads.wtune.prover.utils.Constants.EXTRA_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.Util.isConstantTuple;
 import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
 
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import sjtu.ipads.wtune.prover.DecisionContext;
+import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.utils.Congruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -28,10 +34,48 @@ public final class Canonization {
   private Canonization() {}
 
   public static Disjunction canonize(Disjunction d, DecisionContext ctx) {
-    return applyForeignKey(applyUniqueKey(d, ctx.uniqueKeys()), ctx.foreignKeys());
+    return eliminateTautology(
+        applyForeignKey(applyUniqueKey(applyConstant(d), ctx.uniqueKeys()), ctx.foreignKeys()));
   }
 
-  static Disjunction applyUniqueKey(Disjunction d, Collection<Constraint> uks) {
+  private static Disjunction applyConstant(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyConstant);
+    return d;
+  }
+
+  // [x = const_val] * f(x) -> f(const_val)
+  private static Conjunction applyConstant(Conjunction c) {
+    final Set<UExpr> toRemove = new HashSet<>(c.predicates().size());
+
+    for (UExpr p : c.predicates()) {
+      if (p.kind() != Kind.EQ_PRED) continue;
+      final EqPredTerm eqPred = (EqPredTerm) p;
+      final Tuple lTup = eqPred.left(), rTup = eqPred.right();
+      final boolean lConst = isConstantTuple(lTup), rConst = isConstantTuple(rTup);
+
+      final Tuple varTup, constTup;
+      if (lConst && rConst) continue;
+      else if (lConst) {
+        varTup = rTup;
+        constTup = lTup;
+      } else if (isConstantTuple(rTup)) {
+        varTup = lTup;
+        constTup = rTup;
+      } else continue;
+
+      c.subst(varTup, constTup);
+      toRemove.add(p);
+    }
+
+    c.predicates().removeAll(toRemove);
+
+    if (c.negation() != null) applyConstant(c.negation());
+    if (c.squash() != null) applyConstant(c.squash());
+
+    return c;
+  }
+
+  private static Disjunction applyUniqueKey(Disjunction d, Collection<Constraint> uks) {
     if (uks.isEmpty()) return d;
     applyUk1(d, uks);
     applyUk2(d, uks);
@@ -117,7 +161,7 @@ public final class Canonization {
       for (TableTerm term : terms)
         if (all(
             uniqueKey.columns(),
-            c -> any(cong.getClass(term.tuple().proj(c.name())), Canonization::isConstantTuple))) {
+            c -> any(cong.getClass(term.tuple().proj(c.name())), Util::isConstantTuple))) {
           found = true;
           break outer;
         }
@@ -136,11 +180,11 @@ public final class Canonization {
     return disjunction.conjunctions().get(0);
   }
 
-  static Disjunction applyForeignKey(Disjunction d, Collection<Constraint> fks) {
+  private static Disjunction applyForeignKey(Disjunction d, Collection<Constraint> fks) {
     if (fks.isEmpty()) return d;
 
     //    applyToEachConjunction(d, c -> applyFk1(c, fks));
-    applyToEachConjunction(d, c -> applyFk2(c, fks));
+    applyFk2(d, fks);
     return d;
   }
 
@@ -170,6 +214,10 @@ public final class Canonization {
   //
   //    return found ? null : c;
   //  }
+
+  private static void applyFk2(Disjunction d, Collection<Constraint> fks) {
+    applyToEachConjunction(d, c -> applyFk2(c, fks));
+  }
 
   // Definition 4.4: S(t) -> S(t) * Sum[t'](R(t') * [t.k=t'.k'], where S.k=>R.k' is a FK
   private static Conjunction applyFk2(Conjunction c, Collection<Constraint> fks) {
@@ -202,8 +250,8 @@ public final class Canonization {
       }
     }
 
-    if (c.squash() != null) applyForeignKey(c.squash(), fks);
-    if (c.negation() != null) applyForeignKey(c.negation(), fks);
+    if (c.squash() != null) applyFk2(c.squash(), fks);
+    if (c.negation() != null) applyFk2(c.negation(), fks);
 
     return c;
   }
@@ -216,12 +264,5 @@ public final class Canonization {
       conjunctions.set(i, c);
     }
     conjunctions.removeIf(Objects::isNull);
-  }
-
-  private static boolean isConstantTuple(Tuple t) {
-    if (t.isConstant()) return true;
-    if (t.isBase() && t.name().toString().equals("t")) return true;
-    if (t.isProjected()) return isConstantTuple(t.base()[0]);
-    return false;
   }
 }

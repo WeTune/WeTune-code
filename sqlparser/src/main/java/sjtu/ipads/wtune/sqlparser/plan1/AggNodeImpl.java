@@ -107,7 +107,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     if (!refs.isEmpty()) {
       builder.append(",refs=");
       if (context == null) builder.append(refs);
-      else builder.append(listMap(this.context::deRef, refs));
+      else builder.append(context.deRef(refs));
     }
     builder.append('}');
 

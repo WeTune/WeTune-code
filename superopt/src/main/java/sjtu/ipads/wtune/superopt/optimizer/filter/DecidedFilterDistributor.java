@@ -29,7 +29,7 @@ public class DecidedFilterDistributor extends FilterDistributorBase implements F
       return ctx.interpretations().hasAssignment(filterOp.fields())
           || ctx.interpretations().hasAssignment(filterOp.predicate());
 
-    } else if (op.type() == OperatorType.SubqueryFilter) {
+    } else if (op.type() == OperatorType.InSubFilter) {
       return ctx.interpretations().hasAssignment(op.fields());
 
     } else assert false;
@@ -74,11 +74,11 @@ public class DecidedFilterDistributor extends FilterDistributorBase implements F
       // TODO: support the case where several filter nodes collectively satisfy the constraint
       return candidates;
 
-    } else if (op.type() == OperatorType.SubqueryFilter) {
+    } else if (op.type() == OperatorType.InSubFilter) {
       final List<AttributeDef> attrs =
           dist.interpretations().interpretAttributes(((SubqueryFilter) op).fields());
       for (FilterNode node : unused)
-        if (node.type() == OperatorType.SubqueryFilter && node.usedAttributes().equals(attrs))
+        if (node.type() == OperatorType.InSubFilter && node.usedAttributes().equals(attrs))
           candidates.add(node);
       return candidates;
 

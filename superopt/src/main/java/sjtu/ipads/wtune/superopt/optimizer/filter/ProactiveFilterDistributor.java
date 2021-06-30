@@ -57,7 +57,7 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
           dist.rollback();
         }
 
-    } else if (target.type() == OperatorType.SubqueryFilter) {
+    } else if (target.type() == OperatorType.InSubFilter) {
       for (var assignment : candidates) {
         dist.assign(target, singletonList(assignment.get()));
         distribute0(idx + 1);
@@ -71,7 +71,7 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
     final Set<Equivalence.Wrapper<FilterNode>> unused =
         collectionMap(identity()::wrap, Sets.difference(dist.pool(), dist.used()), HashSet::new);
 
-    if (op.type() == OperatorType.SubqueryFilter)
+    if (op.type() == OperatorType.InSubFilter)
       unused.removeIf(it -> it.get().type() == OperatorType.PlainFilter);
 
     return unused;

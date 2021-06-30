@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.decision;
+package sjtu.ipads.wtune.prover.normalform;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -6,49 +6,80 @@ import static sjtu.ipads.wtune.prover.decision.SimpleDecisionProcedure.decideSam
 import static sjtu.ipads.wtune.prover.utils.PermutationIter.permute;
 import static sjtu.ipads.wtune.prover.utils.Util.compareTable;
 import static sjtu.ipads.wtune.prover.utils.Util.isMatchedUninterpretedPred;
+import static sjtu.ipads.wtune.prover.utils.Util.makeTempVars1;
+import static sjtu.ipads.wtune.prover.utils.Util.minimizeVars;
+import static sjtu.ipads.wtune.prover.utils.Util.substBoundedVars;
 
 import gnu.trove.TIntCollection;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
-import sjtu.ipads.wtune.prover.normalform.Conjunction;
-import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.utils.Congruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 
 /**
  * Eliminate tautology by excluded middle.
  *
- * <p>i.e., Sum(not(T1 + T2 + ...) * E) + Sum(T1 * E) + Sum(T2 * E) + ... => Sum(E)
+ * <p>Sum(not(T1 + T2 + ...) * E) + Sum(T1 * E) + Sum(T2 * E) + ... => Sum(E)
  */
-class TautologyEliminator {
-  public static Disjunction eliminate(Disjunction d) {
+class ExecludedMiddleEliminator {
+  private final boolean insideSquash;
+
+  private ExecludedMiddleEliminator(boolean insideSquash) {
+    this.insideSquash = insideSquash;
+  }
+
+  public static Disjunction eliminateTautology(Disjunction d) {
+    return eliminateTautology(d, false);
+  }
+
+  public static Disjunction eliminateTautology(Disjunction d, boolean insideSquash) {
+    if (d == null) return null;
+    return new ExecludedMiddleEliminator(insideSquash).eliminate0(d);
+  }
+
+  private Disjunction eliminate0(Disjunction d) {
+    final ListIterator<Conjunction> iter = d.conjunctions().listIterator();
+    while (iter.hasNext()) {
+      final Conjunction c = iter.next();
+      final Disjunction sq = c.squash(), neg = c.negation();
+      if (neg == null && sq == null) continue;
+
+      final Disjunction newSq = eliminateTautology(sq, true);
+      final Disjunction newNeg = eliminateTautology(neg, true);
+      if (newSq == sq && newNeg == neg) continue;
+
+      iter.set(Conjunction.make(c.vars(), c.tables(), c.predicates(), newSq, newNeg));
+    }
+
     for (Conjunction c : d) {
-      final CollapsableFinder finder = new CollapsableFinder(c, d.conjunctions());
+      final List<Conjunction> conjunctions = d.conjunctions();
+      final CollapsableFinder finder = new CollapsableFinder(c, conjunctions);
       if (!finder.find()) continue;
 
       final Conjunction e = finder.getE();
       final TIntCollection group = finder.getGroup();
 
-      final List<Conjunction> newConjunctions = new ArrayList<>();
-      for (int i = 0; i < d.conjunctions().size(); i++)
-        if (!group.contains(i)) newConjunctions.add(d.conjunctions().get(i));
+      final List<Conjunction> newConjunctions = new ArrayList<>(conjunctions.size() - group.size());
+      for (int i = 0; i < conjunctions.size(); i++)
+        if (!group.contains(i)) newConjunctions.add(conjunctions.get(i));
       newConjunctions.add(e);
 
-      return eliminate(Disjunction.make(newConjunctions));
+      return eliminateTautology(Disjunction.make(newConjunctions));
     }
 
     return d;
   }
 
   // find a `E` such that c0 = `E` * T1 and c1 = `E` * T2
-  private static boolean intersect(
+  private boolean intersect(
       Conjunction c0, Conjunction c1, ConjunctionMask intersect0, ConjunctionMask intersect1) {
     /* 1. Tables */
     final boolean[] tableMasks0 = intersect0.maskedTables;
@@ -126,13 +157,24 @@ class TautologyEliminator {
     return tableMatched || predMatched || negMatched || sqMatched;
   }
 
-  // This method check whether `c` is in from (`diff` * `E`)
-  private static boolean minus(Conjunction c, Conjunction E, ConjunctionMask intersect0) {
+  // check whether `c` = `E` * T
+  private boolean minus(Conjunction c, Conjunction E, ConjunctionMask intersect0) {
     final ConjunctionMask intersect1 = new ConjunctionMask(E);
     return intersect(c, E, intersect0, intersect1) && intersect1.isFullMasked();
   }
 
-  private static class CollapsableFinder {
+  // check whether a conjunction must be evaluated to 0 or 1
+  private boolean isBinaryValue(ConjunctionMask c, boolean complement) {
+    if (insideSquash) return true;
+    if (complement) {
+      for (boolean t : c.maskedTables) if (!t) return false;
+    } else {
+      for (boolean t : c.maskedTables) if (t) return false;
+    }
+    return true;
+  }
+
+  private class CollapsableFinder {
     /*
      Given a conjunction `pivot` and a set of conjunctions `terms` {T1, T2, ... Tn},
      find a subset of `terms` such that
@@ -141,6 +183,7 @@ class TautologyEliminator {
      We call such subset "Collapsable Group"
     */
 
+    private final Conjunction originalPivot;
     private final Conjunction pivot;
     private final List<Conjunction> terms;
 
@@ -148,23 +191,24 @@ class TautologyEliminator {
     private Conjunction E;
 
     private CollapsableFinder(Conjunction pivot, List<Conjunction> terms) {
-      this.pivot = pivot;
+      this.originalPivot = pivot;
+      this.pivot = substBoundedVars(pivot, makeTempVars1(pivot.vars().size()));
       this.terms = terms;
     }
 
-    boolean find() {
+    private Conjunction getE() {
+      return E;
+    }
+
+    private TIntList getGroup() {
+      return collapsableGroup;
+    }
+
+    private boolean find() {
       E = null;
       collapsableGroup = new TIntArrayList();
 
       return find(0, null, new TautologyInference(pivot.vars()));
-    }
-
-    Conjunction getE() {
-      return E;
-    }
-
-    TIntList getGroup() {
-      return collapsableGroup;
     }
 
     private boolean find(int i, Conjunction E, TautologyInference infer) {
@@ -180,14 +224,19 @@ class TautologyEliminator {
       */
       if (i >= terms.size()) {
         if (infer.checkTautology()) {
-          this.E = E;
+          this.E = substBoundedVars(E, originalPivot.vars());
           return true;
         }
         return false;
       }
 
       final Conjunction term = terms.get(i);
-      if (term == pivot) return find(i + 1, E, infer); // skip pivot itself.
+      if (term == originalPivot)
+        // skip pivot itself.
+        if (find(i + 1, E, infer)) {
+          collapsableGroup.add(i);
+          return true;
+        } else return false;
 
       /* 1. Align the variables. */
       // Try each embedding of the pivot's vars into the term to check.
@@ -209,6 +258,7 @@ class TautologyEliminator {
           // "intersect" the `pivot` and `term`.
           // Get the intersection and the differences at `term` and `pivot` side.
           if (!intersect(substTerm, pivot, intersect0, intersect1)) continue;
+          if (intersect1.isEmpty()) continue;
 
           E = intersect1.getMasked();
         } else {
@@ -218,13 +268,17 @@ class TautologyEliminator {
         }
 
         /* 3. Accumulate the `diff` part */
+        if (!isBinaryValue(intersect0, true)) continue;
+        if (isHead && !isBinaryValue(intersect1, true)) continue;
+
         final TautologyInference inferCopy = infer.copy();
-        inferCopy.add(intersect0.getComplement());
-        if (isHead) inferCopy.add(intersect1.getComplement());
+        inferCopy.add(minimizeVars(intersect0.getComplement()));
+        if (isHead) inferCopy.add(minimizeVars(intersect1.getComplement()));
 
         /* 4. `term` is a participant. Remember it and return. */
-        // If the `term` contains `E`, it's impossible to form a collapsable group without `term`.
-        // So we needn't skip to next in this case.
+        // If the `term` contains `E` and there is not collapsable group with `term`,
+        // then there must not be a collapsable group without `term`.
+        // So we needn't skip to next in this case but just trace back.
         skipToNext = false;
         if (find(i + 1, E, inferCopy)) {
           collapsableGroup.add(i);
@@ -250,50 +304,50 @@ class TautologyEliminator {
 
     Conjunction getMasked() {
       final List<UExpr> tables = c.tables();
-      final List<UExpr> complementTables = new ArrayList<>(tables.size());
+      final List<UExpr> ts = new ArrayList<>(tables.size());
       for (int i = 0, bound = tables.size(); i < bound; i++)
-        if (maskedTables[i]) complementTables.add(tables.get(i));
+        if (maskedTables[i]) ts.add(tables.get(i));
 
       final List<UExpr> preds = c.predicates();
-      final List<UExpr> complementPreds = new ArrayList<>(preds.size());
+      final List<UExpr> ps = new ArrayList<>(preds.size());
       for (int i = 0, bound = preds.size(); i < bound; i++)
-        if (maskedTables[i]) complementPreds.add(preds.get(i));
+        if (maskedPredicates[i]) ps.add(preds.get(i));
 
-      final Disjunction squash = maskedSquash ? c.squash() : null;
-      final Disjunction negation = maskedNegation ? c.negation() : null;
+      final Disjunction sq = maskedSquash ? c.squash() : null;
+      final Disjunction neg = maskedNegation ? c.negation() : null;
 
-      final Conjunction newConj =
-          Conjunction.make(c.vars(), complementTables, complementPreds, squash, negation);
-      Util.minimizeVars(newConj);
-
-      return newConj;
+      if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) return Conjunction.empty();
+      else return Conjunction.make(c.vars(), ts, ps, sq, neg);
     }
 
     Conjunction getComplement() {
       final List<UExpr> tables = c.tables();
-      final List<UExpr> complementTables = new ArrayList<>(tables.size());
+      final List<UExpr> ts = new ArrayList<>(tables.size());
       for (int i = 0, bound = tables.size(); i < bound; i++)
-        if (!maskedTables[i]) complementTables.add(tables.get(i));
+        if (!maskedTables[i]) ts.add(tables.get(i));
 
       final List<UExpr> preds = c.predicates();
-      final List<UExpr> complementPreds = new ArrayList<>(preds.size());
+      final List<UExpr> ps = new ArrayList<>(preds.size());
       for (int i = 0, bound = preds.size(); i < bound; i++)
-        if (!maskedTables[i]) complementPreds.add(preds.get(i));
+        if (!maskedPredicates[i]) ps.add(preds.get(i));
 
-      final Disjunction squash = maskedSquash ? null : c.squash();
-      final Disjunction negation = maskedNegation ? null : c.negation();
+      final Disjunction sq = maskedSquash ? null : c.squash();
+      final Disjunction neg = maskedNegation ? null : c.negation();
 
-      final Conjunction newConj =
-          Conjunction.make(c.vars(), complementTables, complementPreds, squash, negation);
-      Util.minimizeVars(newConj);
-
-      return newConj;
+      if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) return Conjunction.empty();
+      else return Conjunction.make(c.vars(), ts, ps, sq, neg);
     }
 
     boolean isFullMasked() {
       for (boolean m : maskedTables) if (!m) return false;
       for (boolean m : maskedPredicates) if (!m) return false;
-      return maskedNegation && maskedSquash;
+      return (c.negation() == null || maskedNegation) && (c.squash() == null || maskedSquash);
+    }
+
+    boolean isEmpty() {
+      for (boolean m : maskedTables) if (m) return false;
+      for (boolean m : maskedPredicates) if (m) return false;
+      return (c.negation() == null || !maskedNegation) && (c.squash() == null || !maskedSquash);
     }
   }
 }

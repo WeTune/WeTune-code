@@ -65,9 +65,7 @@ public class Normalization {
     // not efficient, but safe
     for (UExpr target : targets)
       for (Transformation tf : tfs) {
-        final UExpr savedExpr = rootOf(target).copy();
         final UExpr applied = tf.apply(target, proof);
-        final UExpr newExpr = rootOf(applied);
         if (applied != target) {
           return transform(UExpr.postorderTraversal(rootOf(applied)), tfs);
         }

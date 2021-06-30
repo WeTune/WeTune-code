@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.decision;
+package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
@@ -10,13 +10,11 @@ import static sjtu.ipads.wtune.prover.utils.Util.compareTable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import sjtu.ipads.wtune.prover.decision.PropositionMemo.Proposition;
+import sjtu.ipads.wtune.prover.normalform.PropositionMemo.Proposition;
 import sjtu.ipads.wtune.prover.expr.PredTerm;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.normalform.Conjunction;
-import sjtu.ipads.wtune.prover.normalform.Disjunction;
 
 class TautologyInference {
   private final List<Tuple> fixedVars;
@@ -37,7 +35,7 @@ class TautologyInference {
   }
 
   boolean checkTautology() {
-    return false;
+    return memo.checkTautology();
   }
 
   void add(Conjunction conjunction) {
@@ -51,6 +49,8 @@ class TautologyInference {
   }
 
   private List<List<Proposition>> toProps(Conjunction conjunction) {
+    if (conjunction.isEmpty()) return singletonList(singletonList(memo.makeTrue()));
+
     final List<Proposition> props = new ArrayList<>();
 
     final List<Tuple> vars = new ArrayList<>(conjunction.vars());
@@ -85,7 +85,7 @@ class TautologyInference {
           props.add(toProp(c).not());
         }
       }
-      boundedNeg = Disjunction.make(boundedC);
+      boundedNeg = boundedC.isEmpty() ? null : Disjunction.make(boundedC);
     } else {
       boundedNeg = null;
     }
@@ -111,7 +111,9 @@ class TautologyInference {
       return ret;
 
     } else {
-      props.add(toProp(conjunctionMaker.apply(null)));
+      if (!boundedTables.isEmpty() || !boundedPreds.isEmpty() || boundedNeg != null)
+        props.add(toProp(conjunctionMaker.apply(null)));
+
       return singletonList(props);
     }
   }

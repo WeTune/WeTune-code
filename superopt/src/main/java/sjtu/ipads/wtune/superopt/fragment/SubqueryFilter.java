@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 public interface SubqueryFilter extends Filter {
   @Override
   default OperatorType type() {
-    return OperatorType.SubqueryFilter;
+    return OperatorType.InSubFilter;
   }
 
   static SubqueryFilter create() {

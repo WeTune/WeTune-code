@@ -22,7 +22,7 @@ public interface Fingerprint {
       case InnerJoin:
       case LeftJoin:
         return 'j';
-      case SubqueryFilter:
+      case InSubFilter:
         return 's';
       case PlainFilter:
         return 'f';

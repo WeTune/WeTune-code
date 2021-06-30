@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
 import static sjtu.ipads.wtune.superopt.optimizer.filter.FilterHint.rearrangeFilter;
 import static sjtu.ipads.wtune.superopt.optimizer.join.JoinHint.rearrangeJoinNew;
 
@@ -30,7 +30,7 @@ public interface Hint {
     // PlainFilter can match both PlainFilter and SubqueryFilter
     // SubqueryFilter can only match SubqueryFilter
     if ((opType == PlainFilter && nodeType.isFilter())
-        || (opType == SubqueryFilter && nodeType == SubqueryFilter))
+        || (opType == InSubFilter && nodeType == InSubFilter))
       return rearrangeFilter((FilterNode) node, op, inter);
 
     // Join rearrangement

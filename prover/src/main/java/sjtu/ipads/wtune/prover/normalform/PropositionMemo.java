@@ -1,6 +1,8 @@
-package sjtu.ipads.wtune.prover.decision;
+package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Collections.emptySet;
+import static sjtu.ipads.wtune.prover.normalform.PropositionMemo.Literal.False;
+import static sjtu.ipads.wtune.prover.normalform.PropositionMemo.Literal.True;
 
 import java.util.HashSet;
 import java.util.List;
@@ -25,12 +27,23 @@ class PropositionMemo {
     return new Term("p" + nextId++);
   }
 
+  Proposition makeTrue() {
+    return True;
+  }
+
+  Proposition makeFalse() {
+    return False;
+  }
+
   PropositionMemo add(List<Proposition> props) {
+    if (props.contains(Literal.False)) return this;
+
     final Set<Set<Proposition>> newDisjunction = new HashSet<>();
 
     for (Set<Proposition> conjunction : disjunction) {
       for (Proposition prop : props) {
-        if (conjunction.contains(prop)) continue;
+        if (prop == True || conjunction.contains(prop)) continue;
+
         final Set<Proposition> newConjunction = new HashSet<>(conjunction);
         newConjunction.add(prop.not());
         newDisjunction.add(newConjunction);
@@ -105,6 +118,17 @@ class PropositionMemo {
     @Override
     public String toString() {
       return "not(" + term + ')';
+    }
+  }
+
+  protected enum Literal implements Proposition {
+    True,
+    False;
+
+    @Override
+    public Proposition not() {
+      if (this == True) return False;
+      else return True;
     }
   }
 }

@@ -46,7 +46,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
 
   @Override
   public List<Expr> orders() {
-    return null;
+    return orders;
   }
 
   @Override
@@ -55,7 +55,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
     if (!refs.isEmpty()) {
       builder.append(",refs=");
       if (context == null) builder.append(refs);
-      else builder.append(listMap(context::deRef, refs));
+      else builder.append(context.deRef(refs));
     }
     builder.append('{');
     if (predecessors[0] != null) builder.append('(').append(predecessors[0]).append(')');

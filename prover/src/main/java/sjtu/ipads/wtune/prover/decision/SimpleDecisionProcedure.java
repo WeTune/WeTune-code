@@ -13,16 +13,16 @@ import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.utils.Util;
 
 // Determine if two expression is literal same up to 1. renaming and 2. equivalence closure.
-class SimpleDecisionProcedure {
+public class SimpleDecisionProcedure {
   private int nextVarIdx = 0;
 
-  static boolean decideSame(Disjunction d0, Disjunction d1) {
+  public static boolean decideSame(Disjunction d0, Disjunction d1) {
     return makeBijectionMatcher(
             d0.conjunctions(), d1.conjunctions(), SimpleDecisionProcedure::decideSame)
         .match();
   }
 
-  static boolean decideSame(Conjunction c0, Conjunction c1) {
+  public static boolean decideSame(Conjunction c0, Conjunction c1) {
     return new SimpleDecisionProcedure().decideSame0(c0, c1) != null;
   }
 

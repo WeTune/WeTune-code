@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.prover.utils;
 
 import static java.util.stream.IntStream.range;
+import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
 import static sjtu.ipads.wtune.prover.utils.Constants.TEMP_VAR_PREFIX_0;
 import static sjtu.ipads.wtune.prover.utils.Constants.TEMP_VAR_PREFIX_1;
 
@@ -23,6 +24,13 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 public final class Util {
 
   private Util() {}
+
+  public static boolean isConstantTuple(Tuple t) {
+    if (t.isConstant()) return true;
+    if (t.isBase() && t.name().toString().equals(FREE_VAR)) return true;
+    if (t.isProjected()) return isConstantTuple(t.base()[0]);
+    return false;
+  }
 
   public static boolean compareTable(UExpr e0, UExpr e1) {
     if (!(e0 instanceof TableTerm) || !(e1 instanceof TableTerm)) return false;
@@ -91,8 +99,9 @@ public final class Util {
     return range(0, count).mapToObj(i -> Tuple.make(prefix + i)).toList();
   }
 
-  public static void minimizeVars(Conjunction c) {
-    c.vars().removeIf(Predicate.not(c::uses));
+  public static Conjunction minimizeVars(Conjunction c) {
+    c.vars().removeIf(Predicate.not(c::usesInBody));
+    return c;
   }
 
   public static Conjunction substBoundedVars(Conjunction c, List<Tuple> tuples) {

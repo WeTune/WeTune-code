@@ -7,7 +7,6 @@ import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 
@@ -21,7 +20,7 @@ public class Main {
     PlanSupport.disambiguate(plan0);
     PlanSupport.disambiguate(plan1);
 
-//    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
+    //    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
@@ -63,6 +62,6 @@ public class Main {
 
   public static void main(String[] args) {
     test0("", false);
-//    test0("broadleaf-199", true);
+    //    test0("diaspora-377", true);
   }
 }
