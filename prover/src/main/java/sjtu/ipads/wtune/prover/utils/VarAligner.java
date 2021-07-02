@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.prover.utils;
 
 import static java.lang.Math.abs;
 import static java.util.Arrays.binarySearch;
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.prover.utils.Util.substBoundedVars;
 
@@ -39,11 +40,12 @@ public class VarAligner implements Iterator<VarAlignment> {
     this.numVars = numVars;
     this.vars = vars;
     this.viable = calcViableAssignments();
-    this.hasNext = true;
-    forward();
+    this.hasNext = forward();
   }
 
   public static Iterable<VarAlignment> alignVars(Conjunction c0, Conjunction c1, List<Tuple> vars) {
+    if (vars.isEmpty()) return singletonList(new VarAlignment(c0.copy(), c1.copy()));
+
     final boolean flip = c0.vars().size() > c1.vars().size();
     final Conjunction theC0 = flip ? c1 : c0;
     final Conjunction theC1 = flip ? c0 : c1;
@@ -58,6 +60,8 @@ public class VarAligner implements Iterator<VarAlignment> {
   }
 
   public static Iterable<VarAlignment> alignVars(Conjunction c0, Conjunction c1, int numVars) {
+    if (numVars == 0) return singletonList(new VarAlignment(c0.copy(), c1.copy()));
+
     final boolean flip = c0.vars().size() > c1.vars().size();
     final Conjunction theC0 = flip ? c1 : c0;
     final Conjunction theC1 = flip ? c0 : c1;
@@ -141,8 +145,6 @@ public class VarAligner implements Iterator<VarAlignment> {
   }
 
   private boolean forward() {
-    assert hasNext;
-
     if (assignments0 == null) {
       // initial step.
       combinations = new Combinations(c0.vars().size(), numVars).iterator();

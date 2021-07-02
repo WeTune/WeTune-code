@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.prover.utils;
 
+import static com.google.common.collect.Sets.cartesianProduct;
 import static java.util.stream.IntStream.range;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
 import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
 import static sjtu.ipads.wtune.prover.utils.Constants.NULL_TUPLE;
@@ -80,6 +82,23 @@ public final class Util {
       return ex0.name().equals(ex1.name()) && Arrays.equals(args0, args1);
 
     } else return false;
+  }
+
+  public static List<UExpr> calcEqClosure(List<UExpr> preds) {
+    if (preds.isEmpty()) return preds;
+
+    final Congruence<Tuple> congruence = Congruence.make(preds);
+    final List<UExpr> ret = new ArrayList<>(preds);
+
+    for (UExpr pred : preds) {
+      if (pred.kind() != Kind.PRED) continue;
+
+      final UninterpretedPredTerm p = (UninterpretedPredTerm) pred;
+      for (List<Tuple> tuples : cartesianProduct(listMap(congruence::getClass, p.tuple())))
+        ret.add(UExpr.uninterpretedPred(p.name().toString(), tuples.toArray(Tuple[]::new)));
+    }
+
+    return ret;
   }
 
   public static Tuple[] subst(Tuple[] args, Tuple t, Tuple rep) {

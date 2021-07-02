@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.utils;
 
+import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 
 import java.util.HashMap;
@@ -53,7 +54,8 @@ class CongruenceImpl<T> implements Congruence<T> {
 
   @Override
   public Set<T> getClass(T x) {
-    return classes.get(x);
+    final CongruentClass<T> cls = classes.get(x);
+    return cls != null ? cls : singleton(x);
   }
 
   @Override

@@ -55,9 +55,13 @@ public class Normalization {
   }
 
   public static Disjunction normalize(UExpr root) {
-    return renameVars(
-        asDisjunction(new Normalization(null).transform(root.copy()), new Counter()),
-        NORMALIZATION_VAR_PREFIX);
+    return normalize(root, true, NORMALIZATION_VAR_PREFIX);
+  }
+
+  public static Disjunction normalize(UExpr root, boolean splitVars, String renamePrefix) {
+    final Disjunction d =
+        asDisjunction(new Normalization(null).transform(root.copy()), splitVars, new Counter());
+    return renamePrefix == null ? d : renameVars(d, renamePrefix);
   }
 
   private UExpr transform(UExpr root) {
@@ -72,9 +76,7 @@ public class Normalization {
     // not efficient, but safe
     for (UExpr target : targets)
       for (Transformation tf : tfs) {
-        //        final UExpr savedExpr = rootOf(target).copy();
         final UExpr applied = tf.apply(target, proof);
-        //        final UExpr newxExpr = rootOf(applied);
         if (applied != target) {
           return transform(UExpr.postorderTraversal(rootOf(applied)), tfs);
         }
@@ -83,40 +85,41 @@ public class Normalization {
     return head(targets);
   }
 
-  private static Disjunction asDisjunction(UExpr root, Counter counter) {
+  private static Disjunction asDisjunction(UExpr root, boolean shouldSplitVars, Counter counter) {
     final List<UExpr> factors = listFactors(root, Kind.ADD);
-    return new DisjunctionImpl(listMap(it -> asConjunction(it, counter), factors));
+    return new DisjunctionImpl(listMap(it -> asConjunction(it, shouldSplitVars, counter), factors));
   }
 
-  private static Conjunction asConjunction(UExpr root, Counter counter) {
+  private static Conjunction asConjunction(UExpr root, boolean shouldSplitVars, Counter counter) {
     final UExpr expr;
-    final List<Tuple> originalBoundedVars;
+    final List<Tuple> oldVars;
     if (root.kind() == Kind.SUM) {
       expr = root.child(0);
-      originalBoundedVars = ((SumExpr) root).boundedVars();
+      oldVars = ((SumExpr) root).boundedVars();
     } else {
       expr = root;
-      originalBoundedVars = emptyList();
+      oldVars = emptyList();
     }
 
     if (expr.kind() == Kind.SUM) throw new IllegalArgumentException("not a normal form: " + root);
 
-    final List<Tuple> boundedVars = splitVariables(expr, originalBoundedVars, counter);
+    final List<Tuple> boundedVars =
+        shouldSplitVars ? splitVariables(expr, oldVars, counter) : oldVars;
     final List<UExpr> factors = listFactors(expr, Kind.MUL);
     final List<UExpr> tables = listFilter(it -> it.kind() == Kind.TABLE, factors);
-    final List<UExpr> squashes = listFilter(it -> it.kind() == Kind.SQUASH, factors);
-    final List<UExpr> negations = listFilter(it -> it.kind() == Kind.NOT, factors);
+    final List<UExpr> sqs = listFilter(it -> it.kind() == Kind.SQUASH, factors);
+    final List<UExpr> negs = listFilter(it -> it.kind() == Kind.NOT, factors);
     final List<UExpr> predicates = listFilter(it -> it.kind().isPred(), factors);
 
-    if (squashes.size() >= 2 || negations.size() >= 2)
+    if (sqs.size() >= 2 || negs.size() >= 2)
       throw new IllegalArgumentException("not a normal form: " + root);
 
     return Conjunction.make(
         boundedVars,
         tables,
         predicates,
-        squashes.isEmpty() ? null : asDisjunction(squashes.get(0).child(0), counter),
-        negations.isEmpty() ? null : asDisjunction(negations.get(0).child(0), counter));
+        sqs.isEmpty() ? null : asDisjunction(sqs.get(0).child(0), shouldSplitVars, counter),
+        negs.isEmpty() ? null : asDisjunction(negs.get(0).child(0), shouldSplitVars, counter));
   }
 
   private static List<UExpr> listFactors(UExpr root, Kind connection) {

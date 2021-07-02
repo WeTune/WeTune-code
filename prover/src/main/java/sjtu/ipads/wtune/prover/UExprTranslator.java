@@ -335,4 +335,9 @@ public class UExprTranslator {
     }
     throw failed("cannot find the scope of value " + value);
   }
+
+  private static class QueryScope {
+    private Tuple outerVar;
+    private List<Tuple> vars;
+  }
 }

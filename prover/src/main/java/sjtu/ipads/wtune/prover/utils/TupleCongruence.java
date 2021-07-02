@@ -4,6 +4,7 @@ import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.EQ_PRED;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;

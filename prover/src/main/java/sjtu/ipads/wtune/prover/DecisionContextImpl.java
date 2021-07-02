@@ -161,8 +161,7 @@ final class DecisionContextImpl extends ProofContextImpl implements DecisionCont
 
           for (Tuple tuple : buffer) {
             final Table table = tables.get(tuple.base()[0]);
-            if (table == null)
-              throw new IllegalArgumentException("unknown table: " + tuple.base()[0].name());
+            if (table == null) continue;
 
             final String colName = tuple.name().toString();
             final Column column = table.column(colName);

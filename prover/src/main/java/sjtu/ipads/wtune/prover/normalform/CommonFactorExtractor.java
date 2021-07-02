@@ -145,8 +145,6 @@ class CommonFactorExtractor {
       final ConjunctionMask m1 = new ConjunctionMask(factor);
 
       intersect(term, factor, m0, m1);
-      if (!m1.isFullMasked()) throw new IllegalStateException();
-
       result.add(minimizeVars(m0.getComplement()));
     }
 

@@ -4,26 +4,41 @@ import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.support.Workflow;
 
 public class Main {
-  private static boolean decide(Statement stmt0, Statement stmt1) {
+  private static PlanNode makePlan(Statement stmt) {
+    final Schema schema = stmt.app().schema("base", true);
+    stmt.parsed().context().setSchema(schema);
+
+    Workflow.normalize(stmt.parsed());
+
+    System.out.println(stmt.parsed());
+
+    final PlanNode plan = PlanSupport.assemblePlan(stmt.parsed(), schema);
+    PlanSupport.disambiguate(plan);
+
+    return plan;
+  }
+
+  private static int decide(Statement stmt0, Statement stmt1) {
     System.out.println(stmt0);
-    System.out.println(stmt0.parsed());
-    System.out.println(stmt1.parsed());
+
+    if (Commons.countOccurrences(stmt0.parsed().toString(), "LEFT JOIN") >= 2) {
+      System.out.println("skipped due to too many LEFT JOIN");
+      return 0;
+    }
+
+    final PlanNode plan0 = makePlan(stmt0);
+    final PlanNode plan1 = makePlan(stmt1);
 
     final Schema schema = stmt0.app().schema("base", true);
-    final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
-    final PlanNode plan1 = PlanSupport.assemblePlan(stmt1.parsed(), schema);
-    PlanSupport.disambiguate(plan0);
-    PlanSupport.disambiguate(plan1);
-
-    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
@@ -38,13 +53,12 @@ public class Main {
     final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
     System.out.println(eq);
 
-    //    return eq;
-    return false;
+    return eq ? 1 : 0;
   }
 
   private static void test0(String latch, boolean single) {
     boolean start = latch.isEmpty();
-    int failed = 0, succeed = 0;
+    int failed = 0, succeed = 0, exception = 0;
 
     for (Statement rewritten : Statement.findAllRewritten()) {
       if (latch.equals(rewritten.toString())) start = true;
@@ -52,20 +66,23 @@ public class Main {
 
       final Statement original = rewritten.original();
 
-      final boolean eq = decide(original, rewritten);
+      final int res = decide(original, rewritten);
 
-      if (eq) succeed += 1;
-      else failed += 1;
+      if (res == 1) succeed += 1;
+      else if (res == 0) failed += 1;
+      else exception += 1;
 
       if (single) break;
     }
 
     System.out.println("#success: " + succeed);
     System.out.println("#failure: " + failed);
+    System.out.println("#exception: " + exception);
   }
 
   public static void main(String[] args) {
-    //    test0("", false);
-    test0("broadleaf-199", true);
+    test0("", false);
+    //    test0("diaspora-577", true);
+    //    test0("discourse-4290", true);
   }
 }

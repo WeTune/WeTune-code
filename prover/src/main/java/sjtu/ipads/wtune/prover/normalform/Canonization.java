@@ -4,7 +4,10 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
+import static sjtu.ipads.wtune.prover.expr.UExpr.squash;
+import static sjtu.ipads.wtune.prover.normalform.Normalization.normalize;
 import static sjtu.ipads.wtune.prover.utils.Constants.EXTRA_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.Util.isConstantTuple;
@@ -13,7 +16,6 @@ import static sjtu.ipads.wtune.prover.utils.Util.isNullTuple;
 import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
 import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
 
-import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -167,53 +169,24 @@ public final class Canonization {
 
   // Theorem 4.3: Sum[t]([b] * |E| * [t.uk=e] * R(t)) -> |Sum[t]([b] * |E| * [t.uk=e] * R(t))|,
   private static Conjunction applyUk2(Conjunction conjunction, Collection<Constraint> uks) {
-    final Map<String, List<TableTerm>> groups = Util.groupTables(conjunction);
+    if (conjunction.tables().isEmpty()) return conjunction;
+
     final Congruence<Tuple> cong = Congruence.make(conjunction.preds());
 
-    /*
-     NOTE: Theorem 4.3 cannot generalize to multiple tables.
-       e.g. SELECT T.k, S.k' FROM T JOIN S
-         => Sum[t1,t2]([t.k=t1.k] * [t.k=t2.k'] * R(t1) * S(t2))
-       Provided T.k and S.k' are the unique keys of each table.
-       There is no way to apply the theorem.
-       (Derive a combined unique key <T.k,S.k'> is out of scope of the theorem)
+    for (UExpr e : conjunction.tables()) {
+      final TableTerm table = (TableTerm) e;
 
-       Btw, WeTune can easily inference the uniqueness of the query
+      for (Constraint uk : uks) {
+        if (!ownerTableOf(uk).equals(table.name().toString())) continue;
 
-       Besides, the "e" in the theorem must be a constant value.
-       Otherwise, a term such as [t.k=t.k] apparently takes no effect.
-    */
-    if (groups.size() != 1) return conjunction;
-
-    final String tableName = Iterables.getOnlyElement(groups.keySet());
-    final List<TableTerm> terms = groups.get(tableName); // R(t0),R(t1),...
-
-    boolean found = false;
-    outer:
-    // find a R(tn) and a unique key constraint (k1, k2, ..., kj)
-    // such that there is [tn.k1=e1] * [tn.k2=e2] * ... * [tn.kj=ej],
-    // where kj is the j-th column of the unique key and ej is a constant value.
-    for (Constraint uniqueKey : uks) {
-      if (!tableName.equals(uniqueKey.columns().get(0).tableName())) continue;
-      for (TableTerm term : terms)
-        if (all(
-            uniqueKey.columns(),
-            c -> any(cong.getClass(term.tuple().proj(c.name())), Util::isConstantTuple))) {
-          found = true;
-          break outer;
-        }
+        final Tuple baseTuple = table.tuple();
+        final List<Tuple> tuples = listMap(it -> baseTuple.proj(it.name()), uk.columns());
+        // we require \forall t \in tuples. \exists c. c is constant /\ c == t
+        if (any(tuples, tup -> none(cong.getClass(tup), Util::isConstantTuple))) return conjunction;
+      }
     }
 
-    if (!found) return conjunction;
-
-    // Surround the conjunction with squash.
-    // This process may subsequently eliminate a inner squash.
-    // We just delegate it to `normalize`
-    final Disjunction disjunction = normalizeExpr(UExpr.squash(conjunction.toExpr()));
-    // The resulting SPNF must be in the form |E|.
-    if (disjunction.conjunctions().size() != 1)
-      throw new IllegalStateException("invalid conjunction: " + conjunction);
-
+    final Disjunction disjunction = normalize(squash(conjunction.toExpr()), false, null);
     return disjunction.conjunctions().get(0);
   }
 
