@@ -64,7 +64,7 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public List<UExpr> predicates() {
+  public List<UExpr> preds() {
     return predicates;
   }
 
@@ -74,7 +74,7 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public Disjunction negation() {
+  public Disjunction neg() {
     return negation;
   }
 

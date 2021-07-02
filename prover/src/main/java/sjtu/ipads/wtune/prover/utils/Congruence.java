@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 public interface Congruence<T> {
+  Set<T> keys();
 
   Set<T> getClass(T x);
 

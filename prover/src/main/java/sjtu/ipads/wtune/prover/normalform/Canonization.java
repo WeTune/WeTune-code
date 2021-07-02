@@ -2,12 +2,16 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
-import static sjtu.ipads.wtune.prover.normalform.ExecludedMiddleEliminator.eliminateTautology;
 import static sjtu.ipads.wtune.prover.utils.Constants.EXTRA_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.Util.isConstantTuple;
+import static sjtu.ipads.wtune.prover.utils.Util.isNotNullPredOf;
+import static sjtu.ipads.wtune.prover.utils.Util.isNullTuple;
 import static sjtu.ipads.wtune.prover.utils.Util.ownerTableOf;
+import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
 
 import com.google.common.collect.Iterables;
 import java.util.ArrayList;
@@ -20,11 +24,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import sjtu.ipads.wtune.prover.DecisionContext;
-import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.utils.Congruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
@@ -34,52 +36,87 @@ public final class Canonization {
   private Canonization() {}
 
   public static Disjunction canonize(Disjunction d, DecisionContext ctx) {
-    return eliminateTautology(
-        applyForeignKey(applyUniqueKey(applyConstant(d), ctx.uniqueKeys()), ctx.foreignKeys()));
+    applyConstant(d);
+    applyEqualRelation(d);
+    applyUniqueKey(d, ctx.uniqueKeys());
+    applyForeignKey(d, ctx.foreignKeys());
+    renameVars(d, TRANSLATOR_VAR_PREFIX);
+    return ExcludedMiddle.collapse(d);
   }
 
-  private static Disjunction applyConstant(Disjunction d) {
-    applyToEachConjunction(d, Canonization::applyConstant);
-    return d;
+  private static void applyConstant(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyConst1);
+    applyToEachConjunction(d, Canonization::applyConst2);
   }
 
-  // [x = const_val] * f(x) -> f(const_val)
-  private static Conjunction applyConstant(Conjunction c) {
-    final Set<UExpr> toRemove = new HashSet<>(c.predicates().size());
+  // [x = const_val] * f(x) -> [x = const_val] * f(const_val)
+  private static void applyConst1(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyConst1);
+  }
 
-    for (UExpr p : c.predicates()) {
-      if (p.kind() != Kind.EQ_PRED) continue;
-      final EqPredTerm eqPred = (EqPredTerm) p;
-      final Tuple lTup = eqPred.left(), rTup = eqPred.right();
-      final boolean lConst = isConstantTuple(lTup), rConst = isConstantTuple(rTup);
+  // [x = const_val] * f(x) -> [x = const_val] * f(const_val)
+  // [x not Null] * [x = const] -> [x = const]
+  private static Conjunction applyConst1(Conjunction c) {
+    final Congruence<Tuple> congruence = Congruence.make(c.preds());
 
-      final Tuple varTup, constTup;
-      if (lConst && rConst) continue;
-      else if (lConst) {
-        varTup = rTup;
-        constTup = lTup;
-      } else if (isConstantTuple(rTup)) {
-        varTup = lTup;
-        constTup = rTup;
-      } else continue;
+    final Map<Tuple, Tuple> toSubstVar = new HashMap<>();
+    final Set<UExpr> toRemovePred = new HashSet<>();
 
-      c.subst(varTup, constTup);
-      toRemove.add(p);
+    for (Tuple val : congruence.keys()) {
+      if (!isConstantTuple(val)) continue;
+      final Set<Tuple> cls = congruence.getClass(val);
+
+      for (Tuple t : cls) if (t.isBase()) toSubstVar.put(t, val);
+      if (isNullTuple(val)) continue;
+
+      for (UExpr pred : c.preds())
+        if (find(it -> isNotNullPredOf(pred, it), cls) != null) {
+          toRemovePred.add(pred);
+          break;
+        }
     }
 
-    c.predicates().removeAll(toRemove);
+    c.vars().removeAll(toSubstVar.keySet());
+    c.preds().removeAll(toRemovePred);
+    toSubstVar.forEach(c::subst);
 
-    if (c.negation() != null) applyConstant(c.negation());
-    if (c.squash() != null) applyConstant(c.squash());
+    if (c.neg() != null) applyConst1(c.neg());
+    if (c.squash() != null) applyConst1(c.squash());
 
     return c;
   }
 
-  private static Disjunction applyUniqueKey(Disjunction d, Collection<Constraint> uks) {
-    if (uks.isEmpty()) return d;
+  private static void applyConst2(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyConst2);
+  }
+
+  // [x = Null] * f(x.y) -> [x = Null] * f(y)
+  private static Conjunction applyConst2(Conjunction c) {
+    c.preds().forEach(NullPropagator::propagateNull);
+    c.tables().forEach(NullPropagator::propagateNull);
+    if (c.squash() != null) applyConst2(c.squash());
+    if (c.neg() != null) applyConst2(c.neg());
+    return c;
+  }
+
+  private static void applyEqualRelation(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyEqRel);
+  }
+
+  private static Conjunction applyEqRel(Conjunction c) {
+    if (any(c.preds(), Util::isContradictory)) return null;
+    c.preds().removeIf(Util::isReflexivity);
+
+    if (c.squash() != null) applyToEachConjunction(c.squash(), Canonization::applyEqRel);
+    if (c.squash() != null) applyToEachConjunction(c.squash(), Canonization::applyEqRel);
+
+    return c;
+  }
+
+  private static void applyUniqueKey(Disjunction d, Collection<Constraint> uks) {
+    if (uks.isEmpty()) return;
     applyUk1(d, uks);
     applyUk2(d, uks);
-    return d;
   }
 
   private static void applyUk1(Disjunction d, Collection<Constraint> uks) {
@@ -93,7 +130,7 @@ public final class Canonization {
   // Definition 4.1: [t.uk=t'.uk] * R(t) * R(t') -> [t=t'] * R(t)
   private static Conjunction applyUk1(Conjunction conjunction, Collection<Constraint> uks) {
     final Map<String, List<TableTerm>> groups = Util.groupTables(conjunction);
-    final Congruence<Tuple> cong = Congruence.make(conjunction.predicates());
+    final Congruence<Tuple> cong = Congruence.make(conjunction.preds());
     final Map<TableTerm, List<TableTerm>> victims = new HashMap<>();
 
     for (Constraint uniqueKey : uks) {
@@ -123,7 +160,7 @@ public final class Canonization {
 
     // recurse on Negation and Squash term
     if (conjunction.squash() != null) applyUk1(conjunction.squash(), uks);
-    if (conjunction.negation() != null) applyUk1(conjunction.negation(), uks);
+    if (conjunction.neg() != null) applyUk1(conjunction.neg(), uks);
 
     return conjunction;
   }
@@ -131,12 +168,12 @@ public final class Canonization {
   // Theorem 4.3: Sum[t]([b] * |E| * [t.uk=e] * R(t)) -> |Sum[t]([b] * |E| * [t.uk=e] * R(t))|,
   private static Conjunction applyUk2(Conjunction conjunction, Collection<Constraint> uks) {
     final Map<String, List<TableTerm>> groups = Util.groupTables(conjunction);
-    final Congruence<Tuple> cong = Congruence.make(conjunction.predicates());
+    final Congruence<Tuple> cong = Congruence.make(conjunction.preds());
 
     /*
      NOTE: Theorem 4.3 cannot generalize to multiple tables.
        e.g. SELECT T.k, S.k' FROM T JOIN S
-         => Sum[t1,t2]([t.k=t1.k] * [t.k'=t2.k'] * R(t1) * S(t2))
+         => Sum[t1,t2]([t.k=t1.k] * [t.k=t2.k'] * R(t1) * S(t2))
        Provided T.k and S.k' are the unique keys of each table.
        There is no way to apply the theorem.
        (Derive a combined unique key <T.k,S.k'> is out of scope of the theorem)
@@ -180,12 +217,11 @@ public final class Canonization {
     return disjunction.conjunctions().get(0);
   }
 
-  private static Disjunction applyForeignKey(Disjunction d, Collection<Constraint> fks) {
-    if (fks.isEmpty()) return d;
+  private static void applyForeignKey(Disjunction d, Collection<Constraint> fks) {
+    if (fks.isEmpty()) return;
 
     //    applyToEachConjunction(d, c -> applyFk1(c, fks));
     applyFk2(d, fks);
-    return d;
   }
 
   //  // Additional definition: S(t) * not(Sum[t'](R(t') * [t.k=t'.k']) -> 0, where S.k=>R.t' is a
@@ -222,7 +258,7 @@ public final class Canonization {
   // Definition 4.4: S(t) -> S(t) * Sum[t'](R(t') * [t.k=t'.k'], where S.k=>R.k' is a FK
   private static Conjunction applyFk2(Conjunction c, Collection<Constraint> fks) {
     final List<Tuple> vars = c.vars();
-    final List<UExpr> predicates = c.predicates();
+    final List<UExpr> predicates = c.preds();
     final List<UExpr> tables = c.tables();
 
     int idx = 0;
@@ -251,7 +287,7 @@ public final class Canonization {
     }
 
     if (c.squash() != null) applyFk2(c.squash(), fks);
-    if (c.negation() != null) applyFk2(c.negation(), fks);
+    if (c.neg() != null) applyFk2(c.neg(), fks);
 
     return c;
   }

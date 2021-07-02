@@ -28,9 +28,9 @@ final class CongruentClass<T> extends AbstractSet<T> {
     assert other.elements != this.elements;
     assert other.congruence == this.congruence;
     // add all plan from `group`
-    this.elements.addAll(other);
+    elements.addAll(other);
     // share same collection to sync automatically
-    other.elements = this.elements;
+    for (T t : other) congruence.getClass0(t).elements = elements;
   }
 
   @Override

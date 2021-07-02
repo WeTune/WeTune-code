@@ -16,17 +16,17 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.normalform.PropositionMemo.Proposition;
 
-class TautologyInference {
+class TautologySolver {
   private final List<Tuple> fixedVars;
   private final List<Object> terms;
   private final List<Proposition> props;
   private PropositionMemo memo;
 
-  TautologyInference(List<Tuple> fixedVars) {
+  TautologySolver(List<Tuple> fixedVars) {
     this(new ArrayList<>(), new ArrayList<>(), new PropositionMemo(), fixedVars);
   }
 
-  private TautologyInference(
+  private TautologySolver(
       List<Object> terms, List<Proposition> props, PropositionMemo memo, List<Tuple> fixedVars) {
     this.terms = terms;
     this.props = props;
@@ -34,7 +34,7 @@ class TautologyInference {
     this.fixedVars = fixedVars;
   }
 
-  boolean checkTautology() {
+  boolean solve() {
     return memo.checkTautology();
   }
 
@@ -42,10 +42,6 @@ class TautologyInference {
     for (List<Proposition> props : toProps(conjunction)) {
       memo = memo.add(props); // don't forget memo is immutable
     }
-  }
-
-  TautologyInference copy() {
-    return new TautologyInference(new ArrayList<>(terms), new ArrayList<>(props), memo, fixedVars);
   }
 
   private List<List<Proposition>> toProps(Conjunction conjunction) {

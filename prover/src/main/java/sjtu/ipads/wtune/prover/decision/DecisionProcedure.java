@@ -3,8 +3,7 @@ package sjtu.ipads.wtune.prover.decision;
 import static java.lang.Math.max;
 import static sjtu.ipads.wtune.prover.decision.Minimization.minimize;
 import static sjtu.ipads.wtune.prover.utils.Constants.DECISION_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.PermutationIter.permute;
-import static sjtu.ipads.wtune.prover.utils.Util.arrange;
+import static sjtu.ipads.wtune.prover.utils.VarAligner.alignVars;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +13,7 @@ import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.utils.Util;
+import sjtu.ipads.wtune.prover.utils.VarAlignment;
 
 public final class DecisionProcedure {
   private final DecisionContext ctx;
@@ -45,17 +45,16 @@ public final class DecisionProcedure {
 
   private Proof tdp(Conjunction x, Conjunction y) {
     if (x.vars().size() != y.vars().size()) return null;
-    if (x.negation() == null ^ y.negation() == null) return null;
+    if (x.neg() == null ^ y.neg() == null) return null;
     if (x.squash() == null ^ y.squash() == null) return null;
     if (x.tables().size() != y.tables().size()) return null;
-    if (x.predicates().size() != y.predicates().size()) return null;
+    //    if (x.preds().size() != y.preds().size()) return null;
 
-    final int numVars = x.vars().size();
-    final List<Tuple> freeVars = makeFreshVars(numVars);
-    final Conjunction xRenamed = Util.substBoundedVars(x, freeVars);
+    final List<Tuple> freeVars = makeFreshVars(x.vars().size());
 
-    for (int[] permutation : permute(numVars, numVars)) {
-      final Conjunction yRenamed = Util.substBoundedVars(y, arrange(freeVars, permutation));
+    for (VarAlignment alignment : alignVars(x, y, freeVars)) {
+      final Conjunction xRenamed = alignment.c0();
+      final Conjunction yRenamed = alignment.c1();
 
       final Proof proof = tdp0(xRenamed, yRenamed);
       if (proof != null) return proof;
@@ -68,11 +67,11 @@ public final class DecisionProcedure {
     final TableBijectionMatcher tableMatcher = new TableBijectionMatcher(x.tables(), y.tables());
     if (!tableMatcher.match()) return null;
 
-    final PredMatcher predMatcher = new PredMatcher(x.predicates(), y.predicates());
+    final PredMatcher predMatcher = new PredMatcher(x.preds(), y.preds());
     if (!predMatcher.match()) return null;
 
     final Proof negationLemma;
-    final Disjunction xNeg = x.negation(), yNeg = y.negation();
+    final Disjunction xNeg = x.neg(), yNeg = y.neg();
     if (xNeg == null || yNeg == null) negationLemma = null;
     else {
       final Proof proof = sdp(xNeg, yNeg);

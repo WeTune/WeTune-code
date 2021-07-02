@@ -3,12 +3,13 @@ package sjtu.ipads.wtune.prover.normalform;
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.prover.expr.UExpr.preorderTraversal;
 import static sjtu.ipads.wtune.prover.expr.UExpr.rootOf;
 import static sjtu.ipads.wtune.prover.utils.Constants.NORMALIZATION_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.Constants.TEMP_VAR_PREFIX_0;
+import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,11 +17,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import sjtu.ipads.wtune.prover.Proof;
+import sjtu.ipads.wtune.prover.expr.EqPredTerm;
 import sjtu.ipads.wtune.prover.expr.SumExpr;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
+import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.utils.Counter;
 
 public class Normalization {
@@ -34,14 +37,16 @@ public class Normalization {
           new NotNot(),
           new SquashNot(),
           new SquashSquash(),
-          new Associativity(),
+          new MulAssociativity(),
+          new AddAssociativity(),
           new Distribution());
   // Section 3.3, Eq 1-9
   private static final List<Transformation> PASS1 = List.of(new MulSum(), new SumSum());
   private static final List<Transformation> PASS2 =
-      List.of(new SquashCommunity(), new Associativity(), new MulSquash());
+      List.of(
+          new SquashCommunity(), new MulAssociativity(), new AddAssociativity(), new MulSquash());
   private static final List<Transformation> PASS3 =
-      List.of(new NotCommunity(), new Associativity(), new MulNot());
+      List.of(new NotCommunity(), new MulAssociativity(), new AddAssociativity(), new MulNot());
 
   private final Proof proof;
 
@@ -50,7 +55,9 @@ public class Normalization {
   }
 
   public static Disjunction normalize(UExpr root) {
-    return asDisjunction(new Normalization(null).transform(root.copy()), new Counter());
+    return renameVars(
+        asDisjunction(new Normalization(null).transform(root.copy()), new Counter()),
+        NORMALIZATION_VAR_PREFIX);
   }
 
   private UExpr transform(UExpr root) {
@@ -65,7 +72,9 @@ public class Normalization {
     // not efficient, but safe
     for (UExpr target : targets)
       for (Transformation tf : tfs) {
+        //        final UExpr savedExpr = rootOf(target).copy();
         final UExpr applied = tf.apply(target, proof);
+        //        final UExpr newxExpr = rootOf(applied);
         if (applied != target) {
           return transform(UExpr.postorderTraversal(rootOf(applied)), tfs);
         }
@@ -126,26 +135,81 @@ public class Normalization {
     return factors;
   }
 
-  private static List<Tuple> splitVariables(UExpr expr, List<Tuple> originalVars, Counter counter) {
-    final List<UExpr> tables = preorderTraversal(expr, Kind.TABLE);
-    final List<Tuple> variables = new ArrayList<>(tables.size());
-    final Set<Tuple> split = new HashSet<>(originalVars.size());
+  private static List<Tuple> splitVariables(UExpr expr, List<Tuple> oldVars, Counter counter) {
+    final Set<Tuple> vars = collectVarComponents(expr, oldVars);
+    final List<Tuple> variables = new ArrayList<>(vars.size());
+    final Set<Tuple> split = new HashSet<>(oldVars.size());
 
-    for (UExpr e : tables) {
-      final TableTerm tableTerm = (TableTerm) e;
-      final Tuple tuple = tableTerm.tuple();
-      if (tuple.isBase() || !originalVars.contains(tuple.base()[0])) continue;
+    for (Tuple oldVar : vars) {
+      final Tuple newVar = Tuple.make(TEMP_VAR_PREFIX_0 + counter.addAssign());
 
-      final Tuple variable = Tuple.make(NORMALIZATION_VAR_PREFIX + counter.addAssign());
-      expr.subst(tuple, variable);
-      variables.add(variable);
-      split.add(tuple.base()[0]);
+      expr.subst(oldVar, newVar);
+      variables.add(newVar);
+      split.add(oldVar.base()[0]);
     }
 
-    if (split.size() != originalVars.size())
-      for (Tuple originalVar : originalVars)
+    if (split.size() != oldVars.size())
+      for (Tuple originalVar : oldVars)
         if (!split.contains(originalVar)) variables.add(originalVar);
 
     return variables;
+  }
+
+  private static Set<Tuple> collectVarComponents(UExpr expr, List<Tuple> interestSet) {
+    final VarComponentCollector collector = new VarComponentCollector(interestSet);
+    collector.onNode(expr);
+    return collector.components;
+  }
+
+  // given a set of tuple `V` and an U-expr `expr`,
+  // returns {t | t in `expr` /\ v in `V` /\ t.uses(v)}.
+  private static class VarComponentCollector {
+    private final List<Tuple> interestSet;
+    private final Set<Tuple> components;
+    private final List<Tuple> screened;
+
+    private VarComponentCollector(List<Tuple> interestSet) {
+      if (!all(interestSet, Tuple::isBase)) throw new IllegalArgumentException();
+
+      this.interestSet = interestSet;
+      this.components = new HashSet<>();
+      this.screened = new ArrayList<>();
+    }
+
+    private void onNode(UExpr expr) {
+      if (expr.kind() == Kind.SUM) screened.addAll(((SumExpr) expr).boundedVars());
+
+      for (UExpr child : expr.children()) onNode(child);
+
+      if (expr.kind() == Kind.SUM) {
+        final SumExpr sum = (SumExpr) expr;
+        screened.subList(screened.size() - sum.boundedVars().size(), screened.size()).clear();
+      }
+
+      switch (expr.kind()) {
+        case TABLE:
+          extractComponent(((TableTerm) expr).tuple());
+          break;
+        case PRED:
+          for (Tuple tuple : ((UninterpretedPredTerm) expr).tuple()) extractComponent(tuple);
+          break;
+        case EQ_PRED:
+          extractComponent(((EqPredTerm) expr).left());
+          extractComponent(((EqPredTerm) expr).right());
+          break;
+      }
+    }
+
+    private void extractComponent(Tuple t) {
+      if (t.isProjected()) {
+        final Tuple base = t.base()[0];
+        if (base.isProjected() || base.isFunc()) extractComponent(base);
+        else if (base.isBase() && !screened.contains(base) && interestSet.contains(base))
+          components.add(t);
+
+      } else if (t.isFunc()) {
+        for (Tuple arg : t.base()) extractComponent(arg);
+      }
+    }
   }
 }

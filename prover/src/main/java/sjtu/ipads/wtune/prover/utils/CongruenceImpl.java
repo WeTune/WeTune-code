@@ -30,6 +30,15 @@ class CongruenceImpl<T> implements Congruence<T> {
     return false;
   }
 
+  CongruentClass<T> getClass0(T x) {
+    return classes.get(x);
+  }
+
+  @Override
+  public Set<T> keys() {
+    return classes.keySet();
+  }
+
   @Override
   public Set<T> makeClass(T x) {
     requireNonNull(x);

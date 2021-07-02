@@ -8,14 +8,14 @@ public class PermutationIter implements Iterator<int[]> {
   private final int[] buffer;
   private final boolean[] masks;
 
-  private boolean isDrained;
+  private boolean hasNext;
 
   private PermutationIter(int n, int k) {
     this.n = n;
     this.k = k;
     this.buffer = new int[k];
     this.masks = new boolean[n];
-    this.isDrained = true;
+    this.hasNext = true;
 
     for (int i = 0; i < k; i++) {
       buffer[i] = i;
@@ -24,6 +24,8 @@ public class PermutationIter implements Iterator<int[]> {
   }
 
   private boolean forward(int idx) {
+    if (buffer.length == 0) return false;
+
     final int original = buffer[idx];
     masks[original] = false; // clear the mask first
 
@@ -59,13 +61,13 @@ public class PermutationIter implements Iterator<int[]> {
 
   @Override
   public boolean hasNext() {
-    return isDrained;
+    return hasNext;
   }
 
   @Override
   public int[] next() {
     final int[] ret = Arrays.copyOf(buffer, buffer.length);
-    isDrained = forward(buffer.length - 1);
+    hasNext = forward(buffer.length - 1);
     return ret;
   }
 }

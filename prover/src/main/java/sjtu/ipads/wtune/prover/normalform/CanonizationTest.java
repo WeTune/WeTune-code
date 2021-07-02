@@ -10,32 +10,20 @@ import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 
-public class EliminatorTest {
+public class CanonizationTest {
   public static void main(String[] args) {
     final Statement stmt0 =
-        Statement.make(
-            "broadleaf",
-            "SELECT DISTINCT `adminuseri2_`.`ADMIN_USER_ID` FROM `BLC_ADMIN_USER_ROLE_XREF` AS `allusers1_` INNER JOIN `BLC_ADMIN_USER` AS `adminuseri2_` ON `allusers1_`.`ADMIN_USER_ID` = `adminuseri2_`.`ADMIN_USER_ID` LEFT JOIN `BLC_ADMIN_USER_SANDBOX` AS `adminuseri2_1_` ON `adminuseri2_`.`ADMIN_USER_ID` = `adminuseri2_1_`.`ADMIN_USER_ID` WHERE `adminuseri2_`.`ADMIN_USER_ID` = 1",
-            null);
-    final Statement stmt1 =
-        Statement.make(
-            "broadleaf",
-            "SELECT DISTINCT `adminuseri2_`.`ADMIN_USER_ID` FROM `BLC_ADMIN_USER_ROLE_XREF` AS `allusers1_` INNER JOIN `BLC_ADMIN_USER` AS `adminuseri2_` ON `allusers1_`.`ADMIN_USER_ID` = `adminuseri2_`.`ADMIN_USER_ID` WHERE `adminuseri2_`.`ADMIN_USER_ID` = 1",
-            null);
-    final Schema schema = stmt0.app().schema("base");
+        Statement.make("test", "SELECT DISTINCT a.j FROM a LEFT JOIN b ON a.j = b.y", null);
+    final Statement stmt1 = Statement.make("test", "SELECT DISTINCT a.j FROM a", null);
 
+    final Schema schema = stmt0.app().schema("base", true);
     final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
     final PlanNode plan1 = PlanSupport.assemblePlan(stmt1.parsed(), schema);
-
     PlanSupport.disambiguate(plan0);
     PlanSupport.disambiguate(plan1);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
-
-    System.out.println(normalForm0);
-    System.out.println(normalForm1);
-
     final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
     final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
     final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);

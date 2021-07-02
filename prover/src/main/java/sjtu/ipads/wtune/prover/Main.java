@@ -7,12 +7,15 @@ import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 
 public class Main {
   private static boolean decide(Statement stmt0, Statement stmt1) {
     System.out.println(stmt0);
+    System.out.println(stmt0.parsed());
+    System.out.println(stmt1.parsed());
 
     final Schema schema = stmt0.app().schema("base", true);
     final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
@@ -20,10 +23,11 @@ public class Main {
     PlanSupport.disambiguate(plan0);
     PlanSupport.disambiguate(plan1);
 
-    //    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
+    ((ProjNode) plan1.predecessors()[0].predecessors()[0]).setExplicitDistinct(true);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+
     final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
     final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
     final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
@@ -31,8 +35,8 @@ public class Main {
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);
 
-    //    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
-    //    System.out.println(eq);
+    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
+    System.out.println(eq);
 
     //    return eq;
     return false;
@@ -61,7 +65,7 @@ public class Main {
   }
 
   public static void main(String[] args) {
-    test0("", false);
-    //    test0("diaspora-377", true);
+    //    test0("", false);
+    test0("broadleaf-199", true);
   }
 }

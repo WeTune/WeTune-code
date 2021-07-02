@@ -12,7 +12,7 @@ class SumMul extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();
-    if (point.kind() != Kind.MUL) return point;
+    if (parent == null || parent.kind() != Kind.MUL) return point;
 
     UExpr ancestor = parent;
     while (ancestor != null) {

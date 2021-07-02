@@ -45,8 +45,8 @@ public class SimpleDecisionProcedure {
       final Conjunction copy1 = substBoundedVars(c1, arrange(tempVars, permutation));
 
       if (compareTables(copy0.tables(), copy1.tables())
-          && comparePreds(copy0.predicates(), copy1.predicates())
-          && compareNeg(copy0.negation(), copy1.negation())
+          && comparePreds(copy0.preds(), copy1.preds())
+          && compareNeg(copy0.neg(), copy1.neg())
           && compareSquash(copy0.squash(), copy1.squash())) return permutation;
     }
 

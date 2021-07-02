@@ -3,15 +3,20 @@ package sjtu.ipads.wtune.prover;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.prover.expr.UExpr.add;
 import static sjtu.ipads.wtune.prover.expr.UExpr.eqPred;
 import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.expr.UExpr.not;
 import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.expr.UExpr.uninterpretedPred;
 import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
+import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
 
 import java.util.ArrayList;
@@ -19,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.utils.Constants;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
 import sjtu.ipads.wtune.sqlparser.plan1.Expr;
@@ -136,7 +142,7 @@ public class UExprTranslator {
 
       final Tuple lhs = projTuple(refs.get(0));
       final Tuple rhs = projTuple(refs.get(1));
-      condExpr = mul(mul(eqPred(lhs, rhs), makeNonNullPred(lhs)), makeNonNullPred(rhs));
+      condExpr = mul(mul(eqPred(lhs, rhs), notNullPred(lhs)), notNullPred(rhs));
 
     } else if (predicate.isEquiCondition()) {
       final RefBag refs = predicate.refs();
@@ -171,6 +177,10 @@ public class UExprTranslator {
   }
 
   private UExpr onJoin(JoinNode join) {
+    final UExpr lhsExpr = onNode(join.predecessors()[0]);
+    final UExpr rhsExpr = onNode(join.predecessors()[1]);
+    if (join.condition() == null) return mul(lhsExpr, rhsExpr);
+
     final UExpr condition;
     if (join.isEquiJoin()) {
       final RefBag lhsRefs = join.lhsRefs(), rhsRefs = join.rhsRefs();
@@ -181,30 +191,28 @@ public class UExprTranslator {
         final Tuple lhs = projTuple(lhsRefs.get(i));
         final Tuple rhs = projTuple(rhsRefs.get(i));
         conditions.add(eqPred(lhs, rhs));
-        conditions.add(makeNonNullPred(lhs));
-        conditions.add(makeNonNullPred(rhs));
+        //        conditions.add(notNullPred(lhs)); // one-side is enough
+        conditions.add(notNullPred(rhs));
       }
       condition = conditions.stream().reduce(UExpr::mul).orElse(null);
 
     } else {
-      final Expr condExpr = join.condition();
-      condition = condExpr == null ? null : makeUninterpretedPred(condExpr);
+      condition = makeUninterpretedPred(join.condition());
+    }
+    // L(x) * R(y) * p(x,y)
+    final UExpr symmPart = mul(mul(condition, lhsExpr), rhsExpr);
+
+    if (join.type() == InnerJoin) return symmPart;
+
+    if (join.type() == LeftJoin) {
+      // [y = null] * Sum{y'}(R(y') * p(x,y'))
+      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
+      // L(x) * R(y) * p(x,y) +
+      // L(x) * [y = null] * Sum{y'}(R(y') * p(x,y'))
+      return add(symmPart, mul(lhsExpr.copy(), asymmPart));
     }
 
-    final UExpr lhsExpr = onNode(join.predecessors()[0]);
-    final UExpr rhsExpr = onNode(join.predecessors()[1]);
-
-    if (condition == null) return mul(lhsExpr, rhsExpr);
-    else return mul(mul(condition, lhsExpr), rhsExpr);
-
-    //    else if (join.type() == InnerJoin) return mul(mul(condition, lhsExpr), rhsExpr);
-    //    else if (join.type() == LeftJoin) {
-    //      // symmetricPart + (L(x) * [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y']))
-    //      // = L(x) * (R(y) * [pred(x,y)] + [IsNull(y)] * not(sum{y'}(R(x,y') * pred[x,y'])))
-    //      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
-    //      return mul(lhsExpr, add(mul(condition.copy(), rhsExpr.copy()), asymmPart));
-    //
-    //    } else throw failed("unsupported join type " + join.type());
+    throw new IllegalArgumentException("unsupported join type: " + join.type());
   }
 
   private UExpr onUnion(SetOpNode setOp) {
@@ -267,12 +275,12 @@ public class UExprTranslator {
     }
   }
 
-  private UExpr makeNonNullPred(Tuple tuple) {
-    return UExpr.uninterpretedPred("`?` NOT NULL", tuple);
+  private UExpr notNullPred(Tuple tuple) {
+    return uninterpretedPred(NOT_NULL_PRED, tuple);
   }
 
-  private UExpr makeIsNullPred(Tuple tuple) {
-    return UExpr.uninterpretedPred("`?` IS NULL", tuple);
+  private UExpr isNullPred(Tuple tuple) {
+    return eqPred(tuple, Constants.NULL_TUPLE);
   }
 
   private UExpr makeUninterpretedPred(Expr expr) {
@@ -281,9 +289,10 @@ public class UExprTranslator {
   }
 
   private UExpr makeAsymmetricJoin(PlanNode asymmJoin, UExpr cond, UExpr rhsExpr) {
-    // A LEFT JOIN B ON A.a = B.b =>
-    // Sum{x,y}(A(x) * B(y) * [x.a = y.b] * [NotNull(x.a)] * [NotNull(y.b)]) -- symmetric part
-    // + Sum{x}(A(x) * [IsNull(y)] * not(Sum{y}(B(y) * [x.a = y.b]))) -- asymmetric part
+    // A LEFT JOIN B ON p(A.a,B.b) =>
+    // Sum{x,y}(A(x) * B(y) * [p(x.a,y.b)] * [NotNull(x.a)] * [NotNull(y.b)]) -- symmetric part
+    // + Sum{x}(A(x) * [IsNull(y)] * not(Sum{y}(B(y) * [p(x.a,y.b)]))) -- asymmetric part
+    // this method returns the part "[IsNull(y)] * not(Sum{y'}(B(y') * p(x.a,y'.b))
 
     cond = cond.copy();
     rhsExpr = rhsExpr.copy();
@@ -302,7 +311,7 @@ public class UExprTranslator {
       final Tuple oldTup = pivotVar.proj(tableAlias);
       final Tuple newTup = freeVar.proj(tableAlias);
 
-      final UExpr isNullPred0 = makeIsNullPred(oldTup);
+      final UExpr isNullPred0 = isNullPred(oldTup);
       isNullPred = isNullPred == null ? isNullPred0 : mul(isNullPred, isNullPred0);
 
       cond.subst(oldTup, newTup);

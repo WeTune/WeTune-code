@@ -18,7 +18,7 @@ import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.utils.Congruence;
 import sjtu.ipads.wtune.prover.utils.Util;
 
-final class Minimization {
+public final class Minimization {
   // Note: to be called from `DecisionProcedure::sdp`
   public static Conjunction minimize(Conjunction c) {
     final Collection<List<TableTerm>> groups = Util.groupTables(c).values();
@@ -50,7 +50,7 @@ final class Minimization {
   /** Find a matched predicate of `target` in `toMatch`. */
   private static boolean matchTerm(Conjunction toMatch, UExpr target) {
     // For one-shot match. For repeated match, make a Congruence and use the overloaded version.
-    return matchTerm(toMatch, target, Congruence.make(toMatch.predicates()));
+    return matchTerm(toMatch, target, Congruence.make(toMatch.preds()));
   }
 
   /** Find a matched predicate of `target` in `toMatch`. */
@@ -64,7 +64,7 @@ final class Minimization {
 
     // for uninterpreted predicate, we match the literal
     final UninterpretedPredTerm p0 = (UninterpretedPredTerm) target;
-    for (UExpr expr : toMatch.predicates()) {
+    for (UExpr expr : toMatch.preds()) {
       if (expr.kind() != Kind.PRED) continue;
 
       final UninterpretedPredTerm p1 = (UninterpretedPredTerm) expr;

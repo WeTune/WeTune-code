@@ -7,11 +7,11 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 public interface Conjunction {
   List<Tuple> vars();
 
-  List<UExpr> predicates();
+  List<UExpr> preds();
 
   List<UExpr> tables();
 
-  Disjunction negation();
+  Disjunction neg();
 
   Disjunction squash();
 

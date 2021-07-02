@@ -2,6 +2,8 @@ package sjtu.ipads.wtune.prover.utils;
 
 import static java.util.stream.IntStream.range;
 import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
+import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
+import static sjtu.ipads.wtune.prover.utils.Constants.NULL_TUPLE;
 import static sjtu.ipads.wtune.prover.utils.Constants.TEMP_VAR_PREFIX_0;
 import static sjtu.ipads.wtune.prover.utils.Constants.TEMP_VAR_PREFIX_1;
 
@@ -19,17 +21,44 @@ import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.expr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
+import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
 public final class Util {
 
   private Util() {}
 
+  public static boolean isNullTuple(Tuple t) {
+    return t.equals(NULL_TUPLE);
+  }
+
   public static boolean isConstantTuple(Tuple t) {
     if (t.isConstant()) return true;
     if (t.isBase() && t.name().toString().equals(FREE_VAR)) return true;
     if (t.isProjected()) return isConstantTuple(t.base()[0]);
     return false;
+  }
+
+  public static boolean isReflexivity(UExpr pred) {
+    if (pred.kind() != Kind.EQ_PRED) return false;
+    final EqPredTerm eqPred = (EqPredTerm) pred;
+    return eqPred.left().equals(eqPred.right());
+  }
+
+  public static boolean isContradictory(UExpr pred) {
+    if (pred.kind() != Kind.EQ_PRED) return false;
+    final EqPredTerm eqPred = (EqPredTerm) pred;
+    return eqPred.left().isConstant()
+        && eqPred.right().isConstant()
+        && !eqPred.left().equals(eqPred.right());
+  }
+
+  public static boolean isNotNullPredOf(UExpr pred, Tuple tuple) {
+    if (pred.kind() != Kind.PRED) return false;
+    final UninterpretedPredTerm p = (UninterpretedPredTerm) pred;
+    return p.name().toString().equals(NOT_NULL_PRED)
+        && p.tuple().length == 1
+        && p.tuple()[0].equals(tuple);
   }
 
   public static boolean compareTable(UExpr e0, UExpr e1) {
@@ -113,19 +142,22 @@ public final class Util {
     return copy;
   }
 
-  public static Conjunction embedBoundedVars(
-      Conjunction conjunction, List<Tuple> tuples, int[] permutation) {
-    if (conjunction.vars().size() > tuples.size()) {
-      // embedding [x1,x2] into [t1,t2,t3] results in
-      // [x1,x2,t3],[x1,t2,x2],[x2,x1,t2],[x2,t2,x1],[t1,x1,x2],[t1,x2,x1]
-      final List<Tuple> vars = new ArrayList<>(conjunction.vars());
-      for (int i = 0; i < permutation.length; i++) vars.set(permutation[i], tuples.get(i));
-      return substBoundedVars(conjunction, vars);
-    } else {
-      // embedding [x1,x2,x3] into [t1,t2] results in
-      // [x1,x2],[x1,x3],[x2,x1],[x2,x3],[x3,x1],[x3,x2]
-      return substBoundedVars(conjunction, arrange(tuples, permutation));
+  public static Disjunction renameVars(Disjunction d, String prefix) {
+    renameVars0(d, prefix, 0);
+    return d;
+  }
+
+  private static int renameVars0(Disjunction d, String prefix, int startIdx) {
+    if (d == null) return startIdx;
+
+    int idx = startIdx;
+    for (Conjunction c : d) {
+      for (Tuple var : c.vars()) c.subst(var, Tuple.make(prefix + idx++));
+      idx = renameVars0(c.squash(), prefix, idx);
+      idx = renameVars0(c.neg(), prefix, idx);
     }
+
+    return idx;
   }
 
   public static boolean isMatchedUninterpretedPred(

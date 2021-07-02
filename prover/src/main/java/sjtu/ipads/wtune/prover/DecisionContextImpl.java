@@ -147,7 +147,7 @@ final class DecisionContextImpl extends ProofContextImpl implements DecisionCont
         }
 
         if (c.squash() != null) collectTables(c.squash(), dest);
-        if (c.negation() != null) collectTables(c.negation(), dest);
+        if (c.neg() != null) collectTables(c.neg(), dest);
       }
     }
 
@@ -155,7 +155,7 @@ final class DecisionContextImpl extends ProofContextImpl implements DecisionCont
       final List<Tuple> buffer = new ArrayList<>(4);
 
       for (Conjunction c : d.conjunctions()) {
-        for (UExpr e : c.predicates()) {
+        for (UExpr e : c.preds()) {
           buffer.clear();
           collectProjTuples(e, buffer);
 
@@ -174,7 +174,7 @@ final class DecisionContextImpl extends ProofContextImpl implements DecisionCont
           }
 
           if (c.squash() != null) collectColumns(c.squash(), dest);
-          if (c.negation() != null) collectColumns(c.negation(), dest);
+          if (c.neg() != null) collectColumns(c.neg(), dest);
         }
       }
     }
