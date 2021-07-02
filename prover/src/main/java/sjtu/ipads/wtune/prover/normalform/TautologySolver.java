@@ -10,11 +10,11 @@ import static sjtu.ipads.wtune.prover.utils.Util.compareTable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import sjtu.ipads.wtune.prover.normalform.PropositionMemo.Proposition;
 import sjtu.ipads.wtune.prover.expr.PredTerm;
 import sjtu.ipads.wtune.prover.expr.TableTerm;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.normalform.PropositionMemo.Proposition;
 
 class TautologyInference {
   private final List<Tuple> fixedVars;
@@ -57,33 +57,24 @@ class TautologyInference {
     vars.removeAll(fixedVars);
 
     final List<UExpr> boundedTables = new ArrayList<>(conjunction.tables().size());
-    for (UExpr table : conjunction.tables()) {
-      if (any(vars, table::uses)) {
-        boundedTables.add(table);
-      } else {
-        props.add(toProp(table));
-      }
-    }
+    for (UExpr table : conjunction.tables())
+      if (any(vars, table::uses)) boundedTables.add(table);
+      else props.add(toProp(table));
 
-    final List<UExpr> boundedPreds = new ArrayList<>(conjunction.predicates().size());
-    for (UExpr pred : conjunction.predicates()) {
-      if (any(vars, pred::uses)) {
-        boundedPreds.add(pred);
-      } else {
-        props.add(toProp(pred));
-      }
-    }
+    final List<UExpr> boundedPreds = new ArrayList<>(conjunction.preds().size());
+    for (UExpr pred : conjunction.preds())
+      if (any(vars, pred::uses)) boundedPreds.add(pred);
+      else props.add(toProp(pred));
 
     // not(T1 + T2 + ...) becomes not(T1) * not(T2) ...
+    // We assume that, if T1 is not a Sum, then T1 contains no multiplicity.
+    // Since that normalization will always break down such case
     final Disjunction boundedNeg;
-    if (conjunction.negation() != null) {
+    if (conjunction.neg() != null) {
       final List<Conjunction> boundedC = new ArrayList<>(1);
-      for (Conjunction c : conjunction.negation()) {
-        if (any(vars, c::uses)) {
-          boundedC.add(c);
-        } else {
-          props.add(toProp(c).not());
-        }
+      for (Conjunction c : conjunction.neg()) {
+        if (any(vars, c::uses)) boundedC.add(c);
+        else props.add(toProp(c).not());
       }
       boundedNeg = boundedC.isEmpty() ? null : Disjunction.make(boundedC);
     } else {
@@ -141,6 +132,10 @@ class TautologyInference {
 
     if (term instanceof Conjunction) {
       final Conjunction c = (Conjunction) term;
+
+      final UExpr unwrapped = tryUnwrap(c);
+      if (unwrapped != null) return toProp(unwrapped);
+
       assert !c.vars().isEmpty();
       for (int i = 0, bound = terms.size(); i < bound; i++) {
         final Object o = terms.get(i);
@@ -152,6 +147,29 @@ class TautologyInference {
     }
 
     return assertFalse();
+  }
+
+  private static UExpr tryUnwrap(Conjunction c) {
+    if (!c.vars().isEmpty()) return null;
+
+    int flag = 0;
+    flag |= Math.min(c.tables().size(), 2);
+    flag |= Math.min(c.preds().size(), 2) << 2;
+    flag |= (c.neg() != null ? 1 : 0) << 4;
+    flag |= (c.squash() != null ? 1 : 0) << 6;
+
+    switch (flag) {
+      case 1:
+        return c.tables().get(0);
+      case (1 << 2):
+        return c.preds().get(0);
+      case (1 << 4):
+        return UExpr.not(c.neg().toExpr());
+      case (1 << 6):
+        return c.squash().toExpr();
+      default:
+        return null;
+    }
   }
 
   private Proposition makeProp(Object term) {

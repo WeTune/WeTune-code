@@ -49,14 +49,14 @@ class ExecludedMiddleEliminator {
     final ListIterator<Conjunction> iter = d.conjunctions().listIterator();
     while (iter.hasNext()) {
       final Conjunction c = iter.next();
-      final Disjunction sq = c.squash(), neg = c.negation();
+      final Disjunction sq = c.squash(), neg = c.neg();
       if (neg == null && sq == null) continue;
 
       final Disjunction newSq = eliminateTautology(sq, true);
       final Disjunction newNeg = eliminateTautology(neg, true);
       if (newSq == sq && newNeg == neg) continue;
 
-      iter.set(Conjunction.make(c.vars(), c.tables(), c.predicates(), newSq, newNeg));
+      iter.set(Conjunction.make(c.vars(), c.tables(), c.preds(), newSq, newNeg));
     }
 
     for (Conjunction c : d) {
@@ -82,8 +82,8 @@ class ExecludedMiddleEliminator {
   private boolean intersect(
       Conjunction c0, Conjunction c1, ConjunctionMask intersect0, ConjunctionMask intersect1) {
     /* 1. Tables */
-    final boolean[] tableMasks0 = intersect0.maskedTables;
-    final boolean[] tableMasks1 = intersect1.maskedTables;
+    final boolean[] tableMasks0 = intersect0.tableMask;
+    final boolean[] tableMasks1 = intersect1.tableMask;
     boolean tableMatched = false;
 
     for (int i = 0, iBound = c0.tables().size(); i < iBound; i++) {
@@ -99,14 +99,14 @@ class ExecludedMiddleEliminator {
     }
 
     /* 2. Predicates */
-    final Congruence<Tuple> cong0 = Congruence.make(c0.predicates());
-    final Congruence<Tuple> cong1 = Congruence.make(c1.predicates());
-    final boolean[] predMasks0 = intersect0.maskedPredicates;
-    final boolean[] predMasks1 = intersect1.maskedPredicates;
+    final Congruence<Tuple> cong0 = Congruence.make(c0.preds());
+    final Congruence<Tuple> cong1 = Congruence.make(c1.preds());
+    final boolean[] predMasks0 = intersect0.predMask;
+    final boolean[] predMasks1 = intersect1.predMask;
     boolean predMatched = false;
 
-    for (int i = 0, iBound = c0.predicates().size(); i < iBound; i++) {
-      final UExpr iPred = c0.predicates().get(i);
+    for (int i = 0, iBound = c0.preds().size(); i < iBound; i++) {
+      final UExpr iPred = c0.preds().get(i);
       if (iPred.kind() == Kind.EQ_PRED) {
         final EqPredTerm eqPred = (EqPredTerm) iPred;
         if (cong0.isCongruent(eqPred.left(), eqPred.right())
@@ -114,8 +114,8 @@ class ExecludedMiddleEliminator {
       }
     }
 
-    for (int j = 0, jBound = c1.predicates().size(); j < jBound; j++) {
-      final UExpr jPred = c1.predicates().get(j);
+    for (int j = 0, jBound = c1.preds().size(); j < jBound; j++) {
+      final UExpr jPred = c1.preds().get(j);
       if (jPred.kind() == Kind.EQ_PRED) {
         final EqPredTerm eqPred = (EqPredTerm) jPred;
         if (cong0.isCongruent(eqPred.left(), eqPred.right())
@@ -123,12 +123,12 @@ class ExecludedMiddleEliminator {
       }
     }
 
-    for (int i = 0, iBound = c0.predicates().size(); i < iBound; i++) {
-      final UExpr iPred = c0.predicates().get(i);
+    for (int i = 0, iBound = c0.preds().size(); i < iBound; i++) {
+      final UExpr iPred = c0.preds().get(i);
       if (!(iPred instanceof UninterpretedPredTerm)) continue;
 
-      for (int j = 0, jBound = c1.predicates().size(); j < jBound; j++) {
-        final UExpr jPred = c1.predicates().get(j);
+      for (int j = 0, jBound = c1.preds().size(); j < jBound; j++) {
+        final UExpr jPred = c1.preds().get(j);
         if (!(jPred instanceof UninterpretedPredTerm)) continue;
 
         if (isMatchedUninterpretedPred(iPred, jPred, cong0)
@@ -141,17 +141,17 @@ class ExecludedMiddleEliminator {
     }
 
     /* 3. Negation */
-    final Disjunction negC = c0.negation(), negE = c1.negation();
+    final Disjunction negC = c0.neg(), negE = c1.neg();
     final boolean negMatched =
-        intersect0.maskedNegation =
-            intersect1.maskedNegation =
+        intersect0.negMask =
+            intersect1.negMask =
                 (negC == null) == (negE == null) && (negC == null || decideSame(negC, negE));
 
     /* 4. Squash */
     final Disjunction sqC = c0.squash(), sqE = c1.squash();
     final boolean sqMatched =
-        intersect0.maskedSquash =
-            intersect1.maskedSquash =
+        intersect0.squashMask =
+            intersect1.squashMask =
                 (sqC == null) == (sqE == null) && (sqC == null || decideSame(sqC, sqE));
 
     return tableMatched || predMatched || negMatched || sqMatched;
@@ -167,9 +167,9 @@ class ExecludedMiddleEliminator {
   private boolean isBinaryValue(ConjunctionMask c, boolean complement) {
     if (insideSquash) return true;
     if (complement) {
-      for (boolean t : c.maskedTables) if (!t) return false;
+      for (boolean t : c.tableMask) if (!t) return false;
     } else {
-      for (boolean t : c.maskedTables) if (t) return false;
+      for (boolean t : c.tableMask) if (t) return false;
     }
     return true;
   }
@@ -288,66 +288,6 @@ class ExecludedMiddleEliminator {
 
       /* 5. Nope, this term is not a participant. Skip this and goto next. */
       return skipToNext && find(i + 1, E, infer);
-    }
-  }
-
-  private static class ConjunctionMask {
-    private final Conjunction c;
-    private final boolean[] maskedTables, maskedPredicates;
-    private boolean maskedNegation, maskedSquash;
-
-    private ConjunctionMask(Conjunction c) {
-      this.c = c;
-      this.maskedTables = new boolean[c.tables().size()];
-      this.maskedPredicates = new boolean[c.predicates().size()];
-    }
-
-    Conjunction getMasked() {
-      final List<UExpr> tables = c.tables();
-      final List<UExpr> ts = new ArrayList<>(tables.size());
-      for (int i = 0, bound = tables.size(); i < bound; i++)
-        if (maskedTables[i]) ts.add(tables.get(i));
-
-      final List<UExpr> preds = c.predicates();
-      final List<UExpr> ps = new ArrayList<>(preds.size());
-      for (int i = 0, bound = preds.size(); i < bound; i++)
-        if (maskedPredicates[i]) ps.add(preds.get(i));
-
-      final Disjunction sq = maskedSquash ? c.squash() : null;
-      final Disjunction neg = maskedNegation ? c.negation() : null;
-
-      if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) return Conjunction.empty();
-      else return Conjunction.make(c.vars(), ts, ps, sq, neg);
-    }
-
-    Conjunction getComplement() {
-      final List<UExpr> tables = c.tables();
-      final List<UExpr> ts = new ArrayList<>(tables.size());
-      for (int i = 0, bound = tables.size(); i < bound; i++)
-        if (!maskedTables[i]) ts.add(tables.get(i));
-
-      final List<UExpr> preds = c.predicates();
-      final List<UExpr> ps = new ArrayList<>(preds.size());
-      for (int i = 0, bound = preds.size(); i < bound; i++)
-        if (!maskedPredicates[i]) ps.add(preds.get(i));
-
-      final Disjunction sq = maskedSquash ? null : c.squash();
-      final Disjunction neg = maskedNegation ? null : c.negation();
-
-      if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) return Conjunction.empty();
-      else return Conjunction.make(c.vars(), ts, ps, sq, neg);
-    }
-
-    boolean isFullMasked() {
-      for (boolean m : maskedTables) if (!m) return false;
-      for (boolean m : maskedPredicates) if (!m) return false;
-      return (c.negation() == null || maskedNegation) && (c.squash() == null || maskedSquash);
-    }
-
-    boolean isEmpty() {
-      for (boolean m : maskedTables) if (m) return false;
-      for (boolean m : maskedPredicates) if (m) return false;
-      return (c.negation() == null || !maskedNegation) && (c.squash() == null || !maskedSquash);
     }
   }
 }

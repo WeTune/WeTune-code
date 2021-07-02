@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // x3 * (x1 * x2) -> x3 * x1 * x2
-final class Associativity extends TransformationBase {
+final class MulAssociativity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point, Proof proof) {
     final UExpr parent = point.parent();
