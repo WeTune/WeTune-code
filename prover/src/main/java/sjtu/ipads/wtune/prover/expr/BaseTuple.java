@@ -40,6 +40,11 @@ final class BaseTuple implements Tuple {
   }
 
   @Override
+  public StringBuilder stringify(StringBuilder builder) {
+    return builder.append(name);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof BaseTuple)) return false;

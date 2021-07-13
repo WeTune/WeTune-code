@@ -29,11 +29,13 @@ final class SumExprImpl extends UnaryExpr implements SumExpr {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("sum");
-    Commons.joining("[", ",", "]", false, boundTuples, builder);
-    builder.append('(').append(children[0]).append(')');
-    return builder.toString();
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append('\u03a3');
+    Commons.joining("{", ",", "}", false, boundTuples, builder);
+    builder.append('(');
+    children[0].stringify(builder);
+    builder.append(')');
+    return builder;
   }
 
   @Override

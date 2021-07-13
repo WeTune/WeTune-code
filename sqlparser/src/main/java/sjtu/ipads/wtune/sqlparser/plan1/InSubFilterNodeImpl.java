@@ -5,24 +5,29 @@ import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
-class InSubFilterImpl extends PlanNodeBase implements InSubFilter {
+class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   private final Expr lhsExpr;
   private final RefBag lhsRefs;
   private Expr rhsExpr, predicate;
   private RefBag refs;
 
-  InSubFilterImpl(Expr lhsExpr) {
+  InSubFilterNodeImpl(Expr lhsExpr) {
     this.lhsExpr = lhsExpr;
     this.lhsRefs = this.refs = lhsExpr.refs();
   }
 
-  static InSubFilter build(ASTNode node) {
-    return new InSubFilterImpl(ExprImpl.build(node));
+  static InSubFilterNode build(ASTNode node) {
+    if (!COLUMN_REF.isInstance(node) && !TUPLE.isInstance(node))
+      throw new IllegalArgumentException("invalid LHS expression for IN-Sub filter " + node);
+
+    return new InSubFilterNodeImpl(ExprImpl.build(node));
   }
 
   @Override
@@ -76,7 +81,7 @@ class InSubFilterImpl extends PlanNodeBase implements InSubFilter {
   protected PlanNode copy0(PlanContext ctx) {
     checkContextSet();
 
-    final InSubFilter copy = new InSubFilterImpl(lhsExpr);
+    final InSubFilterNode copy = new InSubFilterNodeImpl(lhsExpr);
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());

@@ -43,7 +43,10 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
   }
 
   @Override
-  public String toString() {
-    return "[" + Util.interpolateToString(name.toString(), args) + "]";
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append('[');
+    Util.interpolateToString(name.toString(), args, builder);
+    builder.append(']');
+    return builder;
   }
 }

@@ -6,11 +6,11 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
-class ExistsFilterImpl extends PlanNodeBase implements ExistsFilter {
+class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   private Expr expr, predicate;
   private RefBag refs;
 
-  ExistsFilterImpl() {
+  ExistsFilterNodeImpl() {
     refs = RefBag.empty();
   }
 
@@ -54,7 +54,7 @@ class ExistsFilterImpl extends PlanNodeBase implements ExistsFilter {
   protected PlanNode copy0(PlanContext ctx) {
     checkContextSet();
 
-    final ExistsFilter copy = new ExistsFilterImpl();
+    final ExistsFilterNode copy = new ExistsFilterNodeImpl();
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());

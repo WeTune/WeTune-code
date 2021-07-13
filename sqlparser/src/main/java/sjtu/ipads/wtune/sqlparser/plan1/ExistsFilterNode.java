@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-interface ExistsFilter extends FilterNode {
+public interface ExistsFilterNode extends FilterNode {
 
   // Expression is the subquery expression.
   // e.g., exists (select 1 from x), RHS expr is (select 1 from x)

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-public interface InSubFilter extends FilterNode {
+public interface InSubFilterNode extends FilterNode {
   RefBag lhsRefs();
 
   Expr lhsExpr();

@@ -7,7 +7,9 @@ final class SquashExprImpl extends UnaryExpr implements SquashExpr {
   }
 
   @Override
-  public String toString() {
-    return "|%s|".formatted(children[0]);
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append('|');
+    children[0].stringify(builder);
+    return builder.append('|');
   }
 }

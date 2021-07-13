@@ -119,12 +119,6 @@ public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operat
     return op;
   }
 
-  static Distinct distinct(Operator prev) {
-    final Distinct op = Distinct.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
   static Limit limit(Operator prev) {
     final Limit op = Limit.create();
     op.setPredecessor(0, prev);

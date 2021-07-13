@@ -53,6 +53,8 @@ public interface UExpr {
   // Note: the copy's parent is not set.
   UExpr copy();
 
+  StringBuilder stringify(StringBuilder builder);
+
   static UExpr mul(UExpr l, UExpr r) {
     final UExpr mul = new MulExprImpl();
     mul.setChild(0, l);

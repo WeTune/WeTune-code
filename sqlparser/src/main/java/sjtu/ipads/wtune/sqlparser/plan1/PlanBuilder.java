@@ -273,14 +273,14 @@ class PlanBuilder {
       buildFilters0(expr.get(BINARY_RIGHT), filters);
 
     } else if (op == BinaryOp.IN_SUBQUERY) {
-      final InSubFilter filter = InSubFilterImpl.build(expr.get(BINARY_LEFT));
+      final InSubFilterNode filter = InSubFilterNodeImpl.build(expr.get(BINARY_LEFT));
       final PlanNode subquery = build0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
       filter.setPredecessor(1, subquery);
 
       filters.add(filter);
 
     } else if (EXISTS.isInstance(expr)) {
-      final ExistsFilter filter = new ExistsFilterImpl();
+      final ExistsFilterNode filter = new ExistsFilterNodeImpl();
       final PlanNode subquery = build0(expr.get(EXISTS_SUBQUERY_EXPR).get(QUERY_EXPR_QUERY));
       filter.setPredecessor(1, subquery);
 

@@ -54,5 +54,10 @@ abstract class UExprBase implements UExpr {
     return copy;
   }
 
+  @Override
+  public String toString() {
+    return stringify(new StringBuilder()).toString();
+  }
+
   protected abstract UExprBase copy0();
 }

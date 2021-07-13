@@ -118,9 +118,9 @@ class RefResolver {
     resolveRefs(refs, false, true);
 
     if (node.type() == InSubFilter) {
-      ((InSubFilter) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
+      ((InSubFilterNode) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
     } else if (node.type() == ExistsFilter) {
-      ((ExistsFilter) node).setExpr(makeQueryExpr(node.predecessors()[1]));
+      ((ExistsFilterNode) node).setExpr(makeQueryExpr(node.predecessors()[1]));
     }
   }
 
@@ -232,7 +232,7 @@ class RefResolver {
 
   private RuntimeException failed(String reason) {
     throw new IllegalArgumentException(
-        "failed to bind reference to value. [" + reason + "] " + plan);
+        "failed to bind reference to value. \"" + reason + "\" plan: " + plan);
   }
 
   private static boolean needNewLookup(PlanNode node) {

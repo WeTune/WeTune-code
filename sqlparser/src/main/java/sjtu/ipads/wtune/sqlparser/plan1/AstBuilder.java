@@ -105,8 +105,8 @@ class AstBuilder {
       case Input -> onInput((InputNode) node);
       case InnerJoin, LeftJoin -> onJoin((JoinNode) node);
       case PlainFilter -> onPlainFilter((PlainFilterNode) node);
-      case InSubFilter -> onInSubFilter((InSubFilter) node);
-      case ExistsFilter -> onExistsFilter((ExistsFilter) node);
+      case InSubFilter -> onInSubFilter((InSubFilterNode) node);
+      case ExistsFilter -> onExistsFilter((ExistsFilterNode) node);
       case Proj -> onProj((ProjNode) node);
       case Agg -> onAgg((AggNode) node);
       case Sort -> onSort((SortNode) node);
@@ -147,7 +147,7 @@ class AstBuilder {
     q.appendFilter(pred, true);
   }
 
-  private void onInSubFilter(InSubFilter node) {
+  private void onInSubFilter(InSubFilterNode node) {
     final ASTNode subquery = stack.pop().assembleAsQuery();
     final ASTNode lhs = interpolate0(node.lhsExpr(), ctx);
     final ASTNode queryExpr = expr(QUERY_EXPR);
@@ -162,7 +162,7 @@ class AstBuilder {
     stack.peek().appendFilter(inSub, true);
   }
 
-  private void onExistsFilter(ExistsFilter node) {
+  private void onExistsFilter(ExistsFilterNode node) {
     final ASTNode subquery = stack.pop().assembleAsQuery();
     final ASTNode queryExpr = expr(QUERY_EXPR);
     queryExpr.set(QUERY_EXPR_QUERY, subquery);

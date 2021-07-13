@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.fragment;
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.internal.AggImpl;
-import sjtu.ipads.wtune.superopt.fragment.internal.DistinctImpl;
 import sjtu.ipads.wtune.superopt.fragment.internal.InnerJoinImpl;
 import sjtu.ipads.wtune.superopt.fragment.internal.InputImpl;
 import sjtu.ipads.wtune.superopt.fragment.internal.LeftJoinImpl;
@@ -37,12 +36,12 @@ public class Operators {
       case LeftJoin -> LeftJoinImpl.create();
       case PlainFilter -> PlainFilterImpl.create();
       case InSubFilter -> SubqueryFilterImpl.create();
+      case ExistsFilter -> null;
       case Proj -> ProjImpl.create();
       case Agg -> AggImpl.create();
       case Sort -> SortImpl.create();
       case Limit -> LimitImpl.create();
       case Union -> UnionImpl.create();
-      case Distinct -> DistinctImpl.create();
     };
   }
 }

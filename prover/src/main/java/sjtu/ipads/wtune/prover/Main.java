@@ -1,11 +1,7 @@
 package sjtu.ipads.wtune.prover;
 
-import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
-import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
-import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -30,30 +26,33 @@ public class Main {
   private static int decide(Statement stmt0, Statement stmt1) {
     System.out.println(stmt0);
 
-    if (Commons.countOccurrences(stmt0.parsed().toString(), "LEFT JOIN") >= 2) {
-      System.out.println("skipped due to too many LEFT JOIN");
+    if (stmt0.toString().startsWith("shopizer")) {
+      System.out.println("skip shopizer");
       return 0;
     }
 
     final PlanNode plan0 = makePlan(stmt0);
     final PlanNode plan1 = makePlan(stmt1);
 
-    final Schema schema = stmt0.app().schema("base", true);
+    //    final Schema schema = stmt0.app().schema("base", true);
+    System.out.println(translateToExpr(plan0));
+    System.out.println(translateToExpr(plan1));
 
-    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
-    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+    //    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
+    //    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+    //
+    //    final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
+    //    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
+    //    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
+    //
+    //    System.out.println(canonicalForm0);
+    //    System.out.println(canonicalForm1);
+    //
+    //    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
+    //    System.out.println(eq);
 
-    final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
-    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
-    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
-
-    System.out.println(canonicalForm0);
-    System.out.println(canonicalForm1);
-
-    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
-    System.out.println(eq);
-
-    return eq ? 1 : 0;
+    //    return eq ? 1 : 0;
+    return 1;
   }
 
   private static void test0(String latch, boolean single) {
@@ -80,9 +79,18 @@ public class Main {
     System.out.println("#exception: " + exception);
   }
 
+  private static void test1() {
+    //    final Statement stmt0 =
+    //        Statement.make("test", "Select * From ((Select i From a) Union (Select x From b)) As
+    // sub", null);
+    //    final Statement stmt1 =
+    //        Statement.make("test", "Select * From ((Select i From a) Union (Select x From b)) As
+    // sub", null);
+    //
+    //    decide(stmt0, stmt1);
+  }
+
   public static void main(String[] args) {
     test0("", false);
-    //    test0("diaspora-577", true);
-    //    test0("discourse-4290", true);
   }
 }

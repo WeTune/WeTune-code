@@ -40,6 +40,11 @@ final class ConstTuple implements Tuple {
   }
 
   @Override
+  public StringBuilder stringify(StringBuilder builder) {
+    return builder.append(expr);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ConstTuple)) return false;

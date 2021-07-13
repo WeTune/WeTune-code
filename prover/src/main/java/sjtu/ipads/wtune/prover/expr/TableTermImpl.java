@@ -39,7 +39,9 @@ final class TableTermImpl extends UExprBase implements TableTerm {
   }
 
   @Override
-  public String toString() {
-    return table + "(" + tuple + ")";
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append(table).append('(');
+    tuple.stringify(builder);
+    return builder.append(')');
   }
 }

@@ -7,7 +7,9 @@ final class NotExprImpl extends UnaryExpr implements NotExpr {
   }
 
   @Override
-  public String toString() {
-    return "not(%s)".formatted(children[0]);
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("not(");
+    children[0].stringify(builder);
+    return builder.append(')');
   }
 }

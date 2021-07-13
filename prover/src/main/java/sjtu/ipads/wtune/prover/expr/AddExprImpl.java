@@ -7,8 +7,14 @@ final class AddExprImpl extends BinaryExpr implements AddExpr {
   }
 
   @Override
-  public String toString() {
-    if (children[1].kind() == Kind.ADD) return "%s + (%s)".formatted(children[0], children[1]);
-    else return "%s + %s".formatted(children[0], children[1]);
+  public StringBuilder stringify(StringBuilder builder) {
+    children[0].stringify(builder).append(' ').append('+').append(' ');
+
+    final boolean needParen = children[1].kind() == Kind.ADD;
+    if (needParen) builder.append('(');
+    children[1].stringify(builder);
+    if (needParen) builder.append(')');
+
+    return builder;
   }
 }

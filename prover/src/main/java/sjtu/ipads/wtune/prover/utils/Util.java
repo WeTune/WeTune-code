@@ -112,9 +112,8 @@ public final class Util {
     else return newArgs;
   }
 
-  public static String interpolateToString(String template, Tuple[] tuples) {
-    final StringBuilder builder = new StringBuilder(template.length() + 16);
-
+  public static StringBuilder interpolateToString(
+      String template, Tuple[] tuples, StringBuilder builder) {
     int start = 0;
     for (Tuple arg : tuples) {
       final int end = template.indexOf("?", start);
@@ -124,7 +123,7 @@ public final class Util {
     }
     builder.append(template, start, template.length());
 
-    return builder.toString();
+    return builder;
   }
 
   public static <T> List<T> arrange(List<T> ts, int[] arrangement) {

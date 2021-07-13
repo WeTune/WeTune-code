@@ -12,8 +12,7 @@ public enum OperatorType {
   Agg(1),
   Sort(1),
   Limit(1),
-  Union(2),
-  Distinct(1);
+  Union(2);
 
   private final int numPredecessors;
 

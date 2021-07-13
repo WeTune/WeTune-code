@@ -1,15 +1,22 @@
 package sjtu.ipads.wtune.prover;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipMap;
+import static sjtu.ipads.wtune.prover.expr.Tuple.constant;
+import static sjtu.ipads.wtune.prover.expr.Tuple.make;
 import static sjtu.ipads.wtune.prover.expr.UExpr.add;
 import static sjtu.ipads.wtune.prover.expr.UExpr.eqPred;
 import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.expr.UExpr.not;
+import static sjtu.ipads.wtune.prover.expr.UExpr.squash;
 import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.expr.UExpr.table;
 import static sjtu.ipads.wtune.prover.expr.UExpr.uninterpretedPred;
-import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
 import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
@@ -17,18 +24,24 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import sjtu.ipads.wtune.prover.expr.Tuple;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.utils.Constants;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan1.ExistsFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Expr;
-import sjtu.ipads.wtune.sqlparser.plan1.InSubFilter;
+import sjtu.ipads.wtune.sqlparser.plan1.InSubFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlainFilterNode;
@@ -42,23 +55,23 @@ import sjtu.ipads.wtune.sqlparser.plan1.Value;
 import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
 
 public class UExprTranslator {
+  private static final Tuple ROOT_VAR = Tuple.make(TRANSLATOR_VAR_PREFIX);
+
   private final PlanNode plan;
   private final PlanContext ctx;
 
-  private final List<ProjNode> scopes; // Proj is treated as the boundary of a query
-  private final List<Tuple> pivotTuples; // each query owns a free tuple
+  private final List<QueryScope> scopes;
+  private final Map<PlanNode, Tuple> varOwnership;
 
-  private Tuple inSubqueryLhs; // for IN-subquery
-
-  private int nextTupleIdx = 0;
-  private int nextAnonAttrIdx = 0;
+  private int nextVarIdx = 0;
 
   UExprTranslator(PlanNode plan) {
     this.plan = plan;
     this.ctx = requireNonNull(plan.context());
-    this.scopes = new ArrayList<>(5);
-    this.pivotTuples = new ArrayList<>(5);
-    this.pivotTuples.add(Tuple.make(FREE_VAR));
+    this.scopes = new ArrayList<>(4);
+    this.varOwnership = new HashMap<>(8);
+
+    pushScope();
   }
 
   public static UExpr translate(PlanNode plan) {
@@ -77,10 +90,14 @@ public class UExprTranslator {
       case PlainFilter:
         return onPlainFilter((PlainFilterNode) node);
       case InSubFilter:
-        return onSubqueryFilter((InSubFilter) node);
+        return onInSubFilter((InSubFilterNode) node);
+      case ExistsFilter:
+        return onExistsFilter((ExistsFilterNode) node);
       case Union:
         return onUnion((SetOpNode) node);
       case Agg: // TODO: come up with how to deal Agg
+        // Note: some weird query like (Select Sum ...) Union (...)
+        // cannot be handled for now.
       case Sort: // ignore Sort and Limit
       case Limit:
         return onNode(node.predecessors()[0]);
@@ -90,95 +107,90 @@ public class UExprTranslator {
   }
 
   private UExpr onInput(InputNode input) {
-    final String qualification = input.values().qualification();
-    final String tableName = input.table().name();
-    return UExpr.table(tableName, currentPivot().proj(qualification));
+    return table(input.values().qualification(), localScope().makeVar(input));
   }
 
   private UExpr onProj(ProjNode proj) {
-    pushScope(proj);
+    pushScope();
 
-    final ValueBag values = proj.values();
-    // TODO: relax such limitation in the future
-    if (inSubqueryLhs != null && values.size() != 1) throw failed("invalid IN-subquery");
-
-    final List<UExpr> factors = new ArrayList<>(values.size() + 1);
-    // each select item {a.x AS b} turns into a predicate [t'.a.x = t.b],
-    // where t' is current pivot tuple, t is the outer pivot tuple
-    for (Value value : values) { // `value` must be ExprValue
-      final Expr expr = value.expr();
-      if (expr == null) throw failed("invalid selection: " + value);
-
-      // project on outer pivot if this is not RHS of a IN-subquery
-      // otherwise, use the `inSubqueryLhs`
-      final Tuple outer = coalesce(inSubqueryLhs, () -> projTuple(outerPivot(), value));
-      final Tuple inner = makeTuple(expr);
-
-      factors.add(eqPred(outer, inner));
+    final QueryScope outerScope = outerScope();
+    final ValueBag vs = proj.values();
+    final List<Tuple> joints;
+    if (outerScope.joints() != null) {
+      // this branch is for 1. the root query 2. the subquery in a Union
+      // 3. the subquery in a IN-Sub/Exists Filter
+      joints = outerScope.joints;
+    } else {
+      // this branch is for the subquery in From/Join
+      final Tuple pivotVar = outerScope.makeVar(proj);
+      joints = listMap(it -> pivotVar.proj(it.name()), vs);
     }
 
-    factors.add(onNode(proj.predecessors()[0])); // add sub-expression
+    // Each select item {a.x AS b} turns into a predicate [a.x = t.b],
+    // where `a` is var for table `a`, `t` is the outer var.
+    final List<UExpr> terms = new ArrayList<>(vs.size() + 1);
+    terms.add(onNode(proj.predecessors()[0]));
+    terms.addAll(zipMap((o, v) -> eqPred(o, asTuple(v.expr())), joints, vs));
 
-    UExpr expr =
-        factors.stream()
+    final UExpr expr =
+        terms.stream()
             .reduce(UExpr::mul)
-            .map(it -> UExpr.sum(currentPivot(), it))
+            .map(it -> sum(localScope().localVars(), it))
             .orElseThrow(() -> failed("null expression for " + proj));
-
-    if (proj.isExplicitDistinct()) expr = UExpr.squash(expr);
 
     popScope();
 
-    return expr;
+    return proj.isExplicitDistinct() ? squash(expr) : expr;
   }
 
   private UExpr onPlainFilter(PlainFilterNode filter) {
-    final Expr predicate = filter.predicate();
+    final UExpr remaining = onNode(filter.predecessors()[0]);
 
+    final Expr predicate = filter.predicate();
     final UExpr condExpr;
     if (predicate.isJoinCondition()) {
       final RefBag refs = predicate.refs();
       assert refs.size() == 2;
-
-      final Tuple lhs = projTuple(refs.get(0));
-      final Tuple rhs = projTuple(refs.get(1));
-      condExpr = mul(mul(eqPred(lhs, rhs), notNullPred(lhs)), notNullPred(rhs));
+      condExpr = makeNullSafeEqPred(asTuple(refs.get(0)), asTuple(refs.get(1)));
 
     } else if (predicate.isEquiCondition()) {
       final RefBag refs = predicate.refs();
       assert refs.size() == 1;
 
-      final Tuple lhsTuple = projTuple(refs.get(0));
-      final Tuple rhsTuple;
-
       final ASTNode lhsExpr = predicate.template().get(BINARY_LEFT);
       final ASTNode rhsExpr = predicate.template().get(BINARY_RIGHT);
-      if (LITERAL.isInstance(lhsExpr)) rhsTuple = Tuple.constant(lhsExpr.toString());
-      else rhsTuple = Tuple.constant(rhsExpr.toString());
-
-      condExpr = eqPred(lhsTuple, rhsTuple);
+      final Tuple lhs = asTuple(refs.get(0));
+      final Tuple rhs = constant((LITERAL.isInstance(lhsExpr) ? lhsExpr : rhsExpr).toString());
+      condExpr = eqPred(lhs, rhs);
 
     } else {
       condExpr = makeUninterpretedPred(predicate);
     }
 
-    final UExpr remaining = onNode(filter.predecessors()[0]);
     return mul(condExpr, remaining);
   }
 
-  private UExpr onSubqueryFilter(InSubFilter filter) {
-    final UExpr lhsExpr = onNode(filter.predecessors()[0]);
+  private UExpr onInSubFilter(InSubFilterNode filter) {
+    final UExpr lhs = onNode(filter.predecessors()[0]);
+    localScope().setJoints(asList(asTuples(filter.lhsRefs())));
+    final UExpr rhs = onNode(filter.predecessors()[1]);
+    localScope().setJoints(null);
 
-    inSubqueryLhs = makeTuple(filter.lhsExpr());
-    final UExpr rhsExpr = onNode(filter.predecessors()[1]);
-    inSubqueryLhs = null;
+    return mul(lhs, UExpr.squash(rhs));
+  }
 
-    return mul(lhsExpr, UExpr.squash(rhsExpr));
+  private UExpr onExistsFilter(ExistsFilterNode filter) {
+    final UExpr lhs = onNode(filter.predecessors()[0]);
+    localScope().setJoints(emptyList());
+    final UExpr rhs = onNode(filter.predecessors()[1]);
+    localScope().setJoints(null);
+    return mul(lhs, UExpr.squash(rhs));
   }
 
   private UExpr onJoin(JoinNode join) {
     final UExpr lhsExpr = onNode(join.predecessors()[0]);
     final UExpr rhsExpr = onNode(join.predecessors()[1]);
+
     if (join.condition() == null) return mul(lhsExpr, rhsExpr);
 
     final UExpr condition;
@@ -186,15 +198,10 @@ public class UExprTranslator {
       final RefBag lhsRefs = join.lhsRefs(), rhsRefs = join.rhsRefs();
       assert lhsRefs.size() == rhsRefs.size();
 
-      final List<UExpr> conditions = new ArrayList<>(lhsRefs.size());
-      for (int i = 0, bound = lhsRefs.size(); i < bound; ++i) {
-        final Tuple lhs = projTuple(lhsRefs.get(i));
-        final Tuple rhs = projTuple(rhsRefs.get(i));
-        conditions.add(eqPred(lhs, rhs));
-        //        conditions.add(notNullPred(lhs)); // one-side is enough
-        conditions.add(notNullPred(rhs));
-      }
-      condition = conditions.stream().reduce(UExpr::mul).orElse(null);
+      condition =
+          zipMap((x, y) -> makeNullSafeEqPred(asTuple(x), asTuple(y)), lhsRefs, rhsRefs).stream()
+              .reduce(UExpr::mul)
+              .orElse(null);
 
     } else {
       condition = makeUninterpretedPred(join.condition());
@@ -205,74 +212,80 @@ public class UExprTranslator {
     if (join.type() == InnerJoin) return symmPart;
 
     if (join.type() == LeftJoin) {
-      // [y = null] * Sum{y'}(R(y') * p(x,y'))
-      final UExpr asymmPart = makeAsymmetricJoin(join.predecessors()[1], condition, rhsExpr);
+      // L(x) * [y = null] * not(Sum{y'}(R(y') * p(x,y')))
+      final UExpr asymmPart = makeAsymmetricJoin(join, condition, lhsExpr, rhsExpr);
       // L(x) * R(y) * p(x,y) +
-      // L(x) * [y = null] * Sum{y'}(R(y') * p(x,y'))
-      return add(symmPart, mul(lhsExpr.copy(), asymmPart));
+      // L(x) * [y = null] * not(Sum{y'}(R(y') * p(x,y')))
+      return add(symmPart, asymmPart);
     }
 
     throw new IllegalArgumentException("unsupported join type: " + join.type());
   }
 
   private UExpr onUnion(SetOpNode setOp) {
-    final UExpr lhsExpr = onNode(setOp.predecessors()[0]);
-    final UExpr rhsExpr = onNode(setOp.predecessors()[1]);
-
     // TODO: support other set operation
     if (setOp.operation() != SetOperation.UNION)
       throw failed("unsupported set operation: " + setOp.operation());
 
-    return UExpr.add(lhsExpr, rhsExpr);
+    // The root of union tree is responsible to create the join var.
+    // e.g., Select sub.a From ((Select A.a From A) Union (Select B.b From B)) As sub
+    // => Sum{x}(Sum{y}([x.a = y.a] * A(y)) + Sum{z}([x.a = z.b] * B(z)))
+
+    final QueryScope localScope = localScope();
+    final boolean isUnionRoot = isUnionRoot(setOp);
+
+    if (isUnionRoot) {
+      final ValueBag values = setOp.values();
+      final Tuple joint = localScope.makeVar(ctx.ownerOf(values.get(0)));
+      localScope.setJoints(listMap(it -> joint.proj(it.name()), values));
+    }
+
+    final UExpr lhsExpr = onNode(setOp.predecessors()[0]);
+    final UExpr rhsExpr = onNode(setOp.predecessors()[1]);
+
+    if (isUnionRoot) localScope.setJoints(null);
+
+    return add(lhsExpr, rhsExpr);
   }
 
-  private void pushScope(ProjNode proj) {
-    scopes.add(proj);
-    pivotTuples.add(Tuple.make(TRANSLATOR_VAR_PREFIX + nextTupleIdx++));
+  private void pushScope() {
+    scopes.add(new QueryScope(scopes.isEmpty()));
   }
 
   private void popScope() {
     scopes.remove(scopes.size() - 1);
-    pivotTuples.remove(pivotTuples.size() - 1);
   }
 
-  private Tuple currentPivot() {
-    return pivotTuples.get(pivotTuples.size() - 1);
+  private QueryScope outerScope() {
+    return elemAt(scopes, -2);
   }
 
-  private Tuple outerPivot() {
-    return pivotTuples.get(pivotTuples.size() - 2);
+  private QueryScope localScope() {
+    return elemAt(scopes, -1);
   }
 
-  private Tuple projTuple(Tuple base, Value v) {
-    final String qualification = v.qualification();
-    final String name = v.name().isEmpty() ? "_" + nextAnonAttrIdx++ : v.name();
-    if (qualification == null) return base.proj(name);
-    else return base.proj(qualification).proj(name);
+  private Tuple asTuple(Ref ref) {
+    final Value v = ctx.deRef(ref);
+    final Tuple var = varOwnership.get(ctx.ownerOf(v));
+    return var.proj(v.name());
   }
 
-  private Tuple projTuple(Ref ref) {
-    final Value value = ctx.deRef(ref);
-    final ProjNode scope = scopeOf(value);
-
-    final int idx = scopes.lastIndexOf(scope); // backward search
-    if (idx == -1) throw failed("cannot locate the depended tuple: " + ref);
-
-    return projTuple(pivotTuples.get(idx + 1), value);
-  }
-
-  private Tuple[] projTuples(Collection<Ref> refs) {
-    return arrayMap(this::projTuple, Tuple.class, refs);
-  }
-
-  private Tuple makeTuple(Expr expr) {
+  private Tuple asTuple(Expr expr) {
     final RefBag refs = expr.refs();
     if (expr.isIdentity()) {
       assert refs.size() == 1;
-      return projTuple(refs.get(0));
+      return asTuple(refs.get(0));
     } else {
-      return Tuple.func(expr.template().toString(), projTuples(refs));
+      return Tuple.func(expr.template().toString(), asTuples(refs));
     }
+  }
+
+  private Tuple[] asTuples(Collection<Ref> refs) {
+    return arrayMap(this::asTuple, Tuple.class, refs);
+  }
+
+  private UExpr makeNullSafeEqPred(Tuple t0, Tuple t1) {
+    return mul(eqPred(t0, t1), notNullPred(t1));
   }
 
   private UExpr notNullPred(Tuple tuple) {
@@ -284,41 +297,60 @@ public class UExprTranslator {
   }
 
   private UExpr makeUninterpretedPred(Expr expr) {
-    final Tuple[] args = projTuples(expr.refs());
+    final Tuple[] args = asTuples(expr.refs());
     return UExpr.uninterpretedPred(expr.template().toString(), args);
   }
 
-  private UExpr makeAsymmetricJoin(PlanNode asymmJoin, UExpr cond, UExpr rhsExpr) {
+  private UExpr makeAsymmetricJoin(PlanNode asymmJoin, UExpr cond, UExpr lhsExpr, UExpr rhsExpr) {
     // A LEFT JOIN B ON p(A.a,B.b) =>
     // Sum{x,y}(A(x) * B(y) * [p(x.a,y.b)] * [NotNull(x.a)] * [NotNull(y.b)]) -- symmetric part
     // + Sum{x}(A(x) * [IsNull(y)] * not(Sum{y}(B(y) * [p(x.a,y.b)]))) -- asymmetric part
     // this method returns the part "[IsNull(y)] * not(Sum{y'}(B(y') * p(x.a,y'.b))
 
     cond = cond.copy();
+    lhsExpr = lhsExpr.copy();
     rhsExpr = rhsExpr.copy();
 
     // Usually the RHS is a single source (a plain or a subquery),
     // but we handle the most general case.
-    final List<String> rhsTables =
-        asymmJoin.values().stream().map(Value::qualification).distinct().toList();
-    if (rhsTables.isEmpty()) throw failed("invalid join: " + asymmJoin.successor());
+    final List<Tuple> oldVars =
+        asymmJoin.predecessors()[1].values().stream()
+            .map(ctx::ownerOf)
+            .map(varOwnership::get)
+            .distinct()
+            .toList();
 
-    final Tuple pivotVar = currentPivot();
-    final Tuple freeVar = Tuple.make(TRANSLATOR_VAR_PREFIX + nextTupleIdx++);
+    final List<Tuple> newVars = new ArrayList<>(oldVars.size());
+    final List<UExpr> isNullPreds = new ArrayList<>(oldVars.size());
 
-    UExpr isNullPred = null;
-    for (String tableAlias : rhsTables) {
-      final Tuple oldTup = pivotVar.proj(tableAlias);
-      final Tuple newTup = freeVar.proj(tableAlias);
+    for (Tuple oldVar : oldVars) {
+      final Tuple newVar = make(TRANSLATOR_VAR_PREFIX + nextVarIdx++);
+      newVars.add(newVar);
+      isNullPreds.add(isNullPred(oldVar));
 
-      final UExpr isNullPred0 = isNullPred(oldTup);
-      isNullPred = isNullPred == null ? isNullPred0 : mul(isNullPred, isNullPred0);
-
-      cond.subst(oldTup, newTup);
-      rhsExpr.subst(oldTup, newTup);
+      cond.subst(oldVar, newVar);
+      rhsExpr.subst(oldVar, newVar);
     }
 
-    return mul(isNullPred, not(sum(freeVar, mul(cond, rhsExpr))));
+    final UExpr isNullPred = isNullPreds.stream().reduce(UExpr::mul).orElse(null);
+    return mul(lhsExpr, mul(isNullPred, not(sum(newVars, mul(cond, rhsExpr)))));
+  }
+
+  private static boolean isUnionRoot(SetOpNode node) {
+    // if the query the left-most query in a Union
+    // returns true if `node` is not a union component
+    PlanNode n = node;
+
+    while (n.successor() != null) {
+      final PlanNode succ = n.successor();
+      final OperatorType succType = succ.type();
+
+      if (succType == Union) return false;
+      if (succType == Sort || succType == Limit) n = succ;
+      else return true;
+    }
+
+    return true;
   }
 
   private RuntimeException failed(String reason) {
@@ -326,18 +358,37 @@ public class UExprTranslator {
         "failed to translate plan to U-expr. [" + reason + "] " + plan);
   }
 
-  private ProjNode scopeOf(Value value) {
-    final PlanNode owner = ctx.ownerOf(value);
-    PlanNode scope = owner.successor();
-    while (scope != null) {
-      if (scope.type() == Proj) return (ProjNode) scope;
-      scope = scope.successor();
-    }
-    throw failed("cannot find the scope of value " + value);
-  }
+  private class QueryScope {
+    protected boolean isRoot;
+    protected final List<Tuple> localVars;
+    protected List<Tuple> joints;
+    // `hinge` is the connection between current query to a subquery
+    // Currently it is used in "`outer_col` IN <subquery>"
 
-  private static class QueryScope {
-    private Tuple outerVar;
-    private List<Tuple> vars;
+    private QueryScope(boolean isRoot) {
+      this.isRoot = isRoot;
+      this.localVars = new ArrayList<>(4);
+    }
+
+    private List<Tuple> localVars() {
+      return localVars;
+    }
+
+    private List<Tuple> joints() {
+      return joints;
+    }
+
+    private void setJoints(List<Tuple> joints) {
+      this.joints = joints;
+    }
+
+    private Tuple makeVar(PlanNode owner) {
+      if (isRoot) return ROOT_VAR;
+
+      final Tuple var = Tuple.make(TRANSLATOR_VAR_PREFIX + nextVarIdx++);
+      varOwnership.put(owner, var);
+      localVars.add(var);
+      return var;
+    }
   }
 }

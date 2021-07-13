@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.prover.expr;
 
+import sjtu.ipads.wtune.common.utils.Showable;
+
 /**
  * A tuple that is either a variable or a projection on another tuple, e.g. 't', 't.x', 't.x.y'.
  *
  * <p><b>Note: </b> This is a immutable value-based type.
  */
-public interface Tuple {
+public interface Tuple extends Showable {
   Tuple[] base();
 
   Name name();

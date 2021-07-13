@@ -52,6 +52,11 @@ final class ProjectedTuple implements Tuple {
   }
 
   @Override
+  public StringBuilder stringify(StringBuilder builder) {
+    return base[0].stringify(builder).append('.').append(projection);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ProjectedTuple)) return false;

@@ -40,7 +40,10 @@ final class EqPredTermImpl extends UExprBase implements EqPredTerm {
   }
 
   @Override
-  public String toString() {
-    return "[%s = %s]".formatted(left, right);
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append('[');
+    left.stringify(builder).append(' ').append('=').append(' ');
+    right.stringify(builder);
+    return builder.append(']');
   }
 }

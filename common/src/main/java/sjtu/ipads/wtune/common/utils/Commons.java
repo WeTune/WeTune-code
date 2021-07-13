@@ -182,6 +182,12 @@ public interface Commons {
     else return xs.get(xs.size() - 1);
   }
 
+  static <T> T elemAt(List<T> xs, int idx) {
+    if (idx >= xs.size() || idx <= -xs.size() - 1) return null;
+    if (idx >= 0) return xs.get(idx);
+    else return xs.get(xs.size() + idx);
+  }
+
   static <T> T safeGet(List<T> xs, int index) {
     if (index < 0 || index >= xs.size()) return null;
     else return xs.get(index);

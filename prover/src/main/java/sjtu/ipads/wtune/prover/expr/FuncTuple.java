@@ -55,7 +55,12 @@ final class FuncTuple implements Tuple {
 
   @Override
   public String toString() {
-    return Util.interpolateToString(funcName.toString(), args);
+    return stringify(new StringBuilder()).toString();
+  }
+
+  @Override
+  public StringBuilder stringify(StringBuilder builder) {
+    return Util.interpolateToString(funcName.toString(), args, builder);
   }
 
   @Override
