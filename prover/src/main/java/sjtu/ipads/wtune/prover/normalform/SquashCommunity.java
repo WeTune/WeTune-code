@@ -1,16 +1,15 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.Proof;
-import sjtu.ipads.wtune.prover.expr.UExpr;
-
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
+
+import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // let x2 = squash(...)
 // x1 * x2 -> x2 * x1 where x1 is not squash(..)
 final class SquashCommunity extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     if (point.kind() != MUL) return point;
 
     final UExpr x1 = point.child(0), x2 = point.child(1);
@@ -20,8 +19,6 @@ final class SquashCommunity extends TransformationBase {
 
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
-
-    proof.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

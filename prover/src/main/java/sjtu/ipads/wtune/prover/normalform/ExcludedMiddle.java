@@ -26,7 +26,7 @@ class ExcludedMiddle {
       final Disjunction newNeg = collapse(neg, true);
       if (newSq == sq && newNeg == neg) continue;
 
-      iter.set(Conjunction.make(c.vars(), c.tables(), c.preds(), newSq, newNeg));
+      iter.set(Conjunction.mk(c.vars(), c.tables(), c.preds(), newSq, newNeg));
     }
 
     final List<Conjunction> conjunctions = d.conjunctions();
@@ -55,6 +55,6 @@ class ExcludedMiddle {
       if (Arrays.binarySearch(removed, i) < 0) newTerms.add(terms.get(i));
     }
     newTerms.add(collapsed);
-    return Disjunction.make(newTerms);
+    return Disjunction.mk(newTerms);
   }
 }

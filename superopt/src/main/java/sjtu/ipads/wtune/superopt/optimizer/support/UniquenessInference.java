@@ -163,8 +163,8 @@ class InputStage extends InferenceStage {
 
     final List<Constraint> fks =
         listFilter(
-            it -> ConstraintType.isUnique(it.type()),
-            ((InputNode) this.node).table().constraints());
+            ((InputNode) this.node).table().constraints(), it -> ConstraintType.isUnique(it.type())
+        );
 
     fks.sort(Comparator.comparingInt(it -> it.columns().size()));
 

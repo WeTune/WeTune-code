@@ -48,7 +48,7 @@ public interface Tuple extends Showable {
     return new ProjectedTuple(this, new NameImpl(attribute));
   }
 
-  static Tuple make(String name) {
+  static Tuple mk(String name) {
     return new BaseTuple(new NameImpl(name));
   }
 

@@ -70,7 +70,7 @@ public class Generalization {
   private static Substitution renew(
       Fragment g0, Fragment g1, Constraints constraints, Constraint... extra) {
     final Numbering numbering = Numbering.make().number(g0, g1);
-    final List<Constraint> newConstraints = listFilter(it -> isPresent(it, numbering), constraints);
+    final List<Constraint> newConstraints = listFilter(constraints, it -> isPresent(it, numbering));
     newConstraints.addAll(Arrays.asList(extra));
     return Substitution.make(g0, g1, numbering, newConstraints).copy();
   }

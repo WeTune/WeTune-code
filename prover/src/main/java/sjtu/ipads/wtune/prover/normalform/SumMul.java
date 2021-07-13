@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 
-import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.SumExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
@@ -10,7 +9,7 @@ import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 // Sum[t1](f(t1) * f'(t2)) => f'(t2) * Sum[t1](f(t1))
 class SumMul extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
     if (parent == null || parent.kind() != Kind.MUL) return point;
 

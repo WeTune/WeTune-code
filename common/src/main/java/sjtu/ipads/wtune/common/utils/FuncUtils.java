@@ -106,7 +106,7 @@ public interface FuncUtils {
   }
 
   static <P0, P1, R> List<R> zipMap(
-      BiFunction<? super P0, ? super P1, R> func, Collection<P0> l0, Collection<P1> l1) {
+      Collection<P0> l0, Collection<P1> l1, BiFunction<? super P0, ? super P1, R> func) {
     final int bound = Math.min(l0.size(), l1.size());
     final List<R> list = new ArrayList<>(bound);
     final Iterator<P0> it0 = l0.iterator();
@@ -123,7 +123,7 @@ public interface FuncUtils {
     for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
   }
 
-  static <T> List<T> listFilter(Predicate<? super T> func, Iterable<T> os) {
+  static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
   }
 

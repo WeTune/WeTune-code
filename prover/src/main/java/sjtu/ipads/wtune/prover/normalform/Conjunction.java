@@ -27,7 +27,7 @@ public interface Conjunction {
 
   Conjunction copy();
 
-  static Conjunction make(
+  static Conjunction mk(
       List<Tuple> sumTuples,
       List<UExpr> tables,
       List<UExpr> predicates,

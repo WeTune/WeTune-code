@@ -21,7 +21,7 @@ public interface Disjunction extends Iterable<Conjunction> {
     return conjunctions().iterator();
   }
 
-  static Disjunction make(List<Conjunction> cs) {
+  static Disjunction mk(List<Conjunction> cs) {
     return new DisjunctionImpl(cs);
   }
 }

@@ -19,6 +19,6 @@ public interface Table {
   Collection<Constraint> constraints();
 
   default Collection<Constraint> constraints(ConstraintType type) {
-    return listFilter(it -> it.type() == type, constraints());
+    return listFilter(constraints(), it -> it.type() == type);
   }
 }

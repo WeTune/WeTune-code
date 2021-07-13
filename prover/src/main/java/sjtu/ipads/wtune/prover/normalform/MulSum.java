@@ -1,16 +1,15 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.Proof;
-import sjtu.ipads.wtune.prover.expr.SumExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr;
-
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
+
+import sjtu.ipads.wtune.prover.expr.SumExpr;
+import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // x2 * sum(x1) -> sum(x1 * x2)
 final class MulSum extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
     if (parent == null || point.kind() != SUM || parent.kind() != MUL) return point;
 
@@ -22,8 +21,6 @@ final class MulSum extends TransformationBase {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
-
-    proof.append("rw mul_sum (%s) (%s)".formatted(x2, x1));
 
     return newExpr;
   }

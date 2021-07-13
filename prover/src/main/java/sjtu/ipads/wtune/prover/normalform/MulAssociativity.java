@@ -3,13 +3,12 @@ package sjtu.ipads.wtune.prover.normalform;
 import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
 
 import java.util.List;
-import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 
 // x3 * (x1 * x2) -> x3 * x1 * x2
 final class MulAssociativity extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
     if (parent == null
         || point.kind() != MUL
@@ -24,8 +23,6 @@ final class MulAssociativity extends TransformationBase {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
-
-    proof.append("rw mul_assoc (%s) (%s) (%s)".formatted(x3, x1, x2));
 
     return newExpr;
   }

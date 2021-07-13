@@ -38,7 +38,7 @@ class ConjunctionMask {
     if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) {
       return Conjunction.empty();
     } else {
-      return Conjunction.make(c.vars(), ts, ps, sq, neg);
+      return Conjunction.mk(c.vars(), ts, ps, sq, neg);
     }
   }
 
@@ -65,7 +65,7 @@ class ConjunctionMask {
     if (ts.isEmpty() && ps.isEmpty() && sq == null && neg == null) {
       return Conjunction.empty();
     } else {
-      return Conjunction.make(c.vars(), ts, ps, sq, neg);
+      return Conjunction.mk(c.vars(), ts, ps, sq, neg);
     }
   }
 

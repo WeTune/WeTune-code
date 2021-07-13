@@ -72,13 +72,13 @@ class TautologySolver {
         if (any(vars, c::uses)) boundedC.add(c);
         else props.add(toProp(c).not());
       }
-      boundedNeg = boundedC.isEmpty() ? null : Disjunction.make(boundedC);
+      boundedNeg = boundedC.isEmpty() ? null : Disjunction.mk(boundedC);
     } else {
       boundedNeg = null;
     }
 
     final Function<Disjunction, Conjunction> conjunctionMaker =
-        squash -> Conjunction.make(vars, boundedTables, boundedPreds, boundedNeg, squash);
+        squash -> Conjunction.mk(vars, boundedTables, boundedPreds, boundedNeg, squash);
 
     // |T1 + T2 + ...| becomes T1 + T2 + ..., then distributed with previous ones
     if (conjunction.squash() != null) {
@@ -88,7 +88,7 @@ class TautologySolver {
       for (Conjunction c : squash) {
         final List<Proposition> copy = new ArrayList<>(props);
         if (any(vars, c::uses)) {
-          copy.add(toProp(conjunctionMaker.apply(Disjunction.make(singletonList(c)))));
+          copy.add(toProp(conjunctionMaker.apply(Disjunction.mk(singletonList(c)))));
         } else {
           copy.add(toProp(c));
           copy.add(toProp(conjunctionMaker.apply(null)));

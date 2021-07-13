@@ -186,7 +186,7 @@ public final class Canonization {
       }
     }
 
-    final Disjunction disjunction = normalize(squash(conjunction.toExpr()), false, null);
+    final Disjunction disjunction = normalize(squash(conjunction.toExpr()), null);
     return disjunction.conjunctions().get(0);
   }
 
@@ -240,12 +240,12 @@ public final class Canonization {
       final String tableName = table.name().toString();
       final Tuple tuple = table.tuple();
 
-      for (Constraint fk : listFilter(it -> tableName.equals(ownerTableOf(it)), fks)) {
+      for (Constraint fk : listFilter(fks, it -> tableName.equals(ownerTableOf(it)))) {
         final String refTableName = fk.refColumns().get(0).tableName();
         final List<? extends Column> columns = fk.columns();
         final List<Column> refColumns = fk.refColumns();
 
-        final Tuple newTuple = Tuple.make(EXTRA_VAR_PREFIX + idx++);
+        final Tuple newTuple = Tuple.mk(EXTRA_VAR_PREFIX + idx++);
         final UExpr newTable = UExpr.table(refTableName, newTuple);
 
         vars.add(newTuple);

@@ -21,7 +21,7 @@ public abstract class FilterDistributorBase implements FilterDistributor {
   }
 
   protected List<Filter> targetSlots(FilterDistribution dist) {
-    return listFilter(it -> isTargetSlot(it, dist), Sets.difference(dist.slots(), dist.assigned()));
+    return listFilter(Sets.difference(dist.slots(), dist.assigned()), it -> isTargetSlot(it, dist));
   }
 
   protected boolean isTargetSlot(Filter op, FilterDistribution context) {

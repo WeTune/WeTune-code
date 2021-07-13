@@ -143,7 +143,7 @@ public final class Util {
   }
 
   public static List<Tuple> makeFreshVars(String prefix, int count) {
-    return range(0, count).mapToObj(i -> Tuple.make(prefix + i)).toList();
+    return range(0, count).mapToObj(i -> Tuple.mk(prefix + i)).toList();
   }
 
   public static Conjunction minimizeVars(Conjunction c) {
@@ -170,7 +170,7 @@ public final class Util {
 
     int idx = startIdx;
     for (Conjunction c : d) {
-      for (Tuple var : c.vars()) c.subst(var, Tuple.make(prefix + idx++));
+      for (Tuple var : c.vars()) c.subst(var, Tuple.mk(prefix + idx++));
       idx = renameVars0(c.squash(), prefix, idx);
       idx = renameVars0(c.neg(), prefix, idx);
     }

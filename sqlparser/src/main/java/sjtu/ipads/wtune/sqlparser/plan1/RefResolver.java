@@ -288,7 +288,7 @@ class RefResolver {
 
     List<Value> lookup(String qualification) {
       if (qualification == null) return values;
-      else return listFilter(it -> qualification.equals(it.qualification()), values);
+      else return listFilter(values, it -> qualification.equals(it.qualification()));
     }
 
     private static Value lookup0(String qualification, String name, List<Value> values) {

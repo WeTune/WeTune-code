@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 
 // squash(not(x)) -> not(x)
 class SquashNot extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
     if (point.kind() != Kind.NOT || parent == null || parent.kind() != Kind.SQUASH) return point;
 

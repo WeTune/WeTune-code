@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.Proof;
 import sjtu.ipads.wtune.prover.expr.UExpr;
 import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
 
 // not(x1 * x2) -> not(x1) + not(x2)
 class NotMul extends TransformationBase {
   @Override
-  public UExpr apply(UExpr point, Proof proof) {
+  public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
     if (point.kind() != Kind.MUL || parent == null || parent.kind() != Kind.NOT) return point;
 
