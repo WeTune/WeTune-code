@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
 import java.util.List;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
@@ -85,5 +86,17 @@ public class ConstraintImpl implements Constraint {
 
   void setDirections(List<KeyDirection> directions) {
     this.directions = directions;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder builder =
+        new StringBuilder(32).append(type == null ? "INDEX" : type.name()).append(' ');
+    Commons.joining("[", ",", "]", false, columns, builder);
+    if (type == ConstraintType.FOREIGN) {
+      builder.append(" -> ");
+      Commons.joining("[", ",", "]", false, refColumns, builder);
+    }
+    return builder.toString();
   }
 }

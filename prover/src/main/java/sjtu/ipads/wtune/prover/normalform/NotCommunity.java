@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // let x1 = not(...)
 // x1 * x2 -> x2 * x1 where x2 is not not(..)

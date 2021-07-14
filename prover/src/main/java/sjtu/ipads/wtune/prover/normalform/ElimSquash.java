@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SQUASH;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // squash(...squash(x1)...) -> squash(...x1...)
 // not(...squash(x1)...) -> not(...x1...)

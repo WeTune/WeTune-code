@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.ADD;
 
 import java.util.List;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // x3 + (x1 + x2) -> x3 + x1 + x2
 class AddAssociativity extends TransformationBase {

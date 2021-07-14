@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SUM;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SUM;
 
-import sjtu.ipads.wtune.prover.expr.SumExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.SumExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // x2 * sum(x1) -> sum(x1 * x2)
 final class MulSum extends TransformationBase {

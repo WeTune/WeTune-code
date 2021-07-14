@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
 
 import java.util.Collection;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
@@ -18,7 +18,7 @@ public interface Table {
 
   Collection<Constraint> constraints();
 
-  default Collection<Constraint> constraints(ConstraintType type) {
-    return listFilter(constraints(), it -> it.type() == type);
+  default Iterable<Constraint> constraints(ConstraintType type) {
+    return lazyFilter(constraints(), it -> it.type() == type);
   }
 }

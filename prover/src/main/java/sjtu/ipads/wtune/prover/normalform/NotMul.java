@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
 
 // not(x1 * x2) -> not(x1) + not(x2)
 class NotMul extends TransformationBase {

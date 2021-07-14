@@ -15,6 +15,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.Contract;
 
@@ -223,6 +224,13 @@ public interface Commons {
     return arr;
   }
 
+  static <T> List<T> removeIf(List<T> xs, Predicate<T> pred) {
+    final List<T> ret = new ArrayList<>();
+    // so dirty, but efficient
+    xs.removeIf(it -> pred.test(it) && ret.add(it));
+    return ret;
+  }
+
   static int countOccurrences(String str, String target) {
     int index = -1, occurrences = 0;
     while ((index = str.indexOf(target, index + 1)) != -1) {
@@ -241,6 +249,10 @@ public interface Commons {
     int sum = 0;
     for (int i = start; i < end; ++i) sum += arr[i];
     return sum;
+  }
+
+  static Iterable<int[]> permutation(int n, int k) {
+    return PermutationIter.permute(n, k);
   }
 
   static <T> T echo(T t) {

@@ -1,7 +1,10 @@
 package sjtu.ipads.wtune.prover;
 
+import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
+import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
+import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -34,19 +37,18 @@ public class Main {
     final PlanNode plan0 = makePlan(stmt0);
     final PlanNode plan1 = makePlan(stmt1);
 
-    //    final Schema schema = stmt0.app().schema("base", true);
+    final Schema schema = stmt0.app().schema("base", true);
     System.out.println(translateToExpr(plan0));
     System.out.println(translateToExpr(plan1));
 
-    //    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
-    //    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
-    //
-    //    final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
-    //    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
-    //    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
-    //
-    //    System.out.println(canonicalForm0);
-    //    System.out.println(canonicalForm1);
+    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
+    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+
+    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, schema);
+    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, schema);
+
+    System.out.println(canonicalForm0);
+    System.out.println(canonicalForm1);
     //
     //    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
     //    System.out.println(eq);
@@ -92,5 +94,6 @@ public class Main {
 
   public static void main(String[] args) {
     test0("", false);
+    //    test0("diaspora-577", true);
   }
 }

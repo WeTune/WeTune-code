@@ -17,7 +17,6 @@ import java.util.Set;
 import sjtu.ipads.wtune.common.utils.EquivalentClasses;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.common.utils.LazySequence;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
@@ -162,9 +161,7 @@ class InputStage extends InferenceStage {
     if (iter != null) return iter;
 
     final List<Constraint> fks =
-        listFilter(
-            ((InputNode) this.node).table().constraints(), it -> ConstraintType.isUnique(it.type())
-        );
+        listFilter(((InputNode) node).table().constraints(), Constraint::isUnique);
 
     fks.sort(Comparator.comparingInt(it -> it.columns().size()));
 

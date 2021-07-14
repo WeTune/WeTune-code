@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.ADD;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // (x1 + x2) * x3 -> x1 * x3 + x2 * x3
 // x3 * (x1 + x2) -> x1 * x3 + x2 * x3

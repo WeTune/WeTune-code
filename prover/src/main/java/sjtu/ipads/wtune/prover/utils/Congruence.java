@@ -2,13 +2,13 @@ package sjtu.ipads.wtune.prover.utils;
 
 import java.util.List;
 import java.util.Set;
-import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
 
 public interface Congruence<T> {
   Set<T> keys();
 
-  Set<T> getClass(T x);
+  Set<T> eqClassOf(T x);
 
   void putCongruent(T x, T y);
 
@@ -16,11 +16,11 @@ public interface Congruence<T> {
 
   Set<T> makeClass(T x);
 
-  static <T> Congruence<T> make() {
+  static <T> Congruence<T> mk() {
     return new CongruenceImpl<>();
   }
 
-  static Congruence<Tuple> make(List<UExpr> predicates) {
+  static Congruence<Var> mk(List<UExpr> predicates) {
     return TupleCongruence.make(predicates);
   }
 }

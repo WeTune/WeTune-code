@@ -2,31 +2,30 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.TABLE;
-import static sjtu.ipads.wtune.prover.expr.UExpr.mul;
-import static sjtu.ipads.wtune.prover.expr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
-import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
 
 final class ConjunctionImpl implements Conjunction {
   private static final Conjunction EMPTY =
       new ConjunctionImpl(emptyList(), emptyList(), emptyList(), null, null);
 
-  private final List<Tuple> vars;
+  private final List<Var> vars;
   private final List<UExpr> predicates;
   private final Disjunction negation;
   private final Disjunction squash;
   private final List<UExpr> tables;
 
   private ConjunctionImpl(
-      List<Tuple> vars,
+      List<Var> vars,
       List<UExpr> tables,
       List<UExpr> predicates,
       Disjunction squash,
@@ -39,7 +38,7 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   static Conjunction make(
-      List<Tuple> vars,
+      List<Var> vars,
       List<UExpr> tables,
       List<UExpr> predicates,
       Disjunction squash,
@@ -59,7 +58,7 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public List<Tuple> vars() {
+  public List<Var> vars() {
     return vars;
   }
 
@@ -84,17 +83,12 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
-  public boolean isEmpty() {
-    return this == EMPTY;
-  }
-
-  @Override
-  public void subst(Tuple v1, Tuple v2) {
+  public void subst(Var v1, Var v2) {
     if (v1.equals(v2)) return;
     if (vars.contains(v2)) {
       vars.removeAll(Collections.singleton(v1));
     } else {
-      final ListIterator<Tuple> iter = vars.listIterator();
+      final ListIterator<Var> iter = vars.listIterator();
       while (iter.hasNext()) iter.set(iter.next().subst(v1, v2));
     }
 
@@ -102,19 +96,6 @@ final class ConjunctionImpl implements Conjunction {
     tables.forEach(it -> it.subst(v1, v2));
     if (negation != null) negation.subst(v1, v2);
     if (squash != null) squash.subst(v1, v2);
-  }
-
-  @Override
-  public boolean uses(Tuple v) {
-    return !(any(vars, it -> it.uses(v))) && usesInBody(v);
-  }
-
-  @Override
-  public boolean usesInBody(Tuple v) {
-    return (any(tables, it -> it.uses(v))
-        || any(predicates, it -> it.uses(v))
-        || (negation != null && negation.uses(v))
-        || (squash != null && squash.uses(v)));
   }
 
   @Override

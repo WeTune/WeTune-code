@@ -2,19 +2,17 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import java.util.Iterator;
 import java.util.List;
-import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
 
 public interface Disjunction extends Iterable<Conjunction> {
   List<Conjunction> conjunctions();
 
   Disjunction copy();
 
-  void subst(Tuple target, Tuple rep);
+  void subst(Var target, Var rep);
 
   UExpr toExpr();
-
-  boolean uses(Tuple v);
 
   @Override
   default Iterator<Conjunction> iterator() {

@@ -4,7 +4,6 @@ import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
-import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -13,7 +12,7 @@ import sjtu.ipads.wtune.stmt.Statement;
 public class CanonizationTest {
   public static void main(String[] args) {
     final Statement stmt0 =
-        Statement.make("test", "SELECT DISTINCT a.j FROM a LEFT JOIN b ON a.j = b.y", null);
+        Statement.make("test", "SELECT c.v FROM c INNER JOIN d ON c.u = d.p", null);
     final Statement stmt1 = Statement.make("test", "SELECT DISTINCT a.j FROM a", null);
 
     final Schema schema = stmt0.app().schema("base", true);
@@ -24,9 +23,8 @@ public class CanonizationTest {
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
     final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
-    final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
-    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
-    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
+    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, schema);
+    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, schema);
 
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);

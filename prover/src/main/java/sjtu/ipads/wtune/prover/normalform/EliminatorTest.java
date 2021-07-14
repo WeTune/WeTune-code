@@ -4,7 +4,6 @@ import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
-import sjtu.ipads.wtune.prover.DecisionContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -36,9 +35,8 @@ public class EliminatorTest {
     System.out.println(normalForm0);
     System.out.println(normalForm1);
 
-    final DecisionContext ctx = DecisionContext.make(schema, normalForm0, normalForm1);
-    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, ctx);
-    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, ctx);
+    final Disjunction canonicalForm0 = canonizeExpr(normalForm0, schema);
+    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, schema);
 
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);

@@ -123,6 +123,10 @@ public interface FuncUtils {
     for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
   }
 
+  static <T> Iterable<T> lazyFilter(Iterable<T> os, Predicate<? super T> predicate) {
+    return () -> new FilteredIterator<>(os.iterator(), predicate);
+  }
+
   static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
   }

@@ -4,22 +4,22 @@ import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.ADD;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.TABLE;
-import static sjtu.ipads.wtune.prover.expr.UExpr.rootOf;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.ADD;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SQUASH;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.rootOf;
 import static sjtu.ipads.wtune.prover.utils.Constants.NORMALIZATION_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import sjtu.ipads.wtune.prover.expr.SumExpr;
-import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
-import sjtu.ipads.wtune.prover.expr.UExpr.Kind;
+import sjtu.ipads.wtune.prover.uexpr.SumExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
+import sjtu.ipads.wtune.prover.uexpr.Var;
 
 public class Normalization {
   // Section 3.3, Eq 1-9
@@ -53,35 +53,14 @@ public class Normalization {
     return renamePrefix == null ? d : renameVars(d, renamePrefix);
   }
 
-  private UExpr transform(UExpr root) {
-    root = transform(UExpr.postorderTraversal(root), PASS0);
-    root = transform(UExpr.postorderTraversal(root), PASS1);
-    root = transform(UExpr.postorderTraversal(root), PASS2);
-    root = transform(UExpr.postorderTraversal(root), PASS3);
-    return root;
-  }
-
-  private UExpr transform(List<UExpr> targets, Collection<Transformation> tfs) {
-    // not efficient, but safe
-    for (UExpr target : targets)
-      for (Transformation tf : tfs) {
-        final UExpr applied = tf.apply(target);
-        if (applied != target) {
-          return transform(UExpr.postorderTraversal(rootOf(applied)), tfs);
-        }
-      }
-
-    return head(targets);
-  }
-
-  private static Disjunction asDisjunction(UExpr root) {
+  public static Disjunction asDisjunction(UExpr root) {
     final List<UExpr> factors = gatherFactors(root, ADD);
     return Disjunction.mk(listMap(Normalization::asConjunction, factors));
   }
 
-  private static Conjunction asConjunction(UExpr root) {
+  public static Conjunction asConjunction(UExpr root) {
     final UExpr expr;
-    final List<Tuple> vars;
+    final List<Var> vars;
     if (root.kind() == Kind.SUM) {
       expr = root.child(0);
       vars = ((SumExpr) root).boundedVars();
@@ -107,6 +86,27 @@ public class Normalization {
         predicates,
         sqs.isEmpty() ? null : asDisjunction(sqs.get(0).child(0)),
         negs.isEmpty() ? null : asDisjunction(negs.get(0).child(0)));
+  }
+
+  private UExpr transform(UExpr root) {
+    root = transform(UExpr.postorderTraversal(root), PASS0);
+    root = transform(UExpr.postorderTraversal(root), PASS1);
+    root = transform(UExpr.postorderTraversal(root), PASS2);
+    root = transform(UExpr.postorderTraversal(root), PASS3);
+    return root;
+  }
+
+  private UExpr transform(List<UExpr> targets, Collection<Transformation> tfs) {
+    // not efficient, but safe
+    for (UExpr target : targets)
+      for (Transformation tf : tfs) {
+        final UExpr applied = tf.apply(target);
+        if (applied != target) {
+          return transform(UExpr.postorderTraversal(rootOf(applied)), tfs);
+        }
+      }
+
+    return head(targets);
   }
 
   private static List<UExpr> gatherFactors(UExpr root, Kind connection) {

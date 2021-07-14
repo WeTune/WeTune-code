@@ -53,7 +53,7 @@ class CongruenceImpl<T> implements Congruence<T> {
   }
 
   @Override
-  public Set<T> getClass(T x) {
+  public Set<T> eqClassOf(T x) {
     final CongruentClass<T> cls = classes.get(x);
     return cls != null ? cls : singleton(x);
   }
