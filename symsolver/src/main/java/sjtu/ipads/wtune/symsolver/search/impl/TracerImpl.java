@@ -239,7 +239,7 @@ public class TracerImpl implements Tracer {
     final TableSym[][] pivotedSrcs = new TableSym[srcs.length][];
     for (int i = 0; i < srcs.length; i++)
       if (srcs[i] != null)
-        pivotedSrcs[i] = arrayMap(t -> tables[tGrouping[indexOf(t)]], TableSym.class, srcs[i]);
+        pivotedSrcs[i] = arrayMap(srcs[i], t -> tables[tGrouping[indexOf(t)]], TableSym.class);
     summary.pivotedSources = pivotedSrcs;
 
     summary.references = refs;
@@ -339,7 +339,7 @@ public class TracerImpl implements Tracer {
 
   private void tryPickFrom(PickSym p, TableSym[] assign) {
     // not a viable source
-    final TableSym[] src = find(v -> isMatched(v, assign), p.viableSources());
+    final TableSym[] src = find(p.viableSources(), v -> isMatched(v, assign));
     if (src == null) isConflict = true;
     else pickFrom(DecidableConstraint.pickFrom(p, src), p, src);
   }

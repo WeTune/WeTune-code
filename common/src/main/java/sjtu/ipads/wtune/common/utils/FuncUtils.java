@@ -75,13 +75,13 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
-  static <T, R> List<R> listMap(Function<? super T, ? extends R> func, Iterable<T> os) {
+  static <T, R> List<R> listMap(Iterable<T> os, Function<? super T, ? extends R> func) {
     return collectionMap(func, os, ArrayList::new);
   }
 
   @SafeVarargs
   static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
-    return listMap(func, Arrays.asList(os));
+    return listMap(Arrays.asList(os), func);
   }
 
   static <T, R> List<R> listFlatMap(
@@ -136,14 +136,13 @@ public interface FuncUtils {
     return stream(os).filter(func).collect(Collectors.toCollection(supplier));
   }
 
-  @SafeVarargs
-  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, T... ts) {
+  static <T, R> R[] arrayMap(T[] ts, Function<? super T, R> func, Class<R> retType) {
     final R[] rs = Commons.makeArray(retType, ts.length);
     for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
     return rs;
   }
 
-  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, Collection<T> ts) {
+  static <T, R> R[] arrayMap(Collection<T> ts, Function<? super T, R> func, Class<R> retType) {
     final R[] rs = Commons.makeArray(retType, ts.size());
     int i = 0;
     for (T t : ts) rs[i++] = func.apply(t);
@@ -158,7 +157,7 @@ public interface FuncUtils {
         .toArray(n -> (T[]) Array.newInstance(arr.getClass().getComponentType(), n));
   }
 
-  static <T> T[] generate(int n, Class<T> retType, IntFunction<T> func) {
+  static <T> T[] generate(int n, IntFunction<T> func, Class<T> retType) {
     return IntStream.range(0, n).mapToObj(func).toArray(len -> Commons.makeArray(retType, len));
   }
 
@@ -171,13 +170,12 @@ public interface FuncUtils {
     return -1;
   }
 
-  static <T> T find(Predicate<T> pred, Iterable<T> os) {
+  static <T> T find(Iterable<T> os, Predicate<T> pred) {
     for (T o : os) if (pred.test(o)) return o;
     return null;
   }
 
-  @SafeVarargs
-  static <T> T find(Predicate<T> pred, T... ts) {
+  static <T> T find(T[] ts, Predicate<T> pred) {
     for (T t : ts) if (pred.test(t)) return t;
     return null;
   }

@@ -38,14 +38,14 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
   }
 
   @Override
-  public Var[] tuple() {
+  public Var[] vars() {
     return args;
   }
 
   @Override
   public StringBuilder stringify(StringBuilder builder) {
     builder.append('[');
-    Util.interpolateToString(name.toString(), args, builder);
+    Util.interpolateVars(name.toString(), args, builder);
     builder.append(']');
     return builder;
   }

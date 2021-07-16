@@ -16,7 +16,7 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   InputNodeImpl(Table table, String alias) {
-    this(table, new ValueBagImpl(listMap(ColumnValue::new, table.columns())));
+    this(table, new ValueBagImpl(listMap(table.columns(), ColumnValue::new)));
     values.setQualification(simpleName(alias));
   }
 

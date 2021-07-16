@@ -11,7 +11,7 @@ class TableCollection implements Collection {
 
   TableCollection(Table table) {
     this.table = table;
-    this.elements = listMap(Element::ofColumn, table.columns());
+    this.elements = listMap(table.columns(), Element::ofColumn);
   }
 
   @Override

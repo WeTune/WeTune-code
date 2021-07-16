@@ -64,7 +64,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
 
   @Override
   public List<ASTNode> expr() {
-    if (astNodes != null) return listMap(ASTNode::deepCopy, astNodes);
+    if (astNodes != null) return listMap(astNodes, ASTNode::deepCopy);
 
     final List<Object> components = predicate().components();
     final TIntList arity = predicate().arity();
@@ -161,8 +161,8 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
   public void resolveUsed() {
     final AttributeDefBag inAttrs = predecessors()[0].definedAttributes();
 
-    if (usedAttrs == null) usedAttrs = listMap(inAttrs::lookup, expr.columnRefs());
-    else usedAttrs = listMap(inAttrs::lookup, usedAttrs);
+    if (usedAttrs == null) usedAttrs = listMap(expr.columnRefs(), inAttrs::lookup);
+    else usedAttrs = listMap(usedAttrs, inAttrs::lookup);
 
     fixedValueAttrs = null;
     nonNullValueAttrs = null;

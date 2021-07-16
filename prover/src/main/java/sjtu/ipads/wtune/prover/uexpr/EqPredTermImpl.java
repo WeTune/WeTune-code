@@ -11,12 +11,12 @@ final class EqPredTermImpl extends UExprBase implements EqPredTerm {
   }
 
   @Override
-  public Var left() {
+  public Var lhs() {
     return left;
   }
 
   @Override
-  public Var right() {
+  public Var rhs() {
     return right;
   }
 

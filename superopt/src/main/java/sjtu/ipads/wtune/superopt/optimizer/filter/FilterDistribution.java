@@ -80,7 +80,7 @@ public class FilterDistribution {
   }
 
   public FilterAssignment assignmentOf(Operator op) {
-    return FuncUtils.find(it -> it.op() == op, assignments);
+    return FuncUtils.find(assignments, it -> it.op() == op);
   }
 
   public void rollback() {

@@ -17,7 +17,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   static SortNode build(List<ASTNode> orders) {
-    final List<Expr> exprs = listMap(ExprImpl::build, orders);
+    final List<Expr> exprs = listMap(orders, ExprImpl::build);
     return new SortNodeImpl(exprs, new RefBagImpl(listFlatMap(Expr::refs, exprs)));
   }
 

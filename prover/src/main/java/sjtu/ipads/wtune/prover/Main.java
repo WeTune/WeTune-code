@@ -4,6 +4,7 @@ import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
 
+import sjtu.ipads.wtune.prover.logic.Prover;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
@@ -49,6 +50,14 @@ public class Main {
 
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);
+
+    final Prover prover = ProverSupport.mkProver();
+    System.out.println(prover.prove(canonicalForm0, canonicalForm1));
+
+    //    translator.assertions().forEach(System.out::println);
+    //    System.out.println(expr0);
+    //    System.out.println(expr1);
+
     //
     //    final boolean eq = ProverSupport.decideEq(canonicalForm0, canonicalForm1, ctx);
     //    System.out.println(eq);
@@ -82,18 +91,15 @@ public class Main {
   }
 
   private static void test1() {
-    //    final Statement stmt0 =
-    //        Statement.make("test", "Select * From ((Select i From a) Union (Select x From b)) As
-    // sub", null);
-    //    final Statement stmt1 =
-    //        Statement.make("test", "Select * From ((Select i From a) Union (Select x From b)) As
-    // sub", null);
-    //
-    //    decide(stmt0, stmt1);
+    final Statement stmt0 =
+        Statement.make("test", "Select * From (Select i From a Where a.j > 10) As Sub", null);
+    final Statement stmt1 = Statement.make("test", "Select i From a Where a.j > 10", null);
+    decide(stmt0, stmt1);
   }
 
   public static void main(String[] args) {
-    test0("", false);
+    test1();
+    //    test0("", true);
     //    test0("diaspora-577", true);
   }
 }

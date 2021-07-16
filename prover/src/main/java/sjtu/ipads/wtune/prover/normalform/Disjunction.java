@@ -10,6 +10,8 @@ public interface Disjunction extends Iterable<Conjunction> {
 
   Disjunction copy();
 
+  boolean uses(Var v);
+
   void subst(Var target, Var rep);
 
   UExpr toExpr();

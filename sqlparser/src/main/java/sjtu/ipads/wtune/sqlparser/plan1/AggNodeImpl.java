@@ -26,9 +26,9 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   static AggNode build(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
-    final List<Value> values = listMap(ExprValue::fromSelectItem, selectItems);
+    final List<Value> values = listMap(selectItems, ExprValue::fromSelectItem);
     final List<Expr> groups =
-        groupNodes == null ? emptyList() : listMap(ExprImpl::build, groupNodes);
+        groupNodes == null ? emptyList() : listMap(groupNodes, ExprImpl::build);
     final Expr having = havingNode == null ? null : ExprImpl.build(havingNode);
 
     final List<Ref> refs =

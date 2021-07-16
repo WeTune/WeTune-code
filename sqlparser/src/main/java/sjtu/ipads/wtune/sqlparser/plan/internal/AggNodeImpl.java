@@ -74,7 +74,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   private List<ASTNode> updateSelections() {
-    final List<ASTNode> selections = listMap(ASTNode::deepCopy, this.selections);
+    final List<ASTNode> selections = listMap(this.selections, ASTNode::deepCopy);
     final List<ASTNode> colRefs = gatherColumnRefs(selections);
 
     updateColumnRefs(colRefs, attrsInSelections, predecessors()[0].definedAttributes(), true);
@@ -89,7 +89,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
 
   private List<ASTNode> updateGroups() {
     if (groups == null) return null;
-    final List<ASTNode> groups = listMap(ASTNode::deepCopy, this.groups);
+    final List<ASTNode> groups = listMap(this.groups, ASTNode::deepCopy);
     updateColumnRefs(
         gatherColumnRefs(groups), attrsInGroups, predecessors()[0].definedAttributes(), true);
     return groups;
@@ -105,7 +105,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
 
   @Override
   public List<ASTNode> selections() {
-    if (isASTUpdated) return listMap(ASTNode::deepCopy, selections);
+    if (isASTUpdated) return listMap(selections, ASTNode::deepCopy);
 
     updateAST();
     return selections;
@@ -114,7 +114,7 @@ public class AggNodeImpl extends PlanNodeBase implements AggNode {
   @Override
   public List<ASTNode> groups() {
     if (groups == null) return null;
-    if (isASTUpdated) return listMap(ASTNode::deepCopy, groups);
+    if (isASTUpdated) return listMap(groups, ASTNode::deepCopy);
     updateAST();
     return groups;
   }

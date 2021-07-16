@@ -41,7 +41,7 @@ public class Prover {
 
     numbering = Numbering.make().number(g0, g1);
 
-    return listMap(this::makeSubstitution, summaries);
+    return listMap(summaries, this::makeSubstitution);
   }
 
   private Substitution makeSubstitution(Summary summary) {

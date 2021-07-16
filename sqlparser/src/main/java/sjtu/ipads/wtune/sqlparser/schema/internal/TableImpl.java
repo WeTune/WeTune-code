@@ -89,7 +89,7 @@ public class TableImpl implements Table {
     }
 
     if (patch.type() == SchemaPatch.Type.UNIQUE) {
-      final List<ColumnImpl> columns = listMap(this::column, patch.columns());
+      final List<ColumnImpl> columns = listMap(patch.columns(), this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.UNIQUE, columns);
 
       addConstraint(constraint);
@@ -97,7 +97,7 @@ public class TableImpl implements Table {
     }
 
     if (patch.type() == Type.FOREIGN_KEY) {
-      final List<ColumnImpl> columns = listMap(this::column, patch.columns());
+      final List<ColumnImpl> columns = listMap(patch.columns(), this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.FOREIGN, columns);
 
       final String[] split = patch.reference().split("\\.");

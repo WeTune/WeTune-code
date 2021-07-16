@@ -17,6 +17,8 @@ public interface Conjunction {
 
   UExpr toExpr();
 
+  boolean uses(Var v);
+
   void subst(Var v1, Var v2);
 
   Conjunction copy();

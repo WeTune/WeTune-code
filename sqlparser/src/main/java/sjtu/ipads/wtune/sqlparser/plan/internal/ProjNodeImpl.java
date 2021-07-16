@@ -106,9 +106,9 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
   @Override
   public List<ASTNode> selections() {
-    if (isSelectionUpdated) return listMap(ASTNode::deepCopy, selections);
+    if (isSelectionUpdated) return listMap(selections, ASTNode::deepCopy);
 
-    final List<ASTNode> selections = listMap(AttributeDef::makeSelectItem, definedAttributes());
+    final List<ASTNode> selections = listMap(definedAttributes(), AttributeDef::makeSelectItem);
     updateColumnRefs(gatherColumnRefs(selections), usedAttributes());
 
     this.selections = selections;
@@ -143,11 +143,11 @@ public class ProjNodeImpl extends PlanNodeBase implements ProjNode {
 
       if (outAttr.references() == null) {
         final ASTNode expr = ((DerivedAttributeDef) outAttr).expr();
-        references = listMap(inAttrs::lookup, gatherColumnRefs(expr));
+        references = listMap(gatherColumnRefs(expr), inAttrs::lookup);
         newOutAttr = outAttr;
 
       } else {
-        references = listMap(inAttrs::lookup, outAttr.references());
+        references = listMap(outAttr.references(), inAttrs::lookup);
         newOutAttr = outAttr.copy();
       }
 

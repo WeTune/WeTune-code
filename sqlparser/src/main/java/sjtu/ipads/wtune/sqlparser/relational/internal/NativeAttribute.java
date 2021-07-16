@@ -27,7 +27,7 @@ public class NativeAttribute extends BaseAttribute {
 
     final Relation rel = node.get(RELATION);
     final Table table = node.context().schema().table(tableNameOf(node));
-    return listMap(func2(NativeAttribute::new).bind0(rel), table.columns());
+    return listMap(table.columns(), func2(NativeAttribute::new).bind0(rel));
   }
 
   @Override

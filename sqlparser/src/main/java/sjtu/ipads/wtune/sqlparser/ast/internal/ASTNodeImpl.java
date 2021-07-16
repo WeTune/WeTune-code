@@ -159,7 +159,7 @@ public class ASTNodeImpl implements ASTNode {
   private static Object deepCopy0(Object obj) {
     // recursively copy AST (according to obj's class)
     if (obj instanceof ASTNode) return ((ASTNode) obj).deepCopy();
-    else if (obj instanceof Iterable) return listMap(ASTNodeImpl::deepCopy0, (Iterable<?>) obj);
+    else if (obj instanceof Iterable) return listMap((Iterable<?>) obj, ASTNodeImpl::deepCopy0);
     else return obj;
   }
 }

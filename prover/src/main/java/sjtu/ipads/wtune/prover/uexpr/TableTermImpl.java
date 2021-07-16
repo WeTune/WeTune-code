@@ -24,7 +24,7 @@ final class TableTermImpl extends UExprBase implements TableTerm {
   }
 
   @Override
-  public Var tuple() {
+  public Var var() {
     return var;
   }
 

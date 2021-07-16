@@ -53,7 +53,7 @@ public class SchemaImpl implements Schema {
   }
 
   public static Schema build(String dbType, String str) {
-    return build(dbType, listMap(ASTParser.ofDb(dbType)::parseRaw, splitSql(str)));
+    return build(dbType, listMap(splitSql(str), ASTParser.ofDb(dbType)::parseRaw));
   }
 
   private static void addCreateTable(ASTNode node, Map<String, TableBuilder> builders) {
@@ -98,7 +98,7 @@ public class SchemaImpl implements Schema {
             if (ref == null) continue;
             constraint.setRefTable(ref);
             constraint.setRefColumns(
-                listMap(it -> ref.column(it.get(COLUMN_NAME_COLUMN)), constraint.refColNames()));
+                listMap(constraint.refColNames(), it -> ref.column(it.get(COLUMN_NAME_COLUMN))));
           }
         }
   }

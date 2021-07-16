@@ -21,7 +21,7 @@ public interface PlanContext {
   void setRef(Ref ref, Value value);
 
   default List<Value> deRef(List<Ref> refs) {
-    return listMap(this::deRef, refs);
+    return listMap(refs, this::deRef);
   }
 
   static PlanContext build(Schema schema) {

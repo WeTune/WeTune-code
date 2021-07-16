@@ -53,9 +53,9 @@ public class SortNodeImpl extends PlanNodeBase implements SortNode {
 
   @Override
   public List<ASTNode> orderKeys() {
-    if (isASTUpdated) return listMap(ASTNode::deepCopy, keys);
+    if (isASTUpdated) return listMap(keys, ASTNode::deepCopy);
 
-    final List<ASTNode> keys = listMap(ASTNode::deepCopy, this.keys);
+    final List<ASTNode> keys = listMap(this.keys, ASTNode::deepCopy);
     updateColumnRefs(
         gatherColumnRefs(keys), attrsInKeys, predecessors()[0].definedAttributes(), false);
 

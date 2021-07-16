@@ -121,7 +121,7 @@ public class ToASTTranslator {
     final ASTNode column;
     if (attrs.size() == 1) column = attrs.get(0).makeColumnRef();
     else {
-      final List<ASTNode> refs = listMap(AttributeDef::makeColumnRef, attrs);
+      final List<ASTNode> refs = listMap(attrs, AttributeDef::makeColumnRef);
       column = expr(TUPLE);
       column.set(TUPLE_EXPRS, refs);
     }

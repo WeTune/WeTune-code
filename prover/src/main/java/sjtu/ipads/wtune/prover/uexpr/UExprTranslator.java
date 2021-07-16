@@ -109,7 +109,7 @@ public class UExprTranslator {
     } else {
       // this branch is for the subquery in From/Join
       final Var pivotVar = outerScope.makeVar(proj);
-      joints = listMap(it -> pivotVar.proj(it.name()), vs);
+      joints = listMap(vs, it -> pivotVar.proj(it.name()));
     }
 
     // Each select item {a.x AS b} turns into a predicate [a.x = t.b],
@@ -214,7 +214,7 @@ public class UExprTranslator {
     if (isUnionRoot) {
       final ValueBag values = setOp.values();
       final Var joint = localScope.makeVar(ctx.ownerOf(values.get(0)));
-      localScope.setJoints(listMap(it -> joint.proj(it.name()), values));
+      localScope.setJoints(listMap(values, it -> joint.proj(it.name())));
     }
 
     final UExpr lhsExpr = onNode(setOp.predecessors()[0]);
@@ -259,7 +259,7 @@ public class UExprTranslator {
   }
 
   private Var[] asTuples(Collection<Ref> refs) {
-    return arrayMap(this::asTuple, Var.class, refs);
+    return arrayMap(refs, this::asTuple, Var.class);
   }
 
   private UExpr mkUninterpretedPred(Expr expr) {

@@ -119,7 +119,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       if (!reduced && toStringOnTree(optimized.get(0)).equals(toStringOnTree(normalized)))
         optimized = optimized.subList(1, optimized.size());
 
-      if (tracing) optimizationTraces = listMap(this::collectTrace, optimized);
+      if (tracing) optimizationTraces = listMap(optimized, this::collectTrace);
 
       return optimized;
     } catch (OptimizerException ex) {
@@ -313,7 +313,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         matches = listFlatMap(it -> match(nextNode, nextOp, it.assignments()), matches);
         if (matches.isEmpty()) break;
         // lift the match point
-        matches = listMap(Match::lift, matches);
+        matches = listMap(matches, Match::lift);
       }
 
       ret.addAll(matches);

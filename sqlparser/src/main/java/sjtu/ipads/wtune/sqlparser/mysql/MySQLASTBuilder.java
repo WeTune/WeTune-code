@@ -217,12 +217,12 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     final List<ASTNode> keys;
 
     if (keyList != null) {
-      keys = listMap(this::visitKeyPart, keyList.keyPart());
+      keys = listMap(keyList.keyPart(), this::visitKeyPart);
     } else if (keyListVariants != null) {
       keys =
           listMap(
-              this::visitKeyPartOrExpression,
-              keyListVariants.keyListWithExpression().keyPartOrExpression());
+              keyListVariants.keyListWithExpression().keyPartOrExpression(), this::visitKeyPartOrExpression
+          );
     } else {
       return assertFalse();
     }
@@ -343,13 +343,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     final ASTNode node = newNode(QUERY_SPEC);
 
     if (ctx.selectOption() != null
-        && find(it -> "DISTINCT".equalsIgnoreCase(it.getText()), ctx.selectOption()) != null)
+        && find(ctx.selectOption(), it -> "DISTINCT".equalsIgnoreCase(it.getText())) != null)
       node.flag(QUERY_SPEC_DISTINCT);
 
     final var selectItemList = ctx.selectItemList();
     final List<ASTNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
     if (selectItemList.MULT_OPERATOR() != null) items.add(selectItem(newNode(WILDCARD), null));
-    items.addAll(listMap(this::visitSelectItem, selectItemList.selectItem()));
+    items.addAll(listMap(selectItemList.selectItem(), this::visitSelectItem));
     node.set(QUERY_SPEC_SELECT_ITEMS, items);
 
     final var fromClause = ctx.fromClause();
@@ -375,7 +375,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     if (windowClause != null)
       node.set(
           QUERY_SPEC_WINDOWS,
-          listMap(this::visitWindowDefinition, windowClause.windowDefinition()));
+          listMap(windowClause.windowDefinition(), this::visitWindowDefinition));
 
     return node;
   }
@@ -398,14 +398,14 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     if (ctx.usePartition() != null) {
       final var identifiers =
           ctx.usePartition().identifierListWithParentheses().identifierList().identifier();
-      node.set(SIMPLE_PARTITIONS, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+      node.set(SIMPLE_PARTITIONS, listMap(identifiers, MySQLASTHelper::stringifyIdentifier));
     }
 
     if (ctx.tableAlias() != null)
       node.set(SIMPLE_ALIAS, stringifyIdentifier(ctx.tableAlias().identifier()));
 
     if (ctx.indexHintList() != null)
-      node.set(SIMPLE_HINTS, listMap(this::visitIndexHint, ctx.indexHintList().indexHint()));
+      node.set(SIMPLE_HINTS, listMap(ctx.indexHintList().indexHint(), this::visitIndexHint));
 
     return node;
   }
@@ -472,7 +472,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     if (ctx.expr() != null) node.set(JOINED_ON, toExpr(ctx.expr()));
     if (ctx.identifierListWithParentheses() != null) {
       final var identifiers = ctx.identifierListWithParentheses().identifierList().identifier();
-      node.set(JOINED_USING, listMap(MySQLASTHelper::stringifyIdentifier, identifiers));
+      node.set(JOINED_USING, listMap(identifiers, MySQLASTHelper::stringifyIdentifier));
     }
 
     final ASTNode right;
@@ -497,7 +497,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     if (indexList != null) {
       node.set(
           INDEX_HINT_NAMES,
-          listMap(MySQLASTHelper::parseIndexListElement, indexList.indexListElement()));
+          listMap(indexList.indexListElement(), MySQLASTHelper::parseIndexListElement));
     }
 
     return node;
@@ -979,7 +979,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
         else args = emptyList();
 
       } else if (ctx.expr() != null) {
-        args = listMap(this::toExpr, ctx.expr());
+        args = listMap(ctx.expr(), this::toExpr);
 
       } else {
         args = emptyList();
@@ -1012,7 +1012,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     } else if (ctx.substringFunction() != null) {
       node.set(FUNC_CALL_NAME, name2(null, "substring"));
       final var substringFunc = ctx.substringFunction();
-      args = listMap(this::toExpr, substringFunc.expr());
+      args = listMap(substringFunc.expr(), this::toExpr);
 
     } else if (ctx.geometryFunction() != null) {
       final var geoFunc = ctx.geometryFunction();
@@ -1025,7 +1025,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
         args = toExprs(geoFunc.exprList());
 
       } else if (geoFunc.expr() != null) {
-        args = listMap(this::toExpr, geoFunc.expr());
+        args = listMap(geoFunc.expr(), this::toExpr);
 
       } else {
         args = emptyList();
@@ -1190,7 +1190,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
   public ASTNode visitSimpleExprConcat(MySQLParser.SimpleExprConcatContext ctx) {
     final ASTNode node = newNode(FUNC_CALL);
     node.set(FUNC_CALL_NAME, name2(null, "concat"));
-    node.set(FUNC_CALL_ARGS, listMap(arg -> arg.accept(this), ctx.simpleExpr()));
+    node.set(FUNC_CALL_ARGS, listMap(ctx.simpleExpr(), arg -> arg.accept(this)));
     return node;
   }
 
@@ -1240,8 +1240,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     node.set(
         MATCH_COLS,
         listMap(
-            func(this::visitSimpleIdentifier).andThen(this::columnRef),
-            ctx.identListArg().identList().simpleIdentifier()));
+            ctx.identListArg().identList().simpleIdentifier(), func(this::visitSimpleIdentifier).andThen(this::columnRef)
+        ));
     node.set(MATCH_EXPR, ctx.bitExpr().accept(this));
 
     final var fullTextOption = ctx.fulltextOptions();
@@ -1384,7 +1384,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
   }
 
   private List<ASTNode> toOrderItems(MySQLParser.OrderClauseContext ctx) {
-    return listMap(this::visitOrderExpression, ctx.orderList().orderExpression());
+    return listMap(ctx.orderList().orderExpression(), this::visitOrderExpression);
   }
 
   private List<ASTNode> toGroupItems(MySQLParser.OrderListContext ctx) {
@@ -1400,10 +1400,10 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
   }
 
   private List<ASTNode> toExprs(MySQLParser.ExprListContext exprList) {
-    return listMap(this::toExpr, exprList.expr());
+    return listMap(exprList.expr(), this::toExpr);
   }
 
   private List<ASTNode> toExprs(MySQLParser.UdfExprListContext udfExprList) {
-    return listMap(udfExpr -> toExpr(udfExpr.expr()), udfExprList.udfExpr());
+    return listMap(udfExprList.udfExpr(), udfExpr -> toExpr(udfExpr.expr()));
   }
 }

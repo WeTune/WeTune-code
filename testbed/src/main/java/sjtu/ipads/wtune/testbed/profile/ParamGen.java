@@ -226,7 +226,7 @@ class ParamGen {
         stack.push(((String) args[0]).toLowerCase());
         return true;
       case "coalesce":
-        stack.push(FuncUtils.find(Objects::nonNull, args));
+        stack.push(FuncUtils.find(args, Objects::nonNull));
         return true;
       case "string_to_array":
         stack.push(args[0]);

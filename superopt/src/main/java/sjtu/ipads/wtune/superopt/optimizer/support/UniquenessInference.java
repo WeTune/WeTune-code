@@ -179,7 +179,7 @@ class InputStage extends InferenceStage {
 
     final Set<AttributeDef> core = newIdentitySet(fk.columns().size());
     for (Column column : fk.columns()) {
-      final AttributeDef found = FuncUtils.find(it -> it.referredColumn() == column, attrs);
+      final AttributeDef found = FuncUtils.find(attrs, it -> it.referredColumn() == column);
       assert found != null;
       core.add(found);
     }

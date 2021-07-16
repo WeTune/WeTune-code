@@ -55,7 +55,7 @@ public class Normalization {
 
   public static Disjunction asDisjunction(UExpr root) {
     final List<UExpr> factors = gatherFactors(root, ADD);
-    return Disjunction.mk(listMap(Normalization::asConjunction, factors));
+    return Disjunction.mk(listMap(factors, Normalization::asConjunction));
   }
 
   public static Conjunction asConjunction(UExpr root) {

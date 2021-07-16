@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.uexpr;
 
 public interface EqPredTerm extends PredTerm {
-  Var left();
+  Var lhs();
 
-  Var right();
+  Var rhs();
 
   @Override
   default Kind kind() {

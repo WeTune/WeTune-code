@@ -19,18 +19,18 @@ class NullPropagator {
     switch (expr.kind()) {
       case TABLE:
         final TableTerm table = (TableTerm) expr;
-        if (isNull(table.tuple())) expr.subst(table.tuple(), NULL_VAR);
+        if (isNull(table.var())) expr.subst(table.var(), NULL_VAR);
         break;
 
       case PRED:
-        for (Var var : ((UninterpretedPredTerm) expr).tuple())
+        for (Var var : ((UninterpretedPredTerm) expr).vars())
           if (isNull(var)) expr.subst(var, NULL_VAR);
         break;
 
       case EQ_PRED:
         final EqPredTerm eqPred = (EqPredTerm) expr;
-        if (isNull(eqPred.left())) eqPred.subst(eqPred.left(), NULL_VAR);
-        if (isNull(eqPred.right())) eqPred.subst(eqPred.right(), NULL_VAR);
+        if (isNull(eqPred.lhs())) eqPred.subst(eqPred.lhs(), NULL_VAR);
+        if (isNull(eqPred.rhs())) eqPred.subst(eqPred.rhs(), NULL_VAR);
         break;
     }
   }

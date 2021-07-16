@@ -60,7 +60,7 @@ final class FuncVar implements Var {
 
   @Override
   public StringBuilder stringify(StringBuilder builder) {
-    return Util.interpolateToString(funcName.toString(), args, builder);
+    return Util.interpolateVars(funcName.toString(), args, builder);
   }
 
   @Override

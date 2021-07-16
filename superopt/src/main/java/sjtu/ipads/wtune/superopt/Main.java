@@ -128,7 +128,7 @@ public class Main {
     App.all().forEach(it -> it.schema("base", true)); // trigger, avoid concurrent initialization
     //    getOptimizedTrace(Statement.findOne("discourse", 2596), bank);
 
-    final List<Statement> targets = listMap(Statement::original, Statement.findAllRewritten());
+    final List<Statement> targets = listMap(Statement.findAllRewritten(), Statement::original);
     targets.parallelStream().map(Statement::original).forEach(it -> getOptimizationTrace(it, bank));
   }
 

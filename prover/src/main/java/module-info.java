@@ -7,4 +7,5 @@ module sjtu.ipads.wtune.prover {
   requires commons.math3;
   requires annotations;
   requires trove4j;
+  requires z3;
 }

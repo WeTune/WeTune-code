@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
+import sjtu.ipads.wtune.prover.uexpr.EqPredTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.uexpr.UninterpretedPredTerm;
@@ -15,6 +16,12 @@ import sjtu.ipads.wtune.prover.uexpr.Var;
 
 public final class Util {
   private Util() {}
+
+  public static boolean isReflexivity(UExpr pred) {
+    if (pred.kind() != Kind.EQ_PRED) return false;
+    final EqPredTerm eq = (EqPredTerm) pred;
+    return eq.lhs().equals(eq.rhs());
+  }
 
   public static boolean isNullTuple(Var t) {
     return t.equals(NULL_VAR);
@@ -31,8 +38,8 @@ public final class Util {
     if (pred.kind() != Kind.PRED) return false;
     final UninterpretedPredTerm p = (UninterpretedPredTerm) pred;
     return p.name().toString().equals(NOT_NULL_PRED)
-        && p.tuple().length == 1
-        && p.tuple()[0].equals(var);
+        && p.vars().length == 1
+        && p.vars()[0].equals(var);
   }
 
   public static Var[] substVar(Var[] args, Var t, Var rep) {
@@ -73,8 +80,7 @@ public final class Util {
     else return exprs.stream().reduce(UExpr::mul).orElseThrow();
   }
 
-  public static StringBuilder interpolateToString(
-      String template, Var[] vars, StringBuilder builder) {
+  public static StringBuilder interpolateVars(String template, Var[] vars, StringBuilder builder) {
     int start = 0;
     for (Var arg : vars) {
       final int end = template.indexOf("?", start);

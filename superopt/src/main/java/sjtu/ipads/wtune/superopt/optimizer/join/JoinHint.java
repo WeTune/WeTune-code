@@ -55,7 +55,7 @@ public class JoinHint {
 
     // check whether the Reference constraint can be enforced
     if (inter.constraints().requiresReference(op.leftFields(), op.rightFields())) {
-      final List<Column> referred = listMap(AttributeDef::referredColumn, rightAttrs);
+      final List<Column> referred = listMap(rightAttrs, AttributeDef::referredColumn);
       for (AttributeDef referee : leftAttrs) {
         final Column column = referee.referredColumn();
         if (column == null || !column.references(referred)) return false;

@@ -12,21 +12,14 @@ import sjtu.ipads.wtune.stmt.Statement;
 public class CanonizationTest {
   public static void main(String[] args) {
     final Statement stmt0 =
-        Statement.make("test", "SELECT c.v FROM c INNER JOIN d ON c.u = d.p", null);
-    final Statement stmt1 = Statement.make("test", "SELECT DISTINCT a.j FROM a", null);
-
+        Statement.make("test", "Select sub.* From (Select a.j From a) As sub", null);
     final Schema schema = stmt0.app().schema("base", true);
     final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
-    final PlanNode plan1 = PlanSupport.assemblePlan(stmt1.parsed(), schema);
     PlanSupport.disambiguate(plan0);
-    PlanSupport.disambiguate(plan1);
 
     final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
-    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+    System.out.println(normalForm0);
     final Disjunction canonicalForm0 = canonizeExpr(normalForm0, schema);
-    final Disjunction canonicalForm1 = canonizeExpr(normalForm1, schema);
-
     System.out.println(canonicalForm0);
-    System.out.println(canonicalForm1);
   }
 }

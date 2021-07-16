@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.prover.uexpr;
 public interface UninterpretedPredTerm extends PredTerm {
   Name name();
 
-  Var[] tuple();
+  Var[] vars();
 
   @Override
   default Kind kind() {

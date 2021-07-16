@@ -179,7 +179,7 @@ class AstBuilder {
     final Query q = stack.peek();
     if (node.successor() == null && isWildcardProj(node))
       q.setProjection(singletonList(makeWildcard(null)));
-    else q.setProjection(listMap(this::toSelectItem, node.values()));
+    else q.setProjection(listMap(node.values(), this::toSelectItem));
 
     q.setQualification(node.values().qualification());
     q.setForcedDistinct(node.isExplicitDistinct());
@@ -189,14 +189,14 @@ class AstBuilder {
     assert !stack.isEmpty();
     final Query q = stack.peek();
     q.setQualification(node.values().qualification());
-    q.setGroupKeys(listMap(it -> interpolate0(it, ctx), node.groups()));
-    q.setAggregation(listMap(this::toSelectItem, node.values()));
+    q.setGroupKeys(listMap(node.groups(), it -> interpolate0(it, ctx)));
+    q.setAggregation(listMap(node.values(), this::toSelectItem));
     q.setHaving(interpolate0(node.having(), ctx));
   }
 
   private void onSort(SortNode node) {
     assert !stack.isEmpty();
-    stack.peek().setOrderKeys(listMap(it -> interpolate0(it, ctx), node.orders()));
+    stack.peek().setOrderKeys(listMap(node.orders(), it -> interpolate0(it, ctx)));
   }
 
   private void onLimit(LimitNode node) {

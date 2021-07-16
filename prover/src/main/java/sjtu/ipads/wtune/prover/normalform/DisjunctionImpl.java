@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 import java.util.List;
@@ -21,7 +22,12 @@ final class DisjunctionImpl implements Disjunction {
 
   @Override
   public Disjunction copy() {
-    return new DisjunctionImpl(listMap(Conjunction::copy, components));
+    return new DisjunctionImpl(listMap(components, Conjunction::copy));
+  }
+
+  @Override
+  public boolean uses(Var v) {
+    return any(components, it -> it.uses(v));
   }
 
   @Override

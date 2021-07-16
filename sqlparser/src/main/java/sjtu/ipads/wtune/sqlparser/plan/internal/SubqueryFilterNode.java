@@ -33,7 +33,7 @@ public class SubqueryFilterNode extends PlainFilterNode {
     super(InSubFilter, null, usedAttrs);
     assert colRefs != null || usedAttrs != null;
     this.expr = Expr.make(this);
-    this.colRefs = usedAttrs != null ? listMap(AttributeDef::makeColumnRef, usedAttrs) : colRefs;
+    this.colRefs = usedAttrs != null ? listMap(usedAttrs, AttributeDef::makeColumnRef) : colRefs;
   }
 
   public static FilterNode buildFromExpr(ASTNode colRefs) {
@@ -85,10 +85,10 @@ public class SubqueryFilterNode extends PlainFilterNode {
   public void resolveUsed() {
     final AttributeDefBag inAttrs = predecessors()[0].definedAttributes();
 
-    if (usedAttrs == null) usedAttrs = listMap(inAttrs::lookup, colRefs);
+    if (usedAttrs == null) usedAttrs = listMap(colRefs, inAttrs::lookup);
     else {
-      usedAttrs = listMap(inAttrs::lookup, usedAttrs);
-      colRefs = listMap(AttributeDef::makeColumnRef, usedAttrs);
+      usedAttrs = listMap(usedAttrs, inAttrs::lookup);
+      colRefs = listMap(usedAttrs, AttributeDef::makeColumnRef);
     }
 
     astNodes = null;

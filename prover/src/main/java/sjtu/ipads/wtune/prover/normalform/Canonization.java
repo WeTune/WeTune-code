@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.Commons.removeIf;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
 import static sjtu.ipads.wtune.prover.normalform.Normalization.asDisjunction;
@@ -31,6 +31,7 @@ import sjtu.ipads.wtune.prover.uexpr.TableTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.Var;
 import sjtu.ipads.wtune.prover.utils.Congruence;
+import sjtu.ipads.wtune.prover.utils.Util;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -39,6 +40,8 @@ public final class Canonization {
   private Canonization() {}
 
   public static Disjunction canonize(Disjunction d, Schema schema) {
+    applyMinimization(d);
+    applyReflexivity(d);
     applyConstant(d);
     applyUniqueKey(d, schema);
     renameVars(d, TRANSLATOR_VAR_PREFIX);
@@ -56,6 +59,14 @@ public final class Canonization {
 
   private static void applyConst2(Disjunction d) {
     applyToEachConjunction(d, Canonization::applyConst2);
+  }
+
+  private static void applyReflexivity(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyRefl);
+  }
+
+  private static void applyMinimization(Disjunction d) {
+    applyToEachConjunction(d, Canonization::applyMini);
   }
 
   private static void applyUniqueKey(Disjunction d, Schema schema) {
@@ -79,7 +90,7 @@ public final class Canonization {
       if (isNullTuple(val)) continue;
 
       for (UExpr pred : c.preds())
-        if (find(it -> isNotNullPredOf(pred, it), cls) != null) {
+        if (find(cls, it -> isNotNullPredOf(pred, it)) != null) {
           toRemovePred.add(pred);
           break;
         }
@@ -104,14 +115,21 @@ public final class Canonization {
     return c;
   }
 
+  // [x = Null] * f(x.y) -> [x = Null] * f(null)
+  private static Conjunction applyRefl(Conjunction c) {
+    c.preds().removeIf(Util::isReflexivity);
+    if (c.squash() != null) applyConst2(c.squash());
+    if (c.neg() != null) applyConst2(c.neg());
+    return c;
+  }
+
   // Theorem 4.3: Sum[t]([b] * |E| * [t.uk=e] * R(t)) -> |Sum[t]([b] * |E| * [t.uk=e] * R(t))|,
   // where [b] is all the predicates that uses `t`
   private static Conjunction applyUk(Conjunction c, Schema schema) {
     if (c.tables().isEmpty()) return c;
 
     final List<Var> toMoveVars = new ArrayList<>(4);
-    final List<UExpr> toMoveTables = new ArrayList<>(4);
-    final List<UExpr> toMovePreds = new ArrayList<>(4);
+    final List<UExpr> toMoveTerms = new ArrayList<>(4);
     Congruence<Var> cong = Congruence.mk(c.preds());
 
     final ListIterator<UExpr> iter = c.tables().listIterator();
@@ -122,9 +140,9 @@ public final class Canonization {
       if (table == null)
         throw new IllegalArgumentException("unknown table in term [" + tableTerm + "]");
 
-      final Var base = tableTerm.tuple();
+      final Var base = tableTerm.var();
       for (Constraint uk : filterUniqueKey(table.constraints())) {
-        final List<Var> vars = listMap(it -> base.proj(it.name()), uk.columns());
+        final List<Var> vars = listMap(uk.columns(), it -> base.proj(it.name()));
 
         final Congruence<Var> tmp = cong;
         // Premise: \forall t \in tuples. \exists c. c == t /\ c.root() != t.root()
@@ -135,7 +153,7 @@ public final class Canonization {
 
         iter.remove();
         toMoveVars.add(base);
-        toMoveTables.add(tableTerm);
+        toMoveTerms.add(tableTerm);
         // Eagerly remove the predicates and rebuild congruence.
         // e.g., we have e := Sum{a,b}([a.id=b.id] * A(a) * B(b)).
         // The final expression e' should be
@@ -143,23 +161,46 @@ public final class Canonization {
         // or "Sum{b}(B(b) * |Sum{a}(A(a) * [a.id=b.id])|)",
         // but NOT "|Sum{a,b}([a.id=b.id] * A(a) * B(b))|"
         // Thus, we have to somehow screen [a.id=b.id] to avoid the cascade.
-        toMovePreds.addAll(removeIf(c.preds(), it -> it.uses(base)));
+        toMoveTerms.addAll(removeIf(c.preds(), it -> it.uses(base)));
         cong = Congruence.mk(c.preds());
       }
     }
 
-    if (toMoveTables.isEmpty()) return c;
+    if (toMoveTerms.isEmpty()) return c;
 
     c.vars().removeAll(toMoveVars);
-    c.tables().removeAll(toMoveTables);
+    c.tables().removeAll(toMoveTerms);
     // predicates has been removed
 
-    final UExpr addedSqExpr = sum(toMoveVars, mkProduct(listJoin(toMoveTables, toMovePreds), true));
+    final boolean removeNeg = c.neg() != null && any(toMoveVars, c.neg()::uses);
+    if (removeNeg) toMoveTerms.add(c.neg().toExpr());
+
+    final UExpr addedSqExpr = sum(toMoveVars, mkProduct(toMoveTerms, true));
     final Disjunction newSq;
     if (c.squash() == null) newSq = asDisjunction(addedSqExpr);
     else newSq = normalize(mul(c.squash().toExpr(), addedSqExpr), null);
 
-    return Conjunction.mk(c.vars(), c.tables(), c.preds(), newSq, c.neg());
+    return Conjunction.mk(c.vars(), c.tables(), c.preds(), newSq, removeNeg ? null : c.neg());
+  }
+
+  // eliminate intermediate variable
+  private static Conjunction applyMini(Conjunction c) {
+    final List<Var> tmpVars = listFilter(c.vars(), v -> none(c.tables(), it -> it.uses(v)));
+    if (tmpVars.isEmpty()) return c;
+
+    final Congruence<Var> cong = Congruence.mk(c.preds());
+    for (Var key : cong.keys()) {
+      final Var tmpVar = find(tmpVars, key::uses);
+      if (tmpVar == null) continue;
+
+      final Set<Var> group = cong.eqClassOf(key);
+      if (group.size() == 1) continue;
+
+      c.vars().remove(tmpVar);
+      c.subst(key, find(group, it -> none(tmpVars, it::uses)));
+    }
+
+    return c;
   }
 
   private static void applyToEachConjunction(

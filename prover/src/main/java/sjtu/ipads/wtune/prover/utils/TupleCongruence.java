@@ -15,7 +15,7 @@ final class TupleCongruence extends CongruenceImpl<Var> {
     for (UExpr predicate : predicates) {
       if (predicate.kind() != EQ_PRED) continue;
       final EqPredTerm eqTerm = (EqPredTerm) predicate;
-      congruence.putCongruent(eqTerm.left(), eqTerm.right());
+      congruence.putCongruent(eqTerm.lhs(), eqTerm.rhs());
     }
 
     return congruence;

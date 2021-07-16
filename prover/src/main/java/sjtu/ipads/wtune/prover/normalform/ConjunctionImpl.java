@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
@@ -83,6 +84,14 @@ final class ConjunctionImpl implements Conjunction {
   }
 
   @Override
+  public boolean uses(Var v) {
+    return !vars.contains(v) && any(tables, it -> it.uses(v))
+        || any(predicates, it -> it.uses(v))
+        || (squash != null && squash.uses(v))
+        || (negation != null && negation.uses(v));
+  }
+
+  @Override
   public void subst(Var v1, Var v2) {
     if (v1.equals(v2)) return;
     if (vars.contains(v2)) {
@@ -119,8 +128,8 @@ final class ConjunctionImpl implements Conjunction {
   public Conjunction copy() {
     return new ConjunctionImpl(
         vars,
-        listMap(UExpr::copy, tables),
-        listMap(UExpr::copy, predicates),
+        listMap(tables, UExpr::copy),
+        listMap(predicates, UExpr::copy),
         squash == null ? null : squash.copy(),
         negation == null ? null : negation.copy());
   }

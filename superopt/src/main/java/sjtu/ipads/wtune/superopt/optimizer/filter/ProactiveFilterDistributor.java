@@ -52,7 +52,7 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
 
       for (int i = 1; i <= max; i++)
         for (var assignment : combinations(candidates, i)) {
-          dist.assign(target, listMap(Equivalence.Wrapper::get, assignment));
+          dist.assign(target, listMap(assignment, Equivalence.Wrapper::get));
           distribute0(idx + 1);
           dist.rollback();
         }
