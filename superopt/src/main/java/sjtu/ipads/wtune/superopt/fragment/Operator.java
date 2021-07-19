@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import java.util.ArrayList;
-import java.util.List;
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 import sjtu.ipads.wtune.superopt.util.Hole;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operator> {
   Fragment fragment();
@@ -110,68 +111,5 @@ public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operat
     }
 
     return 0;
-  }
-
-  /* static factory methods */
-  static Agg agg(Operator prev) {
-    final Agg op = Agg.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
-  static Limit limit(Operator prev) {
-    final Limit op = Limit.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
-  static PlainFilter plainFilter(Operator prev) {
-    final PlainFilter op = PlainFilter.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
-  static Proj proj(Operator prev) {
-    final Proj op = Proj.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
-  static Sort sort(Operator prev) {
-    final Sort op = Sort.create();
-    op.setPredecessor(0, prev);
-    return op;
-  }
-
-  static Join innerJoin(Operator left, Operator right) {
-    final Join join = InnerJoin.create();
-    join.setPredecessor(0, left);
-    join.setPredecessor(1, right);
-    return join;
-  }
-
-  static Join leftJoin(Operator left, Operator right) {
-    final Join join = LeftJoin.create();
-    join.setPredecessor(0, left);
-    join.setPredecessor(1, right);
-    return join;
-  }
-
-  static SubqueryFilter subqueryFilter(Operator left, Operator right) {
-    final SubqueryFilter subqueryFilter = SubqueryFilter.create();
-    subqueryFilter.setPredecessor(0, left);
-    subqueryFilter.setPredecessor(1, right);
-    return subqueryFilter;
-  }
-
-  static Union union(Operator left, Operator right) {
-    final Union union = Union.create();
-    union.setPredecessor(0, left);
-    union.setPredecessor(1, right);
-    return union;
-  }
-
-  static Input input() {
-    return Input.create();
   }
 }

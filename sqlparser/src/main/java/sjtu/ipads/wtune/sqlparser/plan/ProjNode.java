@@ -19,7 +19,7 @@ public interface ProjNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Proj;
+    return OperatorType.PROJ;
   }
 
   static ProjNode make(List<AttributeDef> projs) {

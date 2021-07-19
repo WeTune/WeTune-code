@@ -15,7 +15,7 @@ public interface InputNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Input;
+    return OperatorType.INPUT;
   }
 
   @Override

@@ -1,17 +1,8 @@
 package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -79,18 +70,17 @@ public interface FuncUtils {
     return collectionMap(func, os, ArrayList::new);
   }
 
-  @SafeVarargs
-  static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
+  static <T, R> List<R> listMap(T[] os, Function<? super T, R> func) {
     return listMap(Arrays.asList(os), func);
   }
 
   static <T, R> List<R> listFlatMap(
-      Function<? super T, ? extends Iterable<R>> func, Iterable<T> os) {
+      Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
     return collectionFlatMap(func, os, ArrayList::new);
   }
 
   static <T, R> List<R> listFlatMap(Function<? super T, ? extends Iterable<R>> func, T... os) {
-    return listFlatMap(func, Arrays.asList(os));
+    return listFlatMap(Arrays.asList(os), func);
   }
 
   static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
@@ -116,7 +106,7 @@ public interface FuncUtils {
   }
 
   static <P0, P1> void zipForEach(
-      BiConsumer<? super P0, ? super P1> func, Collection<P0> l0, Collection<P1> l1) {
+      Collection<P0> l0, Collection<P1> l1, BiConsumer<? super P0, ? super P1> func) {
     final int bound = Math.min(l0.size(), l1.size());
     final Iterator<P0> it0 = l0.iterator();
     final Iterator<P1> it1 = l1.iterator();

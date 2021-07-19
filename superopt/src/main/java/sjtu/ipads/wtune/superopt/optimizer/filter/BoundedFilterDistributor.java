@@ -96,7 +96,7 @@ public class BoundedFilterDistributor extends FilterDistributorBase implements F
     final List<List<Filter>> eqClasses = new ArrayList<>(2);
 
     for (Filter op : ops) {
-      if (op.type() != OperatorType.PlainFilter) continue;
+      if (op.type() != OperatorType.SIMPLE_FILTER) continue;
       if (eqClasses.stream().anyMatch(it -> it.contains(op))) continue;
 
       final List<Filter> eqClass = findEqClass(((PlainFilter) op).predicate(), ops, constraints);

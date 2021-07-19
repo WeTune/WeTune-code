@@ -13,7 +13,7 @@ public interface AggNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Agg;
+    return OperatorType.AGG;
   }
 
   static AggNode make(

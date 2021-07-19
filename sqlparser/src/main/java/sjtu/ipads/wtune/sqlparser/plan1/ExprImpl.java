@@ -1,22 +1,21 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 class ExprImpl implements Expr {
   private RefBag refs;
@@ -27,12 +26,7 @@ class ExprImpl implements Expr {
     this.template = template;
   }
 
-  static Expr buildColumnRef(String qualification, String name) {
-    return new ExprImpl(
-        new RefBagImpl(singletonList(new RefImpl(qualification, name))), makeAnonymousColumnRef());
-  }
-
-  static Expr build(ASTNode node) {
+  static Expr mk(ASTNode node) {
     final ASTNode template = node.deepCopy();
     // unify all column refs and collect refs.
     // e.g., "user.salary = user.age * 100" becomes "?.? = ?.? * 100"
@@ -45,10 +39,27 @@ class ExprImpl implements Expr {
       final String intrinsicName = columnName.set(COLUMN_NAME_COLUMN, "?");
       refs.add(new RefImpl(intrinsicQualification, intrinsicName));
     }
-    return new ExprImpl(new RefBagImpl(refs), template);
+    return new ExprImpl(RefBag.mk(refs), template);
   }
 
-  static Expr buildEquiCond(RefBag lhsRefs, RefBag rhsRefs) {
+  static Expr mk(RefBag refs) {
+    if (refs.isEmpty()) throw new IllegalArgumentException();
+    if (refs.size() == 1) return new ExprImpl(refs, mkAnonymousColumnRef());
+    else {
+      final ASTNode tuple = ASTNode.expr(ExprKind.TUPLE);
+      final List<ASTNode> components = listMap(refs, it -> mkAnonymousColumnRef());
+      tuple.set(TUPLE_EXPRS, components);
+
+      return new ExprImpl(refs, tuple);
+    }
+  }
+
+  static Expr mkColumnRef(String qualification, String name) {
+    return new ExprImpl(
+        RefBag.mk(singletonList(new RefImpl(qualification, name))), mkAnonymousColumnRef());
+  }
+
+  static Expr mkEquiCond(List<Ref> lhsRefs, List<Ref> rhsRefs) {
     if (lhsRefs.size() != rhsRefs.size())
       throw new IllegalArgumentException(
           "unmatched #refs for equi condition. LHS=" + lhsRefs + ", RHS=" + rhsRefs);
@@ -59,29 +70,29 @@ class ExprImpl implements Expr {
       refs.add(rhsRefs.get(i));
     }
 
-    ASTNode template = makePrimitiveEquiCond();
+    ASTNode template = mkPrimitiveEquiCond();
     for (int i = 0, bound = lhsRefs.size() - 1; i < bound; i++) {
       final ASTNode conjunction = ASTNode.expr(ExprKind.BINARY);
       conjunction.set(BINARY_OP, BinaryOp.AND);
       conjunction.set(BINARY_LEFT, template);
-      conjunction.set(BINARY_RIGHT, makePrimitiveEquiCond());
+      conjunction.set(BINARY_RIGHT, mkPrimitiveEquiCond());
 
       template = conjunction;
     }
 
-    return new ExprImpl(new RefBagImpl(refs), template);
+    return new ExprImpl(RefBag.mk(refs), template);
   }
 
-  private static ASTNode makePrimitiveEquiCond() {
+  private static ASTNode mkPrimitiveEquiCond() {
     final ASTNode expr = ASTNode.expr(ExprKind.BINARY);
     expr.set(BINARY_OP, BinaryOp.EQUAL);
-    expr.set(BINARY_LEFT, makeAnonymousColumnRef());
-    expr.set(BINARY_RIGHT, makeAnonymousColumnRef());
+    expr.set(BINARY_LEFT, mkAnonymousColumnRef());
+    expr.set(BINARY_RIGHT, mkAnonymousColumnRef());
 
     return expr;
   }
 
-  private static ASTNode makeAnonymousColumnRef() {
+  private static ASTNode mkAnonymousColumnRef() {
     final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
     colName.set(COLUMN_NAME_TABLE, "?");
     colName.set(COLUMN_NAME_COLUMN, "?");

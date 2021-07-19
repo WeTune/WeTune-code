@@ -10,7 +10,7 @@ public interface LimitNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Limit;
+    return OperatorType.LIMIT;
   }
 
   static LimitNode make(ASTNode limit, ASTNode offset) {

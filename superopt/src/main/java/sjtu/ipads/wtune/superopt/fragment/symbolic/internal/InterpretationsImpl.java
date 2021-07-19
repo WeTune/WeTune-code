@@ -5,7 +5,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.localeInput;
 import static sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag.makeBag;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -231,7 +231,7 @@ public class InterpretationsImpl implements Interpretations {
 
     final PlanNode inputNode = localeInput(pivot, surface);
     if (inputNode == null) return null;
-    assert inputNode.type() == OperatorType.Input;
+    assert inputNode.type() == OperatorType.INPUT;
 
     PlanNode pathNode = inputNode;
     boolean filtered = false, nullable = false;
@@ -239,7 +239,7 @@ public class InterpretationsImpl implements Interpretations {
       if (pathNode.type().isFilter()) filtered = true;
 
       final PlanNode successor = pathNode.successor();
-      if (successor.type() == LeftJoin && successor.predecessors()[1] == pathNode) nullable = true;
+      if (successor.type() == LEFT_JOIN && successor.predecessors()[1] == pathNode) nullable = true;
 
       pathNode = successor;
     }

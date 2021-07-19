@@ -1,40 +1,27 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import sjtu.ipads.wtune.common.utils.Congruence;
+import sjtu.ipads.wtune.prover.uexpr.TableTerm;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
+import sjtu.ipads.wtune.prover.utils.TupleCongruence;
+import sjtu.ipads.wtune.prover.utils.Util;
+import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
+
+import java.util.*;
+import java.util.function.Function;
+
 import static sjtu.ipads.wtune.common.utils.Commons.removeIf;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.prover.normalform.Normalization.asDisjunction;
 import static sjtu.ipads.wtune.prover.normalform.Normalization.normalize;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.Util.isConstantTuple;
-import static sjtu.ipads.wtune.prover.utils.Util.isNotNullPredOf;
-import static sjtu.ipads.wtune.prover.utils.Util.isNullTuple;
-import static sjtu.ipads.wtune.prover.utils.Util.mkProduct;
-import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
+import static sjtu.ipads.wtune.prover.utils.Util.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Constraint.filterUniqueKey;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import sjtu.ipads.wtune.prover.uexpr.TableTerm;
-import sjtu.ipads.wtune.prover.uexpr.UExpr;
-import sjtu.ipads.wtune.prover.uexpr.Var;
-import sjtu.ipads.wtune.prover.utils.Congruence;
-import sjtu.ipads.wtune.prover.utils.Util;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 public final class Canonization {
   private Canonization() {}
@@ -77,7 +64,7 @@ public final class Canonization {
   // Sum{x}[x=const_val] * f(x) -> f(const_val)
   // [x not Null] * [x = const] -> [x = const]
   private static Conjunction applyConst1(Conjunction c) {
-    final Congruence<Var> congruence = Congruence.mk(c.preds());
+    final Congruence<Var> congruence = TupleCongruence.mk(c.preds());
 
     final Map<Var, Var> toSubstVar = new HashMap<>();
     final Set<UExpr> toRemovePred = new HashSet<>();
@@ -130,7 +117,7 @@ public final class Canonization {
 
     final List<Var> toMoveVars = new ArrayList<>(4);
     final List<UExpr> toMoveTerms = new ArrayList<>(4);
-    Congruence<Var> cong = Congruence.mk(c.preds());
+    Congruence<Var> cong = TupleCongruence.mk(c.preds());
 
     final ListIterator<UExpr> iter = c.tables().listIterator();
     while (iter.hasNext()) {
@@ -162,7 +149,7 @@ public final class Canonization {
         // but NOT "|Sum{a,b}([a.id=b.id] * A(a) * B(b))|"
         // Thus, we have to somehow screen [a.id=b.id] to avoid the cascade.
         toMoveTerms.addAll(removeIf(c.preds(), it -> it.uses(base)));
-        cong = Congruence.mk(c.preds());
+        cong = TupleCongruence.mk(c.preds());
       }
     }
 
@@ -188,7 +175,7 @@ public final class Canonization {
     final List<Var> tmpVars = listFilter(c.vars(), v -> none(c.tables(), it -> it.uses(v)));
     if (tmpVars.isEmpty()) return c;
 
-    final Congruence<Var> cong = Congruence.mk(c.preds());
+    final Congruence<Var> cong = TupleCongruence.mk(c.preds());
     for (Var key : cong.keys()) {
       final Var tmpVar = find(tmpVars, key::uses);
       if (tmpVar == null) continue;

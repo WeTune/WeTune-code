@@ -9,6 +9,6 @@ public interface SortNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Sort;
+    return OperatorType.SORT;
   }
 }

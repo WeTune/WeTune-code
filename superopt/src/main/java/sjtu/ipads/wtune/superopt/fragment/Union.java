@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.UnionImpl;
 public interface Union extends Operator {
   @Override
   default OperatorType type() {
-    return OperatorType.Union;
+    return OperatorType.UNION;
   }
 
   static Union create() {

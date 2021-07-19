@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.UNION;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,8 +23,8 @@ class Disambiguation {
 
   private void onNode(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) onNode(predecessor);
-    if (node.type() == Input) onInput((InputNode) node);
-    else if (node.type() == Proj) onProj((ProjNode) node);
+    if (node.type() == INPUT) onInput((InputNode) node);
+    else if (node.type() == PROJ) onProj((ProjNode) node);
   }
 
   private void onProj(ProjNode proj) {
@@ -68,8 +68,8 @@ class Disambiguation {
     PlanNode successor = proj.successor();
     while (successor != null) {
       final OperatorType succType = successor.type();
-      if (succType == Union) return false;
-      if (succType == Proj) return true;
+      if (succType == UNION) return false;
+      if (succType == PROJ) return true;
       if (succType.isJoin()) return true;
       if (succType.isFilter()) return successor.predecessors()[0] == proj;
       successor = successor.successor();

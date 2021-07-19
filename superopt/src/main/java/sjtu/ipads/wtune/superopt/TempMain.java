@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
 
@@ -72,7 +72,7 @@ public class TempMain {
     }
 
     private void check0(PlanNode node) {
-      if (node.type() == Proj) {
+      if (node.type() == PROJ) {
         ++projCount;
         if (!inferUniqueness(node)) ++nonSetProjCount;
       }

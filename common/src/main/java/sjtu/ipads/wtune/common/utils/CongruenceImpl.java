@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.utils;
+package sjtu.ipads.wtune.common.utils;
 
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-class CongruenceImpl<T> implements Congruence<T> {
+public class CongruenceImpl<T> implements Congruence<T> {
   private final Map<T, CongruentClass<T>> classes;
 
   protected CongruenceImpl() {

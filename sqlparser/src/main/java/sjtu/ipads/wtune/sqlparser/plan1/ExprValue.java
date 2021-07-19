@@ -41,7 +41,7 @@ class ExprValue implements Value {
             : COLUMN_REF.isInstance(exprNode)
                 ? exprNode.get(COLUMN_REF_COLUMN).get(COLUMN_NAME_COLUMN)
                 : "";
-    final Expr expr = ExprImpl.build(exprNode);
+    final Expr expr = ExprImpl.mk(exprNode);
 
     return new ExprValue(name, expr);
   }

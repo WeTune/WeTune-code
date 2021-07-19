@@ -1,14 +1,12 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
 class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   private final OperatorType type;
@@ -35,15 +33,15 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
     this(type, condition, condition != null && isEquiCond(condition.template()));
   }
 
-  static JoinNode build(OperatorType joinType, ASTNode condition) {
+  static JoinNode mk(OperatorType joinType, ASTNode condition) {
     if (!joinType.isJoin()) throw new IllegalArgumentException("not a join type: " + joinType);
-    return new JoinNodeImpl(joinType, condition == null ? null : ExprImpl.build(condition));
+    return new JoinNodeImpl(joinType, condition == null ? null : ExprImpl.mk(condition));
   }
 
-  static JoinNode build(OperatorType joinType, RefBag lhsRefs, RefBag rhsRefs) {
+  static JoinNode mk(OperatorType joinType, RefBag lhsRefs, RefBag rhsRefs) {
     if (!joinType.isJoin()) throw new IllegalArgumentException("not a join type: " + joinType);
     return new JoinNodeImpl(
-        joinType, ExprImpl.buildEquiCond(lhsRefs, rhsRefs), true, lhsRefs, rhsRefs);
+        joinType, ExprImpl.mkEquiCond(lhsRefs, rhsRefs), true, lhsRefs, rhsRefs);
   }
 
   @Override

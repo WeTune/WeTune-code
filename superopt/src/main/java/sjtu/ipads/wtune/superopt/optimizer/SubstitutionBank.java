@@ -21,7 +21,7 @@ public interface SubstitutionBank extends Iterable<Substitution> {
   }
 
   default List<Substitution> findByFingerprint(PlanNode plan) {
-    return listFlatMap(this::findByFingerprint, Fingerprint.make(plan));
+    return listFlatMap(Fingerprint.make(plan), this::findByFingerprint);
   }
 
   static SubstitutionBank make() {

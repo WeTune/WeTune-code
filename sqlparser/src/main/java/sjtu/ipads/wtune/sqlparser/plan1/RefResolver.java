@@ -1,21 +1,15 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.ExistsFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
-import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.buildColumnRef;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.sqlparser.plan1.ExprImpl.mkColumnRef;
 
 class RefResolver {
   private final PlanNode plan;
@@ -45,30 +39,30 @@ class RefResolver {
     if (needStackLookup) lookup = new StackedLookup(currentLookup);
 
     switch (node.type()) {
-      case Input:
+      case INPUT:
         onInput((InputNode) node);
         break;
-      case InnerJoin:
-      case LeftJoin:
+      case INNER_JOIN:
+      case LEFT_JOIN:
         onJoin((JoinNode) node);
         break;
-      case PlainFilter:
-      case InSubFilter:
+      case SIMPLE_FILTER:
+      case IN_SUB_FILTER:
         onFilter((FilterNode) node);
         break;
-      case Proj:
+      case PROJ:
         onProj((ProjNode) node);
         break;
-      case Agg:
+      case AGG:
         onAgg((AggNode) node);
         break;
-      case Sort:
+      case SORT:
         onSort((SortNode) node);
         break;
-      case Limit:
+      case LIMIT:
         onLimit((LimitNode) node);
         break;
-      case Union:
+      case UNION:
         onUnion((SetOpNode) node);
         break;
       default:
@@ -104,8 +98,8 @@ class RefResolver {
 
       if (lhsRefs.size() != rhsRefs.size()) throw failed("ill-formed equi-join: " + node);
 
-      node.setLhsRefs(new RefBagImpl(lhsRefs));
-      node.setRhsRefs(new RefBagImpl(rhsRefs));
+      node.setLhsRefs(RefBag.mk(lhsRefs));
+      node.setRhsRefs(RefBag.mk(rhsRefs));
     }
   }
 
@@ -117,9 +111,9 @@ class RefResolver {
     registerRefs(node, refs);
     resolveRefs(refs, false, true);
 
-    if (node.type() == InSubFilter) {
+    if (node.type() == IN_SUB_FILTER) {
       ((InSubFilterNode) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
-    } else if (node.type() == ExistsFilter) {
+    } else if (node.type() == EXISTS_FILTER) {
       ((ExistsFilterNode) node).setExpr(makeQueryExpr(node.predecessors()[1]));
     }
   }
@@ -134,14 +128,14 @@ class RefResolver {
         if (!(value instanceof WildcardValue)) expanded.add(value);
         else
           for (Value base : lookup(value.wildcardQualification())) {
-            final Expr expr = buildColumnRef(base.qualification(), base.name());
+            final Expr expr = mkColumnRef(base.qualification(), base.name());
             final ExprValue newValue = new ExprValue(base.name(), expr);
             newValue.setQualification(value.qualification());
 
             expanded.add(newValue);
           }
       }
-      node.setValues(new ValueBagImpl(expanded));
+      node.setValues(ValueBag.mk(expanded));
     }
 
     final RefBag refs = node.refs();
@@ -227,7 +221,7 @@ class RefResolver {
   }
 
   private Expr makeQueryExpr(PlanNode node) {
-    return AstBuilder.build(node, true);
+    return AstBuilder.mk(node, true);
   }
 
   private RuntimeException failed(String reason) {
@@ -242,27 +236,27 @@ class RefResolver {
     final OperatorType succType = successor.type();
     final OperatorType nodeType = node.type();
 
-    if (succType == Union) return true;
-    if (succType == InSubFilter && successor.predecessors()[1] == node) return false; // needStack
-    if (nodeType == Input || nodeType.isJoin()) return false;
+    if (succType == UNION) return true;
+    if (succType == IN_SUB_FILTER && successor.predecessors()[1] == node) return false; // needStack
+    if (nodeType == INPUT || nodeType.isJoin()) return false;
     if (nodeType.isFilter()) return succType.isJoin();
-    if (nodeType == Proj) return succType != Agg && succType != Sort && succType != Limit;
-    if (nodeType == Agg) return succType != Sort && succType != Limit;
-    if (nodeType == Sort) return succType != Limit;
-    return nodeType == Limit || nodeType == Union;
+    if (nodeType == PROJ) return succType != AGG && succType != SORT && succType != LIMIT;
+    if (nodeType == AGG) return succType != SORT && succType != LIMIT;
+    if (nodeType == SORT) return succType != LIMIT;
+    return nodeType == LIMIT || nodeType == UNION;
   }
 
   private static boolean needStackLookup(PlanNode node) {
     final PlanNode successor = node.successor();
     return successor != null
-        && successor.type() == InSubFilter
+        && successor.type() == IN_SUB_FILTER
         && successor.predecessors()[1] == node;
   }
 
   private static boolean needMergeLookup(boolean needNew, PlanNode node) {
     final PlanNode successor = node.successor();
     if (successor == null) return false;
-    return needNew && (successor.type() != Union || node == successor.predecessors()[0]);
+    return needNew && (successor.type() != UNION || node == successor.predecessors()[0]);
   }
 
   private static class StackedLookup {

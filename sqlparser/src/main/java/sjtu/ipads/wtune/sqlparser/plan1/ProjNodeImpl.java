@@ -1,5 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
@@ -7,10 +12,6 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-
-import java.util.ArrayList;
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private boolean explicitDistinct;
@@ -26,7 +27,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     this.containsWildcard = containsWildcard(values);
   }
 
-  static ProjNode build(boolean explicitDistinct, List<ASTNode> selectItems) {
+  static ProjNode mk(boolean explicitDistinct, List<ASTNode> selectItems) {
     final List<Value> values = new ArrayList<>(selectItems.size());
     final List<Ref> refs = new ArrayList<>(selectItems.size());
 
@@ -50,7 +51,11 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
       }
     }
 
-    return new ProjNodeImpl(explicitDistinct, new ValueBagImpl(values), new RefBagImpl(refs));
+    return new ProjNodeImpl(explicitDistinct, ValueBag.mk(values), RefBag.mk(refs));
+  }
+
+  static ProjNode mk(ValueBag values) {
+    return new ProjNodeImpl(false, values, RefBag.mk(listFlatMap(values, it -> it.expr().refs())));
   }
 
   @Override
@@ -93,7 +98,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
       throw new IllegalStateException("the values are immutable if there are no wildcard");
     this.values = requireNonNull(values);
     // Values are expected containing only ExprValue. We do this check optimistically.
-    this.refs = new RefBagImpl(listFlatMap(it -> it.expr().refs(), values));
+    this.refs = RefBag.mk(listFlatMap(values, it -> it.expr().refs()));
     this.containsWildcard = containsWildcard(values);
   }
 

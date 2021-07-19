@@ -14,6 +14,6 @@ public interface ExistsFilterNode extends FilterNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.ExistsFilter;
+    return OperatorType.EXISTS_FILTER;
   }
 }

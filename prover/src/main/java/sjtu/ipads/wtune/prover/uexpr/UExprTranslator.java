@@ -23,11 +23,11 @@ import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Union;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LIMIT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SORT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.UNION;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +43,7 @@ import sjtu.ipads.wtune.sqlparser.plan1.Expr;
 import sjtu.ipads.wtune.sqlparser.plan1.InSubFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
 import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlainFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan1.SimpleFilterNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
@@ -81,14 +81,14 @@ public class UExprTranslator {
     // TODO: come up with how to deal Agg
     // Note: some weird query like (Select Sum ...) Union (...) cannot be handled for now.
     return switch (node.type()) {
-      case Proj -> onProj((ProjNode) node);
-      case Input -> onInput((InputNode) node);
-      case InnerJoin, LeftJoin -> onJoin((JoinNode) node);
-      case PlainFilter -> onPlainFilter((PlainFilterNode) node);
-      case InSubFilter -> onInSubFilter((InSubFilterNode) node);
-      case ExistsFilter -> onExistsFilter((ExistsFilterNode) node);
-      case Union -> onUnion((SetOpNode) node);
-      case Agg, Sort, Limit -> onNode(node.predecessors()[0]);
+      case PROJ -> onProj((ProjNode) node);
+      case INPUT -> onInput((InputNode) node);
+      case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
+      case SIMPLE_FILTER -> onPlainFilter((SimpleFilterNode) node);
+      case IN_SUB_FILTER -> onInSubFilter((InSubFilterNode) node);
+      case EXISTS_FILTER -> onExistsFilter((ExistsFilterNode) node);
+      case UNION -> onUnion((SetOpNode) node);
+      case AGG, SORT, LIMIT -> onNode(node.predecessors()[0]);
     };
   }
 
@@ -125,7 +125,7 @@ public class UExprTranslator {
     return proj.isExplicitDistinct() ? squash(expr) : expr;
   }
 
-  private UExpr onPlainFilter(PlainFilterNode filter) {
+  private UExpr onPlainFilter(SimpleFilterNode filter) {
     final UExpr remaining = onNode(filter.predecessors()[0]);
 
     final Expr predicate = filter.predicate();
@@ -186,9 +186,9 @@ public class UExprTranslator {
     // L(x) * R(y) * p(x,y)
     final UExpr symmPart = mul(mul(cond, lhsExpr), rhsExpr);
 
-    if (join.type() == InnerJoin) return symmPart;
+    if (join.type() == INNER_JOIN) return symmPart;
 
-    if (join.type() == LeftJoin) {
+    if (join.type() == LEFT_JOIN) {
       // L(x) * [y = null] * not(Sum{y'}(R(y') * p(x,y')))
       final UExpr asymmPart = mkAsymmetricJoin(join, cond, lhsExpr, rhsExpr);
       // L(x) * R(y) * p(x,y) +
@@ -314,8 +314,8 @@ public class UExprTranslator {
       final PlanNode succ = n.successor();
       final OperatorType succType = succ.type();
 
-      if (succType == Union) return false;
-      if (succType == Sort || succType == Limit) n = succ;
+      if (succType == UNION) return false;
+      if (succType == SORT || succType == LIMIT) n = succ;
       else return true;
     }
 

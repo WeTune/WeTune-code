@@ -18,30 +18,30 @@ public class Operators {
     return List.of(
         //        Agg.create(),
         //        Distinct.create(),
-        create(OperatorType.InnerJoin),
-        create(OperatorType.LeftJoin),
+        create(OperatorType.INNER_JOIN),
+        create(OperatorType.LEFT_JOIN),
         //        Limit.create(),
-        create(OperatorType.PlainFilter),
-        create(OperatorType.Proj),
+        create(OperatorType.SIMPLE_FILTER),
+        create(OperatorType.PROJ),
         //        Sort.create(),
-        create(OperatorType.InSubFilter)
-        , create(OperatorType.Union)
+        create(OperatorType.IN_SUB_FILTER)
+        , create(OperatorType.UNION)
         );
   }
 
   public static Operator create(OperatorType type) {
     return switch (type) {
-      case Input -> InputImpl.create();
-      case InnerJoin -> InnerJoinImpl.create();
-      case LeftJoin -> LeftJoinImpl.create();
-      case PlainFilter -> PlainFilterImpl.create();
-      case InSubFilter -> SubqueryFilterImpl.create();
-      case ExistsFilter -> null;
-      case Proj -> ProjImpl.create();
-      case Agg -> AggImpl.create();
-      case Sort -> SortImpl.create();
-      case Limit -> LimitImpl.create();
-      case Union -> UnionImpl.create();
+      case INPUT -> InputImpl.create();
+      case INNER_JOIN -> InnerJoinImpl.create();
+      case LEFT_JOIN -> LeftJoinImpl.create();
+      case SIMPLE_FILTER -> PlainFilterImpl.create();
+      case IN_SUB_FILTER -> SubqueryFilterImpl.create();
+      case EXISTS_FILTER -> null;
+      case PROJ -> ProjImpl.create();
+      case AGG -> AggImpl.create();
+      case SORT -> SortImpl.create();
+      case LIMIT -> LimitImpl.create();
+      case UNION -> UnionImpl.create();
     };
   }
 }

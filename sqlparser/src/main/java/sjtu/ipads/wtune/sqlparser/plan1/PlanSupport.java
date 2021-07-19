@@ -35,7 +35,7 @@ public interface PlanSupport {
   }
 
   static ASTNode buildAst(PlanNode plan) {
-    return AstBuilder.build(plan);
+    return AstBuilder.mk(plan);
   }
 
   static boolean isDependentRef(Ref ref, PlanContext ctx) {

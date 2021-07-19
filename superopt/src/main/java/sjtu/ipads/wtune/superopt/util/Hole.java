@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.util;
 
 import java.util.function.Consumer;
 
+/** Hole represents a position can be filled in in some structure. */
 public interface Hole<T> {
   boolean fill(T t);
 

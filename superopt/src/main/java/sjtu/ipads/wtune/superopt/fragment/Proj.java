@@ -14,7 +14,7 @@ public interface Proj extends Operator {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Proj;
+    return OperatorType.PROJ;
   }
 
   @Override

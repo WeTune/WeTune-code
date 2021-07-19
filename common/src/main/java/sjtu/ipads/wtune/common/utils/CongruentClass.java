@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.utils;
+package sjtu.ipads.wtune.common.utils;
 
 import static java.util.Objects.requireNonNull;
 

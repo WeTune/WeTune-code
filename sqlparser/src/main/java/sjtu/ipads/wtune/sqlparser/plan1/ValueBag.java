@@ -13,4 +13,9 @@ public interface ValueBag extends List<Value> {
   static ValueBag empty() {
     return ValueBagImpl.EMPTY;
   }
+
+  static ValueBag mk(List<Value> values) {
+    if (values instanceof ValueBag) return (ValueBag) values;
+    else return new ValueBagImpl(values);
+  }
 }

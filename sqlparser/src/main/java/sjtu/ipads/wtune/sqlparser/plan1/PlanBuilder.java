@@ -43,8 +43,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 import java.util.ArrayList;
@@ -69,8 +69,8 @@ class PlanBuilder {
 
   public static PlanNode buildPlan(ASTNode ast, Schema schema) {
     final PlanNode plan = new PlanBuilder(requireNonNull(schema), requireNonNull(ast)).build0(ast);
-    final PlanContext ctx = PlanContext.build(schema);
-    PlanContext.installContext(ctx, plan);
+    final PlanContext ctx = PlanContext.mk(schema);
+    PlanContext.install(ctx, plan);
     return plan;
   }
 
@@ -158,9 +158,9 @@ class PlanBuilder {
         selections.add(selection);
       }
       // 4. build Proj node
-      final ProjNode proj = ProjNodeImpl.build(containsDistinctAggregation, selections);
+      final ProjNode proj = ProjNodeImpl.mk(containsDistinctAggregation, selections);
       // 5. build Agg node
-      final AggNode agg = AggNodeImpl.build(selectItems, groups, having);
+      final AggNode agg = AggNodeImpl.mk(selectItems, groups, having);
       // 6. assemble
       proj.setPredecessor(0, prev);
       agg.setPredecessor(0, proj);
@@ -168,7 +168,7 @@ class PlanBuilder {
       return agg;
 
     } else {
-      final ProjNode proj = ProjNodeImpl.build(explicitDistinct, selectItems);
+      final ProjNode proj = ProjNodeImpl.mk(explicitDistinct, selectItems);
       proj.setPredecessor(0, prev);
 
       return proj;
@@ -214,7 +214,7 @@ class PlanBuilder {
   private PlanNode buildSort(List<ASTNode> orders, PlanNode predecessor) {
     if (orders == null || orders.isEmpty()) return predecessor;
 
-    final SortNode sort = SortNodeImpl.build(orders);
+    final SortNode sort = SortNodeImpl.mk(orders);
     sort.setPredecessor(0, predecessor);
 
     return sort;
@@ -223,7 +223,7 @@ class PlanBuilder {
   private PlanNode buildLimit(ASTNode limit, ASTNode offset, PlanNode predecessor) {
     if (limit == null && offset == null) return predecessor;
 
-    final LimitNode node = LimitNodeImpl.build(limit, offset);
+    final LimitNode node = LimitNodeImpl.mk(limit, offset);
     node.setPredecessor(0, predecessor);
     return node;
   }
@@ -247,7 +247,7 @@ class PlanBuilder {
     final ASTNode condition = tableSource.get(JOINED_ON);
 
     final JoinNode joinNode =
-        JoinNodeImpl.build(joinType.isInner() ? InnerJoin : LeftJoin, condition);
+        JoinNodeImpl.mk(joinType.isInner() ? INNER_JOIN : LEFT_JOIN, condition);
 
     joinNode.setPredecessor(0, lhs);
     joinNode.setPredecessor(1, rhs);
@@ -273,7 +273,7 @@ class PlanBuilder {
       buildFilters0(expr.get(BINARY_RIGHT), filters);
 
     } else if (op == BinaryOp.IN_SUBQUERY) {
-      final InSubFilterNode filter = InSubFilterNodeImpl.build(expr.get(BINARY_LEFT));
+      final InSubFilterNode filter = InSubFilterNodeImpl.mk(expr.get(BINARY_LEFT));
       final PlanNode subquery = build0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
       filter.setPredecessor(1, subquery);
 
@@ -287,7 +287,7 @@ class PlanBuilder {
       filters.add(filter);
 
     } else {
-      filters.add(PlainFilterNodeImpl.build(expr));
+      filters.add(SimpleFilterNodeImpl.mk(expr));
     }
 
     return filters;

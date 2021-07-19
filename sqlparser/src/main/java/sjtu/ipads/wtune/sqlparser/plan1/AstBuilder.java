@@ -1,75 +1,32 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.expr;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.node;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.tableSource;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_ORDER_BY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_DISTINCT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_GROUP_BY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_SELECT_ITEMS;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_OPTION;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_ALIAS;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_ALIAS;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.AND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IN_SUBQUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.OR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.LEFT_JOIN;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.ALL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.DISTINCT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.isDependentRef;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.JoinType.LEFT_JOIN;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.ALL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.DISTINCT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.isDependentRef;
 
 class AstBuilder {
   private final PlanNode plan;
@@ -84,34 +41,34 @@ class AstBuilder {
     this.dependentRefs = dependentAsPlaceholder ? new ArrayList<>() : null;
   }
 
-  static Expr build(PlanNode plan, boolean dependentAsPlaceholder) {
+  static Expr mk(PlanNode plan, boolean dependentAsPlaceholder) {
     final AstBuilder builder = new AstBuilder(plan, plan.context(), dependentAsPlaceholder);
     builder.onNode(plan);
 
     assert !builder.stack.isEmpty();
 
     final ASTNode ast = builder.stack.peek().assembleAsQuery();
-    return new ExprImpl(new RefBagImpl(builder.dependentRefs), ast);
+    return new ExprImpl(RefBag.mk(builder.dependentRefs), ast);
   }
 
-  static ASTNode build(PlanNode plan) {
-    return build(plan, false).template();
+  static ASTNode mk(PlanNode plan) {
+    return mk(plan, false).template();
   }
 
   private void onNode(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) onNode(predecessor);
 
     switch (node.type()) {
-      case Input -> onInput((InputNode) node);
-      case InnerJoin, LeftJoin -> onJoin((JoinNode) node);
-      case PlainFilter -> onPlainFilter((PlainFilterNode) node);
-      case InSubFilter -> onInSubFilter((InSubFilterNode) node);
-      case ExistsFilter -> onExistsFilter((ExistsFilterNode) node);
-      case Proj -> onProj((ProjNode) node);
-      case Agg -> onAgg((AggNode) node);
-      case Sort -> onSort((SortNode) node);
-      case Limit -> onLimit((LimitNode) node);
-      case Union -> onUnion((SetOpNode) node);
+      case INPUT -> onInput((InputNode) node);
+      case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
+      case SIMPLE_FILTER -> onPlainFilter((SimpleFilterNode) node);
+      case IN_SUB_FILTER -> onInSubFilter((InSubFilterNode) node);
+      case EXISTS_FILTER -> onExistsFilter((ExistsFilterNode) node);
+      case PROJ -> onProj((ProjNode) node);
+      case AGG -> onAgg((AggNode) node);
+      case SORT -> onSort((SortNode) node);
+      case LIMIT -> onLimit((LimitNode) node);
+      case UNION -> onUnion((SetOpNode) node);
       default -> throw failed("unsupported operator " + node.type());
     }
   }
@@ -135,12 +92,12 @@ class AstBuilder {
     join.set(JOINED_LEFT, lhs);
     join.set(JOINED_RIGHT, rhs);
     join.set(JOINED_ON, interpolate0(node.condition(), ctx));
-    join.set(JOINED_TYPE, node.type() == InnerJoin ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_TYPE, node.type() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }
 
-  private void onPlainFilter(PlainFilterNode node) {
+  private void onPlainFilter(SimpleFilterNode node) {
     assert !stack.isEmpty();
     final Query q = stack.peek();
     final ASTNode pred = interpolate0(node.predicate(), ctx);

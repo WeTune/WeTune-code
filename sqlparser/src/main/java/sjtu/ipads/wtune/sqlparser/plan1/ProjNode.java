@@ -15,6 +15,10 @@ public interface ProjNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Proj;
+    return OperatorType.PROJ;
+  }
+
+  static ProjNode mk(ValueBag values) {
+    return ProjNodeImpl.mk(values);
   }
 }

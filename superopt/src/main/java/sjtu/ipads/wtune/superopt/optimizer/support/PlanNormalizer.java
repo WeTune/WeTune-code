@@ -5,10 +5,10 @@ import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.plan.AttributeDef.locateDefiner;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedToRoot;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
@@ -115,7 +115,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     return proj.isWildcard()
         && (successor instanceof JoinNode || successor instanceof ProjNode)
         && !predecessor.type().isFilter()
-        && predecessor.type() != LeftJoin;
+        && predecessor.type() != LEFT_JOIN;
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
@@ -126,8 +126,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   private static void enforceEffectiveNonNull(PlanNode definer) {
     final PlanNode successor = definer.successor();
-    if (successor.type() == LeftJoin && successor.predecessors()[1] == definer)
-      ((JoinNode) successor).setJoinType(InnerJoin);
+    if (successor.type() == LEFT_JOIN && successor.predecessors()[1] == definer)
+      ((JoinNode) successor).setJoinType(INNER_JOIN);
   }
 
   private static PlanNode handleJoin(JoinNode node) {
@@ -159,9 +159,9 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   private static JoinNode enforceLeftDeepJoin(JoinNode join) {
     final PlanNode successor = join.successor();
     final PlanNode right = join.predecessors()[1];
-    assert right.type() != LeftJoin;
+    assert right.type() != LEFT_JOIN;
 
-    if (right.type() != InnerJoin) return join;
+    if (right.type() != INNER_JOIN) return join;
 
     final JoinNode newJoin = (JoinNode) right;
 
@@ -238,8 +238,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static void setQualification(PlanNode node, String qualification) {
-    assert node.type() == Proj || node.type() == Input;
-    if (node.type() == Input) ((InputNode) node).setAlias(qualification);
-    else if (node.type() == Proj) ((ProjNode) node).setQualification(qualification);
+    assert node.type() == PROJ || node.type() == INPUT;
+    if (node.type() == INPUT) ((InputNode) node).setAlias(qualification);
+    else if (node.type() == PROJ) ((ProjNode) node).setQualification(qualification);
   }
 }

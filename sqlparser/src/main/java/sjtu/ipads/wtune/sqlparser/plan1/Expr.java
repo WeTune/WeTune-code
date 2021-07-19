@@ -42,7 +42,7 @@ public interface Expr {
   void setRefs(RefBag refs);
 
   default void setRefs(List<Ref> refs) {
-    setRefs(new RefBagImpl(refs));
+    setRefs(RefBag.mk(refs));
   }
 
   default boolean isIdentity() {

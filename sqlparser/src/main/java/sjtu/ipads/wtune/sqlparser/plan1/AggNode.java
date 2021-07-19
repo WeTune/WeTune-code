@@ -10,6 +10,6 @@ public interface AggNode extends PlanNode {
   Expr having();
 
   @Override default OperatorType type() {
-    return OperatorType.Agg;
+    return OperatorType.AGG;
   }
 }

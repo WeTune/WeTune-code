@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer.filter;
 
 import static com.google.common.collect.Sets.difference;
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +43,8 @@ public class FilterDistribution {
   }
 
   public boolean isSatisfiable() {
-    final long subNodeCount = pool.stream().filter(it -> it.type() == InSubFilter).count();
-    final long subOpCount = slots.stream().filter(it -> it.type() == InSubFilter).count();
+    final long subNodeCount = pool.stream().filter(it -> it.type() == IN_SUB_FILTER).count();
+    final long subOpCount = slots.stream().filter(it -> it.type() == IN_SUB_FILTER).count();
 
     return subNodeCount >= subOpCount && pool.size() >= slots.size();
   }

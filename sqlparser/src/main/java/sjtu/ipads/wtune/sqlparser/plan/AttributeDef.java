@@ -87,28 +87,28 @@ public interface AttributeDef {
 
     final PlanNode definer = locateDefiner(attr, root);
     if (definer == null) return null;
-    if (definer.type() == OperatorType.Input) return definer;
+    if (definer.type() == OperatorType.INPUT) return definer;
 
-    assert definer.type() == OperatorType.Agg || definer.type() == OperatorType.Proj;
+    assert definer.type() == OperatorType.AGG || definer.type() == OperatorType.PROJ;
     return localeInput(attr.upstream(), definer.predecessors()[0]);
   }
 
   private static PlanNode locateDefiner0(AttributeDef attr, PlanNode root) {
     switch (root.type()) {
-      case PlainFilter:
-      case InSubFilter:
-      case Sort:
-      case Limit:
+      case SIMPLE_FILTER:
+      case IN_SUB_FILTER:
+      case SORT:
+      case LIMIT:
         return locateDefiner0(attr, root.predecessors()[0]);
 
-      case Input:
-      case Agg:
-      case Proj:
+      case INPUT:
+      case AGG:
+      case PROJ:
         if (isDefinedBy(attr, root)) return root;
         else return null;
 
-      case InnerJoin:
-      case LeftJoin:
+      case INNER_JOIN:
+      case LEFT_JOIN:
         final PlanNode leftDefiner = locateDefiner0(attr, root.predecessors()[0]);
         return leftDefiner != null ? leftDefiner : locateDefiner0(attr, root.predecessors()[1]);
 

@@ -1,16 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
-
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
 
 class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   private final Expr lhsExpr;
@@ -23,11 +21,16 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
     this.lhsRefs = this.refs = lhsExpr.refs();
   }
 
-  static InSubFilterNode build(ASTNode node) {
+  static InSubFilterNode mk(ASTNode node) {
     if (!COLUMN_REF.isInstance(node) && !TUPLE.isInstance(node))
       throw new IllegalArgumentException("invalid LHS expression for IN-Sub filter " + node);
 
-    return new InSubFilterNodeImpl(ExprImpl.build(node));
+    return new InSubFilterNodeImpl(ExprImpl.mk(node));
+  }
+
+  static InSubFilterNode mk(RefBag refs) {
+    if (refs.isEmpty()) throw new IllegalArgumentException();
+    return new InSubFilterNodeImpl(ExprImpl.mk(refs));
   }
 
   @Override
@@ -67,7 +70,7 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
     this.rhsExpr = requireNonNull(rhsExpr);
 
     // update refs
-    if (!rhsExpr.refs().isEmpty()) this.refs = new RefBagImpl(listConcat(lhsRefs, rhsExpr.refs()));
+    if (!rhsExpr.refs().isEmpty()) this.refs = RefBag.mk(listConcat(lhsRefs, rhsExpr.refs()));
 
     // update predicate
     final ASTNode predicateExpr = ASTNode.expr(ExprKind.BINARY);

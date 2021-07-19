@@ -1,15 +1,11 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.OperatorVisitor;
-import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
-import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
-public class Canonicalization implements OperatorVisitor {
+public class Canonization implements OperatorVisitor {
   private Operator root;
 
-  private Canonicalization(Operator root) {
+  private Canonization(Operator root) {
     this.root = root;
   }
 
@@ -21,7 +17,9 @@ public class Canonicalization implements OperatorVisitor {
       if (succ == root) {
         root = op;
         op.setSuccessor(null);
-      } else succ.successor().replacePredecessor(succ, op);
+      } else {
+        succ.successor().replacePredecessor(succ, op);
+      }
 
       succ.setPredecessor(0, op.predecessors()[0]);
       op.setPredecessor(0, succ);
@@ -33,8 +31,8 @@ public class Canonicalization implements OperatorVisitor {
     return true;
   }
 
-  public static Fragment canonicalize(Fragment fragment) {
-    final Canonicalization visitor = new Canonicalization(fragment.head());
+  public static Fragment canonize(Fragment fragment) {
+    final Canonization visitor = new Canonization(fragment.head());
     fragment.acceptVisitor(visitor);
     fragment.setHead(visitor.root);
     return fragment;

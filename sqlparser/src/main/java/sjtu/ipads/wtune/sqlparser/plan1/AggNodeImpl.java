@@ -25,11 +25,10 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     this.refs = refs;
   }
 
-  static AggNode build(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
+  static AggNode mk(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
     final List<Value> values = listMap(selectItems, ExprValue::fromSelectItem);
-    final List<Expr> groups =
-        groupNodes == null ? emptyList() : listMap(groupNodes, ExprImpl::build);
-    final Expr having = havingNode == null ? null : ExprImpl.build(havingNode);
+    final List<Expr> groups = groupNodes == null ? emptyList() : listMap(groupNodes, ExprImpl::mk);
+    final Expr having = havingNode == null ? null : ExprImpl.mk(havingNode);
 
     final List<Ref> refs =
         new ArrayList<>(values.size() + groups.size() + (having == null ? 0 : 1));
@@ -56,7 +55,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
 
     assert acc == refs.size();
 
-    return new AggNodeImpl(new ValueBagImpl(values), groups, having, new RefBagImpl(refs));
+    return new AggNodeImpl(ValueBag.mk(values), groups, having, RefBag.mk(refs));
   }
 
   @Override

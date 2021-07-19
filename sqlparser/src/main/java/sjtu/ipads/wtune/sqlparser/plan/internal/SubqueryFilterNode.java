@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InSubFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 import static sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
@@ -30,7 +30,7 @@ public class SubqueryFilterNode extends PlainFilterNode {
   private List<ASTNode> colRefs;
 
   protected SubqueryFilterNode(List<ASTNode> colRefs, List<AttributeDef> usedAttrs) {
-    super(InSubFilter, null, usedAttrs);
+    super(IN_SUB_FILTER, null, usedAttrs);
     assert colRefs != null || usedAttrs != null;
     this.expr = Expr.make(this);
     this.colRefs = usedAttrs != null ? listMap(usedAttrs, AttributeDef::makeColumnRef) : colRefs;
@@ -46,7 +46,7 @@ public class SubqueryFilterNode extends PlainFilterNode {
 
   @Override
   public OperatorType type() {
-    return InSubFilter;
+    return IN_SUB_FILTER;
   }
 
   @Override

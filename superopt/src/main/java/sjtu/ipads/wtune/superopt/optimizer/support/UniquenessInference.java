@@ -262,7 +262,7 @@ class JoinStage extends InferenceStage {
 
       final JoinNode join = (JoinNode) node;
       if (join.isNormalForm())
-        zipForEach(this::addEqualPair, join.leftAttributes(), join.rightAttributes());
+        zipForEach(join.leftAttributes(), join.rightAttributes(), this::addEqualPair);
     }
 
     if (!forwardSplitPivots()) {

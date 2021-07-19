@@ -1,19 +1,10 @@
 package sjtu.ipads.wtune.superopt.util;
 
 import com.google.common.collect.Sets;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
-import sjtu.ipads.wtune.symsolver.core.Constraint;
-import sjtu.ipads.wtune.symsolver.core.PickEq;
-import sjtu.ipads.wtune.symsolver.core.PickFrom;
-import sjtu.ipads.wtune.symsolver.core.PredicateEq;
-import sjtu.ipads.wtune.symsolver.core.TableEq;
+import sjtu.ipads.wtune.symsolver.core.*;
+
+import java.util.*;
 
 public class Constraints extends AbstractList<Constraint> {
   private final List<Constraint> constraints;

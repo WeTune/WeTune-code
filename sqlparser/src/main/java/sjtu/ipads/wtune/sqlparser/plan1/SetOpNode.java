@@ -10,6 +10,6 @@ public interface SetOpNode extends PlanNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Union;
+    return OperatorType.UNION;
   }
 }

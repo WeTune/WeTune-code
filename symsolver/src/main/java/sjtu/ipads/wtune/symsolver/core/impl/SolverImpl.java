@@ -108,7 +108,7 @@ public class SolverImpl implements Solver {
       for (int j = i + 1; j < bound; j++) choices.add(predicateEq(preds[i], preds[j]));
 
     for (PickSym pick : picks) {
-      choices.addAll(listMap(src -> pickFrom(pick, src), pick.viableSources()));
+      choices.addAll(listMap(pick.viableSources(), src -> pickFrom(pick, src)));
 
       //      final PickSym upstream = pick.upstream();
       //      if (upstream != null) choices.add(pickSub(pick, upstream));

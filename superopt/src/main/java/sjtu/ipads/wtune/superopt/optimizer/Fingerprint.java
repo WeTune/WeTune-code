@@ -17,14 +17,14 @@ public interface Fingerprint {
 
   static char charOf(OperatorType t) {
     switch (t) {
-      case Proj:
+      case PROJ:
         return 'p';
-      case InnerJoin:
-      case LeftJoin:
+      case INNER_JOIN:
+      case LEFT_JOIN:
         return 'j';
-      case InSubFilter:
+      case IN_SUB_FILTER:
         return 's';
-      case PlainFilter:
+      case SIMPLE_FILTER:
         return 'f';
       default:
         return '?';

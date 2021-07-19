@@ -1,8 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
 import java.util.IdentityHashMap;
 import java.util.Map;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 
 class PlanContextImpl implements PlanContext {
   private final Schema schema;
@@ -47,5 +50,10 @@ class PlanContextImpl implements PlanContext {
   @Override
   public void setRef(Ref ref, Value value) {
     refTo.put(ref, value);
+  }
+
+  @Override
+  public boolean validate() {
+    return all(refOwners.keySet(), it -> deRef(it) != null);
   }
 }

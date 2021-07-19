@@ -1,9 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public interface PlanContext {
   Schema schema();
@@ -20,16 +21,18 @@ public interface PlanContext {
 
   void setRef(Ref ref, Value value);
 
+  boolean validate();
+
   default List<Value> deRef(List<Ref> refs) {
     return listMap(refs, this::deRef);
   }
 
-  static PlanContext build(Schema schema) {
+  static PlanContext mk(Schema schema) {
     return new PlanContextImpl(schema);
   }
 
-  static void installContext(PlanContext ctx, PlanNode root) {
+  static void install(PlanContext ctx, PlanNode root) {
     root.setContext(ctx);
-    for (PlanNode predecessor : root.predecessors()) installContext(ctx, predecessor);
+    for (PlanNode predecessor : root.predecessors()) install(ctx, predecessor);
   }
 }

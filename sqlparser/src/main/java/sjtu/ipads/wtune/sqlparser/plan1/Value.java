@@ -19,4 +19,8 @@ public interface Value {
   String wildcardQualification();
 
   void setQualification(String qualification);
+
+  default Ref selfish() {
+    return new RefImpl(qualification(), name());
+  }
 }

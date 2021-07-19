@@ -10,9 +10,9 @@ class LimitNodeImpl extends PlanNodeBase implements LimitNode {
     this.offset = offset;
   }
 
-  static LimitNode build(ASTNode limitExpr, ASTNode offsetExpr) {
-    final Expr limit = limitExpr == null ? null : ExprImpl.build(limitExpr);
-    final Expr offset = offsetExpr == null ? null : ExprImpl.build(offsetExpr);
+  static LimitNode mk(ASTNode limitExpr, ASTNode offsetExpr) {
+    final Expr limit = limitExpr == null ? null : ExprImpl.mk(limitExpr);
+    final Expr offset = offsetExpr == null ? null : ExprImpl.mk(offsetExpr);
     return new LimitNodeImpl(limit, offset);
   }
 

@@ -7,8 +7,8 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 import static sjtu.ipads.wtune.sqlparser.ASTContext.manage;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
@@ -221,7 +221,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   private OptGroup<?> optimizeChild(PlanNode n) {
-    assert n.type() != Proj && n.type() != Input;
+    assert n.type() != PROJ && n.type() != INPUT;
     final List<PlanNode> candidates = optimizeChild0(n);
 
     // 3. Register the candidates. See `optimized0` for explanation.
@@ -242,7 +242,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
     // pass the `candidates` instead.
 
     // 4. do transformation
-    final List<PlanNode> transformed = listFlatMap(this::transform, candidates);
+    final List<PlanNode> transformed = listFlatMap(candidates, this::transform);
 
     // 5. recursively optimize the transformed plan
     for (PlanNode p : transformed) optimize0(p);
@@ -271,7 +271,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         final PlanNode newNode = normalize(match.substitute(substitution.g1()));
         if (newNode == null) continue; // invalid, abandon it
         if (!inferUniqueness(newNode)) {
-          if (newNode.type() == Proj) ((ProjNode) newNode).setForcedUnique(true);
+          if (newNode.type() == PROJ) ((ProjNode) newNode).setForcedUnique(true);
           else continue; // unable to enforce uniqueness
         }
 
@@ -285,7 +285,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
       }
     }
 
-    transformed.addAll(listFlatMap(this::transform, transformed));
+    transformed.addAll(listFlatMap(transformed, this::transform));
     return transformed;
   }
 
@@ -310,7 +310,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         final PlanNode nextNode = nodePredecessors[i];
         final Operator nextOp = opPredecessors[i];
 
-        matches = listFlatMap(it -> match(nextNode, nextOp, it.assignments()), matches);
+        matches = listFlatMap(matches, it -> match(nextNode, nextOp, it.assignments()));
         if (matches.isEmpty()) break;
         // lift the match point
         matches = listMap(matches, Match::lift);

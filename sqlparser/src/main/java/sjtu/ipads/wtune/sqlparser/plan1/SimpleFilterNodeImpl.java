@@ -2,17 +2,19 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-
-class PlainFilterNodeImpl extends PlanNodeBase implements PlainFilterNode {
+class SimpleFilterNodeImpl extends PlanNodeBase implements SimpleFilterNode {
   private final Expr predicate;
 
-  PlainFilterNodeImpl(Expr predicate) {
+  SimpleFilterNodeImpl(Expr predicate) {
     this.predicate = predicate;
   }
 
-  static PlainFilterNode build(ASTNode predicate) {
-    return new PlainFilterNodeImpl(ExprImpl.build(predicate));
+  static SimpleFilterNode mk(ASTNode predicate) {
+    return new SimpleFilterNodeImpl(ExprImpl.mk(predicate));
+  }
+
+  static SimpleFilterNode mk(Expr predicate, RefBag refs) {
+    return new SimpleFilterNodeImpl(new ExprImpl(refs, predicate.template()));
   }
 
   @Override
@@ -34,7 +36,7 @@ class PlainFilterNodeImpl extends PlanNodeBase implements PlainFilterNode {
   protected PlanNode copy0(PlanContext ctx) {
     checkContextSet();
 
-    final PlainFilterNode copy = new PlainFilterNodeImpl(predicate);
+    final SimpleFilterNode copy = new SimpleFilterNodeImpl(predicate);
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());

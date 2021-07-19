@@ -17,6 +17,10 @@ public interface InSubFilterNode extends FilterNode {
 
   @Override
   default OperatorType type() {
-    return OperatorType.InSubFilter;
+    return OperatorType.IN_SUB_FILTER;
+  }
+
+  static InSubFilterNode mk(RefBag refs) {
+    return InSubFilterNodeImpl.mk(refs);
   }
 }

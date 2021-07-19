@@ -11,6 +11,6 @@ public interface LeftJoin extends Join {
 
   @Override
   default OperatorType type() {
-    return OperatorType.LeftJoin;
+    return OperatorType.LEFT_JOIN;
   }
 }
