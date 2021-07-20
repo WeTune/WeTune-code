@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface PlanContext {
   Schema schema();
@@ -20,6 +19,8 @@ public interface PlanContext {
   PlanNode ownerOf(Ref ref);
 
   void setRef(Ref ref, Value value);
+
+  boolean isSameSource(Value v0, Value v1);
 
   boolean validate();
 

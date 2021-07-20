@@ -23,4 +23,10 @@ public interface Value {
   default Ref selfish() {
     return new RefImpl(qualification(), name());
   }
+
+  static Value mk(String qualification, String name, Expr expr) {
+    final ExprValue v = new ExprValue(name, expr);
+    v.setQualification(qualification);
+    return v;
+  }
 }

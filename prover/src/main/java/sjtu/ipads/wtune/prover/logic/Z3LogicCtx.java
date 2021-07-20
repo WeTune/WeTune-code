@@ -173,7 +173,7 @@ public class Z3LogicCtx implements LogicCtx {
         this,
         decl,
         decl.getName().toString(),
-        arrayMap(decl.getParameters(), it -> wrap(it.getSort()), DataType.class));
+        arrayMap(decl.getDomain(), this::wrap, DataType.class));
   }
 
   private DataType wrap(Sort sort) {
@@ -183,7 +183,10 @@ public class Z3LogicCtx implements LogicCtx {
           this,
           sort,
           wrap(dt.getConstructors()[0]),
-          arrayMap(dt.getAccessors()[0], this::wrap, Func.class));
+          arrayMap(
+              dt.getAccessors()[0],
+              it -> Func.wrap(this, it, it.getName().toString(), null),
+              Func.class));
     } else {
       return DataType.mk(this, sort);
     }

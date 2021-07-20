@@ -1,11 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 class PlanContextImpl implements PlanContext {
   private final Schema schema;
@@ -53,7 +52,20 @@ class PlanContextImpl implements PlanContext {
   }
 
   @Override
+  public boolean isSameSource(Value v0, Value v1) {
+    if (v0 == v1) return true;
+    if (v0 == null || v1 == null) return false;
+    final Value src0 = sourceOf(v0), src1 = sourceOf(v1);
+    return src0.qualification().equals(src1.qualification()) && src0.name().equals(src1.name());
+  }
+
+  @Override
   public boolean validate() {
     return all(refOwners.keySet(), it -> deRef(it) != null);
+  }
+
+  private Value sourceOf(Value v) {
+    if (!(v instanceof ExprValue) || !v.expr().isIdentity()) return v;
+    else return sourceOf(deRef(v.expr().refs().get(0)));
   }
 }

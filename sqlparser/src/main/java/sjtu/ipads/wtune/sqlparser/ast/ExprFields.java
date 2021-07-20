@@ -53,7 +53,7 @@ public interface ExprFields {
   // Col Ref
   FieldKey<ASTNode> COLUMN_REF_COLUMN = COLUMN_REF.nodeAttr("column");
   // Func Call
-  FieldKey<ASTNode> FUNC_CALL_NAME = FUNC_CALL.nodeAttr("name");
+  FieldKey<ASTNode> FUNC_CALL_NAME = FUNC_CALL.nodeAttr("name"); // NAME2
   FieldKey<List<ASTNode>> FUNC_CALL_ARGS = FUNC_CALL.nodesAttr("args");
   // Collate
   FieldKey<ASTNode> COLLATE_EXPR = COLLATE.nodeAttr("expr");

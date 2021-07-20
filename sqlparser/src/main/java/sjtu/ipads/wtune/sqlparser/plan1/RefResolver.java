@@ -221,7 +221,7 @@ class RefResolver {
   }
 
   private Expr makeQueryExpr(PlanNode node) {
-    return AstBuilder.mk(node, true);
+    return AstTranslator.translate(node, true);
   }
 
   private RuntimeException failed(String reason) {

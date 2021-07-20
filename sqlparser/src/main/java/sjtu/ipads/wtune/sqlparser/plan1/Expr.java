@@ -69,4 +69,8 @@ public interface Expr {
   default ASTNode interpolate(PlanContext ctx) {
     return interpolate(ctx.deRef(refs()));
   }
+
+  static Expr mk(ASTNode expr) {
+    return ExprImpl.mk(expr);
+  }
 }

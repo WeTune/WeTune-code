@@ -2,9 +2,8 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import sjtu.ipads.wtune.common.utils.Lazy;
-
 import java.util.Collection;
+import sjtu.ipads.wtune.common.utils.Lazy;
 
 class SymbolsImpl implements Symbols {
   private final Lazy<ListMultimap<Op, Symbol>> tables, attrs, preds;
@@ -19,12 +18,12 @@ class SymbolsImpl implements Symbols {
   public void bindSymbol(Op op) {
     switch (op.type()) {
       case INPUT -> add(op, Symbol.Kind.TABLE);
-      case IN_SUB_FILTER, PROJ -> add(op, Symbol.Kind.ATTRS);
+      case IN_SUB_FILTER -> add(op, Symbol.Kind.ATTRS);
       case SIMPLE_FILTER -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.PRED);
       }
-      case INNER_JOIN, LEFT_JOIN -> {
+      case INNER_JOIN, LEFT_JOIN, PROJ -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.ATTRS);
       }

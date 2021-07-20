@@ -1,11 +1,10 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import sjtu.ipads.wtune.superopt.substitution.Substitution;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 public class Main {
   public static void main(String[] args) throws IOException {
@@ -13,7 +12,10 @@ public class Main {
     for (String line : lines) {
       if (line.charAt(0) == '=') continue;
       final Substitution sub = Substitution.parse(line);
-      System.out.println(sub);
+      System.out.println(PlanTranslator.translate(sub._0(), sub.constraints()));
+      System.out.println(PlanTranslator.translate(sub._1(), sub.constraints()));
+      break;
+      //      System.out.println(sub);
     }
   }
 }

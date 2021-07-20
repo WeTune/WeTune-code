@@ -3,11 +3,12 @@ package sjtu.ipads.wtune.prover.logic;
 class FuncImpl extends ValueImpl implements Func {
   private final String name;
   private final DataType[] paramTypes;
+  private static final DataType[] EMPTY_PARAM_TYPES = new DataType[0];
 
   FuncImpl(LogicCtx ctx, Object underlying, String name, DataType[] paramTypes) {
     super(ctx, underlying);
     this.name = name;
-    this.paramTypes = paramTypes;
+    this.paramTypes = paramTypes == null ? EMPTY_PARAM_TYPES : paramTypes;
   }
 
   @Override

@@ -1,28 +1,35 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 class AggNodeImpl extends PlanNodeBase implements AggNode {
   private final ValueBag values;
   private final List<Expr> groups;
   private final Expr having;
 
-  private final RefBag refs;
+  private final RefBag aggRefs, groupRefs, havingRefs;
 
-  AggNodeImpl(ValueBag values, List<Expr> groups, Expr having, RefBag refs) {
+  AggNodeImpl(
+      ValueBag values,
+      List<Expr> groups,
+      Expr having,
+      RefBag aggRefs,
+      RefBag groupRefs,
+      RefBag havingRefs) {
     this.values = values;
     this.groups = requireNonNull(groups);
     this.having = having;
-    this.refs = refs;
+    this.aggRefs = aggRefs;
+    this.groupRefs = groupRefs;
+    this.havingRefs = havingRefs;
   }
 
   static AggNode mk(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
@@ -30,32 +37,25 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     final List<Expr> groups = groupNodes == null ? emptyList() : listMap(groupNodes, ExprImpl::mk);
     final Expr having = havingNode == null ? null : ExprImpl.mk(havingNode);
 
-    final List<Ref> refs =
-        new ArrayList<>(values.size() + groups.size() + (having == null ? 0 : 1));
+    final List<Ref> aggRefs = new ArrayList<>(values.size());
+    final List<Ref> groupRefs = new ArrayList<>(groups.size());
+    final List<Ref> havingRefs = new ArrayList<>(having == null ? 0 : 1);
 
     // replace the refs in exprs
     int acc = 0;
-    for (Value value : values) {
-      final List<Ref> newRefs = replaceRefs(value.expr(), acc);
-      refs.addAll(newRefs);
-      acc += newRefs.size();
-    }
+    for (Value value : values) acc += replaceRefs(value.expr(), acc, aggRefs);
+    for (Expr expr : groups) acc += replaceRefs(expr, acc, groupRefs);
+    if (having != null) acc += replaceRefs(having, acc, havingRefs);
 
-    for (Expr expr : groups) {
-      final List<Ref> newRefs = replaceRefs(expr, acc);
-      refs.addAll(newRefs);
-      acc += newRefs.size();
-    }
+    assert acc == aggRefs.size() + groupRefs.size() + havingRefs.size();
 
-    if (having != null) {
-      final List<Ref> newRefs = replaceRefs(having, acc);
-      refs.addAll(newRefs);
-      acc += newRefs.size();
-    }
-
-    assert acc == refs.size();
-
-    return new AggNodeImpl(ValueBag.mk(values), groups, having, RefBag.mk(refs));
+    return new AggNodeImpl(
+        ValueBag.mk(values),
+        groups,
+        having,
+        RefBag.mk(aggRefs),
+        RefBag.mk(groupRefs),
+        RefBag.mk(havingRefs));
   }
 
   @Override
@@ -74,17 +74,33 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
+  public RefBag aggRefs() {
+    return aggRefs;
+  }
+
+  @Override
+  public RefBag groupRefs() {
+    return groupRefs;
+  }
+
+  @Override
+  public RefBag havingRefs() {
+    return havingRefs;
+  }
+
+  @Override
   public RefBag refs() {
-    return refs;
+    return RefBag.mk(listJoin(aggRefs, groupRefs, havingRefs));
   }
 
   @Override
   protected PlanNode copy0(PlanContext ctx) {
     checkContextSet();
 
-    final AggNode copy = new AggNodeImpl(values, groups, having, refs);
+    final AggNode copy = new AggNodeImpl(values, groups, having, aggRefs, groupRefs, havingRefs);
     copy.setContext(ctx);
 
+    final RefBag refs = refs();
     ctx.registerRefs(copy, refs);
     ctx.registerValues(copy, values);
     for (Ref ref : refs) ctx.setRef(ref, this.context.deRef(ref));
@@ -103,6 +119,8 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     builder.append(']');
     if (!groups.isEmpty()) builder.append(",groups=").append(groups);
     if (having != null) builder.append(",having=").append(having);
+
+    final RefBag refs = refs();
     if (!refs.isEmpty()) {
       builder.append(",refs=");
       if (context == null) builder.append(refs);
@@ -115,13 +133,12 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     return builder.toString();
   }
 
-  private static List<Ref> replaceRefs(Expr expr, int startIdx) {
+  private static int replaceRefs(Expr expr, int startIdx, List<Ref> buffer) {
     final int numRefs = expr.refs().size();
-    final List<Ref> newRefs =
-        IntStream.range(startIdx, startIdx + numRefs)
-            .mapToObj(it -> new RefImpl(null, "agg_key_" + it))
-            .collect(Collectors.toList());
-    expr.setRefs(newRefs);
-    return newRefs;
+    IntStream.range(startIdx, startIdx + numRefs)
+        .mapToObj(it -> new RefImpl(null, "agg_key_" + it))
+        .forEach(buffer::add);
+    expr.setRefs(buffer.subList(startIdx, startIdx + numRefs));
+    return numRefs;
   }
 }

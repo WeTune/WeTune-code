@@ -1,10 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
@@ -12,6 +7,10 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
+
+import java.util.ArrayList;
+import java.util.List;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private boolean explicitDistinct;
