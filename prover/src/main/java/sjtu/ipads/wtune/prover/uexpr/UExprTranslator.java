@@ -44,19 +44,6 @@ public class UExprTranslator {
   }
 
   public static UExpr translate(PlanNode plan) {
-    if (isFragment(plan)) {
-      // wrap a fragment plan with a outer Proj
-      final ProjNode proj = ProjNode.mkWildcard(plan.values());
-      final PlanContext ctx = PlanContext.mk(plan.context().schema());
-
-      proj.setContext(ctx);
-      proj.setPredecessor(0, plan.copy(ctx));
-      ctx.registerRefs(proj, proj.refs());
-      ctx.registerValues(proj, proj.values());
-      zipForEach(proj.refs(), plan.values(), ctx::setRef);
-
-      plan = proj;
-    }
 
     return new UExprTranslator(plan).onNode(plan);
   }
@@ -308,16 +295,6 @@ public class UExprTranslator {
     }
 
     return true;
-  }
-
-  private static boolean isFragment(PlanNode node) {
-    // Check if the node is a complete query.
-    // Specifically, check if the root node is Union/Proj
-    // (ignore Sort/Limit)
-    final OperatorType type = node.type();
-    return type != UNION
-        && type != PROJ
-        && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));
   }
 
   private RuntimeException failed(String reason) {

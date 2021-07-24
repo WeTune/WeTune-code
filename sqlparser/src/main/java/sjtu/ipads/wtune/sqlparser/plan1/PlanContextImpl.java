@@ -48,25 +48,18 @@ class PlanContextImpl implements PlanContext {
   }
 
   @Override
+  public Value sourceOf(Value v) {
+    if (!(v instanceof ExprValue) || !v.expr().isIdentity()) return v;
+    else return sourceOf(deRef(v.expr().refs().get(0)));
+  }
+
+  @Override
   public void setRef(Ref ref, Value value) {
     refTo.put(ref, value);
   }
 
   @Override
-  public boolean isSameSource(Value v0, Value v1) {
-    if (v0 == v1) return true;
-    if (v0 == null || v1 == null) return false;
-    final Value src0 = sourceOf(v0), src1 = sourceOf(v1);
-    return src0.qualification().equals(src1.qualification()) && src0.name().equals(src1.name());
-  }
-
-  @Override
   public boolean validate() {
     return all(refOwners.keySet(), it -> deRef(it) != null);
-  }
-
-  private Value sourceOf(Value v) {
-    if (!(v instanceof ExprValue) || !v.expr().isIdentity()) return v;
-    else return sourceOf(deRef(v.expr().refs().get(0)));
   }
 }

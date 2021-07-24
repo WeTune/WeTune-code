@@ -20,6 +20,8 @@ public interface Value {
 
   void setQualification(String qualification);
 
+  void setName(String name); // BE CAUTION INVOKING THIS! (intended only used when prove a rule)
+
   default Ref selfish() {
     return new RefImpl(qualification(), name());
   }

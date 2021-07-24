@@ -37,6 +37,34 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
   }
 
   @Override
+  public ASTNode visitAlterTable(MySQLParser.AlterTableContext ctx) {
+    final ASTNode alter = newNode(ALTER_TABLE);
+
+    final ASTNode tableName = visitTableRef(ctx.tableRef());
+    final List<ASTNode> actions =
+        listMap(
+            ctx.alterTableActions().alterCommandList().alterList().alterListItem(),
+            this::visitAlterListItem);
+
+    alter.set(ALTER_TABLE_NAME, tableName);
+    alter.set(ALTER_TABLE_ACTIONS, actions);
+
+    return alter;
+  }
+
+  @Override
+  public ASTNode visitAlterListItem(MySQLParser.AlterListItemContext ctx) {
+    if (ctx.tableConstraintDef() != null) {
+      final ASTNode action = newNode(ALTER_TABLE_ACTION);
+
+      action.set(ALTER_TABLE_ACTION_NAME, "add_constraint");
+      action.set(ALTER_TABLE_ACTION_PAYLOAD, visitTableConstraintDef(ctx.tableConstraintDef()));
+      return action;
+
+    } else return null;
+  }
+
+  @Override
   public ASTNode visitTableName(MySQLParser.TableNameContext tableName) {
     return MySQLASTHelper.tableName(
         this, tableName.qualifiedIdentifier(), tableName.dotIdentifier());
@@ -221,8 +249,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     } else if (keyListVariants != null) {
       keys =
           listMap(
-              keyListVariants.keyListWithExpression().keyPartOrExpression(), this::visitKeyPartOrExpression
-          );
+              keyListVariants.keyListWithExpression().keyPartOrExpression(),
+              this::visitKeyPartOrExpression);
     } else {
       return assertFalse();
     }
@@ -1240,8 +1268,8 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     node.set(
         MATCH_COLS,
         listMap(
-            ctx.identListArg().identList().simpleIdentifier(), func(this::visitSimpleIdentifier).andThen(this::columnRef)
-        ));
+            ctx.identListArg().identList().simpleIdentifier(),
+            func(this::visitSimpleIdentifier).andThen(this::columnRef)));
     node.set(MATCH_EXPR, ctx.bitExpr().accept(this));
 
     final var fullTextOption = ctx.fulltextOptions();

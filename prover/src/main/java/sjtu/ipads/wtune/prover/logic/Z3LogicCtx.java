@@ -1,26 +1,18 @@
 package sjtu.ipads.wtune.prover.logic;
 
+import com.microsoft.z3.*;
+
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
 
-import com.microsoft.z3.ArithExpr;
-import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.Constructor;
-import com.microsoft.z3.Context;
-import com.microsoft.z3.DatatypeSort;
-import com.microsoft.z3.Expr;
-import com.microsoft.z3.FuncDecl;
-import com.microsoft.z3.Global;
-import com.microsoft.z3.Sort;
-
-public class Z3LogicCtx implements LogicCtx {
+class Z3LogicCtx implements LogicCtx {
   static {
     Global.setParameter("smt.auto_config", "false");
     Global.setParameter("smt.random_seed", "11235");
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
     Global.setParameter("smt.mbqi.max_iterations", "3");
-    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "20"));
+    //    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "100"));
     Global.setParameter("combined_solver.solver2_unknown", "2");
     Global.setParameter("pp.max_depth", "100");
   }

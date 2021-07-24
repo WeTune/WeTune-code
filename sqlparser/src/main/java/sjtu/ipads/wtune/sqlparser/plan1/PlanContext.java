@@ -18,9 +18,8 @@ public interface PlanContext {
 
   PlanNode ownerOf(Ref ref);
 
+  Value sourceOf(Value v);
   void setRef(Ref ref, Value value);
-
-  boolean isSameSource(Value v0, Value v1);
 
   boolean validate();
 

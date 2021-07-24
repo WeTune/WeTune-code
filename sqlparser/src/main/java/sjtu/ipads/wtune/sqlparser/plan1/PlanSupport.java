@@ -33,7 +33,7 @@ public interface PlanSupport {
     return new Disambiguation(plan).disambiguate();
   }
 
-  static ASTNode translateToAst(PlanNode plan) {
+  static ASTNode translateAsAst(PlanNode plan) {
     return AstTranslator.translate(plan);
   }
 

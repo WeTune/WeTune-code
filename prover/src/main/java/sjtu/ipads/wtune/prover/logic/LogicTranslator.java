@@ -1,194 +1,242 @@
 package sjtu.ipads.wtune.prover.logic;
 
-import static java.util.Arrays.asList;
-import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.common.utils.Commons.permutation;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipMap;
-
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import sjtu.ipads.wtune.common.utils.Cascade;
+import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
-import sjtu.ipads.wtune.prover.uexpr.EqPredTerm;
-import sjtu.ipads.wtune.prover.uexpr.Name;
-import sjtu.ipads.wtune.prover.uexpr.TableTerm;
-import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.*;
 import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
-import sjtu.ipads.wtune.prover.uexpr.UninterpretedPredTerm;
-import sjtu.ipads.wtune.prover.uexpr.Var;
 import sjtu.ipads.wtune.prover.utils.Constants;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
-public class LogicTranslator {
+import java.util.*;
+
+import static java.util.Arrays.asList;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+
+class LogicTranslator {
   private static final String TUPLE_TYPE_PREFIX = "Tup_";
   private static final String TABLE_FUNC_PREFIX = "t_";
   private static final String UNINTER_FUNC_PREFIX = "g";
   private static final String MAIN_FUNC_PREFIX = "f";
   private static final String CONSTANT_PREFIX = "k";
   private static final String FREE_VAL_PREFIX = "v";
+  private static final String OUT_TUPLE_TYPE_NAME = "out";
   private static final Var FREE_VAR = Var.mkBase(Constants.FREE_VAR);
 
   private final LogicCtx ctx;
   private final List<Proposition> assertions;
 
-  private final Map<Var, DataType> varTypes;
-  private final Map<Var, Value> varValues;
-  private final Map<Name, Func> tableFuncs;
-  private final Map<Name, Func> uninterFuncs;
-  private final Map<Name, Value> constVals;
+  private final SetMultimap<Name, Name> tableAttrs;
+  private final Map<Name, TableMeta> tableMeta;
+  private final Map<Var, VarMeta> varMeta;
+  private final Map<Name, Func> funcs;
+  private final Map<Name, Value> consts;
   private final Multimap<DataType, Value> freeVals;
+  private final Map<Set<Name>, DataType> knownTypes;
+  private final NameSequence tmpTypeNameSeq, funcNameSeq, constNameSeq, freeValNameSeq;
 
+  private SymbolLookup lookup;
   private Func asIntFunc;
-  private Disjunction disjunction;
-  private VarUsage varUsage;
-  private int nextTmpTableId, nextTmpFuncId;
+
+  private int seq;
 
   private LogicTranslator(LogicCtx ctx) {
     this.ctx = ctx;
     this.assertions = new ArrayList<>();
 
-    this.tableFuncs = new HashMap<>(8);
-    this.varTypes = new HashMap<>(8);
-    this.varValues = new HashMap<>(8);
-    this.uninterFuncs = new HashMap<>(2);
-    this.constVals = new HashMap<>(2);
+    this.tableAttrs = MultimapBuilder.SetMultimapBuilder.hashKeys(8).hashSetValues(2).build();
+    this.tableMeta = new HashMap<>(4);
+    this.varMeta = new HashMap<>(8);
+    this.funcs = new HashMap<>(8);
+    this.consts = new HashMap<>(2);
     this.freeVals = MultimapBuilder.hashKeys(8).arrayListValues(2).build();
+    this.knownTypes = new HashMap<>(8);
+
+    this.tmpTypeNameSeq = NameSequence.mkIndexed("m", 0);
+    this.funcNameSeq = NameSequence.mkIndexed(UNINTER_FUNC_PREFIX, 0);
+    this.constNameSeq = NameSequence.mkIndexed(CONSTANT_PREFIX, 0);
+    this.freeValNameSeq = NameSequence.mkIndexed(FREE_VAL_PREFIX, 0);
   }
 
-  public static LogicTranslator mk(LogicCtx ctx) {
+  static LogicTranslator mk(LogicCtx ctx) {
     return new LogicTranslator(ctx);
   }
 
-  public Value translate(Disjunction d) {
-    this.varTypes.clear();
-    this.varValues.clear();
-    this.disjunction = d;
-    this.varUsage = VarUsage.mk(d);
-
-    return translateBag(d);
+  SymbolLookup prepare(Disjunction d) {
+    final SymbolLookup usage = SymbolLookup.mk(d);
+    for (Name tableName : usage.tables()) tableAttrs.putAll(tableName, usage.attrsOf(tableName));
+    return usage;
   }
 
-  public Proposition translate(Constraint constraint) {
+  // Assumptions: each variable has distinct name.
+  //              each attribute has distinct name.
+  Value translate(Disjunction expr, /* nullable */ SymbolLookup usage) {
+    this.lookup = coalesce(usage, () -> prepare(expr));
+
+    this.tableMeta.clear();
+    this.varMeta.clear();
+    // funcs shouldn't be cleared
+
+    prepareTables();
+    prepareVars();
+    prepareFuncs();
+    prepareConsts();
+
+    return translateBag(expr);
+  }
+
+  Proposition translate(Constraint constraint) {
     assert constraint.type() == ConstraintType.FOREIGN;
     final String ownerTable = constraint.columns().get(0).tableName();
     final String refTable = constraint.refColumns().get(0).tableName();
-    final Func ownerTableFunc = tableFuncs.get(Name.mk(ownerTable));
-    final Func refTableFunc = tableFuncs.get(Name.mk(refTable));
+    final Func ownerTableFunc = mkTableMeta(Name.mk(ownerTable)).func;
+    final Func refTableFunc = mkTableMeta(Name.mk(refTable)).func;
     final DataType xType = ownerTableFunc.paramTypes()[0];
     final DataType yType = refTableFunc.paramTypes()[0];
     final Value x = ctx.mkVal("x", xType);
     final Value y = ctx.mkVal("y", yType);
     final Value X = ownerTableFunc.apply(x);
     final Value Y = refTableFunc.apply(y);
-    final List<Proposition> eqConds =
+
+    final List<Value> eqConds =
         zipMap(
             constraint.columns(),
             constraint.refColumns(),
             (xCol, yCol) ->
-                xType.accessor(xCol.name()).apply(x).eq(yType.accessor(yCol.name()).apply(y)));
-    final Value eqCond = ctx.mkProduct(eqConds.toArray(Proposition[]::new));
+                asIntFunc.apply(
+                    xType.accessor(xCol.name()).apply(x).eq(yType.accessor(yCol.name()).apply(y))));
+    final Value eqCond = ctx.mkProduct(eqConds.toArray(Value[]::new));
+
     return ctx.mkForall(x, X.gt(0).implies(ctx.mkExists(y, Y.mul(eqCond).gt(0))));
   }
 
-  public List<Proposition> assertions() {
+  List<Proposition> assertions() {
     return assertions;
   }
 
-  private DataType mkTupleType(Var v) {
-    if (!v.isBase()) throw new IllegalArgumentException();
-
-    final DataType type = varTypes.get(v);
-    if (type != null) return type;
-
-    final Name table = varUsage.tableOf(v);
-    final String typeName;
-
-    if (table != null) typeName = TUPLE_TYPE_PREFIX + table;
-    else if (v.equals(FREE_VAR)) typeName = TUPLE_TYPE_PREFIX + "out";
-    else typeName = mkTmpTableName();
-
-    final Set<Name> memberSet = table != null ? varUsage.usageOf(table) : varUsage.usageOf(v);
-    final String[] members = arrayMap(memberSet, Object::toString, String.class);
-
-    final DataType dataType = ctx.mkTupleType(typeName, members);
-    varTypes.put(v, dataType);
-    return dataType;
+  private void prepareTables() {
+    for (Name table : lookup.tables()) {
+      final TableMeta meta = mkTableMeta(table);
+      tableMeta.put(table, meta);
+      assertions.add(meta.assertion);
+    }
   }
 
-  private Func mkTableFunc(TableTerm t) {
-    return tableFuncs.computeIfAbsent(
-        t.name(), n -> ctx.mkFunc(TABLE_FUNC_PREFIX + n, ctx.mkIntType(), mkTupleType(t.var())));
+  private void prepareVars() {
+    for (Var var : lookup.vars()) varMeta.put(var, mkVarMeta(var));
+  }
+
+  private void prepareFuncs() {
+    for (Name pred : lookup.preds()) funcs.computeIfAbsent(pred, this::mkPred);
+    for (Name func : lookup.funcs()) funcs.computeIfAbsent(func, this::mkFunc);
+  }
+
+  private void prepareConsts() {
+    for (Name constant : lookup.consts()) consts.computeIfAbsent(constant, this::mkConst);
+  }
+
+  private TableMeta mkTableMeta(Name tableName) {
+    final Set<Name> attrNames = tableAttrs.get(tableName);
+    final DataType tupleType = mkDataType(tableName.toString(), attrNames);
+
+    final Func func = ctx.mkFunc(TABLE_FUNC_PREFIX + tableName, ctx.mkIntType(), tupleType);
+    final Value x = ctx.mkVal("x", tupleType);
+    final Proposition assertion = ctx.mkForall(x, func.apply(x).gt(0));
+
+    return new TableMeta(tableName, tupleType, func, assertion);
+  }
+
+  private VarMeta mkVarMeta(Var var) {
+    final Name vName = var.name();
+    final Name tName = lookup.tableOf(var);
+    final TableMeta tableMeta = this.tableMeta.get(tName);
+
+    final DataType dataType;
+    if (tableMeta != null) dataType = tableMeta.dataType;
+    else {
+      final String typeName = FREE_VAR.equals(var) ? OUT_TUPLE_TYPE_NAME : tmpTypeNameSeq.next();
+      final Set<Name> attrNames = tName != null ? tableAttrs.get(tName) : lookup.attrsOf(var);
+      dataType = mkDataType(typeName, attrNames);
+    }
+
+    final Value val = ctx.mkVal(vName.toString(), dataType);
+
+    return new VarMeta(vName, tName, dataType, val);
+  }
+
+  private Func mkFunc(Name funcName) {
+    final int arity = lookup.funcArityOf(funcName);
+    final DataType[] argTypes = generate(arity, i -> ctx.mkIntType(), DataType.class);
+    return ctx.mkFunc(funcNameSeq.next(), ctx.mkIntType(), argTypes);
+  }
+
+  private Func mkPred(Name predName) {
+    final int arity = lookup.predArityOf(predName);
+    final DataType[] argTypes = generate(arity, i -> ctx.mkIntType(), DataType.class);
+    return ctx.mkFunc(funcNameSeq.next(), ctx.mkBoolType(), argTypes);
+  }
+
+  private DataType mkDataType(String nameSuffix, Set<Name> members) {
+    final String name = TUPLE_TYPE_PREFIX + nameSuffix;
+
+    // The type of output tuple won't be cached
+    if (nameSuffix.equals(OUT_TUPLE_TYPE_NAME))
+      return ctx.mkTupleType(name, arrayMap(members, Object::toString, String.class));
+
+    return knownTypes.computeIfAbsent(
+        members, ms -> ctx.mkTupleType(name, arrayMap(ms, Object::toString, String.class)));
+  }
+
+  private Value mkConst(Name constant) {
+    return ctx.mkIntVal(constNameSeq.next());
+  }
+
+  private Value mkFreeVal(DataType type) {
+    return ctx.mkVal(freeValNameSeq.next(), type);
   }
 
   private Value mkVal(Var v) {
     final Name name = v.name();
 
     if (v.isBase()) {
-      return varValues.computeIfAbsent(v, ignored -> ctx.mkVal(name.toString(), mkTupleType(v)));
+      return varMeta.get(v).val;
+    }
+
+    if (v.isConstant()) {
+      return consts.get(name);
     }
 
     if (v.isProjected()) {
       final Var base = v.base()[0];
       assert base.isBase();
-      final DataType dataType = mkTupleType(base);
-      final Value val = mkVal(base);
-      final Func accessor = dataType.accessor(name.toString());
-      return accessor.apply(val);
+      final VarMeta meta = this.varMeta.get(base);
+      return meta.dataType.accessor(name.toString()).apply(meta.val);
     }
 
     if (v.isFunc()) {
       final Var[] args = v.base();
       assert none(asList(args), Var::isBase);
-      final Func func = mkUninterFunc(name, args.length, ctx.mkIntType());
-      final Value[] vals = arrayMap(args, this::mkVal, Value.class);
-      return func.apply(vals);
-    }
-
-    if (v.isConstant()) {
-      final String valName = CONSTANT_PREFIX + constVals.size();
-      return constVals.computeIfAbsent(name, it -> ctx.mkIntVal(valName));
+      return funcs.get(name).apply(arrayMap(args, this::mkVal, Value.class));
     }
 
     return assertFalse();
   }
 
-  private Value mkFreeVal(DataType type) {
-    return ctx.mkVal(FREE_VAL_PREFIX + freeVals.size(), type);
-  }
-
-  private Func mkUninterFunc(Name desc, int numArgs, DataType retType) {
-    final Func existing = uninterFuncs.get(desc);
-    if (existing != null) return existing;
-
-    final String funcName = UNINTER_FUNC_PREFIX + uninterFuncs.size();
-    final DataType[] argTypes = generate(numArgs, i -> ctx.mkIntType(), DataType.class);
-    final Func func = ctx.mkFunc(funcName, retType, argTypes);
-    uninterFuncs.put(desc, func);
-
-    return func;
-  }
-
   private Func mkMainFunc(DataType retType, DataType... argTypes) {
-    return ctx.mkFunc(mkMainFuncName(), retType, argTypes);
+    return ctx.mkFunc(MAIN_FUNC_PREFIX + seq++, retType, argTypes);
   }
 
   private Func mkAsIntFunc() {
     if (asIntFunc != null) return asIntFunc;
+
     asIntFunc = ctx.mkFunc("as_int", ctx.mkIntType(), ctx.mkBoolType());
 
     final Proposition x = ctx.mkBoolVal("x");
@@ -197,14 +245,6 @@ public class LogicTranslator {
     assertions.add(ctx.mkForall(x, lhs.eq(rhs)));
 
     return asIntFunc;
-  }
-
-  private String mkTmpTableName() {
-    return TUPLE_TYPE_PREFIX + nextTmpTableId++;
-  }
-
-  private String mkMainFuncName() {
-    return MAIN_FUNC_PREFIX + nextTmpFuncId++;
   }
 
   private Iterable<Value[]> mkMainFuncArgs(DataType... argTypes) {
@@ -219,7 +259,7 @@ public class LogicTranslator {
     // 4. a term that applies the function to the variable
     assert tableTerm.var().isBase();
 
-    final Func func = mkTableFunc(tableTerm);
+    final Func func = tableMeta.get(tableTerm.name()).func;
     final Value v = mkVal(tableTerm.var());
 
     return func.apply(v);
@@ -245,9 +285,8 @@ public class LogicTranslator {
     // 3. (optional) constants
     final Var[] vars = p.vars();
     assert none(asList(vars), Var::isBase);
-    final Func func = mkUninterFunc(p.name(), vars.length, ctx.mkBoolType());
     final Value[] args = arrayMap(vars, LogicTranslator.this::mkVal, Value.class);
-    return ((Proposition) func.apply(args));
+    return ((Proposition) funcs.get(p.name()).apply(args));
   }
 
   private Value translateBag(Disjunction d) {
@@ -276,7 +315,7 @@ public class LogicTranslator {
     assert !c.vars().isEmpty();
     final Value body = translateBag0(c);
     // Declare the function.
-    final DataType[] argsTypes = arrayMap(c.vars(), this::mkTupleType, DataType.class);
+    final DataType[] argsTypes = arrayMap(c.vars(), it -> varMeta.get(it).dataType, DataType.class);
     final Func func = mkMainFunc(ctx.mkIntType(), argsTypes);
     // Define the function.
     final Value[] argsValues = arrayMap(c.vars(), this::mkVal, Value.class);
@@ -297,8 +336,12 @@ public class LogicTranslator {
 
   private Proposition translateSet(Conjunction c) {
     final Value val = translateBag0(c);
-    final Value[] vars = arrayMap(c.vars(), this::mkVal, Value.class);
-    return ctx.mkExists(vars, val.gt(0));
+
+    if (c.vars().isEmpty()) return val.gt(0);
+    else {
+      final Value[] vars = arrayMap(c.vars(), this::mkVal, Value.class);
+      return ctx.mkExists(vars, val.gt(0));
+    }
   }
 
   private class ArgsPermutation implements Iterator<Value[]> {
@@ -397,6 +440,33 @@ public class LogicTranslator {
     @Override
     public void reset() {
       iter = permutation.iterator();
+    }
+  }
+
+  private static class TableMeta {
+    private final Name tableName;
+    private final DataType dataType;
+    private final Func func;
+    private final Proposition assertion;
+
+    private TableMeta(Name tableName, DataType dataType, Func func, Proposition assertion) {
+      this.tableName = tableName;
+      this.dataType = dataType;
+      this.func = func;
+      this.assertion = assertion;
+    }
+  }
+
+  private static class VarMeta {
+    private final Name varName, tableName;
+    private final DataType dataType;
+    private final Value val;
+
+    private VarMeta(Name varName, Name tableName, DataType dataType, Value val) {
+      this.varName = varName;
+      this.tableName = tableName;
+      this.dataType = dataType;
+      this.val = val;
     }
   }
 }

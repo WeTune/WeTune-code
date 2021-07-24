@@ -10,6 +10,8 @@ public interface ValueBag extends List<Value> {
 
   void setQualification(String qualification);
 
+  Value locate(Value value, PlanContext ctx);
+
   static ValueBag empty() {
     return ValueBagImpl.EMPTY;
   }

@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.prover;
 
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
-import sjtu.ipads.wtune.prover.logic.LogicTranslator;
-import sjtu.ipads.wtune.prover.logic.Prover;
+import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Canonization;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.normalform.Normalization;
@@ -24,11 +23,7 @@ public class ProverSupport {
     return Canonization.canonize(disjunction, schema);
   }
 
-  public static LogicTranslator mkTranslator() {
-    return LogicTranslator.mk(LogicCtx.z3());
-  }
-
-  public static Prover mkProver() {
-    return Prover.mk(LogicCtx.z3());
+  public static LogicProver mkProver(Schema schema) {
+    return LogicProver.mk(schema, LogicCtx.z3());
   }
 }

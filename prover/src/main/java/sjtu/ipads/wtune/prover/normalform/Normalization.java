@@ -1,27 +1,24 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.ADD;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SQUASH;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.rootOf;
-import static sjtu.ipads.wtune.prover.utils.Constants.NORMALIZATION_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.UExprUtils.renameVars;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import sjtu.ipads.wtune.prover.uexpr.SumExpr;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.uexpr.Var;
 
-public class Normalization {
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.*;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.rootOf;
+import static sjtu.ipads.wtune.prover.utils.Constants.NORMALIZATION_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.renameVars;
+
+public final class Normalization {
   // Section 3.3, Eq 1-9
   private static final List<Transformation> PASS0 =
       List.of(
@@ -41,15 +38,22 @@ public class Normalization {
           new SquashCommunity(), new MulAssociativity(), new AddAssociativity(), new MulSquash());
   private static final List<Transformation> PASS3 =
       List.of(new NotCommunity(), new MulAssociativity(), new AddAssociativity(), new MulNot());
+  private static final List<Transformation> PASS4 =
+      List.of(
+          new MulSum(),
+          new SumSum(),
+          new MulAssociativity(),
+          new AddAssociativity(),
+          new Distribution());
 
-  Normalization() {}
+  private Normalization() {}
 
   public static Disjunction normalize(UExpr root) {
     return normalize(root, NORMALIZATION_VAR_PREFIX);
   }
 
   public static Disjunction normalize(UExpr root, String renamePrefix) {
-    final Disjunction d = asDisjunction(new Normalization().transform(root.copy()));
+    final Disjunction d = asDisjunction(transform(root.copy()));
     return renamePrefix == null ? d : renameVars(d, renamePrefix);
   }
 
@@ -88,15 +92,16 @@ public class Normalization {
         negs.isEmpty() ? null : asDisjunction(negs.get(0).child(0)));
   }
 
-  private UExpr transform(UExpr root) {
+  private static UExpr transform(UExpr root) {
     root = transform(UExpr.postorderTraversal(root), PASS0);
     root = transform(UExpr.postorderTraversal(root), PASS1);
     root = transform(UExpr.postorderTraversal(root), PASS2);
     root = transform(UExpr.postorderTraversal(root), PASS3);
+    root = transform(UExpr.postorderTraversal(root), PASS4);
     return root;
   }
 
-  private UExpr transform(List<UExpr> targets, Collection<Transformation> tfs) {
+  private static UExpr transform(List<UExpr> targets, Collection<Transformation> tfs) {
     // not efficient, but safe
     for (UExpr target : targets)
       for (Transformation tf : tfs) {

@@ -2,10 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
-import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
+import sjtu.ipads.wtune.sqlparser.plan1.*;
 import sjtu.ipads.wtune.superopt.fragment1.pruning.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
@@ -16,8 +13,8 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
 
@@ -175,7 +172,7 @@ class FragmentUtils {
     final ValueBag lookup = predecessor.values();
 
     for (Value value : values) {
-      final Value boundValue = find(lookup, it -> ctx.isSameSource(value, it));
+      final Value boundValue = lookup.locate(value, ctx);
       if (boundValue == null) throw new NoSuchElementException("cannot bind value: " + value);
       boundValues.add(boundValue);
     }
@@ -192,6 +189,43 @@ class FragmentUtils {
       }
 
     return false;
+  }
+
+  static boolean isFragment(PlanNode node) {
+    // Check if the node is a complete query.
+    // Specifically, check if the root node is Union/Proj
+    // (ignore Sort/Limit)
+    final OperatorType type = node.type();
+    return type != UNION
+        && type != PROJ
+        && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));
+  }
+
+  static PlanNode wrapFragment(PlanNode plan) {
+    if (!isFragment(plan)) return plan;
+
+    // wrap a fragment plan with a outer Proj
+    final ProjNode proj = ProjNode.mkWildcard(plan.values());
+    final PlanContext ctx = PlanContext.mk(plan.context().schema());
+
+    proj.setContext(ctx);
+    proj.setPredecessor(0, plan.copy(ctx));
+    ctx.registerRefs(proj, proj.refs());
+    ctx.registerValues(proj, proj.values());
+    zipForEach(proj.refs(), plan.values(), ctx::setRef);
+
+    return proj;
+  }
+
+  static void alignOutput(PlanNode p0, PlanNode p1) {
+    final ValueBag values0 = p0.values(), values1 = p1.values();
+    assert values0.size() == values1.size();
+    for (int i = 0, bound = values0.size(); i < bound; ++i) {
+      final Value value0 = values0.get(i);
+      final Value value1 = values1.get(i);
+      if (value1.expr() != null) value1.setName(value0.name());
+      if (value0.expr() != null) value0.setName(value1.name());
+    }
   }
 
   private static void gatherHoles(Op op, List<Hole<Op>> buffer) {

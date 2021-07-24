@@ -1,16 +1,14 @@
 package sjtu.ipads.wtune.prover;
 
-import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
-import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
-import static sjtu.ipads.wtune.prover.ProverSupport.translateAsUExpr;
-
-import sjtu.ipads.wtune.prover.logic.Prover;
+import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.support.Workflow;
+
+import static sjtu.ipads.wtune.prover.ProverSupport.*;
 
 public class Main {
   private static PlanNode makePlan(Statement stmt) {
@@ -51,7 +49,7 @@ public class Main {
     System.out.println(canonicalForm0);
     System.out.println(canonicalForm1);
 
-    final Prover prover = ProverSupport.mkProver();
+    final LogicProver prover = ProverSupport.mkProver(schema);
     System.out.println(prover.prove(canonicalForm0, canonicalForm1));
 
     //    translator.assertions().forEach(System.out::println);

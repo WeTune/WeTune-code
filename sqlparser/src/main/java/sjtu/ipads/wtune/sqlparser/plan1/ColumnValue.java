@@ -45,6 +45,11 @@ class ColumnValue implements Value {
   }
 
   @Override
+  public void setName(String name) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public String toString() {
     return qualification + '.' + name;
   }

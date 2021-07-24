@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -9,6 +10,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -23,23 +25,20 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsEq;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsFrom;
+import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.alignOutput;
+import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.wrapFragment;
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
 
 class PlanTranslator {
-  private final Fragment fragment;
-  private final Constraints constraints;
   private final Map<Symbol, TableDesc> tableDescs;
   private final Map<Symbol, AttrsDesc> attrsDescs;
   private final Map<Symbol, PredDesc> predDescs;
-
   private final NameSequence tableNameSeq, attrNameSeq, predNameSeq, queryNameSeq;
 
-  PlanTranslator(Fragment fragment, Constraints constraints) {
-    this.fragment = fragment;
-    this.constraints = constraints;
+  private Constraints constraints;
+  private Symbols symbols;
 
-    completeConstraints();
-
+  PlanTranslator() {
     tableDescs = new LinkedHashMap<>(4);
     attrsDescs = new LinkedHashMap<>(8);
     predDescs = new LinkedHashMap<>(4);
@@ -49,18 +48,14 @@ class PlanTranslator {
     queryNameSeq = mkIndexed("q", 0);
   }
 
-  PlanNode translate() {
-    final Symbols symbols = fragment.symbols();
+  PlanNode translate(Fragment fragment, Constraints constraints) {
+    this.constraints = constraints;
+    this.symbols = fragment.symbols();
 
-    assign(symbols.symbolsOf(TABLE), tableDescs, TableDesc::new);
-    assign(symbols.symbolsOf(ATTRS), attrsDescs, AttrsDesc::new);
-    assign(symbols.symbolsOf(PRED), predDescs, PredDesc::new);
+    completeConstraints(fragment);
 
-    applyAttrsFrom(symbols.symbolsOf(ATTRS));
-
-    resolveTables();
-    resolveAttrs();
-    resolvePreds();
+    assignAll();
+    resolveAll();
 
     final Schema schema = mkSchema();
     final Model model = mkModel(schema);
@@ -69,7 +64,47 @@ class PlanTranslator {
     return fragment.root().instantiate(ctx, model);
   }
 
-  private <T> void assign(Collection<Symbol> syms, Map<Symbol, T> descs, Supplier<T> supplier) {
+  Pair<PlanNode, PlanNode> translate(Substitution substitution) {
+    final Fragment fragment0 = substitution._0();
+    final Fragment fragment1 = substitution._1();
+
+    this.constraints = substitution.constraints();
+    this.symbols = Symbols.merge(fragment0.symbols(), fragment1.symbols());
+
+    completeConstraints(fragment0);
+    completeConstraints(fragment1);
+
+    assignAll();
+    resolveAll();
+
+    final Schema schema = mkSchema();
+    final Model model = mkModel(schema);
+
+    final PlanNode rawPlan0 = fragment0.root().instantiate(PlanContext.mk(schema), model);
+    final PlanNode rawPlan1 = fragment1.root().instantiate(PlanContext.mk(schema), model);
+    alignOutput(rawPlan0, rawPlan1);
+    // Ensure the outcome is a complete plan instead of a fragment.
+    final PlanNode plan0 = wrapFragment(rawPlan0);
+    final PlanNode plan1 = wrapFragment(rawPlan1);
+    alignOutput(plan0, plan1);
+
+    return Pair.of(plan0, plan1);
+  }
+
+  private void assignAll() {
+    assign0(symbols.symbolsOf(TABLE), tableDescs, TableDesc::new);
+    assign0(symbols.symbolsOf(ATTRS), attrsDescs, AttrsDesc::new);
+    assign0(symbols.symbolsOf(PRED), predDescs, PredDesc::new);
+    applyAttrsFrom(symbols.symbolsOf(ATTRS));
+  }
+
+  private void resolveAll() {
+    resolveTables();
+    resolveAttrs();
+    resolvePreds();
+  }
+
+  private <T> void assign0(Collection<Symbol> syms, Map<Symbol, T> descs, Supplier<T> supplier) {
     for (Symbol sym : syms) {
       final T desc = descs.get(sym);
       if (desc != null) continue;
@@ -89,21 +124,28 @@ class PlanTranslator {
   }
 
   private void resolveTables() {
-    for (TableDesc desc : tableDescs.values()) desc.name = tableNameSeq.next();
+    for (TableDesc desc : tableDescs.values())
+      if (desc.name == null) desc.name = tableNameSeq.next();
   }
 
   private void resolvePreds() {
-    for (PredDesc desc : predDescs.values()) desc.name = predNameSeq.next();
+    for (PredDesc desc : predDescs.values()) if (desc.name == null) desc.name = predNameSeq.next();
   }
 
   private void resolveAttrs() {
     for (TableDesc tableDesc : tableDescs.values()) {
       final List<String> attrNames = tableDesc.attrNames = new ArrayList<>(4);
       for (AttrsDesc attrsDesc : tableDesc.attrs) {
-        attrsDesc.table = tableDesc.name;
-        attrsDesc.name = attrNameSeq.next();
+        if (attrsDesc.name == null) {
+          attrsDesc.table = tableDesc.name;
+          attrsDesc.name = attrNameSeq.next();
+        }
         attrNames.add(attrsDesc.name);
       }
+    }
+    for (AttrsDesc value : attrsDescs.values()) {
+      if (value.name == null)
+        value.name = attrNameSeq.next();
     }
   }
 
@@ -164,24 +206,25 @@ class PlanTranslator {
   private Model mkModel(Schema schema) {
     final Model model = Model.mk();
 
-    final Map<String, InputNode> inputs = new HashMap<>(tableDescs.size());
+    final Map<Symbol, InputNode> inputs = new HashMap<>(tableDescs.size());
 
     for (var pair : tableDescs.entrySet()) {
       final Table table = schema.table(pair.getValue().name);
       final InputNode input = InputNode.mk(table, table.name());
       model.assign(pair.getKey(), input);
-      inputs.put(table.name(), input);
+      inputs.put(pair.getKey(), input);
     }
 
     for (var pair : attrsDescs.entrySet()) {
-      if (pair.getValue().table != null) {
-        final InputNode input = inputs.get(pair.getValue().table);
-        final String attrName = pair.getValue().name;
+      final AttrsDesc desc = pair.getValue();
+      if (desc.table != null) {
+        final InputNode input = inputs.get(constraints.sourceOf(pair.getKey()));
+        final String attrName = desc.name;
         final Value value = find(input.values(), it -> it.name().equals(attrName));
         model.assign(pair.getKey(), singletonList(value));
 
       } else {
-        final Value value = Value.mk(queryNameSeq.next(), attrNameSeq.next(), Expr.mk(mkColRef()));
+        final Value value = Value.mk(queryNameSeq.next(), desc.name, Expr.mk(mkColRef()));
         model.assign(pair.getKey(), singletonList(value));
       }
     }
@@ -225,13 +268,16 @@ class PlanTranslator {
     private String name;
   }
 
-  private void completeConstraints() {
+  private void completeConstraints(Fragment fragment) {
+    // Add missing AttrsFrom.
     fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints0));
     // In legacy solver, an ref that references the values of a subquery is unconstrained.
     // Thus, incomplete constraint set may be produced.
     // Example: Filter<c0>(Proj<c1>(Input<t0>)). `c0` must be a sublist of `c1`, otherwise invalid.
     // So we add a constraint AttrsEq(c0,c1) in such case (for simplicity).
     fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints1));
+    // For Proj0.inAttrs = Proj1.inAttrs, add Proj0.outAttrs = Proj1.outAttrs
+    fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints2));
   }
 
   private void completeConstraints0(Op op) {
@@ -244,39 +290,16 @@ class PlanTranslator {
     propagateAttrsBound(op.successor(), op, ((Proj) op).inAttrs());
   }
 
-  private void propagateAttrsBound(Op op, Op prev, Symbol bound) {
-    if (op == null) return;
+  private void completeConstraints2(Op op) {
+    if (op.type() != PROJ) return;
 
-    switch (op.type()) {
-      case PROJ:
-        {
-          final Symbol attrs = ((Proj) op).inAttrs();
-          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
-            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
-          return;
-        }
-      case IN_SUB_FILTER:
-      case SIMPLE_FILTER:
-        {
-          if (prev != op.predecessors()[0]) return;
-          final Symbol attrs = ((Filter) op).attrs();
-          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
-            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
-          propagateAttrsBound(op.successor(), op, bound);
-          return;
-        }
-      case LEFT_JOIN:
-      case INNER_JOIN:
-        {
-          final Join join = (Join) op;
-          final Symbol attrs = prev == op.predecessors()[0] ? join.lhsAttrs() : join.rhsAttrs();
-          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
-            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
-          propagateAttrsBound(op.successor(), op, bound);
-          return;
-        }
-      default:
-        throw new IllegalArgumentException();
+    final Proj proj = (Proj) op;
+
+    for (Symbol symbol : constraints.eqClassOf(proj.inAttrs())) {
+      final Op owner = symbols.ownerOf(ATTRS, symbol);
+      if (owner != op && owner.type() == PROJ) {
+        constraints.add(Constraint.mk(AttrsEq, proj.outAttrs(), ((Proj) owner).outAttrs()));
+      }
     }
   }
 
@@ -316,6 +339,42 @@ class PlanTranslator {
             constraints.add(Constraint.mk(AttrsFrom, attrs1, source));
 
           propagateAttrsSource(op.successor(), op, source);
+          return;
+        }
+      default:
+        throw new IllegalArgumentException();
+    }
+  }
+
+  private void propagateAttrsBound(Op op, Op prev, Symbol bound) {
+    if (op == null) return;
+
+    switch (op.type()) {
+      case PROJ:
+        {
+          final Symbol attrs = ((Proj) op).inAttrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          return;
+        }
+      case IN_SUB_FILTER:
+      case SIMPLE_FILTER:
+        {
+          if (prev != op.predecessors()[0]) return;
+          final Symbol attrs = ((Filter) op).attrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          propagateAttrsBound(op.successor(), op, bound);
+          return;
+        }
+      case LEFT_JOIN:
+      case INNER_JOIN:
+        {
+          final Join join = (Join) op;
+          final Symbol attrs = prev == op.predecessors()[0] ? join.lhsAttrs() : join.rhsAttrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          propagateAttrsBound(op.successor(), op, bound);
           return;
         }
       default:

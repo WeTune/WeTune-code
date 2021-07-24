@@ -9,7 +9,13 @@ public interface Symbols {
 
   Collection<Symbol> symbolsOf(Symbol.Kind kind);
 
+  Op ownerOf(Symbol.Kind kind, Symbol symbol);
+
   static Symbols mk() {
     return new SymbolsImpl();
+  }
+
+  static Symbols merge(Symbols symbols0, Symbols symbols1) {
+    return SymbolsImpl.merge(symbols0, symbols1);
   }
 }

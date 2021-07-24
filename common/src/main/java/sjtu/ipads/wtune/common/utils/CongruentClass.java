@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.common.utils;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.AbstractSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 final class CongruentClass<T> extends AbstractSet<T> {
   private final CongruenceImpl<T> congruence;
@@ -20,7 +20,7 @@ final class CongruentClass<T> extends AbstractSet<T> {
   public boolean add(T t) {
     requireNonNull(t);
 
-    if (congruence.bind(t, this)) return elements.add(t);
+    if (!elements.contains(t) && congruence.bind(t, this)) return elements.add(t);
     return false;
   }
 

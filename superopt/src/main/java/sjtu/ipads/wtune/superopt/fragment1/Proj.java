@@ -1,15 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.bindValues;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan1.*;
 
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
-import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.bindValues;
 
 public interface Proj extends Op {
   Symbol inAttrs();

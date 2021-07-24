@@ -41,6 +41,11 @@ class WildcardValue implements Value {
   }
 
   @Override
+  public void setName(String name) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public String toString() {
     if (wildcardQualification == null) return "*";
     else return wildcardQualification + '.' + "*";

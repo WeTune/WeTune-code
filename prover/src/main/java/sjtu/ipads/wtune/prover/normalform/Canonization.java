@@ -102,11 +102,10 @@ public final class Canonization {
     return c;
   }
 
-  // [x = Null] * f(x.y) -> [x = Null] * f(null)
   private static Conjunction applyRefl(Conjunction c) {
     c.preds().removeIf(UExprUtils::isReflexivity);
-    if (c.squash() != null) applyConst2(c.squash());
-    if (c.neg() != null) applyConst2(c.neg());
+    if (c.squash() != null) applyReflexivity(c.squash());
+    if (c.neg() != null) applyReflexivity(c.neg());
     return c;
   }
 
@@ -171,10 +170,15 @@ public final class Canonization {
   }
 
   // eliminate intermediate variable
+  // e.g. Sum{x,y}([x=y] * R(x)) => Sum{x}(R(x))
   private static Conjunction applyMini(Conjunction c) {
+    if (c.squash() != null) applyMinimization(c.squash());
+    if (c.neg() != null) applyMinimization(c.neg());
+    // For those variable from no table ...
     final List<Var> tmpVars = listFilter(c.vars(), v -> none(c.tables(), it -> it.uses(v)));
     if (tmpVars.isEmpty()) return c;
 
+    // ... and its projection is used in a equi-pred ...
     final Congruence<Var> cong = TupleCongruence.mk(c.preds());
     for (Var key : cong.keys()) {
       final Var tmpVar = find(tmpVars, key::uses);
@@ -183,6 +187,7 @@ public final class Canonization {
       final Set<Var> group = cong.eqClassOf(key);
       if (group.size() == 1) continue;
 
+      // ..., substitute such variable with another variable equal to it
       c.vars().remove(tmpVar);
       c.subst(key, find(group, it -> none(tmpVars, it::uses)));
     }
