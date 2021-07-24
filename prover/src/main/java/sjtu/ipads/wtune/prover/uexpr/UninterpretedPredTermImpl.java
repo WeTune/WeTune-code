@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.uexpr;
 
 import static java.util.Objects.requireNonNull;
 
-import sjtu.ipads.wtune.prover.utils.Util;
+import sjtu.ipads.wtune.prover.utils.UExprUtils;
 
 final class UninterpretedPredTermImpl extends UExprBase implements UninterpretedPredTerm {
   private final Name name;
@@ -18,7 +18,7 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
     requireNonNull(t);
     requireNonNull(rep);
 
-    args = Util.substVar(args, t, rep);
+    args = UExprUtils.substVar(args, t, rep);
   }
 
   @Override
@@ -45,7 +45,7 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
   @Override
   public StringBuilder stringify(StringBuilder builder) {
     builder.append('[');
-    Util.interpolateVars(name.toString(), args, builder);
+    UExprUtils.interpolateVars(name.toString(), args, builder);
     builder.append(']');
     return builder;
   }

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
-import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
+import static sjtu.ipads.wtune.prover.ProverSupport.translateAsUExpr;
 
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
@@ -29,8 +29,8 @@ public class EliminatorTest {
     PlanSupport.disambiguate(plan0);
     PlanSupport.disambiguate(plan1);
 
-    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
-    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+    final Disjunction normalForm0 = normalizeExpr(translateAsUExpr(plan0));
+    final Disjunction normalForm1 = normalizeExpr(translateAsUExpr(plan1));
 
     System.out.println(normalForm0);
     System.out.println(normalForm1);

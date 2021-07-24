@@ -14,8 +14,8 @@ import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.uexpr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.uexpr.Var;
 
-public final class Util {
-  private Util() {}
+public final class UExprUtils {
+  private UExprUtils() {}
 
   public static boolean isReflexivity(UExpr pred) {
     if (pred.kind() != Kind.EQ_PRED) return false;

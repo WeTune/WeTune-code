@@ -94,16 +94,11 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("InSub{").append(lhsExpr);
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(refs);
-      else builder.append(context.deRef(refs));
-    }
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("InSub{");
+    stringifyRefs(builder);
     builder.append('}');
-    if (predecessors[0] != null && predecessors[1] != null)
-      builder.append('(').append(predecessors[0]).append(',').append(predecessors[1]).append(')');
-    return builder.toString();
+    stringifyChildren(builder);
+    return builder;
   }
 }

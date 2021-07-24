@@ -41,4 +41,8 @@ public interface Constraint {
   static Constraint parse(String str, SymbolNaming naming) {
     return ConstraintImpl.parse(str, naming);
   }
+
+  static Constraint mk(Kind kind, Symbol... symbols) {
+    return new ConstraintImpl(kind, symbols);
+  }
 }

@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
-
-import java.util.AbstractList;
-import java.util.List;
-import java.util.Set;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.Congruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
+
+import java.util.AbstractList;
+import java.util.List;
+import java.util.Set;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
 
 class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   private final List<Constraint> constraints;
@@ -50,6 +51,14 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
       if (constraint.kind() == Kind.AttrsFrom && constraint.symbols()[0].equals(attrSym))
         return constraint.symbols()[1];
     return null;
+  }
+
+  @Override
+  public boolean add(Constraint constraint) {
+    constraints.add(constraint);
+    if (constraint.kind().isEq())
+      congruence.putCongruent(constraint.symbols()[0], constraint.symbols()[1]);
+    return true;
   }
 
   @Override

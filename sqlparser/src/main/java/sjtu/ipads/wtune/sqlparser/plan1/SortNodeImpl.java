@@ -50,15 +50,11 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("Sort{").append(orders);
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(refs);
-      else builder.append(context.deRef(refs));
-    }
-    builder.append('{');
-    if (predecessors[0] != null) builder.append('(').append(predecessors[0]).append(')');
-    return builder.toString();
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("Sort{");
+    stringifyRefs(builder);
+    builder.append('}');
+    stringifyChildren(builder);
+    return builder;
   }
 }

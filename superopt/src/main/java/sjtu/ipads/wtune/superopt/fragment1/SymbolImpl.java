@@ -11,4 +11,9 @@ class SymbolImpl implements Symbol {
   public Kind kind() {
     return kind;
   }
+
+  @Override
+  public String toString() {
+    return kind.name();
+  }
 }

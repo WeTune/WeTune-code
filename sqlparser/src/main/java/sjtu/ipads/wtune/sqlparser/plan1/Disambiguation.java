@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.UNION;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.HashSet;
 import java.util.Set;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
 // assign unique qualification to each Input and Proj
 class Disambiguation {
@@ -17,8 +16,9 @@ class Disambiguation {
     this.plan = plan;
   }
 
-  public static void disambiguate(PlanNode node) {
-    new Disambiguation(node).onNode(node);
+  public PlanNode disambiguate() {
+    onNode(plan);
+    return plan;
   }
 
   private void onNode(PlanNode node) {
@@ -37,8 +37,9 @@ class Disambiguation {
     if (knownNames.add(knownName)) return;
 
     final String newName = generateNewName(knownName);
-    proj.values().setQualification(newName);
     knownNames.add(newName);
+
+    proj.values().setQualification(newName);
   }
 
   private void onInput(InputNode input) {
@@ -48,14 +49,15 @@ class Disambiguation {
     if (knownNames.add(knownName)) return;
 
     final String newName = generateNewName(knownName);
-    input.values().setQualification(newName);
     knownNames.add(newName);
+
+    input.values().setQualification(newName);
   }
 
   private String generateNewName(String baseName) {
     int i = 0;
     while (true) {
-      final String newName = baseName + (i++);
+      final String newName = baseName + '_' + (i++);
       if (!knownNames.contains(newName)) return newName;
     }
   }

@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public class ProverSupport {
-  public static UExpr translateToExpr(PlanNode plan) {
+  public static UExpr translateAsUExpr(PlanNode plan) {
     return UExprTranslator.translate(plan);
   }
 

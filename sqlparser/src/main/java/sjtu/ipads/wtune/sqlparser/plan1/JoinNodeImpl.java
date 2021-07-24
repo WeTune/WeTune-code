@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
@@ -78,7 +79,7 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.empty();
+    return ValueBag.mk(listJoin(predecessors[0].values(), predecessors[1].values()));
   }
 
   @Override
@@ -121,21 +122,11 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder(type.toString());
-    builder.append('{').append(condition);
-
-    final RefBag refs = refs();
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(refs);
-      else builder.append(context.deRef(refs));
-    }
-
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append(type().text()).append('{').append(condition);
+    stringifyRefs(builder);
     builder.append('}');
-    if (predecessors[0] != null && predecessors[1] != null)
-      builder.append('(').append(predecessors[0]).append(',').append(predecessors[1]).append(')');
-
-    return builder.toString();
+    stringifyChildren(builder);
+    return builder;
   }
 }

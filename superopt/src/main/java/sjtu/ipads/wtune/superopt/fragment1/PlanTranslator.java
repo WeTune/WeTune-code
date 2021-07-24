@@ -1,41 +1,29 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
-import static sjtu.ipads.wtune.common.utils.NameSequence.mkIndexed;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_ARGS;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NAME_2_1;
-import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.ATTRS;
-import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.PRED;
-import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.TABLE;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.plan1.Expr;
-import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
+import sjtu.ipads.wtune.sqlparser.plan1.*;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
+
+import java.util.*;
+import java.util.function.Supplier;
+
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.NameSequence.mkIndexed;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsEq;
+import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsFrom;
+import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
 
 class PlanTranslator {
   private final Fragment fragment;
@@ -46,21 +34,19 @@ class PlanTranslator {
 
   private final NameSequence tableNameSeq, attrNameSeq, predNameSeq, queryNameSeq;
 
-  private PlanTranslator(Fragment fragment, Constraints constraints) {
+  PlanTranslator(Fragment fragment, Constraints constraints) {
     this.fragment = fragment;
     this.constraints = constraints;
+
+    completeConstraints();
 
     tableDescs = new LinkedHashMap<>(4);
     attrsDescs = new LinkedHashMap<>(8);
     predDescs = new LinkedHashMap<>(4);
-    tableNameSeq = mkIndexed("t", 0);
+    tableNameSeq = mkIndexed("r", 0);
     attrNameSeq = mkIndexed("a", 0);
     predNameSeq = mkIndexed("p", 0);
     queryNameSeq = mkIndexed("q", 0);
-  }
-
-  static PlanNode translate(Fragment fragment, Constraints constraints) {
-    return new PlanTranslator(fragment, constraints).translate();
   }
 
   PlanNode translate() {
@@ -129,8 +115,13 @@ class PlanTranslator {
       if (!initedSymbol.add(table.name)) continue;
 
       builder.append("create table ").append(table.name).append("(\n");
+
       for (String attrName : table.attrNames)
         builder.append("  ").append(attrName).append(" int,\n");
+      if (table.attrNames.isEmpty())
+        // empty table is syntactically error, so we add a dummy column
+        builder.append("  ").append(attrNameSeq.next()).append(" int,\n");
+
       builder.replace(builder.length() - 2, builder.length(), ");\n");
     }
 
@@ -232,5 +223,103 @@ class PlanTranslator {
 
   private static class PredDesc {
     private String name;
+  }
+
+  private void completeConstraints() {
+    fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints0));
+    // In legacy solver, an ref that references the values of a subquery is unconstrained.
+    // Thus, incomplete constraint set may be produced.
+    // Example: Filter<c0>(Proj<c1>(Input<t0>)). `c0` must be a sublist of `c1`, otherwise invalid.
+    // So we add a constraint AttrsEq(c0,c1) in such case (for simplicity).
+    fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints1));
+  }
+
+  private void completeConstraints0(Op op) {
+    if (op.type() == INPUT) propagateAttrsSource(op.successor(), op, ((Input) op).table());
+  }
+
+  private void completeConstraints1(Op op) {
+    if (op.type() != PROJ || op.successor() == null) return;
+
+    propagateAttrsBound(op.successor(), op, ((Proj) op).inAttrs());
+  }
+
+  private void propagateAttrsBound(Op op, Op prev, Symbol bound) {
+    if (op == null) return;
+
+    switch (op.type()) {
+      case PROJ:
+        {
+          final Symbol attrs = ((Proj) op).inAttrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          return;
+        }
+      case IN_SUB_FILTER:
+      case SIMPLE_FILTER:
+        {
+          if (prev != op.predecessors()[0]) return;
+          final Symbol attrs = ((Filter) op).attrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          propagateAttrsBound(op.successor(), op, bound);
+          return;
+        }
+      case LEFT_JOIN:
+      case INNER_JOIN:
+        {
+          final Join join = (Join) op;
+          final Symbol attrs = prev == op.predecessors()[0] ? join.lhsAttrs() : join.rhsAttrs();
+          if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
+            constraints.add(Constraint.mk(AttrsEq, attrs, bound));
+          propagateAttrsBound(op.successor(), op, bound);
+          return;
+        }
+      default:
+        throw new IllegalArgumentException();
+    }
+  }
+
+  private void propagateAttrsSource(Op op, Op prev, Symbol source) {
+    if (op == null) return;
+
+    switch (op.type()) {
+      case PROJ:
+        {
+          final Symbol attrs = ((Proj) op).inAttrs();
+          if (constraints.sourceOf(attrs) == null)
+            constraints.add(Constraint.mk(AttrsFrom, attrs, source));
+          propagateAttrsSource(op.successor(), op, source);
+          return;
+        }
+
+      case IN_SUB_FILTER:
+      case SIMPLE_FILTER:
+        {
+          if (prev != op.predecessors()[0]) return;
+          final Symbol attrs = ((Filter) op).attrs();
+          if (constraints.sourceOf(attrs) == null)
+            constraints.add(Constraint.mk(AttrsFrom, attrs, source));
+          propagateAttrsSource(op.successor(), op, source);
+          return;
+        }
+
+      case LEFT_JOIN:
+      case INNER_JOIN:
+        {
+          final Join join = (Join) op;
+          final Symbol attrs0 = join.lhsAttrs(), attrs1 = join.rhsAttrs();
+
+          if (prev == join.predecessors()[0] && constraints.sourceOf(attrs0) == null)
+            constraints.add(Constraint.mk(AttrsFrom, attrs0, source));
+          if (prev == join.predecessors()[1] && constraints.sourceOf(attrs1) == null)
+            constraints.add(Constraint.mk(AttrsFrom, attrs1, source));
+
+          propagateAttrsSource(op.successor(), op, source);
+          return;
+        }
+      default:
+        throw new IllegalArgumentException();
+    }
   }
 }

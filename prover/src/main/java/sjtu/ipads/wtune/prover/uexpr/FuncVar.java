@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Objects;
 import java.util.Arrays;
-import sjtu.ipads.wtune.prover.utils.Util;
+import sjtu.ipads.wtune.prover.utils.UExprUtils;
 
 final class FuncVar implements Var {
   private final Name funcName;
@@ -36,7 +36,7 @@ final class FuncVar implements Var {
 
     if (this.equals(target)) return replacement;
 
-    final Var[] subst = Util.substVar(args, target, replacement);
+    final Var[] subst = UExprUtils.substVar(args, target, replacement);
 
     if (subst == args) return this;
     else return new FuncVar(funcName, subst);
@@ -60,7 +60,7 @@ final class FuncVar implements Var {
 
   @Override
   public StringBuilder stringify(StringBuilder builder) {
-    return Util.interpolateVars(funcName.toString(), args, builder);
+    return UExprUtils.interpolateVars(funcName.toString(), args, builder);
   }
 
   @Override

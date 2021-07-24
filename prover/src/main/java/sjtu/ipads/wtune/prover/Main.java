@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover;
 
 import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
-import static sjtu.ipads.wtune.prover.ProverSupport.translateToExpr;
+import static sjtu.ipads.wtune.prover.ProverSupport.translateAsUExpr;
 
 import sjtu.ipads.wtune.prover.logic.Prover;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
@@ -39,11 +39,11 @@ public class Main {
     final PlanNode plan1 = makePlan(stmt1);
 
     final Schema schema = stmt0.app().schema("base", true);
-    System.out.println(translateToExpr(plan0));
-    System.out.println(translateToExpr(plan1));
+    System.out.println(translateAsUExpr(plan0));
+    System.out.println(translateAsUExpr(plan1));
 
-    final Disjunction normalForm0 = normalizeExpr(translateToExpr(plan0));
-    final Disjunction normalForm1 = normalizeExpr(translateToExpr(plan1));
+    final Disjunction normalForm0 = normalizeExpr(translateAsUExpr(plan0));
+    final Disjunction normalForm1 = normalizeExpr(translateAsUExpr(plan1));
 
     final Disjunction canonicalForm0 = canonizeExpr(normalForm0, schema);
     final Disjunction canonicalForm1 = canonizeExpr(normalForm1, schema);

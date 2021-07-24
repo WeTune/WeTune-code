@@ -1,16 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
+import sjtu.ipads.wtune.sqlparser.plan1.*;
+
+import java.util.List;
+
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.bindValues;
-
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Ref;
-import sjtu.ipads.wtune.sqlparser.plan1.RefBag;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
 
 public interface Join extends Op {
   Symbol lhsAttrs();

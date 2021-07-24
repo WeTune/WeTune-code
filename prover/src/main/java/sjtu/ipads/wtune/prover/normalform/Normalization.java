@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SQUASH;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.rootOf;
 import static sjtu.ipads.wtune.prover.utils.Constants.NORMALIZATION_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.Util.renameVars;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.renameVars;
 
 import java.util.ArrayList;
 import java.util.Collection;

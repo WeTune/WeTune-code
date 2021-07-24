@@ -8,6 +8,7 @@ module sjtu.ipads.wtune.superopt {
   requires sjtu.ipads.wtune.common;
   requires sjtu.ipads.wtune.sqlparser;
   requires sjtu.ipads.wtune.stmt;
+  requires sjtu.ipads.wtune.prover;
   requires trove4j;
   requires java.sql;
   requires mysql.connector.java;

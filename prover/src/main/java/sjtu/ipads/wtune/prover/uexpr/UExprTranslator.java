@@ -1,57 +1,27 @@
 package sjtu.ipads.wtune.prover.uexpr;
 
+import sjtu.ipads.wtune.prover.utils.UExprUtils;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan1.*;
+
+import java.util.*;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipMap;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.add;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.eqPred;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.not;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.squash;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.table;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.uninterpretedPred;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.*;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkBase;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkConstant;
-import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
 import static sjtu.ipads.wtune.prover.utils.Constants.NULL_VAR;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LIMIT;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SORT;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.UNION;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import sjtu.ipads.wtune.prover.utils.Util;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.ExistsFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Expr;
-import sjtu.ipads.wtune.sqlparser.plan1.InSubFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan1.SimpleFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.ProjNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Ref;
-import sjtu.ipads.wtune.sqlparser.plan1.RefBag;
-import sjtu.ipads.wtune.sqlparser.plan1.SetOpNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
-import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
 public class UExprTranslator {
   private static final Var ROOT_VAR = Var.mkBase(TRANSLATOR_VAR_PREFIX);
@@ -74,6 +44,20 @@ public class UExprTranslator {
   }
 
   public static UExpr translate(PlanNode plan) {
+    if (isFragment(plan)) {
+      // wrap a fragment plan with a outer Proj
+      final ProjNode proj = ProjNode.mkWildcard(plan.values());
+      final PlanContext ctx = PlanContext.mk(plan.context().schema());
+
+      proj.setContext(ctx);
+      proj.setPredecessor(0, plan.copy(ctx));
+      ctx.registerRefs(proj, proj.refs());
+      ctx.registerValues(proj, proj.values());
+      zipForEach(proj.refs(), plan.values(), ctx::setRef);
+
+      plan = proj;
+    }
+
     return new UExprTranslator(plan).onNode(plan);
   }
 
@@ -89,11 +73,12 @@ public class UExprTranslator {
       case EXISTS_FILTER -> onExistsFilter((ExistsFilterNode) node);
       case UNION -> onUnion((SetOpNode) node);
       case AGG, SORT, LIMIT -> onNode(node.predecessors()[0]);
+      default -> throw new IllegalArgumentException();
     };
   }
 
   private UExpr onInput(InputNode input) {
-    return table(input.table().name(), localScope().makeVar(input));
+    return table(input.table().name(), localScope().mkVar(input));
   }
 
   private UExpr onProj(ProjNode proj) {
@@ -108,7 +93,7 @@ public class UExprTranslator {
       joints = outerScope.joints;
     } else {
       // this branch is for the subquery in From/Join
-      final Var pivotVar = outerScope.makeVar(proj);
+      final Var pivotVar = outerScope.mkVar(proj);
       joints = listMap(vs, it -> pivotVar.proj(it.name()));
     }
 
@@ -118,7 +103,7 @@ public class UExprTranslator {
     terms.add(onNode(proj.predecessors()[0]));
     terms.addAll(zipMap(joints, vs, (o, v) -> eqPred(o, asTuple(v.expr()))));
 
-    final UExpr expr = sum(localScope().localVars(), Util.mkProduct(terms));
+    final UExpr expr = sum(localScope().localVars(), UExprUtils.mkProduct(terms));
 
     popScope();
 
@@ -179,7 +164,7 @@ public class UExprTranslator {
     if (join.isEquiJoin()) {
       final RefBag lhs = join.lhsRefs(), rhs = join.rhsRefs();
       assert lhs.size() == rhs.size();
-      cond = Util.mkProduct(zipMap(lhs, rhs, (x, y) -> mkNullSafeEq(asTuple(x), asTuple(y))));
+      cond = UExprUtils.mkProduct(zipMap(lhs, rhs, (x, y) -> mkNullSafeEq(asTuple(x), asTuple(y))));
     } else {
       cond = mkUninterpretedPred(join.condition());
     }
@@ -213,7 +198,7 @@ public class UExprTranslator {
 
     if (isUnionRoot) {
       final ValueBag values = setOp.values();
-      final Var joint = localScope.makeVar(ctx.ownerOf(values.get(0)));
+      final Var joint = localScope.mkVar(ctx.ownerOf(values.get(0)));
       localScope.setJoints(listMap(values, it -> joint.proj(it.name())));
     }
 
@@ -298,11 +283,14 @@ public class UExprTranslator {
       rhsExpr.subst(oldVar, newVar);
     }
 
-    return mul(lhsExpr, mul(Util.mkProduct(isNullPreds), not(sum(newVars, mul(cond, rhsExpr)))));
+    return mul(
+        lhsExpr, mul(UExprUtils.mkProduct(isNullPreds), not(sum(newVars, mul(cond, rhsExpr)))));
   }
 
   private static UExpr mkNullSafeEq(Var t0, Var t1) {
-    return mul(eqPred(t0, t1), uninterpretedPred(NOT_NULL_PRED, t1));
+    return eqPred(t0, t1);
+    //    return mul(eqPred(t0, t1), uninterpretedPred(NOT_NULL_PRED, t1));
+    // TODO: formalize the NULL
   }
 
   private static boolean isUnionRoot(SetOpNode node) {
@@ -320,6 +308,16 @@ public class UExprTranslator {
     }
 
     return true;
+  }
+
+  private static boolean isFragment(PlanNode node) {
+    // Check if the node is a complete query.
+    // Specifically, check if the root node is Union/Proj
+    // (ignore Sort/Limit)
+    final OperatorType type = node.type();
+    return type != UNION
+        && type != PROJ
+        && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));
   }
 
   private RuntimeException failed(String reason) {
@@ -351,7 +349,7 @@ public class UExprTranslator {
       this.joints = joints;
     }
 
-    private Var makeVar(PlanNode owner) {
+    private Var mkVar(PlanNode owner) {
       if (isRoot) return ROOT_VAR;
 
       final Var var = Var.mkBase(TRANSLATOR_VAR_PREFIX + nextVarIdx++);

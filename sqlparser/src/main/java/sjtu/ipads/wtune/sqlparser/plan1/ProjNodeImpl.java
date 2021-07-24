@@ -1,16 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.WILDCARD;
-
-import java.util.ArrayList;
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   private boolean explicitDistinct;
@@ -53,8 +55,25 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     return new ProjNodeImpl(explicitDistinct, ValueBag.mk(values), RefBag.mk(refs));
   }
 
-  static ProjNode mk(ValueBag values) {
-    return new ProjNodeImpl(false, values, RefBag.mk(listFlatMap(values, it -> it.expr().refs())));
+  // Make a Proj node that output `outValues`.
+  static ProjNode mk(ValueBag outValues) {
+    return new ProjNodeImpl(
+        false, outValues, RefBag.mk(listFlatMap(outValues, it -> it.expr().refs())));
+  }
+
+  // Make a Proj node that select all of `inValues`.
+  // Each of the Proj's output is an identity ExprValue,
+  static ProjNode mkWildcard(ValueBag inValues) {
+    final List<Ref> refs = new ArrayList<>(inValues.size());
+    final List<Value> outValues = new ArrayList<>(inValues.size());
+    for (Value inValue : inValues) {
+      final Ref ref = inValue.selfish();
+      final Expr expr = Expr.mk(RefBag.mk(singletonList(ref)));
+      final Value outValue = Value.mk(null, inValue.name(), expr);
+      refs.add(ref);
+      outValues.add(outValue);
+    }
+    return new ProjNodeImpl(false, ValueBag.mk(outValues), RefBag.mk(refs));
   }
 
   @Override
@@ -84,8 +103,8 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     final ProjNode copy = new ProjNodeImpl(explicitDistinct, values, this.refs);
     copy.setContext(ctx);
 
-    ctx.registerRefs(this, refs);
-    ctx.registerValues(this, values);
+    ctx.registerRefs(copy, refs);
+    ctx.registerValues(copy, values);
     for (Ref ref : refs) ctx.setRef(ref, this.context.deRef(ref));
 
     return copy;
@@ -110,34 +129,22 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
     return values.stream().anyMatch(it -> it instanceof WildcardValue);
   }
 
-  private static final int LIMIT = 1;
-
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("Proj{").append('[');
-    int count = 0;
-    for (Value value : values) {
-      if (count++ >= LIMIT) break;
-      if (value.expr() != null) builder.append(value.expr());
-      final String str = value.toString();
-      if (!str.isEmpty()) {
-        if (value.expr() != null) builder.append(" AS ");
-        builder.append(str);
-      }
-    }
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("Proj{");
+
+    builder.append('[');
+    joining(",", values, builder, this::stringifyAsSelectItem);
     builder.append(']');
-    if (values.size() > LIMIT) builder.append("...");
+
     if (explicitDistinct) builder.append(",distinct");
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(head(refs));
-      else builder.append(context.deRef(refs));
-      if (refs.size() > LIMIT) builder.append("...");
-    }
+
+    stringifyRefs(builder);
+
     builder.append('}');
 
-    if (predecessors[0] != null) builder.append('(').append(predecessors[0]).append(')');
+    stringifyChildren(builder);
 
-    return builder.toString();
+    return builder;
   }
 }

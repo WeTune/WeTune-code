@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 
 class PlanContextImpl implements PlanContext {
   private final Schema schema;

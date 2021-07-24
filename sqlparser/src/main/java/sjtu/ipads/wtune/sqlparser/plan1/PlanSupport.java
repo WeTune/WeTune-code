@@ -30,12 +30,15 @@ public interface PlanSupport {
   }
 
   static PlanNode disambiguate(PlanNode plan) {
-    Disambiguation.disambiguate(plan);
-    return plan;
+    return new Disambiguation(plan).disambiguate();
   }
 
-  static ASTNode buildAst(PlanNode plan) {
+  static ASTNode translateToAst(PlanNode plan) {
     return AstTranslator.translate(plan);
+  }
+
+  static PlanNode copyPlan(PlanNode root) {
+    return root.copy(PlanContext.mk(root.context().schema()));
   }
 
   static boolean isDependentRef(Ref ref, PlanContext ctx) {

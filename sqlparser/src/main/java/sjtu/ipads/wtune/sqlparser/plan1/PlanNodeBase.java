@@ -4,7 +4,9 @@ import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.Objects;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 
 abstract class PlanNodeBase implements PlanNode {
   protected PlanContext context;
@@ -73,5 +75,39 @@ abstract class PlanNodeBase implements PlanNode {
 
   protected void checkContextSet() {
     if (context == null) throw new IllegalStateException("unresolved plan");
+  }
+
+  @Override
+  public String toString() {
+    return stringify(new StringBuilder()).toString();
+  }
+
+  protected final void stringifyAsSelectItem(Value v, StringBuilder builder) {
+    builder.append(v.expr());
+    final String str = v.toString();
+    if (!str.isEmpty()) builder.append(" AS ").append(str);
+  }
+
+  protected final void stringifyRefs(StringBuilder builder) {
+    final RefBag refs = refs();
+    if (!refs.isEmpty()) {
+      if (builder.charAt(builder.length() - 1) != '{') builder.append(',');
+      builder.append("refs=");
+      if (context() == null) builder.append(refs);
+      else builder.append(context.deRef(refs));
+    }
+  }
+
+  protected final void stringifyChildren(StringBuilder builder) {
+    builder.append('(');
+    joining(
+        ",",
+        asList(predecessors),
+        builder,
+        (c, b) -> {
+          if (b == null) builder.append('\u25a1');
+          else c.stringify(builder);
+        });
+    builder.append(')');
   }
 }

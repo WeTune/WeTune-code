@@ -1,14 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class AggNodeImpl extends PlanNodeBase implements AggNode {
   private final ValueBag values;
@@ -109,28 +111,22 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("Agg{").append('[');
-    for (Value value : values) {
-      builder.append(value.expr());
-      final String str = value.toString();
-      if (!str.isEmpty()) builder.append(" AS ").append(str);
-    }
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("Agg{");
+
+    builder.append('[');
+    joining(",", values, builder, this::stringifyAsSelectItem);
     builder.append(']');
+
     if (!groups.isEmpty()) builder.append(",groups=").append(groups);
     if (having != null) builder.append(",having=").append(having);
+    stringifyRefs(builder);
 
-    final RefBag refs = refs();
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(refs);
-      else builder.append(context.deRef(refs));
-    }
     builder.append('}');
 
-    if (predecessors[0] != null) builder.append('(').append(predecessors[0]).append(')');
+    stringifyChildren(builder);
 
-    return builder.toString();
+    return builder;
   }
 
   private static int replaceRefs(Expr expr, int startIdx, List<Ref> buffer) {

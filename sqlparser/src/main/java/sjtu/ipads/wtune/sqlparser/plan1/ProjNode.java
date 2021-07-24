@@ -18,7 +18,11 @@ public interface ProjNode extends PlanNode {
     return OperatorType.PROJ;
   }
 
-  static ProjNode mk(ValueBag values) {
-    return ProjNodeImpl.mk(values);
+  static ProjNode mk(ValueBag outValues) {
+    return ProjNodeImpl.mk(outValues);
+  }
+
+  static ProjNode mkWildcard(ValueBag inValues) {
+    return ProjNodeImpl.mkWildcard(inValues);
   }
 }

@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
-
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+
+import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
 
 class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   private Expr expr, predicate;
@@ -64,16 +64,11 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   }
 
   @Override
-  public String toString() {
-    final StringBuilder builder = new StringBuilder("Exists{");
-    if (!refs.isEmpty()) {
-      builder.append(",refs=");
-      if (context == null) builder.append(refs);
-      else builder.append(context.deRef(refs));
-    }
+  public StringBuilder stringify(StringBuilder builder) {
+    builder.append("Exists{");
+    stringifyRefs(builder);
     builder.append('}');
-    if (predecessors[0] != null && predecessors[1] != null)
-      builder.append('(').append(predecessors[0]).append(',').append(predecessors[1]).append(')');
-    return builder.toString();
+    stringifyChildren(builder);
+    return builder;
   }
 }

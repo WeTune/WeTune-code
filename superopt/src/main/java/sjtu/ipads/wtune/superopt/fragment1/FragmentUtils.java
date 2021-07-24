@@ -1,36 +1,27 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SIMPLE_FILTER;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.UNION;
-import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Value;
 import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.AllJoin;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.MalformedJoin;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.MalformedSubquery;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.MalformedUnion;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.NonLeftDeepJoin;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.Rule;
+import sjtu.ipads.wtune.superopt.fragment1.pruning.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
-public class FragmentUtils {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
+
+class FragmentUtils {
   private static final List<Op> DEFAULT_OP_SET =
       listMap(List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, IN_SUB_FILTER, UNION), Op::mk);
   private static final int DEFAULT_MAX_OPS = 4;

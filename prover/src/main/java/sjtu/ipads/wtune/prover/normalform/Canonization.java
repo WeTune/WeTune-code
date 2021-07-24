@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.prover.uexpr.TableTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.Var;
 import sjtu.ipads.wtune.prover.utils.TupleCongruence;
-import sjtu.ipads.wtune.prover.utils.Util;
+import sjtu.ipads.wtune.prover.utils.UExprUtils;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -20,7 +20,7 @@ import static sjtu.ipads.wtune.prover.normalform.Normalization.normalize;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.Util.*;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Constraint.filterUniqueKey;
 
 public final class Canonization {
@@ -104,7 +104,7 @@ public final class Canonization {
 
   // [x = Null] * f(x.y) -> [x = Null] * f(null)
   private static Conjunction applyRefl(Conjunction c) {
-    c.preds().removeIf(Util::isReflexivity);
+    c.preds().removeIf(UExprUtils::isReflexivity);
     if (c.squash() != null) applyConst2(c.squash());
     if (c.neg() != null) applyConst2(c.neg());
     return c;
