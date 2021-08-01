@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -16,8 +17,10 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.*;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkBase;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkConstant;
-import static sjtu.ipads.wtune.prover.utils.Constants.NULL_VAR;
+import static sjtu.ipads.wtune.prover.utils.Constants.NULL;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkNotNull;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkProduct;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
@@ -44,7 +47,6 @@ public class UExprTranslator {
   }
 
   public static UExpr translate(PlanNode plan) {
-
     return new UExprTranslator(plan).onNode(plan);
   }
 
@@ -60,7 +62,6 @@ public class UExprTranslator {
       case EXISTS_FILTER -> onExistsFilter((ExistsFilterNode) node);
       case UNION -> onUnion((SetOpNode) node);
       case AGG, SORT, LIMIT -> onNode(node.predecessors()[0]);
-      default -> throw new IllegalArgumentException();
     };
   }
 
@@ -90,7 +91,7 @@ public class UExprTranslator {
     terms.add(onNode(proj.predecessors()[0]));
     terms.addAll(zipMap(joints, vs, (o, v) -> eqPred(o, asTuple(v.expr()))));
 
-    final UExpr expr = sum(localScope().localVars(), UExprUtils.mkProduct(terms));
+    final UExpr expr = sum(localScope().localVars(), mkProduct(terms));
 
     popScope();
 
@@ -105,7 +106,7 @@ public class UExprTranslator {
     if (predicate.isJoinCondition()) {
       final RefBag refs = predicate.refs();
       assert refs.size() == 2;
-      condExpr = mkNullSafeEq(asTuple(refs.get(0)), asTuple(refs.get(1)));
+      condExpr = UExprUtils.mkNullSafeEq(asTuple(refs.get(0)), asTuple(refs.get(1)));
 
     } else if (predicate.isEquiCondition()) {
       final RefBag refs = predicate.refs();
@@ -126,11 +127,13 @@ public class UExprTranslator {
 
   private UExpr onInSubFilter(InSubFilterNode filter) {
     final UExpr lhs = onNode(filter.predecessors()[0]);
-    localScope().setJoints(asList(asTuples(filter.lhsRefs())));
+    final List<Var> joints = asList(asTuples(filter.lhsRefs()));
+    localScope().setJoints(joints);
     final UExpr rhs = onNode(filter.predecessors()[1]);
     localScope().setJoints(null);
 
-    return mul(lhs, UExpr.squash(rhs));
+    final Stream<UExpr> nonNullCond = joints.stream().map(UExprUtils::mkNotNull);
+    return mul(nonNullCond.reduce(lhs, UExpr::mul), squash(rhs));
   }
 
   private UExpr onExistsFilter(ExistsFilterNode filter) {
@@ -147,24 +150,27 @@ public class UExprTranslator {
 
     if (join.condition() == null) return mul(lhsExpr, rhsExpr);
 
-    final UExpr cond;
+    final UExpr mainCond;
+    final UExpr notNullCond;
     if (join.isEquiJoin()) {
       final RefBag lhs = join.lhsRefs(), rhs = join.rhsRefs();
       assert lhs.size() == rhs.size();
-      cond = UExprUtils.mkProduct(zipMap(lhs, rhs, (x, y) -> mkNullSafeEq(asTuple(x), asTuple(y))));
+      mainCond = mkProduct(zipMap(lhs, rhs, (x, y) -> eqPred(asTuple(x), asTuple(y))));
+      notNullCond = mkProduct(listMap(rhs, x -> mkNotNull(asTuple(x))));
     } else {
-      cond = mkUninterpretedPred(join.condition());
+      mainCond = mkUninterpretedPred(join.condition());
+      notNullCond = null;
     }
     // L(x) * R(y) * p(x,y)
-    final UExpr symmPart = mul(mul(cond, lhsExpr), rhsExpr);
+    final UExpr symmPart = mul(mul(mul(lhsExpr, rhsExpr), mainCond), notNullCond);
 
     if (join.type() == INNER_JOIN) return symmPart;
 
     if (join.type() == LEFT_JOIN) {
-      // L(x) * [y = null] * not(Sum{y'}(R(y') * p(x,y')))
-      final UExpr asymmPart = mkAsymmetricJoin(join, cond, lhsExpr, rhsExpr);
+      // L(x) * [y = 0] * not(Sum{y'}(R(y') * p(x,y')))
+      final UExpr asymmPart = mkAsymmetricJoin(join, mainCond, notNullCond, lhsExpr, rhsExpr);
       // L(x) * R(y) * p(x,y) +
-      // L(x) * [y = null] * not(Sum{y'}(R(y') * p(x,y')))
+      // L(x) * [y = 0] * not(Sum{y'}(R(y') * p(x,y')))
       return add(symmPart, asymmPart);
     }
 
@@ -239,22 +245,25 @@ public class UExprTranslator {
     return UExpr.uninterpretedPred(expr.template().toString(), args);
   }
 
-  private UExpr mkAsymmetricJoin(PlanNode asymmJoin, UExpr cond, UExpr lhsExpr, UExpr rhsExpr) {
+  private UExpr mkAsymmetricJoin(
+      PlanNode asymmJoin, UExpr mainCond, UExpr notNullCond, UExpr lhsExpr, UExpr rhsExpr) {
     // A LEFT JOIN B ON p(A.a,B.b) =>
-    // Sum{x,y}(A(x) * B(y) * [p(x.a,y.b)] * [NotNull(x.a)] * [NotNull(y.b)]) -- symmetric part
-    // + Sum{x}(A(x) * [IsNull(y)] * not(Sum{y}(B(y) * [p(x.a,y.b)]))) -- asymmetric part
-    // this method returns the part "[IsNull(y)] * not(Sum{y'}(B(y') * p(x.a,y'.b))
+    //  -- symmetric part
+    // A(x) * B(y) * [p(x.a,y.b)] * [x != NULL] * [y != NULL]
+    //  -- asymmetric part
+    // + A(x) * [y = NULL] * not(Sum{z}(B(z) * [p(x.a,z.b)] * [x != NULL] * [z != NULL])
 
-    cond = cond.copy();
+    UExpr cond0 = mainCond.copy();
+    UExpr cond1 = mul(mainCond.copy(), notNullCond.copy());
     lhsExpr = lhsExpr.copy();
     rhsExpr = rhsExpr.copy();
 
-    // Usually the RHS is a single source (a plain or a subquery),
-    // but we handle the most general case.
+    // We need to find the vars from `rhsExpr` and replaces them with fresh vars to be used in Sum.
+    // Usually RHS is a single plain/subquery source, but let's handle the most general case.
     final List<Var> oldVars =
         asymmJoin.predecessors()[1].values().stream()
-            .map(ctx::ownerOf)
-            .map(varOwnership::get)
+            .map(ctx::ownerOf) // The owner of the values.
+            .map(varOwnership::get) // The corresponding vars of the owners.
             .distinct()
             .toList();
 
@@ -264,20 +273,14 @@ public class UExprTranslator {
     for (Var oldVar : oldVars) {
       final Var newVar = mkBase(TRANSLATOR_VAR_PREFIX + nextVarIdx++);
       newVars.add(newVar);
-      isNullPreds.add(eqPred(oldVar, NULL_VAR));
+      isNullPreds.add(UExprUtils.mkIsNull(oldVar));
 
-      cond.subst(oldVar, newVar);
+      cond0.subst(oldVar, NULL);
+      cond1.subst(oldVar, newVar);
       rhsExpr.subst(oldVar, newVar);
     }
 
-    return mul(
-        lhsExpr, mul(UExprUtils.mkProduct(isNullPreds), not(sum(newVars, mul(cond, rhsExpr)))));
-  }
-
-  private static UExpr mkNullSafeEq(Var t0, Var t1) {
-    return eqPred(t0, t1);
-    //    return mul(eqPred(t0, t1), uninterpretedPred(NOT_NULL_PRED, t1));
-    // TODO: formalize the NULL
+    return mul(mul(lhsExpr, mkProduct(isNullPreds)), add(cond0, not(sum(newVars, mul(rhsExpr, cond1)))));
   }
 
   private static boolean isUnionRoot(SetOpNode node) {

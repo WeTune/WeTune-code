@@ -1,18 +1,17 @@
 package sjtu.ipads.wtune.prover.utils;
 
-import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
-import static sjtu.ipads.wtune.prover.utils.Constants.NOT_NULL_PRED;
-import static sjtu.ipads.wtune.prover.utils.Constants.NULL_VAR;
-
-import java.util.Arrays;
-import java.util.Collection;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.uexpr.EqPredTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
-import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
-import sjtu.ipads.wtune.prover.uexpr.UninterpretedPredTerm;
 import sjtu.ipads.wtune.prover.uexpr.Var;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.*;
+import static sjtu.ipads.wtune.prover.utils.Constants.FREE_VAR;
+import static sjtu.ipads.wtune.prover.utils.Constants.NULL;
 
 public final class UExprUtils {
   private UExprUtils() {}
@@ -23,26 +22,39 @@ public final class UExprUtils {
     return eq.lhs().equals(eq.rhs());
   }
 
-  public static boolean isNullTuple(Var t) {
-    return t.equals(NULL_VAR);
-  }
-
-  public static boolean isConstantTuple(Var t) {
+  public static boolean isConstantVar(Var t) {
     if (t.isConstant()) return true;
     if (t.isBase() && t.name().toString().equals(FREE_VAR)) return true;
-    if (t.isProjected()) return isConstantTuple(t.base()[0]);
+    if (t.isProjected()) return isConstantVar(t.base()[0]);
     return false;
   }
 
-  public static boolean isNotNullPredOf(UExpr pred, Var var) {
-    if (pred.kind() != Kind.PRED) return false;
-    final UninterpretedPredTerm p = (UninterpretedPredTerm) pred;
-    return p.name().toString().equals(NOT_NULL_PRED)
-        && p.vars().length == 1
-        && p.vars()[0].equals(var);
+  public static boolean isNull(Var t) {
+    return t.uses(NULL);
   }
 
-  public static Var[] substVar(Var[] args, Var t, Var rep) {
+  public static UExpr mkIsNull(Var t) {
+    return eqPred(t, NULL);
+  }
+
+  public static UExpr mkNotNull(Var t) {
+    return not(mkIsNull(t));
+  }
+
+  public static UExpr mkNullSafeEq(Var t0, Var t1) {
+    return mul(mkNotNull(t1), eqPred(t0, t1));
+  }
+
+  public static UExpr mkProduct(Collection<UExpr> exprs) {
+    return mkProduct(exprs, false);
+  }
+
+  public static UExpr mkProduct(Collection<UExpr> exprs, boolean copyTerms) {
+    if (copyTerms) return exprs.stream().map(UExpr::copy).reduce(UExpr::mul).orElseThrow();
+    else return exprs.stream().reduce(UExpr::mul).orElseThrow();
+  }
+
+  public static Var[] substArgs(Var[] args, Var t, Var rep) {
     final Var[] newArgs = Arrays.copyOf(args, args.length);
     boolean changed = false;
     for (int i = 0; i < args.length; i++) {
@@ -51,6 +63,19 @@ public final class UExprUtils {
     }
     if (!changed) return args;
     else return newArgs;
+  }
+
+  public static StringBuilder interpolateVars(String template, Var[] vars, StringBuilder builder) {
+    int start = 0;
+    for (Var arg : vars) {
+      final int end = template.indexOf("?", start);
+      builder.append(template, start, end - 1);
+      builder.append(arg);
+      start = end + 2;
+    }
+    builder.append(template, start, template.length());
+
+    return builder;
   }
 
   public static Disjunction renameVars(Disjunction d, String prefix) {
@@ -69,27 +94,5 @@ public final class UExprUtils {
     }
 
     return idx;
-  }
-
-  public static UExpr mkProduct(Collection<UExpr> exprs) {
-    return mkProduct(exprs, false);
-  }
-
-  public static UExpr mkProduct(Collection<UExpr> exprs, boolean copyTerms) {
-    if (copyTerms) return exprs.stream().map(UExpr::copy).reduce(UExpr::mul).orElseThrow();
-    else return exprs.stream().reduce(UExpr::mul).orElseThrow();
-  }
-
-  public static StringBuilder interpolateVars(String template, Var[] vars, StringBuilder builder) {
-    int start = 0;
-    for (Var arg : vars) {
-      final int end = template.indexOf("?", start);
-      builder.append(template, start, end - 1);
-      builder.append(arg);
-      start = end + 2;
-    }
-    builder.append(template, start, template.length());
-
-    return builder;
   }
 }

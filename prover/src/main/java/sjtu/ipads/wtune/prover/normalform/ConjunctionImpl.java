@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static java.util.Collections.emptyList;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -8,16 +15,7 @@ import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
-import sjtu.ipads.wtune.prover.uexpr.UExpr;
-import sjtu.ipads.wtune.prover.uexpr.Var;
-
 final class ConjunctionImpl implements Conjunction {
-  private static final Conjunction EMPTY =
-      new ConjunctionImpl(emptyList(), emptyList(), emptyList(), null, null);
 
   private final List<Var> vars;
   private final List<UExpr> predicates;
@@ -54,10 +52,6 @@ final class ConjunctionImpl implements Conjunction {
     return new ConjunctionImpl(vars, tables, predicates, squash, negation);
   }
 
-  static Conjunction empty() {
-    return EMPTY;
-  }
-
   @Override
   public List<Var> vars() {
     return vars;
@@ -81,6 +75,11 @@ final class ConjunctionImpl implements Conjunction {
   @Override
   public Disjunction squash() {
     return squash;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return tables.isEmpty() && predicates.isEmpty() && squash == null && negation == null;
   }
 
   @Override

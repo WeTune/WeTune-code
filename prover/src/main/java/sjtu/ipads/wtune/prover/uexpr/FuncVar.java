@@ -36,7 +36,7 @@ final class FuncVar implements Var {
 
     if (this.equals(target)) return replacement;
 
-    final Var[] subst = UExprUtils.substVar(args, target, replacement);
+    final Var[] subst = UExprUtils.substArgs(args, target, replacement);
 
     if (subst == args) return this;
     else return new FuncVar(funcName, subst);

@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.prover.logic;
 
-import static sjtu.ipads.wtune.prover.logic.Z3LogicCtx.unwrap;
-
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+
+import static sjtu.ipads.wtune.prover.logic.Z3LogicCtx.unwrap;
 
 class Z3Solver implements LogicSolver {
   private final Solver z3Solver;
@@ -17,16 +17,11 @@ class Z3Solver implements LogicSolver {
   }
 
   private static Result convertResult(Status status) {
-    switch (status) {
-      case UNKNOWN:
-        return Result.UNKNOWN;
-      case SATISFIABLE:
-        return Result.SAT;
-      case UNSATISFIABLE:
-        return Result.UNSAT;
-      default:
-        throw new IllegalStateException();
-    }
+    return switch (status) {
+      case UNKNOWN -> Result.UNKNOWN;
+      case SATISFIABLE -> Result.SAT;
+      case UNSATISFIABLE -> Result.UNSAT;
+    };
   }
 
   @Override

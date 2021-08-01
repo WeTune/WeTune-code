@@ -20,16 +20,16 @@ import static sjtu.ipads.wtune.prover.normalform.Normalization.normalize;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
-import static sjtu.ipads.wtune.prover.utils.UExprUtils.*;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkProduct;
+import static sjtu.ipads.wtune.prover.utils.UExprUtils.renameVars;
 import static sjtu.ipads.wtune.sqlparser.schema.Constraint.filterUniqueKey;
 
 public final class Canonization {
   private Canonization() {}
 
   public static Disjunction canonize(Disjunction d, Schema schema) {
-    applyMinimization(d);
-    applyReflexivity(d);
     applyConstant(d);
+    applyMinimization(d);
     applyUniqueKey(d, schema);
     renameVars(d, TRANSLATOR_VAR_PREFIX);
     return d;
@@ -38,6 +38,7 @@ public final class Canonization {
   private static void applyConstant(Disjunction d) {
     applyToEachConjunction(d, Canonization::applyConst1);
     applyToEachConjunction(d, Canonization::applyConst2);
+    applyToEachConjunction(d, Canonization::applyConst1);
   }
 
   private static void applyConst1(Disjunction d) {
@@ -62,29 +63,17 @@ public final class Canonization {
 
   // [x = const_val] * f(x) -> [x = const_val] * f(const_val)
   // Sum{x}[x=const_val] * f(x) -> f(const_val)
-  // [x not Null] * [x = const] -> [x = const]
   private static Conjunction applyConst1(Conjunction c) {
     final Congruence<Var> congruence = TupleCongruence.mk(c.preds());
 
     final Map<Var, Var> toSubstVar = new HashMap<>();
-    final Set<UExpr> toRemovePred = new HashSet<>();
 
-    for (Var val : congruence.keys()) {
-      if (!isConstantTuple(val)) continue;
-      final Set<Var> cls = congruence.eqClassOf(val);
-
-      for (Var t : cls) if (t.isBase()) toSubstVar.put(t, val);
-      if (isNullTuple(val)) continue;
-
-      for (UExpr pred : c.preds())
-        if (find(cls, it -> isNotNullPredOf(pred, it)) != null) {
-          toRemovePred.add(pred);
-          break;
-        }
-    }
+    for (Var val : lazyFilter(congruence.keys(), UExprUtils::isConstantVar))
+      for (Var t : lazyFilter(congruence.eqClassOf(val), Var::isBase)) {
+        toSubstVar.put(t, val);
+      }
 
     c.vars().removeAll(toSubstVar.keySet());
-    c.preds().removeAll(toRemovePred);
     toSubstVar.forEach(c::subst);
 
     if (c.neg() != null) applyConst1(c.neg());
@@ -106,7 +95,7 @@ public final class Canonization {
     c.preds().removeIf(UExprUtils::isReflexivity);
     if (c.squash() != null) applyReflexivity(c.squash());
     if (c.neg() != null) applyReflexivity(c.neg());
-    return c;
+    return c.isEmpty() ? null : c;
   }
 
   // Theorem 4.3: Sum[t]([b] * |E| * [t.uk=e] * R(t)) -> |Sum[t]([b] * |E| * [t.uk=e] * R(t))|,
@@ -170,7 +159,7 @@ public final class Canonization {
   }
 
   // eliminate intermediate variable
-  // e.g. Sum{x,y}([x=y] * R(x)) => Sum{x}(R(x))
+  // e.g. Sum{x,y}([x=y] * R(y)) => Sum{x}(R(x))
   private static Conjunction applyMini(Conjunction c) {
     if (c.squash() != null) applyMinimization(c.squash());
     if (c.neg() != null) applyMinimization(c.neg());
@@ -178,7 +167,7 @@ public final class Canonization {
     final List<Var> tmpVars = listFilter(c.vars(), v -> none(c.tables(), it -> it.uses(v)));
     if (tmpVars.isEmpty()) return c;
 
-    // ... and its projection is used in a equi-pred ...
+    // ... and its projection is used in an equi-pred ...
     final Congruence<Var> cong = TupleCongruence.mk(c.preds());
     for (Var key : cong.keys()) {
       final Var tmpVar = find(tmpVars, key::uses);

@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.uexpr.*;
 import sjtu.ipads.wtune.prover.uexpr.UExpr.Kind;
 import sjtu.ipads.wtune.prover.utils.Constants;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 
 import java.util.*;
@@ -45,6 +45,7 @@ class LogicTranslator {
 
   private SymbolLookup lookup;
   private Func asIntFunc;
+  private Value nullValue;
 
   private int seq;
 
@@ -89,33 +90,20 @@ class LogicTranslator {
     prepareVars();
     prepareFuncs();
     prepareConsts();
+    prepareAuxiliary();
 
     return translateBag(expr);
   }
 
   Proposition translate(Constraint constraint) {
-    assert constraint.type() == ConstraintType.FOREIGN;
-    final String ownerTable = constraint.columns().get(0).tableName();
-    final String refTable = constraint.refColumns().get(0).tableName();
-    final Func ownerTableFunc = mkTableMeta(Name.mk(ownerTable)).func;
-    final Func refTableFunc = mkTableMeta(Name.mk(refTable)).func;
-    final DataType xType = ownerTableFunc.paramTypes()[0];
-    final DataType yType = refTableFunc.paramTypes()[0];
-    final Value x = ctx.mkVal("x", xType);
-    final Value y = ctx.mkVal("y", yType);
-    final Value X = ownerTableFunc.apply(x);
-    final Value Y = refTableFunc.apply(y);
-
-    final List<Value> eqConds =
-        zipMap(
-            constraint.columns(),
-            constraint.refColumns(),
-            (xCol, yCol) ->
-                asIntFunc.apply(
-                    xType.accessor(xCol.name()).apply(x).eq(yType.accessor(yCol.name()).apply(y))));
-    final Value eqCond = ctx.mkProduct(eqConds.toArray(Value[]::new));
-
-    return ctx.mkForall(x, X.gt(0).implies(ctx.mkExists(y, Y.mul(eqCond).gt(0))));
+    switch (constraint.type()) {
+      case FOREIGN:
+        return translateForeignKey(constraint.columns(), constraint.refColumns());
+      case NOT_NULL:
+        return translateNotNull(constraint.columns().get(0));
+      default:
+        throw new IllegalArgumentException();
+    }
   }
 
   List<Proposition> assertions() {
@@ -141,6 +129,11 @@ class LogicTranslator {
 
   private void prepareConsts() {
     for (Name constant : lookup.consts()) consts.computeIfAbsent(constant, this::mkConst);
+    nullValue = mkConst(Name.mk("0"));
+  }
+
+  private void prepareAuxiliary() {
+    if (asIntFunc == null) asIntFunc = mkAsIntFunc();
   }
 
   private TableMeta mkTableMeta(Name tableName) {
@@ -196,7 +189,11 @@ class LogicTranslator {
   }
 
   private Value mkConst(Name constant) {
-    return ctx.mkIntVal(constNameSeq.next());
+    if (constant.toString().equals("0")) {
+      return ctx.mkConst(0);
+    } else {
+      return ctx.mkIntVal(constNameSeq.next());
+    }
   }
 
   private Value mkFreeVal(DataType type) {
@@ -235,20 +232,22 @@ class LogicTranslator {
   }
 
   private Func mkAsIntFunc() {
-    if (asIntFunc != null) return asIntFunc;
-
-    asIntFunc = ctx.mkFunc("as_int", ctx.mkIntType(), ctx.mkBoolType());
+    final Func f = ctx.mkFunc("as_int", ctx.mkIntType(), ctx.mkBoolType());
 
     final Proposition x = ctx.mkBoolVal("x");
-    final Value lhs = asIntFunc.apply(x);
+    final Value lhs = f.apply(x);
     final Value rhs = x.ite(ctx.mkConst(1), ctx.mkConst(0));
     assertions.add(ctx.mkForall(x, lhs.eq(rhs)));
 
-    return asIntFunc;
+    return f;
   }
 
   private Iterable<Value[]> mkMainFuncArgs(DataType... argTypes) {
     return () -> new ArgsPermutation(argTypes);
+  }
+
+  private Value mkProjection(DataType tupleType, Column column, Value v) {
+    return tupleType.accessor(column.name()).apply(v);
   }
 
   private Value translateTable(TableTerm tableTerm) {
@@ -299,13 +298,29 @@ class LogicTranslator {
     return ctx.mkSum(values.toArray(Value[]::new));
   }
 
-  private Value translateBag0(Conjunction c) {
+  private List<Value> translate0(Conjunction c) {
     final List<Value> values = new ArrayList<>();
 
     c.tables().forEach(it -> values.add(translateTable((TableTerm) it)));
-    c.preds().forEach(it -> values.add(mkAsIntFunc().apply(translatePred(it))));
-    if (c.squash() != null) values.add(mkAsIntFunc().apply(translateSet(c.squash())));
-    if (c.neg() != null) values.add(mkAsIntFunc().apply(translateSet(c.neg()).not()));
+    c.preds().forEach(it -> values.add(translatePred(it)));
+    if (c.squash() != null) values.add(translateSet(c.squash()));
+    if (c.neg() != null)
+      // values.add(translateSet(c.neg()).not());
+      for (Conjunction factor : c.neg()) {
+        values.add(translateSet(factor).not());
+      }
+
+    return values;
+  }
+
+  private Value translateBag0(Conjunction c) {
+    final List<Value> values = translate0(c);
+
+    final ListIterator<Value> iter = values.listIterator();
+    while (iter.hasNext()) {
+      final Value v = iter.next();
+      if (v instanceof Proposition) iter.set(asIntFunc.apply(v));
+    }
 
     // Product all terms.
     return ctx.mkProduct(values.toArray(Value[]::new));
@@ -335,13 +350,67 @@ class LogicTranslator {
   }
 
   private Proposition translateSet(Conjunction c) {
-    final Value val = translateBag0(c);
+    final List<Value> values = translate0(c);
 
-    if (c.vars().isEmpty()) return val.gt(0);
-    else {
-      final Value[] vars = arrayMap(c.vars(), this::mkVal, Value.class);
-      return ctx.mkExists(vars, val.gt(0));
+    final ListIterator<Value> iter = values.listIterator();
+    while (iter.hasNext()) {
+      final Value v = iter.next();
+      if (!(v instanceof Proposition)) iter.set(v.gt(0));
     }
+
+    final Proposition prop =
+        ctx.mkConjunction(arrayMap(values, it -> (Proposition) it, Proposition.class));
+
+    return c.vars().isEmpty()
+        ? prop
+        : ctx.mkExists(arrayMap(c.vars(), this::mkVal, Value.class), prop);
+  }
+
+  private Proposition translateForeignKey(List<Column> columns, List<Column> refColumns) {
+    // Temporary patch. NotNull should be independently added.
+    assertions.add(translateNotNull(columns.get(0)));
+
+    final String ownerTable = columns.get(0).tableName();
+    final String refTable = refColumns.get(0).tableName();
+    final Func ownerTableFunc = mkTableMeta(Name.mk(ownerTable)).func;
+    final Func refTableFunc = mkTableMeta(Name.mk(refTable)).func;
+    final DataType xType = ownerTableFunc.paramTypes()[0];
+    final DataType yType = refTableFunc.paramTypes()[0];
+    final Value x = ctx.mkVal("x", xType);
+    final Value y = ctx.mkVal("y", yType);
+    final Value X = ownerTableFunc.apply(x);
+    final Value Y = refTableFunc.apply(y);
+
+    // R.x References S.y -->
+    // forall r. (R(r) > 0 /\ r.x != Null => (exists s. S(s) > 0 /\ s.y != Null /\ r.x = s.u)
+    final List<Proposition> conds0 =
+        listMap(columns, col -> mkProjection(xType, col, x).eq(nullValue).not());
+
+    final List<Proposition> conds1 =
+        zipMap(
+            columns,
+            refColumns,
+            (xCol, yCol) -> {
+              final Value xVal = mkProjection(xType, xCol, x), yVal = mkProjection(yType, yCol, y);
+              return xVal.eq(yVal).and(yVal.eq(nullValue).not());
+            });
+
+    final Proposition cond0 = ctx.mkConjunction(conds0.toArray(Proposition[]::new));
+    final Proposition cond1 = ctx.mkConjunction(conds1.toArray(Proposition[]::new));
+
+    return ctx.mkForall(x, X.gt(0).and(cond0).implies(ctx.mkExists(y, Y.gt(0).and(cond1))));
+  }
+
+  private Proposition translateNotNull(Column column) {
+    final String ownerTable = column.tableName();
+    final Func tableFunc = tableMeta.get(Name.mk(ownerTable)).func;
+    final DataType tupleType = tableFunc.paramTypes()[0];
+    final Value v = ctx.mkVal("x", tupleType);
+    final Value nullValue = ctx.mkConst(0);
+
+    return ctx.mkForall(
+        v,
+        mkProjection(tupleType, column, v).eq(nullValue).implies(tableFunc.apply(v).eq(nullValue)));
   }
 
   private class ArgsPermutation implements Iterator<Value[]> {

@@ -23,8 +23,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsEq;
-import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.AttrsFrom;
+import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.alignOutput;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.wrapFragment;
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
@@ -144,8 +143,7 @@ class PlanTranslator {
       }
     }
     for (AttrsDesc value : attrsDescs.values()) {
-      if (value.name == null)
-        value.name = attrNameSeq.next();
+      if (value.name == null) value.name = attrNameSeq.next();
     }
   }
 
@@ -167,7 +165,19 @@ class PlanTranslator {
       builder.replace(builder.length() - 2, builder.length(), ");\n");
     }
 
-    for (Constraint uniqueKey : constraints.uniqueKeys()) {
+    for (Constraint notNull : constraints.ofKind(NotNull)) {
+      final TableDesc table = tableDescs.get(notNull.symbols()[0]);
+      final AttrsDesc attr = attrsDescs.get(notNull.symbols()[1]);
+
+      builder
+          .append("alter table ")
+          .append(table.name)
+          .append(" modify column ")
+          .append(attr.name)
+          .append(" int not null;\n");
+    }
+
+    for (Constraint uniqueKey : constraints.ofKind(Unique)) {
       if (!tableDescs.containsKey(uniqueKey.symbols()[0])) continue;
 
       final TableDesc table = tableDescs.get(uniqueKey.symbols()[0]);
@@ -180,7 +190,7 @@ class PlanTranslator {
           .append(");\n");
     }
 
-    for (Constraint foreignKey : constraints.foreignKeys()) {
+    for (Constraint foreignKey : constraints.ofKind(Reference)) {
       if (!tableDescs.containsKey(foreignKey.symbols()[0])) continue;
 
       final TableDesc table = tableDescs.get(foreignKey.symbols()[0]);

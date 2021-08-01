@@ -1,13 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
-
-import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+
 public interface Constraint {
-  List<? extends Column> columns();
+  List<Column> columns();
 
   List<KeyDirection> directions();
 

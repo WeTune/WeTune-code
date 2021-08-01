@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.prover.uexpr;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.tautology;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.tautology;
 
 public interface UExpr {
   enum Kind {
@@ -56,6 +56,9 @@ public interface UExpr {
   StringBuilder stringify(StringBuilder builder);
 
   static UExpr mul(UExpr l, UExpr r) {
+    if (l == null) return r;
+    if (r == null) return l;
+
     final UExpr mul = new MulExprImpl();
     mul.setChild(0, l);
     mul.setChild(1, r);
@@ -63,10 +66,13 @@ public interface UExpr {
   }
 
   static UExpr add(UExpr l, UExpr r) {
-    final UExpr mul = new AddExprImpl();
-    mul.setChild(0, l);
-    mul.setChild(1, r);
-    return mul;
+    if (l == null) return r;
+    if (r == null) return l;
+
+    final UExpr add = new AddExprImpl();
+    add.setChild(0, l);
+    add.setChild(1, r);
+    return add;
   }
 
   static UExpr squash(UExpr x) {

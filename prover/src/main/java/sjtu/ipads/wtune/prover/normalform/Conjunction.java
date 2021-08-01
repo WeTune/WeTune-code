@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import java.util.List;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.Var;
+
+import java.util.List;
 
 public interface Conjunction {
   List<Var> vars();
@@ -17,6 +18,8 @@ public interface Conjunction {
 
   UExpr toExpr();
 
+  boolean isEmpty();
+
   boolean uses(Var v);
 
   void subst(Var v1, Var v2);
@@ -30,9 +33,5 @@ public interface Conjunction {
       Disjunction squash,
       Disjunction negation) {
     return ConjunctionImpl.make(sumVars, tables, predicates, squash, negation);
-  }
-
-  static Conjunction empty() {
-    return ConjunctionImpl.empty();
   }
 }

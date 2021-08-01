@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.schema.internal;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -32,8 +33,10 @@ class TableBuilder {
 
   TableBuilder fromAlterTable(ASTNode alterTable) {
     for (ASTNode action : alterTable.get(ALTER_TABLE_ACTIONS))
-      if ("add_constraint".equals(action.get(ALTER_TABLE_ACTION_NAME)))
-        setConstraint((ASTNode) action.get(ALTER_TABLE_ACTION_PAYLOAD));
+      switch (action.get(ALTER_TABLE_ACTION_NAME)) {
+        case "add_constraint" -> setConstraint((ASTNode) action.get(ALTER_TABLE_ACTION_PAYLOAD));
+        case "modify_column" -> setColumn((ASTNode) action.get(ALTER_TABLE_ACTION_PAYLOAD));
+      }
     return this;
   }
 
@@ -72,7 +75,7 @@ class TableBuilder {
 
   private void setConstraint(ASTNode constraintDef) {
     final List<ASTNode> keys = constraintDef.get(INDEX_DEF_KEYS);
-    final List<ColumnImpl> columns = new ArrayList<>(keys.size());
+    final List<Column> columns = new ArrayList<>(keys.size());
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
     for (ASTNode key : keys) {
       final String columnName = key.get(KEY_PART_COLUMN);
@@ -92,7 +95,7 @@ class TableBuilder {
       c.setRefColNames(refs.get(REFERENCES_COLUMNS));
     }
 
-    columns.forEach(col -> col.addConstraint(c));
+    columns.forEach(col -> ((ColumnImpl) col).addConstraint(c));
     table.addConstraint(c);
   }
 }

@@ -11,7 +11,8 @@ public interface Constraint {
     AttrsFrom(2),
     AttrsSub(2),
     Reference(4),
-    Unique(2);
+    Unique(2),
+    NotNull(2);
 
     private final int numSyms;
 

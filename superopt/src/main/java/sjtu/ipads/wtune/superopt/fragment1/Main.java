@@ -22,15 +22,12 @@ import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
 public class Main {
-  private static final int[] FAILED = {1903};
-
-  private static int test1(int i, String line) {
-    return line.contains("Left") ? 1 : 0;
-  }
+  private static final int[] TARGETS = {};
 
   private static int test0(int i, String line) {
-    if (line.contains("Left")) return -1;
-    //    if (Arrays.binarySearch(FAILED, i) < 0) return -1;
+    //    if (!line.contains("Left")) return -1;
+    //    if (line.contains("Left")) return -1;
+    //    if (Arrays.binarySearch(TARGETS, i) < 0) return -1;
 
     final Substitution sub = Substitution.parse(line);
 

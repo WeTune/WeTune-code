@@ -1,18 +1,17 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import java.util.List;
-import java.util.Set;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
+
+import java.util.List;
+import java.util.Set;
 
 public interface Constraints extends List<Constraint> {
   Set<Symbol> eqClassOf(Symbol symbol);
 
   Symbol sourceOf(Symbol attrSym);
 
-  Iterable<Constraint> uniqueKeys();
-
-  Iterable<Constraint> foreignKeys();
+  Iterable<Constraint> ofKind(Constraint.Kind kind);
 
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
 

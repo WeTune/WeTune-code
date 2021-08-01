@@ -12,7 +12,7 @@ class Z3LogicCtx implements LogicCtx {
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
     Global.setParameter("smt.mbqi.max_iterations", "3");
-    //    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "100"));
+    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "15000"));
     Global.setParameter("combined_solver.solver2_unknown", "2");
     Global.setParameter("pp.max_depth", "100");
   }

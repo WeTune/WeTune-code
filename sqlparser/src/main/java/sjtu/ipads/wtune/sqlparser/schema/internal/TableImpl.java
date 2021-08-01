@@ -1,22 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_ENGINE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.CREATE_TABLE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_SCHEMA;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
@@ -25,6 +8,14 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
+
+import java.util.*;
+
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class TableImpl implements Table {
   private final String schema;
@@ -89,15 +80,15 @@ public class TableImpl implements Table {
     }
 
     if (patch.type() == SchemaPatch.Type.UNIQUE) {
-      final List<ColumnImpl> columns = listMap(patch.columns(), this::column);
+      final List<Column> columns = listMap(patch.columns(), this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.UNIQUE, columns);
 
       addConstraint(constraint);
-      columns.forEach(it -> it.addConstraint(constraint));
+      columns.forEach(it -> ((ColumnImpl) it).addConstraint(constraint));
     }
 
     if (patch.type() == Type.FOREIGN_KEY) {
-      final List<ColumnImpl> columns = listMap(patch.columns(), this::column);
+      final List<Column> columns = listMap(patch.columns(), this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.FOREIGN, columns);
 
       final String[] split = patch.reference().split("\\.");
@@ -112,7 +103,7 @@ public class TableImpl implements Table {
       constraint.setRefColNames(Collections.singletonList(colName));
 
       addConstraint(constraint);
-      columns.forEach(it -> it.addConstraint(constraint));
+      columns.forEach(it -> ((ColumnImpl) it).addConstraint(constraint));
     }
   }
 

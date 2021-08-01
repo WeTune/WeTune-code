@@ -61,7 +61,20 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
       action.set(ALTER_TABLE_ACTION_PAYLOAD, visitTableConstraintDef(ctx.tableConstraintDef()));
       return action;
 
-    } else return null;
+    } else if (ctx.MODIFY_SYMBOL() != null) {
+      final ASTNode action = newNode(ALTER_TABLE_ACTION);
+      final ASTNode colDef = newNode(COLUMN_DEF);
+      final ASTNode colName = newNode(COLUMN_NAME);
+
+      colName.set(COLUMN_NAME_COLUMN, stringifyIdentifier(ctx.columnInternalRef().identifier()));
+      colDef.set(COLUMN_DEF_NAME, colName);
+      parseFieldDefinition(ctx.fieldDefinition(), colDef);
+
+      action.set(ALTER_TABLE_ACTION_NAME, "modify_column");
+      action.set(ALTER_TABLE_ACTION_PAYLOAD, colDef);
+      return action;
+    }
+    return null;
   }
 
   @Override
@@ -141,14 +154,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     final ASTNode node = newNode(NodeType.COLUMN_DEF);
     node.set(COLUMN_DEF_NAME, visitColumnName(ctx.columnName()));
 
-    final var fieldDef = ctx.fieldDefinition();
-    node.set(COLUMN_DEF_DATATYPE_RAW, fieldDef.dataType().getText().toLowerCase());
-    node.set(COLUMN_DEF_DATATYPE, parseDataType(fieldDef.dataType()));
-
-    collectColumnAttrs(fieldDef.columnAttribute(), node);
-    collectGColumnAttrs(fieldDef.gcolAttribute(), node);
-
-    if (fieldDef.AS_SYMBOL() != null) node.flag(COLUMN_DEF_GENERATED);
+    parseFieldDefinition(ctx.fieldDefinition(), node);
 
     final var checkOrRef = ctx.checkOrReferences();
     if (checkOrRef != null)
@@ -1409,6 +1415,16 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
     node.set(ORDER_ITEM_DIRECTION, direction);
 
     return node;
+  }
+
+  private void parseFieldDefinition(MySQLParser.FieldDefinitionContext fieldDef, ASTNode node) {
+    node.set(COLUMN_DEF_DATATYPE_RAW, fieldDef.dataType().getText().toLowerCase());
+    node.set(COLUMN_DEF_DATATYPE, parseDataType(fieldDef.dataType()));
+
+    collectColumnAttrs(fieldDef.columnAttribute(), node);
+    collectGColumnAttrs(fieldDef.gcolAttribute(), node);
+
+    if (fieldDef.AS_SYMBOL() != null) node.flag(COLUMN_DEF_GENERATED);
   }
 
   private List<ASTNode> toOrderItems(MySQLParser.OrderClauseContext ctx) {

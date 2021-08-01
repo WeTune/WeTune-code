@@ -62,13 +62,8 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
-  public Iterable<Constraint> uniqueKeys() {
-    return lazyFilter(constraints, it -> it.kind() == Kind.Unique);
-  }
-
-  @Override
-  public Iterable<Constraint> foreignKeys() {
-    return lazyFilter(constraints, it -> it.kind() == Kind.Reference);
+  public Iterable<Constraint> ofKind(Kind kind) {
+    return lazyFilter(constraints, it -> it.kind() == kind);
   }
 
   @Override

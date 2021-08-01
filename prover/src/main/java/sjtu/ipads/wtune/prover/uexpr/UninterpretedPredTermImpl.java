@@ -18,7 +18,7 @@ final class UninterpretedPredTermImpl extends UExprBase implements Uninterpreted
     requireNonNull(t);
     requireNonNull(rep);
 
-    args = UExprUtils.substVar(args, t, rep);
+    args = UExprUtils.substArgs(args, t, rep);
   }
 
   @Override
