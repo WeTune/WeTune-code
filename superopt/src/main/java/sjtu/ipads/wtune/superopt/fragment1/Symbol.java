@@ -10,7 +10,9 @@ public interface Symbol {
 
   Kind kind();
 
-  static Symbol mk(Kind kind) {
-    return new SymbolImpl(kind);
+  Symbols ctx();
+
+  static Symbol mk(Kind kind, Symbols ctx) {
+    return new SymbolImpl(kind, ctx);
   }
 }

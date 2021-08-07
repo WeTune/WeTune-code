@@ -1871,6 +1871,6 @@ LeftJoin<c0 c1>(InnerJoin<c2 c3>(Input<t0>,Input<t1>),Input<t2>)|LeftJoin<c4 c5>
 ====
 Proj<c0>(Proj<c1>(Input<t0>))|Proj<c2>(Input<t1>)|TableEq(t0,t1);PickEq(c0,c2);PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickSub(c0,c1)
 ====
-InnerJoin<c0 c1>(Input<t0>,Proj<c2>(PlainFilter<p0 c3>(Input<t1>)))|PlainFilter<p1 c4>(InnerJoin<c5 c6>(Input<t2>,Proj<c7>(Input<t3>)))|TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c5);PickEq(c1,c6);PickEq(c2,c7);PickEq(c3,c4);PredicateEq(p0,p1);PickFrom(c4,[t3]);PickSub(c3,c2)
+InnerJoin<c0 c1>(Input<t0>,Proj<c2>(PlainFilter<p0 c3>(Input<t1>)))|PlainFilter<p1 c4>(InnerJoin<c5 c6>(Input<t2>,Proj<c7>(Input<t3>)))|TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c5);PickEq(c1,c6);PickEq(c2,c7);PickEq(c3,c4);PredicateEq(p0,p1);PickFrom(c3,[t1]);PickFrom(c4,[t3]);PickSub(c3,c2)
 ====
-PlainFilter<p0 c0>(InnerJoin<c1 c2>(Input<t0>,Proj<c3>(Input<t1>)))|InnerJoin<c4 c5>(Input<t2>,Proj<c6>(PlainFilter<p1 c7>(Input<t3>)))|TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c7);PickEq(c1,c4);PickEq(c2,c5);PickEq(c3,c6);PredicateEq(p0,p1);PickFrom(c0,[t1]);PickSub(c7,c6)
+PlainFilter<p0 c0>(InnerJoin<c1 c2>(Input<t0>,Proj<c3>(Input<t1>)))|InnerJoin<c4 c5>(Input<t2>,Proj<c6>(PlainFilter<p1 c7>(Input<t3>)))|TableEq(t0,t2);TableEq(t1,t3);PickEq(c0,c7);PickEq(c1,c4);PickEq(c2,c5);PickEq(c3,c6);PredicateEq(p0,p1);PickFrom(c0,[t1]);PickFrom(c7,[t3]);PickSub(c7,c6)

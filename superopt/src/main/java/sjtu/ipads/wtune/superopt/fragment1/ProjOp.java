@@ -7,7 +7,7 @@ class ProjOp extends BaseOp implements Proj {
 
   @Override
   public Symbol inAttrs() {
-    return fragment().symbols().symbolAt(this, Symbol.Kind.ATTRS, 0);
+    return fragment().symbols().symbolAt(this, Kind.ATTRS, 0);
   }
 
   @Override

@@ -35,12 +35,14 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
 
   @Override
   public Value locate(Value target, PlanContext ctx) {
-    final Value src = ctx.sourceOf(target);
-    // Strict.
-    for (Value v : values) if (v == target || strictEq(src, ctx.sourceOf(v))) return v;
-    // Relaxed.
-    for (Value v : values) if (relaxedEq(src, ctx.sourceOf(v))) return v;
-    return null;
+    final Value src0 = ctx.sourceOf(target);
+    Value cached = null;
+    for (Value v : values) {
+      final Value src1;
+      if (v == target || (strictEq(src0, src1 = ctx.sourceOf(v)))) return v;
+      else if (relaxedEq(src0, src1)) cached = v;
+    }
+    return cached;
   }
 
   @Override

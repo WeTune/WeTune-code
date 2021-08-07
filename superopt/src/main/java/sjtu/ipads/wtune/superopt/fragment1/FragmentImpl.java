@@ -18,7 +18,7 @@ class FragmentImpl implements Fragment {
 
   FragmentImpl(Op root) {
     this.root = root;
-    this.symbols = Lazy.mk(this::initSymbol);
+    this.symbols = Lazy.mk(this::initSymbols);
     // must be the `root()` accessor instead of `root`
   }
 
@@ -104,7 +104,7 @@ class FragmentImpl implements Fragment {
     return root == null ? 0 : structuralHash(root);
   }
 
-  private Symbols initSymbol() {
+  private Symbols initSymbols() {
     final Symbols symbols = Symbols.mk();
     root().acceptVisitor(OpVisitor.traverse(symbols::bindSymbol));
     return symbols;

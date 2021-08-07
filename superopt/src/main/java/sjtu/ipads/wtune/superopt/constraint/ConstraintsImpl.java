@@ -41,16 +41,27 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
+  public boolean isEq(Symbol s0, Symbol s1) {
+    return congruence.isCongruent(s0, s1);
+  }
+
+  @Override
   public Set<Symbol> eqClassOf(Symbol symbol) {
     return congruence.eqClassOf(symbol);
   }
 
   @Override
   public Symbol sourceOf(Symbol attrSym) {
-    for (Constraint constraint : constraints)
-      if (constraint.kind() == Kind.AttrsFrom && constraint.symbols()[0].equals(attrSym))
-        return constraint.symbols()[1];
-    return null;
+    Symbol cached = null;
+
+    for (Constraint constraint : constraints) {
+      final Kind kind = constraint.kind();
+      if (constraint.symbols()[0] == attrSym)
+        if (kind == Kind.AttrsFrom) return constraint.symbols()[1];
+        else if (kind == Kind.AttrsSub) cached = constraint.symbols()[1];
+    }
+
+    return cached;
   }
 
   @Override

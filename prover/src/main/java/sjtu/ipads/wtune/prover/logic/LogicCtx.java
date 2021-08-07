@@ -33,6 +33,8 @@ public interface LogicCtx {
 
   Proposition mkGt(Value v0, Value v1);
 
+  Proposition mkGe(Value v0, Value v1);
+
   Proposition mkNot(Proposition p);
 
   Proposition mkImplies(Proposition premise, Proposition consequence);

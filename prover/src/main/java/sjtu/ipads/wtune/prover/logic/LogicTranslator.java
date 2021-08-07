@@ -32,7 +32,7 @@ class LogicTranslator {
   private static final Var FREE_VAR = Var.mkBase(Constants.FREE_VAR);
 
   private final LogicCtx ctx;
-  private final List<Proposition> assertions;
+  private final Set<Proposition> assertions;
 
   private final SetMultimap<Name, Name> tableAttrs;
   private final Map<Name, TableMeta> tableMeta;
@@ -51,7 +51,7 @@ class LogicTranslator {
 
   private LogicTranslator(LogicCtx ctx) {
     this.ctx = ctx;
-    this.assertions = new ArrayList<>();
+    this.assertions = new LinkedHashSet<>();
 
     this.tableAttrs = MultimapBuilder.SetMultimapBuilder.hashKeys(8).hashSetValues(2).build();
     this.tableMeta = new HashMap<>(4);
@@ -106,7 +106,7 @@ class LogicTranslator {
     }
   }
 
-  List<Proposition> assertions() {
+  Set<Proposition> assertions() {
     return assertions;
   }
 
@@ -142,7 +142,7 @@ class LogicTranslator {
 
     final Func func = ctx.mkFunc(TABLE_FUNC_PREFIX + tableName, ctx.mkIntType(), tupleType);
     final Value x = ctx.mkVal("x", tupleType);
-    final Proposition assertion = ctx.mkForall(x, func.apply(x).gt(0));
+    final Proposition assertion = ctx.mkForall(x, func.apply(x).ge(0));
 
     return new TableMeta(tableName, tupleType, func, assertion);
   }
@@ -368,7 +368,7 @@ class LogicTranslator {
 
   private Proposition translateForeignKey(List<Column> columns, List<Column> refColumns) {
     // Temporary patch. NotNull should be independently added.
-    assertions.add(translateNotNull(columns.get(0)));
+    //    assertions.add(translateNotNull(columns.get(0)));
 
     final String ownerTable = columns.get(0).tableName();
     final String refTable = refColumns.get(0).tableName();
@@ -403,7 +403,7 @@ class LogicTranslator {
 
   private Proposition translateNotNull(Column column) {
     final String ownerTable = column.tableName();
-    final Func tableFunc = tableMeta.get(Name.mk(ownerTable)).func;
+    final Func tableFunc = mkTableMeta(Name.mk(ownerTable)).func;
     final DataType tupleType = tableFunc.paramTypes()[0];
     final Value v = ctx.mkVal("x", tupleType);
     final Value nullValue = ctx.mkConst(0);

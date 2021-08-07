@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 public interface Constraints extends List<Constraint> {
+  boolean isEq(Symbol s0, Symbol s1);
+
   Set<Symbol> eqClassOf(Symbol symbol);
 
   Symbol sourceOf(Symbol attrSym);

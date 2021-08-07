@@ -4,7 +4,13 @@ import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface LogicProver {
-  boolean prove(Disjunction expr0, Disjunction expr1);
+  enum Result {
+    EQ,
+    NEQ,
+    UNKNOWN
+  }
+
+  Result prove(Disjunction expr0, Disjunction expr1);
 
   void close();
 

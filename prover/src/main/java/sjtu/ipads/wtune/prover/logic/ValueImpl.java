@@ -26,6 +26,11 @@ class ValueImpl implements Value {
   }
 
   @Override
+  public Proposition ge(int i) {
+    return ctx.mkGe(this, ctx.mkConst(i));
+  }
+
+  @Override
   public Value mul(Value other) {
     return ctx.mkProduct(this, other);
   }
@@ -44,5 +49,18 @@ class ValueImpl implements Value {
   @Override
   public String toString() {
     return Objects.toString(underlying);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ValueImpl value = (ValueImpl) o;
+    return underlying.equals(value.underlying);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(underlying);
   }
 }

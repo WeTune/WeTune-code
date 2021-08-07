@@ -8,11 +8,12 @@ public interface Constraint {
     TableEq(2),
     AttrsEq(2),
     PredicateEq(2),
-    AttrsFrom(2),
     AttrsSub(2),
-    Reference(4),
     Unique(2),
-    NotNull(2);
+    NotNull(2),
+    Reference(4),
+    AttrsFrom(2),
+    ; // DON'T change the order. Some implementations trick depends on this.
 
     private final int numSyms;
 

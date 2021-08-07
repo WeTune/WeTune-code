@@ -17,8 +17,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.removeIf;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.prover.normalform.Normalization.asDisjunction;
 import static sjtu.ipads.wtune.prover.normalform.Normalization.normalize;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.sum;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.*;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkProduct;
 import static sjtu.ipads.wtune.prover.utils.UExprUtils.renameVars;
@@ -145,10 +144,10 @@ public final class Canonization {
 
     c.vars().removeAll(toMoveVars);
     c.tables().removeAll(toMoveTerms);
-    // predicates has been removed
+    // predicates have been removed
 
     final boolean removeNeg = c.neg() != null && any(toMoveVars, c.neg()::uses);
-    if (removeNeg) toMoveTerms.add(c.neg().toExpr());
+    if (removeNeg) toMoveTerms.add(not(c.neg().toExpr()));
 
     final UExpr addedSqExpr = sum(toMoveVars, mkProduct(toMoveTerms, true));
     final Disjunction newSq;

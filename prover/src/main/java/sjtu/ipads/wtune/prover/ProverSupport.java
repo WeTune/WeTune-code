@@ -23,7 +23,15 @@ public class ProverSupport {
     return Canonization.canonize(disjunction, schema);
   }
 
+  public static LogicCtx mkLogicCtx() {
+    return LogicCtx.z3();
+  }
+
   public static LogicProver mkProver(Schema schema) {
     return LogicProver.mk(schema, LogicCtx.z3());
+  }
+
+  public static LogicProver mkProver(Schema schema, LogicCtx logicCtx) {
+    return LogicProver.mk(schema, logicCtx);
   }
 }

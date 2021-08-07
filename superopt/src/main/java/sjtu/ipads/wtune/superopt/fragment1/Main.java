@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
-import static sjtu.ipads.wtune.prover.uexpr.UExpr.squash;
+import static sjtu.ipads.wtune.prover.logic.LogicProver.Result.EQ;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
@@ -25,14 +25,14 @@ public class Main {
   private static final int[] TARGETS = {};
 
   private static int test0(int i, String line) {
-    //    if (!line.contains("Left")) return -1;
+    if (!line.contains("Left")) return -1;
     //    if (line.contains("Left")) return -1;
     //    if (Arrays.binarySearch(TARGETS, i) < 0) return -1;
 
     final Substitution sub = Substitution.parse(line);
 
     System.out.println(i);
-    final var pair = translateAsPlan(sub);
+    final var pair = translateAsPlan(sub, true);
     final PlanNode plan0 = disambiguate(pair.getLeft());
     final PlanNode plan1 = disambiguate(pair.getRight());
 
@@ -41,8 +41,8 @@ public class Main {
 
     final Schema schema = plan0.context().schema();
 
-    final UExpr expr0 = squash(translateAsUExpr(plan0));
-    final UExpr expr1 = squash(translateAsUExpr(plan1));
+    final UExpr expr0 = translateAsUExpr(plan0); // squash(translateAsUExpr(plan0));
+    final UExpr expr1 = translateAsUExpr(plan1); // squash(translateAsUExpr(plan1));
 
     final Disjunction d0 = canonizeExpr(normalizeExpr(expr0), schema);
     final Disjunction d1 = canonizeExpr(normalizeExpr(expr1), schema);
@@ -51,7 +51,7 @@ public class Main {
     System.out.println(d1);
 
     final LogicProver prover = mkProver(schema);
-    final boolean result = prover.prove(d0, d1);
+    final boolean result = prover.prove(d0, d1) == EQ;
     System.out.println(result);
 
     return result ? 1 : 0;

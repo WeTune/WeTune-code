@@ -7,12 +7,12 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
 
 class Z3LogicCtx implements LogicCtx {
   static {
-    Global.setParameter("smt.auto_config", "false");
-    Global.setParameter("smt.random_seed", "11235");
+    //    Global.setParameter("smt.auto_config", "false");
+    Global.setParameter("smt.random_seed", "112358");
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
     Global.setParameter("smt.mbqi.max_iterations", "3");
-    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "15000"));
+    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "50"));
     Global.setParameter("combined_solver.solver2_unknown", "2");
     Global.setParameter("pp.max_depth", "100");
   }
@@ -114,6 +114,11 @@ class Z3LogicCtx implements LogicCtx {
   @Override
   public Proposition mkGt(Value v0, Value v1) {
     return wrap(z3.mkGt((ArithExpr) unwrap(v0), (ArithExpr) unwrap(v1)));
+  }
+
+  @Override
+  public Proposition mkGe(Value v0, Value v1) {
+    return wrap(z3.mkGe((ArithExpr) unwrap(v0), (ArithExpr) unwrap(v1)));
   }
 
   @Override

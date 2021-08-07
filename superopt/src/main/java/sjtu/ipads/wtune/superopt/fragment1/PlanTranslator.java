@@ -36,6 +36,9 @@ class PlanTranslator {
 
   private Constraints constraints;
   private Symbols symbols;
+  private SymbolNaming naming;
+
+  private boolean compatibleMode;
 
   PlanTranslator() {
     tableDescs = new LinkedHashMap<>(4);
@@ -64,14 +67,23 @@ class PlanTranslator {
   }
 
   Pair<PlanNode, PlanNode> translate(Substitution substitution) {
+    return translate(substitution, false);
+  }
+
+  Pair<PlanNode, PlanNode> translate(Substitution substitution, boolean backwardCompatible) {
+    compatibleMode = backwardCompatible;
+    naming = substitution.naming();
+
     final Fragment fragment0 = substitution._0();
     final Fragment fragment1 = substitution._1();
 
     this.constraints = substitution.constraints();
     this.symbols = Symbols.merge(fragment0.symbols(), fragment1.symbols());
 
-    completeConstraints(fragment0);
-    completeConstraints(fragment1);
+    if (backwardCompatible) {
+      completeConstraints(fragment0);
+      completeConstraints(fragment1);
+    }
 
     assignAll();
     resolveAll();
@@ -94,7 +106,8 @@ class PlanTranslator {
     assign0(symbols.symbolsOf(TABLE), tableDescs, TableDesc::new);
     assign0(symbols.symbolsOf(ATTRS), attrsDescs, AttrsDesc::new);
     assign0(symbols.symbolsOf(PRED), predDescs, PredDesc::new);
-    applyAttrsFrom(symbols.symbolsOf(ATTRS));
+    applyAttrsFrom();
+    if (!compatibleMode) applyAttrsSub();
   }
 
   private void resolveAll() {
@@ -114,11 +127,26 @@ class PlanTranslator {
     }
   }
 
-  private void applyAttrsFrom(Collection<Symbol> attrsSyms) {
-    for (Symbol attrSym : attrsSyms) {
-      final Symbol tableSym = constraints.sourceOf(attrSym);
-      if (tableSym == null) continue;
-      tableDescs.get(tableSym).attrs.add(attrsDescs.get(attrSym));
+  private void applyAttrsFrom() {
+    for (Constraint c : constraints.ofKind(AttrsFrom)) {
+      tableDescs.get(c.symbols()[1]).attrs.add(attrsDescs.get(c.symbols()[0]));
+    }
+  }
+
+  private void applyAttrsSub() {
+    for (Constraint c : constraints.ofKind(AttrsSub)) {
+      final Symbol sym0 = c.symbols()[0];
+      final Symbol sym1 = c.symbols()[1];
+
+      if (sym1.kind() == TABLE) {
+        tableDescs.get(sym1).attrs.add(attrsDescs.get(sym0));
+
+      } else /* sym1.kind() == ATTRS */ {
+        if (!constraints.isEq(sym0, sym1)) { // Avoid duplication
+          // For simplicity, just treat AttrsSub as AttrsEq.
+          attrsDescs.put(sym0, attrsDescs.get(sym1));
+        }
+      }
     }
   }
 
@@ -281,7 +309,7 @@ class PlanTranslator {
   private void completeConstraints(Fragment fragment) {
     // Add missing AttrsFrom.
     fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints0));
-    // In legacy solver, an ref that references the values of a subquery is unconstrained.
+    // In legacy solver, a ref that references the values of a subquery is unconstrained.
     // Thus, incomplete constraint set may be produced.
     // Example: Filter<c0>(Proj<c1>(Input<t0>)). `c0` must be a sublist of `c1`, otherwise invalid.
     // So we add a constraint AttrsEq(c0,c1) in such case (for simplicity).
@@ -306,7 +334,7 @@ class PlanTranslator {
     final Proj proj = (Proj) op;
 
     for (Symbol symbol : constraints.eqClassOf(proj.inAttrs())) {
-      final Op owner = symbols.ownerOf(ATTRS, symbol);
+      final Op owner = symbols.ownerOf(symbol);
       if (owner != op && owner.type() == PROJ) {
         constraints.add(Constraint.mk(AttrsEq, proj.outAttrs(), ((Proj) owner).outAttrs()));
       }
@@ -351,6 +379,7 @@ class PlanTranslator {
           propagateAttrsSource(op.successor(), op, source);
           return;
         }
+
       default:
         throw new IllegalArgumentException();
     }

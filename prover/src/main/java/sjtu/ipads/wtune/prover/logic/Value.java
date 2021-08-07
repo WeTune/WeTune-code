@@ -7,6 +7,8 @@ interface Value {
 
   Proposition gt(int i);
 
+  Proposition ge(int i);
+
   Value mul(Value other);
 
   Proposition eq(Value other);

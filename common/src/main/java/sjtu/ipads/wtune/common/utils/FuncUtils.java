@@ -113,6 +113,17 @@ public interface FuncUtils {
     for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
   }
 
+  static <P0, P1> boolean zipAll(
+      Collection<P0> l0, Collection<P1> l1, BiPredicate<? super P0, ? super P1> predicate) {
+    final int bound = Math.min(l0.size(), l1.size());
+    final Iterator<P0> it0 = l0.iterator();
+    final Iterator<P1> it1 = l1.iterator();
+    for (int i = 0; i < bound; i++) {
+      if (!predicate.test(it0.next(), it1.next())) return false;
+    }
+    return true;
+  }
+
   static <T> Iterable<T> lazyFilter(Iterable<T> os, Predicate<? super T> predicate) {
     return () -> new FilteredIterator<>(os.iterator(), predicate);
   }
@@ -151,7 +162,7 @@ public interface FuncUtils {
     return IntStream.range(0, n).mapToObj(func).toArray(len -> Commons.makeArray(retType, len));
   }
 
-  static <T> int indexOf(Predicate<T> pred, Iterable<T> os) {
+  static <T> int locate(Iterable<T> os, Predicate<T> pred) {
     int index = 0;
     for (T o : os) {
       if (pred.test(o)) return index;

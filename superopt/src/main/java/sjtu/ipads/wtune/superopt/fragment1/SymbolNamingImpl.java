@@ -52,7 +52,7 @@ class SymbolNamingImpl implements SymbolNaming {
 
     @Override
     public String mkName(Symbol symbol) {
-      return (symbol.kind().name().charAt(0) + ('A' - 'a')) + String.valueOf(nextId++);
+      return ((char) (symbol.kind().name().charAt(0) + ('a' - 'A'))) + String.valueOf(nextId++);
     }
   }
 }

@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.MultimapBuilder;
 import sjtu.ipads.wtune.common.utils.Lazy;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 class SymbolsImpl implements Symbols {
@@ -42,6 +42,11 @@ class SymbolsImpl implements Symbols {
   }
 
   @Override
+  public int size() {
+    return tables.get().size() + attrs.get().size() + preds.get().size();
+  }
+
+  @Override
   public void bindSymbol(Op op) {
     switch (op.type()) {
       case INPUT -> add(op, Symbol.Kind.TABLE);
@@ -58,25 +63,25 @@ class SymbolsImpl implements Symbols {
   }
 
   @Override
-  public Symbol symbolAt(Op op, Symbol.Kind kind, int oridinal) {
-    return getMap(kind).get(op).get(oridinal);
+  public Symbol symbolAt(Op op, Symbol.Kind kind, int ordinal) {
+    return getMap(kind).get(op).get(ordinal);
   }
 
   @Override
-  public Collection<Symbol> symbolsOf(Symbol.Kind kind) {
-    return getMap(kind).values();
+  public List<Symbol> symbolsOf(Symbol.Kind kind) {
+    return (List<Symbol>) getMap(kind).values();
   }
 
   @Override
-  public Op ownerOf(Symbol.Kind kind, Symbol symbol) {
-    for (Map.Entry<Op, Symbol> entry : getMap(kind).entries()) {
+  public Op ownerOf(Symbol symbol) {
+    for (Map.Entry<Op, Symbol> entry : getMap(symbol.kind()).entries()) {
       if (entry.getValue() == symbol) return entry.getKey();
     }
     return null;
   }
 
   private static ListMultimap<Op, Symbol> initMap() {
-    return MultimapBuilder.ListMultimapBuilder.linkedHashKeys(4).arrayListValues(1).build();
+    return LinkedListMultimap.create(4);
   }
 
   private ListMultimap<Op, Symbol> getMap(Symbol.Kind kind) {
@@ -84,11 +89,10 @@ class SymbolsImpl implements Symbols {
       case TABLE -> tables.get();
       case ATTRS -> attrs.get();
       case PRED -> preds.get();
-      default -> throw new IllegalArgumentException();
     };
   }
 
   private void add(Op op, Symbol.Kind kind) {
-    getMap(kind).get(op).add(Symbol.mk(kind));
+    getMap(kind).get(op).add(Symbol.mk(kind, this));
   }
 }

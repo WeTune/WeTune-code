@@ -37,6 +37,19 @@ class SubstitutionImpl implements Substitution {
     return new SubstitutionImpl(_0, _1, Constraints.mk(constraints), naming);
   }
 
+  static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {
+    final SymbolNaming naming = SymbolNaming.mk();
+    naming.name(f0.symbols());
+    naming.name(f1.symbols());
+
+    final Constraints cs =
+        constraints instanceof Constraints
+            ? (Constraints) constraints
+            : Constraints.mk(constraints);
+
+    return new SubstitutionImpl(f0, f1, cs, naming);
+  }
+
   @Override
   public int id() {
     return id;
@@ -55,6 +68,11 @@ class SubstitutionImpl implements Substitution {
   @Override
   public Constraints constraints() {
     return constraints;
+  }
+
+  @Override
+  public SymbolNaming naming() {
+    return naming;
   }
 
   @Override

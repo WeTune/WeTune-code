@@ -1,15 +1,17 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface Symbols {
+  int size();
+
   void bindSymbol(Op op);
 
-  Symbol symbolAt(Op op, Symbol.Kind kind, int oridinal);
+  Symbol symbolAt(Op op, Symbol.Kind kind, int ordinal);
 
-  Collection<Symbol> symbolsOf(Symbol.Kind kind);
+  List<Symbol> symbolsOf(Symbol.Kind kind);
 
-  Op ownerOf(Symbol.Kind kind, Symbol symbol);
+  Op ownerOf(Symbol symbol);
 
   static Symbols mk() {
     return new SymbolsImpl();

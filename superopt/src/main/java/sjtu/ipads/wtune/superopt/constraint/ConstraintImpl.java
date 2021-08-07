@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
 
+import java.util.Arrays;
+
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
 
@@ -45,5 +47,25 @@ class ConstraintImpl implements Constraint {
     Commons.joining(",", asList(symbols), builder, naming::nameOf);
     builder.append(')');
     return builder;
+  }
+
+  @Override
+  public String toString() {
+    return kind.name();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Constraint)) return false;
+    final Constraint that = (Constraint) o;
+    return kind == that.kind() && Arrays.equals(symbols, that.symbols());
+  }
+
+  @Override
+  public int hashCode() {
+    int result = kind.hashCode();
+    result = 31 * result + Arrays.hashCode(symbols);
+    return result;
   }
 }
