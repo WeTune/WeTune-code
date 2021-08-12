@@ -8,12 +8,9 @@ public class ExecutorSQLServerImpl extends ExecutorImpl{
 
     public ExecutorSQLServerImpl(Connection conn, String sql) {
         //TODO regex rewrite sql
+//        sql = sql.replace();
         super(conn, sql);
     }
 
-//    @Override
-//    protected PreparedStatement statement() throws SQLException {
-//        if (stmt != null) return stmt;
-//        return stmt = conn.prepareStatement(sql);
-//    }
+
 }
