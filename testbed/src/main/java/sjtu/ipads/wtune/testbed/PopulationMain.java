@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -92,13 +93,15 @@ public class PopulationMain {
     if (!failed.isEmpty()) LOG.log(Level.WARNING, "failed to populate tables: {0}", failed);
   }
 
+  @SuppressWarnings("all")
   private static Function<String, PrintWriter> fileDump(String appName, String postfix) {
     return tableName -> {
+      final Path baseDir = Paths.get(System.getProperty("user.dir"), "wtune_data/dump/%s/%s".formatted(appName, postfix));
       try {
-        return new PrintWriter(
-            Files.newOutputStream(
-                Paths.get("wtune_data/dump/%s/%s/%s.csv".formatted(appName, postfix, tableName))));
-
+        baseDir.toFile().mkdirs();
+//        final Path path = Paths.get(System.getProperty("user.dir"), "wtune_data/dump/%s/%s/%s.csv".formatted(appName, postfix, tableName));
+        final Path path = Paths.get(baseDir.toString(), "%s.csv".formatted(tableName));
+        return new PrintWriter(Files.newOutputStream(path));
       } catch (IOException ioe) {
         throw new UncheckedIOException(ioe);
       }
@@ -144,6 +147,7 @@ public class PopulationMain {
   }
 
   public static void main(String[] args) {
+    System.setProperty("user.dir", "D:\\study\\WeTune\\wtune-code");
     TAG = BASE;
 
     //    final App app = App.of("discourse");

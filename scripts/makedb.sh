@@ -1,5 +1,6 @@
 POSTGRESQL='postgresql'
 MYSQL='mysql'
+SQLSERVER='sqlserver'
 
 recreate=
 
@@ -15,22 +16,28 @@ username=
 password=
 
 getDbName() {
-  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
-    dbType=${POSTGRESQL}
-    appName=${1}
-  else
-    head=${1%:*}
-    tail=${1##*:}
-    if [ "${tail}" != "$1" ]; then
-      dbType=${tail}
-      appName=${head}
-    else
-      dbType=${MYSQL}
-      appName=${1}
-    fi
-  fi
+#  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
+#    dbType=${POSTGRESQL}
+#    appName=${1}
+#  else
+#    head=${1%:*}
+#    tail=${1##*:}
+#    if [ "${tail}" != "$1" ]; then
+#      dbType=${tail}
+#      appName=${head}
+#    else
+#      dbType=${MYSQL}
+#      appName=${1}
+#    fi
+#  fi
+#  postfix=${2:-'base'}
+#  dbName=${appName}_${postfix}
+
+  dbType=${SQLSERVER}
+  appName=${1}
   postfix=${2:-'base'}
   dbName=${appName}_${postfix}
+
 }
 
 findSchema() {
@@ -53,11 +60,24 @@ getConnProp() {
     port=${2:-'3306'}
     username=${3:-'root'}
     password=${4:-'admin'}
+  elif [ "$dbType" = "$SQLSERVER" ]; then
+    host=${1:-'192.168.13.53'}
+    port=${2:-'1433'}
+    username=${3:-'SA'}
+    password=${4:-'mssql2019Admin'}
   fi
 }
 
 doMakeTable() {
-  if [ "$dbType" = "$POSTGRESQL" ]; then
+  if [ "$dbType" = "$SQLSERVR" ]; then
+    if [ "$recreate" ]; then
+      echo "drop db $dbName"
+      sqlcmd -U "$username" -P "$password" -S "$host","$port" -q "drop database if exists $dbName;"
+    fi
+    echo "create db $dbName"
+    sqlcmd -U "$username" -P "$password" -S "$host","$port" -q "create database $dbName;"
+    sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "$schemaFile"
+  elif [ "$dbType" = "$POSTGRESQL" ]; then
     if [ "$recreate" ]; then
       echo "drop db $dbName"
       PGPASSWORD="$password" dropdb -h "$host" -p "$port" -U "$username" "$dbName" >/dev/null 2>&1
@@ -81,7 +101,16 @@ if [ "$1" = "-r" ]; then
   shift
 fi
 
-getDbName "$1" "$2"
-getConnProp "$3" "$4" "$5" "$6"
-findSchema
-doMakeTable
+
+for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
+do
+#  getDbName "$1" "$2" # broadleaf base
+#  getConnProp "$3" "$4" "$5" "$6"
+
+  # ./xx.sh base
+  getDbName "$db" "$1" # broadleaf base
+  getConnProp "$2" "$3" "$4" "$5"
+  findSchema
+  doMakeTable
+done

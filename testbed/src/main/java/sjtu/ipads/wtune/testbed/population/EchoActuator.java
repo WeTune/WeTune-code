@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,27 +65,28 @@ public class EchoActuator implements BatchActuator {
 
   @Override
   public void setBool(int index, boolean b) {
-    values.set(index, String.valueOf(b));
+    values.set(index, String.valueOf(b ? 1 : 0));
   }
 
   @Override
   public void setString(int index, String s) {
-    values.set(index, "\"" + s + "\"");
+    values.set(index, s);
   }
 
   @Override
   public void setDateTime(int index, LocalDateTime t) {
-    values.set(index, "\"" + t + "\"");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'hh:mm:ss");
+    values.set(index, t.format(formatter) + "");
   }
 
   @Override
   public void setTime(int index, LocalTime t) {
-    values.set(index, "\"" + t + "\"");
+    values.set(index, t + "");
   }
 
   @Override
   public void setDate(int index, LocalDate t) {
-    values.set(index, "\"" + t + "\"");
+    values.set(index, t + "");
   }
 
   @Override
@@ -99,7 +101,15 @@ public class EchoActuator implements BatchActuator {
 
   @Override
   public void setBytes(int index, byte[] bs) {
-    values.set(index, Arrays.toString(bs));
+    StringBuilder bStrBuilder = new StringBuilder();
+    for (byte b: bs) {
+      bStrBuilder.append(Long.toHexString(b));
+    }
+    String bStr = bStrBuilder.toString();
+    if(bStr.length() % 2 != 0)
+      bStr = bStr.substring(0, bStr.length() - 1);
+    values.set(index, bStr);
+//    values.set(index, Arrays.toString(bs));
   }
 
   @Override

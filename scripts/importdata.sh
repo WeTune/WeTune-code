@@ -2,6 +2,7 @@
 
 POSTGRESQL='postgresql'
 MYSQL='mysql'
+SQLSERVER='sqlserver'
 
 appName=
 postfix=
@@ -17,20 +18,24 @@ password=
 table=
 
 dbType() {
-  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
-    dbType=${POSTGRESQL}
-    appName=${1}
-  else
-    head="${1%:*}"
-    tail="${1##*:}"
-    if [ "${tail}" != "$1" ]; then
-      dbType=${tail}
-      appName=${head}
-    else
-      dbType=${MYSQL}
-      appName=${1}
-    fi
-  fi
+#  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
+#    dbType=${POSTGRESQL}
+#    appName=${1}
+#  else
+#    head="${1%:*}"
+#    tail="${1##*:}"
+#    if [ "${tail}" != "$1" ]; then
+#      dbType=${tail}
+#      appName=${head}
+#    else
+#      dbType=${MYSQL}
+#      appName=${1}
+#    fi
+#  fi
+
+  dbType=${SQLSERVER}
+  appName=${1}
+
   postfix=${2?:"no postfix specified"}
   dbName=${appName}_${postfix}
 }
@@ -46,6 +51,11 @@ getConnProp() {
     port=${2:-'3306'}
     username=${3:-'root'}
     password=${4:-'admin'}
+  elif [ "$dbType" = "$SQLSERVER" ]; then
+    host=${1:-'192.168.13.53'}
+    port=${2:-'1433'}
+    username=${3:-'SA'}
+    password=${4:-'mssql2019Admin'}
   fi
 }
 
@@ -60,9 +70,17 @@ findDataDir() {
 
 doTruncateOne() {
   local tableName=${1}
+  echo "truncating ${tableName}"
   if [ "$dbType" = "$POSTGRESQL" ]; then
     PGPASSWORD="$password" psql -U "$username" -h "$host" -p "$port" -d "$dbName" \
       -c "truncate table ${tableName} cascade" &>/dev/null || echo "truncate ${tableName} failed"
+  elif [ "$dbType" = "$SQLSERVER" ]; then
+    sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
+      ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL";
+      truncate table [${tableName}];
+      ALTER TABLE [${tableName}] CHECK CONSTRAINT ALL;
+      GO
+EOF
   fi
 }
 
@@ -76,7 +94,14 @@ doImportOne() {
   cd "$dataDir" || exit
 
   echo "importing ${tableName}"
-  if [ "$dbType" = "$MYSQL" ]; then
+  if [ "$dbType" = "$SQLSERVER" ]; then
+    sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
+      ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL;
+      BULK INSERT [${tableName}] FROM '/home/cleveland/yicun/wtune_data/dump/${appName}/base/${tableName}.csv' WITH( FIELDTERMINATOR=';', ROWTERMINATOR='\n' );
+      ALTER TABLE [${tableName}] CHECK CONSTRAINT ALL;
+      GO
+EOF
+  elif [ "$dbType" = "$MYSQL" ]; then
     mysql -u"$username" -p"$password" -h"$host" -P"$port" 2>/dev/null <<EOF
     set global foreign_key_checks=0;
     set global unique_checks=0;
@@ -112,17 +137,29 @@ doImportData() {
   done
 }
 
-if [ "$1" = '-t' ]; then
-  table="$2"
-  shift 2
-fi
+#if [ "$1" = '-t' ]; then
+#  table="$2"
+#  shift 2
+#fi
+#
+#dbType "$1" "$2"
+#getConnProp "$3" "$4" "$5" "$6"
+#findDataDir
+#
+#if [ -z "$table" ]; then
+#  doImportData
+#else
+#  doImportOne "$table"
+#fi
 
-dbType "$1" "$2"
-getConnProp "$3" "$4" "$5" "$6"
-findDataDir
 
-if [ -z "$table" ]; then
+#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
+for db in 'broadleaf'
+do
+  dbType "$db" "$1"
+  getConnProp "$2" "$3" "$4" "$5"
+  findDataDir
+
   doImportData
-else
-  doImportOne "$table"
-fi
+done

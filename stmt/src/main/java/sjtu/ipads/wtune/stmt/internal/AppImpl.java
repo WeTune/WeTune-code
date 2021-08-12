@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.stmt.internal;
 
 import static java.util.function.Function.identity;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,6 +69,10 @@ public class AppImpl implements App {
         connProps.setProperty("username", "root");
         connProps.setProperty("dbType", POSTGRESQL);
 
+      } else if (SQLSERVER.equals(dbType)){
+        connProps.setProperty("jdbcUrl", "jdbc:sqlserver://192.168.13.53:1433;DatabaseName=" + name + "_base");
+        connProps.setProperty("username", "SA");
+        connProps.setProperty("dbType", SQLSERVER);
       } else throw new IllegalArgumentException("unknown db type");
     }
 
@@ -120,9 +123,15 @@ public class AppImpl implements App {
   };
 
   private static final Set<String> PG_APPS = Set.of("discourse", "gitlab", "homeland");
+  private static final Set<String> SQLSERVER_APPS = Set.of(
+//          "broadleaf", "diaspora", "discourse", "eladmin", "fatfreecrm", "febs", "forest_blog",
+//          "gitlab", "guns", "halo", "homeland", "lobsters", "publiccms", "pybbs", "redmine",
+//          "refinerycms", "sagan", "shopizer", "solidus", "spree"
+  );
 
   private static final Map<String, App> KNOWN_APPS =
       Arrays.stream(APP_NAMES)
-          .map(it -> new AppImpl(it, PG_APPS.contains(it) ? POSTGRESQL : MYSQL))
+          .map(it -> new AppImpl(it, SQLSERVER_APPS.contains(it)? SQLSERVER :
+                                          (PG_APPS.contains(it) ? POSTGRESQL : MYSQL)))
           .collect(Collectors.toMap(App::name, identity()));
 }

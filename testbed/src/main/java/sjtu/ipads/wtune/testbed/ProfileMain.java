@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.testbed;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.SQLSERVER;
 import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
-import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.mysqlProps;
-import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.pgProps;
+import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -64,8 +64,8 @@ public class ProfileMain {
     final ProfileConfig config = ProfileConfig.make(Generators.make(popConfig));
     final String dbName = original.appName() + "_" + tag;
     config.setDryRun(dryRun);
-    config.setDbProperties(
-        MYSQL.equals(original.app().dbType()) ? mysqlProps(dbName) : pgProps(dbName));
+    config.setDbProperties(SQLSERVER.equals(original.app().dbType()) ? sqlserverProps(dbName) :
+            (MYSQL.equals(original.app().dbType()) ? mysqlProps(dbName) : pgProps(dbName)) );
     config.setParamSaveFile(paramSaveFile(tag));
     //    config.setWarmupCycles(20);
     //    config.setProfileCycles(201);
@@ -149,8 +149,10 @@ public class ProfileMain {
   }
 
   public static void main(String[] args) throws IOException {
-    out = new PrintWriter(Files.newOutputStream(Paths.get("wtune_data/profile.csv")));
+    System.setProperty("user.dir", "D:\\study\\WeTune\\wtune-code");
     tag = BASE;
+    out = new PrintWriter(Files.newOutputStream(
+            Paths.get(System.getProperty("user.dir"),String.format("wtune_data/profile_%s.csv", tag))));
     //    run("discourse-3842", false, true);
     run(null, false, false);
   }

@@ -21,11 +21,11 @@ import sjtu.ipads.wtune.testbed.profile.ParamsGen.IsNull;
 import sjtu.ipads.wtune.testbed.profile.ParamsGen.NotNull;
 
 class ExecutorImpl extends PreparedStatementActuator implements Executor {
-  private final String sql;
-  private final Connection conn;
+  protected final String sql;
+  protected final Connection conn;
 
-  private PreparedStatement stmt;
-  private ResultSet resultSet;
+  protected PreparedStatement stmt;
+  protected ResultSet resultSet;
 
   ExecutorImpl(Connection conn, String sql) {
     this.conn = conn;

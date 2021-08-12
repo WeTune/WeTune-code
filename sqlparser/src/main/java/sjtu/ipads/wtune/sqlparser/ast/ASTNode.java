@@ -17,6 +17,7 @@ import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeImpl;
 public interface ASTNode extends Fields {
   String POSTGRESQL = "postgresql";
   String MYSQL = "mysql";
+  String SQLSERVER = "sqlserver";
 
   ASTContext context();
 
