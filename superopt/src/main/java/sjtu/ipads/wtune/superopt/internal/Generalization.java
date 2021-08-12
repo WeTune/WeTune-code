@@ -1,12 +1,5 @@
 package sjtu.ipads.wtune.superopt.internal;
 
-import static com.google.common.collect.Lists.cartesianProduct;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
@@ -18,6 +11,14 @@ import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.google.common.collect.Lists.cartesianProduct;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.superopt.fragment.Fragment.wrap;
 
 public class Generalization {
   private final SubstitutionBank bank;
@@ -35,8 +36,8 @@ public class Generalization {
 
       if (op0.successor() == null
           || op1.successor() == null
-          || op0.type() == OperatorType.Input
-          || op1.type() == OperatorType.Input) continue;
+          || op0.type() == OperatorType.INPUT
+          || op1.type() == OperatorType.INPUT) continue;
 
       final Pair<Substitution, Substitution> cut = cut(sub, op0, op1);
       if (isProved(cut.getLeft()) && isProved(cut.getRight())) return true;
@@ -70,7 +71,7 @@ public class Generalization {
   private static Substitution renew(
       Fragment g0, Fragment g1, Constraints constraints, Constraint... extra) {
     final Numbering numbering = Numbering.make().number(g0, g1);
-    final List<Constraint> newConstraints = listFilter(it -> isPresent(it, numbering), constraints);
+    final List<Constraint> newConstraints = listFilter(constraints, it -> isPresent(it, numbering));
     newConstraints.addAll(Arrays.asList(extra));
     return Substitution.make(g0, g1, numbering, newConstraints).copy();
   }

@@ -19,7 +19,7 @@ class BasePopulatable implements Populatable {
 
   @Override
   public boolean bindGen(Generators generators) {
-    this.generators = listMap(generators::bind, collection.elements());
+    this.generators = listMap(collection.elements(), generators::bind);
     return this.generators.stream().allMatch(Objects::nonNull);
   }
 

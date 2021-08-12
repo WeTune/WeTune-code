@@ -86,7 +86,7 @@ interface PGASTHelper {
   static String stringifyText(PGParser.Character_stringContext ctx) {
     if (ctx == null) return null;
     if (ctx.Text_between_Dollar() != null && !ctx.Text_between_Dollar().isEmpty())
-      return String.join("", listMap(TerminalNode::getText, ctx.Text_between_Dollar()));
+      return String.join("", listMap(ctx.Text_between_Dollar(), TerminalNode::getText));
     else if (ctx.Character_String_Literal() != null) return unquoted(ctx.getText(), '\'');
     else return assertFalse();
   }

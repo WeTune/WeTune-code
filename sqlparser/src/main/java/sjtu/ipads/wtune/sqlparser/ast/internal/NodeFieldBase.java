@@ -98,7 +98,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
         "mis-typed SQLNode attribute: {0} for {1} \nStacktrace:\n  {2}",
         obj,
         name,
-        String.join("\n  ", listMap(Object::toString, Thread.currentThread().getStackTrace())));
+        String.join("\n  ", listMap(Thread.currentThread().getStackTrace(), Object::toString)));
     return null;
   }
 

@@ -36,8 +36,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.plan.FilterNode.makePlainFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.FilterNode.makeSubqueryFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
 import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
@@ -161,7 +161,7 @@ public class ToPlanTranslator {
       final ASTNode onCondition = tableSource.get(JOINED_ON);
       final JoinType joinType = tableSource.get(JOINED_TYPE);
 
-      final PlanNode op = JoinNode.make(joinType.isInner() ? InnerJoin : LeftJoin, onCondition);
+      final PlanNode op = JoinNode.make(joinType.isInner() ? INNER_JOIN : LEFT_JOIN, onCondition);
 
       final PlanNode left = translateTableSource(tableSource.get(JOINED_LEFT));
       final PlanNode right = translateTableSource(tableSource.get(JOINED_RIGHT));

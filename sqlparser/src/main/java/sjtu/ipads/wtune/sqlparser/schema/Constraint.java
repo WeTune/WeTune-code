@@ -5,8 +5,10 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+
 public interface Constraint {
-  List<? extends Column> columns();
+  List<Column> columns();
 
   List<KeyDirection> directions();
 
@@ -18,5 +20,13 @@ public interface Constraint {
 
   default boolean isIndex() {
     return type() != ConstraintType.NOT_NULL && type() != ConstraintType.CHECK;
+  }
+
+  default boolean isUnique() {
+    return type() == ConstraintType.PRIMARY || type() == ConstraintType.UNIQUE;
+  }
+
+  static Iterable<Constraint> filterUniqueKey(Iterable<Constraint> constraints) {
+    return lazyFilter(constraints, Constraint::isUnique);
   }
 }

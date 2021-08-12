@@ -45,14 +45,13 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SELECT_ITEM;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Agg;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Input;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Limit;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Proj;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.Sort;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.AGG;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LIMIT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SIMPLE_FILTER;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SORT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -78,14 +77,14 @@ public class ToASTTranslator {
   private void translate0(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) translate0(predecessor);
 
-    if (node.type() == Input) translateInput((InputNode) node);
+    if (node.type() == INPUT) translateInput((InputNode) node);
     else if (node.type().isJoin()) translateJoin((JoinNode) node);
-    else if (node.type() == Proj) translateProj((ProjNode) node);
-    else if (node.type() == PlainFilter) translatePlainFilter((FilterNode) node);
-    else if (node.type() == SubqueryFilter) translateSubqueryFilter((FilterNode) node);
-    else if (node.type() == Agg) translateAgg((AggNode) node);
-    else if (node.type() == Sort) translateSort((SortNode) node);
-    else if (node.type() == Limit) translateLimit((LimitNode) node);
+    else if (node.type() == PROJ) translateProj((ProjNode) node);
+    else if (node.type() == SIMPLE_FILTER) translatePlainFilter((FilterNode) node);
+    else if (node.type() == IN_SUB_FILTER) translateSubqueryFilter((FilterNode) node);
+    else if (node.type() == AGG) translateAgg((AggNode) node);
+    else if (node.type() == SORT) translateSort((SortNode) node);
+    else if (node.type() == LIMIT) translateLimit((LimitNode) node);
     else assert false;
   }
 
@@ -121,7 +120,7 @@ public class ToASTTranslator {
     final ASTNode column;
     if (attrs.size() == 1) column = attrs.get(0).makeColumnRef();
     else {
-      final List<ASTNode> refs = listMap(AttributeDef::makeColumnRef, attrs);
+      final List<ASTNode> refs = listMap(attrs, AttributeDef::makeColumnRef);
       column = expr(TUPLE);
       column.set(TUPLE_EXPRS, refs);
     }
@@ -146,7 +145,7 @@ public class ToASTTranslator {
     join.set(JOINED_LEFT, leftSource);
     join.set(JOINED_RIGHT, rightSource);
     join.set(JOINED_ON, node.onCondition());
-    join.set(JOINED_TYPE, node.type() == InnerJoin ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_TYPE, node.type() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }

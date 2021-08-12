@@ -58,7 +58,7 @@ public class WeTuneHelper {
 
     assert transformed.size() == traces.size();
     final Map<ASTNode, List<Substitution>> traceMap = new IdentityHashMap<>();
-    zipForEach(traceMap::put, transformed, traces);
+    zipForEach(transformed, traces, traceMap::put);
 
     return traceMap;
   }

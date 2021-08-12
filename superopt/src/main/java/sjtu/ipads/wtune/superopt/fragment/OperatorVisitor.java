@@ -27,12 +27,6 @@ public interface OperatorVisitor {
 
   default void leaveAgg(Agg op) {}
 
-  default boolean enterDistinct(Distinct op) {
-    return true;
-  }
-
-  default void leaveDistinct(Distinct op) {}
-
   default boolean enterInnerJoin(InnerJoin op) {
     return true;
   }

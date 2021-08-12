@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.SQUASH;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.SQUASH;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // squash(x1) * squash(x2) -> squash(x1 * x2)
-class MulSquash extends TransformationBase {
+final class MulSquash extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -20,8 +20,6 @@ class MulSquash extends TransformationBase {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
-
-    ctx.append("rw mul_squash (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

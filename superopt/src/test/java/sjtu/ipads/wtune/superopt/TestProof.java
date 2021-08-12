@@ -32,7 +32,7 @@ public class TestProof {
       if (results != null) return;
       if (g0 == null || g1 == null) throw new IllegalStateException();
       results = Prover.prove(g0, g1, -1);
-      strs = results == null ? null : listMap(Object::toString, results);
+      strs = results == null ? null : listMap(results, Object::toString);
       numbering = Numbering.make();
       numbering.number(g0, g1);
     }

@@ -40,7 +40,7 @@ public class InputNodeImpl extends PlanNodeBase implements InputNode {
     final String nonNullAlias = coalesce(alias, table.name());
     final int id = System.identityHashCode(new Object());
     final AttributeDefBag bag =
-        makeBag(listMap(it -> makeAttribute(id, nonNullAlias, it), table.columns()));
+        makeBag(listMap(table.columns(), it -> makeAttribute(id, nonNullAlias, it)));
     return new InputNodeImpl(node, id, table, nonNullAlias, bag);
   }
 

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan.internal;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 import gnu.trove.list.TIntList;
@@ -42,7 +42,7 @@ public class ExprImpl implements Expr {
   private static boolean checkComponentType(Object c) {
     return c instanceof ASTNode
         ? EXPR.isInstance((ASTNode) c)
-        : c instanceof FilterNode && ((FilterNode) c).type() == SubqueryFilter;
+        : c instanceof FilterNode && ((FilterNode) c).type() == IN_SUB_FILTER;
   }
 
   @Override
@@ -61,7 +61,7 @@ public class ExprImpl implements Expr {
 
         } else if (component instanceof FilterNode) {
           final FilterNode filter = (FilterNode) component;
-          assert filter.type() == SubqueryFilter;
+          assert filter.type() == IN_SUB_FILTER;
 
           final List<ASTNode> astNodes = filter.expr();
           assert astNodes.size() == 1;

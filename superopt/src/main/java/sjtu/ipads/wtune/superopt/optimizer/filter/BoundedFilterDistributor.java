@@ -96,7 +96,7 @@ public class BoundedFilterDistributor extends FilterDistributorBase implements F
     final List<List<Filter>> eqClasses = new ArrayList<>(2);
 
     for (Filter op : ops) {
-      if (op.type() != OperatorType.PlainFilter) continue;
+      if (op.type() != OperatorType.SIMPLE_FILTER) continue;
       if (eqClasses.stream().anyMatch(it -> it.contains(op))) continue;
 
       final List<Filter> eqClass = findEqClass(((PlainFilter) op).predicate(), ops, constraints);
@@ -108,8 +108,9 @@ public class BoundedFilterDistributor extends FilterDistributorBase implements F
 
   private List<List<FilterNode>> eqClassesByPredicate(Set<FilterNode> nodes) {
     return listFilter(
-        it -> it.size() > 1,
-        nodes.stream().collect(Collectors.groupingBy(FilterNode::predicate)).values());
+        nodes.stream().collect(Collectors.groupingBy(FilterNode::predicate)).values(),
+        it -> it.size() > 1
+    );
   }
 
   private List<List<Filter>> eqClassesByAttributes(List<Filter> ops, Constraints constraints) {
@@ -127,7 +128,8 @@ public class BoundedFilterDistributor extends FilterDistributorBase implements F
 
   private List<List<FilterNode>> eqClassesByAttributes(Set<FilterNode> nodes) {
     return listFilter(
-        it -> it.size() > 1,
-        nodes.stream().collect(Collectors.groupingBy(FilterNode::usedAttributes)).values());
+        nodes.stream().collect(Collectors.groupingBy(FilterNode::usedAttributes)).values(),
+        it -> it.size() > 1
+    );
   }
 }

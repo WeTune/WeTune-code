@@ -145,7 +145,7 @@ public class ToASTTranslator implements OperatorVisitor {
 
   private ASTNode makeColumnRefNode(Placeholder placeholder) {
     final Placeholder[] srcs = constraints == null ? null : constraints.sourceOf(placeholder);
-    final String srcName = srcs == null ? null : String.join(",", listMap(this::nameOf, srcs));
+    final String srcName = srcs == null ? null : String.join(",", listMap(srcs, this::nameOf));
     final String colName = nameOf(placeholder);
 
     final ASTNode name = node(COLUMN_NAME);

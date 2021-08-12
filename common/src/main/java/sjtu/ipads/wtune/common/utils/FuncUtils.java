@@ -1,23 +1,18 @@
 package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public interface FuncUtils {
+  static <T> Predicate<T> tautology() {
+    return ignored -> true;
+  }
+
   static <T, R> IFunction<T, R> deaf(Supplier<R> supplier) {
     return t -> supplier.get();
   }
@@ -63,38 +58,45 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
-  static <T, R> List<R> listMap(Function<? super T, ? extends R> func, Iterable<T> os) {
+  static <T, R, C extends Collection<R>> C collectionFlatMap(
+      Function<? super T, ? extends Iterable<R>> func, T[] arr, Supplier<C> supplier) {
+    return stream(Arrays.asList(arr))
+        .map(func)
+        .flatMap(FuncUtils::stream)
+        .collect(Collectors.toCollection(supplier));
+  }
+
+  static <T, R> List<R> listMap(Iterable<T> os, Function<? super T, ? extends R> func) {
     return collectionMap(func, os, ArrayList::new);
   }
 
-  @SafeVarargs
-  static <T, R> List<R> listMap(Function<? super T, R> func, T... os) {
-    return listMap(func, Arrays.asList(os));
+  static <T, R> List<R> listMap(T[] os, Function<? super T, R> func) {
+    return listMap(Arrays.asList(os), func);
   }
 
   static <T, R> List<R> listFlatMap(
-      Function<? super T, ? extends Iterable<R>> func, Iterable<T> os) {
+      Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
     return collectionFlatMap(func, os, ArrayList::new);
   }
 
   static <T, R> List<R> listFlatMap(Function<? super T, ? extends Iterable<R>> func, T... os) {
-    return listFlatMap(func, Arrays.asList(os));
+    return listFlatMap(Arrays.asList(os), func);
   }
 
-  static <T> boolean all(Predicate<T> check, Iterable<T> xs) {
-    return stream(xs).allMatch(check);
+  static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
+    return xs == null || stream(xs).allMatch(check);
   }
 
-  static <T> boolean any(Predicate<T> check, Iterable<T> xs) {
-    return stream(xs).anyMatch(check);
+  static <T> boolean any(Iterable<T> xs, Predicate<T> check) {
+    return xs != null && stream(xs).anyMatch(check);
   }
 
-  static <T> boolean none(Predicate<T> check, Iterable<T> xs) {
-    return stream(xs).noneMatch(check);
+  static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
+    return xs == null || stream(xs).noneMatch(check);
   }
 
   static <P0, P1, R> List<R> zipMap(
-      BiFunction<? super P0, ? super P1, R> func, Collection<P0> l0, Collection<P1> l1) {
+      Collection<P0> l0, Collection<P1> l1, BiFunction<? super P0, ? super P1, R> func) {
     final int bound = Math.min(l0.size(), l1.size());
     final List<R> list = new ArrayList<>(bound);
     final Iterator<P0> it0 = l0.iterator();
@@ -104,14 +106,29 @@ public interface FuncUtils {
   }
 
   static <P0, P1> void zipForEach(
-      BiConsumer<? super P0, ? super P1> func, Collection<P0> l0, Collection<P1> l1) {
+      Collection<P0> l0, Collection<P1> l1, BiConsumer<? super P0, ? super P1> func) {
     final int bound = Math.min(l0.size(), l1.size());
     final Iterator<P0> it0 = l0.iterator();
     final Iterator<P1> it1 = l1.iterator();
     for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
   }
 
-  static <T> List<T> listFilter(Predicate<? super T> func, Iterable<T> os) {
+  static <P0, P1> boolean zipAll(
+      Collection<P0> l0, Collection<P1> l1, BiPredicate<? super P0, ? super P1> predicate) {
+    final int bound = Math.min(l0.size(), l1.size());
+    final Iterator<P0> it0 = l0.iterator();
+    final Iterator<P1> it1 = l1.iterator();
+    for (int i = 0; i < bound; i++) {
+      if (!predicate.test(it0.next(), it1.next())) return false;
+    }
+    return true;
+  }
+
+  static <T> Iterable<T> lazyFilter(Iterable<T> os, Predicate<? super T> predicate) {
+    return () -> new FilteredIterator<>(os.iterator(), predicate);
+  }
+
+  static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
   }
 
@@ -120,14 +137,13 @@ public interface FuncUtils {
     return stream(os).filter(func).collect(Collectors.toCollection(supplier));
   }
 
-  @SafeVarargs
-  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, T... ts) {
+  static <T, R> R[] arrayMap(T[] ts, Function<? super T, R> func, Class<R> retType) {
     final R[] rs = Commons.makeArray(retType, ts.length);
     for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
     return rs;
   }
 
-  static <T, R> R[] arrayMap(Function<? super T, R> func, Class<R> retType, Collection<T> ts) {
+  static <T, R> R[] arrayMap(Collection<T> ts, Function<? super T, R> func, Class<R> retType) {
     final R[] rs = Commons.makeArray(retType, ts.size());
     int i = 0;
     for (T t : ts) rs[i++] = func.apply(t);
@@ -142,11 +158,11 @@ public interface FuncUtils {
         .toArray(n -> (T[]) Array.newInstance(arr.getClass().getComponentType(), n));
   }
 
-  static <T> T[] generate(int n, Class<T> retType, IntFunction<T> func) {
+  static <T> T[] generate(int n, IntFunction<T> func, Class<T> retType) {
     return IntStream.range(0, n).mapToObj(func).toArray(len -> Commons.makeArray(retType, len));
   }
 
-  static <T> int indexOf(Predicate<T> pred, Iterable<T> os) {
+  static <T> int locate(Iterable<T> os, Predicate<T> pred) {
     int index = 0;
     for (T o : os) {
       if (pred.test(o)) return index;
@@ -155,13 +171,12 @@ public interface FuncUtils {
     return -1;
   }
 
-  static <T> T find(Predicate<T> pred, Iterable<T> os) {
+  static <T> T find(Iterable<T> os, Predicate<T> pred) {
     for (T o : os) if (pred.test(o)) return o;
     return null;
   }
 
-  @SafeVarargs
-  static <T> T find(Predicate<T> pred, T... ts) {
+  static <T> T find(T[] ts, Predicate<T> pred) {
     for (T t : ts) if (pred.test(t)) return t;
     return null;
   }

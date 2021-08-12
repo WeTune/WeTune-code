@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimizer.join;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class JoinHint {
   private static boolean isEligibleMatch(
       JoinNode node, Join op, Interpretations inter, boolean swapLeaf) {
     if (node.type() != op.type()) return false;
-    if (node.type() == LeftJoin && swapLeaf) return false;
+    if (node.type() == LEFT_JOIN && swapLeaf) return false;
 
     final AttributeInterpretation leftInter = inter.getAttributes(op.leftFields());
     final AttributeInterpretation rightInter = inter.getAttributes(op.rightFields());
@@ -55,7 +55,7 @@ public class JoinHint {
 
     // check whether the Reference constraint can be enforced
     if (inter.constraints().requiresReference(op.leftFields(), op.rightFields())) {
-      final List<Column> referred = listMap(AttributeDef::referredColumn, rightAttrs);
+      final List<Column> referred = listMap(rightAttrs, AttributeDef::referredColumn);
       for (AttributeDef referee : leftAttrs) {
         final Column column = referee.referredColumn();
         if (column == null || !column.references(referred)) return false;

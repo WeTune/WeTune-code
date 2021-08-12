@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.superopt.optimizer.internal;
 import static com.google.common.collect.Sets.cartesianProduct;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SIMPLE_FILTER;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 import static sjtu.ipads.wtune.superopt.optimizer.Fingerprint.charOf;
 
 import java.util.HashSet;
@@ -46,7 +46,7 @@ public class PlanFingerprint {
               .forEach(it -> strings.add(c + it.get(0) + it.get(1)));
 
     } else if (!type.isJoin()) {
-      final char alterChar = type == SubqueryFilter ? charOf(PlainFilter) : c;
+      final char alterChar = type == IN_SUB_FILTER ? charOf(SIMPLE_FILTER) : c;
       for (int i = 0; i < budget; i++)
         for (String sub : fingerprint0(preds[0], i)) strings.add(alterChar + sub);
     }

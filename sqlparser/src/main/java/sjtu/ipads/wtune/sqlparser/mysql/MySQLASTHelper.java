@@ -50,7 +50,7 @@ public interface MySQLASTHelper {
   }
 
   static String stringifyText(MySQLParser.TextLiteralContext text) {
-    return String.join("", listMap(MySQLASTHelper::stringifyText, text.textStringLiteral()));
+    return String.join("", listMap(text.textStringLiteral(), MySQLASTHelper::stringifyText));
   }
 
   static String stringifyText(MySQLParser.TextStringLiteralContext text) {
@@ -360,7 +360,7 @@ public interface MySQLASTHelper {
     final List<String> valuesList =
         stringList == null
             ? emptyList()
-            : listMap(MySQLParser.TextStringContext::getText, stringList.textString());
+            : listMap(stringList.textString(), MySQLParser.TextStringContext::getText);
 
     return SQLDataType.make(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
   }

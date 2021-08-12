@@ -10,6 +10,6 @@ public interface Limit extends Operator {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Limit;
+    return OperatorType.LIMIT;
   }
 }

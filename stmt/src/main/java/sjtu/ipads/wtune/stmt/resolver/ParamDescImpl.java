@@ -47,7 +47,7 @@ class ParamDescImpl implements ParamDesc, Serializable {
 
   @Override
   public boolean isElement() {
-    return any(it -> it.type() == Type.ARRAY_ELEMENT || it.type() == Type.TUPLE_ELEMENT, modifiers);
+    return any(modifiers, it -> it.type() == Type.ARRAY_ELEMENT || it.type() == Type.TUPLE_ELEMENT);
   }
 
   @Override

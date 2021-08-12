@@ -7,8 +7,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PlainFilter;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SIMPLE_FILTER;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateOtherSide;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
@@ -45,16 +45,16 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
 
   public static FilterNode build(ASTNode expr) {
     if (!EXPR.isInstance(expr)) throw new IllegalArgumentException();
-    return new PlainFilterNode(PlainFilter, Expr.make(expr), null);
+    return new PlainFilterNode(SIMPLE_FILTER, Expr.make(expr), null);
   }
 
   public static FilterNode build(Expr expr, List<AttributeDef> usedAttrs) {
-    return new PlainFilterNode(PlainFilter, expr, usedAttrs);
+    return new PlainFilterNode(SIMPLE_FILTER, expr, usedAttrs);
   }
 
   @Override
   public OperatorType type() {
-    return PlainFilter;
+    return SIMPLE_FILTER;
   }
 
   @Override
@@ -64,7 +64,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
 
   @Override
   public List<ASTNode> expr() {
-    if (astNodes != null) return listMap(ASTNode::deepCopy, astNodes);
+    if (astNodes != null) return listMap(astNodes, ASTNode::deepCopy);
 
     final List<Object> components = predicate().components();
     final TIntList arity = predicate().arity();
@@ -161,8 +161,8 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
   public void resolveUsed() {
     final AttributeDefBag inAttrs = predecessors()[0].definedAttributes();
 
-    if (usedAttrs == null) usedAttrs = listMap(inAttrs::lookup, expr.columnRefs());
-    else usedAttrs = listMap(inAttrs::lookup, usedAttrs);
+    if (usedAttrs == null) usedAttrs = listMap(expr.columnRefs(), inAttrs::lookup);
+    else usedAttrs = listMap(usedAttrs, inAttrs::lookup);
 
     fixedValueAttrs = null;
     nonNullValueAttrs = null;
@@ -187,10 +187,10 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
 
       final FilterNode filter;
       if (o instanceof ASTNode) {
-        filter = new PlainFilterNode(PlainFilter, Expr.make(o), attrs);
+        filter = new PlainFilterNode(SIMPLE_FILTER, Expr.make(o), attrs);
 
       } else if (o instanceof FilterNode) {
-        assert ((FilterNode) o).type() == SubqueryFilter;
+        assert ((FilterNode) o).type() == IN_SUB_FILTER;
         filter = new SubqueryFilterNode(null, attrs);
         filter.setPredecessor(1, PlanNode.copyOnTree((PlanNode) o).predecessors()[1]);
 
@@ -204,7 +204,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
 
   @Override
   protected PlanNode copy0() {
-    return new PlainFilterNode(PlainFilter, expr, usedAttributes());
+    return new PlainFilterNode(SIMPLE_FILTER, expr, usedAttributes());
   }
 
   @Override

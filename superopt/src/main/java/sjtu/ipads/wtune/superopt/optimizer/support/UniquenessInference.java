@@ -17,7 +17,6 @@ import java.util.Set;
 import sjtu.ipads.wtune.common.utils.EquivalentClasses;
 import sjtu.ipads.wtune.common.utils.FuncUtils;
 import sjtu.ipads.wtune.common.utils.LazySequence;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
 import sjtu.ipads.wtune.sqlparser.plan.AttributeDefBag;
@@ -162,9 +161,7 @@ class InputStage extends InferenceStage {
     if (iter != null) return iter;
 
     final List<Constraint> fks =
-        listFilter(
-            it -> ConstraintType.isUnique(it.type()),
-            ((InputNode) this.node).table().constraints());
+        listFilter(((InputNode) node).table().constraints(), Constraint::isUnique);
 
     fks.sort(Comparator.comparingInt(it -> it.columns().size()));
 
@@ -182,7 +179,7 @@ class InputStage extends InferenceStage {
 
     final Set<AttributeDef> core = newIdentitySet(fk.columns().size());
     for (Column column : fk.columns()) {
-      final AttributeDef found = FuncUtils.find(it -> it.referredColumn() == column, attrs);
+      final AttributeDef found = FuncUtils.find(attrs, it -> it.referredColumn() == column);
       assert found != null;
       core.add(found);
     }
@@ -265,7 +262,7 @@ class JoinStage extends InferenceStage {
 
       final JoinNode join = (JoinNode) node;
       if (join.isNormalForm())
-        zipForEach(this::addEqualPair, join.leftAttributes(), join.rightAttributes());
+        zipForEach(join.leftAttributes(), join.rightAttributes(), this::addEqualPair);
     }
 
     if (!forwardSplitPivots()) {

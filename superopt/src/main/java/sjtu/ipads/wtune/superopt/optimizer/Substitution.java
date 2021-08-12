@@ -34,7 +34,7 @@ public interface Substitution {
         g1(),
         g0(),
         Numbering.make().number(g1(), g0()),
-        listMap(Substitution::flip, constraints()));
+        listMap(constraints(), Substitution::flip));
   }
 
   default Substitution copy() {

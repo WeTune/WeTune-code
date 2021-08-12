@@ -41,12 +41,12 @@ public class Prover {
 
     numbering = Numbering.make().number(g0, g1);
 
-    return listMap(this::makeSubstitution, summaries);
+    return listMap(summaries, this::makeSubstitution);
   }
 
   private Substitution makeSubstitution(Summary summary) {
     return Substitution.make(
-        g0, g1, numbering, listMap(this::makeConstraint, summary.constraints()));
+        g0, g1, numbering, listMap(summary.constraints(), this::makeConstraint));
   }
 
   private Constraint makeConstraint(Constraint constraint) {

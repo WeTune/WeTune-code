@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import java.util.List;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
@@ -9,9 +9,11 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
+import java.util.List;
+
 public class ConstraintImpl implements Constraint {
   private final ConstraintType type;
-  private final List<? extends Column> columns;
+  private final List<Column> columns;
   private List<KeyDirection> directions;
   private IndexType indexType;
 
@@ -21,17 +23,17 @@ public class ConstraintImpl implements Constraint {
   private Table refTable;
   private List<Column> refColumns;
 
-  private ConstraintImpl(ConstraintType type, List<? extends Column> columns) {
+  private ConstraintImpl(ConstraintType type, List<Column> columns) {
     this.type = type;
     this.columns = columns;
   }
 
-  static ConstraintImpl build(ConstraintType type, List<? extends Column> columns) {
+  static ConstraintImpl build(ConstraintType type, List<Column> columns) {
     return new ConstraintImpl(type, columns);
   }
 
   @Override
-  public List<? extends Column> columns() {
+  public List<Column> columns() {
     return columns;
   }
 
@@ -85,5 +87,17 @@ public class ConstraintImpl implements Constraint {
 
   void setDirections(List<KeyDirection> directions) {
     this.directions = directions;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder builder =
+        new StringBuilder(32).append(type == null ? "INDEX" : type.name()).append(' ');
+    Commons.joining("[", ",", "]", false, columns, builder);
+    if (type == ConstraintType.FOREIGN) {
+      builder.append(" -> ");
+      Commons.joining("[", ",", "]", false, refColumns, builder);
+    }
+    return builder.toString();
   }
 }

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.internal;
 
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
+import static sjtu.ipads.wtune.superopt.internal.Canonization.canonize;
 
 import com.google.common.collect.Sets;
 import java.util.HashSet;
@@ -15,7 +15,6 @@ import sjtu.ipads.wtune.superopt.util.Hole;
 import sjtu.ipads.wtune.superopt.util.rules.Rule;
 import sjtu.ipads.wtune.superopt.util.rules.simplify.NonLeftDeepJoin;
 import sjtu.ipads.wtune.superopt.util.rules.support.AllJoin;
-import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedJoin;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedSubqueryFilter;
 import sjtu.ipads.wtune.superopt.util.rules.validation.MalformedUnion;
 
@@ -37,7 +36,7 @@ public class Enumerator {
       for (Hole<Operator> hole : g.holes())
         for (Operator template : Operators.templates())
           if (hole.fill(template)) {
-            newFragments.add(canonicalize(g.copy()));
+            newFragments.add(canonize(g.copy()));
             hole.unFill();
           }
 

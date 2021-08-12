@@ -82,7 +82,7 @@ class ResolveParam {
     final List<ASTNode> params = collectParams(expr);
     if (params.isEmpty()) return emptyList();
 
-    return listMap(it -> resolve0(expr, it), params);
+    return listMap(params, it -> resolve0(expr, it));
   }
 
   private ParamDesc resolve0(ASTNode expr, ASTNode paramNode) {

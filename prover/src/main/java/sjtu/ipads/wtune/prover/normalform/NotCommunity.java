@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // let x1 = not(...)
 // x1 * x2 -> x2 * x1 where x2 is not not(..)
-class NotCommunity extends TransformationBase {
+final class NotCommunity extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     if (point.kind() != MUL) return point;
@@ -19,8 +19,6 @@ class NotCommunity extends TransformationBase {
 
     final UExpr parent = point.parent();
     if (parent != null) UExpr.replaceChild(parent, point, newExpr);
-
-    ctx.append("rw mul_comm (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

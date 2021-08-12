@@ -51,7 +51,7 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   static Expr[] unwrap(Value... vs) {
-    return arrayMap(Z3LogicCtx::unwrap, Expr.class, vs);
+    return arrayMap(vs, Z3LogicCtx::unwrap, Expr.class);
   }
 
   static BoolExpr unwrap(Proposition p) {
@@ -59,7 +59,7 @@ public class Z3LogicCtx implements LogicCtx {
   }
 
   static BoolExpr[] unwrap(Proposition... ps) {
-    return arrayMap(Z3LogicCtx::unwrap, BoolExpr.class, ps);
+    return arrayMap(ps, Z3LogicCtx::unwrap, BoolExpr.class);
   }
 
   static FuncDecl unwrap(Func f) {

@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SubqueryFilter;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.IN_SUB_FILTER;
 import static sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
@@ -30,10 +30,10 @@ public class SubqueryFilterNode extends PlainFilterNode {
   private List<ASTNode> colRefs;
 
   protected SubqueryFilterNode(List<ASTNode> colRefs, List<AttributeDef> usedAttrs) {
-    super(SubqueryFilter, null, usedAttrs);
+    super(IN_SUB_FILTER, null, usedAttrs);
     assert colRefs != null || usedAttrs != null;
     this.expr = Expr.make(this);
-    this.colRefs = usedAttrs != null ? listMap(AttributeDef::makeColumnRef, usedAttrs) : colRefs;
+    this.colRefs = usedAttrs != null ? listMap(usedAttrs, AttributeDef::makeColumnRef) : colRefs;
   }
 
   public static FilterNode buildFromExpr(ASTNode colRefs) {
@@ -46,7 +46,7 @@ public class SubqueryFilterNode extends PlainFilterNode {
 
   @Override
   public OperatorType type() {
-    return SubqueryFilter;
+    return IN_SUB_FILTER;
   }
 
   @Override
@@ -85,10 +85,10 @@ public class SubqueryFilterNode extends PlainFilterNode {
   public void resolveUsed() {
     final AttributeDefBag inAttrs = predecessors()[0].definedAttributes();
 
-    if (usedAttrs == null) usedAttrs = listMap(inAttrs::lookup, colRefs);
+    if (usedAttrs == null) usedAttrs = listMap(colRefs, inAttrs::lookup);
     else {
-      usedAttrs = listMap(inAttrs::lookup, usedAttrs);
-      colRefs = listMap(AttributeDef::makeColumnRef, usedAttrs);
+      usedAttrs = listMap(usedAttrs, inAttrs::lookup);
+      colRefs = listMap(usedAttrs, AttributeDef::makeColumnRef);
     }
 
     astNodes = null;

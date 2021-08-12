@@ -17,11 +17,11 @@ public interface AttributeDefBag extends List<AttributeDef> {
   int locate(AttributeDef reference);
 
   default AttributeDefBag copy() {
-    return makeBag(listMap(AttributeDef::copy, this));
+    return makeBag(listMap(this, AttributeDef::copy));
   }
 
   default AttributeDefBag copyWithQualification(String qualification) {
-    return makeBag(listMap(it -> it.copyWithQualification(qualification), this));
+    return makeBag(listMap(this, it -> it.copyWithQualification(qualification)));
   }
 
   default AttributeDef lookup(int id) {

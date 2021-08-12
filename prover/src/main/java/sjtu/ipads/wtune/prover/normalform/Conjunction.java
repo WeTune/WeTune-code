@@ -1,24 +1,37 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.Tuple;
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
+import sjtu.ipads.wtune.prover.uexpr.Var;
 
 import java.util.List;
 
 public interface Conjunction {
-  List<Tuple> boundedVars();
+  List<Var> vars();
 
-  List<UExpr> predicates();
+  List<UExpr> preds();
 
   List<UExpr> tables();
 
-  UExpr negation();
+  Disjunction neg();
 
-  UExpr squash();
+  Disjunction squash();
 
   UExpr toExpr();
 
-  void subst(Tuple v1, Tuple v2);
+  boolean isEmpty();
+
+  boolean uses(Var v);
+
+  void subst(Var v1, Var v2);
 
   Conjunction copy();
+
+  static Conjunction mk(
+      List<Var> sumVars,
+      List<UExpr> tables,
+      List<UExpr> predicates,
+      Disjunction squash,
+      Disjunction negation) {
+    return ConjunctionImpl.make(sumVars, tables, predicates, squash, negation);
+  }
 }

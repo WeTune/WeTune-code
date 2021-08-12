@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.InnerJoin;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LeftJoin;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.common.utils.TypedTreeVisitor;
@@ -27,7 +27,7 @@ public class CostEstimator {
     int result = 0;
 
     for (int i = 0, bound = opCount0.length; i < bound; i++) {
-      if (i == LeftJoin.ordinal() || i == InnerJoin.ordinal()) continue;
+      if (i == LEFT_JOIN.ordinal() || i == INNER_JOIN.ordinal()) continue;
 
       if ((result < 0 && opCount0[i] > opCount1[i])) return 0;
       if (result > 0 && opCount0[i] < opCount1[i]) return 0;
@@ -38,10 +38,10 @@ public class CostEstimator {
     if (result != 0) return result;
 
     // prefer inner join
-    final int numInnerJoin0 = opCount0[InnerJoin.ordinal()];
-    final int numLeftJoin0 = opCount0[LeftJoin.ordinal()];
-    final int numInnerJoin1 = opCount1[InnerJoin.ordinal()];
-    final int numLeftJoin1 = opCount1[LeftJoin.ordinal()];
+    final int numInnerJoin0 = opCount0[INNER_JOIN.ordinal()];
+    final int numLeftJoin0 = opCount0[LEFT_JOIN.ordinal()];
+    final int numInnerJoin1 = opCount1[INNER_JOIN.ordinal()];
+    final int numLeftJoin1 = opCount1[LEFT_JOIN.ordinal()];
     final int numJoin0 = numInnerJoin0 + numLeftJoin0;
     final int numJoin1 = numInnerJoin1 + numLeftJoin1;
 

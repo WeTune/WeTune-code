@@ -154,7 +154,7 @@ public class PopulationMain {
     //    populateOne(config, app.name(), null, false);
 
     final Map<String, Set<Table>> usedTables =
-        getUsedTables(listMap(Statement::original, Statement.findAllRewritten()));
+        getUsedTables(listMap(Statement.findAllRewritten(), Statement::original));
 
     for (var pair : usedTables.entrySet()) {
       final App app = App.of(pair.getKey());

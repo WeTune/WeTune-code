@@ -15,8 +15,8 @@ import static sjtu.ipads.wtune.symsolver.core.Indexed.number;
 public class ConstraintTest {
   @Test
   void test() {
-    final TableSym[] tbls = generate(3, TableSym.class, i -> TableSym.of());
-    final PickSym[] picks = generate(3, PickSym.class, i -> PickSym.of());
+    final TableSym[] tbls = generate(3, i -> TableSym.of(), TableSym.class);
+    final PickSym[] picks = generate(3, i -> PickSym.of(), PickSym.class);
 
     final Class<IllegalArgumentException> wrongArgEx = IllegalArgumentException.class;
     assertThrows(wrongArgEx, () -> DecidableConstraint.tableEq(tbls[0], tbls[0]));

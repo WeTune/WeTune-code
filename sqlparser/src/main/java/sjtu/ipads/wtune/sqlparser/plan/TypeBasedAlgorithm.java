@@ -3,23 +3,23 @@ package sjtu.ipads.wtune.sqlparser.plan;
 public class TypeBasedAlgorithm<T> {
   public T dispatch(PlanNode node) {
     switch (node.type()) {
-      case Input:
+      case INPUT:
         return onInput((InputNode) node);
-      case PlainFilter:
+      case SIMPLE_FILTER:
         return onPlainFilter((FilterNode) node);
-      case SubqueryFilter:
+      case IN_SUB_FILTER:
         return onSubqueryFilter((FilterNode) node);
-      case InnerJoin:
+      case INNER_JOIN:
         return onInnerJoin((JoinNode) node);
-      case LeftJoin:
+      case LEFT_JOIN:
         return onLeftJoin((JoinNode) node);
-      case Proj:
+      case PROJ:
         return onProj((ProjNode) node);
-      case Limit:
+      case LIMIT:
         return onLimit((LimitNode) node);
-      case Sort:
+      case SORT:
         return onSort((SortNode) node);
-      case Agg:
+      case AGG:
         return onAgg((AggNode) node);
       default:
         throw new IllegalArgumentException();

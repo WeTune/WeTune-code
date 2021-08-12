@@ -6,8 +6,8 @@
 6. modify malformed stmtImpl
 7. add alt statements
 8. remove invalid and duplicated
-9. add output group
-10. add struct group
+9. add output congruentClass
+10. add struct congruentClass
 11. update numbers
 12. add column wtune_stmt.stmt_trace
 13. update schema patches

@@ -12,7 +12,7 @@ public interface PlainFilter extends Filter {
 
   @Override
   default OperatorType type() {
-    return OperatorType.PlainFilter;
+    return OperatorType.SIMPLE_FILTER;
   }
 
   static PlainFilter create() {

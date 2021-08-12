@@ -1,13 +1,5 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listSort;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func2;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
-import static sjtu.ipads.wtune.superopt.internal.Canonicalization.canonicalize;
-
-import java.util.List;
-import java.util.stream.Collectors;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Numbering;
 import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
@@ -15,6 +7,13 @@ import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 import sjtu.ipads.wtune.symsolver.core.Constraint;
 import sjtu.ipads.wtune.symsolver.core.PickFrom;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sjtu.ipads.wtune.common.utils.Commons.listSort;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.superopt.internal.Canonization.canonize;
 
 public class SubstitutionImpl implements Substitution {
   private final Fragment g0, g1;
@@ -45,10 +44,10 @@ public class SubstitutionImpl implements Substitution {
     final Numbering numbering = Numbering.make().number(g0, g1);
 
     final List<Constraint> constraints =
-        listMap(func2(SubstitutionImpl::rebuildConstraint).bind1(numbering), split[2].split(";"));
+        listMap(split[2].split(";"), func2(SubstitutionImpl::rebuildConstraint).bind1(numbering));
 
-    canonicalize(g0);
-    canonicalize(g1);
+    canonize(g0);
+    canonize(g1);
 
     final Numbering canonicalNumbering = Numbering.make().number(g0, g1);
     return new SubstitutionImpl(g0, g1, canonicalNumbering, constraints);
@@ -113,13 +112,13 @@ public class SubstitutionImpl implements Substitution {
           + ",["
           + String.join(
               ",",
-              listMap(it -> numbering.nameOf((Placeholder) it), ((PickFrom<?, ?>) constraint).ts()))
+              listMap(((PickFrom<?, ?>) constraint).ts(), it -> numbering.nameOf((Placeholder) it)))
           + "])";
     } else
       return constraint.kind()
           + "("
           + String.join(
-              ",", listMap(it -> numbering.nameOf((Placeholder) it), constraint.targets()))
+              ",", listMap(constraint.targets(), it -> numbering.nameOf((Placeholder) it)))
           + ")";
   }
 

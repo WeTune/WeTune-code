@@ -10,6 +10,6 @@ public interface Agg extends Operator {
 
   @Override
   default OperatorType type() {
-    return OperatorType.Agg;
+    return OperatorType.AGG;
   }
 }

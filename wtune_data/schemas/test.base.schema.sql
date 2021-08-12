@@ -23,5 +23,7 @@ CREATE TABLE d
 (
     p INT,
     q CHAR(10),
-    r DECIMAL(1, 10)
+    r DECIMAL(1, 10),
+    UNIQUE KEY (p),
+    FOREIGN KEY (p) REFERENCES c (u)
 );

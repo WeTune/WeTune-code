@@ -1,24 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.schema.internal;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_SEQUENCE_OPERATION;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_SEQUENCE_PAYLOAD;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.ALTER_TABLE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.INDEX_DEF_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.ALTER_SEQUENCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.ALTER_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.CREATE_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.INDEX_DEF;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
@@ -26,6 +7,17 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 public class SchemaImpl implements Schema {
   private final String dbType;
@@ -53,7 +45,7 @@ public class SchemaImpl implements Schema {
   }
 
   public static Schema build(String dbType, String str) {
-    return build(dbType, listMap(ASTParser.ofDb(dbType)::parseRaw, splitSql(str)));
+    return build(dbType, listMap(splitSql(str), ASTParser.ofDb(dbType)::parseRaw));
   }
 
   private static void addCreateTable(ASTNode node, Map<String, TableBuilder> builders) {
@@ -98,7 +90,7 @@ public class SchemaImpl implements Schema {
             if (ref == null) continue;
             constraint.setRefTable(ref);
             constraint.setRefColumns(
-                listMap(it -> ref.column(it.get(COLUMN_NAME_COLUMN)), constraint.refColNames()));
+                listMap(constraint.refColNames(), it -> ref.column(it.get(COLUMN_NAME_COLUMN))));
           }
         }
   }

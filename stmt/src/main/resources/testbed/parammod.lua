@@ -198,12 +198,12 @@ end
 
 function Modifiers.make_tuple(count)
     return function(_, _, stack)
-        local tuple = {}
+        local var = {}
         for i = count, 1, -1 do
-            tuple[i] = stack:pop()
+            var[i] = stack:pop()
         end
-        tuple.asTuple = true
-        stack:push(tuple)
+        var.asTuple = true
+        stack:push(var)
     end
 end
 

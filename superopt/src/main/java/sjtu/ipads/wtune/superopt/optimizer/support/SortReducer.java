@@ -30,7 +30,7 @@ public class SortReducer {
   }
 
   private static SortSpec resolveSort(PlanNode node) {
-    if (node.type() == OperatorType.Input) return null;
+    if (node.type() == OperatorType.INPUT) return null;
 
     final SortSpec sort0 = resolveSort(node.predecessors()[0]);
     if (node.type().isFilter()) return sort0;
@@ -49,20 +49,20 @@ public class SortReducer {
       return new SortSpec(null, false, basedOn);
     }
 
-    if (node.type() == OperatorType.Proj)
+    if (node.type() == OperatorType.PROJ)
       return sort0 != null
           ? sort0.limited ? sort0 : new SortSpec(null, false, sort0.basedOn)
           : null;
 
-    if (node.type() == OperatorType.Sort)
+    if (node.type() == OperatorType.SORT)
       if (sort0 == null) return new SortSpec(node, false, null);
       else if (sort0.limited) return new SortSpec(node, false, new SortSpec[] {sort0});
       else return new SortSpec(node, false, sort0.basedOn);
 
-    if (node.type() == OperatorType.Limit)
+    if (node.type() == OperatorType.LIMIT)
       return sort0 == null ? null : new SortSpec(sort0.enforcer, true, sort0.basedOn);
 
-    if (node.type() == OperatorType.Agg)
+    if (node.type() == OperatorType.AGG)
       if (sort0 == null) return null;
       else if (isCount((AggNode) node)) return new SortSpec(null, false, sort0.basedOn);
       else return sort0;
@@ -83,7 +83,7 @@ public class SortReducer {
   private static boolean reduceSort0(PlanNode node, Set<PlanNode> preserved) {
     boolean changed = false;
     for (PlanNode predecessor : node.predecessors()) changed |= reduceSort0(predecessor, preserved);
-    if (node.type() != OperatorType.Sort || preserved.contains(node)) return changed;
+    if (node.type() != OperatorType.SORT || preserved.contains(node)) return changed;
     node.successor().replacePredecessor(node, node.predecessors()[0]);
     return true;
   }

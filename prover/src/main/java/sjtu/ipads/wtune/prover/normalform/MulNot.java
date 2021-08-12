@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.prover.expr.UExpr;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.MUL;
+import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.NOT;
 
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.MUL;
-import static sjtu.ipads.wtune.prover.expr.UExpr.Kind.NOT;
+import sjtu.ipads.wtune.prover.uexpr.UExpr;
 
 // not(x1) * not(x2) -> not(x1 + x2)
-class MulNot extends TransformationBase {
+final class MulNot extends TransformationBase {
   @Override
   public UExpr apply(UExpr point) {
     final UExpr parent = point.parent();
@@ -20,8 +20,6 @@ class MulNot extends TransformationBase {
 
     final UExpr grandpa = parent.parent();
     if (grandpa != null) UExpr.replaceChild(grandpa, parent, newExpr);
-
-    ctx.append("rw mul_not (%s) (%s)".formatted(x1, x2));
 
     return newExpr;
   }

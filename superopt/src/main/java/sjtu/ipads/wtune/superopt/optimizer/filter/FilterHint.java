@@ -84,7 +84,7 @@ public class FilterHint {
     assignments = sortAssignments(assignments, ops);
     final PlanNode matchPoint =
         rebuildFilters0(
-            listMap(FilterAssignment::assignment, assignments), copyOnTree(predecessor));
+            listMap(assignments, FilterAssignment::assignment), copyOnTree(predecessor));
 
     final PlanNode newHead;
     if (tail.op() == null) {
@@ -99,7 +99,7 @@ public class FilterHint {
   private static List<FilterAssignment> sortAssignments(
       List<FilterAssignment> assignments, Iterable<Filter> ops) {
     final List<FilterAssignment> ret = new ArrayList<>(assignments.size());
-    for (Operator op : ops) ret.add(FuncUtils.find(it -> it.op() == op, assignments));
+    for (Operator op : ops) ret.add(FuncUtils.find(assignments, it -> it.op() == op));
     assert ret.stream().noneMatch(Objects::isNull);
     return ret;
   }

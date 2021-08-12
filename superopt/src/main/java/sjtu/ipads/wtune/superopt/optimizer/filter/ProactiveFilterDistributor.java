@@ -46,18 +46,18 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
     final Filter target = targets.get(idx);
     final var candidates = candidatesOf(target);
 
-    if (target.type() == OperatorType.PlainFilter) {
+    if (target.type() == OperatorType.SIMPLE_FILTER) {
       final int max = maxAssignmentsOf(target);
       if (max <= 0) return;
 
       for (int i = 1; i <= max; i++)
         for (var assignment : combinations(candidates, i)) {
-          dist.assign(target, listMap(Equivalence.Wrapper::get, assignment));
+          dist.assign(target, listMap(assignment, Equivalence.Wrapper::get));
           distribute0(idx + 1);
           dist.rollback();
         }
 
-    } else if (target.type() == OperatorType.SubqueryFilter) {
+    } else if (target.type() == OperatorType.IN_SUB_FILTER) {
       for (var assignment : candidates) {
         dist.assign(target, singletonList(assignment.get()));
         distribute0(idx + 1);
@@ -71,8 +71,8 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
     final Set<Equivalence.Wrapper<FilterNode>> unused =
         collectionMap(identity()::wrap, Sets.difference(dist.pool(), dist.used()), HashSet::new);
 
-    if (op.type() == OperatorType.SubqueryFilter)
-      unused.removeIf(it -> it.get().type() == OperatorType.PlainFilter);
+    if (op.type() == OperatorType.IN_SUB_FILTER)
+      unused.removeIf(it -> it.get().type() == OperatorType.SIMPLE_FILTER);
 
     return unused;
   }
@@ -105,7 +105,7 @@ public class ProactiveFilterDistributor extends FilterDistributorBase implements
         && constraints.equivalenceOf(attr).stream().anyMatch(it -> it.owner().fragment() == side))
       return true;
 
-    if (op.type() == OperatorType.PlainFilter) {
+    if (op.type() == OperatorType.SIMPLE_FILTER) {
       final Placeholder pred = ((PlainFilter) op).predicate();
       return !inter.hasAssignment(pred)
           && constraints.equivalenceOf(pred).stream().anyMatch(it -> it.owner().fragment() == side);

@@ -57,28 +57,28 @@ public class Stringify implements OperatorVisitor {
 
     builder.append('<');
     switch (op.type()) {
-      case Input:
+      case INPUT:
         builder.append(toString(((Input) op).table()));
         break;
-      case InnerJoin:
-      case LeftJoin:
+      case INNER_JOIN:
+      case LEFT_JOIN:
         final Join join = (Join) op;
         builder
             .append(toString(join.leftFields()))
             .append(' ')
             .append(toString(join.rightFields()));
         break;
-      case PlainFilter:
+      case SIMPLE_FILTER:
         final PlainFilter plainFilter = (PlainFilter) op;
         builder
             .append(toString(plainFilter.predicate()))
             .append(' ')
             .append(toString(plainFilter.fields()));
         break;
-      case SubqueryFilter:
+      case IN_SUB_FILTER:
         builder.append(toString(((SubqueryFilter) op).fields()));
         break;
-      case Proj:
+      case PROJ:
         builder.append(toString(((Proj) op).fields()));
         break;
     }

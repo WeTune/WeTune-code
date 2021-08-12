@@ -100,7 +100,7 @@ public class TestHint {
 
     final Iterable<PlanNode> mutated = Hint.apply(filterNode, filterOp, inter);
     final List<String> str =
-        listMap(func(ToASTTranslator::toAST).andThen(ASTNode::toString), mutated);
+        listMap(mutated, func(ToASTTranslator::toAST).andThen(ASTNode::toString));
     assertEquals(2, str.size());
     assertTrue(
         str.contains(
