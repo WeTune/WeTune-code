@@ -231,15 +231,15 @@ public class InterpretationsImpl implements Interpretations {
 
     final PlanNode inputNode = localeInput(pivot, surface);
     if (inputNode == null) return null;
-    assert inputNode.type() == OperatorType.INPUT;
+    assert inputNode.kind() == OperatorType.INPUT;
 
     PlanNode pathNode = inputNode;
     boolean filtered = false, nullable = false;
     while (pathNode != surface) {
-      if (pathNode.type().isFilter()) filtered = true;
+      if (pathNode.kind().isFilter()) filtered = true;
 
       final PlanNode successor = pathNode.successor();
-      if (successor.type() == LEFT_JOIN && successor.predecessors()[1] == pathNode) nullable = true;
+      if (successor.kind() == LEFT_JOIN && successor.predecessors()[1] == pathNode) nullable = true;
 
       pathNode = successor;
     }

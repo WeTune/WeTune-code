@@ -8,7 +8,7 @@ public interface SortNode extends PlanNode {
   List<ASTNode> orderKeys();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SORT;
   }
 

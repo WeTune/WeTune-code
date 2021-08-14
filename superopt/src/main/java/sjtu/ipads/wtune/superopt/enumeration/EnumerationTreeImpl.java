@@ -115,22 +115,23 @@ class EnumerationTreeImpl implements EnumerationTree {
   private List<Enumerator> mkEnumerators() {
     final Symbols symbols0 = constraints.fragment0().symbols();
     final Symbols symbols1 = constraints.fragment1().symbols();
+    final List<Symbol> tables0 = symbols0.symbolsOf(TABLE), tables1 = symbols1.symbolsOf(TABLE);
+    final List<Symbol> attrs0 = symbols0.symbolsOf(ATTRS), attrs1 = symbols1.symbolsOf(ATTRS);
+    final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
+
     final List<Enumerator> enumerators =
         new ArrayList<>(constraints.size() - constraints.beginIndexOf(AttrsSub) + 5);
 
-    enumerators.add(enumEq(symbols0.symbolsOf(TABLE), symbols1.symbolsOf(TABLE)));
-    enumerators.add(
-        enumEq(filterNative(symbols0.symbolsOf(ATTRS)), filterNative(symbols1.symbolsOf(ATTRS))));
-    enumerators.add(
-        enumEq(filterDerived(symbols0.symbolsOf(TABLE)), filterDerived(symbols1.symbolsOf(TABLE))));
-    enumerators.add(enumEq(symbols0.symbolsOf(PRED), symbols1.symbolsOf(PRED)));
+    enumerators.add(mkEqRelEnumerator(tables0, tables1));
+    enumerators.add(mkEqRelEnumerator(filterNative(attrs0), filterNative(attrs1)));
+    enumerators.add(mkEqRelEnumerator(filterDerived(attrs0), filterDerived(attrs1)));
+    enumerators.add(mkEqRelEnumerator(preds0, preds1));
 
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
     final int attrSubEnd = constraints.endIndexOf(AttrsSub);
     for (int i = attrSubBegin; i < attrSubEnd; ++i) enumerators.add(new AttrsSubEnumerator(i));
 
-    enumerators.add(
-        new SourceChecker(listJoin(f0.symbols().symbolsOf(ATTRS), f1.symbols().symbolsOf(ATTRS))));
+    enumerators.add(new SourceChecker(listJoin(attrs0, attrs1)));
 
     final int notNullBegin = constraints.beginIndexOf(NotNull);
     final int notNullEnd = constraints.endIndexOf(NotNull);
@@ -151,8 +152,8 @@ class EnumerationTreeImpl implements EnumerationTree {
     return enumerators;
   }
 
-  private Enumerator enumEq(List<Symbol> symbols0, List<Symbol> symbols1) {
-    return new EqEnumerator(symbols0, symbols1);
+  private Enumerator mkEqRelEnumerator(List<Symbol> symbols0, List<Symbol> symbols1) {
+    return new EqRelEnumerator(symbols0, symbols1);
   }
 
   private List<Symbol> filterDerived(List<Symbol> attrs) {
@@ -218,12 +219,12 @@ class EnumerationTreeImpl implements EnumerationTree {
     abstract int enumerate();
   }
 
-  private class EqEnumerator extends Enumerator {
+  private class EqRelEnumerator extends Enumerator {
     private final int segIndex;
     private final List<Symbol> symbols;
     private final Partitioner partitioner;
 
-    private EqEnumerator(List<Symbol> lhsSymbols, List<Symbol> rhsSymbols) {
+    private EqRelEnumerator(List<Symbol> lhsSymbols, List<Symbol> rhsSymbols) {
       this.segIndex = lhsSymbols.size();
       this.symbols = listJoin(lhsSymbols, rhsSymbols);
       this.partitioner = new Partitioner((byte) symbols.size());
@@ -493,10 +494,10 @@ class EnumerationTreeImpl implements EnumerationTree {
 
     @Override
     int enumerate() {
-//      System.out.print(i++);
-//      System.out.print(" ");
+      //      System.out.print(i++);
+      //      System.out.print(" ");
       final int answer = next.enumerate();
-//      System.out.println("=> " + answer);
+      //      System.out.println("=> " + answer);
       if (answer == EQ) {
         final boolean[] result = Arrays.copyOf(enabled, enabled.length);
         results.removeIf(it -> isWeakerThan(result, it));

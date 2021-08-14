@@ -9,7 +9,7 @@ public interface LimitNode extends PlanNode {
   ASTNode offset();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.LIMIT;
   }
 

@@ -53,7 +53,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
   }
 
   @Override
-  public OperatorType type() {
+  public OperatorType kind() {
     return SIMPLE_FILTER;
   }
 
@@ -190,7 +190,7 @@ public class PlainFilterNode extends PlanNodeBase implements FilterNode {
         filter = new PlainFilterNode(SIMPLE_FILTER, Expr.make(o), attrs);
 
       } else if (o instanceof FilterNode) {
-        assert ((FilterNode) o).type() == IN_SUB_FILTER;
+        assert ((FilterNode) o).kind() == IN_SUB_FILTER;
         filter = new SubqueryFilterNode(null, attrs);
         filter.setPredecessor(1, PlanNode.copyOnTree((PlanNode) o).predecessors()[1]);
 

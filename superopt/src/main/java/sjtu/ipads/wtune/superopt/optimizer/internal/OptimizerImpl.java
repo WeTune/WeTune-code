@@ -138,7 +138,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   protected List<PlanNode> onPlainFilter(FilterNode filter) {
     assert filter.successor() != null;
     // only do full optimization at filter chain head
-    if (filter.successor().type().isFilter()) return optimizeChild0(filter);
+    if (filter.successor().kind().isFilter()) return optimizeChild0(filter);
     else return optimizeFull(filter);
   }
 
@@ -146,7 +146,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   protected List<PlanNode> onSubqueryFilter(FilterNode filter) {
     assert filter.successor() != null;
     // only do full optimization at filter chain head
-    if (filter.successor().type().isFilter()) return optimizeChild0(filter);
+    if (filter.successor().kind().isFilter()) return optimizeChild0(filter);
     else return optimizeFull(filter);
   }
 
@@ -158,14 +158,14 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   @Override
   protected List<PlanNode> onInnerJoin(JoinNode innerJoin) {
     // only do full optimization at join tree root
-    if (innerJoin.successor().type().isJoin()) return optimizeChild0(innerJoin);
+    if (innerJoin.successor().kind().isJoin()) return optimizeChild0(innerJoin);
     else return optimizeFull(innerJoin);
   }
 
   @Override
   protected List<PlanNode> onLeftJoin(JoinNode leftJoin) {
     // only do full optimization at join tree root
-    if (leftJoin.successor().type().isJoin()) return optimizeChild0(leftJoin);
+    if (leftJoin.successor().kind().isJoin()) return optimizeChild0(leftJoin);
     else return optimizeFull(leftJoin);
   }
 
@@ -208,7 +208,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   private List<PlanNode> optimizeChild0(PlanNode n) {
     // 1. Recursively optimize the children (or retrieve from memo)
     final List<List<PlanNode>> childOpts;
-    if (n.type().numPredecessors() == 1)
+    if (n.kind().numPredecessors() == 1)
       childOpts = cartesianProduct(optimize0(n.predecessors()[0]));
     else // assert n.type.numPredecessors() == 2
     childOpts = cartesianProduct(optimize0(n.predecessors()[0]), optimize0(n.predecessors()[1]));
@@ -221,7 +221,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   }
 
   private OptGroup<?> optimizeChild(PlanNode n) {
-    assert n.type() != PROJ && n.type() != INPUT;
+    assert n.kind() != PROJ && n.kind() != INPUT;
     final List<PlanNode> candidates = optimizeChild0(n);
 
     // 3. Register the candidates. See `optimized0` for explanation.
@@ -253,7 +253,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private List<PlanNode> transform(PlanNode n) {
     if (System.currentTimeMillis() - startTime >= TIMEOUT) return emptyList();
-    if (n.type().isFilter() && n.successor().type().isFilter()) return emptyList();
+    if (n.kind().isFilter() && n.successor().kind().isFilter()) return emptyList();
     if (!inferUniqueness(n)) return emptyList();
 
     final OptGroup<String> group = memo.get(n);
@@ -271,7 +271,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
         final PlanNode newNode = normalize(match.substitute(substitution.g1()));
         if (newNode == null) continue; // invalid, abandon it
         if (!inferUniqueness(newNode)) {
-          if (newNode.type() == PROJ) ((ProjNode) newNode).setForcedUnique(true);
+          if (newNode.kind() == PROJ) ((ProjNode) newNode).setForcedUnique(true);
           else continue; // unable to enforce uniqueness
         }
 
@@ -334,7 +334,7 @@ public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements
 
     for (List<PlanNode> optChildren : childrenOpts) {
       if (optChildren.isEmpty()) continue;
-      assert optChildren.size() == root.type().numPredecessors();
+      assert optChildren.size() == root.kind().numPredecessors();
 
       final PlanNode copy = copyToRoot(root);
       for (int i = 0, bound = optChildren.size(); i < bound; i++) {

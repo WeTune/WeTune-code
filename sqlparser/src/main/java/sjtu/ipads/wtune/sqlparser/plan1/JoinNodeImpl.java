@@ -46,7 +46,7 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public OperatorType type() {
+  public OperatorType kind() {
     return type;
   }
 
@@ -123,7 +123,7 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
 
   @Override
   public StringBuilder stringify(StringBuilder builder) {
-    builder.append(type().text()).append('{').append(condition);
+    builder.append(kind().text()).append('{').append(condition);
     stringifyRefs(builder);
     builder.append('}');
     stringifyChildren(builder);

@@ -13,10 +13,10 @@ import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 
 public class DistinctReducer {
   public static boolean reduceDistinct(PlanNode node) {
-    if (node.type() == INPUT) return false;
+    if (node.kind() == INPUT) return false;
 
     final boolean reduced = reduceDistinct(node.predecessors()[0]);
-    if (node.type() == PROJ) {
+    if (node.kind() == PROJ) {
       final ProjNode proj = (ProjNode) node;
       if (proj.isForcedUnique()) {
         proj.setForcedUnique(false);
@@ -29,10 +29,10 @@ public class DistinctReducer {
   }
 
   private static boolean isLimitedAsSingleton(PlanNode proj) {
-    assert proj.type() == PROJ;
+    assert proj.kind() == PROJ;
     PlanNode successor = proj.successor();
-    if (successor != null && successor.type() == SORT) successor = successor.successor();
-    if (successor != null && successor.type() == LIMIT) {
+    if (successor != null && successor.kind() == SORT) successor = successor.successor();
+    if (successor != null && successor.kind() == LIMIT) {
       final LimitNode limit = (LimitNode) successor;
       return limit.offset() == null && Integer.valueOf(1).equals(limit.limit().get(LITERAL_VALUE));
     }

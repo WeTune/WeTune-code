@@ -29,7 +29,7 @@ public class PlanFingerprint {
     // terminate if `budget` is run out or `node` is of Input.
     if (budget == 0 || node instanceof InputNode) return singleton("");
 
-    final OperatorType type = node.type();
+    final OperatorType type = node.kind();
     final char c = charOf(type);
 
     if (c == '?') return emptySet();
@@ -53,7 +53,7 @@ public class PlanFingerprint {
 
     // special handling for filter:
     // if a filter is the child of another filter, then it can be skipped.
-    if (node.type().isFilter() && node.successor().type().isFilter())
+    if (node.kind().isFilter() && node.successor().kind().isFilter())
       strings.addAll(fingerprint0(preds[0], budget));
 
     return strings;

@@ -11,7 +11,7 @@ public interface PlainFilter extends Filter {
   Placeholder predicate();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SIMPLE_FILTER;
   }
 
@@ -32,7 +32,7 @@ public interface PlainFilter extends Filter {
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
-    if (!node.type().isFilter()) return false;
+    if (!node.kind().isFilter()) return false;
     final FilterNode filter = (FilterNode) node;
     return inter.assignAttributes(fields(), filter.usedAttributes())
         && inter.assignPredicate(predicate(), filter.predicate());

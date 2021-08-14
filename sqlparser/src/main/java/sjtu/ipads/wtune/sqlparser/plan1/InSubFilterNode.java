@@ -16,7 +16,7 @@ public interface InSubFilterNode extends FilterNode {
   void setRhsExpr(Expr expr);
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.IN_SUB_FILTER;
   }
 

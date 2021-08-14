@@ -12,7 +12,7 @@ public interface AggNode extends PlanNode {
   ASTNode having();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.AGG;
   }
 

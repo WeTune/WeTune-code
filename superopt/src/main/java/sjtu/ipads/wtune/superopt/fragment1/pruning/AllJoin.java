@@ -25,7 +25,7 @@ public class AllJoin extends BaseMatchingRule {
   public boolean match(Fragment g) {
     final Op head = g.root();
 
-    if (head.type().isJoin()
+    if (head.kind().isJoin()
         && head.predecessors()[0] instanceof Input
         && head.predecessors()[1] instanceof Input) return false;
 

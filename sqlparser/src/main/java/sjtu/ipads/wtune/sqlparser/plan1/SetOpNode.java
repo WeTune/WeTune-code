@@ -9,7 +9,7 @@ public interface SetOpNode extends PlanNode {
   SetOperation operation();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.UNION;
   }
 }

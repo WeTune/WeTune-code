@@ -19,7 +19,7 @@ public interface JoinTree extends List<JoinNode> {
 
   static PlanNode predecessorOfTree(JoinNode root) {
     PlanNode predecessor = root;
-    while (predecessor.type().isJoin()) predecessor = predecessor.predecessors()[0];
+    while (predecessor.kind().isJoin()) predecessor = predecessor.predecessors()[0];
     return predecessor;
   }
 

@@ -92,7 +92,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  public boolean isExplicitDistinct() {
+  public boolean isDeduplicated() {
     return explicitDistinct;
   }
 
@@ -121,7 +121,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  public void setExplicitDistinct(boolean explicitDistinct) {
+  public void setDeduplicated(boolean explicitDistinct) {
     this.explicitDistinct = explicitDistinct;
   }
 

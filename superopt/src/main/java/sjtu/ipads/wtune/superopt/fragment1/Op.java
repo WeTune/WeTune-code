@@ -23,6 +23,15 @@ public interface Op extends TypedTreeNode<OperatorType>, Comparable<Op>, Copyabl
     };
   }
 
+  static Op parse(String typeName){
+    final OperatorType opType = OperatorType.parse(typeName);
+    final Op op = Op.mk(opType);
+    if (opType == OperatorType.PROJ && typeName.endsWith("*")) {
+      ((Proj)op).setDeduplicated(true);
+    }
+    return op;
+  }
+
   Fragment fragment();
 
   Op successor();
@@ -43,13 +52,13 @@ public interface Op extends TypedTreeNode<OperatorType>, Comparable<Op>, Copyabl
     throw new UnsupportedOperationException();
   }
 
-  default PlanNode instantiate(PlanContext ctx, Model m) {
+  default PlanNode instantiate(Model m, PlanContext ctx) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   default int compareTo(Op o) {
-    int res = type().compareTo(o.type());
+    int res = kind().compareTo(o.kind());
     if (res != 0) return res;
 
     final Op[] preds = predecessors(), otherPreds = o.predecessors();

@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.UnionImpl;
 
 public interface Union extends Operator {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.UNION;
   }
 

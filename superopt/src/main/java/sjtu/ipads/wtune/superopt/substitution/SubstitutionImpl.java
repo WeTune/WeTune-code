@@ -12,7 +12,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 class SubstitutionImpl implements Substitution {
   private final Fragment _0, _1;
   private final Constraints constraints;
-  private final SymbolNaming naming;
+  private SymbolNaming naming;
 
   private int id;
 
@@ -38,16 +38,12 @@ class SubstitutionImpl implements Substitution {
   }
 
   static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {
-    final SymbolNaming naming = SymbolNaming.mk();
-    naming.name(f0.symbols());
-    naming.name(f1.symbols());
-
     final Constraints cs =
         constraints instanceof Constraints
             ? (Constraints) constraints
             : Constraints.mk(constraints);
 
-    return new SubstitutionImpl(f0, f1, cs, naming);
+    return new SubstitutionImpl(f0, f1, cs, null);
   }
 
   @Override
@@ -72,6 +68,11 @@ class SubstitutionImpl implements Substitution {
 
   @Override
   public SymbolNaming naming() {
+    if (naming == null) {
+      naming = SymbolNaming.mk();
+      naming.name(_0.symbols());
+      naming.name(_1.symbols());
+    }
     return naming;
   }
 
@@ -83,6 +84,7 @@ class SubstitutionImpl implements Substitution {
   @Override
   public String toString() {
     final StringBuilder builder = new StringBuilder(50);
+    final SymbolNaming naming = naming();
     _0.stringify(naming, builder).append('|');
     _1.stringify(naming, builder).append('|');
     constraints.stringify(naming, builder);

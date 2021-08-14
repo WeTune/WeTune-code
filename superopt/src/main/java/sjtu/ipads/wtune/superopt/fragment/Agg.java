@@ -9,7 +9,7 @@ public interface Agg extends Operator {
   }
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.AGG;
   }
 }

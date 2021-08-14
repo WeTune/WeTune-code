@@ -113,7 +113,7 @@ public class Semantic extends BaseQueryBuilder implements OperatorVisitor {
     pick.setViableSources(makeViableSources(visible, false));
 
     Operator prev = op.predecessors()[0];
-    while (prev.type().numPredecessors() == 1) {
+    while (prev.kind().numPredecessors() == 1) {
       if (prev instanceof Proj) {
         pick.setUpstream(pickSym(((Proj) prev).fields()));
         break;

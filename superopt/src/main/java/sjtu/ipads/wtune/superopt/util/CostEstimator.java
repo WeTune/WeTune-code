@@ -68,7 +68,7 @@ public class CostEstimator {
 
     @Override
     public boolean on(TypedTreeNode<OperatorType> n) {
-      counters[n.type().ordinal()]++;
+      counters[n.kind().ordinal()]++;
 
       if (n instanceof ProjNode && ((ProjNode) n).isForcedUnique()) counters[counters.length - 1]++;
 

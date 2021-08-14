@@ -8,7 +8,7 @@ public class MalformedLimit extends BaseMatchingRule {
   @Override
   public boolean enterLimit(Limit op) {
     final Operator in = op.predecessors()[0];
-    if ((in != null && !in.type().isValidOutput()) || (in instanceof Limit)) {
+    if ((in != null && !in.kind().isValidOutput()) || (in instanceof Limit)) {
       matched = true;
       return false;
     }

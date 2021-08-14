@@ -16,6 +16,6 @@ public class MalformedUnion extends BaseMatchingRule {
   }
 
   private static boolean isInvalidInput(Operator in) {
-    return in != null && !in.type().isValidOutput();
+    return in != null && !in.kind().isValidOutput();
   }
 }

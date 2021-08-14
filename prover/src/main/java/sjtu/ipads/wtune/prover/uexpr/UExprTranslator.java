@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.uexpr;
 
+import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.prover.utils.UExprUtils;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
@@ -35,13 +36,14 @@ public class UExprTranslator {
   private final List<QueryScope> scopes;
   private final Map<PlanNode, Var> varOwnership;
 
-  private int nextVarIdx = 0;
+  private final NameSequence varNameSeq;
 
   UExprTranslator(PlanNode plan) {
     this.plan = plan;
     this.ctx = requireNonNull(plan.context());
     this.scopes = new ArrayList<>(4);
     this.varOwnership = new HashMap<>(8);
+    this.varNameSeq = NameSequence.mkIndexed(TRANSLATOR_VAR_PREFIX, 0);
 
     pushScope();
   }
@@ -53,7 +55,7 @@ public class UExprTranslator {
   private UExpr onNode(PlanNode node) {
     // TODO: come up with how to deal Agg
     // Note: some weird query like (Select Sum ...) Union (...) cannot be handled for now.
-    return switch (node.type()) {
+    return switch (node.kind()) {
       case PROJ -> onProj((ProjNode) node);
       case INPUT -> onInput((InputNode) node);
       case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
@@ -66,7 +68,18 @@ public class UExprTranslator {
   }
 
   private UExpr onInput(InputNode input) {
-    return table(input.table().name(), localScope().mkVar(input));
+    final List<Var> joints = localScope().joints();
+
+    if (joints == null) {
+      return table(input.table().name(), localScope().mkVar(input));
+    } else {
+      final Var var = mkBase(varNameSeq.next());
+      final UExpr tableTerm = table(input.table().name(), var);
+      final UExpr term = joints.stream()
+              .map(it -> eqPred(it, var.proj("_" + it.name())))
+              .reduce(tableTerm, UExpr::mul);
+      return sum(var, term);
+    }
   }
 
   private UExpr onProj(ProjNode proj) {
@@ -77,7 +90,7 @@ public class UExprTranslator {
     final List<Var> joints;
     if (outerScope.joints() != null) {
       // this branch is for 1. the root query 2. the subquery in a Union
-      // 3. the subquery in a IN-Sub/Exists Filter
+      // 3. the subquery in an IN-Sub/Exists Filter
       joints = outerScope.joints;
     } else {
       // this branch is for the subquery in From/Join
@@ -95,7 +108,7 @@ public class UExprTranslator {
 
     popScope();
 
-    return proj.isExplicitDistinct() ? squash(expr) : expr;
+    return proj.isDeduplicated() ? squash(expr) : expr;
   }
 
   private UExpr onPlainFilter(SimpleFilterNode filter) {
@@ -164,9 +177,9 @@ public class UExprTranslator {
     // L(x) * R(y) * p(x,y)
     final UExpr symmPart = mul(mul(mul(lhsExpr, rhsExpr), mainCond), notNullCond);
 
-    if (join.type() == INNER_JOIN) return symmPart;
+    if (join.kind() == INNER_JOIN) return symmPart;
 
-    if (join.type() == LEFT_JOIN) {
+    if (join.kind() == LEFT_JOIN) {
       // L(x) * [y = 0] * not(Sum{y'}(R(y') * p(x,y')))
       final UExpr asymmPart = mkAsymmetricJoin(join, mainCond, notNullCond, lhsExpr, rhsExpr);
       // L(x) * R(y) * p(x,y) +
@@ -174,7 +187,7 @@ public class UExprTranslator {
       return add(symmPart, asymmPart);
     }
 
-    throw new IllegalArgumentException("unsupported join type: " + join.type());
+    throw new IllegalArgumentException("unsupported join type: " + join.kind());
   }
 
   private UExpr onUnion(SetOpNode setOp) {
@@ -187,9 +200,9 @@ public class UExprTranslator {
     // => Sum{x}(Sum{y}([x.a = y.a] * A(y)) + Sum{z}([x.a = z.b] * B(z)))
 
     final QueryScope localScope = localScope();
-    final boolean isUnionRoot = isUnionRoot(setOp);
+    final boolean isUnionHead = isUnionHead(setOp);
 
-    if (isUnionRoot) {
+    if (isUnionHead) {
       final ValueBag values = setOp.values();
       final Var joint = localScope.mkVar(ctx.ownerOf(values.get(0)));
       localScope.setJoints(listMap(values, it -> joint.proj(it.name())));
@@ -198,7 +211,7 @@ public class UExprTranslator {
     final UExpr lhsExpr = onNode(setOp.predecessors()[0]);
     final UExpr rhsExpr = onNode(setOp.predecessors()[1]);
 
-    if (isUnionRoot) localScope.setJoints(null);
+    if (isUnionHead) localScope.setJoints(null);
 
     if (setOp.distinct()) return squash(add(lhsExpr, rhsExpr));
     else return add(lhsExpr, rhsExpr);
@@ -271,7 +284,7 @@ public class UExprTranslator {
     final List<UExpr> isNullPreds = new ArrayList<>(oldVars.size());
 
     for (Var oldVar : oldVars) {
-      final Var newVar = mkBase(TRANSLATOR_VAR_PREFIX + nextVarIdx++);
+      final Var newVar = mkBase(varNameSeq.next());
       newVars.add(newVar);
       isNullPreds.add(UExprUtils.mkIsNull(oldVar));
 
@@ -280,17 +293,18 @@ public class UExprTranslator {
       rhsExpr.subst(oldVar, newVar);
     }
 
-    return mul(mul(lhsExpr, mkProduct(isNullPreds)), add(cond0, not(sum(newVars, mul(rhsExpr, cond1)))));
+    return mul(
+        mul(lhsExpr, mkProduct(isNullPreds)), add(cond0, not(sum(newVars, mul(rhsExpr, cond1)))));
   }
 
-  private static boolean isUnionRoot(SetOpNode node) {
+  private static boolean isUnionHead(SetOpNode node) {
     // if the query the left-most query in a Union
     // returns true if `node` is not a union component
     PlanNode n = node;
 
     while (n.successor() != null) {
       final PlanNode succ = n.successor();
-      final OperatorType succType = succ.type();
+      final OperatorType succType = succ.kind();
 
       if (succType == UNION) return false;
       if (succType == SORT || succType == LIMIT) n = succ;
@@ -332,7 +346,7 @@ public class UExprTranslator {
     private Var mkVar(PlanNode owner) {
       if (isRoot) return ROOT_VAR;
 
-      final Var var = Var.mkBase(TRANSLATOR_VAR_PREFIX + nextVarIdx++);
+      final Var var = Var.mkBase(varNameSeq.next());
       varOwnership.put(owner, var);
       localVars.add(var);
       return var;

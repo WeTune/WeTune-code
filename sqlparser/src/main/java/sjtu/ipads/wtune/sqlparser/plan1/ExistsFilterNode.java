@@ -13,7 +13,7 @@ public interface ExistsFilterNode extends FilterNode {
   void setExpr(Expr expr);
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.EXISTS_FILTER;
   }
 }

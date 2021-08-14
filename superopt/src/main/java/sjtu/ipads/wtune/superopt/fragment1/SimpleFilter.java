@@ -13,21 +13,21 @@ public interface SimpleFilter extends Filter {
   Symbol predicate();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SIMPLE_FILTER;
   }
 
   @Override
   default boolean match(PlanNode node, Model m) {
-    if (node.type() != type()) return false;
+    if (node.kind() != kind()) return false;
 
     final SimpleFilterNode f = (SimpleFilterNode) node;
     return m.assign(predicate(), f.predicate()) && m.assign(attrs(), f.context().deRef(f.refs()));
   }
 
   @Override
-  default PlanNode instantiate(PlanContext ctx, Model m) {
-    final PlanNode predecessor = predecessors()[0].instantiate(ctx, m);
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
 
     final Expr predicate = m.interpretPred(predicate());
     final List<Value> values = bindValues(m.interpretAttrs(attrs()), predecessor);

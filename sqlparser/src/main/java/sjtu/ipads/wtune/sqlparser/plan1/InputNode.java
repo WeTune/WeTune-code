@@ -9,7 +9,7 @@ public interface InputNode extends PlanNode {
   Table table();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.INPUT;
   }
 

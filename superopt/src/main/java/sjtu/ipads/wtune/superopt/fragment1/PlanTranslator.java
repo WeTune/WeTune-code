@@ -63,7 +63,7 @@ class PlanTranslator {
     final Model model = mkModel(schema);
     final PlanContext ctx = PlanContext.mk(schema);
 
-    return fragment.root().instantiate(ctx, model);
+    return fragment.root().instantiate(model, ctx);
   }
 
   Pair<PlanNode, PlanNode> translate(Substitution substitution) {
@@ -91,8 +91,8 @@ class PlanTranslator {
     final Schema schema = mkSchema();
     final Model model = mkModel(schema);
 
-    final PlanNode rawPlan0 = fragment0.root().instantiate(PlanContext.mk(schema), model);
-    final PlanNode rawPlan1 = fragment1.root().instantiate(PlanContext.mk(schema), model);
+    final PlanNode rawPlan0 = fragment0.root().instantiate(model, PlanContext.mk(schema));
+    final PlanNode rawPlan1 = fragment1.root().instantiate(model, PlanContext.mk(schema));
     alignOutput(rawPlan0, rawPlan1);
     // Ensure the outcome is a complete plan instead of a fragment.
     final PlanNode plan0 = wrapFragment(rawPlan0);
@@ -163,15 +163,13 @@ class PlanTranslator {
     for (TableDesc tableDesc : tableDescs.values()) {
       final List<String> attrNames = tableDesc.attrNames = new ArrayList<>(4);
       for (AttrsDesc attrsDesc : tableDesc.attrs) {
-        if (attrsDesc.name == null) {
-          attrsDesc.table = tableDesc.name;
-          attrsDesc.name = attrNameSeq.next();
-        }
+        if (attrsDesc.name == null) attrsDesc.name = attrNameSeq.next();
         attrNames.add(attrsDesc.name);
       }
     }
-    for (AttrsDesc value : attrsDescs.values()) {
-      if (value.name == null) value.name = attrNameSeq.next();
+
+    for (AttrsDesc attrsDesc : attrsDescs.values()) {
+      if (attrsDesc.name == null) attrsDesc.name = attrNameSeq.next();
     }
   }
 
@@ -255,15 +253,28 @@ class PlanTranslator {
 
     for (var pair : attrsDescs.entrySet()) {
       final AttrsDesc desc = pair.getValue();
-      if (desc.table != null) {
-        final InputNode input = inputs.get(constraints.sourceOf(pair.getKey()));
+      final Symbol attrsSym = pair.getKey();
+      final Symbol src = constraints.sourceOf(attrsSym);
+
+      if (src == null) {
+        final Value value = Value.mk(queryNameSeq.next(), desc.name, Expr.mk(mkColRef()));
+        model.assign(attrsSym, singletonList(value));
+
+      } else if (src.kind() == TABLE) {
+        final InputNode input = inputs.get(src);
         final String attrName = desc.name;
         final Value value = find(input.values(), it -> it.name().equals(attrName));
-        model.assign(pair.getKey(), singletonList(value));
+        assert value != null;
+        model.assign(attrsSym, singletonList(value));
+      }
+    }
 
-      } else {
-        final Value value = Value.mk(queryNameSeq.next(), desc.name, Expr.mk(mkColRef()));
-        model.assign(pair.getKey(), singletonList(value));
+    for (var pair : attrsDescs.entrySet()) {
+      final Symbol attrsSym = pair.getKey();
+      if (model.interpretAttrs(attrsSym) == null) {
+        final Symbol src = constraints.sourceOf(attrsSym);
+        assert src != null && src.kind() == ATTRS;
+        model.assign(attrsSym, model.interpretAttrs(src));
       }
     }
 
@@ -299,7 +310,7 @@ class PlanTranslator {
   }
 
   private static class AttrsDesc {
-    private String table, name;
+    private String name;
   }
 
   private static class PredDesc {
@@ -319,23 +330,23 @@ class PlanTranslator {
   }
 
   private void completeConstraints0(Op op) {
-    if (op.type() == INPUT) propagateAttrsSource(op.successor(), op, ((Input) op).table());
+    if (op.kind() == INPUT) propagateAttrsSource(op.successor(), op, ((Input) op).table());
   }
 
   private void completeConstraints1(Op op) {
-    if (op.type() != PROJ || op.successor() == null) return;
+    if (op.kind() != PROJ || op.successor() == null) return;
 
     propagateAttrsBound(op.successor(), op, ((Proj) op).inAttrs());
   }
 
   private void completeConstraints2(Op op) {
-    if (op.type() != PROJ) return;
+    if (op.kind() != PROJ) return;
 
     final Proj proj = (Proj) op;
 
     for (Symbol symbol : constraints.eqClassOf(proj.inAttrs())) {
       final Op owner = symbols.ownerOf(symbol);
-      if (owner != op && owner.type() == PROJ) {
+      if (owner != op && owner.kind() == PROJ) {
         constraints.add(Constraint.mk(AttrsEq, proj.outAttrs(), ((Proj) owner).outAttrs()));
       }
     }
@@ -344,7 +355,7 @@ class PlanTranslator {
   private void propagateAttrsSource(Op op, Op prev, Symbol source) {
     if (op == null) return;
 
-    switch (op.type()) {
+    switch (op.kind()) {
       case PROJ:
         {
           final Symbol attrs = ((Proj) op).inAttrs();
@@ -388,7 +399,7 @@ class PlanTranslator {
   private void propagateAttrsBound(Op op, Op prev, Symbol bound) {
     if (op == null) return;
 
-    switch (op.type()) {
+    switch (op.kind()) {
       case PROJ:
         {
           final Symbol attrs = ((Proj) op).inAttrs();

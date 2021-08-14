@@ -14,7 +14,7 @@ public interface Input extends Operator {
   Placeholder table();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.INPUT;
   }
 

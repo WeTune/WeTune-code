@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 public interface SimpleFilterNode extends FilterNode {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SIMPLE_FILTER;
   }
 

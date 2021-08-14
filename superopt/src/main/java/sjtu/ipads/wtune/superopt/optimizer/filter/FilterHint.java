@@ -56,7 +56,7 @@ public class FilterHint {
 
   private static List<Filter> gatherFilters(Operator op) {
     final List<Filter> filters = new ArrayList<>(2);
-    while (op.type().isFilter()) {
+    while (op.kind().isFilter()) {
       filters.add((Filter) op);
       op = op.predecessors()[0];
     }
@@ -65,7 +65,7 @@ public class FilterHint {
 
   private static List<FilterNode> gatherFilters(PlanNode node) {
     final List<FilterNode> filters = new ArrayList<>(2);
-    while (node.type().isFilter()) {
+    while (node.kind().isFilter()) {
       filters.add((FilterNode) node);
       node = node.predecessors()[0];
     }

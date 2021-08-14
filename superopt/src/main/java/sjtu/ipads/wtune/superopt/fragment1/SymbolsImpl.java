@@ -48,7 +48,7 @@ class SymbolsImpl implements Symbols {
 
   @Override
   public void bindSymbol(Op op) {
-    switch (op.type()) {
+    switch (op.kind()) {
       case INPUT -> add(op, Symbol.Kind.TABLE);
       case IN_SUB_FILTER -> add(op, Symbol.Kind.ATTRS);
       case SIMPLE_FILTER -> {

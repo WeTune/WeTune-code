@@ -15,22 +15,22 @@ import sjtu.ipads.wtune.sqlparser.plan1.Value;
 
 public interface InSubFilter extends Filter {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.IN_SUB_FILTER;
   }
 
   @Override
   default boolean match(PlanNode node, Model m) {
-    if (node.type() != type()) return false;
+    if (node.kind() != kind()) return false;
 
     final InSubFilterNode f = (InSubFilterNode) node;
     return m.assign(attrs(), f.context().deRef(f.lhsRefs()));
   }
 
   @Override
-  default PlanNode instantiate(PlanContext ctx, Model m) {
-    final PlanNode predecessor0 = predecessors()[0].instantiate(ctx, m);
-    final PlanNode predecessor1 = predecessors()[1].instantiate(ctx, m);
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
+    final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
     final List<Value> values = bindValues(m.interpretAttrs(attrs()), predecessor0);
     final List<Ref> refs = listMap(values, Value::selfish);
     final InSubFilterNode f = InSubFilterNode.mk(RefBag.mk(refs));

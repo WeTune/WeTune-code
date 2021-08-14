@@ -18,7 +18,7 @@ public interface ProjNode extends PlanNode {
   void setQualification(String qualification);
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.PROJ;
   }
 

@@ -8,7 +8,7 @@ public interface LimitNode extends PlanNode {
   Expr offset();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.LIMIT;
   }
 }

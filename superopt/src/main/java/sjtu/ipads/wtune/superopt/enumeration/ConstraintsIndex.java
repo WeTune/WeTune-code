@@ -21,15 +21,20 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
 
+// The class maintains a collection of constraint and corresponding metadata.
 class ConstraintsIndex extends AbstractList<Constraint> {
   private final Fragment f0, f1;
   private final Symbols symbols0, symbols1;
   private final List<Constraint> constraints;
+  // Possible sources of attributes. Key: Attrs symbols. Value: Attrs/Table symbols.
   private final Multimap<Symbol, Symbol> sources;
-  private final boolean[] mandatory;
-  private final boolean[] useless;
+  private final boolean[] mandatory; // Indicates whether a constraint must be present.
+  private final boolean[] useless; // If whether a constraint is meaningless.
+  // The constraints are organized by the kind. i.e., [TablEqs, AttrsEqs, PredEqs, AttrSubs,...]
+  // `segBase` is the beginning index of each segment.
   private final int[] segBases;
-  private final int[] symCounts;
+  private final int[] symCounts; // The count of symbols of each kinds.
+  // The ordinal of a symbol. Used to quickly calculates the index of XxEq constraint.
   private final TObjectIntMap<Symbol> symbolsIndex;
 
   ConstraintsIndex(
@@ -64,9 +69,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     final Multimap<Symbol, Symbol> sources = analyzeSources(f0);
     sources.putAll(analyzeSources(f1));
 
-    mkEqs(TableEq, listJoin(tables0, tables1), constraints);
-    mkEqs(AttrsEq, listJoin(attrs0, attrs1), constraints);
-    mkEqs(PredicateEq, listJoin(preds0, preds1), constraints);
+    mkEqRel(TableEq, listJoin(tables0, tables1), constraints);
+    mkEqRel(AttrsEq, listJoin(attrs0, attrs1), constraints);
+    mkEqRel(PredicateEq, listJoin(preds0, preds1), constraints);
     mkAttrsSub(sources, constraints);
     mkUnique(sources, constraints);
     mkNotNull(sources, constraints);
@@ -76,7 +81,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     return new ConstraintsIndex(f0, f1, constraints, sources);
   }
 
-  private static void mkEqs(Constraint.Kind kind, List<Symbol> symbols, List<Constraint> buffer) {
+  private static void mkEqRel(Constraint.Kind kind, List<Symbol> symbols, List<Constraint> buffer) {
     for (int i = 0, bound = symbols.size(); i < bound - 1; i++)
       for (int j = i + 1; j < bound; j++) {
         buffer.add(Constraint.mk(kind, symbols.get(i), symbols.get(j)));
@@ -110,7 +115,8 @@ class ConstraintsIndex extends AbstractList<Constraint> {
 
   private static void mkReferences0(
       Op op, Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    if (!op.type().isJoin()) return;
+    // We only consider the Attrs as join key
+    if (!op.kind().isJoin()) return;
 
     final Symbols symbols = op.fragment().symbols();
     final Join join = (Join) op;
@@ -193,9 +199,13 @@ class ConstraintsIndex extends AbstractList<Constraint> {
       final Constraint.Kind kind = Constraint.Kind.values()[i];
       final int seg = begin + locate(constraints.subList(begin, bound), it -> it.kind() == kind);
       if (seg >= begin) begin = segBases[i] = seg;
-      else segBases[i] = begin;
+      else segBases[i] = -1;
     }
     segBases[segBases.length - 1] = bound;
+
+    for (int i = 0; i < numKinds; i++) {
+      if (segBases[i] == -1) segBases[i] = segBases[i + 1];
+    }
   }
 
   public Fragment fragment0() {
@@ -258,7 +268,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     }
 
     List<Symbol> analyze0(Op op) {
-      final OperatorType type = op.type();
+      final OperatorType type = op.kind();
       final List<Symbol> lhs = type.numPredecessors() >= 1 ? analyze0(op.predecessors()[0]) : null;
       final List<Symbol> rhs = type.numPredecessors() >= 2 ? analyze0(op.predecessors()[1]) : null;
 
@@ -281,8 +291,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
         case PROJ:
           {
             final Symbol attrs0 = symbols.symbolAt(op, ATTRS, 0);
+            final Symbol attrs1 = symbols.symbolAt(op, ATTRS, 1);
             sources.putAll(attrs0, lhs);
-            return singletonList(attrs0);
+            return singletonList(attrs1);
           }
         default:
           throw new IllegalArgumentException();

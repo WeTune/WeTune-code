@@ -41,8 +41,8 @@ public class JoinHint {
 
   private static boolean isEligibleMatch(
       JoinNode node, Join op, Interpretations inter, boolean swapLeaf) {
-    if (node.type() != op.type()) return false;
-    if (node.type() == LEFT_JOIN && swapLeaf) return false;
+    if (node.kind() != op.kind()) return false;
+    if (node.kind() == LEFT_JOIN && swapLeaf) return false;
 
     final AttributeInterpretation leftInter = inter.getAttributes(op.leftFields());
     final AttributeInterpretation rightInter = inter.getAttributes(op.rightFields());

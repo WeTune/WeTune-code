@@ -36,7 +36,7 @@ public class JoinTreeImpl extends AbstractList<JoinNode> implements JoinTree {
     final List<JoinNode> nodes = new ArrayList<>();
 
     PlanNode predecessor = root;
-    while (predecessor.type().isJoin()) {
+    while (predecessor.kind().isJoin()) {
       nodes.add((JoinNode) predecessor);
       predecessor = predecessor.predecessors()[0];
     }

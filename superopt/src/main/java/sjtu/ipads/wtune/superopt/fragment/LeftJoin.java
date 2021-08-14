@@ -10,7 +10,7 @@ public interface LeftJoin extends Join {
   }
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.LEFT_JOIN;
   }
 }

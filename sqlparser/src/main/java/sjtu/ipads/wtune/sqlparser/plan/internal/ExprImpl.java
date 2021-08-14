@@ -42,7 +42,7 @@ public class ExprImpl implements Expr {
   private static boolean checkComponentType(Object c) {
     return c instanceof ASTNode
         ? EXPR.isInstance((ASTNode) c)
-        : c instanceof FilterNode && ((FilterNode) c).type() == IN_SUB_FILTER;
+        : c instanceof FilterNode && ((FilterNode) c).kind() == IN_SUB_FILTER;
   }
 
   @Override
@@ -61,7 +61,7 @@ public class ExprImpl implements Expr {
 
         } else if (component instanceof FilterNode) {
           final FilterNode filter = (FilterNode) component;
-          assert filter.type() == IN_SUB_FILTER;
+          assert filter.kind() == IN_SUB_FILTER;
 
           final List<ASTNode> astNodes = filter.expr();
           assert astNodes.size() == 1;

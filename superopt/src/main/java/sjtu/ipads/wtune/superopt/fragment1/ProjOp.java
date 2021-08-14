@@ -3,7 +3,19 @@ package sjtu.ipads.wtune.superopt.fragment1;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind;
 
 class ProjOp extends BaseOp implements Proj {
+  boolean isDeduplicated = false;
+
   ProjOp() {}
+
+  @Override
+  public void setDeduplicated(boolean deduplicated) {
+    isDeduplicated = deduplicated;
+  }
+
+  @Override
+  public boolean isDeduplicated() {
+    return isDeduplicated;
+  }
 
   @Override
   public Symbol inAttrs() {

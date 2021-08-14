@@ -85,7 +85,7 @@ public class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public OperatorType type() {
+  public OperatorType kind() {
     return type;
   }
 
@@ -221,6 +221,6 @@ public class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   @Override
   public String toString() {
     final ASTNode onCondition = isASTUpdated ? this.onCondition : this.onCondition();
-    return "%s<%s>".formatted(type(), onCondition);
+    return "%s<%s>".formatted(kind(), onCondition);
   }
 }

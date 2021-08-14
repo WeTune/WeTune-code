@@ -72,7 +72,7 @@ public class TempMain {
     }
 
     private void check0(PlanNode node) {
-      if (node.type() == PROJ) {
+      if (node.kind() == PROJ) {
         ++projCount;
         if (!inferUniqueness(node)) ++nonSetProjCount;
       }

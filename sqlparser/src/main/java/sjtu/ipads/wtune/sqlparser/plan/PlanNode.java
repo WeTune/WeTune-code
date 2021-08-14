@@ -87,8 +87,8 @@ public interface PlanNode extends TypedTreeNode<OperatorType> {
   private static StringBuilder toStringOnTree(PlanNode n, StringBuilder builder) {
     builder.append(n);
     builder.append('(');
-    if (n.type().numPredecessors() >= 1) toStringOnTree(n.predecessors()[0], builder);
-    if (n.type().numPredecessors() >= 2) {
+    if (n.kind().numPredecessors() >= 1) toStringOnTree(n.predecessors()[0], builder);
+    if (n.kind().numPredecessors() >= 2) {
       builder.append(',');
       toStringOnTree(n.predecessors()[1], builder);
     }

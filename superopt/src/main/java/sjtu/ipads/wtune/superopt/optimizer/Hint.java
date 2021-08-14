@@ -18,13 +18,13 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
 public interface Hint {
   static Iterable<PlanNode> apply(PlanNode node, Operator op, Interpretations inter) {
-    final OperatorType opType = op.type(), nodeType = node.type();
+    final OperatorType opType = op.kind(), nodeType = node.kind();
 
     // Input can match any type of node
     if (opType == INPUT) return singletonList(node);
 
     // Filter rearrangement only happens on filter chain head. otherwise do nothing
-    if (opType.isFilter() && op.successor() != null && op.successor().type().isFilter())
+    if (opType.isFilter() && op.successor() != null && op.successor().kind().isFilter())
       return singletonList(node);
 
     // PlainFilter can match both PlainFilter and SubqueryFilter
@@ -34,7 +34,7 @@ public interface Hint {
       return rearrangeFilter((FilterNode) node, op, inter);
 
     // Join rearrangement
-    if (opType.isJoin() && node.type().isJoin())
+    if (opType.isJoin() && node.kind().isJoin())
       return rearrangeJoinNew((JoinNode) node, (Join) op, inter);
 
     // Otherwise, the type of op and the type of node are required to be identical

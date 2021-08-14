@@ -101,7 +101,7 @@ class AstTranslator {
   private void onNode(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) onNode(predecessor);
 
-    switch (node.type()) {
+    switch (node.kind()) {
       case INPUT -> onInput((InputNode) node);
       case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
       case SIMPLE_FILTER -> onPlainFilter((SimpleFilterNode) node);
@@ -112,7 +112,7 @@ class AstTranslator {
       case SORT -> onSort((SortNode) node);
       case LIMIT -> onLimit((LimitNode) node);
       case UNION -> onUnion((SetOpNode) node);
-      default -> throw failed("unsupported operator " + node.type());
+      default -> throw failed("unsupported operator " + node.kind());
     }
   }
 
@@ -135,7 +135,7 @@ class AstTranslator {
     join.set(JOINED_LEFT, lhs);
     join.set(JOINED_RIGHT, rhs);
     join.set(JOINED_ON, interpolate0(node.condition()));
-    join.set(JOINED_TYPE, node.type() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_TYPE, node.kind() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }
@@ -182,7 +182,7 @@ class AstTranslator {
     else q.setProjection(listMap(node.values(), this::toSelectItem));
 
     q.setQualification(node.values().qualification());
-    q.setForcedDistinct(node.isExplicitDistinct());
+    q.setForcedDistinct(node.isDeduplicated());
   }
 
   private void onAgg(AggNode node) {

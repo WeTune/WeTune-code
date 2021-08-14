@@ -304,7 +304,7 @@ class PlanBuilder {
   private static class FilterComparator implements Comparator<FilterNode> {
     @Override
     public int compare(FilterNode o1, FilterNode o2) {
-      final int typeCmp = o1.type().compareTo(o2.type());
+      final int typeCmp = o1.kind().compareTo(o2.kind());
       if (typeCmp != 0) return typeCmp;
       else return o1.refs().toString().compareTo(o2.refs().toString());
     }

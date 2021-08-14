@@ -31,11 +31,11 @@ public interface Match {
         return null;
       }
 
-      if (!matchPoint.type().isFilter()) return newNode;
+      if (!matchPoint.kind().isFilter()) return newNode;
 
       // always returns the filter chain's head
       PlanNode succ = newNode;
-      while (succ.successor().type().isFilter()) succ = succ.successor();
+      while (succ.successor().kind().isFilter()) succ = succ.successor();
       return succ;
     }
   }

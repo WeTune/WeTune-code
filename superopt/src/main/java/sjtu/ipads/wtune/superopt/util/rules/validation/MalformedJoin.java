@@ -9,7 +9,7 @@ public class MalformedJoin extends BaseMatchingRule {
   @Override
   public boolean enterInnerJoin(InnerJoin op) {
     final Operator[] in = op.predecessors();
-    if (in[0].type().isFilter() || in[1].type().isFilter()) {
+    if (in[0].kind().isFilter() || in[1].kind().isFilter()) {
       matched = true;
       return false;
     }
@@ -19,7 +19,7 @@ public class MalformedJoin extends BaseMatchingRule {
   @Override
   public boolean enterLeftJoin(LeftJoin op) {
     final Operator[] in = op.predecessors();
-    if (in[0].type().isFilter() || in[1].type().isFilter()) {
+    if (in[0].kind().isFilter() || in[1].kind().isFilter()) {
       matched = true;
       return false;
     }

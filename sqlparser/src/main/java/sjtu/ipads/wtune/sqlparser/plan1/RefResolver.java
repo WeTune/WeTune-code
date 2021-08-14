@@ -38,7 +38,7 @@ class RefResolver {
     if (needNewLookup) lookup = new StackedLookup(null);
     if (needStackLookup) lookup = new StackedLookup(currentLookup);
 
-    switch (node.type()) {
+    switch (node.kind()) {
       case INPUT:
         onInput((InputNode) node);
         break;
@@ -66,7 +66,7 @@ class RefResolver {
         onUnion((SetOpNode) node);
         break;
       default:
-        throw failed("unsupported operator " + node.type());
+        throw failed("unsupported operator " + node.kind());
     }
 
     if (needMergeLookup) currentLookup.addAll(lookup.values);
@@ -105,15 +105,15 @@ class RefResolver {
 
   private void onFilter(FilterNode node) {
     onNode(node.predecessors()[0]);
-    if (node.type().numPredecessors() >= 2) onNode(node.predecessors()[1]);
+    if (node.kind().numPredecessors() >= 2) onNode(node.predecessors()[1]);
 
     final RefBag refs = node.refs();
     registerRefs(node, refs);
     resolveRefs(refs, false, true);
 
-    if (node.type() == IN_SUB_FILTER) {
+    if (node.kind() == IN_SUB_FILTER) {
       ((InSubFilterNode) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
-    } else if (node.type() == EXISTS_FILTER) {
+    } else if (node.kind() == EXISTS_FILTER) {
       ((ExistsFilterNode) node).setExpr(makeQueryExpr(node.predecessors()[1]));
     }
   }
@@ -209,7 +209,7 @@ class RefResolver {
   }
 
   private boolean isLhs(PlanNode root, PlanNode descent) {
-    assert root.type().numPredecessors() == 2;
+    assert root.kind().numPredecessors() == 2;
 
     final PlanNode savedDescent = descent;
     while (descent != null) {
@@ -233,8 +233,8 @@ class RefResolver {
     final PlanNode successor = node.successor();
     if (successor == null) return true;
 
-    final OperatorType succType = successor.type();
-    final OperatorType nodeType = node.type();
+    final OperatorType succType = successor.kind();
+    final OperatorType nodeType = node.kind();
 
     if (succType == UNION) return true;
     if (succType == IN_SUB_FILTER && successor.predecessors()[1] == node) return false; // needStack
@@ -249,14 +249,14 @@ class RefResolver {
   private static boolean needStackLookup(PlanNode node) {
     final PlanNode successor = node.successor();
     return successor != null
-        && successor.type() == IN_SUB_FILTER
+        && successor.kind() == IN_SUB_FILTER
         && successor.predecessors()[1] == node;
   }
 
   private static boolean needMergeLookup(boolean needNew, PlanNode node) {
     final PlanNode successor = node.successor();
     if (successor == null) return false;
-    return needNew && (successor.type() != UNION || node == successor.predecessors()[0]);
+    return needNew && (successor.kind() != UNION || node == successor.predecessors()[0]);
   }
 
   private static class StackedLookup {

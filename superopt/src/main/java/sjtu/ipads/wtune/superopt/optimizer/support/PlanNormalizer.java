@@ -64,7 +64,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   @Override
   protected PlanNode onLeftJoin(JoinNode leftJoin) {
     final PlanNode successor = leftJoin.successor();
-    if (successor.type().isJoin() && successor.predecessors()[1] == leftJoin) return null;
+    if (successor.kind().isJoin() && successor.predecessors()[1] == leftJoin) return null;
     return handleJoin(leftJoin);
   }
 
@@ -114,8 +114,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
     return proj.isWildcard()
         && (successor instanceof JoinNode || successor instanceof ProjNode)
-        && !predecessor.type().isFilter()
-        && predecessor.type() != LEFT_JOIN;
+        && !predecessor.kind().isFilter()
+        && predecessor.kind() != LEFT_JOIN;
   }
 
   private static void insertProj(PlanNode successor, PlanNode predecessor) {
@@ -126,7 +126,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
 
   private static void enforceEffectiveNonNull(PlanNode definer) {
     final PlanNode successor = definer.successor();
-    if (successor.type() == LEFT_JOIN && successor.predecessors()[1] == definer)
+    if (successor.kind() == LEFT_JOIN && successor.predecessors()[1] == definer)
       ((JoinNode) successor).setJoinType(INNER_JOIN);
   }
 
@@ -134,8 +134,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     final PlanNode successor = node.successor();
     final PlanNode[] predecessors = node.predecessors();
     // 1. insert proj if a filter directly precedes a join
-    final boolean insertProjOnLeft = predecessors[0].type().isFilter();
-    final boolean insertProjOnRight = predecessors[1].type().isFilter();
+    final boolean insertProjOnLeft = predecessors[0].kind().isFilter();
+    final boolean insertProjOnRight = predecessors[1].kind().isFilter();
     if (insertProjOnLeft) insertProj(node, predecessors[0]);
     if (insertProjOnRight) insertProj(node, predecessors[1]);
     if (insertProjOnLeft || insertProjOnRight) resolveUsedToRoot(node);
@@ -144,7 +144,7 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     node = enforceLeftDeepJoin(node);
 
     // extra operator at join root
-    if (!successor.type().isJoin()) {
+    if (!successor.kind().isJoin()) {
       // 3. rectify qualification
       //      resolveUsedOnTree(node); // necessary?
       if (rectifyQualification(node)) resolveUsedOnTree(rootOf(node));
@@ -159,15 +159,15 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   private static JoinNode enforceLeftDeepJoin(JoinNode join) {
     final PlanNode successor = join.successor();
     final PlanNode right = join.predecessors()[1];
-    assert right.type() != LEFT_JOIN;
+    assert right.kind() != LEFT_JOIN;
 
-    if (right.type() != INNER_JOIN) return join;
+    if (right.kind() != INNER_JOIN) return join;
 
     final JoinNode newJoin = (JoinNode) right;
 
     final PlanNode b = right.predecessors()[0]; // b can be another JOIN
     final PlanNode c = right.predecessors()[1]; // c must not be a JOIN
-    assert !c.type().isJoin();
+    assert !c.kind().isJoin();
 
     if (b.definedAttributes().containsAll(join.rightAttributes())) {
       // 1. join<a.x=b.y>(a,newJoin<b.z=c.w>(b,c)) => newJoin<b.z=c.w>(join<a.x=b.y>(a,b),c)
@@ -200,10 +200,10 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
     // target:
     // 1. add the qualification to an unqualified subquery
     // 2. change the qualification to ensure non-duplicated
-    if (!node.type().isJoin()) return false;
+    if (!node.kind().isJoin()) return false;
 
     final PlanNode left = node.predecessors()[0], right = node.predecessors()[1];
-    assert !right.type().isJoin() && !right.type().isFilter();
+    assert !right.kind().isJoin() && !right.kind().isFilter();
 
     final Map<String, PlanNode> qualified = new HashMap<>();
     final Set<PlanNode> unqualified = newIdentitySet();
@@ -238,8 +238,8 @@ public class PlanNormalizer extends TypeBasedAlgorithm<PlanNode> {
   }
 
   private static void setQualification(PlanNode node, String qualification) {
-    assert node.type() == PROJ || node.type() == INPUT;
-    if (node.type() == INPUT) ((InputNode) node).setAlias(qualification);
-    else if (node.type() == PROJ) ((ProjNode) node).setQualification(qualification);
+    assert node.kind() == PROJ || node.kind() == INPUT;
+    if (node.kind() == INPUT) ((InputNode) node).setAlias(qualification);
+    else if (node.kind() == PROJ) ((ProjNode) node).setQualification(qualification);
   }
 }

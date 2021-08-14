@@ -13,15 +13,15 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
 
 class FragmentUtils {
-  private static final List<Op> DEFAULT_OP_SET =
-      listMap(List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, IN_SUB_FILTER, UNION), Op::mk);
   private static final int DEFAULT_MAX_OPS = 4;
+  private static final List<Op> DEFAULT_OP_SET =
+      listMap(
+          List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, PROJ, IN_SUB_FILTER, UNION), Op::mk);
   private static final Set<Class<? extends Rule>> DEFAULT_PRUNING_RULES =
       Set.of(
           MalformedJoin.class,
@@ -29,6 +29,10 @@ class FragmentUtils {
           MalformedSubquery.class,
           NonLeftDeepJoin.class,
           AllJoin.class);
+
+  static {
+    ((Proj) find(DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);
+  }
 
   static List<Fragment> enumerate() {
     final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
@@ -57,7 +61,7 @@ class FragmentUtils {
   static boolean structuralEq(Op tree0, Op tree1) {
     if (tree0 == tree1) return true;
     if (tree0 == null || tree1 == null) return false;
-    if (tree0.type() != tree1.type()) return false;
+    if (tree0.kind() != tree1.kind()) return false;
 
     final Op[] prevs0 = tree0.predecessors();
     final Op[] prevs1 = tree1.predecessors();
@@ -74,7 +78,7 @@ class FragmentUtils {
     if (sz0 < sz1) return -1;
     if (sz0 > sz1) return 1;
 
-    final OperatorType type0 = tree0.type(), type1 = tree1.type();
+    final OperatorType type0 = tree0.kind(), type1 = tree1.kind();
     if (type0.numPredecessors() < type1.numPredecessors()) return -1;
     if (type0.numPredecessors() > type1.numPredecessors()) return 1;
 
@@ -89,10 +93,11 @@ class FragmentUtils {
   static StringBuilder structuralToString(Op tree, SymbolNaming naming, StringBuilder builder) {
     if (tree == null) return builder;
 
-    builder.append(tree.type().text());
+    builder.append(tree.kind().text());
+    if (tree.kind() == PROJ && ((Proj) tree).isDeduplicated()) builder.append('*');
 
     if (naming != null)
-      switch (tree.type()) {
+      switch (tree.kind()) {
         case INPUT:
           builder.append('<').append(naming.nameOf(((Input) tree).table())).append('>');
           break;
@@ -115,7 +120,7 @@ class FragmentUtils {
           throw new UnsupportedOperationException();
       }
 
-    if (tree.type().numPredecessors() > 0) {
+    if (tree.kind().numPredecessors() > 0) {
       builder.append('(');
       Commons.joining(
           ",", asList(tree.predecessors()), builder, (it, b) -> structuralToString(it, naming, b));
@@ -142,7 +147,7 @@ class FragmentUtils {
   }
 
   static void bindNames(Op op, String[] names, SymbolNaming naming) {
-    switch (op.type()) {
+    switch (op.kind()) {
       case INPUT:
         naming.setName(((Input) op).table(), names[1]);
         break;
@@ -195,7 +200,7 @@ class FragmentUtils {
     // Check if the node is a complete query.
     // Specifically, check if the root node is Union/Proj
     // (ignore Sort/Limit)
-    final OperatorType type = node.type();
+    final OperatorType type = node.kind();
     return type != UNION
         && type != PROJ
         && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));

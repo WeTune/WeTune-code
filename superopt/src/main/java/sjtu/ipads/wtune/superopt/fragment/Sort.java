@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.SortImpl;
 
 public interface Sort extends Operator {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SORT;
   }
 

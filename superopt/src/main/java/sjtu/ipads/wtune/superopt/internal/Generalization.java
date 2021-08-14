@@ -36,8 +36,8 @@ public class Generalization {
 
       if (op0.successor() == null
           || op1.successor() == null
-          || op0.type() == OperatorType.INPUT
-          || op1.type() == OperatorType.INPUT) continue;
+          || op0.kind() == OperatorType.INPUT
+          || op1.kind() == OperatorType.INPUT) continue;
 
       final Pair<Substitution, Substitution> cut = cut(sub, op0, op1);
       if (isProved(cut.getLeft()) && isProved(cut.getRight())) return true;

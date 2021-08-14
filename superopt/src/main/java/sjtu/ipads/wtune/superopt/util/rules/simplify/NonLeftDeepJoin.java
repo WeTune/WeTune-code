@@ -9,7 +9,7 @@ public class NonLeftDeepJoin extends BaseMatchingRule {
   @Override
   public boolean enterInnerJoin(InnerJoin op) {
     final Operator right = op.predecessors()[1];
-    if (right != null && right.type().isJoin()) {
+    if (right != null && right.kind().isJoin()) {
       matched = true;
       return false;
     }
@@ -19,7 +19,7 @@ public class NonLeftDeepJoin extends BaseMatchingRule {
   @Override
   public boolean enterLeftJoin(LeftJoin op) {
     final Operator right = op.predecessors()[1];
-    if (right != null && right.type().isJoin()) {
+    if (right != null && right.kind().isJoin()) {
       matched = true;
       return false;
     }

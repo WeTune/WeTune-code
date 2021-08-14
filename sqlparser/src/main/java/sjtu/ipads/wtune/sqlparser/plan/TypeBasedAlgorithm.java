@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 public class TypeBasedAlgorithm<T> {
   public T dispatch(PlanNode node) {
-    switch (node.type()) {
+    switch (node.kind()) {
       case INPUT:
         return onInput((InputNode) node);
       case SIMPLE_FILTER:

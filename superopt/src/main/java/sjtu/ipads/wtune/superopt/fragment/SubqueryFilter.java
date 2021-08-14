@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
 
 public interface SubqueryFilter extends Filter {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.IN_SUB_FILTER;
   }
 
@@ -28,7 +28,7 @@ public interface SubqueryFilter extends Filter {
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
-    if (node.type() != this.type()) return false;
+    if (node.kind() != this.kind()) return false;
 
     return inter.assignAttributes(fields(), node.usedAttributes());
   }

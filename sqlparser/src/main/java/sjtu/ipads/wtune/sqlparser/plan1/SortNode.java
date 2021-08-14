@@ -8,7 +8,7 @@ public interface SortNode extends PlanNode {
   List<Expr> orders();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.SORT;
   }
 }

@@ -53,7 +53,7 @@ public enum OperatorType {
       case "PlainFilter", "SimpleFilter", "Filter" -> SIMPLE_FILTER;
       case "SubqueryFilter", "InSubFilter" -> IN_SUB_FILTER;
       case "Input" -> INPUT;
-      case "Proj" -> PROJ;
+      case "Proj", "Proj*" -> PROJ;
       default -> throw new IllegalArgumentException("unknown operator: " + value);
     };
   }

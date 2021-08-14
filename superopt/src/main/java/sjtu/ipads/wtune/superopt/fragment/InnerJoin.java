@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.superopt.fragment.internal.InnerJoinImpl;
 
 public interface InnerJoin extends Join {
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.INNER_JOIN;
   }
 

@@ -10,7 +10,7 @@ public abstract class BaseOperator implements Operator {
   private final Operator[] predecessors;
 
   protected BaseOperator() {
-    predecessors = new Operator[type().numPredecessors()];
+    predecessors = new Operator[kind().numPredecessors()];
   }
 
   @Override
@@ -64,7 +64,7 @@ public abstract class BaseOperator implements Operator {
 
   @Override
   public String toString() {
-    return type().name();
+    return kind().name();
   }
 
   protected abstract Operator newInstance();

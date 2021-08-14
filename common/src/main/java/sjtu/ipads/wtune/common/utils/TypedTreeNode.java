@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.common.utils;
 
 public interface TypedTreeNode<Type extends Enum<Type>> {
-  Type type();
+  Type kind();
 
   TypedTreeNode<Type> successor();
 

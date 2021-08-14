@@ -8,7 +8,7 @@ public class MalformedSort extends BaseMatchingRule {
   @Override
   public boolean enterSort(Sort op) {
     final Operator in = op.predecessors()[0];
-    if ((in != null && !in.type().isValidOutput()) || (in instanceof Sort)) {
+    if ((in != null && !in.kind().isValidOutput()) || (in instanceof Sort)) {
       matched = true;
       return false;
     }

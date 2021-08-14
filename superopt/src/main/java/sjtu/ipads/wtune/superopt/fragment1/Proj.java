@@ -13,23 +13,29 @@ public interface Proj extends Op {
 
   Symbol outAttrs();
 
+  void setDeduplicated(boolean flag);
+
+  boolean isDeduplicated();
+
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.PROJ;
   }
 
   @Override
   default boolean match(PlanNode node, Model m) {
-    if (node.type() != type()) return false;
+    if (node.kind() != kind()) return false;
+    if (isDeduplicated() != ((ProjNode) node).isDeduplicated()) return false;
 
     return m.assign(inAttrs(), node.context().deRef(node.refs()))
         && m.assign(outAttrs(), node.values());
   }
 
   @Override
-  default PlanNode instantiate(PlanContext ctx, Model m) {
-    final PlanNode predecessor = predecessors()[0].instantiate(ctx, m);
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
     final ProjNode proj = ProjNode.mk(ValueBag.mk(m.interpretAttrs(outAttrs())));
+    proj.setDeduplicated(isDeduplicated());
 
     proj.setContext(ctx);
     proj.setPredecessor(0, predecessor);

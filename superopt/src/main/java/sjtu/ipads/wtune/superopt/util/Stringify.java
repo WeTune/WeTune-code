@@ -56,7 +56,7 @@ public class Stringify implements OperatorVisitor {
     if (numbering == null) return;
 
     builder.append('<');
-    switch (op.type()) {
+    switch (op.kind()) {
       case INPUT:
         builder.append(toString(((Input) op).table()));
         break;

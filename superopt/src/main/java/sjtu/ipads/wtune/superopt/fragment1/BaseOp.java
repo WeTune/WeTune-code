@@ -6,7 +6,7 @@ abstract class BaseOp implements Op {
   private final Op[] predecessors;
 
   protected BaseOp() {
-    predecessors = new Op[type().numPredecessors()];
+    predecessors = new Op[kind().numPredecessors()];
   }
 
   @Override
@@ -59,7 +59,7 @@ abstract class BaseOp implements Op {
 
   @Override
   public Op copy() {
-    final Op thisCopy = Op.mk(type());
+    final Op thisCopy = Op.mk(kind());
 
     final Op[] prev = predecessors();
     for (int i = 0; i < prev.length; i++) {
@@ -75,7 +75,7 @@ abstract class BaseOp implements Op {
 
   @Override
   public String toString() {
-    return type().name();
+    return kind().name();
   }
 
   protected abstract boolean accept0(OpVisitor visitor);

@@ -45,7 +45,7 @@ public class SubqueryFilterNode extends PlainFilterNode {
   }
 
   @Override
-  public OperatorType type() {
+  public OperatorType kind() {
     return IN_SUB_FILTER;
   }
 

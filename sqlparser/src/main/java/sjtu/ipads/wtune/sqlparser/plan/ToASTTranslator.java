@@ -77,14 +77,14 @@ public class ToASTTranslator {
   private void translate0(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) translate0(predecessor);
 
-    if (node.type() == INPUT) translateInput((InputNode) node);
-    else if (node.type().isJoin()) translateJoin((JoinNode) node);
-    else if (node.type() == PROJ) translateProj((ProjNode) node);
-    else if (node.type() == SIMPLE_FILTER) translatePlainFilter((FilterNode) node);
-    else if (node.type() == IN_SUB_FILTER) translateSubqueryFilter((FilterNode) node);
-    else if (node.type() == AGG) translateAgg((AggNode) node);
-    else if (node.type() == SORT) translateSort((SortNode) node);
-    else if (node.type() == LIMIT) translateLimit((LimitNode) node);
+    if (node.kind() == INPUT) translateInput((InputNode) node);
+    else if (node.kind().isJoin()) translateJoin((JoinNode) node);
+    else if (node.kind() == PROJ) translateProj((ProjNode) node);
+    else if (node.kind() == SIMPLE_FILTER) translatePlainFilter((FilterNode) node);
+    else if (node.kind() == IN_SUB_FILTER) translateSubqueryFilter((FilterNode) node);
+    else if (node.kind() == AGG) translateAgg((AggNode) node);
+    else if (node.kind() == SORT) translateSort((SortNode) node);
+    else if (node.kind() == LIMIT) translateLimit((LimitNode) node);
     else assert false;
   }
 
@@ -145,7 +145,7 @@ public class ToASTTranslator {
     join.set(JOINED_LEFT, leftSource);
     join.set(JOINED_RIGHT, rightSource);
     join.set(JOINED_ON, node.onCondition());
-    join.set(JOINED_TYPE, node.type() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
+    join.set(JOINED_TYPE, node.kind() == OperatorType.INNER_JOIN ? INNER_JOIN : LEFT_JOIN);
 
     stack.push(Query.from(join));
   }

@@ -15,7 +15,7 @@ public interface AggNode extends PlanNode {
   RefBag havingRefs();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.AGG;
   }
 }

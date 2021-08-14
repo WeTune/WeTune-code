@@ -23,8 +23,8 @@ class Disambiguation {
 
   private void onNode(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) onNode(predecessor);
-    if (node.type() == INPUT) onInput((InputNode) node);
-    else if (node.type() == PROJ) onProj((ProjNode) node);
+    if (node.kind() == INPUT) onInput((InputNode) node);
+    else if (node.kind() == PROJ) onProj((ProjNode) node);
   }
 
   private void onProj(ProjNode proj) {
@@ -69,7 +69,7 @@ class Disambiguation {
   private static boolean mustQualified(ProjNode proj) {
     PlanNode successor = proj.successor();
     while (successor != null) {
-      final OperatorType succType = successor.type();
+      final OperatorType succType = successor.kind();
       if (succType == UNION) return false;
       if (succType == PROJ) return true;
       if (succType.isJoin()) return true;

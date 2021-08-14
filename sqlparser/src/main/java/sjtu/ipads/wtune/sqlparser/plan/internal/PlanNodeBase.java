@@ -21,7 +21,7 @@ public abstract class PlanNodeBase implements PlanNode {
   private final PlanNode[] predecessors;
 
   protected PlanNodeBase() {
-    predecessors = new PlanNode[type().numPredecessors()];
+    predecessors = new PlanNode[kind().numPredecessors()];
   }
 
   protected PlanNodeBase(OperatorType type) {

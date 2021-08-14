@@ -8,7 +8,7 @@ public interface Input extends Op {
   Symbol table();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.INPUT;
   }
 
@@ -18,7 +18,7 @@ public interface Input extends Op {
   }
 
   @Override
-  default PlanNode instantiate(PlanContext ctx, Model m) {
+  default PlanNode instantiate(Model m, PlanContext ctx) {
     return m.interpretTable(table()).copy(ctx);
   }
 }

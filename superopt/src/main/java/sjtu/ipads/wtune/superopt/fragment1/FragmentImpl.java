@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -29,10 +28,9 @@ class FragmentImpl implements Fragment {
 
     for (int i = opStrs.length - 1; i >= 0; i--) {
       final String[] fields = opStrs[i].split("[<> ]+");
-      final OperatorType opType = OperatorType.parse(fields[0]);
-      final Op op = Op.mk(opType);
+      final Op op = Op.parse(fields[0]);
 
-      for (int j = 0; j < opType.numPredecessors(); j++) op.setPredecessor(j, operators.pop());
+      for (int j = 0; j < op.kind().numPredecessors(); j++) op.setPredecessor(j, operators.pop());
       operators.push(op);
 
       if (names != null) names.put(op, fields);

@@ -25,7 +25,7 @@ public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operat
   void acceptVisitor(OperatorVisitor visitor);
 
   default Operator copy() {
-    final Operator thisCopy = Operators.create(type());
+    final Operator thisCopy = Operators.create(kind());
 
     final Operator[] prev = predecessors();
     for (int i = 0; i < prev.length; i++) {
@@ -94,7 +94,7 @@ public interface Operator extends TypedTreeNode<OperatorType>, Comparable<Operat
 
   @Override
   default int compareTo(Operator o) {
-    int res = type().compareTo(o.type());
+    int res = kind().compareTo(o.kind());
     if (res != 0) return res;
 
     final Operator[] preds = predecessors(), otherPreds = o.predecessors();

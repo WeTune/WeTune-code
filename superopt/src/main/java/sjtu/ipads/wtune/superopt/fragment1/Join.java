@@ -15,7 +15,7 @@ public interface Join extends Op {
 
   @Override
   default boolean match(PlanNode node, Model m) {
-    if (node.type() != this.type()) return false;
+    if (node.kind() != this.kind()) return false;
 
     final JoinNode join = (JoinNode) node;
     if (!join.isEquiJoin()) return false;
@@ -27,15 +27,15 @@ public interface Join extends Op {
   }
 
   @Override
-  default PlanNode instantiate(PlanContext ctx, Model m) {
-    final PlanNode predecessor0 = predecessors()[0].instantiate(ctx, m);
-    final PlanNode predecessor1 = predecessors()[1].instantiate(ctx, m);
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
+    final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
 
     final List<Value> lhsValues = bindValues(m.interpretAttrs(lhsAttrs()), predecessor0);
     final List<Value> rhsValues = bindValues(m.interpretAttrs(rhsAttrs()), predecessor1);
     final List<Ref> lhsRefs = listMap(lhsValues, Value::selfish);
     final List<Ref> rhsRefs = listMap(rhsValues, Value::selfish);
-    final JoinNode join = JoinNode.mk(type(), RefBag.mk(lhsRefs), RefBag.mk(rhsRefs));
+    final JoinNode join = JoinNode.mk(kind(), RefBag.mk(lhsRefs), RefBag.mk(rhsRefs));
 
     join.setContext(ctx);
     join.setPredecessor(0, predecessor0);

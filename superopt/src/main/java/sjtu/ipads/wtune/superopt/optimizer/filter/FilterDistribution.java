@@ -43,8 +43,8 @@ public class FilterDistribution {
   }
 
   public boolean isSatisfiable() {
-    final long subNodeCount = pool.stream().filter(it -> it.type() == IN_SUB_FILTER).count();
-    final long subOpCount = slots.stream().filter(it -> it.type() == IN_SUB_FILTER).count();
+    final long subNodeCount = pool.stream().filter(it -> it.kind() == IN_SUB_FILTER).count();
+    final long subOpCount = slots.stream().filter(it -> it.kind() == IN_SUB_FILTER).count();
 
     return subNodeCount >= subOpCount && pool.size() >= slots.size();
   }

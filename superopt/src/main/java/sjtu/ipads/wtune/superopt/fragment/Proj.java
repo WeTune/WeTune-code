@@ -13,7 +13,7 @@ public interface Proj extends Operator {
   Placeholder fields();
 
   @Override
-  default OperatorType type() {
+  default OperatorType kind() {
     return OperatorType.PROJ;
   }
 
@@ -28,7 +28,7 @@ public interface Proj extends Operator {
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
-    if (node.type() != this.type()) return false;
+    if (node.kind() != this.kind()) return false;
     return inter.assignAttributes(fields(), node.definedAttributes());
   }
 

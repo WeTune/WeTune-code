@@ -20,7 +20,7 @@ public interface Join extends Operator {
     final List<AttributeDef> l = interpretations.getAttributes(leftFields()).object();
     final List<AttributeDef> r = interpretations.getAttributes(rightFields()).object();
 
-    final PlanNode node = JoinNode.make(type(), l, r);
+    final PlanNode node = JoinNode.make(kind(), l, r);
 
     node.setPredecessor(0, pred0);
     node.setPredecessor(1, pred1);
@@ -29,7 +29,7 @@ public interface Join extends Operator {
 
   @Override
   default boolean match(PlanNode node, Interpretations inter) {
-    if (node.type() != this.type()) return false;
+    if (node.kind() != this.kind()) return false;
 
     final JoinNode join = (JoinNode) node;
     if (!join.isNormalForm()) return false;

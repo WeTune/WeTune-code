@@ -188,7 +188,7 @@ public class ToPlanTranslator {
 
     if (filters.isEmpty()) throw new IllegalArgumentException("not a filter");
 
-    filters.sort(Comparator.comparing(PlanNode::type));
+    filters.sort(Comparator.comparing(PlanNode::kind));
 
     for (int i = 0, bound = filters.size() - 1; i < bound; i++)
       filters.get(i).setPredecessor(0, filters.get(i + 1));
