@@ -7,10 +7,10 @@ import java.util.List;
 
 public class EnumFragment implements Runner {
   @Override
-  public void prepare(String[] args) {}
+  public void prepare(String[] argStrings) {}
 
   @Override
-  public void run(String[] args) throws Exception {
+  public void run() throws Exception {
     final List<Fragment> fragments = FragmentSupport.enumFragments();
     for (Fragment fragment : fragments) System.out.println(fragment);
     System.out.println(fragments.size());

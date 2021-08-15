@@ -34,6 +34,8 @@ public interface Constraint {
 
   Symbol[] symbols();
 
+  String canonicalStringify(SymbolNaming naming);
+
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
 
   default String stringify(SymbolNaming naming) {

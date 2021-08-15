@@ -47,4 +47,8 @@ public class FragmentSupport {
       Substitution substitution, boolean backwardCompatible) {
     return new PlanTranslator().translate(substitution, backwardCompatible);
   }
+
+  public static Complexity calcComplexity(Fragment fragment) {
+    return new ComplexityImpl(fragment);
+  }
 }

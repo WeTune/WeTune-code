@@ -18,7 +18,7 @@ public interface Substitution {
 
   SymbolNaming naming();
 
-  void setId(int id);
+  String canonicalStringify();
 
   static Substitution parse(String str) {
     return SubstitutionImpl.parse(str);

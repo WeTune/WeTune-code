@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   private final List<Constraint> constraints;
@@ -75,6 +76,13 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   @Override
   public Iterable<Constraint> ofKind(Kind kind) {
     return lazyFilter(constraints, it -> it.kind() == kind);
+  }
+
+  @Override
+  public StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder) {
+    final List<String> strings = listMap(constraints, it -> it.canonicalStringify(naming));
+    strings.sort(String::compareTo);
+    return Commons.joining(";", strings, builder);
   }
 
   @Override

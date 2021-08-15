@@ -15,7 +15,7 @@ def resourceDir = "src/main/resources"
 
 task antlrMysql {
     doFirst {
-        if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
+        if (!file("$zysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
             println("generating mysql parser")
             if (Os.isFamily(Os.FAMILY_WINDOWS))
                 exec {

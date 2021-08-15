@@ -46,7 +46,7 @@ public class RuleRegression implements Runner {
   }
 
   @Override
-  public void run(String[] args) throws IOException {
+  public void run() throws IOException {
     final List<String> lines = Files.readAllLines(Paths.get(file));
     final TIntList failures = new TIntArrayList(80);
 

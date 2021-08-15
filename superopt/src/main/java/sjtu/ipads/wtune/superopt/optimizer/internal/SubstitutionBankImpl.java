@@ -1,20 +1,16 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
-import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
-import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 import sjtu.ipads.wtune.superopt.internal.Generalization;
 import sjtu.ipads.wtune.superopt.optimizer.Substitution;
 import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+
+import java.util.*;
+
+import static java.lang.System.Logger.Level.WARNING;
+import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
+import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 
 public class SubstitutionBankImpl implements SubstitutionBank {
   private final Set<Substitution> substitutions;

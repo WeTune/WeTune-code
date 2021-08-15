@@ -63,8 +63,33 @@ class SymbolsImpl implements Symbols {
   }
 
   @Override
+  public void reBindSymbol(Op op) {
+    switch (op.kind()) {
+      case INPUT -> add(op, ((Input) op).table());
+      case IN_SUB_FILTER -> add(op, ((InSubFilter) op).attrs());
+      case SIMPLE_FILTER -> {
+        add(op, ((SimpleFilter) op).attrs());
+        add(op, ((SimpleFilter) op).predicate());
+      }
+      case INNER_JOIN, LEFT_JOIN -> {
+        add(op, ((Join) op).lhsAttrs());
+        add(op, ((Join) op).rhsAttrs());
+      }
+      case PROJ -> {
+        add(op, ((Proj) op).inAttrs());
+        add(op, ((Proj) op).outAttrs());
+      }
+    }
+  }
+
+  @Override
   public Symbol symbolAt(Op op, Symbol.Kind kind, int ordinal) {
     return getMap(kind).get(op).get(ordinal);
+  }
+
+  @Override
+  public List<Symbol> symbolAt(Op op, Symbol.Kind kind) {
+    return getMap(kind).get(op);
   }
 
   @Override
@@ -78,6 +103,11 @@ class SymbolsImpl implements Symbols {
       if (entry.getValue() == symbol) return entry.getKey();
     }
     return null;
+  }
+
+  @Override
+  public boolean contains(Symbol symbol) {
+    return ownerOf(symbol) != null;
   }
 
   private static ListMultimap<Op, Symbol> initMap() {
@@ -94,5 +124,9 @@ class SymbolsImpl implements Symbols {
 
   private void add(Op op, Symbol.Kind kind) {
     getMap(kind).get(op).add(Symbol.mk(kind, this));
+  }
+
+  private void add(Op op, Symbol sym) {
+    getMap(sym.kind()).get(op).add(sym);
   }
 }

@@ -58,9 +58,16 @@ public class EnumSubstitution implements Runner {
   }
 
   @Override
-  public void run(String[] args) throws Exception {
+  public void run() throws Exception {
     if (runFailure) fromFailures();
     else fromEnumeration();
+  }
+
+  @Override
+  public void stop() throws Exception {
+    out.close();
+    err.close();
+    fail.close();
   }
 
   private void fromEnumeration() {

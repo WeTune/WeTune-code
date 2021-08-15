@@ -5,9 +5,11 @@ import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class ConstraintImpl implements Constraint {
   private final Kind kind;
@@ -39,6 +41,18 @@ class ConstraintImpl implements Constraint {
   @Override
   public Symbol[] symbols() {
     return symbols;
+  }
+
+  @Override
+  public String canonicalStringify(SymbolNaming naming) {
+    final List<String> symNames = listMap(symbols, naming::nameOf);
+    if (kind.isEq()) symNames.sort(String::compareTo);
+
+    final StringBuilder builder = new StringBuilder();
+    builder.append(kind.name()).append('(');
+    Commons.joining(",", symNames, builder);
+    builder.append(')');
+    return builder.toString();
   }
 
   @Override

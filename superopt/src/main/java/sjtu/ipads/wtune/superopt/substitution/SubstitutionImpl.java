@@ -77,8 +77,13 @@ class SubstitutionImpl implements Substitution {
   }
 
   @Override
-  public void setId(int id) {
-    this.id = id;
+  public String canonicalStringify() {
+    final StringBuilder builder = new StringBuilder(50);
+    final SymbolNaming naming = naming();
+    _0.stringify(naming, builder).append('|');
+    _1.stringify(naming, builder).append('|');
+    constraints.canonicalStringify(naming, builder);
+    return builder.toString();
   }
 
   @Override

@@ -1,7 +1,9 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 public interface Runner {
-  void prepare(String[] args) throws Exception;
+  void prepare(String[] argStrings) throws Exception;
 
-  void run(String[] args) throws Exception;
+  void run() throws Exception;
+
+  default void stop() throws Exception {}
 }

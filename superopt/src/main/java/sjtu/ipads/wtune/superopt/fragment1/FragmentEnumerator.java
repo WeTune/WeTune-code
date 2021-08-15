@@ -34,6 +34,7 @@ class FragmentEnumerator {
         .peek(FragmentUtils::setupFragment)
         .filter(f -> none(pruningRules, it -> it.match(f)))
         .sorted((x, y) -> structuralCompare(x.root(), y.root()))
+        .peek(FragmentImpl::symbols) // trigger initialization
         .collect(Collectors.toList());
   }
 

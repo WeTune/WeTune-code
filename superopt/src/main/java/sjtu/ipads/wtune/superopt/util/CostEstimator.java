@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
-
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.common.utils.TypedTreeVisitor;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
+
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
 
 public class CostEstimator {
   public static int compareCost(PlanNode o1, PlanNode o2) {

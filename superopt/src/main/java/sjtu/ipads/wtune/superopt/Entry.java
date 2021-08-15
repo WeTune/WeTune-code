@@ -14,6 +14,7 @@ public class Entry {
 
     final Runner runner = (Runner) cls.getConstructor().newInstance();
     runner.prepare(args);
-    runner.run(args);
+    runner.run();
+    runner.stop();
   }
 }

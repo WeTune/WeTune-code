@@ -2,7 +2,10 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.*;
 
@@ -11,6 +14,12 @@ class FragmentImpl implements Fragment {
   private Op root;
 
   private final Lazy<Symbols> symbols;
+
+  FragmentImpl(Op root, Symbols symbols) {
+    this.root = root;
+    this.symbols = Lazy.mk(symbols);
+    // must be the `root()` accessor instead of `root`
+  }
 
   FragmentImpl(Op root) {
     this.root = root;

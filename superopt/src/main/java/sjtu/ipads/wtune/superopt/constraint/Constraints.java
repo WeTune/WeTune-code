@@ -15,6 +15,8 @@ public interface Constraints extends List<Constraint> {
 
   Iterable<Constraint> ofKind(Constraint.Kind kind);
 
+  StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder);
+
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
 
   default String stringify(SymbolNaming naming) {
