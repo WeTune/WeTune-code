@@ -62,26 +62,22 @@ task antlrPg {
 }
 
 task copyMysql(type: Copy) {
-    doFirst {
-        dependsOn antlrMysql
-        if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
-            from(genDir) {
-                include 'MySQL*.java'
-            }
-            into(mysqlDir)
+    dependsOn antlrMysql
+    if (!file("$mysqlDir/MySQLLexer.java").exists() || !file("$mysqlDir/MySQLParser.java").exists()) {
+        from(genDir) {
+            include 'MySQL*.java'
         }
+        into(mysqlDir)
     }
 }
 
 task copyPg(type: Copy) {
-    doFirst {
-        dependsOn antlrPg
-        if (!file("$pgDir/PGLexer.java").exists() || !file("$pgDir/PGParser.java").exists()) {
-            from(genDir) {
-                include 'PG*.java'
-            }
-            into(pgDir)
+    dependsOn antlrPg
+    if (!file("$pgDir/PGLexer.java").exists() || !file("$pgDir/PGParser.java").exists()) {
+        from(genDir) {
+            include 'PG*.java'
         }
+        into(pgDir)
     }
 }
 
