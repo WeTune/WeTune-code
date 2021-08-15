@@ -99,7 +99,7 @@ public class EnumSubstitution implements Runner {
     assert i < j;
     if (i < iBegin || j < jBegin) return;
 
-    final int ordinal = (((fragments.size() << 1) - i - 1) * i) >> 1 + j - i - 1;
+    final int ordinal = ((((fragments.size() << 1) - i - 1) * i) >> 1) + j - i - 1;
     if ((ordinal % numSegments) != segMask) return;
     final Fragment f0 = fragments.get(i);
     final Fragment f1 = fragments.get(j);
