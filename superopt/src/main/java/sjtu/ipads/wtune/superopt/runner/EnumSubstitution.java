@@ -114,17 +114,22 @@ public class EnumSubstitution implements Runner {
   private void enumerate(Fragment f0, Fragment f1) {
     try {
       final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
-      for (Substitution substitution : substitutions) out.println(substitution);
-      out.flush();
+
+      synchronized (out) {
+        for (Substitution substitution : substitutions) out.println(substitution);
+        out.flush();
+      }
 
       if (echo) substitutions.forEach(System.out::println);
 
     } catch (Throwable ex) {
-      err.print(f0);
-      err.print(f1);
-      ex.printStackTrace(err);
-      err.print("====");
-      err.flush();
+      synchronized (err) {
+        err.println(f0);
+        err.println(f1);
+        ex.printStackTrace(err);
+        err.println("====");
+        err.flush();
+      }
 
       if (echo) {
         System.err.println(f0);
@@ -132,10 +137,12 @@ public class EnumSubstitution implements Runner {
         ex.printStackTrace();
       }
 
-      fail.print(f0);
-      fail.print("|");
-      fail.print(f1);
-      fail.flush();
+      synchronized (fail) {
+        fail.print(f0);
+        fail.print("|");
+        fail.println(f1);
+        fail.flush();
+      }
     }
   }
 }

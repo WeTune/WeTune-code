@@ -156,6 +156,6 @@ public class TestEnumeration {
 
   @Test
   void test() {
-    doTest("Filter(Input)", "Proj(Filter(InnerJoin(Input,Input)))");
+    doTest("Proj(Input)", "InSubFilter(Proj*(Filter(LeftJoin(Input,Input))),Input)");
   }
 }

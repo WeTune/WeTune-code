@@ -41,6 +41,7 @@ public final class Normalization {
   private static final List<Transformation> PASS4 =
       List.of(
           new MulSum(),
+          new SumAdd(),
           new SumSum(),
           new MulAssociativity(),
           new AddAssociativity(),
