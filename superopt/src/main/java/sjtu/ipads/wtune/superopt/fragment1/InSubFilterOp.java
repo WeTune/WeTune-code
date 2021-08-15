@@ -10,7 +10,7 @@ class InSubFilterOp extends BaseOp implements InSubFilter {
 
   @Override
   public boolean accept0(OpVisitor visitor) {
-    return visitor.enterSubqueryFilter(this);
+    return visitor.enterInSubFilter(this);
   }
 
   @Override

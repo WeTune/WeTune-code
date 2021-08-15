@@ -93,11 +93,12 @@ class PlanTranslator {
 
     final PlanNode rawPlan0 = fragment0.root().instantiate(model, PlanContext.mk(schema));
     final PlanNode rawPlan1 = fragment1.root().instantiate(model, PlanContext.mk(schema));
-    alignOutput(rawPlan0, rawPlan1);
+    if (!alignOutput(rawPlan0, rawPlan1)) return null;
+
     // Ensure the outcome is a complete plan instead of a fragment.
     final PlanNode plan0 = wrapFragment(rawPlan0);
     final PlanNode plan1 = wrapFragment(rawPlan1);
-    alignOutput(plan0, plan1);
+    if (!alignOutput(plan0, plan1)) return null;
 
     return Pair.of(plan0, plan1);
   }
@@ -184,9 +185,10 @@ class PlanTranslator {
 
       for (String attrName : table.attrNames)
         builder.append("  ").append(attrName).append(" int,\n");
-      if (table.attrNames.isEmpty())
-        // empty table is syntactically error, so we add a dummy column
-        builder.append("  ").append(attrNameSeq.next()).append(" int,\n");
+      //      if (table.attrNames.isEmpty())
+      // empty table is syntactically error, so we add a dummy column
+      // Always add a dummy column.
+      builder.append("  ").append(attrNameSeq.next()).append(" int,\n");
 
       builder.replace(builder.length() - 2, builder.length(), ");\n");
     }

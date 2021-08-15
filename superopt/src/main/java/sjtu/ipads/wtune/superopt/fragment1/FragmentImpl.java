@@ -2,10 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.*;
 
@@ -24,7 +21,7 @@ class FragmentImpl implements Fragment {
   static Fragment parse(String str, SymbolNaming naming) {
     final String[] opStrs = str.split("[(),]+");
     final Deque<Op> operators = new ArrayDeque<>(opStrs.length);
-    final Map<Op, String[]> names = naming == null ? null : new HashMap<>();
+    final Map<Op, String[]> names = naming == null ? null : new IdentityHashMap<>();
 
     for (int i = opStrs.length - 1; i >= 0; i--) {
       final String[] fields = opStrs[i].split("[<> ]+");
@@ -36,10 +33,14 @@ class FragmentImpl implements Fragment {
       if (names != null) names.put(op, fields);
     }
 
-    final Fragment fragment = setupFragment(Fragment.mk(operators.pop()));
+    final Fragment fragment = setupFragment(new FragmentImpl(operators.pop()));
     if (names != null) names.forEach((op, ns) -> bindNames(op, ns, naming));
 
     return fragment;
+  }
+
+  void setRoot0(Op root) {
+    this.root = root;
   }
 
   @Override
@@ -71,7 +72,7 @@ class FragmentImpl implements Fragment {
   }
 
   @Override
-  public Fragment copy() {
+  public FragmentImpl copy() {
     return new FragmentImpl(root == null ? null : root.copy());
   }
 

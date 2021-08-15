@@ -48,6 +48,8 @@ public interface Op extends TypedTreeNode<OperatorType>, Comparable<Op>, Copyabl
 
   Op copy();
 
+  int shadowHash();
+
   default boolean match(PlanNode node, Model m) {
     throw new UnsupportedOperationException();
   }

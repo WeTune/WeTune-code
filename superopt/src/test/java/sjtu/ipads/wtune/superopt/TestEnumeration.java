@@ -41,18 +41,18 @@ public class TestEnumeration {
   @Test
   void testInnerJoinElimination0() {
     doTest(
-        "Proj(InnerInnerJoin(Input,Input))",
+        "Proj(InnerJoin(Input,Input))",
         "Proj(Input)",
-        "Proj<a0>(InnerInnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2);Reference(t0,a2,t1,a3)");
+        "Proj<a0>(InnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2);Reference(t0,a2,t1,a3)");
   }
 
   @Test
   void testInnerJoinElimination1() {
     doTest(
-        "Proj*(InnerInnerJoin(Input,Input))",
+        "Proj*(InnerJoin(Input,Input))",
         "Proj*(Input)",
-        "Proj*<a0>(InnerInnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj*<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
-        "Proj*<a0>(InnerInnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj*<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a2,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t1);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a4);Reference(t0,a2,t1,a3)");
+        "Proj*<a0>(InnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj*<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
+        "Proj*<a0>(InnerJoin<a2 a3>(Input<t0>,Input<t1>))|Proj*<a4>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a2,a4);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a0,t1);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a4);Reference(t0,a2,t1,a3)");
   }
 
   @Test
@@ -119,7 +119,7 @@ public class TestEnumeration {
     doTest(
         "Proj(InSubFilter(Input,Proj(Input)))",
         "Proj(InnerJoin(Input,Input))",
-        "Proj<a0>(SubFilter<a2>(Input<t0>,Proj<a3>(Input<t1>)))|Proj<a5>(InnerJoin<a7 a8>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a5);AttrsEq(a2,a7);AttrsEq(a3,a8);AttrsSub(a3,t1);AttrsSub(a2,t0);AttrsSub(a0,t0);AttrsSub(a7,t2);AttrsSub(a8,t3);AttrsSub(a5,t2);Unique(t1,a3);Unique(t3,a8)");
+        "Proj<a0>(InSubFilter<a2>(Input<t0>,Proj<a3>(Input<t1>)))|Proj<a5>(InnerJoin<a7 a8>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a5);AttrsEq(a2,a7);AttrsEq(a3,a8);AttrsSub(a3,t1);AttrsSub(a2,t0);AttrsSub(a0,t0);AttrsSub(a7,t2);AttrsSub(a8,t3);AttrsSub(a5,t2);Unique(t1,a3);Unique(t3,a8)");
   }
 
   @Test
@@ -127,7 +127,7 @@ public class TestEnumeration {
     doTest(
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))",
-        "Proj*<a0>(SubFilter<a2>(Input<t0>,Proj<a3>(Input<t1>)))|Proj*<a5>(InnerJoin<a7 a8>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a5);AttrsEq(a2,a7);AttrsEq(a3,a8);AttrsSub(a3,t1);AttrsSub(a2,t0);AttrsSub(a0,t0);AttrsSub(a7,t2);AttrsSub(a8,t3);AttrsSub(a5,t2)");
+        "Proj*<a0>(InSubFilter<a2>(Input<t0>,Proj<a3>(Input<t1>)))|Proj*<a5>(InnerJoin<a7 a8>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a5);AttrsEq(a2,a7);AttrsEq(a3,a8);AttrsSub(a3,t1);AttrsSub(a2,t0);AttrsSub(a0,t0);AttrsSub(a7,t2);AttrsSub(a8,t3);AttrsSub(a5,t2)");
   }
 
   @Test
@@ -143,7 +143,7 @@ public class TestEnumeration {
     doTest(
         "InSubFilter(InSubFilter(Input,Input),Input)",
         "InSubFilter(Input,Input)",
-        "SubFilter<a0>(SubFilter<a1>(Input<t0>,Input<t1>),Input<t2>)|SubFilter<a2>(Input<t3>,Input<t4>)|TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t4);TableEq(t2,t4);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a2,t3)");
+        "InSubFilter<a0>(InSubFilter<a1>(Input<t0>,Input<t1>),Input<t2>)|InSubFilter<a2>(Input<t3>,Input<t4>)|TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t4);TableEq(t2,t4);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a2,t3)");
   }
 
   @Test
@@ -152,5 +152,10 @@ public class TestEnumeration {
         "Proj(Proj(Input))",
         "Proj(Input)",
         "Proj<a0>(Proj<a2>(Input<t0>))|Proj<a4>(Input<t1>)|TableEq(t0,t1);AttrsEq(a2,a4);AttrsSub(a2,t0);AttrsSub(a0,a3);AttrsSub(a4,t1)");
+  }
+
+  @Test
+  void test() {
+    doTest("Filter(Input)", "Proj(Filter(InnerJoin(Input,Input)))");
   }
 }

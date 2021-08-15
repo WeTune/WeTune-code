@@ -28,6 +28,13 @@ class ProjOp extends BaseOp implements Proj {
   }
 
   @Override
+  protected Op copy0() {
+    final ProjOp copy = new ProjOp();
+    copy.setDeduplicated(isDeduplicated);
+    return copy;
+  }
+
+  @Override
   public boolean accept0(OpVisitor visitor) {
     return visitor.enterProj(this);
   }
@@ -35,5 +42,10 @@ class ProjOp extends BaseOp implements Proj {
   @Override
   public void leave0(OpVisitor visitor) {
     visitor.leaveProj(this);
+  }
+
+  @Override
+  public int shadowHash() {
+    return super.hashCode() * 31 + Boolean.hashCode(isDeduplicated);
   }
 }

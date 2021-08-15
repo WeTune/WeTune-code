@@ -16,7 +16,13 @@ public class ConstraintSupport {
   }
 
   public static List<Substitution> enumConstraints(Fragment f0, Fragment f1, LogicCtx logicCtx) {
-    return listMap(
-        mkConstraintEnumerator(f0, f1, logicCtx).enumerate(), it -> Substitution.mk(f0, f1, it));
+    return enumConstraints(f0, f1, logicCtx, -1);
+  }
+
+  public static List<Substitution> enumConstraints(
+      Fragment f0, Fragment f1, LogicCtx logicCtx, long timeout) {
+    final ConstraintEnumerator enumerator = mkConstraintEnumerator(f0, f1, logicCtx);
+    enumerator.setTimeout(timeout);
+    return listMap(enumerator.enumerate(), it -> Substitution.mk(f0, f1, it));
   }
 }

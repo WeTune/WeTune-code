@@ -26,7 +26,7 @@ import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPla
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
 
 class ConstraintEnumeratorImpl implements ConstraintEnumerator {
-  private static final int EQ = 0, CONFLICT = 1, INCOMPLETE = -1;
+  private static final int EQ = 0, CONFLICT = 1, INCOMPLETE = -1, TIMEOUT = 2;
   private final Fragment f0, f1;
   private final ConstraintsIndex constraints;
   private final LogicCtx logicCtx;
@@ -35,6 +35,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private final List<boolean[]> results;
   private final List<Enumerator> enumerators;
   private SymbolNaming naming;
+
+  private long timeout, begin;
 
   ConstraintEnumeratorImpl(
       Fragment f0, Fragment f1, ConstraintsIndex constraints, LogicCtx logicCtx) {
@@ -46,13 +48,21 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     this.enabled = new boolean[constraints.size()];
     this.results = new LinkedList<>();
     this.enumerators = mkEnumerators();
+    this.timeout = Long.MAX_VALUE;
 
     markMandatory();
     chainEnumerators(enumerators);
   }
 
   @Override
+  public void setTimeout(long timeout) {
+    if (timeout >= 0) this.timeout = timeout;
+  }
+
+  @Override
   public List<List<Constraint>> enumerate() {
+    begin = System.currentTimeMillis();
+
     head(enumerators).enumerate();
     return results();
   }
@@ -86,6 +96,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     final Substitution sub = Substitution.mk(f0, f1, mkConstraintSet(enabled));
 
     final var pair = translateAsPlan(sub, false);
+    if (pair == null) return CONFLICT;
+
     final PlanNode plan0 = disambiguate(pair.getLeft());
     final PlanNode plan1 = disambiguate(pair.getRight());
 
@@ -147,6 +159,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     for (int i = refBegin; i < refEnd; ++i) enumerators.add(new ReferenceEnumerator(i));
 
     enumerators.add(new Recorder());
+    enumerators.add(new Timeout());
     //    enumerators.add(new Dummy());
     enumerators.add(new Proof());
 
@@ -253,7 +266,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
               buffer.add(index);
             }
 
-        next.enumerate(); // Here we don't care about the returned value.
+        // We don't care about the other conditions.
+        if (next.enumerate() == TIMEOUT) return TIMEOUT;
 
         // Reset before next iteration.
         for (int i = 0, bound = buffer.size(); i < bound; ++i) enabled[buffer.get(i)] = false;
@@ -310,9 +324,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       }
 
       enabled[index] = false;
-      if (answer == INCOMPLETE) {
-        return INCOMPLETE;
-      }
+      if (answer == INCOMPLETE || answer == TIMEOUT) return answer;
+
       final int answer1 = next.enumerate();
       return answer == EQ ? EQ : answer1;
     }
@@ -490,6 +503,14 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     }
   }
 
+  private class Timeout extends Enumerator {
+    @Override
+    int enumerate() {
+      if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
+      return next.enumerate();
+    }
+  }
+
   private class Recorder extends Enumerator {
     private int i = 0;
 
@@ -516,7 +537,6 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private class Proof extends Enumerator {
     @Override
     int enumerate() {
-      //      System.out.println(Arrays.toString(enabled));
       return prove0(enabled);
     }
   }

@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.superopt.constraint.Constraint;
-
 import java.util.List;
 
 public interface ConstraintEnumerator {
+  void setTimeout(long millis);
+
   List<List<Constraint>> enumerate();
 
   List<List<Constraint>> results();

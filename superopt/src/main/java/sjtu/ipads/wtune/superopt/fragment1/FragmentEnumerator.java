@@ -10,14 +10,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.gatherHoles;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentUtils.structuralCompare;
 
 class FragmentEnumerator {
   private final int maxOps;
   private final List<Op> opSet;
-  private final Set<Class<? extends Rule>> pruningRules;
+  private final Set<Rule> pruningRules;
 
   FragmentEnumerator(List<Op> opSet, int maxOps) {
     this.maxOps = maxOps;
@@ -25,23 +25,23 @@ class FragmentEnumerator {
     this.pruningRules = new HashSet<>(8);
   }
 
-  void setPruningRules(Iterable<Class<? extends Rule>> rules) {
+  void setPruningRules(Iterable<Rule> rules) {
     rules.forEach(pruningRules::add);
   }
 
   List<Fragment> enumerate() {
-    return enumerate0(0, singleton(Fragment.mk(null))).parallelStream()
+    return enumerate0(0, singleton(new FragmentImpl(null))).stream()
         .peek(FragmentUtils::setupFragment)
-        .filter(f -> any(pruningRules, it -> Rule.match(it, f)))
+        .filter(f -> none(pruningRules, it -> it.match(f)))
         .sorted((x, y) -> structuralCompare(x.root(), y.root()))
         .collect(Collectors.toList());
   }
 
-  private Set<Fragment> enumerate0(int depth, Set<Fragment> fragments) {
+  private Set<FragmentImpl> enumerate0(int depth, Set<FragmentImpl> fragments) {
     if (depth >= maxOps) return fragments;
 
-    final Set<Fragment> newFragments = new HashSet<>();
-    for (Fragment g : fragments)
+    final Set<FragmentImpl> newFragments = new HashSet<>();
+    for (FragmentImpl g : fragments)
       for (Hole<Op> hole : gatherHoles(g))
         for (Op template : opSet)
           if (hole.fill(template)) {

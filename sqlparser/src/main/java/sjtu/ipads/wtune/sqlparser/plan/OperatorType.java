@@ -6,7 +6,7 @@ public enum OperatorType {
   INNER_JOIN(2, "InnerJoin"),
   LEFT_JOIN(2, "LeftJoin"),
   SIMPLE_FILTER(1, "Filter"),
-  IN_SUB_FILTER(2, "SubFilter"),
+  IN_SUB_FILTER(2, "InSubFilter"),
   EXISTS_FILTER(2, "Exists"),
   PROJ(1, "Proj"),
   AGG(1, "Agg"),
@@ -43,7 +43,11 @@ public enum OperatorType {
   }
 
   public boolean isFilter() {
-    return this == SIMPLE_FILTER || this == IN_SUB_FILTER;
+    return this == SIMPLE_FILTER || this == IN_SUB_FILTER || this == EXISTS_FILTER;
+  }
+
+  public boolean isSubquery() {
+    return this == IN_SUB_FILTER || this == EXISTS_FILTER;
   }
 
   public static OperatorType parse(String value) {

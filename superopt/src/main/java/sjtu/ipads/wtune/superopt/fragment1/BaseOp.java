@@ -59,7 +59,7 @@ abstract class BaseOp implements Op {
 
   @Override
   public Op copy() {
-    final Op thisCopy = Op.mk(kind());
+    final Op thisCopy = copy0();
 
     final Op[] prev = predecessors();
     for (int i = 0; i < prev.length; i++) {
@@ -74,8 +74,17 @@ abstract class BaseOp implements Op {
   }
 
   @Override
+  public int shadowHash() {
+    return kind().hashCode();
+  }
+
+  @Override
   public String toString() {
     return kind().name();
+  }
+
+  protected Op copy0() {
+    return Op.mk(kind());
   }
 
   protected abstract boolean accept0(OpVisitor visitor);

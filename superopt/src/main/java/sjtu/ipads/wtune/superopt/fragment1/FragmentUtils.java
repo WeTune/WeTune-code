@@ -3,57 +3,37 @@ package sjtu.ipads.wtune.superopt.fragment1;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.*;
-import sjtu.ipads.wtune.superopt.fragment1.pruning.*;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
 
 class FragmentUtils {
-  private static final int DEFAULT_MAX_OPS = 4;
-  private static final List<Op> DEFAULT_OP_SET =
-      listMap(
-          List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, PROJ, IN_SUB_FILTER, UNION), Op::mk);
-  private static final Set<Class<? extends Rule>> DEFAULT_PRUNING_RULES =
-      Set.of(
-          MalformedJoin.class,
-          MalformedUnion.class,
-          MalformedSubquery.class,
-          NonLeftDeepJoin.class,
-          AllJoin.class);
-
-  static {
-    ((Proj) find(DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);
+  static boolean isDedup(Op op) {
+    return op.kind() == PROJ && ((Proj) op).isDeduplicated();
   }
 
-  static List<Fragment> enumFragments() {
-    final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
-    enumerator.setPruningRules(DEFAULT_PRUNING_RULES);
-    return enumerator.enumerate();
-  }
-
-  static int sizeOf(Op tree) {
+  static int structuralSize(Op tree) {
     if (tree == null) return 0;
 
     int sub = 0;
-    for (Op predecessor : tree.predecessors()) sub += sizeOf(predecessor);
+    for (Op predecessor : tree.predecessors()) sub += structuralSize(predecessor);
     return sub + 1;
   }
 
   static int structuralHash(Op tree) {
-    int h = tree.hashCode();
+    int h = tree.shadowHash();
     for (Op operator : tree.predecessors()) {
       // Input is out of consideration.
       if (operator == null || operator instanceof Input) h = h * 31;
-      else h = h * 31 + structuralHash(tree);
+      else h = h * 31 + structuralHash(operator);
     }
     return h;
   }
@@ -61,7 +41,7 @@ class FragmentUtils {
   static boolean structuralEq(Op tree0, Op tree1) {
     if (tree0 == tree1) return true;
     if (tree0 == null || tree1 == null) return false;
-    if (tree0.kind() != tree1.kind()) return false;
+    if (!tree0.equals(tree1)) return false;
 
     final Op[] prevs0 = tree0.predecessors();
     final Op[] prevs1 = tree1.predecessors();
@@ -74,13 +54,15 @@ class FragmentUtils {
   static int structuralCompare(Op tree0, Op tree1) {
     if (tree0 == tree1) return 0;
 
-    final int sz0 = sizeOf(tree0), sz1 = sizeOf(tree1);
+    final int sz0 = structuralSize(tree0), sz1 = structuralSize(tree1);
     if (sz0 < sz1) return -1;
     if (sz0 > sz1) return 1;
 
     final OperatorType type0 = tree0.kind(), type1 = tree1.kind();
-    if (type0.numPredecessors() < type1.numPredecessors()) return -1;
-    if (type0.numPredecessors() > type1.numPredecessors()) return 1;
+    if (type0.ordinal() < type1.ordinal()) return -1;
+    if (type0.ordinal() > type1.ordinal()) return 1;
+    if (!isDedup(tree0) && isDedup(tree1)) return -1;
+    if (isDedup(tree0) && !isDedup(tree1)) return 1;
 
     for (int i = 0, bound = type0.numPredecessors(); i < bound; ++i) {
       final int cmp = structuralCompare(tree0.predecessors()[i], tree1.predecessors()[i]);
@@ -131,14 +113,14 @@ class FragmentUtils {
   }
 
   /** Fill holes with Input operator and call setFragment on each operator. */
-  static Fragment setupFragment(Fragment fragment) {
+  static Fragment setupFragment(FragmentImpl fragment) {
     for (Hole<Op> hole : gatherHoles(fragment)) hole.fill(mk(OperatorType.INPUT));
     fragment.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(fragment)));
     return fragment;
   }
 
-  static List<Hole<Op>> gatherHoles(Fragment fragment) {
-    if (fragment.root() == null) return singletonList(Hole.ofSetter(fragment::setRoot));
+  static List<Hole<Op>> gatherHoles(FragmentImpl fragment) {
+    if (fragment.root() == null) return singletonList(Hole.ofSetter(fragment::setRoot0));
 
     final List<Hole<Op>> holes = new ArrayList<>();
     fragment.acceptVisitor(OpVisitor.traverse(x -> gatherHoles(x, holes)));
@@ -222,15 +204,18 @@ class FragmentUtils {
     return proj;
   }
 
-  static void alignOutput(PlanNode p0, PlanNode p1) {
+  static boolean alignOutput(PlanNode p0, PlanNode p1) {
     final ValueBag values0 = p0.values(), values1 = p1.values();
-    assert values0.size() == values1.size();
+    if (values0.size() != values1.size()) return false;
+
     for (int i = 0, bound = values0.size(); i < bound; ++i) {
       final Value value0 = values0.get(i);
       final Value value1 = values1.get(i);
       if (value1.expr() != null) value1.setName(value0.name());
       if (value0.expr() != null) value0.setName(value1.name());
     }
+
+    return true;
   }
 
   private static void gatherHoles(Op op, List<Hole<Op>> buffer) {

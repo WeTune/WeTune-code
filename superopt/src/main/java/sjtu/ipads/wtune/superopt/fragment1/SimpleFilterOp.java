@@ -13,7 +13,7 @@ public class SimpleFilterOp extends BaseOp implements SimpleFilter {
 
   @Override
   public boolean accept0(OpVisitor visitor) {
-    return visitor.enterPlainFilter(this);
+    return visitor.enterSimpleFilter(this);
   }
 
   @Override

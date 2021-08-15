@@ -45,7 +45,7 @@ public interface OpVisitor {
 
   default void leaveLimit(Limit op) {}
 
-  default boolean enterPlainFilter(SimpleFilter op) {
+  default boolean enterSimpleFilter(SimpleFilter op) {
     return true;
   }
 
@@ -57,7 +57,7 @@ public interface OpVisitor {
 
   default void leaveProj(Proj op) {}
 
-  default boolean enterSubqueryFilter(InSubFilter op) {
+  default boolean enterInSubFilter(InSubFilter op) {
     return true;
   }
 
