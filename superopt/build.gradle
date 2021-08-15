@@ -4,17 +4,20 @@ dependencies {
     implementation project(":sqlparser")
     implementation project(":stmt")
     implementation project(":prover")
-    implementation('com.google.guava:guava:29.0-jre')
-    implementation('org.apache.commons:commons-lang3:3.10')
+    implementation('com.google.guava:guava:30.1.1-jre')
+    implementation('org.apache.commons:commons-lang3:3.12.0')
     implementation('net.sf.trove4j:trove4j:3.0.3')
     implementation(name: 'z3-4.8.9')
-    implementation('com.zaxxer:HikariCP:4.0.3')
-    implementation('mysql:mysql-connector-java:8.0.21')
+    implementation('com.zaxxer:HikariCP:5.0.0')
+    implementation('mysql:mysql-connector-java:8.0.25')
     implementation('org.postgresql:postgresql:42.2.19')
 }
 
-application {
+task run(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
     mainModule = 'sjtu.ipads.wtune.superopt'
-    mainClass = 'sjtu.ipads.wtune.superopt.Main'
-    applicationDefaultJvmArgs += ["-Dwetune.superopt.outFile=$rootDir/out", "-Dwetune.superopt.errFile=$rootDir/err"]
+    mainClass = 'sjtu.ipads.wtune.superopt.Entry'
+    modularity.inferModulePath = false
+    jvmArgs += ['--module-path', classpath.asPath]
 }
+

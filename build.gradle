@@ -11,36 +11,33 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'application'
 
     sourceCompatibility = JavaVersion.VERSION_16
     targetCompatibility = JavaVersion.VERSION_16
-
 
     repositories {
         flatDir { dirs("$rootDir/lib") }
         mavenCentral()
     }
 
-    compileJava {
+    tasks.withType(JavaCompile) {
         doFirst {
             options.compilerArgs += [
-                    '--module-path', classpath.asPath
+                    '--module-path', classpath.asPath,
+                    '--enable-preview'
             ]
         }
     }
 
-    run {
+    tasks.withType(JavaExec) {
         doFirst {
             environment 'LD_LIBRARY_PATH', "$rootDir/lib/"
+            jvmArgs += ["-Djava.library.path=$rootDir/lib", '--enable-preview']
+            workingDir(rootDir)
         }
     }
 
-    application {
-        applicationDefaultJvmArgs += ["-Djava.library.path=$rootDir/lib", '--enable-preview']
-    }
-
-    test {
+    tasks.withType(Test) {
         systemProperty('java.library.path', "$rootDir/lib/")
         environment('LD_LIBRARY_PATH', "$rootDir/lib/")
         useJUnitPlatform()
@@ -54,14 +51,6 @@ subprojects {
         testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.6.2')
         testRuntimeOnly('org.junit.platform:junit-platform-launcher:1.6.2')
         testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.6.2')
-    }
-
-    task("cleanAll") {
-        dependsOn clean
-    }
-
-    tasks.withType(JavaCompile).each {
-        it.options.compilerArgs.add("--enable-preview")
     }
 
     ext.download = { String url, java.nio.file.Path path, String mod = null ->
@@ -104,12 +93,10 @@ subprojects {
     }
 }
 
-configurations {
-    childJars
-}
-
 task cleanAll {
-    subprojects.each {
-        dependsOn("${it.name}:cleanAll")
+    doFirst {
+        subprojects.each {
+            dependsOn("${it.name}:cleanAll")
+        }
     }
 }

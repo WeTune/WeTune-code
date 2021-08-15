@@ -9,8 +9,10 @@ dependencies {
 
 def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
 
-task downloadDb {
-    download(url, rootDir.toPath().resolve("wtune_data").resolve("wtune.db"))
-}
+def downloadTask = tasks.register("downloadDb", {
+    doFirst {
+        download(url, rootDir.toPath().resolve("wtune_data").resolve("wtune.db"))
+    }
+})
 
-test.dependsOn(downloadDb)
+test.dependsOn(downloadTask)
