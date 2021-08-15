@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.fragment1;
+package sjtu.ipads.wtune.superopt.runner;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
@@ -21,7 +21,7 @@ import static sjtu.ipads.wtune.prover.logic.LogicProver.Result.EQ;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
-public class Main {
+public class RuleRegressionTest {
   private static final int[] TARGETS = {};
 
   private static int test0(int i, String line) {
@@ -55,12 +55,11 @@ public class Main {
     System.out.println(result);
 
     return result ? 1 : 0;
-    //    return -2;
   }
 
   public static void main(String[] args) throws IOException {
     final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
-    final BiFunction<Integer, String, Integer> test = Main::test0;
+    final BiFunction<Integer, String, Integer> test = RuleRegressionTest::test0;
     final TIntList failures = new TIntArrayList(80);
 
     int numSuccess = 0, numFailure = 0, numSkip = 0;

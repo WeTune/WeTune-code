@@ -1,11 +1,10 @@
-package sjtu.ipads.wtune.superopt.enumeration;
+package sjtu.ipads.wtune.superopt.constraint;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.fragment1.*;
 
 import java.util.AbstractList;

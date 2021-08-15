@@ -34,7 +34,7 @@ class FragmentUtils {
     ((Proj) find(DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);
   }
 
-  static List<Fragment> enumerate() {
+  static List<Fragment> enumFragments() {
     final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
     enumerator.setPruningRules(DEFAULT_PRUNING_RULES);
     return enumerator.enumerate();

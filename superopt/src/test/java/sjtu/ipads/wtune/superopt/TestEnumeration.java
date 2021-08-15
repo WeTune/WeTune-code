@@ -2,12 +2,10 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.superopt.enumeration.EnumerationTree;
 import sjtu.ipads.wtune.superopt.fragment1.Fragment;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,7 +13,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.mkLogicCtx;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
-import static sjtu.ipads.wtune.superopt.enumeration.EnumerationSupport.mkEnumTree;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
 @Tag("slow")
@@ -33,10 +31,7 @@ public class TestEnumeration {
   private static void doTest(String fragment0, String fragment1, String... expectation) {
     final Fragment f0 = Fragment.parse(fragment0, null);
     final Fragment f1 = Fragment.parse(fragment1, null);
-    final EnumerationTree tree = mkEnumTree(f0, f1, mkLogicCtx());
-    tree.enumerate();
-    final List<Substitution> results =
-        tree.results().stream().map(it -> Substitution.mk(f0, f1, it)).collect(Collectors.toList());
+    final List<Substitution> results = enumConstraints(f0, f1, mkLogicCtx());
 
     if (echo) results.forEach(TestEnumeration::printReadable);
 

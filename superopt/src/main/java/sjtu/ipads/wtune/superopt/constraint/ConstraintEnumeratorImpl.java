@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.enumeration;
+package sjtu.ipads.wtune.superopt.constraint;
 
 import com.google.common.collect.Multimap;
 import gnu.trove.list.TIntList;
@@ -8,7 +8,6 @@ import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.fragment1.Fragment;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
@@ -26,7 +25,7 @@ import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
 
-class EnumerationTreeImpl implements EnumerationTree {
+class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private static final int EQ = 0, CONFLICT = 1, INCOMPLETE = -1;
   private final Fragment f0, f1;
   private final ConstraintsIndex constraints;
@@ -37,7 +36,8 @@ class EnumerationTreeImpl implements EnumerationTree {
   private final List<Enumerator> enumerators;
   private SymbolNaming naming;
 
-  EnumerationTreeImpl(Fragment f0, Fragment f1, ConstraintsIndex constraints, LogicCtx logicCtx) {
+  ConstraintEnumeratorImpl(
+      Fragment f0, Fragment f1, ConstraintsIndex constraints, LogicCtx logicCtx) {
     this.f0 = f0;
     this.f1 = f1;
     this.constraints = constraints;
@@ -52,8 +52,9 @@ class EnumerationTreeImpl implements EnumerationTree {
   }
 
   @Override
-  public void enumerate() {
+  public List<List<Constraint>> enumerate() {
     head(enumerators).enumerate();
+    return results();
   }
 
   @Override

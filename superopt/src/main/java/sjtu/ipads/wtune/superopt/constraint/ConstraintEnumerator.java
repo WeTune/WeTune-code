@@ -1,11 +1,11 @@
-package sjtu.ipads.wtune.superopt.enumeration;
+package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 
 import java.util.List;
 
-public interface EnumerationTree {
-  void enumerate();
+public interface ConstraintEnumerator {
+  List<List<Constraint>> enumerate();
 
   List<List<Constraint>> results();
 
