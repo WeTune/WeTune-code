@@ -17,3 +17,4 @@ out
 data/
 *.log
 *.tar.gz
+nohup.out

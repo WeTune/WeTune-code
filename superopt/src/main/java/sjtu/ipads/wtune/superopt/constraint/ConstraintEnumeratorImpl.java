@@ -55,6 +55,11 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   }
 
   @Override
+  public void close() {
+      logicCtx.close();
+  }
+
+  @Override
   public void setTimeout(long timeout) {
     if (timeout >= 0) this.timeout = timeout;
   }
