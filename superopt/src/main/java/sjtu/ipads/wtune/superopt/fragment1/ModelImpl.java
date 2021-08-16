@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan1.Expr;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.Value;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 class ModelImpl implements Model {
   private final ModelImpl base;
@@ -32,7 +34,13 @@ class ModelImpl implements Model {
 
   @Override
   public boolean assign(Symbol attrs, List<Value> values) {
-    assignments.put(attrs, values);
+    assignments.put(attrs, Pair.of(values, null));
+    return true;
+  }
+
+  @Override
+  public boolean assign(Symbol attrs, List<Value> inValues, List<Value> outValues) {
+    assignments.put(attrs, Pair.of(inValues, outValues));
     return true;
   }
 
@@ -47,8 +55,14 @@ class ModelImpl implements Model {
   }
 
   @Override
-  public List<Value> interpretAttrs(Symbol pred) {
-    return get0(pred);
+  public List<Value> interpretInAttrs(Symbol attrs) {
+    final Pair<List<Value>, List<Value>> pair = get0(attrs);
+    return pair == null ? null : pair.getLeft();
+  }
+
+  @Override
+  public Pair<List<Value>, List<Value>> interpretAttrs(Symbol attrs) {
+    return get0(attrs);
   }
 
   @Override

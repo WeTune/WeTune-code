@@ -83,6 +83,19 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
+  public JoinNode flip(PlanContext ctx) {
+    checkContextSet();
+
+    final JoinNodeImpl copy = new JoinNodeImpl(type, condition, isEquiJoin, rhsRefs, lhsRefs);
+    copy.setContext(ctx);
+
+    ctx.registerRefs(copy, refs());
+    for (Ref ref : refs()) ctx.setRef(ref, this.context.deRef(ref));
+
+    return copy;
+  }
+
+  @Override
   public void setLhsRefs(RefBag lhsRefs) {
     if (!isEquiJoin) throw new IllegalStateException("LHS refs is non-sense for non-equi join");
     if (this.lhsRefs != null) throw new IllegalStateException("LHS ref is immutable once set");

@@ -18,10 +18,16 @@ public interface Substitution {
 
   SymbolNaming naming();
 
+  void resetNaming();
+
   String canonicalStringify();
 
   static Substitution parse(String str) {
-    return SubstitutionImpl.parse(str);
+    return parse(str, false);
+  }
+
+  static Substitution parse(String str, boolean backwardCompatible) {
+    return SubstitutionImpl.parse(str, backwardCompatible);
   }
 
   static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {

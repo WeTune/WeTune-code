@@ -30,7 +30,7 @@ public interface SimpleFilter extends Filter {
     final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
 
     final Expr predicate = m.interpretPred(predicate());
-    final List<Value> values = bindValues(m.interpretAttrs(attrs()), predecessor);
+    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor);
     final List<Ref> refs = listMap(values, Value::selfish);
     final SimpleFilterNode f = SimpleFilterNode.mk(predicate, RefBag.mk(refs));
 

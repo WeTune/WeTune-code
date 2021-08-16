@@ -2,9 +2,16 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
 
 class SymbolNamingImpl implements SymbolNaming {
   private final BiMap<Symbol, String> names;
+  private final List<Pair<String, Symbol>> extraNaming;
   private final NamingStrategy tableNaming, attrsNaming, predNaming;
 
   SymbolNamingImpl() {
@@ -12,6 +19,7 @@ class SymbolNamingImpl implements SymbolNaming {
     tableNaming = new NamingStrategyImpl();
     attrsNaming = new NamingStrategyImpl();
     predNaming = new NamingStrategyImpl();
+    extraNaming = new ArrayList<>(2);
   }
 
   @Override
@@ -30,7 +38,8 @@ class SymbolNamingImpl implements SymbolNaming {
 
   @Override
   public void setName(Symbol symbol, String name) {
-    names.put(symbol, name);
+    if (!names.containsKey(symbol)) names.put(symbol, name);
+    else extraNaming.add(Pair.of(name, symbol));
   }
 
   @Override
@@ -40,7 +49,10 @@ class SymbolNamingImpl implements SymbolNaming {
 
   @Override
   public Symbol symbolOf(String name) {
-    return names.inverse().get(name);
+    final Symbol symbol = names.inverse().get(name);
+    if (symbol != null) return symbol;
+    final Pair<String, Symbol> pair = find(extraNaming, it -> name.equals(it.getKey()));
+    return pair == null ? null : pair.getRight();
   }
 
   private interface NamingStrategy {

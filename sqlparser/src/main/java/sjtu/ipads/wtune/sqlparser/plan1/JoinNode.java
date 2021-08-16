@@ -11,6 +11,8 @@ public interface JoinNode extends PlanNode {
 
   RefBag rhsRefs();
 
+  JoinNode flip(PlanContext context);
+
   void setLhsRefs(RefBag lhsRefs);
 
   void setRhsRefs(RefBag rhsRefs);

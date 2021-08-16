@@ -31,7 +31,7 @@ public interface InSubFilter extends Filter {
   default PlanNode instantiate(Model m, PlanContext ctx) {
     final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
     final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
-    final List<Value> values = bindValues(m.interpretAttrs(attrs()), predecessor0);
+    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor0);
     final List<Ref> refs = listMap(values, Value::selfish);
     final InSubFilterNode f = InSubFilterNode.mk(RefBag.mk(refs));
 

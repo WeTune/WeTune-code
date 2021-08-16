@@ -25,12 +25,17 @@ class SubstitutionImpl implements Substitution {
   }
 
   static Substitution parse(String str) {
+    return parse(str, false);
+  }
+
+  static Substitution parse(String str, boolean backwardCompatible) {
     final String[] split = str.split("\\|");
     if (split.length != 3)
       throw new IllegalArgumentException("invalid serialized substitution: " + str);
 
     final SymbolNaming naming = SymbolNaming.mk();
-    final Fragment _0 = Fragment.parse(split[0], naming), _1 = Fragment.parse(split[1], naming);
+    final Fragment _0 = Fragment.parse(split[0], naming, backwardCompatible);
+    final Fragment _1 = Fragment.parse(split[1], naming, backwardCompatible);
     final List<Constraint> constraints =
         listMap(split[2].split(";"), it -> Constraint.parse(it, naming));
 
@@ -74,6 +79,11 @@ class SubstitutionImpl implements Substitution {
       naming.name(_1.symbols());
     }
     return naming;
+  }
+
+  @Override
+  public void resetNaming() {
+    naming = null;
   }
 
   @Override

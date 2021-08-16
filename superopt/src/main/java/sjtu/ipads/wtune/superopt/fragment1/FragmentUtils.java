@@ -84,7 +84,7 @@ class FragmentUtils {
           builder.append('<').append(naming.nameOf(((Input) tree).table())).append('>');
           break;
         case PROJ:
-          builder.append('<').append(naming.nameOf(((Proj) tree).inAttrs())).append('>');
+          builder.append('<').append(naming.nameOf(((Proj) tree).attrs())).append('>');
           break;
         case SIMPLE_FILTER:
           builder.append('<').append(naming.nameOf(((SimpleFilter) tree).predicate()));
@@ -128,7 +128,7 @@ class FragmentUtils {
     return holes;
   }
 
-  static void bindNames(Op op, String[] names, SymbolNaming naming) {
+  static void bindNames(Op op, String[] names, SymbolNaming naming, boolean backwardCompatible) {
     switch (op.kind()) {
       case INPUT:
         naming.setName(((Input) op).table(), names[1]);
@@ -146,11 +146,19 @@ class FragmentUtils {
         naming.setName(((InSubFilter) op).attrs(), names[1]);
         break;
       case PROJ:
-        naming.setName(((Proj) op).inAttrs(), names[1]);
+        naming.setName(((Proj) op).attrs(), names[1]);
+        if (backwardCompatible) {
+          final int ordinal = Integer.parseInt(names[1].substring(1));
+          naming.setName(((Proj) op).attrs(), String.valueOf(names[1].charAt(0)) + (ordinal + 1));
+        }
         break;
       default:
         throw new UnsupportedOperationException();
     }
+  }
+
+  static void bindNames(Op op, String[] names, SymbolNaming naming) {
+    bindNames(op, names, naming, false);
   }
 
   static List<Value> bindValues(List<Value> values, PlanNode predecessor) {

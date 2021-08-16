@@ -136,14 +136,14 @@ class ConstraintsIndex extends AbstractList<Constraint> {
       Multimap<Symbol, Symbol> sources,
       List<Constraint> buffer) {
     if (lhsSource.kind() == ATTRS) {
-      final Symbol referredAttrs = ((Proj) symbols.ownerOf(lhsSource)).inAttrs();
+      final Symbol referredAttrs = ((Proj) symbols.ownerOf(lhsSource)).attrs();
       for (Symbol actualSource : sources.get(referredAttrs))
         mkReferences0(actualSource, referredAttrs, rhsSource, rhsAttr, symbols, sources, buffer);
       return;
     }
 
     if (rhsSource.kind() == ATTRS) {
-      final Symbol referredAttrs = ((Proj) symbols.ownerOf(rhsSource)).inAttrs();
+      final Symbol referredAttrs = ((Proj) symbols.ownerOf(rhsSource)).attrs();
       for (Symbol actualSource : sources.get(referredAttrs))
         mkReferences0(lhsSource, lhsAttr, actualSource, referredAttrs, symbols, sources, buffer);
       return;
@@ -289,10 +289,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
           }
         case PROJ:
           {
-            final Symbol attrs0 = symbols.symbolAt(op, ATTRS, 0);
-            final Symbol attrs1 = symbols.symbolAt(op, ATTRS, 1);
-            sources.putAll(attrs0, lhs);
-            return singletonList(attrs1);
+            final Symbol attrs = symbols.symbolAt(op, ATTRS, 0);
+            sources.putAll(attrs, lhs);
+            return singletonList(attrs);
           }
         default:
           throw new IllegalArgumentException();

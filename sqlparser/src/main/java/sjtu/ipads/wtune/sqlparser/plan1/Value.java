@@ -2,6 +2,8 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
+import java.util.Collections;
+
 public interface Value {
   String qualification();
 
@@ -24,6 +26,10 @@ public interface Value {
 
   default Ref selfish() {
     return new RefImpl(qualification(), name());
+  }
+
+  default Value wrapAsExprValue() {
+    return mk(qualification(), name(), Expr.mk(RefBag.mk(Collections.singletonList(selfish()))));
   }
 
   static Value mk(String qualification, String name, Expr expr) {

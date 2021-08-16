@@ -4,6 +4,11 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface PlanSupport {
+  static PlanNode planRootOf(PlanNode node) {
+    if (node.successor() == null) return node;
+    else return planRootOf(node.successor());
+  }
+
   static PlanNode buildPlan(ASTNode ast) {
     return PlanBuilder.buildPlan(ast);
   }
@@ -38,7 +43,11 @@ public interface PlanSupport {
   }
 
   static PlanNode copyPlan(PlanNode root) {
-    return root.copy(PlanContext.mk(root.context().schema()));
+    return copyPlan(root, PlanContext.mk(root.context().schema()));
+  }
+
+  static PlanNode copyPlan(PlanNode root, PlanContext ctx) {
+    return root.copy(ctx);
   }
 
   static boolean isDependentRef(Ref ref, PlanContext ctx) {

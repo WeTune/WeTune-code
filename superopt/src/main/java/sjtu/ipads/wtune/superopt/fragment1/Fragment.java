@@ -32,4 +32,8 @@ public interface Fragment extends Copyable<Fragment> {
   static Fragment parse(String str, SymbolNaming naming) {
     return FragmentImpl.parse(str, naming);
   }
+
+  static Fragment parse(String str, SymbolNaming naming, boolean backwardCompatible) {
+    return FragmentImpl.parse(str, naming, backwardCompatible);
+  }
 }

@@ -1,8 +1,10 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment1.*;
+import sjtu.ipads.wtune.superopt.fragment1.Complexity;
+import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment1.Symbol;
+import sjtu.ipads.wtune.superopt.fragment1.Symbols;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,8 +25,7 @@ public class SubstitutionSupport {
 
     for (Symbol.Kind kind : Symbol.Kind.values())
       for (Symbol symbol : symbols.symbolsOf(kind))
-        if (!isProjOutAttrs(symbol, symbols)
-            && none(constraints.eqClassOf(symbol), it -> it.ctx() != symbol.ctx())) {
+        if (none(constraints.eqClassOf(symbol), it -> it.ctx() != symbol.ctx())) {
           return false;
         }
 
@@ -49,12 +50,5 @@ public class SubstitutionSupport {
 
     bank.removeAll(duplicated);
     return bank;
-  }
-
-  private static boolean isProjOutAttrs(Symbol symbol, Symbols symbols) {
-    if (symbol.kind() != Symbol.Kind.ATTRS) return false;
-
-    final Op owner = symbols.ownerOf(symbol);
-    return owner.kind() == OperatorType.PROJ && ((Proj) owner).outAttrs() == symbol;
   }
 }

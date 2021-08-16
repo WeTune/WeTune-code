@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.common.utils.Showable;
+import sjtu.ipads.wtune.common.utils.TreeNode;
 import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-public interface PlanNode extends TypedTreeNode<OperatorType>, Showable {
+public interface PlanNode extends TypedTreeNode<OperatorType>, TreeNode<PlanNode>, Showable {
   ValueBag values();
 
   RefBag refs();

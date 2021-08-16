@@ -17,6 +17,7 @@ import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.NameSequence.mkIndexed;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
@@ -243,55 +244,52 @@ class PlanTranslator {
 
   private Model mkModel(Schema schema) {
     final Model model = Model.mk();
-
-    final Map<Symbol, InputNode> inputs = new HashMap<>(tableDescs.size());
-
-    for (var pair : tableDescs.entrySet()) {
-      final Table table = schema.table(pair.getValue().name);
-      final InputNode input = InputNode.mk(table, table.name());
-      model.assign(pair.getKey(), input);
-      inputs.put(pair.getKey(), input);
-    }
-
-    for (var pair : attrsDescs.entrySet()) {
-      final AttrsDesc desc = pair.getValue();
-      final Symbol attrsSym = pair.getKey();
-      final Symbol src = constraints.sourceOf(attrsSym);
-
-      if (src == null) {
-        final Value value = Value.mk(queryNameSeq.next(), desc.name, Expr.mk(mkColRef()));
-        model.assign(attrsSym, singletonList(value));
-
-      } else if (src.kind() == TABLE) {
-        final InputNode input = inputs.get(src);
-        final String attrName = desc.name;
-        final Value value = find(input.values(), it -> it.name().equals(attrName));
-        assert value != null;
-        model.assign(attrsSym, singletonList(value));
-      }
-    }
-
-    for (var pair : attrsDescs.entrySet()) {
-      final Symbol attrsSym = pair.getKey();
-      if (model.interpretAttrs(attrsSym) == null) {
-        final Symbol src = constraints.sourceOf(attrsSym);
-        assert src != null && src.kind() == ATTRS;
-        model.assign(attrsSym, model.interpretAttrs(src));
-      }
-    }
-
-    for (var pair : predDescs.entrySet()) {
-      final ASTNode name = ASTNode.node(NodeType.NAME_2);
-      name.set(NAME_2_1, pair.getValue().name);
-
-      final ASTNode func = ASTNode.expr(ExprKind.FUNC_CALL);
-      func.set(FUNC_CALL_NAME, name);
-      func.set(FUNC_CALL_ARGS, singletonList(mkColRef()));
-
-      model.assign(pair.getKey(), Expr.mk(func));
-    }
-
+    for (Symbol symbol : tableDescs.keySet()) mkTable(symbol, schema, model);
+    for (Symbol symbol : attrsDescs.keySet()) mkAttrs(symbol, model);
+    for (Symbol symbol : predDescs.keySet()) mkPred(symbol, model);
     return model;
+  }
+
+  private void mkTable(Symbol sym, Schema schema, Model model) {
+    final Table table = schema.table(tableDescs.get(sym).name);
+    model.assign(sym, InputNode.mk(table, table.name()));
+  }
+
+  private void mkAttrs(Symbol sym, Model model) {
+    if (model.interpretInAttrs(sym) != null) return;
+
+    final AttrsDesc desc = attrsDescs.get(sym);
+    final Symbol src = constraints.sourceOf(sym);
+
+    if (src.kind() == TABLE) {
+      final InputNode input = ((InputNode) model.interpretTable(src));
+      final String attrName = desc.name;
+      final Value inValue = find(input.values(), it -> it.name().equals(attrName));
+      assert inValue != null;
+      final Value outValue = inValue.wrapAsExprValue();
+      outValue.setQualification(queryNameSeq.next());
+
+      model.assign(sym, singletonList(inValue), singletonList(outValue));
+    } else {
+      mkAttrs(src, model);
+      final List<Value> inValue = model.interpretAttrs(src).getRight();
+      final List<Value> outValue = listMap(inValue, Value::wrapAsExprValue);
+      final String qualification = queryNameSeq.next();
+      outValue.forEach(it -> it.setQualification(qualification));
+
+      model.assign(sym, inValue, outValue);
+    }
+  }
+
+  private void mkPred(Symbol sym, Model model) {
+    final ASTNode name = ASTNode.node(NodeType.NAME_2);
+    name.set(NAME_2_1, predDescs.get(sym).name);
+
+    final ASTNode func = ASTNode.expr(ExprKind.FUNC_CALL);
+    func.set(FUNC_CALL_NAME, name);
+    func.set(FUNC_CALL_ARGS, singletonList(mkColRef()));
+
+    model.assign(sym, Expr.mk(func));
   }
 
   private static ASTNode mkColRef() {
@@ -328,7 +326,7 @@ class PlanTranslator {
     // So we add a constraint AttrsEq(c0,c1) in such case (for simplicity).
     fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints1));
     // For Proj0.inAttrs = Proj1.inAttrs, add Proj0.outAttrs = Proj1.outAttrs
-    fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints2));
+    //    fragment.root().acceptVisitor(OpVisitor.traverse(this::completeConstraints2));
   }
 
   private void completeConstraints0(Op op) {
@@ -338,20 +336,7 @@ class PlanTranslator {
   private void completeConstraints1(Op op) {
     if (op.kind() != PROJ || op.successor() == null) return;
 
-    propagateAttrsBound(op.successor(), op, ((Proj) op).inAttrs());
-  }
-
-  private void completeConstraints2(Op op) {
-    if (op.kind() != PROJ) return;
-
-    final Proj proj = (Proj) op;
-
-    for (Symbol symbol : constraints.eqClassOf(proj.inAttrs())) {
-      final Op owner = symbols.ownerOf(symbol);
-      if (owner != op && owner.kind() == PROJ) {
-        constraints.add(Constraint.mk(AttrsEq, proj.outAttrs(), ((Proj) owner).outAttrs()));
-      }
-    }
+    propagateAttrsBound(op.successor(), op, ((Proj) op).attrs());
   }
 
   private void propagateAttrsSource(Op op, Op prev, Symbol source) {
@@ -360,7 +345,7 @@ class PlanTranslator {
     switch (op.kind()) {
       case PROJ:
         {
-          final Symbol attrs = ((Proj) op).inAttrs();
+          final Symbol attrs = ((Proj) op).attrs();
           if (constraints.sourceOf(attrs) == null)
             constraints.add(Constraint.mk(AttrsFrom, attrs, source));
           propagateAttrsSource(op.successor(), op, source);
@@ -404,7 +389,7 @@ class PlanTranslator {
     switch (op.kind()) {
       case PROJ:
         {
-          final Symbol attrs = ((Proj) op).inAttrs();
+          final Symbol attrs = ((Proj) op).attrs();
           if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
             constraints.add(Constraint.mk(AttrsEq, attrs, bound));
           return;

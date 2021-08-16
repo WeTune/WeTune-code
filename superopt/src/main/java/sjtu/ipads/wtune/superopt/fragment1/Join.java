@@ -31,8 +31,8 @@ public interface Join extends Op {
     final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
     final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
 
-    final List<Value> lhsValues = bindValues(m.interpretAttrs(lhsAttrs()), predecessor0);
-    final List<Value> rhsValues = bindValues(m.interpretAttrs(rhsAttrs()), predecessor1);
+    final List<Value> lhsValues = bindValues(m.interpretInAttrs(lhsAttrs()), predecessor0);
+    final List<Value> rhsValues = bindValues(m.interpretInAttrs(rhsAttrs()), predecessor1);
     final List<Ref> lhsRefs = listMap(lhsValues, Value::selfish);
     final List<Ref> rhsRefs = listMap(rhsValues, Value::selfish);
     final JoinNode join = JoinNode.mk(kind(), RefBag.mk(lhsRefs), RefBag.mk(rhsRefs));

@@ -50,12 +50,12 @@ class SymbolsImpl implements Symbols {
   public void bindSymbol(Op op) {
     switch (op.kind()) {
       case INPUT -> add(op, Symbol.Kind.TABLE);
-      case IN_SUB_FILTER -> add(op, Symbol.Kind.ATTRS);
+      case IN_SUB_FILTER, PROJ -> add(op, Symbol.Kind.ATTRS);
       case SIMPLE_FILTER -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.PRED);
       }
-      case INNER_JOIN, LEFT_JOIN, PROJ -> {
+      case INNER_JOIN, LEFT_JOIN -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.ATTRS);
       }
@@ -67,6 +67,7 @@ class SymbolsImpl implements Symbols {
     switch (op.kind()) {
       case INPUT -> add(op, ((Input) op).table());
       case IN_SUB_FILTER -> add(op, ((InSubFilter) op).attrs());
+      case PROJ -> add(op, ((Proj) op).attrs());
       case SIMPLE_FILTER -> {
         add(op, ((SimpleFilter) op).attrs());
         add(op, ((SimpleFilter) op).predicate());
@@ -74,10 +75,6 @@ class SymbolsImpl implements Symbols {
       case INNER_JOIN, LEFT_JOIN -> {
         add(op, ((Join) op).lhsAttrs());
         add(op, ((Join) op).rhsAttrs());
-      }
-      case PROJ -> {
-        add(op, ((Proj) op).inAttrs());
-        add(op, ((Proj) op).outAttrs());
       }
     }
   }

@@ -28,6 +28,10 @@ class FragmentImpl implements Fragment {
   }
 
   static Fragment parse(String str, SymbolNaming naming) {
+    return parse(str, naming, false);
+  }
+
+  static Fragment parse(String str, SymbolNaming naming, boolean backwardCompatible) {
     final String[] opStrs = str.split("[(),]+");
     final Deque<Op> operators = new ArrayDeque<>(opStrs.length);
     final Map<Op, String[]> names = naming == null ? null : new IdentityHashMap<>();
@@ -43,7 +47,7 @@ class FragmentImpl implements Fragment {
     }
 
     final Fragment fragment = setupFragment(new FragmentImpl(operators.pop()));
-    if (names != null) names.forEach((op, ns) -> bindNames(op, ns, naming));
+    if (names != null) names.forEach((op, ns) -> bindNames(op, ns, naming, backwardCompatible));
 
     return fragment;
   }
