@@ -57,6 +57,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   @Override
   public void close() {
       logicCtx.close();
+      System.gc();
   }
 
   @Override
