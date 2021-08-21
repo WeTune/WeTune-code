@@ -33,9 +33,9 @@ public class TestJoinTreeReorder {
     assertFalse(linearJoinTree.isEligibleRoot(1));
     assertTrue(linearJoinTree.isEligibleRoot(2));
     assertTrue(linearJoinTree.isEligibleRoot(3));
-    final PlanNode newPlan0 = treeRootOf(linearJoinTree.mkRootedBy(0));
-    final PlanNode newPlan1 = treeRootOf(linearJoinTree.mkRootedBy(2));
-    final PlanNode newPlan2 = treeRootOf(linearJoinTree.mkRootedBy(3));
+    final PlanNode newPlan0 = treeRootOf(linearJoinTree.mkRootedByJoinee(0));
+    final PlanNode newPlan1 = treeRootOf(linearJoinTree.mkRootedByJoinee(2));
+    final PlanNode newPlan2 = treeRootOf(linearJoinTree.mkRootedByJoinee(3));
 
     assertEquals(
         "SELECT `a`.`i` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`y` = `c`.`u` INNER JOIN `d` AS `d` ON `b`.`z` = `d`.`p` INNER JOIN `a` AS `a` ON `a`.`i` = `b`.`x`",
@@ -60,9 +60,9 @@ public class TestJoinTreeReorder {
 
     assertEquals(
         "SELECT * FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `d` AS `d` ON `b`.`z` = `d`.`p` LEFT JOIN `c` AS `c` ON `b`.`y` = `c`.`u`",
-        translateAsAst(linearJoinTree.mkRootedBy(2)).toString());
+        translateAsAst(linearJoinTree.mkRootedByJoinee(2)).toString());
     assertEquals(
         "SELECT * FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` LEFT JOIN `c` AS `c` ON `b`.`y` = `c`.`u` INNER JOIN `d` AS `d` ON `b`.`z` = `d`.`p`",
-        translateAsAst(linearJoinTree.mkRootedBy(3)).toString());
+        translateAsAst(linearJoinTree.mkRootedByJoinee(3)).toString());
   }
 }

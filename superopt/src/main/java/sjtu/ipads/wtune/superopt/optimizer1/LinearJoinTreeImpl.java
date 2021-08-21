@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Integer.max;
-import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
+import static sjtu.ipads.wtune.common.utils.Commons.listSwap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceLocal;
@@ -46,8 +46,13 @@ class LinearJoinTreeImpl implements LinearJoinTree {
   }
 
   @Override
-  public JoinNode rootJoiner() {
-    return elemAt(joiners, -1);
+  public List<JoinNode> joiners() {
+    return joiners;
+  }
+
+  @Override
+  public List<PlanNode> joinees() {
+    return joinees;
   }
 
   @Override
@@ -70,20 +75,23 @@ class LinearJoinTreeImpl implements LinearJoinTree {
   }
 
   @Override
-  public JoinNode mkRootedBy(int joineeIndex) {
+  public JoinNode mkRootedByJoinee(int joineeIndex) {
     if (joineeIndex == joinees.size() - 1) return joiners.get(joiners.size() - 1);
 
     final JoinNode oldJoinRoot = rootJoiner();
     final PlanContext newCtx = oldJoinRoot.context().dup();
 
     final List<JoinNode> joiners;
-    if (joineeIndex > 0) joiners = this.joiners;
-    else {
+    final List<PlanNode> joinees;
+    if (joineeIndex > 0) {
+      joiners = this.joiners;
+      joinees = this.joinees;
+    } else {
       joiners = new ArrayList<>(this.joiners);
-      final PlanNode newFst = replaceLocal(newCtx, joiners.get(0), joinees.get(1), joinees.get(0));
-      final PlanNode newSnd = replaceLocal(newCtx, joiners.get(1), joinees.get(1));
-      joiners.set(0, ((JoinNode) newFst).flip(null));
-      joiners.set(1, ((JoinNode) newSnd));
+      joinees = new ArrayList<>(this.joinees);
+      final PlanNode newHead = replaceLocal(newCtx, joiners.get(0), joinees.get(1), joinees.get(0));
+      joiners.set(0, ((JoinNode) newHead).flip(null));
+      listSwap(joinees, 0, 1);
     }
 
     final int newRootJoinerIndex = max(0, joineeIndex - 1);
@@ -96,6 +104,7 @@ class LinearJoinTreeImpl implements LinearJoinTree {
         template =
             template.bindJointPoint(template.root().predecessors()[0], joiners.get(joinerIndex));
       }
+    template.bindJointPoint(template.root().predecessors()[0], joinees.get(0));
 
     return ((JoinNode) displaceGlobal(oldJoinRoot, scaffold.instantiate(), false));
   }

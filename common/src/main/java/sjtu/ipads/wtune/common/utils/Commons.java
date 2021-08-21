@@ -219,6 +219,13 @@ public interface Commons {
     return arr;
   }
 
+  static <T> List<T> listSwap(List<T> list, int idx0, int idx1) {
+    final T e0 = list.get(idx0);
+    list.set(idx0, list.get(idx1));
+    list.set(idx1, e0);
+    return list;
+  }
+
   static <T> List<T> removeIf(List<T> xs, Predicate<T> pred) {
     final List<T> ret = new ArrayList<>();
     // so dirty, but efficient

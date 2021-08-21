@@ -45,7 +45,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   }
 
   @Override
-  public Model derive() {
+  public ConstraintAwareModel derive() {
     return new ConstraintAwareModelImpl(this, plan, constraints);
   }
 
@@ -148,7 +148,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     if (!fk.refColumns().equals(resolveSourceColumns(referredAttrs))) return false;
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
-    final PlanNode surface = interpretTable(reference.symbols()[1]);
+    final PlanNode surface = interpretTable(reference.symbols()[0]);
     if (surface == null) return true;
 
     final PlanNode inputNode = plan.ownerOf(plan.sourceOf(referredAttrs.get(0)));
