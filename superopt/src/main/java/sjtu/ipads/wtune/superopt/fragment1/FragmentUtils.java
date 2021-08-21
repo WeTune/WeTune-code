@@ -2,7 +2,10 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan1.Value;
+import sjtu.ipads.wtune.sqlparser.plan1.ValueBag;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
@@ -11,9 +14,8 @@ import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.wrapWildcardProj;
 import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
 
 class FragmentUtils {
@@ -189,7 +191,7 @@ class FragmentUtils {
 
   static boolean isFragment(PlanNode node) {
     // Check if the node is a complete query.
-    // Specifically, check if the root node is Union/Proj
+    // Specifically, check if the root node is not Union/Proj.
     // (ignore Sort/Limit)
     final OperatorType type = node.kind();
     return type != UNION
@@ -198,19 +200,8 @@ class FragmentUtils {
   }
 
   static PlanNode wrapFragment(PlanNode plan) {
-    if (!isFragment(plan)) return plan;
-
-    // wrap a fragment plan with a outer Proj
-    final ProjNode proj = ProjNode.mkWildcard(plan.values());
-    final PlanContext ctx = PlanContext.mk(plan.context().schema());
-
-    proj.setContext(ctx);
-    proj.setPredecessor(0, copyTree(plan, ctx));
-    ctx.registerRefs(proj, proj.refs());
-    ctx.registerValues(proj, proj.values());
-    zipForEach(proj.refs(), plan.values(), ctx::setRef);
-
-    return proj;
+    if (isFragment(plan)) return wrapWildcardProj(plan);
+    else return plan;
   }
 
   static boolean alignOutput(PlanNode p0, PlanNode p1) {

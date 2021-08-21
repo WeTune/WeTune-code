@@ -94,7 +94,7 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("InSub{");
     stringifyRefs(builder);
     builder.append('}');

@@ -64,14 +64,20 @@ abstract class PlanNodeBase implements PlanNode {
 
   @Override
   public void freeze() {
-    stringifyCache = stringify(new StringBuilder()).toString();
+    for (PlanNode predecessor : predecessors) predecessor.freeze();
+    stringifyCache = stringify0(new StringBuilder()).toString();
   }
 
   @Override
   public String toString() {
     if (stringifyCache != null) return stringifyCache;
+    return stringify0(new StringBuilder()).toString();
+  }
 
-    return stringify(new StringBuilder()).toString();
+  @Override
+  public StringBuilder stringify(StringBuilder builder) {
+    if (stringifyCache != null) return builder.append(stringifyCache);
+    else return stringify0(builder);
   }
 
   protected void checkContextSet() {
@@ -106,4 +112,6 @@ abstract class PlanNodeBase implements PlanNode {
         });
     builder.append(')');
   }
+
+  protected abstract StringBuilder stringify0(StringBuilder builder);
 }

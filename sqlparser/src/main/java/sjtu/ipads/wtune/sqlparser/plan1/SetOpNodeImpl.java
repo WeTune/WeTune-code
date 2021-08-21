@@ -39,7 +39,7 @@ class SetOpNodeImpl extends PlanNodeBase implements SetOpNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append(kind().text());
     if (distinct) builder.append("{distinct}");
     stringifyChildren(builder);

@@ -13,6 +13,8 @@ public interface JoinNode extends PlanNode {
 
   JoinNode flip(PlanContext context); // If `context` is null, do in-place. Otherwise, make a copy.
 
+  void setJoinType(OperatorType type);
+
   void setLhsRefs(RefBag lhsRefs);
 
   void setRhsRefs(RefBag rhsRefs);

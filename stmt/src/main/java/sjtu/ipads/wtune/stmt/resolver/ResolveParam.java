@@ -1,60 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CAST_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CAST_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_ARGS;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.FUNC_CALL_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.MATCH_COLS;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.SYMBOL_TEXT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_MIDDLE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TERNARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NAME_2_1;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.Category.INTERVAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.FUNC_CALL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.NOT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.UNARY_MINUS;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateOtherSide;
-import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ADD;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ARRAY_ELEMENT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.COLUMN_VALUE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DECREASE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIRECT_VALUE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIVIDE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.GUESS;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INCREASE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVERSE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVOKE_AGG;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INVOKE_FUNC;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.KEEP;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.MAKE_TUPLE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.MATCHING;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.SUBTRACT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TIMES;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TUPLE_ELEMENT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.fromBinaryOp;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
-
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
@@ -63,6 +9,28 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
+
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NAME_2_1;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.Category.INTERVAL;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.NOT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp.UNARY_MINUS;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.locateOtherSide;
+import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.fromBinaryOp;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
 
 class ResolveParam {
   private boolean negated;
@@ -133,8 +101,8 @@ class ResolveParam {
           final ASTNode otherSide = locateOtherSide(parent, target);
           assert otherSide != null;
           // `swapped` indicates whether the param is of the right side.
-          // e.g. age > ?, ? should be LESS than age
-          //      ? > age, ? should be GREATER than age
+          // e.g. For "age > ?" ? should be LESS than age.
+          //      For "? > age" ? should be GREATER than age.
           final boolean swapped = parent.get(BINARY_RIGHT) == target;
           final BinaryOp op = parent.get(BINARY_OP);
 
@@ -180,7 +148,7 @@ class ResolveParam {
     }
   }
 
-  // induce a expression's value and express as modifier
+  // Induce an expression's value and express as modifier.
   // e.g. `x` + 1 (where `x` is a column name),
   // the resultant modifiers is [Value("x"), DirectValue(1), Plus()]
   private boolean induce(ASTNode target) {

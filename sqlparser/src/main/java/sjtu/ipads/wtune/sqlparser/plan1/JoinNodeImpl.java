@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
 class JoinNodeImpl extends PlanNodeBase implements JoinNode {
-  private final OperatorType type;
+  private OperatorType type;
   private final Expr condition;
   private final boolean isEquiJoin;
 
@@ -105,6 +105,12 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
+  public void setJoinType(OperatorType type) {
+    if (!type.isJoin()) throw new IllegalArgumentException();
+    this.type = type;
+  }
+
+  @Override
   public void setLhsRefs(RefBag lhsRefs) {
     if (this.lhsRefs != null) throw new IllegalStateException("LHS ref is immutable once set");
     this.lhsRefs = requireNonNull(lhsRefs);
@@ -142,7 +148,7 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append(kind().text()).append('{').append(condition);
     stringifyRefs(builder);
     builder.append('}');

@@ -44,7 +44,7 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Input{").append(table.name());
     final String qualification = values.get(0).qualification();
     if (qualification != null) builder.append(" AS ").append(qualification);

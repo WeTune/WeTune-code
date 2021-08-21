@@ -30,11 +30,8 @@ class Disambiguation {
   private void onProj(ProjNode proj) {
     final String knownName = proj.values().qualification();
 
-    if (knownName == null)
-      if (mustQualified(proj)) throw failed("subquery must be named " + proj);
-      else return;
-
-    if (knownNames.add(knownName)) return;
+    if (knownName == null && !mustBeQualified(proj)) return;
+    if (knownName != null && knownNames.add(knownName)) return;
 
     final String newName = generateNewName(knownName);
     knownNames.add(newName);
@@ -55,6 +52,7 @@ class Disambiguation {
   }
 
   private String generateNewName(String baseName) {
+    baseName = baseName == null ? "sub" : baseName;
     int i = 0;
     while (true) {
       final String newName = baseName + '_' + (i++);
@@ -66,7 +64,7 @@ class Disambiguation {
     return new IllegalArgumentException("invalid plan [" + reason + "] " + plan);
   }
 
-  private static boolean mustQualified(ProjNode proj) {
+  private static boolean mustBeQualified(ProjNode proj) {
     PlanNode successor = proj.successor();
     while (successor != null) {
       final OperatorType succType = successor.kind();

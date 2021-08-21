@@ -44,7 +44,7 @@ class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Limit{");
     if (limit != null) builder.append(limit);
     if (offset != null) builder.append(',').append(offset);

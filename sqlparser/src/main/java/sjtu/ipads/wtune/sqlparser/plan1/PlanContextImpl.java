@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 
@@ -51,6 +52,12 @@ class PlanContextImpl implements PlanContext {
   public Value sourceOf(Value v) {
     if (!(v instanceof ExprValue) || !v.expr().isIdentity()) return v;
     else return sourceOf(deRef(v.expr().refs().get(0)));
+  }
+
+  @Override
+  public void changeIndirection(Value oldAttr, Value newAttr) {
+    if (!valueOwners.containsKey(newAttr)) throw new NoSuchElementException();
+    for (var pair : refTo.entrySet()) if (pair.getValue() == oldAttr) pair.setValue(newAttr);
   }
 
   @Override

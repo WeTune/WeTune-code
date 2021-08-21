@@ -130,7 +130,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Proj{");
 
     builder.append('[');

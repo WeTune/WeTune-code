@@ -111,7 +111,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Agg{");
 
     builder.append('[');

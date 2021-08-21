@@ -64,7 +64,7 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Exists{");
     stringifyRefs(builder);
     builder.append('}');

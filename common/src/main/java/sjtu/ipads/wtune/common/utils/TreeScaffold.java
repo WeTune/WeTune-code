@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.common.utils;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 
 public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
   private final TreeTemplate<C, T> root;
-  private final Map<T, TreeTemplate<C, T>> jointPoints;
+  private final Map<Object, TreeTemplate<C, T>> jointPoints;
 
   public TreeScaffold(T root) {
     this(root, (Function<T, T>) null);
@@ -22,7 +22,7 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
 
   public TreeScaffold(T root, Function<T, T> copyFunction) {
     this.root = new TreeTemplate<>(this, root);
-    this.jointPoints = new IdentityHashMap<>();
+    this.jointPoints = new HashMap<>();
     if (copyFunction != null) {
       this.root.setCopyFunction(copyFunction);
     } else {
@@ -31,11 +31,11 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
     }
   }
 
-  void bindJointPoint(T point, TreeTemplate<C, T> subTree) {
+  void bindJointPoint(Object point, TreeTemplate<C, T> subTree) {
     jointPoints.put(point, subTree);
   }
 
-  TreeTemplate<C, T> getJointPoint(T point) {
+  TreeTemplate<C, T> getJointPoint(Object point) {
     return jointPoints.get(point);
   }
 

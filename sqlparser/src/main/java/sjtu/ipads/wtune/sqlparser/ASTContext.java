@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.sqlparser;
 
-import java.lang.System.Logger.Level;
 import sjtu.ipads.wtune.common.multiversion.MultiVersion;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.AttributeManager;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ASTContextImpl;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
+import java.lang.System.Logger.Level;
 
 public interface ASTContext extends MultiVersion {
   System.Logger LOG = System.getLogger("wetune.sql");

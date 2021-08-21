@@ -20,6 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRef
 class ExprImpl implements Expr {
   private RefBag refs;
   private final ASTNode template;
+  private List<ASTNode> holes;
 
   ExprImpl(RefBag refs, ASTNode template) {
     this.refs = refs;
@@ -106,6 +107,12 @@ class ExprImpl implements Expr {
   @Override
   public RefBag refs() {
     return refs;
+  }
+
+  @Override
+  public List<ASTNode> holes() {
+    if (holes == null) holes = gatherColumnRefs(template);
+    return holes;
   }
 
   @Override

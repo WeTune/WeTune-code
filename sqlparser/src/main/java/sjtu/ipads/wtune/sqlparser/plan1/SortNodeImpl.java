@@ -50,7 +50,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Sort{");
     stringifyRefs(builder);
     builder.append('}');

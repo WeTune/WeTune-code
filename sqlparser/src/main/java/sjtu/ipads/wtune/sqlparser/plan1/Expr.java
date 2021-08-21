@@ -34,6 +34,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 public interface Expr {
   RefBag refs();
 
+  List<ASTNode> holes();
+
   ASTNode template();
 
   ASTNode interpolate(List<Value> values);

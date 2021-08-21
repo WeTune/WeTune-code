@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 class SimpleFilterNodeImpl extends PlanNodeBase implements SimpleFilterNode {
-  private final Expr predicate;
+  protected final Expr predicate;
 
   SimpleFilterNodeImpl(Expr predicate) {
     this.predicate = predicate;
@@ -46,8 +46,9 @@ class SimpleFilterNodeImpl extends PlanNodeBase implements SimpleFilterNode {
   }
 
   @Override
-  public StringBuilder stringify(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder) {
     builder.append("Filter{");
+    builder.append(predicate);
     stringifyRefs(builder);
     builder.append('}');
     stringifyChildren(builder);

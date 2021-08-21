@@ -24,6 +24,8 @@ public interface PlanContext extends TreeContext<PlanContext> {
 
   void setRef(Ref ref, Value value);
 
+  void changeIndirection(Value oldAttr, Value newAttr);
+
   boolean validate();
 
   default List<Value> deRef(List<Ref> refs) {
