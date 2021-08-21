@@ -32,7 +32,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final SortNode copy = new SortNodeImpl(orders, refs);

@@ -31,11 +31,11 @@ public interface Statement {
     return App.of(appName());
   }
 
-  static Statement make(String appName, String rawSql, String stackTrace) {
+  static Statement mk(String appName, String rawSql, String stackTrace) {
     return StatementImpl.build(appName, rawSql, stackTrace);
   }
 
-  static Statement make(String appName, int stmtId, String rawSql, String stackTrace) {
+  static Statement mk(String appName, int stmtId, String rawSql, String stackTrace) {
     return StatementImpl.build(appName, stmtId, rawSql, stackTrace);
   }
 

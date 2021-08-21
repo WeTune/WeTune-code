@@ -40,7 +40,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
           + "VALUES (?, ?, ?, ?)";
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
-    return Statement.make(
+    return Statement.mk(
         rs.getString(KEY_APP_NAME),
         rs.getInt(KEY_STMT_ID),
         rs.getString(KEY_RAW_SQL),

@@ -66,6 +66,10 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
+  static <T, R> Set<R> setMap(Iterable<T> os, Function<? super T, ? extends R> func) {
+    return collectionMap(func, os, HashSet::new);
+  }
+
   static <T, R> List<R> listMap(Iterable<T> os, Function<? super T, ? extends R> func) {
     return collectionMap(func, os, ArrayList::new);
   }
@@ -130,6 +134,10 @@ public interface FuncUtils {
 
   static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
+  }
+
+  static <T> Set<T> setFilter(Iterable<T> os, Predicate<? super T> func) {
+    return stream(os).filter(func).collect(Collectors.toSet());
   }
 
   static <T, C extends Collection<T>> C collectionFilter(

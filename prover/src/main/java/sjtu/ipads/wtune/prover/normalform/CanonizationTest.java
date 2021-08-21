@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.stmt.Statement;
 public class CanonizationTest {
   public static void main(String[] args) {
     final Statement stmt0 =
-        Statement.make("test", "Select sub.* From (Select a.j From a) As sub", null);
+        Statement.mk("test", "Select sub.* From (Select a.j From a) As sub", null);
     final Schema schema = stmt0.app().schema("base", true);
     final PlanNode plan0 = PlanSupport.assemblePlan(stmt0.parsed(), schema);
     PlanSupport.disambiguate(plan0);

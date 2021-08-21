@@ -36,7 +36,7 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     final InputNode copy = new InputNodeImpl(table, values);
     copy.setContext(ctx);
     ctx.registerValues(copy, values());

@@ -13,7 +13,7 @@ public interface Constraints extends List<Constraint> {
 
   Symbol sourceOf(Symbol attrSym);
 
-  Iterable<Constraint> ofKind(Constraint.Kind kind);
+  List<Constraint> ofKind(Constraint.Kind kind);
 
   StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder);
 

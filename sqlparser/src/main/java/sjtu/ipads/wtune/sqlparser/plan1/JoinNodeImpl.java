@@ -84,33 +84,40 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
 
   @Override
   public JoinNode flip(PlanContext ctx) {
-    checkContextSet();
+    if (ctx != null) {
+      checkContextSet();
 
-    final JoinNodeImpl copy = new JoinNodeImpl(type, condition, isEquiJoin, rhsRefs, lhsRefs);
-    copy.setContext(ctx);
+      final JoinNodeImpl copy = new JoinNodeImpl(type, condition, isEquiJoin, rhsRefs, lhsRefs);
+      copy.setContext(ctx);
 
-    ctx.registerRefs(copy, refs());
-    for (Ref ref : refs()) ctx.setRef(ref, this.context.deRef(ref));
+      ctx.registerRefs(copy, refs());
+      for (Ref ref : refs()) ctx.setRef(ref, this.context.deRef(ref));
 
-    return copy;
+      return copy;
+
+    } else {
+      final RefBag rhsRefs = this.rhsRefs;
+      this.rhsRefs = this.lhsRefs;
+      this.lhsRefs = rhsRefs;
+
+      return this;
+    }
   }
 
   @Override
   public void setLhsRefs(RefBag lhsRefs) {
-    if (!isEquiJoin) throw new IllegalStateException("LHS refs is non-sense for non-equi join");
     if (this.lhsRefs != null) throw new IllegalStateException("LHS ref is immutable once set");
     this.lhsRefs = requireNonNull(lhsRefs);
   }
 
   @Override
   public void setRhsRefs(RefBag rhsRefs) {
-    if (!isEquiJoin) throw new IllegalStateException("RHS refs is non-sense for non-equi join");
     if (this.rhsRefs != null) throw new IllegalStateException("RHS ref is immutable once set");
     this.rhsRefs = requireNonNull(rhsRefs);
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final JoinNode copy = new JoinNodeImpl(type, condition, isEquiJoin, lhsRefs, rhsRefs);

@@ -51,7 +51,7 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final ExistsFilterNode copy = new ExistsFilterNodeImpl();

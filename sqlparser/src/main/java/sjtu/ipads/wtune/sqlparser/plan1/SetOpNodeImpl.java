@@ -32,7 +32,7 @@ class SetOpNodeImpl extends PlanNodeBase implements SetOpNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     final SetOpNode copy = new SetOpNodeImpl(operation, distinct);
     copy.setContext(ctx);
     return copy;

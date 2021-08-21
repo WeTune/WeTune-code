@@ -86,21 +86,20 @@ class RefResolver {
     registerRefs(node, refs);
     resolveRefs(refs, false, false);
 
-    if (node.isEquiJoin()) {
-      final List<Ref> lhsRefs = new ArrayList<>(refs.size() >> 1);
-      final List<Ref> rhsRefs = new ArrayList<>(refs.size() >> 1);
+    final List<Ref> lhsRefs = new ArrayList<>(refs.size() >> 1);
+    final List<Ref> rhsRefs = new ArrayList<>(refs.size() >> 1);
 
-      for (Ref ref : refs) {
-        final Value value = ctx.deRef(ref);
-        if (isLhs(node, ctx.ownerOf(value))) lhsRefs.add(ref);
-        else rhsRefs.add(ref);
-      }
-
-      if (lhsRefs.size() != rhsRefs.size()) throw failed("ill-formed equi-join: " + node);
-
-      node.setLhsRefs(RefBag.mk(lhsRefs));
-      node.setRhsRefs(RefBag.mk(rhsRefs));
+    for (Ref ref : refs) {
+      final Value value = ctx.deRef(ref);
+      if (isLhs(node, ctx.ownerOf(value))) lhsRefs.add(ref);
+      else rhsRefs.add(ref);
     }
+
+    if (node.isEquiJoin() && lhsRefs.size() != rhsRefs.size())
+      throw failed("ill-formed equi-join: " + node);
+
+    node.setLhsRefs(RefBag.mk(lhsRefs));
+    node.setRhsRefs(RefBag.mk(rhsRefs));
   }
 
   private void onFilter(FilterNode node) {

@@ -110,7 +110,7 @@ public interface Workflow {
       if (!sql.startsWith("select") && !sql.startsWith("SELECT")) continue;
 
       final String stackTrace = log.stackTrace() == null ? "" : log.stackTrace().toString();
-      final Statement stmt = Statement.make(appName, sql, stackTrace);
+      final Statement stmt = Statement.mk(appName, sql, stackTrace);
       final String key = normalizeParam(stmt.parsed()).toString();
 
       if (keys.add(key)) {

@@ -31,7 +31,7 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
-        Statement.make(
+        Statement.mk(
             rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
     stmt.setRewritten(true);
     return stmt;

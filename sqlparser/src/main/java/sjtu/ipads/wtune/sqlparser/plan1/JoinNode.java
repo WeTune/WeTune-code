@@ -11,7 +11,7 @@ public interface JoinNode extends PlanNode {
 
   RefBag rhsRefs();
 
-  JoinNode flip(PlanContext context);
+  JoinNode flip(PlanContext context); // If `context` is null, do in-place. Otherwise, make a copy.
 
   void setLhsRefs(RefBag lhsRefs);
 

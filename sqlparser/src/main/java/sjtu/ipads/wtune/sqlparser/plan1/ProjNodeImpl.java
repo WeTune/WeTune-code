@@ -97,7 +97,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final ProjNode copy = new ProjNodeImpl(explicitDistinct, values, this.refs);

@@ -12,6 +12,7 @@ abstract class PlanNodeBase implements PlanNode {
   protected PlanContext context;
   protected PlanNode successor;
   protected final PlanNode[] predecessors;
+  private String stringifyCache;
 
   protected PlanNodeBase() {
     predecessors = new PlanNode[kind().numPredecessors()];
@@ -62,24 +63,19 @@ abstract class PlanNodeBase implements PlanNode {
   }
 
   @Override
-  public PlanNode copy(PlanContext ctx) {
-    final PlanNode copy = copy0(ctx);
-    final PlanNode[] predecessors = this.predecessors;
-    for (int i = 0, bound = predecessors.length; i < bound; i++) {
-      copy.setPredecessor(i, predecessors[i].copy(ctx));
-    }
-    return copy;
-  }
-
-  protected abstract PlanNode copy0(PlanContext ctx);
-
-  protected void checkContextSet() {
-    if (context == null) throw new IllegalStateException("unresolved plan");
+  public void freeze() {
+    stringifyCache = stringify(new StringBuilder()).toString();
   }
 
   @Override
   public String toString() {
+    if (stringifyCache != null) return stringifyCache;
+
     return stringify(new StringBuilder()).toString();
+  }
+
+  protected void checkContextSet() {
+    if (context == null) throw new IllegalStateException("unresolved plan");
   }
 
   protected final void stringifyAsSelectItem(Value v, StringBuilder builder) {

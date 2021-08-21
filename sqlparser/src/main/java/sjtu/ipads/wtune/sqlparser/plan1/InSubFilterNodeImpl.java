@@ -81,7 +81,7 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final InSubFilterNode copy = new InSubFilterNodeImpl(lhsExpr);

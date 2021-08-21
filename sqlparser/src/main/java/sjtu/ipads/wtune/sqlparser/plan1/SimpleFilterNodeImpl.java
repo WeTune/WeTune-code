@@ -33,7 +33,7 @@ class SimpleFilterNodeImpl extends PlanNodeBase implements SimpleFilterNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final SimpleFilterNode copy = new SimpleFilterNodeImpl(predicate);

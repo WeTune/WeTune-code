@@ -5,8 +5,8 @@ import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 
-public class TreeTemplate<T extends TreeNode<T>> {
-  private final TreeScaffold<T> ctx;
+public class TreeTemplate<C extends TreeContext<C>, T extends TreeNode<C, T>> {
+  private final TreeScaffold<C, T> ctx;
   private final T root;
   private final Set<T> jointPoint;
   private boolean copy;
@@ -14,13 +14,13 @@ public class TreeTemplate<T extends TreeNode<T>> {
 
   private T instantiated;
 
-  TreeTemplate(TreeScaffold<T> ctx, T root) {
+  TreeTemplate(TreeScaffold<C, T> ctx, T root) {
     this.ctx = ctx;
     this.root = root;
     this.jointPoint = newIdentitySet();
   }
 
-  TreeTemplate(TreeScaffold<T> ctx, T root, Set<T> jointPoint) {
+  TreeTemplate(TreeScaffold<C, T> ctx, T root, Set<T> jointPoint) {
     this.ctx = ctx;
     this.root = root;
     this.jointPoint = jointPoint;
@@ -30,11 +30,11 @@ public class TreeTemplate<T extends TreeNode<T>> {
     return root;
   }
 
-  public TreeTemplate<T> bindJointPoint(T point, T subTree) {
+  public TreeTemplate<C, T> bindJointPoint(T point, T subTree) {
     return bindJointPoint(point, new TreeTemplate<>(ctx, subTree));
   }
 
-  public TreeTemplate<T> bindJointPoint(T point, TreeTemplate<T> subTree) {
+  public TreeTemplate<C, T> bindJointPoint(T point, TreeTemplate<C, T> subTree) {
     jointPoint.add(point);
     ctx.bindJointPoint(point, subTree);
     subTree.setCopyFunction(copyFunction);
@@ -55,6 +55,8 @@ public class TreeTemplate<T extends TreeNode<T>> {
   }
 
   public T instantiate() {
+    if (!copy && jointPoint.isEmpty()) return instantiated = root;
+
     final Function<T, T> copyFunc = copy ? copyFunction : Function.identity();
     return instantiated = instantiate0(root, copyFunc);
   }
@@ -63,9 +65,10 @@ public class TreeTemplate<T extends TreeNode<T>> {
     if (jointPoint.contains(subtree)) return ctx.getJointPoint(subtree).instantiate();
 
     final T copy = copyFunc.apply(subtree);
-    final T[] predecessors = copy.predecessors();
+    final T[] predecessors = subtree.predecessors();
     for (int i = 0, bound = predecessors.length; i < bound; ++i) {
-      copy.setPredecessor(i, instantiate0(predecessors[i], copyFunc));
+      final T newPredecessor = instantiate0(predecessors[i], copyFunc);
+      if (predecessors[i] != newPredecessor) copy.setPredecessor(i, newPredecessor);
     }
 
     return copy;

@@ -2,25 +2,16 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.common.utils.Showable;
 import sjtu.ipads.wtune.common.utils.TreeNode;
-import sjtu.ipads.wtune.common.utils.TypedTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-public interface PlanNode extends TypedTreeNode<OperatorType>, TreeNode<PlanNode>, Showable {
+public interface PlanNode extends TreeNode<PlanContext, PlanNode>, Showable {
+  OperatorType kind();
+
   ValueBag values();
 
   RefBag refs();
 
-  PlanContext context();
-
-  PlanNode successor();
-
-  PlanNode[] predecessors();
-
   void setContext(PlanContext context);
 
-  void setSuccessor(PlanNode successor);
-
-  void setPredecessor(int idx, PlanNode predecessor);
-
-  PlanNode copy(PlanContext ctx);
+  void freeze();
 }

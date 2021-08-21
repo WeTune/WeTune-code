@@ -21,7 +21,7 @@ public class PacketHandler {
       final App app = ctx.appOf(contextName);
       final Registration registration = ctx.registrationOf(contextName);
 
-      final Statement stmt = Statement.make(app.name(), sql, null);
+      final Statement stmt = Statement.mk(app.name(), sql, null);
       if (!registration.contains(stmt)) registration.register(stmt, ctx.optimize(stmt));
 
     } catch (IOException ex) {

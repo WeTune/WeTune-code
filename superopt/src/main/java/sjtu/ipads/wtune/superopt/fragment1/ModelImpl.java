@@ -9,39 +9,39 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
+
 class ModelImpl implements Model {
-  private final ModelImpl base;
-  private final Map<Symbol, Object> assignments;
+  protected final ModelImpl base;
+  protected final Map<Symbol, Object> assignments;
 
   ModelImpl(ModelImpl base) {
     this.base = base;
     this.assignments = new HashMap<>(8);
   }
 
-  // TODO: conflict check
-
   @Override
   public boolean assign(Symbol table, PlanNode input) {
-    assignments.put(table, input);
-    return true;
+    return assign0(table, input);
   }
 
   @Override
   public boolean assign(Symbol pred, Expr predicate) {
-    assignments.put(pred, predicate);
-    return true;
+    return assign0(pred, predicate);
   }
 
   @Override
   public boolean assign(Symbol attrs, List<Value> values) {
-    assignments.put(attrs, Pair.of(values, null));
-    return true;
+    return assign(attrs, values, null);
   }
 
   @Override
   public boolean assign(Symbol attrs, List<Value> inValues, List<Value> outValues) {
-    assignments.put(attrs, Pair.of(inValues, outValues));
-    return true;
+    if (outValues == null || all(outValues, it -> it.expr().isIdentity())) {
+      return assign0(attrs, Pair.of(inValues, null));
+    } else {
+      return assign0(attrs, Pair.of(inValues, outValues));
+    }
   }
 
   @Override
@@ -70,7 +70,12 @@ class ModelImpl implements Model {
     return new ModelImpl(this);
   }
 
-  private <T> T get0(Symbol key) {
+  protected boolean assign0(Symbol sym, Object obj) {
+    assignments.put(sym, obj);
+    return true;
+  }
+
+  protected <T> T get0(Symbol key) {
     final Object obj = assignments.get(key);
     if (obj != null) return (T) obj;
     else if (base != null) return base.get0(key);

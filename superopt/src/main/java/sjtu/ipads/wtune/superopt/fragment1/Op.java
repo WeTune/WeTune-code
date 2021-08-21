@@ -1,13 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.common.utils.Copyable;
-import sjtu.ipads.wtune.common.utils.TreeNode;
-import sjtu.ipads.wtune.common.utils.TypedTreeNode;
+import sjtu.ipads.wtune.common.utils.NoContextTreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 
-public interface Op extends TypedTreeNode<OperatorType>, TreeNode<Op>, Comparable<Op>, Copyable<Op> {
+public interface Op extends NoContextTreeNode<Op>, Comparable<Op>, Copyable<Op> {
   static Op mk(OperatorType type) {
     return switch (type) {
       case INPUT -> new InputOp();
@@ -33,21 +32,13 @@ public interface Op extends TypedTreeNode<OperatorType>, TreeNode<Op>, Comparabl
     return op;
   }
 
+  OperatorType kind();
+
   Fragment fragment();
-
-  Op successor();
-
-  Op[] predecessors();
 
   void setFragment(Fragment fragment);
 
-  void setSuccessor(Op node);
-
-  void setPredecessor(int idx, Op prev);
-
   void acceptVisitor(OpVisitor visitor);
-
-  Op copy();
 
   int shadowHash();
 

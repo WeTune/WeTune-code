@@ -12,12 +12,12 @@ import sjtu.ipads.wtune.stmt.Statement;
 public class EliminatorTest {
   public static void main(String[] args) {
     final Statement stmt0 =
-        Statement.make(
+        Statement.mk(
             "broadleaf",
             "SELECT DISTINCT `adminuseri2_`.`ADMIN_USER_ID` FROM `BLC_ADMIN_USER_ROLE_XREF` AS `allusers1_` INNER JOIN `BLC_ADMIN_USER` AS `adminuseri2_` ON `allusers1_`.`ADMIN_USER_ID` = `adminuseri2_`.`ADMIN_USER_ID` LEFT JOIN `BLC_ADMIN_USER_SANDBOX` AS `adminuseri2_1_` ON `adminuseri2_`.`ADMIN_USER_ID` = `adminuseri2_1_`.`ADMIN_USER_ID` WHERE `adminuseri2_`.`ADMIN_USER_ID` = 1",
             null);
     final Statement stmt1 =
-        Statement.make(
+        Statement.mk(
             "broadleaf",
             "SELECT DISTINCT `adminuseri2_`.`ADMIN_USER_ID` FROM `BLC_ADMIN_USER_ROLE_XREF` AS `allusers1_` INNER JOIN `BLC_ADMIN_USER` AS `adminuseri2_` ON `allusers1_`.`ADMIN_USER_ID` = `adminuseri2_`.`ADMIN_USER_ID` WHERE `adminuseri2_`.`ADMIN_USER_ID` = 1",
             null);

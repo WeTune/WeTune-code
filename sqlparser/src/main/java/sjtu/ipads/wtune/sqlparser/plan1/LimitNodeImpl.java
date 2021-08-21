@@ -37,7 +37,7 @@ class LimitNodeImpl extends PlanNodeBase implements LimitNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     final LimitNode copy = new LimitNodeImpl(limit, offset);
     copy.setContext(ctx);
     return copy;

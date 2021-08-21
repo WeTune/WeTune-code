@@ -96,7 +96,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
-  protected PlanNode copy0(PlanContext ctx) {
+  public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final AggNode copy = new AggNodeImpl(values, groups, having, aggRefs, groupRefs, havingRefs);

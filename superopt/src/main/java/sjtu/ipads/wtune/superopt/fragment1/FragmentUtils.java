@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Op.mk;
 
@@ -204,7 +205,7 @@ class FragmentUtils {
     final PlanContext ctx = PlanContext.mk(plan.context().schema());
 
     proj.setContext(ctx);
-    proj.setPredecessor(0, plan.copy(ctx));
+    proj.setPredecessor(0, copyTree(plan, ctx));
     ctx.registerRefs(proj, proj.refs());
     ctx.registerValues(proj, proj.values());
     zipForEach(proj.refs(), plan.values(), ctx::setRef);
