@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
-
 class ModelImpl implements Model {
   protected final ModelImpl base;
   protected final Map<Symbol, Object> assignments;
@@ -37,11 +35,7 @@ class ModelImpl implements Model {
 
   @Override
   public boolean assign(Symbol attrs, List<Value> inValues, List<Value> outValues) {
-    if (outValues == null || all(outValues, it -> it.expr().isIdentity())) {
-      return assign0(attrs, Pair.of(inValues, null));
-    } else {
-      return assign0(attrs, Pair.of(inValues, outValues));
-    }
+    return assign0(attrs, Pair.of(inValues, outValues));
   }
 
   @Override

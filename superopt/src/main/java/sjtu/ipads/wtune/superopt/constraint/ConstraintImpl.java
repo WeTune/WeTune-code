@@ -46,7 +46,14 @@ class ConstraintImpl implements Constraint {
   @Override
   public String canonicalStringify(SymbolNaming naming) {
     final List<String> symNames = listMap(symbols, naming::nameOf);
-    if (kind.isEq()) symNames.sort(String::compareTo);
+    if (kind.isEq()) {
+      symNames.sort(
+          (x, y) -> {
+            if (x.length() < y.length()) return -1;
+            if (x.length() > y.length()) return 1;
+            return x.compareTo(y);
+          });
+    }
 
     final StringBuilder builder = new StringBuilder();
     builder.append(kind.name()).append('(');

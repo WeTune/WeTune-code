@@ -174,7 +174,10 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     if (from.kind() != Symbol.Kind.ATTRS) return false;
 
     assert oldVal instanceof Pair && newVal instanceof Pair;
-    return ((Pair<?, ?>) oldVal).getRight() == null && ((Pair<?, ?>) newVal).getRight() != null;
+    final Pair<?, List<Value>> oldPair = (Pair<?, List<Value>>) oldVal;
+    final Pair<?, ?> newPair = ((Pair<?, ?>) newVal);
+    return newPair.getRight() != null
+        && (oldPair.getRight() == null || all(oldPair.getRight(), it -> it.expr().isIdentity()));
   }
 
   private List<Column> resolveSourceColumns(List<Value> attrs) {

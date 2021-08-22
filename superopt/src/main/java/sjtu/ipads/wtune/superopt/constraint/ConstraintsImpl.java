@@ -50,7 +50,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
     }
     segBases[segBases.length - 1] = bound;
 
-    for (int i = 0; i < numKinds; i++) {
+    for (int i = numKinds - 1; i >= 0; i--) {
       if (segBases[i] == -1) segBases[i] = segBases[i + 1];
     }
   }
@@ -117,6 +117,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   private int endIndexOf(Constraint.Kind kind) {
+    if (kind == Kind.AttrsFrom) return constraints.size();
     return segBases[kind.ordinal() + 1];
   }
 }

@@ -56,8 +56,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
   @Override
   public void close() {
-      logicCtx.close();
-      System.gc();
+    logicCtx.close();
+    System.gc();
   }
 
   @Override
@@ -81,7 +81,9 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   @Override
   public boolean prove(List<Constraint> selectedConstraints) {
     final boolean[] enabled = new boolean[constraints.size()];
-    for (Constraint selected : selectedConstraints) enabled[constraints.indexOf(selected)] = true;
+    for (Constraint selected : selectedConstraints) {
+      enabled[constraints.indexOf(selected)] = true;
+    }
     return prove0(enabled) == EQ;
   }
 

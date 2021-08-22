@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.constraint.ConstraintEnumerator;
 import sjtu.ipads.wtune.superopt.fragment1.Fragment;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -14,6 +15,7 @@ import static sjtu.ipads.wtune.prover.ProverSupport.mkLogicCtx;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.mkConstraintEnumerator;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
 @Tag("slow")
@@ -162,5 +164,24 @@ public class TestEnumeration {
         "Proj(Proj(Input))",
         "Proj(Input)",
         "Proj<a0>(Proj<a1>(Input<t0>))|Proj<a2>(Input<t1>)|TableEq(t0,t1);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a0,a1);AttrsSub(a2,t1)");
+  }
+
+  @Test
+  void testInSubFilterElimination() {
+    doTest(
+        "InSubFilter(Input,Proj(Input))",
+        "Input",
+        "InSubFilter<a0>(Input<t0>,Proj<a1>(Input<t1>))|Input<t2>|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsSub(a1,t1);AttrsSub(a0,t0);NotNull(t1,a1);NotNull(t0,a0)");
+  }
+
+  @Test
+  void test() {
+    final Substitution substitution0 =
+        Substitution.parse(
+            "Proj*<a0>(Proj<a1>(Input<t0>))|Proj*<a2>(Input<t1>)|TableEq(t0,t1);AttrsEq(a1,a2);AttrsSub(a0,a1);AttrsSub(a1,t0);AttrsSub(a2,t1)");
+    final Substitution substitution = Substitution.parse(substitution0.canonicalStringify());
+    final ConstraintEnumerator enumerator =
+        mkConstraintEnumerator(substitution._0(), substitution._1(), mkLogicCtx());
+    System.out.println(enumerator.prove(substitution.constraints()));
   }
 }

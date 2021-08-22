@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment1.Complexity;
 import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
@@ -13,6 +15,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
 
 public class SubstitutionSupport {
   public static Substitution flip(Substitution sub) {
@@ -49,6 +54,14 @@ public class SubstitutionSupport {
       }
 
     bank.removeAll(duplicated);
+    bank.removeIf(MeaninglessChecker::isMeaningless);
     return bank;
+  }
+
+  public static void printReadable(Substitution substitution) {
+    System.out.println(substitution);
+    final Pair<PlanNode, PlanNode> pair = translateAsPlan(substitution, false);
+    System.out.println(" q0: " + translateAsAst(disambiguate(pair.getLeft())));
+    System.out.println(" q1: " + translateAsAst(disambiguate(pair.getRight())));
   }
 }

@@ -15,7 +15,7 @@ public class UpgradeSubstitutionBank implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions.raw"));
-    outputFile = Path.of(args.getOptional("-o", String.class, "wtune_data/substitutions.upgraded.raw"));
+    outputFile = Path.of(args.getOptional("-o", String.class, inputFile + ".upgraded"));
     echo = args.getOptional("-echo", boolean.class, true);
   }
 
@@ -25,8 +25,8 @@ public class UpgradeSubstitutionBank implements Runner {
       for (String line : Files.readAllLines(inputFile)) {
         final Substitution substitution = Substitution.parse(line, true);
         substitution.resetNaming();
-        if (echo) System.out.println(substitution);
-        out.println(substitution);
+        if (echo) System.out.println(substitution.canonicalStringify());
+        out.println(substitution.canonicalStringify());
       }
     }
   }

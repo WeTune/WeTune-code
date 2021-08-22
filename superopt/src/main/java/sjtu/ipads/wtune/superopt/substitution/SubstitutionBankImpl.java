@@ -42,14 +42,14 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
 
   @Override
   public boolean add(Substitution substitution) {
-    if (!known.add(substitution.toString())) return false;
+    if (!known.add(substitution.canonicalStringify())) return false;
     return substitutions.add(substitution);
   }
 
   @Override
   public boolean contains(Object o) {
     if (!(o instanceof Substitution)) return false;
-    return known.contains(o.toString());
+    return known.contains(((Substitution) o).canonicalStringify());
   }
 
   @Override

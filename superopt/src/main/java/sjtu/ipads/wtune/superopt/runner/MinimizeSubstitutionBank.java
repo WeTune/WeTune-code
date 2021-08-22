@@ -30,7 +30,7 @@ public class MinimizeSubstitutionBank implements Runner {
     if (echo) System.out.printf("%d -> %d\n", oldSize, minSize);
 
     try (final PrintWriter out = new PrintWriter(Files.newOutputStream(outputFile))) {
-      minimized.forEach(out::println);
+      minimized.forEach(it -> out.println(it.canonicalStringify()));
     }
   }
 }

@@ -1,11 +1,5 @@
 package sjtu.ipads.wtune.superopt;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
-import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
-
-import java.util.HashSet;
-import java.util.Set;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -14,6 +8,13 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
 
 public class TempMain {
   private static void checkNonSetTable() {

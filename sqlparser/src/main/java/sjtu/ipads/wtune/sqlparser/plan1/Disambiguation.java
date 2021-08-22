@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
@@ -23,35 +24,50 @@ class Disambiguation {
 
   private void onNode(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) onNode(predecessor);
-    if (node.kind() == INPUT) onInput((InputNode) node);
-    else if (node.kind() == PROJ) onProj((ProjNode) node);
+    if (node.kind() == INPUT) {
+      qualifyInput((InputNode) node);
+    } else if (node.kind() == PROJ) {
+      qualifyProj((ProjNode) node);
+      distinguishAttrs(node.values());
+    }
   }
 
-  private void onProj(ProjNode proj) {
+  private void qualifyProj(ProjNode proj) {
     final String knownName = proj.values().qualification();
 
     if (knownName == null && !mustBeQualified(proj)) return;
     if (knownName != null && knownNames.add(knownName)) return;
 
-    final String newName = generateNewName(knownName);
+    final String newName = generateNewName(knownName, knownNames);
     knownNames.add(newName);
 
     proj.values().setQualification(newName);
   }
 
-  private void onInput(InputNode input) {
+  private void qualifyInput(InputNode input) {
     final String knownName = input.values().qualification();
     if (knownName == null) throw failed("non-consensus qualification found in " + input);
 
     if (knownNames.add(knownName)) return;
 
-    final String newName = generateNewName(knownName);
+    final String newName = generateNewName(knownName, knownNames);
     knownNames.add(newName);
 
     input.values().setQualification(newName);
   }
 
-  private String generateNewName(String baseName) {
+  private void distinguishAttrs(List<Value> values) {
+    final Set<String> knownNames = new HashSet<>(values.size());
+    for (Value value : values) {
+      if (!knownNames.add(value.name())) {
+        final String newName = generateNewName(value.name(), knownNames);
+        value.setName(newName);
+        knownNames.add(newName);
+      }
+    }
+  }
+
+  private String generateNewName(String baseName, Set<String> knownNames) {
     baseName = baseName == null ? "sub" : baseName;
     int i = 0;
     while (true) {
