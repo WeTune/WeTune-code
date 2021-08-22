@@ -24,7 +24,7 @@ import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 
 public class ProactiveFilterDistributor extends FilterDistributorBase implements FilterDistributor {
-  // "Proactive" means what the filter will influence the later matching
+  // "Proactive" means what the filter will influence the latter matching
   // Example: Filter<p0 c0>(InnerJoin<c1 c2>(..)), c0=c1
   //          We have to try every possibility in this situation.
 

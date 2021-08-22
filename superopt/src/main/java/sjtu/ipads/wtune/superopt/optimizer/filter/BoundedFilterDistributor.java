@@ -18,7 +18,7 @@ import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
 import sjtu.ipads.wtune.superopt.util.Constraints;
 
 public class BoundedFilterDistributor extends FilterDistributorBase implements FilterDistributor {
-  // "Bounded" means what what the filter is bounded by constraints among filters.
+  // "Bounded" means that the filter is bounded by constraints among filters.
   // Example: Filter<p0 c0>(Filter<p1 c1>(Input<t0>)), p0=p1 /\ c0=c1
   //          The class distribute filters according to the fact: two filter must be identical.
 

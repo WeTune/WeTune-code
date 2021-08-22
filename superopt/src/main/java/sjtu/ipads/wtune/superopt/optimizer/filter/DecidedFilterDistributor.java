@@ -17,7 +17,7 @@ import sjtu.ipads.wtune.superopt.fragment.PlainFilter;
 import sjtu.ipads.wtune.superopt.fragment.SubqueryFilter;
 
 public class DecidedFilterDistributor extends FilterDistributorBase implements FilterDistributor {
-  // "Decided" meaning what the filter should be has be decided according to existing assignment and
+  // "Decided" meaning what the filter has been decided according to existing assignment and
   // constraints.
   // Example: Proj<c0>(Filter<p0 c1>(Input<t1)), c0=c1
   //          `c1` must have been decided because `c0` was decided.
