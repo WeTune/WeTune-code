@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
@@ -13,9 +12,9 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.MultimapBuilder.linkedHashKeys;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
@@ -28,7 +27,6 @@ class ConstraintsIndex extends AbstractList<Constraint> {
   // Possible sources of attributes. Key: Attrs symbols. Value: Attrs/Table symbols.
   private final Multimap<Symbol, Symbol> sources;
   private final boolean[] mandatory; // Indicates whether a constraint must be present.
-  private final boolean[] useless; // If whether a constraint is meaningless.
   // The constraints are organized by the kind. i.e., [TablEqs, AttrsEqs, PredEqs, AttrSubs,...]
   // `segBase` is the beginning index of each segment.
   private final int[] segBases;
@@ -45,14 +43,12 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     this.constraints = constraints;
     this.sources = sources;
     this.mandatory = new boolean[constraints.size()];
-    this.useless = new boolean[constraints.size()];
     this.segBases = new int[Constraint.Kind.values().length];
     this.symCounts = new int[3];
     this.symbolsIndex = new TObjectIntHashMap<>();
 
     calcSegments();
     calcMandatory();
-    calcUseless();
     buildSymbolsIndex();
   }
 
@@ -65,8 +61,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     final List<Symbol> tables0 = symbols0.symbolsOf(TABLE), tables1 = symbols1.symbolsOf(TABLE);
     final List<Symbol> attrs0 = symbols0.symbolsOf(ATTRS), attrs1 = symbols1.symbolsOf(ATTRS);
     final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
-    final Multimap<Symbol, Symbol> sources = analyzeSources(f0);
-    sources.putAll(analyzeSources(f1));
+    final Multimap<Symbol, Symbol> sources = linkedHashKeys().arrayListValues().build();
+    analyzeSources(f0, sources);
+    analyzeSources(f1, sources);
 
     mkEqRel(TableEq, listJoin(tables0, tables1), constraints);
     mkEqRel(AttrsEq, listJoin(attrs0, attrs1), constraints);
@@ -114,7 +111,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
 
   private static void mkReferences0(
       Op op, Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    // We only consider the Attrs as join key
+    // We only consider Reference between the attrs that are used as join keys.
     if (!op.kind().isJoin()) return;
 
     final Symbols symbols = op.fragment().symbols();
@@ -165,29 +162,12 @@ class ConstraintsIndex extends AbstractList<Constraint> {
   }
 
   private void calcMandatory() {
+    // The only possible AttrsSub of an attrs must be mandatory.
     final int begin = segBases[AttrsSub.ordinal()], end = segBases[AttrsSub.ordinal() + 1];
     for (int i = begin; i < end; i++)
       if (sources.get(constraints.get(i).symbols()[0]).size() <= 1) {
         mandatory[i] = true;
       }
-  }
-
-  private void calcUseless() {
-    final int begin = segBases[AttrsEq.ordinal()], end = segBases[AttrsEq.ordinal() + 1];
-    for (int i = begin; i < end; i++) {
-      final Constraint c = constraints.get(i);
-      final Symbol attrs0 = c.symbols()[0], attrs1 = c.symbols()[1];
-      final Collection<Symbol> sources0 = sources.get(attrs0), sources1 = sources.get(attrs1);
-
-      final boolean hasTableSource0 = any(sources0, it -> it.kind() == TABLE);
-      final boolean hasTableSource1 = any(sources1, it -> it.kind() == TABLE);
-      final boolean hasSubquerySource0 = any(sources0, it -> it.kind() == ATTRS);
-      final boolean hasSubquerySource1 = any(sources1, it -> it.kind() == ATTRS);
-
-      if ((!hasSubquerySource0 && !hasTableSource1) || (!hasTableSource0 && !hasSubquerySource1)) {
-        useless[i] = true;
-      }
-    }
   }
 
   private void calcSegments() {
@@ -207,31 +187,31 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     }
   }
 
-  public Fragment fragment0() {
+  Fragment fragment0() {
     return f0;
   }
 
-  public Fragment fragment1() {
+  Fragment fragment1() {
     return f1;
   }
 
-  public boolean[] mandatoryBitmap() {
+  boolean[] mandatoryBitmap() {
     return mandatory;
   }
 
-  public Multimap<Symbol, Symbol> attrSources() {
+  Multimap<Symbol, Symbol> attrSources() {
     return sources;
   }
 
-  public int beginIndexOf(Constraint.Kind kind) {
+  int beginIndexOf(Constraint.Kind kind) {
     return segBases[kind.ordinal()];
   }
 
-  public int endIndexOf(Constraint.Kind kind) {
+  int endIndexOf(Constraint.Kind kind) {
     return segBases[kind.ordinal() + 1];
   }
 
-  public int indexOfEq(Symbol s0, Symbol s1) {
+  int indexOfEq(Symbol s0, Symbol s1) {
     assert s0.kind() == s1.kind();
     final Symbol.Kind kind = s0.kind();
     final int base = segBases[kind.ordinal()];
@@ -251,8 +231,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     return constraints.size();
   }
 
-  private static Multimap<Symbol, Symbol> analyzeSources(Fragment fragment) {
-    final AttrSourceAnalyzer analyzer = new AttrSourceAnalyzer(fragment.symbols());
+  private static Multimap<Symbol, Symbol> analyzeSources(
+      Fragment fragment, Multimap<Symbol, Symbol> sources) {
+    final AttrSourceAnalyzer analyzer = new AttrSourceAnalyzer(fragment.symbols(), sources);
     analyzer.analyze0(fragment.root());
     return analyzer.sources;
   }
@@ -261,9 +242,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     private final Symbols symbols;
     private final Multimap<Symbol, Symbol> sources;
 
-    private AttrSourceAnalyzer(Symbols symbols) {
+    private AttrSourceAnalyzer(Symbols symbols, Multimap<Symbol, Symbol> sources) {
       this.symbols = symbols;
-      this.sources = LinkedListMultimap.create(16);
+      this.sources = sources;
     }
 
     List<Symbol> analyze0(Op op) {

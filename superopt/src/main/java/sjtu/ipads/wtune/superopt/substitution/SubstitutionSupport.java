@@ -14,7 +14,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
+import static java.util.Arrays.asList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
@@ -63,5 +64,12 @@ public class SubstitutionSupport {
     final Pair<PlanNode, PlanNode> pair = translateAsPlan(substitution, false);
     System.out.println(" q0: " + translateAsAst(disambiguate(pair.getLeft())));
     System.out.println(" q1: " + translateAsAst(disambiguate(pair.getRight())));
+  }
+
+  public static Constraints partialConstraintsOf(Substitution substitution, boolean lhs) {
+    final Symbols ctx = (lhs ? substitution._0() : substitution._1()).symbols();
+    return Constraints.mk(
+        listFilter(
+            substitution.constraints(), it -> all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
   }
 }

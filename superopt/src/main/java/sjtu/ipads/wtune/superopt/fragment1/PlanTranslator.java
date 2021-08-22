@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -13,10 +14,8 @@ import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
-import java.util.function.Supplier;
 
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.NameSequence.mkIndexed;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
@@ -33,7 +32,6 @@ class PlanTranslator {
   private final Map<Symbol, TableDesc> tableDescs;
   private final Map<Symbol, AttrsDesc> attrsDescs;
   private final Map<Symbol, PredDesc> predDescs;
-  private final NameSequence tableNameSeq, attrNameSeq, predNameSeq, queryNameSeq;
 
   private Constraints constraints;
   private Symbols symbols;
@@ -45,10 +43,6 @@ class PlanTranslator {
     tableDescs = new LinkedHashMap<>(4);
     attrsDescs = new LinkedHashMap<>(8);
     predDescs = new LinkedHashMap<>(4);
-    tableNameSeq = mkIndexed("r", 0);
-    attrNameSeq = mkIndexed("a", 0);
-    predNameSeq = mkIndexed("p", 0);
-    queryNameSeq = mkIndexed("q", 0);
   }
 
   PlanNode translate(Fragment fragment, Constraints constraints) {
@@ -105,33 +99,51 @@ class PlanTranslator {
   }
 
   private void assignAll() {
-    assign0(symbols.symbolsOf(TABLE), tableDescs, TableDesc::new);
-    assign0(symbols.symbolsOf(ATTRS), attrsDescs, AttrsDesc::new);
-    assign0(symbols.symbolsOf(PRED), predDescs, PredDesc::new);
-    applyAttrsFrom();
-    if (!compatibleMode) applyAttrsSub();
+    assignTables(symbols.symbolsOf(TABLE));
+    assignAttrs(symbols.symbolsOf(ATTRS));
+    assignPred(symbols.symbolsOf(PRED));
   }
 
   private void resolveAll() {
+    applyAttrsFrom();
+    if (!compatibleMode) applyAttrsSub();
     resolveTables();
-    resolveAttrs();
     resolvePreds();
   }
 
-  private <T> void assign0(Collection<Symbol> syms, Map<Symbol, T> descs, Supplier<T> supplier) {
+  private void assignTables(Iterable<Symbol> syms) {
     for (Symbol sym : syms) {
-      final T desc = descs.get(sym);
-      if (desc != null) continue;
-
-      final T newDesc = supplier.get();
-      for (Symbol eqSym : constraints.eqClassOf(sym))
-        if (syms.contains(eqSym)) descs.put(eqSym, newDesc);
+      final TableDesc existing = tableDescs.get(sym);
+      if (existing == null) {
+        final TableDesc tableDesc = new TableDesc();
+        for (Symbol eqSym : constraints.eqClassOf(sym)) tableDescs.put(eqSym, tableDesc);
+      }
     }
+  }
+
+  private void assignAttrs(Iterable<Symbol> syms) {
+    for (Symbol sym : syms) {
+      final AttrsDesc existing = attrsDescs.get(sym);
+      if (existing == null) {
+        final AttrsDesc attrsDesc = new AttrsDesc();
+        for (Symbol eqSym : constraints.eqClassOf(sym)) attrsDescs.put(eqSym, attrsDesc);
+      }
+    }
+  }
+
+  private void assignPred(Iterable<Symbol> syms) {
+    for (Symbol sym : syms)
+      if (predDescs.get(sym) == null) {
+        final PredDesc predDesc = new PredDesc();
+        for (Symbol eqSym : constraints.eqClassOf(sym)) predDescs.put(eqSym, predDesc);
+      }
   }
 
   private void applyAttrsFrom() {
     for (Constraint c : constraints.ofKind(AttrsFrom)) {
-      tableDescs.get(c.symbols()[1]).attrs.add(attrsDescs.get(c.symbols()[0]));
+      final Symbol sym0 = c.symbols()[0];
+      final Symbol sym1 = c.symbols()[1];
+      tableDescs.get(sym1).subValues.add(attrsDescs.get(sym0));
     }
   }
 
@@ -140,56 +152,50 @@ class PlanTranslator {
       final Symbol sym0 = c.symbols()[0];
       final Symbol sym1 = c.symbols()[1];
 
-      if (sym1.kind() == TABLE) {
-        tableDescs.get(sym1).attrs.add(attrsDescs.get(sym0));
-
-      } else /* sym1.kind() == ATTRS */ {
-        if (!constraints.isEq(sym0, sym1)) { // Avoid duplication
-          // For simplicity, just treat AttrsSub as AttrsEq.
-          attrsDescs.put(sym0, attrsDescs.get(sym1));
-        }
-      }
+      final AttrsDesc attrsDesc = attrsDescs.get(sym0);
+      if (sym1.kind() == TABLE) tableDescs.get(sym1).subValues.add(attrsDesc);
+      else if (!constraints.isEq(sym0, sym1)) attrsDescs.get(sym1).subValues.add(attrsDesc);
     }
   }
 
   private void resolveTables() {
+    final NameSequence tableNameSeq = mkIndexed("t", 0);
+    final NameSequence attrsNameSeq = mkIndexed("a", 0);
+
     for (TableDesc desc : tableDescs.values())
-      if (desc.name == null) desc.name = tableNameSeq.next();
+      if (desc.name == null) {
+        desc.name = tableNameSeq.next();
+        for (AttrsDesc subValue : desc.subValues)
+          desc.columnNames.addAll(resolveAttrs(subValue, attrsNameSeq));
+        desc.columnNames.add(attrsNameSeq.next());
+      }
   }
 
   private void resolvePreds() {
+    final NameSequence predNameSeq = mkIndexed("p", 0);
     for (PredDesc desc : predDescs.values()) if (desc.name == null) desc.name = predNameSeq.next();
   }
 
-  private void resolveAttrs() {
-    for (TableDesc tableDesc : tableDescs.values()) {
-      final List<String> attrNames = tableDesc.attrNames = new ArrayList<>(4);
-      for (AttrsDesc attrsDesc : tableDesc.attrs) {
-        if (attrsDesc.name == null) attrsDesc.name = attrNameSeq.next();
-        attrNames.add(attrsDesc.name);
-      }
+  private List<String> resolveAttrs(AttrsDesc desc, NameSequence nameSeq) {
+    if (desc.attrNames == null) {
+      final List<String> names = desc.attrNames = new ArrayList<>(desc.subValues.size() + 1);
+      for (AttrsDesc subValues : desc.subValues) names.addAll(resolveAttrs(subValues, nameSeq));
+      names.add(nameSeq.next()); // Always add a dummy column.
     }
-
-    for (AttrsDesc attrsDesc : attrsDescs.values()) {
-      if (attrsDesc.name == null) attrsDesc.name = attrNameSeq.next();
-    }
+    return desc.attrNames;
   }
 
   private Schema mkSchema() {
     final StringBuilder builder = new StringBuilder();
-    final Set<String> initedSymbol = new HashSet<>();
 
     for (TableDesc table : tableDescs.values()) {
-      if (!initedSymbol.add(table.name)) continue;
+      if (table.initialized) continue;
+      table.initialized = true;
 
       builder.append("create table ").append(table.name).append("(\n");
-
-      for (String attrName : table.attrNames)
+      assert !table.columnNames.isEmpty();
+      for (String attrName : table.columnNames)
         builder.append("  ").append(attrName).append(" int,\n");
-      //      if (table.attrNames.isEmpty())
-      // empty table is syntactically error, so we add a dummy column
-      // Always add a dummy column.
-      builder.append("  ").append(attrNameSeq.next()).append(" int,\n");
 
       builder.replace(builder.length() - 2, builder.length(), ");\n");
     }
@@ -202,7 +208,7 @@ class PlanTranslator {
           .append("alter table ")
           .append(table.name)
           .append(" modify column ")
-          .append(attr.name)
+          .append(attr.attrNames.get(0))
           .append(" int not null;\n");
     }
 
@@ -210,33 +216,25 @@ class PlanTranslator {
       if (!tableDescs.containsKey(uniqueKey.symbols()[0])) continue;
 
       final TableDesc table = tableDescs.get(uniqueKey.symbols()[0]);
-      final AttrsDesc attr = attrsDescs.get(uniqueKey.symbols()[1]);
-      builder
-          .append("alter table ")
-          .append(table.name)
-          .append(" add unique (")
-          .append(attr.name)
-          .append(");\n");
+      final AttrsDesc attrs = attrsDescs.get(uniqueKey.symbols()[1]);
+      builder.append("alter table ").append(table.name).append(" add unique (");
+      joining(",", attrs.attrNames, builder);
+      builder.append(");\n");
     }
 
     for (Constraint foreignKey : constraints.ofKind(Reference)) {
       if (!tableDescs.containsKey(foreignKey.symbols()[0])) continue;
 
       final TableDesc table = tableDescs.get(foreignKey.symbols()[0]);
-      final AttrsDesc attr = attrsDescs.get(foreignKey.symbols()[1]);
+      final AttrsDesc attrs = attrsDescs.get(foreignKey.symbols()[1]);
       final TableDesc refTable = tableDescs.get(foreignKey.symbols()[2]);
-      final AttrsDesc refAttr = attrsDescs.get(foreignKey.symbols()[3]);
+      final AttrsDesc refAttrs = attrsDescs.get(foreignKey.symbols()[3]);
 
-      builder
-          .append("alter table ")
-          .append(table.name)
-          .append(" add foreign key (")
-          .append(attr.name)
-          .append(") references ")
-          .append(refTable.name)
-          .append('(')
-          .append(refAttr.name)
-          .append(");\n");
+      builder.append("alter table ").append(table.name).append(" add foreign key (");
+      joining(",", attrs.attrNames, builder);
+      builder.append(") references ").append(refTable.name).append('(');
+      joining(",", refAttrs.attrNames, builder);
+      builder.append(");\n");
     }
 
     return Schema.parse(MYSQL, builder.toString());
@@ -244,50 +242,66 @@ class PlanTranslator {
 
   private Model mkModel(Schema schema) {
     final Model model = Model.mk();
-    for (Symbol symbol : tableDescs.keySet()) mkTable(symbol, schema, model);
-    for (Symbol symbol : attrsDescs.keySet()) mkAttrs(symbol, model);
+    final NameSequence qualificationSeq = NameSequence.mkIndexed("q", 0);
+    for (Symbol symbol : tableDescs.keySet()) mkInput(schema, symbol, qualificationSeq, model);
+    for (Symbol symbol : attrsDescs.keySet()) mkAttrs(symbol, qualificationSeq, model);
     for (Symbol symbol : predDescs.keySet()) mkPred(symbol, model);
     return model;
   }
 
-  private void mkTable(Symbol sym, Schema schema, Model model) {
+  private void mkInput(Schema schema, Symbol sym, NameSequence qualificationSeq, Model model) {
     final Table table = schema.table(tableDescs.get(sym).name);
-    model.assign(sym, InputNode.mk(table, table.name()));
+    final InputNode input = InputNode.mk(table, qualificationSeq.next());
+    model.assign(sym, input);
   }
 
-  private void mkAttrs(Symbol sym, Model model) {
-    if (model.interpretInAttrs(sym) != null) return;
+  private void mkAttrs(Symbol sym, NameSequence qualificationSeq, Model model) {
+    if (model.interpretAttrs(sym) != null) return;
 
-    final AttrsDesc desc = attrsDescs.get(sym);
-    final Symbol src = constraints.sourceOf(sym);
+    final Symbol source = constraints.sourceOf(sym);
+    final AttrsDesc attrs = attrsDescs.get(sym);
 
-    if (src.kind() == TABLE) {
-      final InputNode input = ((InputNode) model.interpretTable(src));
-      final String attrName = desc.name;
-      final Value inValue = find(input.values(), it -> it.name().equals(attrName));
-      assert inValue != null;
-      final Value outValue = inValue.wrapAsExprValue();
-      outValue.setQualification(queryNameSeq.next());
-
-      model.assign(sym, singletonList(inValue), singletonList(outValue));
-    } else {
-      mkAttrs(src, model);
-      final List<Value> inValue = model.interpretAttrs(src).getRight();
-      final List<Value> outValue = listMap(inValue, Value::wrapAsExprValue);
-      final String qualification = queryNameSeq.next();
-      outValue.forEach(it -> it.setQualification(qualification));
-
-      model.assign(sym, inValue, outValue);
+    final ValueBag lookup;
+    if (source.kind() == TABLE) {
+      lookup = model.interpretTable(source).values();
+    } else /* refTo instance ValueDesc */ {
+      mkAttrs(source, qualificationSeq, model);
+      lookup = ValueBag.mk(model.interpretAttrs(source).getRight());
     }
+
+    final List<Value> inValues = listMap(attrs.attrNames, it -> lookup.locate(null, it));
+
+    final int nullIdx;
+    if ((nullIdx = inValues.indexOf(null)) != -1)
+      // Ignorable. May be caused by infeasible AttrsSub constraints.
+      // e.g. AttrsSub(a0,a1) /\ AttrsSub(a1,a2) /\ AttrsEq(a0,a2)
+      throw new IgnorableException("attrs not found: " + attrs.attrNames.get(nullIdx), true);
+
+    final List<Value> outValues = listMap(inValues, Value::wrapAsExprValue);
+    final String qualification = qualificationSeq.next();
+    for (Value value : outValues) value.setQualification(qualification);
+
+    model.assign(sym, inValues, outValues);
   }
 
   private void mkPred(Symbol sym, Model model) {
+    final Symbol attrs = ((SimpleFilter) symbols.ownerOf(sym)).attrs();
+    final AttrsDesc attrsDesc = attrsDescs.get(attrs);
+    final int arity = attrsDesc.attrNames.size();
+    final PredDesc predDesc = predDescs.get(sym);
+
+    if (predDesc.arity != 0 && predDesc.arity != arity)
+      throw new IgnorableException("mismatched arity", true);
+
     final ASTNode name = ASTNode.node(NodeType.NAME_2);
-    name.set(NAME_2_1, predDescs.get(sym).name);
+    name.set(NAME_2_1, predDesc.name);
 
     final ASTNode func = ASTNode.expr(ExprKind.FUNC_CALL);
+    final List<ASTNode> columnsRefs = new ArrayList<>(arity);
+    for (int i = 0; i < arity; i++) columnsRefs.add(mkColRef());
+
     func.set(FUNC_CALL_NAME, name);
-    func.set(FUNC_CALL_ARGS, singletonList(mkColRef()));
+    func.set(FUNC_CALL_ARGS, columnsRefs);
 
     model.assign(sym, Expr.mk(func));
   }
@@ -304,17 +318,20 @@ class PlanTranslator {
   }
 
   private static class TableDesc {
-    private final Set<AttrsDesc> attrs = new HashSet<>();
+    private final Set<AttrsDesc> subValues = new HashSet<>();
+    private final List<String> columnNames = new ArrayList<>();
     private String name;
-    private List<String> attrNames;
+    private boolean initialized;
   }
 
   private static class AttrsDesc {
-    private String name;
+    private final Set<AttrsDesc> subValues = new HashSet<>();
+    private List<String> attrNames;
   }
 
   private static class PredDesc {
     private String name;
+    private int arity;
   }
 
   private void completeConstraints(Fragment fragment) {
@@ -417,5 +434,11 @@ class PlanTranslator {
       default:
         throw new IllegalArgumentException();
     }
+  }
+
+  private Symbol rootSourceOf(Symbol sym) {
+    final Symbol src = constraints.sourceOf(sym);
+    if (src.kind() == TABLE) return sym;
+    else return rootSourceOf(src);
   }
 }

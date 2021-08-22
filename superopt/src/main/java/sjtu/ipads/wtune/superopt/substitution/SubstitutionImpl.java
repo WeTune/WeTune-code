@@ -12,7 +12,9 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 class SubstitutionImpl implements Substitution {
   private final Fragment _0, _1;
   private final Constraints constraints;
+
   private SymbolNaming naming;
+  private FragmentProbe probe0, probe1;
 
   private int id;
 
@@ -79,6 +81,17 @@ class SubstitutionImpl implements Substitution {
       naming.name(_1.symbols());
     }
     return naming;
+  }
+
+  @Override
+  public FragmentProbe probe(boolean lhs) {
+    if (lhs) {
+      if (probe0 == null) probe0 = new FragmentProbeImpl(this, true);
+      return probe0;
+    } else {
+      if (probe1 == null) probe1 = new FragmentProbeImpl(this, false);
+      return probe1;
+    }
   }
 
   @Override

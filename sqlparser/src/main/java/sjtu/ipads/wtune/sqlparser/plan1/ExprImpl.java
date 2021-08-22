@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -62,8 +63,8 @@ class ExprImpl implements Expr {
 
   static Expr mkEquiCond(List<Ref> lhsRefs, List<Ref> rhsRefs) {
     if (lhsRefs.size() != rhsRefs.size())
-      throw new IllegalArgumentException(
-          "unmatched #refs for equi condition. LHS=" + lhsRefs + ", RHS=" + rhsRefs);
+      throw new IgnorableException(
+          "unmatched #refs for equi condition. LHS=" + lhsRefs + ", RHS=" + rhsRefs, true);
 
     final List<Ref> refs = new ArrayList<>(lhsRefs.size() << 1);
     for (int i = 0, bound = lhsRefs.size(); i < bound; i++) {

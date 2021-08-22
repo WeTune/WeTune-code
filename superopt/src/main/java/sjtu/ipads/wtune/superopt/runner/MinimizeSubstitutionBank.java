@@ -16,7 +16,7 @@ public class MinimizeSubstitutionBank implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions.raw"));
-    outputFile = Path.of(args.getOptional("-o", String.class, "wtune_data/substitutions.filtered"));
+    outputFile = Path.of(args.getOptional("-o", String.class, inputFile + ".min"));
     echo = args.getOptional("-echo", boolean.class, true);
   }
 

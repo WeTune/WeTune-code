@@ -18,7 +18,6 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.*;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkBase;
 import static sjtu.ipads.wtune.prover.uexpr.Var.mkConstant;
-import static sjtu.ipads.wtune.prover.utils.Constants.NULL;
 import static sjtu.ipads.wtune.prover.utils.Constants.TRANSLATOR_VAR_PREFIX;
 import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkNotNull;
 import static sjtu.ipads.wtune.prover.utils.UExprUtils.mkProduct;
@@ -75,7 +74,8 @@ public class UExprTranslator {
     } else {
       final Var var = mkBase(varNameSeq.next());
       final UExpr tableTerm = table(input.table().name(), var);
-      final UExpr term = joints.stream()
+      final UExpr term =
+          joints.stream()
               .map(it -> eqPred(it, var.proj("_" + it.name())))
               .reduce(tableTerm, UExpr::mul);
       return sum(var, term);
@@ -266,7 +266,7 @@ public class UExprTranslator {
     //  -- asymmetric part
     // + A(x) * [y = NULL] * not(Sum{z}(B(z) * [p(x.a,z.b)] * [x != NULL] * [z != NULL])
 
-    UExpr cond0 = mainCond.copy();
+    //    UExpr cond0 = mainCond.copy();
     UExpr cond1 = mul(mainCond.copy(), notNullCond.copy());
     lhsExpr = lhsExpr.copy();
     rhsExpr = rhsExpr.copy();
@@ -288,13 +288,15 @@ public class UExprTranslator {
       newVars.add(newVar);
       isNullPreds.add(UExprUtils.mkIsNull(oldVar));
 
-      cond0.subst(oldVar, NULL);
+      //      cond0.subst(oldVar, NULL);
       cond1.subst(oldVar, newVar);
       rhsExpr.subst(oldVar, newVar);
     }
 
-    return mul(
-        mul(lhsExpr, mkProduct(isNullPreds)), add(cond0, not(sum(newVars, mul(rhsExpr, cond1)))));
+    //    return mul(
+    //        mul(lhsExpr, mkProduct(isNullPreds)), add(cond0, not(sum(newVars, mul(rhsExpr,
+    // cond1)))));
+    return mul(mul(lhsExpr, mkProduct(isNullPreds)), not(sum(newVars, mul(rhsExpr, cond1))));
   }
 
   private static boolean isUnionHead(SetOpNode node) {

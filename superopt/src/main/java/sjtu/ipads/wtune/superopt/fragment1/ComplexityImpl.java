@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment1;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
 class ComplexityImpl implements Complexity {
   private final int[] opCounts = new int[OperatorType.values().length + 1];
@@ -37,6 +36,11 @@ class ComplexityImpl implements Complexity {
   public int compareTo(Complexity other, boolean preferInnerJoin) {
     final int[] opCount0 = opCounts();
     final int[] opCount1 = other.opCounts();
+
+    final int numInput0 = opCount0[INPUT.ordinal()];
+    final int numInput1 = opCount1[INPUT.ordinal()];
+    if (numInput0 < numInput1) return -1;
+    if (numInput0 > numInput1) return 1;
 
     int result = 0;
 

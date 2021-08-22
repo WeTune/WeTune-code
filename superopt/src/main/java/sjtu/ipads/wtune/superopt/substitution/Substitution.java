@@ -22,6 +22,8 @@ public interface Substitution {
 
   String canonicalStringify();
 
+  FragmentProbe probe(boolean lhs);
+
   static Substitution parse(String str) {
     return parse(str, false);
   }

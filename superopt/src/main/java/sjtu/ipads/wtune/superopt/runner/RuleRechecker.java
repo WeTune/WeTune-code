@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintEnumerator;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -20,9 +21,7 @@ public class RuleRechecker implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions.filtered"));
-    outputFile =
-        Path.of(
-            args.getOptional("-o", String.class, "wtune_data/substitutions.filtered.rechecked"));
+    outputFile = Path.of(args.getOptional("-o", String.class, inputFile + ".rechecked"));
     echo = args.getOptional("-echo", boolean.class, true);
   }
 
@@ -32,20 +31,29 @@ public class RuleRechecker implements Runner {
     try (final PrintWriter out = new PrintWriter(Files.newOutputStream(outputFile))) {
       for (String line : Files.readAllLines(inputFile)) {
         ++total;
+        if (total < 26) continue;
+        System.out.println(total);
 
         final Substitution substitution = Substitution.parse(line);
         final LogicCtx ctx = mkLogicCtx();
         final ConstraintEnumerator enumerator =
             mkConstraintEnumerator(substitution._0(), substitution._1(), ctx);
 
-        if (!enumerator.prove(substitution.constraints())) {
+        boolean proved = false;
+        try {
+          proved = enumerator.prove(substitution.constraints());
+        } catch (IgnorableException ex) {
+          if (!ex.ignorable()) throw ex;
+        } finally {
+          ctx.close();
+        }
+
+        if (!proved) {
           ++filtered;
           if (echo) System.out.println(substitution);
         } else {
           out.println(substitution.canonicalStringify());
         }
-
-        ctx.close();
       }
     }
     if (echo) System.out.printf("%d -> %d\n", total, total - filtered);

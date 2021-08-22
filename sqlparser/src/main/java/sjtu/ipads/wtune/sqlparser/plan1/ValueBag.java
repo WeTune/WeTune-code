@@ -12,6 +12,8 @@ public interface ValueBag extends List<Value> {
 
   Value locate(Value value, PlanContext ctx);
 
+  Value locate(String qualification, String name);
+
   static ValueBag empty() {
     return ValueBagImpl.EMPTY;
   }

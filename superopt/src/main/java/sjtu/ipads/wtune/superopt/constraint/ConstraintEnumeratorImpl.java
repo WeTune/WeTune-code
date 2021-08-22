@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import com.google.common.collect.Multimap;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
@@ -16,9 +16,9 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
@@ -128,9 +128,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
   private void markMandatory() {
     final boolean[] bits = constraints.mandatoryBitmap();
-    for (int i = 0, bound = bits.length; i < bound; i++) {
-      if (bits[i]) enabled[i] = true;
-    }
+    for (int i = 0, bound = bits.length; i < bound; i++) if (bits[i]) enabled[i] = true;
   }
 
   private List<Enumerator> mkEnumerators() {
@@ -144,8 +142,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         new ArrayList<>(constraints.size() - constraints.beginIndexOf(AttrsSub) + 5);
 
     enumerators.add(mkEqRelEnumerator(tables0, tables1));
-    enumerators.add(mkEqRelEnumerator(filterNative(attrs0), filterNative(attrs1)));
-    enumerators.add(mkEqRelEnumerator(filterDerived(attrs0), filterDerived(attrs1)));
+    enumerators.add(mkEqRelEnumerator(attrs0, attrs1));
     enumerators.add(mkEqRelEnumerator(preds0, preds1));
 
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
@@ -178,16 +175,6 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     return new EqRelEnumerator(symbols0, symbols1);
   }
 
-  private List<Symbol> filterDerived(List<Symbol> attrs) {
-    final Multimap<Symbol, Symbol> sources = constraints.attrSources();
-    return listFilter(attrs, it -> any(sources.get(it), src -> src.kind() == ATTRS));
-  }
-
-  private List<Symbol> filterNative(List<Symbol> attrs) {
-    final Multimap<Symbol, Symbol> sources = constraints.attrSources();
-    return listFilter(attrs, it -> any(sources.get(it), src -> src.kind() == TABLE));
-  }
-
   private void chainEnumerators(List<Enumerator> enumerators) {
     for (int i = 1, bound = enumerators.size(); i < bound; i++)
       enumerators.get(i - 1).setNext(enumerators.get(i));
@@ -206,6 +193,20 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     for (int i = attrSubBegin; i < attrSubEnd; ++i) {
       final Constraint attrSub = constraints.get(i);
       if (enabled[i] && attrSub.symbols()[0] == x) return attrSub.symbols()[1];
+    }
+
+    return null;
+  }
+
+  private Symbol fastSourceOf(Symbol x, int indexHint) {
+    assert x.kind() == ATTRS;
+    final int attrsSubBegin = constraints.beginIndexOf(AttrsSub);
+    for (int i = indexHint; i >= attrsSubBegin; i--) {
+      if (enabled[i]) {
+        final Constraint constraint = constraints.get(i);
+        if (constraint.symbols()[0] != x) return null;
+        else return constraint.symbols()[1];
+      }
     }
 
     return null;
@@ -239,6 +240,53 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     }
 
     abstract int enumerate();
+  }
+
+  private abstract class PruningEnumerator extends Enumerator {
+    protected final int index;
+
+    protected PruningEnumerator(int index) {
+      this.index = index;
+    }
+
+    @Override
+    int enumerate() {
+      final boolean original = enabled[index];
+      final boolean canRelax = !original && !isImplied();
+      int answer = CONFLICT;
+
+      enabled[index] = true;
+      if (checkNoConflict()) answer = next.enumerate();
+      if (!canRelax) {
+        enabled[index] = original;
+        return answer;
+      }
+
+      enabled[index] = false;
+      if (answer == INCOMPLETE || answer == TIMEOUT) return answer;
+
+      final int answer1 = next.enumerate();
+      return answer == EQ ? EQ : answer1;
+    }
+
+    protected boolean isImplied() {
+      final Constraint me = constraints.get(index);
+      final Constraint.Kind kind = me.kind();
+
+      final int start = constraints.beginIndexOf(kind);
+      final int end = constraints.endIndexOf(kind);
+
+      for (int i = start; i < end; ++i) {
+        if (i == index || !enabled[i]) continue;
+        if (canImply(constraints.get(i), me)) return true;
+      }
+
+      return false;
+    }
+
+    protected abstract boolean canImply(Constraint pre, Constraint post);
+
+    protected abstract boolean checkNoConflict();
   }
 
   private class EqRelEnumerator extends Enumerator {
@@ -311,104 +359,6 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     }
   }
 
-  private abstract class PruningEnumerator extends Enumerator {
-    protected final int index;
-
-    protected PruningEnumerator(int index) {
-      this.index = index;
-    }
-
-    @Override
-    int enumerate() {
-      final boolean original = enabled[index];
-      final boolean canRelax = !original && !isImplied();
-      int answer = CONFLICT;
-
-      enabled[index] = true;
-      if (checkNoConflict()) answer = next.enumerate();
-      if (!canRelax) {
-        enabled[index] = original;
-        return answer;
-      }
-
-      enabled[index] = false;
-      if (answer == INCOMPLETE || answer == TIMEOUT) return answer;
-
-      final int answer1 = next.enumerate();
-      return answer == EQ ? EQ : answer1;
-    }
-
-    protected boolean isImplied() {
-      final Constraint me = constraints.get(index);
-      final Constraint.Kind kind = me.kind();
-
-      final int start = constraints.beginIndexOf(kind);
-      final int end = constraints.endIndexOf(kind);
-
-      for (int i = start; i < end; ++i) {
-        if (i == index || !enabled[i]) continue;
-        if (canImply(constraints.get(i), me)) return true;
-      }
-
-      return false;
-    }
-
-    protected abstract boolean canImply(Constraint pre, Constraint post);
-
-    protected abstract boolean checkNoConflict();
-  }
-
-  private class AttrsSubEnumerator extends PruningEnumerator {
-    private AttrsSubEnumerator(int index) {
-      super(index);
-    }
-
-    @Override
-    protected boolean checkNoConflict() {
-      final Constraint me = constraints.get(index);
-      final Symbol attr = me.symbols()[0];
-      final Symbol source = me.symbols()[1];
-      final int begin = constraints.beginIndexOf(AttrsSub);
-      final int end = constraints.endIndexOf(AttrsSub);
-
-      for (int i = begin; i < end; ++i) {
-        final Constraint c = constraints.get(i);
-        if (enabled[i]) {
-          final Symbol thatAttr = c.symbols()[0];
-          final Symbol thatSource = c.symbols()[1];
-
-          if ((attr == thatAttr && source != thatSource)
-              || isEq(attr, thatAttr) && !isEq(source, thatSource)) {
-            return false;
-          }
-        } else if (i < index && canImply(c, me)) {
-          return false; // We should be suppressed.
-        }
-      }
-
-      return true;
-    }
-
-    @Override
-    protected boolean canImply(Constraint pre, Constraint post) {
-      final Symbol[] syms0 = pre.symbols();
-      final Symbol[] syms1 = post.symbols();
-      if (!isEq(syms0[0], syms1[0])) return false;
-
-      final Symbol src0 = syms0[1], src1 = syms1[1];
-      if (src0 == src1) return true;
-      if (src0.ctx() == src1.ctx() || !isEq(src0, src1)) return false;
-      return countEqsOf(src0) == 1;
-    }
-
-    private int countEqsOf(Symbol sym) {
-      int count = 0;
-      for (Symbol other : f0.symbols().symbolsOf(sym.kind())) if (isEq(sym, other)) ++count;
-      for (Symbol other : f1.symbols().symbolsOf(sym.kind())) if (isEq(sym, other)) ++count;
-      return count;
-    }
-  }
-
   private class SourceChecker extends Enumerator {
     private final Collection<Symbol> symbols;
 
@@ -431,10 +381,60 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     int enumerate() {
-      for (Symbol symbol : symbols) {
-        if (sourceOf(symbol) == null) return CONFLICT;
-      }
+      for (Symbol symbol : symbols) if (sourceOf(symbol) == null) return CONFLICT;
       return next.enumerate();
+    }
+  }
+
+  private class AttrsSubEnumerator extends PruningEnumerator {
+    private final Symbol attrs, source;
+
+    private AttrsSubEnumerator(int index) {
+      super(index);
+      final Constraint constraint = constraints.get(index);
+      this.attrs = constraint.symbols()[0];
+      this.source = constraint.symbols()[1];
+    }
+
+    @Override
+    protected boolean checkNoConflict() {
+      return checkSingleSource() // Check no other equal attrs has incompatible source.
+          && checkCompatible(); // Check no other AttrsSub of this attrs is enabled.
+    }
+
+    @Override
+    protected boolean canImply(Constraint pre, Constraint post) {
+      // AttrsSub can never be implied - even isEq(pre.attrs,post.attrs) && isEq(pre.src,post.src)
+      return false;
+    }
+
+    private boolean checkSingleSource() {
+      return fastSourceOf(attrs, index - 1) == null;
+    }
+
+    private boolean checkCompatible() {
+      final int bound = constraints.beginIndexOf(AttrsSub);
+      for (int i = index - 1; i >= bound; i--) {
+        if (!enabled[i]) continue;
+
+        final Constraint that = constraints.get(i);
+        final Symbol thatAttrs = that.symbols()[0];
+        final Symbol thatSrc = that.symbols()[1];
+        assert thatAttrs != attrs;
+        if (isEq(thatAttrs, attrs) && !checkSourceCompatible(source, thatSrc)) return false;
+      }
+
+      return true;
+    }
+
+    private boolean checkSourceCompatible(Symbol src0, Symbol src1) {
+      if (src0 == null || src1 == null) return false;
+
+      if (src1.kind() == src0.kind()) return isEq(src0, src1);
+      if (src0.kind() == ATTRS) return checkSourceCompatible(sourceOf(src0), src1);
+      if (src1.kind() == ATTRS) return checkSourceCompatible(src0, sourceOf(src1));
+
+      return assertFalse();
     }
   }
 
@@ -464,9 +464,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     protected boolean canImply(Constraint pre, Constraint post) {
       final Symbol[] syms0 = pre.symbols();
       final Symbol[] syms1 = post.symbols();
-      if (!isEq(syms0[1], syms1[1])) return false;
-
-      return isEq(syms0[0], syms1[0]) && sourceOf(syms1[1]) == syms1[0];
+      return isEq(syms0[1], syms1[1]) && isEq(syms0[0], syms1[0]) && sourceOf(syms1[1]) == syms1[0];
     }
   }
 
@@ -545,7 +543,12 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private class Proof extends Enumerator {
     @Override
     int enumerate() {
-      return prove0(enabled);
+      try {
+        return prove0(enabled);
+      } catch (IgnorableException ex) {
+        if (ex.ignorable()) return CONFLICT;
+        throw ex;
+      }
     }
   }
 

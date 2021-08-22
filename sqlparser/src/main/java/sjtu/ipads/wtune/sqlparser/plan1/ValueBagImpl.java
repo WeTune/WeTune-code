@@ -46,6 +46,17 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
   }
 
   @Override
+  public Value locate(String qualification, String name) {
+    requireNonNull(name);
+
+    for (Value value : values)
+      if ((qualification == null || qualification.equals(value.qualification()))
+          && name.equals(value.name())) return value;
+
+    return null;
+  }
+
+  @Override
   public Value get(int index) {
     return values.get(index);
   }
