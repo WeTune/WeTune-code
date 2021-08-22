@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.common.utils.IgnorableException;
-import sjtu.ipads.wtune.superopt.constraint.ConstraintEnumerator;
+import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.PrintWriter;
@@ -36,12 +35,12 @@ public class RuleRechecker implements Runner {
 
         final Substitution substitution = Substitution.parse(line);
         final LogicCtx ctx = mkLogicCtx();
-        final ConstraintEnumerator enumerator =
-            mkConstraintEnumerator(substitution._0(), substitution._1(), ctx);
 
         boolean proved = false;
         try {
-          proved = enumerator.prove(substitution.constraints());
+          proved =
+              mkConstraintEnumerator(substitution._0(), substitution._1(), ctx)
+                  .prove(substitution.constraints());
         } catch (IgnorableException ex) {
           if (!ex.ignorable()) throw ex;
         } finally {

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.superopt.fragment1.Fragment;
 import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -10,7 +11,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.Integer.parseInt;
@@ -75,13 +75,11 @@ public class EnumSubstitution implements Runner {
 
     final int total = fragments.size();
     if (parallel) {
-        range(0, total).parallel().forEach(i -> {
-            range(i + 1, total).parallel().forEach(j -> fromFragments(i, j));
-        });
+      range(0, total)
+          .parallel()
+          .forEach(i -> range(i + 1, total).parallel().forEach(j -> fromFragments(i, j)));
     } else {
-        range(0, total).forEach(i -> {
-            range(i + 1, total).forEach(j -> fromFragments(i, j));
-        });
+      range(0, total).forEach(i -> range(i + 1, total).forEach(j -> fromFragments(i, j)));
     }
   }
 
@@ -131,6 +129,9 @@ public class EnumSubstitution implements Runner {
       }
 
       if (echo) substitutions.forEach(System.out::println);
+
+    } catch (IgnorableException ex) {
+      if (!ex.ignorable()) throw ex;
 
     } catch (Throwable ex) {
       synchronized (err) {
