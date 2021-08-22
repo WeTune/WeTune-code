@@ -50,6 +50,6 @@ class FragmentEnumerator {
             hole.unFill();
           }
 
-    return Sets.union(newFragments, enumerate0(depth + 1, newFragments));
+    return Sets.union(fragments, enumerate0(depth + 1, newFragments));
   }
 }
