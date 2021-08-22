@@ -3,4 +3,4 @@
 !data.version
 !schemas/
 !schemas/*
-!filtered_bank
+!substitutions.filtered
