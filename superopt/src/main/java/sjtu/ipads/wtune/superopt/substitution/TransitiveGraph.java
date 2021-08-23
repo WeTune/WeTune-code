@@ -1,50 +1,78 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableValueGraph;
-import com.google.common.graph.ValueGraphBuilder;
 
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Consumer;
 
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
+public class TransitiveGraph<V, E> {
+  private final MutableValueGraph<V, E> graph;
 
-class TransitiveGraph {
-  private final SubstitutionBank bank;
-  private final MutableValueGraph<FragmentProbe, Substitution> graph;
-
-  TransitiveGraph(SubstitutionBank bank) {
-    this.bank = bank;
-    this.graph =
-        ValueGraphBuilder.directed()
-            .expectedNodeCount(bank.size() << 2)
-            .allowsSelfLoops(false)
-            .build();
-
-    buildGraph();
+  public TransitiveGraph(MutableValueGraph<V, E> graph) {
+    this.graph = graph;
   }
 
-  private void buildGraph() {
-    for (Substitution sub : bank) {
-      final FragmentProbe lhs = sub.probe(true), rhs = sub.probe(false);
-      graph.addNode(lhs);
-      graph.addNode(rhs);
-      graph.putEdgeValue(lhs, rhs, sub);
-    }
+  public MutableValueGraph<V, E> graph() {
+    return graph;
   }
 
-  private int countNodeWithMultipleOut() {
-    int count = 0;
-    for (FragmentProbe node : graph.nodes()) {
+  public void breakTransitivity(Consumer<E> listener) {
+    for (V node : graph.nodes()) {
       if (graph.successors(node).size() == 0) {
-        ++count;
+        final Set<V> predecessors = graph.predecessors(node);
+        if (predecessors.isEmpty()) continue;
+
+        final boolean isMandatory = predecessors.size() == 1;
+        final Map<V, NodeDistance<V>> distances = new IdentityHashMap<>();
+        final List<EndpointPair<V>> toRemoveEdges = new ArrayList<>();
+        for (V predecessor : predecessors) {
+          breakTransitivity0(predecessor, node, isMandatory, 1, distances, toRemoveEdges);
+        }
+        for (EndpointPair<V> toRemoveEdge : toRemoveEdges) {
+          listener.accept(graph.removeEdge(toRemoveEdge));
+        }
       }
     }
-    return count;
   }
 
-  public static void main(String[] args) throws IOException {
-    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "substitutions.filtered"));
-    final TransitiveGraph graph = new TransitiveGraph(bank);
-    System.out.println(graph.countNodeWithMultipleOut());
+  private void breakTransitivity0(
+      V start,
+      V end,
+      boolean mandatory,
+      int distance,
+      Map<V, NodeDistance<V>> distances,
+      List<EndpointPair<V>> toRemoveEdges) {
+    final NodeDistance<V> knownDist = distances.get(start);
+
+    if (knownDist != null) {
+      if (distance < knownDist.distance) {
+        toRemoveEdges.add(EndpointPair.ordered(start, end));
+      } else if (distance > knownDist.distance) {
+        if (knownDist.adjacent != end && !knownDist.mandatory)
+          toRemoveEdges.add(EndpointPair.ordered(start, knownDist.adjacent));
+        knownDist.adjacent = end;
+        knownDist.distance = distance;
+        knownDist.mandatory = mandatory;
+      }
+      return;
+    }
+
+    final NodeDistance<V> d = new NodeDistance<>();
+    d.adjacent = end;
+    d.distance = distance;
+    d.mandatory = mandatory;
+    distances.put(start, d);
+
+    final Set<V> predecessors = graph.predecessors(start);
+    boolean isMandatory = predecessors.size() == 1;
+    for (V predecessor : predecessors)
+      breakTransitivity0(predecessor, start, isMandatory, distance + 1, distances, toRemoveEdges);
+  }
+
+  private static class NodeDistance<E> {
+    private E adjacent;
+    private int distance;
+    private boolean mandatory;
   }
 }

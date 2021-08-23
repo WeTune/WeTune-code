@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.ValueGraphBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
@@ -46,16 +48,10 @@ public class SubstitutionSupport {
   }
 
   public static SubstitutionBank minimize(SubstitutionBank bank) {
-    final DuplicationChecker checker = new DuplicationChecker(bank);
-    final Set<Substitution> duplicated = new HashSet<>(bank.size() >> 2);
+    removeMeaningless(bank);
+    removeDuplicated(bank);
+    removeTransitive(bank);
 
-    for (Substitution substitution : bank)
-      if (checker.isDuplicated(substitution)) {
-        duplicated.add(substitution);
-      }
-
-    bank.removeAll(duplicated);
-    bank.removeIf(MeaninglessChecker::isMeaningless);
     return bank;
   }
 
@@ -71,5 +67,39 @@ public class SubstitutionSupport {
     return Constraints.mk(
         listFilter(
             substitution.constraints(), it -> all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
+  }
+
+  private static void removeMeaningless(SubstitutionBank bank) {
+    bank.removeIf(MeaninglessChecker::isMeaningless);
+  }
+
+  private static void removeDuplicated(SubstitutionBank bank) {
+    final DuplicationChecker checker = new DuplicationChecker(bank);
+    final Set<Substitution> duplicated = new HashSet<>(bank.size() >> 2);
+
+    for (Substitution substitution : bank)
+      if (checker.isDuplicated(substitution)) {
+        duplicated.add(substitution);
+      }
+
+    bank.removeAll(duplicated);
+  }
+
+  private static void removeTransitive(SubstitutionBank bank) {
+    MutableValueGraph<FragmentProbe, Substitution> graph =
+        ValueGraphBuilder.directed()
+            .expectedNodeCount(bank.size() << 2)
+            .allowsSelfLoops(false)
+            .build();
+
+    for (Substitution sub : bank) {
+      final FragmentProbe lhs = sub.probe(true), rhs = sub.probe(false);
+      graph.addNode(lhs);
+      graph.addNode(rhs);
+      graph.putEdgeValue(lhs, rhs, sub);
+    }
+
+    final TransitiveGraph<FragmentProbe, Substitution> g = new TransitiveGraph<>(graph);
+    g.breakTransitivity(bank::remove);
   }
 }
