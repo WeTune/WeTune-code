@@ -75,9 +75,7 @@ public class EnumSubstitution implements Runner {
 
     final int total = fragments.size();
     if (parallel) {
-      range(0, total)
-          .parallel()
-          .forEach(i -> range(i + 1, total).parallel().forEach(j -> fromFragments(i, j)));
+      range(0, total).forEach(i -> range(i + 1, total).parallel().forEach(j -> fromFragments(i, j)));
     } else {
       range(0, total).forEach(i -> range(i + 1, total).forEach(j -> fromFragments(i, j)));
     }

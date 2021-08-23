@@ -25,12 +25,14 @@ public class ConstraintSupport {
 
   public static List<Substitution> enumConstraints(
       Fragment f0, Fragment f1, LogicCtx logicCtx, long timeout) {
-    final ConstraintEnumerator enumerator = mkConstraintEnumerator(f0, f1, logicCtx);
-    enumerator.setTimeout(timeout);
-    final List<Substitution> ret =
-        listMap(enumerator.enumerate(), it -> Substitution.mk(f0, f1, it));
-    enumerator.close();
-    return ret;
+    ConstraintEnumerator enumerator = null;
+    try {
+        enumerator = mkConstraintEnumerator(f0, f1, logicCtx);
+        enumerator.setTimeout(timeout);
+        return listMap(enumerator.enumerate(), it -> Substitution.mk(f0, f1, it));
+    } finally {
+        if (enumerator != null) enumerator.close();
+    }
   }
 
   private static void checkOverwhelming(Fragment f0, Fragment f1) {

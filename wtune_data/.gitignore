@@ -3,4 +3,4 @@
 !data.version
 !schemas/
 !schemas/*
-!substitutions.filtered
+!substitutions
