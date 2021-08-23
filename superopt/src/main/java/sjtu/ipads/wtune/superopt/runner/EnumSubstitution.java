@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.Arrays;
 
 import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
@@ -22,6 +23,7 @@ public class EnumSubstitution implements Runner {
   private PrintWriter out;
   private PrintWriter err;
   private PrintWriter fail;
+  private String completedFile;
 
   private boolean echo, runFailure, parallel;
   private int iBegin, jBegin;
@@ -30,6 +32,7 @@ public class EnumSubstitution implements Runner {
   private long timeout;
 
   private String failFile;
+  private int[] completed;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -48,6 +51,8 @@ public class EnumSubstitution implements Runner {
     out = new PrintWriter(Files.newOutputStream(Path.of(outFile)));
     err = new PrintWriter(Files.newOutputStream(Path.of(errFile)));
     fail = new PrintWriter(Files.newOutputStream(Path.of(failFile)));
+    completedFile = args.getOptional("completed", String.class, null);
+
 
     final String from = args.getOptional("from", String.class, "0,0");
     final String[] split = from.split(",");
@@ -70,8 +75,22 @@ public class EnumSubstitution implements Runner {
     fail.close();
   }
 
-  private void fromEnumeration() {
+  private void fromEnumeration() throws IOException {
     fragments = FragmentSupport.enumFragments();
+
+    if (completedFile != null) {
+        final List<String> strs = Files.readAllLines(Path.of(completedFile));
+        completed = new int[strs.size()];
+        int index = 0;
+        for (String str : strs) {
+            final String[] split = str.split(",");
+            final int i = Integer.parseInt(split[0]);
+            final int j = Integer.parseInt(split[1]);
+            completed[index++] = ordinal(i, j);
+        }
+        Arrays.sort(completed);
+    }
+
 
     final int total = fragments.size();
     if (parallel) {
@@ -101,11 +120,24 @@ public class EnumSubstitution implements Runner {
     enumerate(f0, f1);
   }
 
+  private int ordinal(int i, int j) {
+    assert i < j;
+    return ((((fragments.size() << 1) - i - 1) * i) >> 1) + j - i - 1;
+  }
+
+  private boolean isCompleted(int ordinal) {
+      return completed != null && Arrays.binarySearch(completed, ordinal) >= 0;
+  }
+
   private void fromFragments(int i, int j) {
     assert i < j;
     if (i < iBegin || j < jBegin) return;
 
-    final int ordinal = ((((fragments.size() << 1) - i - 1) * i) >> 1) + j - i - 1;
+    final int ordinal = ordinal(i, j);
+    if (isCompleted(ordinal)) {
+        System.out.printf("skipped: %d,%d\n", i, j);
+        return;
+    }
     if ((ordinal % numSegments) != segMask) return;
     final Fragment f0 = fragments.get(i);
     final Fragment f1 = fragments.get(j);
