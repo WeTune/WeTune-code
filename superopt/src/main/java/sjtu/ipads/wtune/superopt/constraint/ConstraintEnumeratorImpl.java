@@ -144,10 +144,12 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     enumerators.add(mkEqRelEnumerator(tables0, tables1));
     enumerators.add(mkEqRelEnumerator(attrs0, attrs1));
     enumerators.add(mkEqRelEnumerator(preds0, preds1));
+    enumerators.add(new Timeout());
 
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
     final int attrSubEnd = constraints.endIndexOf(AttrsSub);
     for (int i = attrSubBegin; i < attrSubEnd; ++i) enumerators.add(new AttrsSubEnumerator(i));
+    enumerators.add(new Timeout());
 
     enumerators.add(new SourceChecker(listJoin(attrs0, attrs1)));
 
@@ -163,8 +165,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     final int refEnd = constraints.endIndexOf(Reference);
     for (int i = refBegin; i < refEnd; ++i) enumerators.add(new ReferenceEnumerator(i));
 
-    enumerators.add(new Recorder());
     enumerators.add(new Timeout());
+    enumerators.add(new Recorder());
     //    enumerators.add(new Dummy());
     enumerators.add(new Proof());
 
@@ -311,6 +313,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         final int originalBias = bias;
         final byte[][] partitions = partitioner.partition();
 
+	if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
         if (!checkComplete(partitions)) continue;
 
         for (byte[] partition : partitions)
