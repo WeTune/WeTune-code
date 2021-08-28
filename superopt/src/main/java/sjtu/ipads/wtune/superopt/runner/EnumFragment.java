@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 
 import java.util.List;
 

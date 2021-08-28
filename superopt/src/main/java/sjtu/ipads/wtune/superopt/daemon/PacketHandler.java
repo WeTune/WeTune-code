@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
+import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.stmt.Statement;
 
 public class PacketHandler {
   private final DaemonContext ctx;

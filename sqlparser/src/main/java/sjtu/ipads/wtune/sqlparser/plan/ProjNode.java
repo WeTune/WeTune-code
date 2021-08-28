@@ -1,36 +1,26 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.internal.ProjNodeImpl;
-
 public interface ProjNode extends PlanNode {
-  List<ASTNode> selections();
+  boolean containsWildcard();
 
-  boolean isForcedUnique();
+  boolean isDeduplicated();
+  // For wildcard resolution.
+  // If there are no wildcard, the values are immutable.
+  // Note: the bag is expected containing only ExprValue.
+  void setValues(ValueBag bag);
 
-  boolean isWildcard();
-
-  void setForcedUnique(boolean flag);
-
-  void setWildcard(boolean flag);
-
-  void setQualification(String qualification);
+  void setDeduplicated(boolean explicitDistinct);
 
   @Override
   default OperatorType kind() {
     return OperatorType.PROJ;
   }
 
-  static ProjNode make(List<AttributeDef> projs) {
-    return ProjNodeImpl.build(projs);
+  static ProjNode mk(ValueBag outValues) {
+    return ProjNodeImpl.mk(outValues);
   }
 
-  static ProjNode make(String qualification, List<ASTNode> selectItems) {
-    return ProjNodeImpl.build(qualification, selectItems);
-  }
-
-  static ProjNode makeWildcard(List<AttributeDef> usedAttrs) {
-    return ProjNodeImpl.buildWildcard(usedAttrs);
+  static ProjNode mkWildcard(ValueBag inValues) {
+    return ProjNodeImpl.mkWildcard(inValues);
   }
 }

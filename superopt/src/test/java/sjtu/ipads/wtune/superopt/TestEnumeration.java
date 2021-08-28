@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintEnumerator;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.List;
@@ -12,11 +12,11 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.mkLogicCtx;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.mkConstraintEnumerator;
-import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
 
 @Tag("slow")
 @Tag("enumeration")

@@ -1,21 +1,21 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.optimizer.internal.OptimizerImpl;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
+
+import java.util.List;
+import java.util.Set;
 
 public interface Optimizer {
-  List<PlanNode> optimize(PlanNode root);
+  Set<PlanNode> optimize(PlanNode plan);
 
-  List<ASTNode> optimize(ASTNode root);
+  void setTimeout(long timeout);
 
   void setTracing(boolean flag);
 
-  List<List<Substitution>> getTraces();
+  List<OptimizationStep> traceOf(PlanNode plan);
 
-  static Optimizer make(SubstitutionBank repo, Schema schema) {
-    return new OptimizerImpl(repo, schema);
+  static Optimizer mk(SubstitutionBank bank) {
+    return new OptimizerImpl(bank);
   }
 }

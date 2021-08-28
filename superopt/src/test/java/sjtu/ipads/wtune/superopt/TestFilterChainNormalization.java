@@ -3,19 +3,19 @@ package sjtu.ipads.wtune.superopt;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.utils.TreeScaffold;
-import sjtu.ipads.wtune.sqlparser.plan1.CombinedFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.SimpleFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.CombinedFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.SimpleFilterNode;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.TestHelper.mkPlan;
-import static sjtu.ipads.wtune.superopt.optimizer1.OptimizerSupport.normalizeFilterChain;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizeFilterChain;
 
 @Tag("fast")
 @Tag("optimizer")

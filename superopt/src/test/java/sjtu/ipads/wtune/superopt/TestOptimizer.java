@@ -1,46 +1,18 @@
 package sjtu.ipads.wtune.superopt;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.superopt.TestHelper.optimizeStmt;
 
 public class TestOptimizer {
-  private static SubstitutionBank bank;
-
-  private static SubstitutionBank bank() {
-    if (bank != null) return bank;
-
-    bank = SubstitutionBank.make();
-
-    try {
-      bank.importFrom(Files.readAllLines(Paths.get("wtune_data", "filtered_bank")), false);
-    } catch (IOException ioe) {
-      throw new UncheckedIOException(ioe);
-    }
-
-    return bank;
-  }
-
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);
-    final ASTNode ast = stmt.parsed();
-    final Schema schema = stmt.app().schema("base", true);
-    ast.context().setSchema(schema);
-    normalize(stmt.parsed());
-
-    final Optimizer optimizer = Optimizer.make(bank(), schema);
-    final List<ASTNode> optimized = optimizer.optimize(ast);
+    final Set<ASTNode> optimized = optimizeStmt(stmt);
 
     optimized.forEach(System.out::println);
     boolean passed = false;

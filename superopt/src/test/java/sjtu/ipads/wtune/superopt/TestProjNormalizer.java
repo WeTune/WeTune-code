@@ -3,18 +3,18 @@ package sjtu.ipads.wtune.superopt;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.TestHelper.mkPlan;
-import static sjtu.ipads.wtune.superopt.optimizer1.OptimizerSupport.insertProjIfNeed;
-import static sjtu.ipads.wtune.superopt.optimizer1.OptimizerSupport.removeProjIfNeed;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.insertProjIfNeed;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.removeProjIfNeed;
 
 @Tag("fast")
 @Tag("optimizer")

@@ -6,12 +6,12 @@ import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
-import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
-import sjtu.ipads.wtune.superopt.fragment1.Symbols;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
@@ -20,10 +20,10 @@ import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
-import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
-import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private static final int EQ = 0, CONFLICT = 1, INCOMPLETE = -1, TIMEOUT = 2;
@@ -313,7 +313,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         final int originalBias = bias;
         final byte[][] partitions = partitioner.partition();
 
-	if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
+        if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
         if (!checkComplete(partitions)) continue;
 
         for (byte[] partition : partitions)
@@ -521,7 +521,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   }
 
   private class Recorder extends Enumerator {
-    private int i = 0;
+    private final int i = 0;
 
     @Override
     int enumerate() {

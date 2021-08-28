@@ -4,7 +4,7 @@ import com.google.common.collect.Multimap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment1.*;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
-import static sjtu.ipads.wtune.superopt.fragment1.Symbol.Kind.*;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 // The class maintains a collection of constraint and corresponding metadata.
 class ConstraintsIndex extends AbstractList<Constraint> {

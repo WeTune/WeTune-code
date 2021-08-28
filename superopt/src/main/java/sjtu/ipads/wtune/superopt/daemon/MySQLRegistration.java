@@ -1,13 +1,14 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import static sjtu.ipads.wtune.superopt.daemon.DaemonContext.LOG;
+import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 
 import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
+
+import static sjtu.ipads.wtune.superopt.daemon.DaemonContext.LOG;
 
 public class MySQLRegistration extends RegistrationBase {
   private final ConnectionProvider connPool;

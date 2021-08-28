@@ -2,14 +2,14 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.CombinedFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.SimpleFilterNode;
-import sjtu.ipads.wtune.superopt.fragment1.ConstraintAwareModel;
-import sjtu.ipads.wtune.superopt.fragment1.Filter;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.optimizer1.ReversedMatch;
+import sjtu.ipads.wtune.sqlparser.plan.CombinedFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.SimpleFilterNode;
+import sjtu.ipads.wtune.superopt.fragment.ConstraintAwareModel;
+import sjtu.ipads.wtune.superopt.fragment.Filter;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.optimizer.ReversedMatch;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.List;

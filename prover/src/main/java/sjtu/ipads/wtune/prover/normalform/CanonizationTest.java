@@ -4,8 +4,8 @@ import static sjtu.ipads.wtune.prover.ProverSupport.canonizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.normalizeExpr;
 import static sjtu.ipads.wtune.prover.ProverSupport.translateAsUExpr;
 
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 

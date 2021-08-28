@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import static sjtu.ipads.wtune.stmt.support.Workflow.parameterize;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.Statement;
+
+import static sjtu.ipads.wtune.stmt.support.Workflow.parameterize;
 
 public class RegistrationBase implements Registration {
   private static final long TTL = 50 * 60 * 1000; // 50 min

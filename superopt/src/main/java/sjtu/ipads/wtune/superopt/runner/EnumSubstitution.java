@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.IgnorableException;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
@@ -10,9 +10,9 @@ import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
-import java.util.Arrays;
 
 import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
@@ -53,7 +53,6 @@ public class EnumSubstitution implements Runner {
     fail = new PrintWriter(Files.newOutputStream(Path.of(failFile)));
     completedFile = args.getOptional("completed", String.class, null);
 
-
     final String from = args.getOptional("from", String.class, "0,0");
     final String[] split = from.split(",");
     iBegin = parseInt(split[0]);
@@ -79,22 +78,23 @@ public class EnumSubstitution implements Runner {
     fragments = FragmentSupport.enumFragments();
 
     if (completedFile != null) {
-        final List<String> strs = Files.readAllLines(Path.of(completedFile));
-        completed = new int[strs.size()];
-        int index = 0;
-        for (String str : strs) {
-            final String[] split = str.split(",");
-            final int i = Integer.parseInt(split[0]);
-            final int j = Integer.parseInt(split[1]);
-            completed[index++] = ordinal(i, j);
-        }
-        Arrays.sort(completed);
+      final List<String> strs = Files.readAllLines(Path.of(completedFile));
+      completed = new int[strs.size()];
+      int index = 0;
+      for (String str : strs) {
+        final String[] split = str.split(",");
+        final int i = Integer.parseInt(split[0]);
+        final int j = Integer.parseInt(split[1]);
+        completed[index++] = ordinal(i, j);
+      }
+      Arrays.sort(completed);
     }
-
 
     final int total = fragments.size();
     if (parallel) {
-      range(0, total).parallel().forEach(i -> range(i + 1, total).parallel().forEach(j -> fromFragments(i, j)));
+      range(0, total)
+          .parallel()
+          .forEach(i -> range(i + 1, total).parallel().forEach(j -> fromFragments(i, j)));
     } else {
       range(0, total).forEach(i -> range(i + 1, total).forEach(j -> fromFragments(i, j)));
     }
@@ -126,7 +126,7 @@ public class EnumSubstitution implements Runner {
   }
 
   private boolean isCompleted(int ordinal) {
-      return completed != null && Arrays.binarySearch(completed, ordinal) >= 0;
+    return completed != null && Arrays.binarySearch(completed, ordinal) >= 0;
   }
 
   private void fromFragments(int i, int j) {
@@ -135,8 +135,8 @@ public class EnumSubstitution implements Runner {
 
     final int ordinal = ordinal(i, j);
     if (isCompleted(ordinal)) {
-        System.out.printf("skipped: %d,%d\n", i, j);
-        return;
+      System.out.printf("skipped: %d,%d\n", i, j);
+      return;
     }
     if ((ordinal % numSegments) != segMask) return;
     final Fragment f0 = fragments.get(i);

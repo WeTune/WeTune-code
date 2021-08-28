@@ -1,6 +1,5 @@
 dependencies {
     implementation project(":common")
-    implementation project(":symsolver")
     implementation project(":sqlparser")
     implementation project(":stmt")
     implementation project(":prover")

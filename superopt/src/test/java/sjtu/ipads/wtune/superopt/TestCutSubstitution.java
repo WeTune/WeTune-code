@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.superopt.fragment1.Op;
+import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

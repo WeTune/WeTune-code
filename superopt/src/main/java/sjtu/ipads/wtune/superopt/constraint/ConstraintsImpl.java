@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.superopt.constraint;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
-import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
 import java.util.AbstractList;
 import java.util.List;

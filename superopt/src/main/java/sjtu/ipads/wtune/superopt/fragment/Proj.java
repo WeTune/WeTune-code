@@ -1,16 +1,19 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.plan.AttributeDef;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
-import sjtu.ipads.wtune.superopt.fragment.internal.ProjImpl;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
-public interface Proj extends Operator {
-  Placeholder fields();
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.bindValues;
+
+public interface Proj extends Op {
+  Symbol attrs();
+
+  void setDeduplicated(boolean flag);
+
+  boolean isDeduplicated();
 
   @Override
   default OperatorType kind() {
@@ -18,21 +21,34 @@ public interface Proj extends Operator {
   }
 
   @Override
-  default PlanNode instantiate(Interpretations interpretations) {
-    final PlanNode pred = predecessors()[0].instantiate(interpretations);
-    final List<AttributeDef> pair = interpretations.getAttributes(fields()).object();
-    final ProjNode node = ProjNode.make(pair);
-    node.setPredecessor(0, pred);
-    return node;
+  default boolean match(PlanNode node, Model m) {
+    if (node == null || node.kind() != kind()) return false;
+    if (isDeduplicated() != ((ProjNode) node).isDeduplicated()) return false;
+
+    return m.assign(attrs(), node.context().deRef(node.refs()), node.values());
   }
 
   @Override
-  default boolean match(PlanNode node, Interpretations inter) {
-    if (node.kind() != this.kind()) return false;
-    return inter.assignAttributes(fields(), node.definedAttributes());
-  }
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
+    final var pair = m.interpretAttrs(attrs());
+    final List<Value> inValues = pair.getLeft();
+    final List<Value> outValues;
+    if (pair.getRight() != null) outValues = pair.getRight();
+    else outValues = listMap(inValues, Value::wrapAsExprValue);
 
-  static Proj create() {
-    return ProjImpl.create();
+    final ProjNode proj = ProjNode.mk(ValueBag.mk(outValues));
+    proj.setDeduplicated(isDeduplicated());
+
+    proj.setContext(ctx);
+    proj.setPredecessor(0, predecessor);
+
+    ctx.registerValues(proj, proj.values());
+    ctx.registerRefs(proj, proj.refs());
+
+    final List<Value> usedValues = bindValues(inValues, predecessor);
+    zipForEach(proj.refs(), usedValues, ctx::setRef);
+
+    return proj;
   }
 }

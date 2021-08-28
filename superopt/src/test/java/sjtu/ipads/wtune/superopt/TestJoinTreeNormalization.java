@@ -2,17 +2,14 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.assemblePlan;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.TestHelper.mkJoin;
-import static sjtu.ipads.wtune.superopt.optimizer1.OptimizerSupport.normalizeJoinTree;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizeJoinTree;
 
 @Tag("fast")
 @Tag("optimizer")

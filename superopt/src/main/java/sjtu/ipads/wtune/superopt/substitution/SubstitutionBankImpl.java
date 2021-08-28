@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.*;
 

@@ -4,7 +4,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
-import sjtu.ipads.wtune.superopt.fragment1.*;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
 import java.util.List;
 

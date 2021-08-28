@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.TestHelper.mkPlan;
-import static sjtu.ipads.wtune.superopt.optimizer1.OptimizerSupport.inferenceInnerJoin;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.inferenceInnerJoin;
 
 @Tag("fast")
 @Tag("optimizer")

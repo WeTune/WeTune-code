@@ -5,8 +5,8 @@ import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -18,8 +18,8 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
 import static sjtu.ipads.wtune.prover.logic.LogicProver.Result.EQ;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
-import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
 
 public class RuleRegression implements Runner {
   private String file;

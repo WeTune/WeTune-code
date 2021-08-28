@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.Op;
-import sjtu.ipads.wtune.superopt.fragment1.OpVisitor;
-import sjtu.ipads.wtune.superopt.fragment1.Proj;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Op;
+import sjtu.ipads.wtune.superopt.fragment.OpVisitor;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
 
 import java.util.ArrayList;
 import java.util.List;

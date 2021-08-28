@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.superopt;
 
+import com.google.common.collect.Iterables;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 
-import java.util.List;
+import java.util.Set;
 
-import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 
@@ -27,19 +28,16 @@ public class TestSubstitution {
             + "PickFrom(c0,[t1]);PickFrom(c1,[t1]);PickFrom(c2,[t0]);PickFrom(c3,[t1]);PickFrom(c4,[t2]);PickFrom(c5,[t2]);"
             + "Reference(t0,c2,t1,c3)";
 
+    final SubstitutionBank bank = SubstitutionBank.parse(singletonList(substitution));
     final ASTNode ast = ASTParser.mysql().parse(sql);
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
-
-    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
-
-    final Optimizer opt = Optimizer.make(repo, schema);
-    final List<ASTNode> optimized = opt.optimize(ast);
+    final Set<ASTNode> optimized = OptimizerSupport.optimize(bank, schema, ast);
 
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT DISTINCT `a`.`i` AS `i` FROM `a` AS `a` WHERE `a`.`i` = 1",
-        optimized.get(0).toString());
+        Iterables.get(optimized, 0).toString());
   }
 
   @Test
@@ -55,15 +53,16 @@ public class TestSubstitution {
             + "|TableEq(t0,t2);PickEq(c0,c3);"
             + "PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
             + "Reference(t0,c1,t1,c2)";
+
+    final SubstitutionBank bank = SubstitutionBank.parse(singletonList(substitution));
     final ASTNode ast = ASTParser.mysql().parse(sql);
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
+    final Set<ASTNode> optimized = OptimizerSupport.optimize(bank, schema, ast);
 
-    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
-
-    final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
-    assertEquals("SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b`", optimized.get(0).toString());
+    assertEquals(
+        "SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b`", Iterables.get(optimized, 0).toString());
   }
 
   @Test
@@ -79,16 +78,16 @@ public class TestSubstitution {
             + "|TableEq(t0,t2);PickEq(c0,c3);"
             + "PickFrom(c0,[t0]);PickFrom(c1,[t0]);PickFrom(c2,[t1]);PickFrom(c3,[t2]);"
             + "Reference(t0,c1,t1,c2)";
+
+    final SubstitutionBank bank = SubstitutionBank.parse(singletonList(substitution));
     final ASTNode ast = ASTParser.mysql().parse(sql);
     final Schema schema = Schema.parse(MYSQL, schemaSQL);
     ast.context().setSchema(schema);
+    final Set<ASTNode> optimized = OptimizerSupport.optimize(bank, schema, ast);
 
-    final SubstitutionBank repo = SubstitutionBank.make().importFrom(singleton(substitution));
-
-    final List<ASTNode> optimized = Optimizer.make(repo, schema).optimize(ast);
     assertEquals(1, optimized.size());
     assertEquals(
         "SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
-        optimized.get(0).toString());
+        Iterables.get(optimized, 0).toString());
   }
 }

@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
-import sjtu.ipads.wtune.superopt.fragment1.Symbols;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.List;
@@ -27,11 +27,11 @@ public class ConstraintSupport {
       Fragment f0, Fragment f1, LogicCtx logicCtx, long timeout) {
     ConstraintEnumerator enumerator = null;
     try {
-        enumerator = mkConstraintEnumerator(f0, f1, logicCtx);
-        enumerator.setTimeout(timeout);
-        return listMap(enumerator.enumerate(), it -> Substitution.mk(f0, f1, it));
+      enumerator = mkConstraintEnumerator(f0, f1, logicCtx);
+      enumerator.setTimeout(timeout);
+      return listMap(enumerator.enumerate(), it -> Substitution.mk(f0, f1, it));
     } finally {
-        if (enumerator != null) enumerator.close();
+      if (enumerator != null) enumerator.close();
     }
   }
 

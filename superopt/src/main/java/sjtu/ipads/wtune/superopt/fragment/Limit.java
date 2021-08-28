@@ -1,13 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.internal.LimitImpl;
 
-public interface Limit extends Operator {
-  static Limit create() {
-    return LimitImpl.create();
-  }
-
+public interface Limit extends Op {
   @Override
   default OperatorType kind() {
     return OperatorType.LIMIT;

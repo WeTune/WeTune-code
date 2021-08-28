@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
 
 import java.util.List;
 

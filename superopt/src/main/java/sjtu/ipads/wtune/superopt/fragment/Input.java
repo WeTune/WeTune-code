@@ -1,17 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.TreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.superopt.fragment.internal.InputImpl;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Placeholder;
 
-public interface Input extends Operator {
-  static Input create() {
-    return InputImpl.create();
-  }
-
-  Placeholder table();
+public interface Input extends Op {
+  Symbol table();
 
   @Override
   default OperatorType kind() {
@@ -19,12 +14,12 @@ public interface Input extends Operator {
   }
 
   @Override
-  default boolean match(PlanNode node, Interpretations inter) {
-    return inter.assignInput(table(), node);
+  default boolean match(PlanNode node, Model m) {
+    return m.assign(table(), node);
   }
 
   @Override
-  default PlanNode instantiate(Interpretations interpretations) {
-    return PlanNode.copyOnTree(interpretations.getInput(table()).object());
+  default PlanNode instantiate(Model m, PlanContext ctx) {
+    return TreeNode.copyTree(m.interpretTable(table()), ctx);
   }
 }

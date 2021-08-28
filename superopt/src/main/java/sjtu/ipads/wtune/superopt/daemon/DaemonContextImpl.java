@@ -1,27 +1,29 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.pickMinCost;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
+import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
+import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.internal.WeTuneHelper;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
-import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
+
+import static sjtu.ipads.wtune.superopt.util.WeTuneHelper.pickMinCost;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;
@@ -45,8 +47,7 @@ public class DaemonContextImpl implements DaemonContext {
     // TODO: read custom context from property
 
     final String bankPath = config.getProperty("bank_path", "wtune_data/filtered_bank");
-    final SubstitutionBank bank =
-        SubstitutionBank.make().importFrom(Files.readAllLines(Paths.get(bankPath)), false);
+    final SubstitutionBank bank = SubstitutionSupport.loadBank(Paths.get(bankPath));
 
     final int port = Integer.parseInt(config.getProperty("port", "9876"));
     final String inetAddrStr = config.getProperty("bind_address", "localhost");
@@ -77,8 +78,9 @@ public class DaemonContextImpl implements DaemonContext {
 
   @Override
   public ASTNode optimize(Statement stmt) {
-    final List<ASTNode> candidates = WeTuneHelper.optimize(stmt, bank);
-    final var result = pickMinCost(stmt.parsed(), candidates, stmt.app().dbProps());
+    final Schema schema = stmt.app().schema("base");
+    final Set<ASTNode> candidates = OptimizerSupport.optimize(bank, schema, stmt.parsed());
+    final var result = pickMinCost(schema, stmt.parsed(), candidates, stmt.app().dbProps());
     return result == null ? null : result.getLeft();
   }
 

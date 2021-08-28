@@ -1,7 +1,6 @@
 rootProject.name = 'wetune'
 include 'common', 'sqlparser'
 include 'stmt'
-include 'symsolver'
 include 'superopt'
 include 'support'
 include 'testbed'

@@ -3,9 +3,11 @@ package sjtu.ipads.wtune.superopt.substitution;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment1.*;
+import sjtu.ipads.wtune.superopt.fragment.Op;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.io.IOException;
@@ -16,9 +18,9 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.disambiguate;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
-import static sjtu.ipads.wtune.superopt.fragment1.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
 
 public class SubstitutionSupport {
   public static Substitution flip(Substitution sub) {
@@ -35,8 +37,8 @@ public class SubstitutionSupport {
           return false;
         }
 
-    final Complexity complexity0 = FragmentSupport.calcComplexity(sub._0());
-    final Complexity complexity1 = FragmentSupport.calcComplexity(sub._1());
+    final Complexity complexity0 = Complexity.mk(sub._0());
+    final Complexity complexity1 = Complexity.mk(sub._1());
 
     return complexity0.compareTo(complexity1, true) >= 0;
   }

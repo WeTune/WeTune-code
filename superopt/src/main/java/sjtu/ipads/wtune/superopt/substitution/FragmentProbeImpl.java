@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment1.Fragment;
-import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.partialConstraintsOf;
 

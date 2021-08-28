@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.prover.utils.UExprUtils;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.*;
 import java.util.stream.Stream;

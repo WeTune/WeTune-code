@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.prover.normalform.Disjunction;
 import sjtu.ipads.wtune.prover.normalform.Normalization;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.UExprTranslator;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public class ProverSupport {

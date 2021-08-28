@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
-import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
 public interface Constraint {
   enum Kind {

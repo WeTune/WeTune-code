@@ -2,16 +2,16 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
-import sjtu.ipads.wtune.superopt.fragment1.ConstraintAwareModel;
-import sjtu.ipads.wtune.superopt.fragment1.Join;
-import sjtu.ipads.wtune.superopt.optimizer1.ReversedMatch;
+import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.superopt.fragment.ConstraintAwareModel;
+import sjtu.ipads.wtune.superopt.fragment.Join;
+import sjtu.ipads.wtune.superopt.optimizer.ReversedMatch;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.TestHelper.mkJoin;
 
 @Tag("fast")

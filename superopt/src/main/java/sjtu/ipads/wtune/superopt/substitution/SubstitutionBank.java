@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.List;
 import java.util.Set;
