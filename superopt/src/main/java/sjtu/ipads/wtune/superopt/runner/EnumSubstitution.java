@@ -40,7 +40,7 @@ public class EnumSubstitution implements Runner {
     echo = args.getOptional("echo", boolean.class, false);
     runFailure = args.getOptional("runFailure", boolean.class, false);
     parallel = args.getOptional("parallel", boolean.class, true);
-    timeout = args.getOptional("timeout", long.class, 15000L);
+    timeout = args.getOptional("timeout", long.class, 30000L);
     numSegments = args.getPositional(0, int.class);
     segMask = args.getPositional(1, int.class);
 
