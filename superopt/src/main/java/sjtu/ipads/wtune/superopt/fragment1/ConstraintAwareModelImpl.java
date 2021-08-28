@@ -45,16 +45,21 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   }
 
   @Override
+  public ConstraintAwareModel base() {
+    return (ConstraintAwareModel) base;
+  }
+
+  @Override
   public ConstraintAwareModel derive() {
     return new ConstraintAwareModelImpl(this, plan, constraints);
   }
 
   @Override
   protected boolean assign0(Symbol target, Object newVal) {
-    for (Symbol other : constraints.eqClassOf(target)) {
-      final Object oldVal = get0(other);
+    for (Symbol eqSym : constraints.eqClassOf(target)) {
+      final Object oldVal = get0(eqSym);
       if (oldVal != null && !checkCompatible(newVal, oldVal)) return false;
-      if (shouldTransitiveAssign(target, other, newVal, oldVal)) super.assign0(target, newVal);
+      if (shouldTransitiveAssign(target, eqSym, newVal, oldVal)) super.assign0(eqSym, newVal);
     }
     return true;
   }

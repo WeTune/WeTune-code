@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import sjtu.ipads.wtune.common.utils.Congruence;
+import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.prover.uexpr.TableTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.Var;
@@ -63,7 +63,7 @@ public final class Canonization {
   // [x = const_val] * f(x) -> [x = const_val] * f(const_val)
   // Sum{x}[x=const_val] * f(x) -> f(const_val)
   private static Conjunction applyConst1(Conjunction c) {
-    final Congruence<Var> congruence = TupleCongruence.mk(c.preds());
+    final NaturalCongruence<Var> congruence = TupleCongruence.mk(c.preds());
 
     final Map<Var, Var> toSubstVar = new HashMap<>();
 
@@ -104,7 +104,7 @@ public final class Canonization {
 
     final List<Var> toMoveVars = new ArrayList<>(4);
     final List<UExpr> toMoveTerms = new ArrayList<>(4);
-    Congruence<Var> cong = TupleCongruence.mk(c.preds());
+    NaturalCongruence<Var> cong = TupleCongruence.mk(c.preds());
 
     final ListIterator<UExpr> iter = c.tables().listIterator();
     while (iter.hasNext()) {
@@ -118,7 +118,7 @@ public final class Canonization {
       for (Constraint uk : filterUniqueKey(table.constraints())) {
         final List<Var> vars = listMap(uk.columns(), it -> base.proj(it.name()));
 
-        final Congruence<Var> tmp = cong;
+        final NaturalCongruence<Var> tmp = cong;
         // Premise: \forall t \in tuples. \exists c. c == t /\ c.root() != t.root()
         // e.g. say we have UK (post.author,post.name)
         // then we will check if there is a predicate [post.author = t.x] and [post.name = s.y],
@@ -167,7 +167,7 @@ public final class Canonization {
     if (tmpVars.isEmpty()) return c;
 
     // ... and its projection is used in an equi-pred ...
-    final Congruence<Var> cong = TupleCongruence.mk(c.preds());
+    final NaturalCongruence<Var> cong = TupleCongruence.mk(c.preds());
     for (Var key : cong.keys()) {
       final Var tmpVar = find(tmpVars, key::uses);
       if (tmpVar == null) continue;

@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 import java.util.*;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.superopt.internal.ProofRunner.LOG;
+import static sjtu.ipads.wtune.superopt.Main.LOG;
 import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
 
 public class SubstitutionBankImpl implements SubstitutionBank {

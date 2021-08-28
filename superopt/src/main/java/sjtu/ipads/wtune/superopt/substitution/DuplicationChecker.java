@@ -31,7 +31,7 @@ class DuplicationChecker {
     final Op tree0 = f0.root(), tree1 = f1.root();
     for (Op subtree0 : collectSubtrees(tree0)) {
       for (Op subtree1 : collectSubtrees(tree1)) {
-        if (subtree0 == tree0 && subtree1 == tree1) continue;
+        if (subtree0 == tree0 || subtree1 == tree1) continue;
         if (subtree0.kind() == INPUT && subtree1.kind() == INPUT) continue;
         return isImplied(subtree0, subtree1);
       }

@@ -39,6 +39,11 @@ class ModelImpl implements Model {
   }
 
   @Override
+  public boolean isInterpreted(Symbol sym) {
+    return get0(sym) != null;
+  }
+
+  @Override
   public PlanNode interpretTable(Symbol table) {
     return get0(table);
   }
@@ -57,6 +62,11 @@ class ModelImpl implements Model {
   @Override
   public Pair<List<Value>, List<Value>> interpretAttrs(Symbol attrs) {
     return get0(attrs);
+  }
+
+  @Override
+  public Model base() {
+    return base;
   }
 
   @Override

@@ -11,6 +11,9 @@ public interface ConstraintAwareModel extends Model {
   boolean checkConstraint();
 
   @Override
+  ConstraintAwareModel base();
+
+  @Override
   ConstraintAwareModel derive();
 
   static ConstraintAwareModel mk(PlanContext plan, Constraints constraints) {

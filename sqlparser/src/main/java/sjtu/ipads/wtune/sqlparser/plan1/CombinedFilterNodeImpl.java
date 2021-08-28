@@ -38,7 +38,9 @@ class CombinedFilterNodeImpl extends SimpleFilterNodeImpl implements CombinedFil
     }
 
     final ExprImpl expr = new ExprImpl(RefBag.mk(refs), predicate);
-    return new CombinedFilterNodeImpl(filters, expr);
+    final CombinedFilterNode node = new CombinedFilterNodeImpl(filters, expr);
+    node.setContext(filters.get(0).context());
+    return node;
   }
 
   @Override

@@ -5,6 +5,10 @@ import sjtu.ipads.wtune.sqlparser.plan1.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 
 public interface OptimizerSupport {
+  static PlanNode reduceSort(PlanNode node) {
+    return new SortReducer().reduceSort(node);
+  }
+
   static FilterNode normalizeFilterChain(FilterNode filterRoot) {
     return FilterChainNormalizer.normalize(filterRoot);
   }

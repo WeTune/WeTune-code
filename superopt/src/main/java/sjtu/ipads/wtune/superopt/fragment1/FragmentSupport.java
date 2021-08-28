@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment1.pruning.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.util.List;
 import java.util.Set;
@@ -49,6 +50,6 @@ public class FragmentSupport {
   }
 
   public static Complexity calcComplexity(Fragment fragment) {
-    return new ComplexityImpl(fragment);
+    return new FragmentComplexity(fragment);
   }
 }

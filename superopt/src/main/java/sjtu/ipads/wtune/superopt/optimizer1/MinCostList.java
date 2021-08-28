@@ -1,25 +1,27 @@
-package sjtu.ipads.wtune.superopt.optimizer.support;
+package sjtu.ipads.wtune.superopt.optimizer1;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.superopt.util.CostEstimator.compareCost;
-
-public class MinCostList extends AbstractList<PlanNode> {
+class MinCostList extends AbstractList<PlanNode> {
   private final List<PlanNode> list = new ArrayList<>();
+  private Complexity minCost;
 
   @Override
   public boolean add(PlanNode n) {
-    final PlanNode currentMin = head(list);
-    final int cmp = currentMin == null ? 0 : compareCost(n, currentMin);
+    final PlanComplexity cost = new PlanComplexity(n);
+    final int cmp = minCost == null ? 0 : cost.compareTo(minCost);
     // the new plan is more costly, abandon it
     if (cmp > 0) return false;
     // the new plan is cheaper, abandon existing ones
-    if (cmp < 0) list.clear();
+    if (cmp < 0) {
+      list.clear();
+      minCost = cost;
+    }
     return list.add(n);
   }
 

@@ -29,7 +29,6 @@ public interface Fragment extends Copyable<Fragment> {
     return new FragmentImpl(head, symbols, setupContext);
   }
 
-
   static Fragment parse(String str, SymbolNaming naming) {
     return FragmentImpl.parse(str, naming);
   }

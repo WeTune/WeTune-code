@@ -3,9 +3,11 @@ package sjtu.ipads.wtune.common.utils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 
 public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
@@ -95,17 +97,32 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
     return replaceGlobal(parent.context().dup(), parent, children);
   }
 
+  public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
+      T parent, List<T> children) {
+    return replaceGlobal(parent.context().dup(), parent, children);
+  }
+
   @SafeVarargs
   public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
       C context, T parent, T... children) {
-    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(treeRootOf(parent), context);
-    final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
-    final TreeTemplate<C, T> localTemplate = rootTemplate.bindJointPoint(parent, parent);
+    return replaceGlobal(context, parent, asList(children));
+  }
 
-    for (int i = 0; i < children.length; i++)
-      if (children[i] != null && children[i] != parent.predecessors()[i]) {
-        localTemplate.bindJointPoint(parent.predecessors()[i], children[i]);
+  public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
+      C context, T parent, List<T> children) {
+    final T root = treeRootOf(parent);
+    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(root, context);
+    final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
+    final TreeTemplate<C, T> localTemplate;
+    if (parent != root) localTemplate = rootTemplate.bindJointPoint(parent, parent);
+    else localTemplate = rootTemplate;
+
+    for (int i = 0, bound = children.size(); i < bound; i++) {
+      final T newChild = children.get(i);
+      if (newChild != null && newChild != parent.predecessors()[i]) {
+        localTemplate.bindJointPoint(parent.predecessors()[i], newChild);
       }
+    }
 
     scaffold.instantiate();
     return localTemplate.getInstantiated();
@@ -117,12 +134,25 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
     return replaceGlobal(parent.context().dup(), parent, replacements);
   }
 
+  public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
+      T parent, Iterable<Pair<T, T>> replacements) {
+    return replaceGlobal(parent.context().dup(), parent, replacements);
+  }
+
   @SafeVarargs
   public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
       C context, T parent, Pair<T, T>... replacements) {
-    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(treeRootOf(parent), context);
+    return replaceGlobal(context, parent, asList(replacements));
+  }
+
+  public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T replaceGlobal(
+      C context, T parent, Iterable<Pair<T, T>> replacements) {
+    final T root = treeRootOf(parent);
+    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(root, context);
     final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
-    final TreeTemplate<C, T> localTemplate = rootTemplate.bindJointPoint(parent, parent);
+    final TreeTemplate<C, T> localTemplate;
+    if (root != parent) localTemplate = rootTemplate.bindJointPoint(parent, parent);
+    else localTemplate = rootTemplate;
 
     for (Pair<T, T> replacement : replacements)
       localTemplate.bindJointPoint(replacement.getKey(), replacement.getValue());

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment1.*;
+import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,9 +46,9 @@ public class SubstitutionSupport {
   }
 
   public static SubstitutionBank minimize(SubstitutionBank bank) {
-    removeMeaningless(bank);
-    removeDuplicated(bank);
     removeTransitive(bank);
+    removeDuplicated(bank);
+    removeMeaningless(bank);
 
     return bank;
   }

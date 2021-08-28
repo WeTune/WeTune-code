@@ -28,7 +28,6 @@ public class TestFilterChainNormalization {
     final PlanNode input = plan.predecessors()[0].predecessors()[0].predecessors()[0];
 
     final CombinedFilterNode combined = CombinedFilterNode.mk(List.of(filter0, filter1));
-    combined.setContext(plan.context());
     final var scaffold = new TreeScaffold<>(plan);
     scaffold.rootTemplate().bindJointPoint(filter0, combined).bindJointPoint(combined, 0, input);
     final PlanNode planToTest = scaffold.instantiate();
@@ -38,7 +37,7 @@ public class TestFilterChainNormalization {
     assertTrue(newFilter instanceof SimpleFilterNode);
     assertTrue(newFilter.predecessors()[0] instanceof SimpleFilterNode);
     assertEquals(
-        "SELECT `a`.`i` FROM `a` AS `a` WHERE `a`.`i` = 0 AND `a`.`j` < 10",
+        "SELECT `a`.`i` FROM `a` AS `a` WHERE `a`.`j` < 10 AND `a`.`i` = 0",
         translateAsAst(newPlan).toString());
   }
 }

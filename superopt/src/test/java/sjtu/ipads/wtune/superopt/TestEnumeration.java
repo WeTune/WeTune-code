@@ -174,7 +174,15 @@ public class TestEnumeration {
         "InSubFilter<a0>(Input<t0>,Proj<a1>(Input<t1>))|Input<t2>|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsSub(a1,t1);AttrsSub(a0,t0);NotNull(t1,a1);NotNull(t0,a0)");
   }
 
-//  @Test
+  @Test
+  void testRemoveDeduplication() {
+    doTest(
+        "Proj*(Input)",
+        "Proj(Input)",
+        "Proj*<a0>(Input<t0>)|Proj<a1>(Input<t1>)|TableEq(t0,t1);AttrsEq(a0,a1);AttrsSub(a0,t0);AttrsSub(a1,t1);Unique(t0,a0);Unique(t1,a1)");
+  }
+
+  //  @Test
   void test() {
     final Substitution substitution0 =
         Substitution.parse(

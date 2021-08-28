@@ -1,17 +1,24 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+
 import java.util.*;
 
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 
 class SubstitutionBankImpl extends AbstractSet<Substitution> implements SubstitutionBank {
   private final List<Substitution> substitutions;
   private final Set<String> known;
+  private final Multimap<Fingerprint, Substitution> fingerprintIndex;
 
   SubstitutionBankImpl() {
     this.substitutions = new ArrayList<>(2048);
     this.known = new HashSet<>(2048);
+    this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
   }
 
   static SubstitutionBank parse(List<String> lines) {
@@ -43,7 +50,9 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   @Override
   public boolean add(Substitution substitution) {
     if (!known.add(substitution.canonicalStringify())) return false;
-    return substitutions.add(substitution);
+    substitutions.add(substitution);
+    fingerprintIndex.put(Fingerprint.mk(substitution._0()), substitution);
+    return true;
   }
 
   @Override
@@ -55,6 +64,11 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   @Override
   public boolean contains(String substitution) {
     return known.contains(substitution);
+  }
+
+  @Override
+  public Iterable<Substitution> matchByFingerprint(PlanNode plan) {
+    return listFlatMap(Fingerprint.mk(plan), fingerprintIndex::get);
   }
 
   @Override

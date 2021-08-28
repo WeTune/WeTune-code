@@ -1,19 +1,28 @@
 package sjtu.ipads.wtune.superopt.optimizer.internal;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.superopt.fragment.Operator;
+import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
+import sjtu.ipads.wtune.superopt.optimizer.*;
+import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
+import sjtu.ipads.wtune.superopt.optimizer.support.MinCostList;
+import sjtu.ipads.wtune.superopt.optimizer.support.OptGroup;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static com.google.common.collect.Lists.cartesianProduct;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.ASTContext.manage;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyOnTree;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.copyToRoot;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.resolveUsedOnTree;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.rootOf;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.toStringOnTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanNode.*;
 import static sjtu.ipads.wtune.sqlparser.plan.ToASTTranslator.toAST;
 import static sjtu.ipads.wtune.sqlparser.plan.ToPlanTranslator.toPlan;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.findInvalidColumnRefs;
@@ -23,33 +32,6 @@ import static sjtu.ipads.wtune.superopt.optimizer.support.DistinctReducer.reduce
 import static sjtu.ipads.wtune.superopt.optimizer.support.PlanNormalizer.normalize;
 import static sjtu.ipads.wtune.superopt.optimizer.support.SortReducer.reduceSort;
 import static sjtu.ipads.wtune.superopt.optimizer.support.UniquenessInference.inferUniqueness;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.InputNode;
-import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.LimitNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
-import sjtu.ipads.wtune.sqlparser.plan.SortNode;
-import sjtu.ipads.wtune.sqlparser.plan.TypeBasedAlgorithm;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.superopt.fragment.Operator;
-import sjtu.ipads.wtune.superopt.fragment.symbolic.Interpretations;
-import sjtu.ipads.wtune.superopt.optimizer.Hint;
-import sjtu.ipads.wtune.superopt.optimizer.Match;
-import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
-import sjtu.ipads.wtune.superopt.optimizer.OptimizerException;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.optimizer.support.Memo;
-import sjtu.ipads.wtune.superopt.optimizer.support.MinCostList;
-import sjtu.ipads.wtune.superopt.optimizer.support.OptGroup;
 
 public class OptimizerImpl extends TypeBasedAlgorithm<List<PlanNode>> implements Optimizer {
   private static final long TIMEOUT = 20_000; // 20 second

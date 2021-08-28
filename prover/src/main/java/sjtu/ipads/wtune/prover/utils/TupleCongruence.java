@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.prover.utils;
 
-import sjtu.ipads.wtune.common.utils.Congruence;
-import sjtu.ipads.wtune.common.utils.CongruenceImpl;
+import sjtu.ipads.wtune.common.utils.BaseNaturalCongruence;
+import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.prover.uexpr.EqPredTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
 import sjtu.ipads.wtune.prover.uexpr.Var;
@@ -11,9 +11,9 @@ import java.util.Objects;
 
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.EQ_PRED;
 
-public final class TupleCongruence extends CongruenceImpl<Var> {
-  public static Congruence<Var> mk(List<UExpr> predicates) {
-    final Congruence<Var> congruence = new TupleCongruence();
+public final class TupleCongruence extends BaseNaturalCongruence<Var> {
+  public static NaturalCongruence<Var> mk(List<UExpr> predicates) {
+    final NaturalCongruence<Var> congruence = new TupleCongruence();
 
     for (UExpr predicate : predicates) {
       if (predicate.kind() != EQ_PRED) continue;

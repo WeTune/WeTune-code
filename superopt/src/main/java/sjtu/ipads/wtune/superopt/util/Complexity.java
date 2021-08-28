@@ -1,39 +1,16 @@
-package sjtu.ipads.wtune.superopt.fragment1;
-
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+package sjtu.ipads.wtune.superopt.util;
 
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
-class ComplexityImpl implements Complexity {
-  private final int[] opCounts = new int[OperatorType.values().length + 1];
-
-  ComplexityImpl(Op tree) {
-    tree.acceptVisitor(OpVisitor.traverse(this::incrementOpCount));
-  }
-
-  ComplexityImpl(Fragment fragment) {
-    this(fragment.root());
-  }
-
-  private void incrementOpCount(Op op) {
-    ++opCounts[op.kind().ordinal()];
-    // Treat deduplication as an operator.
-    if (op.kind() == OperatorType.PROJ && ((Proj) op).isDeduplicated())
-      ++opCounts[opCounts.length - 1];
-  }
+public interface Complexity extends Comparable<Complexity> {
+  int[] opCounts();
 
   @Override
-  public int[] opCounts() {
-    return opCounts;
-  }
-
-  @Override
-  public int compareTo(Complexity o) {
+  default int compareTo(Complexity o) {
     return compareTo(o, true);
   }
 
-  @Override
-  public int compareTo(Complexity other, boolean preferInnerJoin) {
+  default int compareTo(Complexity other, boolean preferInnerJoin) {
     final int[] opCount0 = opCounts();
     final int[] opCount1 = other.opCounts();
 

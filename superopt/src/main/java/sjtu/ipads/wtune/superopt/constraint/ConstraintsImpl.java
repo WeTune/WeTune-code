@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.common.utils.Congruence;
+import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
 import sjtu.ipads.wtune.superopt.fragment1.Symbol;
 import sjtu.ipads.wtune.superopt.fragment1.SymbolNaming;
@@ -16,10 +16,10 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
 
 class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   private final List<Constraint> constraints;
-  private final Congruence<Symbol> congruence;
+  private final NaturalCongruence<Symbol> congruence;
   private final int[] segBases;
 
-  ConstraintsImpl(List<Constraint> constraints, Congruence<Symbol> congruence) {
+  ConstraintsImpl(List<Constraint> constraints, NaturalCongruence<Symbol> congruence) {
     this.constraints = constraints;
     this.congruence = congruence;
     this.segBases = new int[Constraint.Kind.values().length];
@@ -28,7 +28,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   static Constraints mk(List<Constraint> constraints) {
-    final Congruence<Symbol> congruence = Congruence.mk();
+    final NaturalCongruence<Symbol> congruence = NaturalCongruence.mk();
     for (Constraint constraint : constraints)
       if (constraint.kind().isEq())
         congruence.putCongruent(constraint.symbols()[0], constraint.symbols()[1]);

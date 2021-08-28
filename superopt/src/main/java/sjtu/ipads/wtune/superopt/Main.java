@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
-import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.optimize;
-import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.optimizeWithTrace;
-import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.pickMinCost;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.Substitution;
+import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -13,17 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.logging.LogManager;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.fragment.ToASTTranslator;
-import sjtu.ipads.wtune.superopt.internal.Enumerator;
-import sjtu.ipads.wtune.superopt.internal.ProofRunner;
-import sjtu.ipads.wtune.superopt.optimizer.Substitution;
-import sjtu.ipads.wtune.superopt.optimizer.SubstitutionBank;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
+import static sjtu.ipads.wtune.superopt.internal.WeTuneHelper.*;
 
 public class Main {
+  public static final System.Logger LOG = System.getLogger("superopt");
 
   private static final String LOGGER_CONFIG =
       ".level = INFO\n"
@@ -41,36 +38,6 @@ public class Main {
   }
 
   private static PrintWriter out, err;
-
-  private static void cleanBank() throws IOException {
-    final SubstitutionBank bank =
-        SubstitutionBank.make()
-            .importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
-    try (final PrintWriter writer =
-        new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "filtered_bank")))) {
-      for (Substitution substitution : bank) {
-        writer.println("====");
-        writer.println(substitution);
-      }
-    }
-  }
-
-  private static void printReadableBank() throws IOException {
-    final SubstitutionBank bank =
-        SubstitutionBank.make()
-            .importFrom(Files.readAllLines(Paths.get("wtune_data", "substitution_bank")));
-    try (final PrintWriter writer =
-        new PrintWriter(Files.newOutputStream(Paths.get("wtune_data", "readable_bank")))) {
-      for (Substitution substitution : bank) {
-        writer.println("====");
-        final ToASTTranslator translator =
-            ToASTTranslator.build().setNumbering(substitution.numbering());
-        writer.println(translator.translate(substitution.g0()));
-        writer.println(translator.translate(substitution.g1()));
-        writer.println(substitution);
-      }
-    }
-  }
 
   private static SubstitutionBank loadBank() throws IOException {
     final List<String> lines = Files.readAllLines(Paths.get("wtune_data", "filtered_bank"));
@@ -200,15 +167,9 @@ public class Main {
   }
 
   public static void main(String[] args) throws IOException {
-    if (args.length >= 1 && "run".equals(args[0])) {
-      ProofRunner.build(args).run();
-
-    } else {
-      //      test0();
-      //      test1();
-      //      test2();
-      //      test3();
-      System.out.println(Enumerator.enumPlans().size());
-    }
+    //      test0();
+    //      test1();
+    //      test2();
+    //      test3();
   }
 }

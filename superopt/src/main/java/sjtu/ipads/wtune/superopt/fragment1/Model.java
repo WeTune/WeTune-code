@@ -16,6 +16,8 @@ public interface Model {
 
   boolean assign(Symbol attrs, List<Value> inValues, List<Value> outValues);
 
+  boolean isInterpreted(Symbol sym);
+
   PlanNode interpretTable(Symbol table);
 
   Expr interpretPred(Symbol pred);
@@ -23,6 +25,8 @@ public interface Model {
   List<Value> interpretInAttrs(Symbol attrs);
 
   Pair<List<Value>, List<Value>> interpretAttrs(Symbol attrs);
+
+  Model base();
 
   Model derive();
 

@@ -17,6 +17,8 @@ class MeaninglessChecker {
   private static boolean isUniform(Substitution substitution) {
     final Constraints constraints = substitution.constraints();
     final List<Symbol> attrs = substitution._0().symbols().symbolsOf(Symbol.Kind.ATTRS);
+    if (attrs.size() <= 5) return false;
+
     for (int i = 0; i < attrs.size() - 1; i++)
       for (int j = i + 1; j < attrs.size(); j++)
         if (!constraints.isEq(attrs.get(i), attrs.get(j))) {
