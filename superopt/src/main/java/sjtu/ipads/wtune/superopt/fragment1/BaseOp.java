@@ -25,6 +25,14 @@ abstract class BaseOp implements Op {
   }
 
   @Override
+  public Symbols context() {
+    return fragment.symbols();
+  }
+
+  @Override
+  public void setContext(Symbols context) {}
+
+  @Override
   public void setSuccessor(Op successor) {
     this.successor = successor;
   }
@@ -58,19 +66,26 @@ abstract class BaseOp implements Op {
   }
 
   @Override
-  public Op copy() {
+  public Op copyTree() {
     final Op thisCopy = copy0();
 
     final Op[] prev = predecessors();
     for (int i = 0; i < prev.length; i++) {
       if (prev[i] == null) thisCopy.setPredecessor(i, null);
       else {
-        final Op prevCopy = prev[i].copy();
+        final Op prevCopy = prev[i].copyTree();
         thisCopy.setPredecessor(i, prevCopy);
       }
     }
 
     return thisCopy;
+  }
+
+  @Override
+  public Op copy(Symbols context) {
+    final Op copy = copy0();
+    context.reBindSymbol(copy, this, context());
+    return copy;
   }
 
   @Override

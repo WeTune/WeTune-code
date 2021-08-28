@@ -15,10 +15,10 @@ class FragmentImpl implements Fragment {
 
   private final Lazy<Symbols> symbols;
 
-  FragmentImpl(Op root, Symbols symbols) {
+  FragmentImpl(Op root, Symbols symbols, boolean setupContext) {
     this.root = root;
     this.symbols = Lazy.mk(symbols);
-    // must be the `root()` accessor instead of `root`
+    if (setupContext) root.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(this)));
   }
 
   FragmentImpl(Op root) {
@@ -86,7 +86,7 @@ class FragmentImpl implements Fragment {
 
   @Override
   public FragmentImpl copy() {
-    return new FragmentImpl(root == null ? null : root.copy());
+    return new FragmentImpl(root == null ? null : root.copyTree());
   }
 
   @Override

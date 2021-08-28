@@ -1,13 +1,15 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
+import sjtu.ipads.wtune.common.utils.TreeContext;
+
 import java.util.List;
 
-public interface Symbols {
+public interface Symbols extends TreeContext<Symbols> {
   int size();
 
   void bindSymbol(Op op);
 
-  void reBindSymbol(Op op);
+  void reBindSymbol(Op newOp, Op oldOp, Symbols oldSyms);
 
   Symbol symbolAt(Op op, Symbol.Kind kind, int ordinal);
 
@@ -18,6 +20,19 @@ public interface Symbols {
   Op ownerOf(Symbol symbol);
 
   boolean contains(Symbol symbol);
+
+  @Override
+  default Symbols dup() {
+    return mk();
+  }
+
+  default void reBindSymbol(Op op) {
+    reBindSymbol(op, op, op.context());
+  }
+
+  default void reBindSymbol(Op op, Symbols oldSyms) {
+    reBindSymbol(op, op, oldSyms);
+  }
 
   static Symbols mk() {
     return new SymbolsImpl();

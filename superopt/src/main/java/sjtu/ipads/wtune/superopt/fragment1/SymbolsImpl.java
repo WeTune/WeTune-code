@@ -63,18 +63,19 @@ class SymbolsImpl implements Symbols {
   }
 
   @Override
-  public void reBindSymbol(Op op) {
-    switch (op.kind()) {
-      case INPUT -> add(op, ((Input) op).table());
-      case IN_SUB_FILTER -> add(op, ((InSubFilter) op).attrs());
-      case PROJ -> add(op, ((Proj) op).attrs());
+  public void reBindSymbol(Op newOp, Op oldOp, Symbols oldSyms) {
+    if (newOp.kind() != oldOp.kind()) throw new IllegalArgumentException();
+
+    switch (newOp.kind()) {
+      case INPUT -> add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.TABLE, 0));
+      case IN_SUB_FILTER, PROJ -> add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
       case SIMPLE_FILTER -> {
-        add(op, ((SimpleFilter) op).attrs());
-        add(op, ((SimpleFilter) op).predicate());
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.PRED, 0));
       }
       case INNER_JOIN, LEFT_JOIN -> {
-        add(op, ((Join) op).lhsAttrs());
-        add(op, ((Join) op).rhsAttrs());
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 1));
       }
     }
   }
@@ -104,7 +105,7 @@ class SymbolsImpl implements Symbols {
 
   @Override
   public boolean contains(Symbol symbol) {
-    return ownerOf(symbol) != null;
+    return symbol.ctx() == this || ownerOf(symbol) != null;
   }
 
   private static ListMultimap<Op, Symbol> initMap() {

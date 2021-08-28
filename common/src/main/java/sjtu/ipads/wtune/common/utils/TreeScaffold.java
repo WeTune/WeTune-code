@@ -133,9 +133,12 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
 
   public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T displaceGlobal(
       T target, T rep, boolean copyRep) {
-    final C context = copyRep ? null : rep.context();
+    return displaceGlobal(copyRep ? null : rep.context(), target, rep, copyRep);
+  }
 
-    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(treeRootOf(target), context);
+  public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T displaceGlobal(
+      C ctx, T target, T rep, boolean copyRep) {
+    final TreeScaffold<C, T> scaffold = new TreeScaffold<>(treeRootOf(target), ctx);
     final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
     final TreeTemplate<C, T> localTemplate = rootTemplate.bindJointPoint(target, rep);
     localTemplate.setNeedCopy(copyRep);

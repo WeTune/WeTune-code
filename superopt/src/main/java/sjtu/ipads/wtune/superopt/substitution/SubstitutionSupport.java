@@ -5,10 +5,7 @@ import com.google.common.graph.ValueGraphBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment1.Complexity;
-import sjtu.ipads.wtune.superopt.fragment1.FragmentSupport;
-import sjtu.ipads.wtune.superopt.fragment1.Symbol;
-import sjtu.ipads.wtune.superopt.fragment1.Symbols;
+import sjtu.ipads.wtune.superopt.fragment1.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -67,6 +64,11 @@ public class SubstitutionSupport {
     return Constraints.mk(
         listFilter(
             substitution.constraints(), it -> all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
+  }
+
+  public static Pair<Substitution, Substitution> cutSubstitution(
+      Substitution substitution, Op lhsCutPoint, Op rhsCutPoint) {
+    return CutSubstitution.cut(substitution, lhsCutPoint, rhsCutPoint);
   }
 
   private static void removeMeaningless(SubstitutionBank bank) {

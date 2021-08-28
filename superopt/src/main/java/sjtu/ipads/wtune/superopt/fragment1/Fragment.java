@@ -25,9 +25,10 @@ public interface Fragment extends Copyable<Fragment> {
     return new FragmentImpl(head);
   }
 
-  static Fragment mk(/* nullable */ Op head, Symbols symbols) {
-    return new FragmentImpl(head, symbols);
+  static Fragment mk(/* nullable */ Op head, Symbols symbols, boolean setupContext) {
+    return new FragmentImpl(head, symbols, setupContext);
   }
+
 
   static Fragment parse(String str, SymbolNaming naming) {
     return FragmentImpl.parse(str, naming);

@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.superopt.fragment1;
 
-import sjtu.ipads.wtune.common.utils.Copyable;
-import sjtu.ipads.wtune.common.utils.NoContextTreeNode;
+import sjtu.ipads.wtune.common.utils.TreeNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
 
-public interface Op extends NoContextTreeNode<Op>, Comparable<Op>, Copyable<Op> {
+public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
   static Op mk(OperatorType type) {
     return switch (type) {
       case INPUT -> new InputOp();
@@ -41,6 +40,13 @@ public interface Op extends NoContextTreeNode<Op>, Comparable<Op>, Copyable<Op> 
   void acceptVisitor(OpVisitor visitor);
 
   int shadowHash();
+
+  Op copyTree();
+
+  @Override
+  default Op copy(Symbols context) {
+    throw new UnsupportedOperationException();
+  }
 
   default boolean match(PlanNode node, Model m) {
     throw new UnsupportedOperationException();
