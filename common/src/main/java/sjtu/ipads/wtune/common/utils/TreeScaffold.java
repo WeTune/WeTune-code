@@ -114,15 +114,21 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
     final TreeScaffold<C, T> scaffold = new TreeScaffold<>(root, context);
     final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
     final TreeTemplate<C, T> localTemplate;
+
     if (parent != root) localTemplate = rootTemplate.bindJointPoint(parent, parent);
     else localTemplate = rootTemplate;
+
+    boolean changed = false;
 
     for (int i = 0, bound = children.size(); i < bound; i++) {
       final T newChild = children.get(i);
       if (newChild != null && newChild != parent.predecessors()[i]) {
+        changed = true;
         localTemplate.bindJointPoint(parent.predecessors()[i], newChild);
       }
     }
+
+    if (!changed) return parent;
 
     scaffold.instantiate();
     return localTemplate.getInstantiated();
@@ -168,6 +174,8 @@ public class TreeScaffold<C extends TreeContext<C>, T extends TreeNode<C, T>> {
 
   public static <C extends TreeContext<C>, T extends TreeNode<C, T>> T displaceGlobal(
       C ctx, T target, T rep, boolean copyRep) {
+    if (target == rep) return target;
+
     final TreeScaffold<C, T> scaffold = new TreeScaffold<>(treeRootOf(target), ctx);
     final TreeTemplate<C, T> rootTemplate = scaffold.rootTemplate();
     final TreeTemplate<C, T> localTemplate = rootTemplate.bindJointPoint(target, rep);

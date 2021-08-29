@@ -9,7 +9,7 @@ import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 
 public abstract class BaseCongruence<K, T> implements Congruence<K, T> {
-  private final Map<K, BaseCongruentClass<T>> classes;
+  protected final Map<K, BaseCongruentClass<T>> classes;
 
   protected BaseCongruence() {
     classes = new HashMap<>();
@@ -45,7 +45,7 @@ public abstract class BaseCongruence<K, T> implements Congruence<K, T> {
   public Set<T> mkEqClass(T x) {
     requireNonNull(x);
 
-    BaseCongruentClass<T> congruentClass = classes.get(x);
+    BaseCongruentClass<T> congruentClass = classes.get(extractKey(x));
     if (congruentClass != null) return congruentClass;
 
     congruentClass = mkCongruentClass();
@@ -60,7 +60,7 @@ public abstract class BaseCongruence<K, T> implements Congruence<K, T> {
 
   @Override
   public Set<T> eqClassOf(T x) {
-    final BaseCongruentClass<T> cls = classes.get(x);
+    final BaseCongruentClass<T> cls = classes.get(extractKey(x));
     return cls != null ? cls : singleton(x);
   }
 
@@ -74,7 +74,7 @@ public abstract class BaseCongruence<K, T> implements Congruence<K, T> {
     if (Objects.equals(x, y)) return true; // reflexivity
     if (x == null || y == null) return false;
 
-    final CongruentClass<T> gx = classes.get(x), gy = classes.get(y);
+    final CongruentClass<T> gx = classes.get(extractKey(x)), gy = classes.get(extractKey(y));
     return gx != null && gx.equals(gy);
   }
 

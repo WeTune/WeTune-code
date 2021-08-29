@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
+import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -14,6 +15,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.Set;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
@@ -28,6 +30,12 @@ class TestHelper {
     final Statement stmt = Statement.mk("test", sql, null);
     final ASTNode ast = stmt.parsed();
     return assemblePlan(ast, stmt.app().schema("base"));
+  }
+
+  static PlanNode mkPlan(String sql, String schemaSQL) {
+    final Schema schema = Schema.parse(MYSQL, schemaSQL);
+    final ASTNode ast = ASTParser.mysql().parse(sql);
+    return assemblePlan(ast, schema);
   }
 
   static SubstitutionBank getBank() {

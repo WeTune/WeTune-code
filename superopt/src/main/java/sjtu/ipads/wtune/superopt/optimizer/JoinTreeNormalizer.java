@@ -12,7 +12,8 @@ import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceLocal;
 
 public class JoinTreeNormalizer {
   static JoinNode normalize(JoinNode joinRoot) {
-    return ((JoinNode) displaceGlobal(joinRoot, normalize0(joinRoot), false));
+    if (isLeftDeepJoinTree(joinRoot)) return joinRoot;
+    else return ((JoinNode) displaceGlobal(joinRoot, normalize0(joinRoot), false));
   }
 
   private static PlanNode normalize0(PlanNode node) {
@@ -24,10 +25,9 @@ public class JoinTreeNormalizer {
     if (lhs == node.predecessors()[0] && rhs == node.predecessors()[1] && !rhs.kind().isJoin())
       return node; // No modification needed.
 
-    final PlanContext oldCtx = node.context();
-
     if (!rhs.kind().isJoin()) return replaceLocal(node, lhs, rhs);
 
+    final PlanContext oldCtx = node.context();
     final PlanNode a = lhs, b = rhs.predecessors()[0], c = rhs.predecessors()[1];
     final JoinNode join = ((JoinNode) node), newJoin = ((JoinNode) rhs);
     assert !c.kind().isJoin();
@@ -42,5 +42,10 @@ public class JoinTreeNormalizer {
       final PlanNode newLhs = replaceLocal(join, a, c);
       return normalize0(((JoinNode) replaceLocal(newJoin, newLhs, b)).flip(null));
     }
+  }
+
+  private static boolean isLeftDeepJoinTree(PlanNode n) {
+    return !n.kind().isJoin()
+        || (!n.predecessors()[1].kind().isJoin() && isLeftDeepJoinTree(n.predecessors()[0]));
   }
 }

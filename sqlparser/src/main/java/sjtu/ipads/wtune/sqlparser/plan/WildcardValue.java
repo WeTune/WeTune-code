@@ -32,7 +32,7 @@ class WildcardValue implements Value {
 
   @Override
   public String wildcardQualification() {
-    return null;
+    return wildcardQualification;
   }
 
   @Override

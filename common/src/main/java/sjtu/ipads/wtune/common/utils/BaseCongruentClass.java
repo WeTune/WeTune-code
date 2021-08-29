@@ -8,8 +8,8 @@ import java.util.Iterator;
 import static java.util.Objects.requireNonNull;
 
 public class BaseCongruentClass<T> extends AbstractSet<T> implements CongruentClass<T> {
-  private final BaseCongruence<?, T> congruence;
-  private Collection<T> elements;
+  protected final BaseCongruence<?, T> congruence;
+  protected Collection<T> elements;
 
   protected BaseCongruentClass(BaseCongruence<?, T> congruence) {
     this.congruence = congruence;

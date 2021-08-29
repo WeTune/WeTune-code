@@ -34,6 +34,8 @@ class OptimizerImpl implements Optimizer {
 
   OptimizerImpl(SubstitutionBank bank) {
     this.bank = bank;
+    this.startAt = Long.MIN_VALUE;
+    this.timeout = Long.MAX_VALUE;
   }
 
   @Override
@@ -68,7 +70,6 @@ class OptimizerImpl implements Optimizer {
   }
 
   private Set<PlanNode> optimize0(PlanNode node) {
-    final Set<PlanNode> group = memo.eqClassOf(node);
     // A plan is "fully optimized" if:
     // 1. itself has been registered in memo, and
     // 2. all its children have been registered in memo.
@@ -82,8 +83,8 @@ class OptimizerImpl implements Optimizer {
     // Now, P1 cannot be further transformed (nor its children), thus "fully-optimized"
     // Obviously, P1 and P3 is equivalent. P1 and P3 thus reside in the same group.
     // Then, when P2 are transformed to P3, the group is accordingly updated.
-    if (group != null && stream(node.predecessors()).allMatch(it -> memo.eqClassOf(it) != null))
-      return group;
+    if (memo.isRegistered(node) && stream(node.predecessors()).allMatch(memo::isRegistered))
+      return memo.eqClassOf(node);
     else return dispatch(node);
   }
 
@@ -133,12 +134,12 @@ class OptimizerImpl implements Optimizer {
   }
 
   /* find eligible substitutions and use them to transform `n` and generate new plans */
-  private List<PlanNode> transform(PlanNode n) {
-    if (System.currentTimeMillis() - startAt >= timeout) return emptyList();
-    if (n.kind().isFilter() && n.successor().kind().isFilter()) return emptyList();
+  private Set<PlanNode> transform(PlanNode n) {
+    if (System.currentTimeMillis() - startAt >= timeout) return emptySet();
+    if (n.kind().isFilter() && n.successor().kind().isFilter()) return emptySet();
 
     final Set<PlanNode> group = memo.eqClassOf(n);
-    final List<PlanNode> transformed = new MinCostList();
+    final Set<PlanNode> transformed = new MinCostSet<>(memo::extractKey);
     // 1. fast search for candidate substitution by fingerprint
     final Iterable<Substitution> substitutions = bank.matchByFingerprint(n);
     for (Substitution substitution : substitutions) {
@@ -153,7 +154,7 @@ class OptimizerImpl implements Optimizer {
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
-        if (memo.eqClassOf(newNode) == null) {
+        if (!memo.isRegistered(newNode)) {
           transformed.add(newNode);
           traceStep(n, newNode, substitution);
         }

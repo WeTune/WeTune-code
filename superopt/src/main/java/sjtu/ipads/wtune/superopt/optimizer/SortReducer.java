@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.difference;
+import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceGlobal;
@@ -23,6 +24,9 @@ class SortReducer {
 
   PlanNode reduceSort(PlanNode node) {
     gatherSortEnforcer(resolveSortChain(node));
+
+    if (sortNodes == null) return node;
+    if (enforcer == null) enforcer = emptySet();
 
     final List<Pair<PlanNode, PlanNode>> toRemove =
         listMap(difference(sortNodes, enforcer), it -> Pair.of(it, it.predecessors()[0]));

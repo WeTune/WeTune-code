@@ -173,18 +173,6 @@ class FragmentUtils {
     return boundValues;
   }
 
-  static boolean replacePredecessor(Op op, Op target, Op rep) {
-    final Op[] pres = op.predecessors();
-
-    for (int i = 0; i < pres.length; i++)
-      if (pres[i] == target) {
-        op.setPredecessor(i, rep);
-        return true;
-      }
-
-    return false;
-  }
-
   static boolean isFragment(PlanNode node) {
     // Check if the node is a complete query.
     // Specifically, check if the root node is not Union/Proj.
