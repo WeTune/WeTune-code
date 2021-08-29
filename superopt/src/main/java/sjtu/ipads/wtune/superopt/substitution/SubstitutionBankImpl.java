@@ -7,16 +7,17 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 
 class SubstitutionBankImpl extends AbstractSet<Substitution> implements SubstitutionBank {
-  private final List<Substitution> substitutions;
+  private final Set<Substitution> substitutions;
   private final Set<String> known;
   private final Multimap<Fingerprint, Substitution> fingerprintIndex;
 
   SubstitutionBankImpl() {
-    this.substitutions = new ArrayList<>(2048);
+    this.substitutions = new HashSet<>(2048);
     this.known = new HashSet<>(2048);
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
   }
@@ -73,7 +74,13 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
 
   @Override
   public boolean remove(Object o) {
-    return substitutions.remove(o);
+    if (substitutions.remove(o)) {
+      final Substitution s = (Substitution) o;
+      known.remove(s.canonicalStringify());
+      fingerprintIndex.remove(Fingerprint.mk(s._0()), s);
+      return true;
+    }
+    return false;
   }
 
   @Override

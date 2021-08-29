@@ -16,7 +16,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.mkConstraintEnumerator;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 @Tag("slow")
 @Tag("enumeration")

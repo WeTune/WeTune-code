@@ -13,14 +13,15 @@ import sjtu.ipads.wtune.superopt.util.Complexity;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
 
 public class SubstitutionSupport {
   public static Substitution flip(Substitution sub) {
@@ -49,8 +50,8 @@ public class SubstitutionSupport {
 
   public static SubstitutionBank minimize(SubstitutionBank bank) {
     removeTransitive(bank);
-    removeDuplicated(bank);
-    removeMeaningless(bank);
+    //    removeDuplicated(bank);
+    //    removeMeaningless(bank);
 
     return bank;
   }
@@ -90,6 +91,13 @@ public class SubstitutionSupport {
     bank.removeAll(duplicated);
   }
 
+  private static void removeDuplicated2(SubstitutionBank bank) {
+    final List<Substitution> substitutions = new ArrayList<>(bank);
+    for (Substitution substitution : substitutions) {
+      DuplicationChecker2.removeIfDuplicated(bank, substitution);
+    }
+  }
+
   private static void removeTransitive(SubstitutionBank bank) {
     MutableValueGraph<FragmentProbe, Substitution> graph =
         ValueGraphBuilder.directed()
@@ -106,5 +114,10 @@ public class SubstitutionSupport {
 
     final TransitiveGraph<FragmentProbe, Substitution> g = new TransitiveGraph<>(graph);
     g.breakTransitivity(bank::remove);
+  }
+
+  public static Pair<PlanNode, PlanNode> translateAsPlan(
+      Substitution substitution, boolean backwardCompatible) {
+    return new PlanTranslator().translate(substitution, backwardCompatible);
   }
 }

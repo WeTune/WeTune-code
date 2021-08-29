@@ -19,7 +19,7 @@ import java.util.List;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
 import static sjtu.ipads.wtune.prover.logic.LogicProver.Result.EQ;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 public class RuleRegression implements Runner {
   private String file;

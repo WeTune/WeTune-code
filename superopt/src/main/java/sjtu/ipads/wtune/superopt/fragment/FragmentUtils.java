@@ -173,35 +173,6 @@ class FragmentUtils {
     return boundValues;
   }
 
-  static boolean isFragment(PlanNode node) {
-    // Check if the node is a complete query.
-    // Specifically, check if the root node is not Union/Proj.
-    // (ignore Sort/Limit)
-    final OperatorType type = node.kind();
-    return type != UNION
-        && type != PROJ
-        && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));
-  }
-
-  static PlanNode wrapFragment(PlanNode plan) {
-    if (isFragment(plan)) return wrapWildcardProj(plan);
-    else return plan;
-  }
-
-  static boolean alignOutput(PlanNode p0, PlanNode p1) {
-    final ValueBag values0 = p0.values(), values1 = p1.values();
-    if (values0.size() != values1.size()) return false;
-
-    for (int i = 0, bound = values0.size(); i < bound; ++i) {
-      final Value value0 = values0.get(i);
-      final Value value1 = values1.get(i);
-      if (value1.expr() != null) value1.setName(value0.name());
-      if (value0.expr() != null) value0.setName(value1.name());
-    }
-
-    return true;
-  }
-
   private static void gatherHoles(Op op, List<Hole<Op>> buffer) {
     final Op[] prev = op.predecessors();
 

@@ -1,10 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.pruning.*;
-import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.List;
 import java.util.Set;
@@ -37,14 +33,5 @@ public class FragmentSupport {
     final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
     enumerator.setPruningRules(DEFAULT_PRUNING_RULES);
     return enumerator.enumerate();
-  }
-
-  public static PlanNode translateAsPlan(Fragment fragment, Constraints constraints) {
-    return new PlanTranslator().translate(fragment, constraints);
-  }
-
-  public static Pair<PlanNode, PlanNode> translateAsPlan(
-      Substitution substitution, boolean backwardCompatible) {
-    return new PlanTranslator().translate(substitution, backwardCompatible);
   }
 }

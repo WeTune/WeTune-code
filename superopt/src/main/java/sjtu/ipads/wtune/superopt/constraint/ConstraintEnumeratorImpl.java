@@ -22,7 +22,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.translateAsPlan;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 class ConstraintEnumeratorImpl implements ConstraintEnumerator {
