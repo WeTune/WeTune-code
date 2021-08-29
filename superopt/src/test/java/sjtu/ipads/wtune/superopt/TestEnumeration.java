@@ -24,7 +24,7 @@ public class TestEnumeration {
   private static boolean echo = true;
 
   private static void printReadable(Substitution substitution) {
-    final var pair = translateAsPlan(substitution, false);
+    final var pair = translateAsPlan(substitution, false, true);
     System.out.println("sub: " + substitution);
     System.out.println(" q0: " + translateAsAst(disambiguate(pair.getLeft())));
     System.out.println(" q1: " + translateAsAst(disambiguate(pair.getRight())));

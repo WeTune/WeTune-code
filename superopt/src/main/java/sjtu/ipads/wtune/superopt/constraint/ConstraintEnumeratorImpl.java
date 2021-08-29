@@ -103,7 +103,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private int prove0(boolean[] enabled) {
     final Substitution sub = Substitution.mk(f0, f1, mkConstraintSet(enabled));
 
-    final var pair = translateAsPlan(sub, false);
+    final var pair = translateAsPlan(sub, false, true);
     if (pair == null) return CONFLICT;
 
     final PlanNode plan0 = disambiguate(pair.getLeft());

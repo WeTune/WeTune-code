@@ -82,6 +82,12 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
+  public void rebindRefs(PlanContext refCtx) {
+    rebindRefs(refCtx, lhsRefs(), predecessors[0]);
+    rebindRefs(refCtx, rhsRefs(), predecessors[1]);
+  }
+
+  @Override
   public JoinNode flip(PlanContext ctx) {
     if (ctx != null) {
       checkContextSet();
@@ -147,11 +153,11 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public StringBuilder stringify0(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
     builder.append(kind().text()).append('{').append(condition);
-    stringifyRefs(builder);
+    stringifyRefs(builder, compact);
     builder.append('}');
-    stringifyChildren(builder);
+    stringifyChildren(builder, compact);
     return builder;
   }
 }

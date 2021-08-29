@@ -12,5 +12,11 @@ public interface PlanNode extends TreeNode<PlanContext, PlanNode>, Showable {
 
   void setContext(PlanContext context);
 
+  void rebindRefs(PlanContext refCtx);
+
   void freeze();
+
+  StringBuilder stringifyCompact(StringBuilder builder);
+
+  String toString(boolean compact);
 }

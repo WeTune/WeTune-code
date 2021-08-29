@@ -7,8 +7,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 
 class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   private final Expr lhsExpr;
@@ -73,10 +72,12 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
     if (!rhsExpr.refs().isEmpty()) this.refs = RefBag.mk(listConcat(lhsRefs, rhsExpr.refs()));
 
     // update predicate
+    final ASTNode queryExpr = ASTNode.expr(QUERY_EXPR);
+    queryExpr.set(QUERY_EXPR_QUERY, rhsExpr.template().deepCopy());
     final ASTNode predicateExpr = ASTNode.expr(ExprKind.BINARY);
     predicateExpr.set(BINARY_OP, BinaryOp.IN_SUBQUERY);
     predicateExpr.set(BINARY_LEFT, lhsExpr.template().deepCopy());
-    predicateExpr.set(BINARY_RIGHT, rhsExpr.template().deepCopy());
+    predicateExpr.set(BINARY_RIGHT, queryExpr);
     this.predicate = new ExprImpl(refs, predicateExpr);
   }
 
@@ -94,11 +95,11 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   }
 
   @Override
-  public StringBuilder stringify0(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
     builder.append("InSub{");
-    stringifyRefs(builder);
+    stringifyRefs(builder, compact);
     builder.append('}');
-    stringifyChildren(builder);
+    stringifyChildren(builder, compact);
     return builder;
   }
 }

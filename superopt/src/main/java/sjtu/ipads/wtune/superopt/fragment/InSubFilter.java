@@ -6,7 +6,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.bindValues;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValues;
 
 public interface InSubFilter extends Filter {
   @Override
@@ -26,7 +26,7 @@ public interface InSubFilter extends Filter {
   default PlanNode instantiate(Model m, PlanContext ctx) {
     final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
     final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
-    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor0);
+    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor0, m.planContext());
     final List<Ref> refs = listMap(values, Value::selfish);
     final InSubFilterNode f = InSubFilterNode.mk(RefBag.mk(refs));
 

@@ -4,9 +4,10 @@ import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.Commons.safeGet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.bindValues;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValues;
 
 public interface Proj extends Op {
   Symbol attrs();
@@ -31,11 +32,16 @@ public interface Proj extends Op {
   @Override
   default PlanNode instantiate(Model m, PlanContext ctx) {
     final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
-    final var pair = m.interpretAttrs(attrs());
-    final List<Value> inValues = pair.getLeft();
-    final List<Value> outValues;
-    if (pair.getRight() != null) outValues = pair.getRight();
-    else outValues = listMap(inValues, Value::wrapAsExprValue);
+    final List<Value> inValues = m.interpretInAttrs(attrs());
+    final List<List<Value>> outCandidates = m.interpretOutAttrs(attrs());
+    List<Value> outValues = safeGet(outCandidates, 0);
+
+    if (m.isAssignmentTrusted(attrs()))
+      assert outValues != null; // Only reachable when called from PlanTranslator.
+    else {
+      if (outValues != null) outValues = listMap(outValues, Value::renewRefs);
+      else outValues = listMap(inValues, Value::wrapAsExprValue);
+    }
 
     final ProjNode proj = ProjNode.mk(ValueBag.mk(outValues));
     proj.setDeduplicated(isDeduplicated());
@@ -46,7 +52,7 @@ public interface Proj extends Op {
     ctx.registerValues(proj, proj.values());
     ctx.registerRefs(proj, proj.refs());
 
-    final List<Value> usedValues = bindValues(inValues, predecessor);
+    final List<Value> usedValues = bindValues(inValues, predecessor, m.planContext());
     zipForEach(proj.refs(), usedValues, ctx::setRef);
 
     return proj;

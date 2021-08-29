@@ -2,7 +2,8 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
-import java.util.Collections;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public interface Value {
   String qualification();
@@ -29,7 +30,11 @@ public interface Value {
   }
 
   default Value wrapAsExprValue() {
-    return mk(qualification(), name(), Expr.mk(RefBag.mk(Collections.singletonList(selfish()))));
+    return mk(qualification(), name(), Expr.mk(RefBag.mk(singletonList(selfish()))));
+  }
+
+  default Value renewRefs() {
+    return mk(qualification(), name(), Expr.mk(RefBag.mk(listMap(expr().refs(), RefImpl::new))));
   }
 
   static Value mk(String qualification, String name, Expr expr) {

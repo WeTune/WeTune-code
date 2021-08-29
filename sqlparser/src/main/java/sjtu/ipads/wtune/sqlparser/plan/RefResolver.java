@@ -23,6 +23,19 @@ class RefResolver {
     new RefResolver(plan, plan.context()).onNode(plan);
   }
 
+  static void resolveSubqueryExpr(PlanNode plan) {
+    new RefResolver(plan, plan.context()).resolveSubqueryExpr0(plan);
+  }
+
+  private void resolveSubqueryExpr0(PlanNode node) {
+    for (PlanNode predecessor : node.predecessors()) resolveSubqueryExpr0(predecessor);
+    if (node.kind() == IN_SUB_FILTER) {
+      ((InSubFilterNode) node).setRhsExpr(mkQueryExpr(node.predecessors()[1]));
+    } else if (node.kind() == EXISTS_FILTER) {
+      ((ExistsFilterNode) node).setExpr(mkQueryExpr(node.predecessors()[1]));
+    }
+  }
+
   private void onNode(PlanNode node) {
     final boolean needNewLookup = needNewLookup(node);
     final boolean needStackLookup = needStackLookup(node);
@@ -37,34 +50,15 @@ class RefResolver {
     if (needStackLookup) lookup = new StackedLookup(currentLookup);
 
     switch (node.kind()) {
-      case INPUT:
-        onInput((InputNode) node);
-        break;
-      case INNER_JOIN:
-      case LEFT_JOIN:
-        onJoin((JoinNode) node);
-        break;
-      case SIMPLE_FILTER:
-      case IN_SUB_FILTER:
-        onFilter((FilterNode) node);
-        break;
-      case PROJ:
-        onProj((ProjNode) node);
-        break;
-      case AGG:
-        onAgg((AggNode) node);
-        break;
-      case SORT:
-        onSort((SortNode) node);
-        break;
-      case LIMIT:
-        onLimit((LimitNode) node);
-        break;
-      case UNION:
-        onUnion((SetOpNode) node);
-        break;
-      default:
-        throw failed("unsupported operator " + node.kind());
+      case INPUT -> onInput((InputNode) node);
+      case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
+      case SIMPLE_FILTER, IN_SUB_FILTER -> onFilter((FilterNode) node);
+      case PROJ -> onProj((ProjNode) node);
+      case AGG -> onAgg((AggNode) node);
+      case SORT -> onSort((SortNode) node);
+      case LIMIT -> onLimit((LimitNode) node);
+      case UNION -> onUnion((SetOpNode) node);
+      default -> throw failed("unsupported operator " + node.kind());
     }
 
     if (needMergeLookup) currentLookup.addAll(lookup.values);
@@ -89,7 +83,7 @@ class RefResolver {
 
     for (Ref ref : refs) {
       final Value value = ctx.deRef(ref);
-      if (isLhs(node, ctx.ownerOf(value))) lhsRefs.add(ref);
+      if (isOnLhs(node, ctx.ownerOf(value))) lhsRefs.add(ref);
       else rhsRefs.add(ref);
     }
 
@@ -109,9 +103,9 @@ class RefResolver {
     resolveRefs(refs, false, true);
 
     if (node.kind() == IN_SUB_FILTER) {
-      ((InSubFilterNode) node).setRhsExpr(makeQueryExpr(node.predecessors()[1]));
+      ((InSubFilterNode) node).setRhsExpr(mkQueryExpr(node.predecessors()[1]));
     } else if (node.kind() == EXISTS_FILTER) {
-      ((ExistsFilterNode) node).setExpr(makeQueryExpr(node.predecessors()[1]));
+      ((ExistsFilterNode) node).setExpr(mkQueryExpr(node.predecessors()[1]));
     }
   }
 
@@ -205,7 +199,7 @@ class RefResolver {
     return values;
   }
 
-  private boolean isLhs(PlanNode root, PlanNode descent) {
+  private boolean isOnLhs(PlanNode root, PlanNode descent) {
     assert root.kind().numPredecessors() == 2;
 
     final PlanNode savedDescent = descent;
@@ -217,7 +211,7 @@ class RefResolver {
     throw failed("%s not a descent of %s".formatted(savedDescent, root));
   }
 
-  private Expr makeQueryExpr(PlanNode node) {
+  private Expr mkQueryExpr(PlanNode node) {
     return AstTranslator.translate(node, true);
   }
 

@@ -34,29 +34,6 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
   }
 
   @Override
-  public Value locate(Value target, PlanContext ctx) {
-    final Value src0 = ctx.sourceOf(target);
-    Value cached = null;
-    for (Value v : values) {
-      final Value src1;
-      if (v == target || (strictEq(src0, src1 = ctx.sourceOf(v)))) return v;
-      else if (relaxedEq(src0, src1)) cached = v;
-    }
-    return cached;
-  }
-
-  @Override
-  public Value locate(String qualification, String name) {
-    requireNonNull(name);
-
-    for (Value value : values)
-      if ((qualification == null || qualification.equals(value.qualification()))
-          && name.equals(value.name())) return value;
-
-    return null;
-  }
-
-  @Override
   public Value get(int index) {
     return values.get(index);
   }
@@ -76,11 +53,5 @@ class ValueBagImpl extends AbstractList<Value> implements ValueBag {
     return values.spliterator();
   }
 
-  private static boolean strictEq(Value v0, Value v1) {
-    return v0 == v1;
-  }
 
-  private static boolean relaxedEq(Value v0, Value v1) {
-    return v0.qualification().equals(v1.qualification()) && v0.name().equals(v1.name());
-  }
 }

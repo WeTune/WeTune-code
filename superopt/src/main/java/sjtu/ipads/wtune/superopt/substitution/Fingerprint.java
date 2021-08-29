@@ -83,6 +83,7 @@ public final class Fingerprint {
       builder.append(
           identifierOf(nodeType, nodeType == PROJ && ((ProjNode) node).isDeduplicated()));
       mkFingerprint0(node.predecessors()[0], builder, limit - 1, fingerprints);
+      popChars(builder, 1);
     }
   }
 

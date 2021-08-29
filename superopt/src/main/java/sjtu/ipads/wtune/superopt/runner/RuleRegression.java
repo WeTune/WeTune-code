@@ -79,7 +79,7 @@ public class RuleRegression implements Runner {
 
     final Substitution sub = Substitution.parse(line);
 
-    final var pair = translateAsPlan(sub, true);
+    final var pair = translateAsPlan(sub, true, true);
     final PlanNode plan0 = disambiguate(pair.getLeft());
     final PlanNode plan1 = disambiguate(pair.getRight());
 

@@ -3,8 +3,13 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 
 public interface PlanSupport {
   static ASTNode translateAsAst(PlanNode plan) {
@@ -25,6 +30,11 @@ public interface PlanSupport {
 
   static PlanNode resolvePlan(PlanNode plan) {
     RefResolver.resolve(plan);
+    return plan;
+  }
+
+  static PlanNode resolveSubqueryExpr(PlanNode plan) {
+    RefResolver.resolveSubqueryExpr(plan);
     return plan;
   }
 
@@ -75,5 +85,31 @@ public interface PlanSupport {
     }
 
     return true;
+  }
+
+  static List<Value> bindValues(List<Value> values, PlanNode predecessor, PlanContext refCtx) {
+    if (values.isEmpty() || refCtx == null) return values;
+
+    final List<Value> boundValues = new ArrayList<>(values.size());
+    final PlanContext ctx = predecessor.context();
+    final ValueBag lookup = predecessor.values();
+
+    boolean changed = false;
+    for (Value value : values) {
+      final Value boundValue = locateValue(lookup, value, ctx, refCtx);
+      if (boundValue == null) throw new NoSuchElementException("cannot bind value: " + value);
+      boundValues.add(boundValue);
+      changed |= boundValue != value;
+    }
+    return changed ? boundValues : values;
+  }
+
+  static PlanNode rebindRefsToRoot(PlanNode n, PlanContext refCtx) {
+    PlanNode path = n;
+    while (path != null) {
+      path.rebindRefs(refCtx);
+      path = path.successor();
+    }
+    return n;
   }
 }

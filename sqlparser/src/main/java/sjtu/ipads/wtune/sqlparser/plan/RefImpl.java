@@ -10,6 +10,11 @@ class RefImpl implements Ref {
     this.intrinsicName = simpleName(intrinsicName);
   }
 
+  RefImpl(Ref other) {
+    this.intrinsicQualification = other.intrinsicQualification();
+    this.intrinsicName = other.intrinsicName();
+  }
+
   @Override
   public String intrinsicQualification() {
     return intrinsicQualification;

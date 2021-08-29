@@ -10,8 +10,8 @@ import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.wrapWildcardProj;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
 
 class FragmentUtils {
@@ -158,19 +158,6 @@ class FragmentUtils {
 
   static void bindNames(Op op, String[] names, SymbolNaming naming) {
     bindNames(op, names, naming, false);
-  }
-
-  static List<Value> bindValues(List<Value> values, PlanNode predecessor) {
-    final List<Value> boundValues = new ArrayList<>(values.size());
-    final PlanContext ctx = predecessor.context();
-    final ValueBag lookup = predecessor.values();
-
-    for (Value value : values) {
-      final Value boundValue = lookup.locate(value, ctx);
-      if (boundValue == null) throw new NoSuchElementException("cannot bind value: " + value);
-      boundValues.add(boundValue);
-    }
-    return boundValues;
   }
 
   private static void gatherHoles(Op op, List<Hole<Op>> buffer) {

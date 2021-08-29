@@ -11,7 +11,7 @@ class Memo extends BaseCongruence<String, PlanNode> {
 
   @Override
   protected String extractKey(PlanNode planNode) {
-    return planNode.toString();
+    return planNode.toString(true);
   }
 
   @Override

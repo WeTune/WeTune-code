@@ -49,16 +49,17 @@ public class SubstitutionSupport {
   }
 
   public static SubstitutionBank minimize(SubstitutionBank bank) {
-    removeTransitive(bank);
+    //    removeTransitive(bank);
     //    removeDuplicated(bank);
     //    removeMeaningless(bank);
+    removeDuplicated2(bank);
 
     return bank;
   }
 
   public static void printReadable(Substitution substitution) {
     System.out.println(substitution);
-    final Pair<PlanNode, PlanNode> pair = translateAsPlan(substitution, false);
+    final Pair<PlanNode, PlanNode> pair = translateAsPlan(substitution, false, true);
     System.out.println(" q0: " + translateAsAst(disambiguate(pair.getLeft())));
     System.out.println(" q1: " + translateAsAst(disambiguate(pair.getRight())));
   }
@@ -93,8 +94,9 @@ public class SubstitutionSupport {
 
   private static void removeDuplicated2(SubstitutionBank bank) {
     final List<Substitution> substitutions = new ArrayList<>(bank);
-    for (Substitution substitution : substitutions) {
-      DuplicationChecker2.removeIfDuplicated(bank, substitution);
+    for (int i = 0; i < substitutions.size(); i++) {
+      System.out.println(i);
+      DuplicationChecker2.removeIfDuplicated(bank, substitutions.get(i));
     }
   }
 
@@ -117,7 +119,7 @@ public class SubstitutionSupport {
   }
 
   public static Pair<PlanNode, PlanNode> translateAsPlan(
-      Substitution substitution, boolean backwardCompatible) {
-    return new PlanTranslator().translate(substitution, backwardCompatible);
+      Substitution substitution, boolean backwardCompatible, boolean wrapIfNeeded) {
+    return new PlanTranslator().translate(substitution, backwardCompatible, wrapIfNeeded);
   }
 }

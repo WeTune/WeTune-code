@@ -9,10 +9,10 @@ import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
 class PlanNormalizer {
   static PlanNode normalize(PlanNode node) {
-    final PlanNode newPlan = disambiguate(inferenceInnerJoin(normalize0(node, true)));
-    assert newPlan.context().validate();
-    newPlan.freeze();
-    return newPlan;
+    final PlanNode newNode = disambiguate(inferenceInnerJoin(normalize0(node, true)));
+    assert newNode.context().validate();
+    newNode.freeze();
+    return newNode;
   }
 
   private static PlanNode normalize0(PlanNode node, boolean isRoot) {

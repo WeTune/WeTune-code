@@ -111,20 +111,20 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
-  public StringBuilder stringify0(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
     builder.append("Agg{");
 
     builder.append('[');
-    joining(",", values, builder, this::stringifyAsSelectItem);
+    joining(",", values, builder, (v, b) -> stringifyAsSelectItem(v, b, compact));
     builder.append(']');
 
     if (!groups.isEmpty()) builder.append(",groups=").append(groups);
     if (having != null) builder.append(",having=").append(having);
-    stringifyRefs(builder);
+    stringifyRefs(builder, compact);
 
     builder.append('}');
 
-    stringifyChildren(builder);
+    stringifyChildren(builder, compact);
 
     return builder;
   }

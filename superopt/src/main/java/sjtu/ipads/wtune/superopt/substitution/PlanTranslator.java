@@ -23,6 +23,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.wrapWildcardProj;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
@@ -59,11 +60,8 @@ class PlanTranslator {
     return fragment.root().instantiate(model, ctx);
   }
 
-  Pair<PlanNode, PlanNode> translate(Substitution substitution) {
-    return translate(substitution, false);
-  }
-
-  Pair<PlanNode, PlanNode> translate(Substitution substitution, boolean backwardCompatible) {
+  Pair<PlanNode, PlanNode> translate(
+      Substitution substitution, boolean backwardCompatible, boolean wrapIfNeeded) {
     compatibleMode = backwardCompatible;
     naming = substitution.naming();
 
@@ -88,11 +86,12 @@ class PlanTranslator {
     final PlanNode rawPlan1 = fragment1.root().instantiate(model, PlanContext.mk(schema));
     if (!alignOutput(rawPlan0, rawPlan1)) return null;
 
+    if (!wrapIfNeeded) return Pair.of(rawPlan0, rawPlan1);
+
     // Ensure the outcome is a complete plan instead of a fragment.
     final PlanNode plan0 = wrapFragment(rawPlan0);
     final PlanNode plan1 = wrapFragment(rawPlan1);
     if (!alignOutput(plan0, plan1)) return null;
-
     return Pair.of(plan0, plan1);
   }
 
@@ -254,7 +253,7 @@ class PlanTranslator {
   }
 
   private void mkAttrs(Symbol sym, NameSequence qualificationSeq, Model model) {
-    if (model.interpretAttrs(sym) != null) return;
+    if (model.isInterpreted(sym)) return;
 
     final Symbol source = constraints.sourceOf(sym);
     final AttrsDesc attrs = attrsDescs.get(sym);
@@ -264,10 +263,10 @@ class PlanTranslator {
       lookup = model.interpretTable(source).values();
     } else /* refTo instance ValueDesc */ {
       mkAttrs(source, qualificationSeq, model);
-      lookup = ValueBag.mk(model.interpretAttrs(source).getRight());
+      lookup = ValueBag.mk(model.interpretOutAttrs(source).get(0));
     }
 
-    final List<Value> inValues = listMap(attrs.attrNames, it -> lookup.locate(null, it));
+    final List<Value> inValues = listMap(attrs.attrNames, it -> locateValue(lookup, null, it));
 
     final int nullIdx;
     if ((nullIdx = inValues.indexOf(null)) != -1)

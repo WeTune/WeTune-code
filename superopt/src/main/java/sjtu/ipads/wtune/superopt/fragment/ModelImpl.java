@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.fragment;
 
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan.Expr;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.Value;
 
@@ -9,13 +10,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.singletonList;
+
 class ModelImpl implements Model {
   protected final ModelImpl base;
   protected final Map<Symbol, Object> assignments;
 
   ModelImpl(ModelImpl base) {
     this.base = base;
-    this.assignments = new HashMap<>(8);
+    this.assignments = new HashMap<>(16);
   }
 
   @Override
@@ -60,8 +63,9 @@ class ModelImpl implements Model {
   }
 
   @Override
-  public Pair<List<Value>, List<Value>> interpretAttrs(Symbol attrs) {
-    return get0(attrs);
+  public List<List<Value>> interpretOutAttrs(Symbol attrs) {
+    final Pair<List<Value>, List<Value>> pair = get0(attrs);
+    return pair == null ? null : singletonList(pair.getRight());
   }
 
   @Override
@@ -72,6 +76,16 @@ class ModelImpl implements Model {
   @Override
   public Model derive() {
     return new ModelImpl(this);
+  }
+
+  @Override
+  public PlanContext planContext() {
+    return null;
+  }
+
+  @Override
+  public boolean isAssignmentTrusted(Symbol sym) {
+    return true;
   }
 
   protected boolean assign0(Symbol sym, Object obj) {

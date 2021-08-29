@@ -16,6 +16,8 @@ public interface ConstraintAwareModel extends Model {
   @Override
   ConstraintAwareModel derive();
 
+  ConstraintAwareModel derive(PlanContext ctx);
+
   static ConstraintAwareModel mk(PlanContext plan, Constraints constraints) {
     return new ConstraintAwareModelImpl(plan, constraints);
   }

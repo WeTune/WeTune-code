@@ -69,6 +69,8 @@ public class TreeTemplate<C extends TreeContext<C>, T extends TreeNode<C, T>> {
   }
 
   private T instantiate0(T subtree, Function<T, T> copyFunc) {
+    if (jointPoints.contains(subtree)) return ctx.getJointPoint(subtree).instantiate();
+
     final T copy = copyFunc.apply(subtree);
     final T[] predecessors = subtree.predecessors();
 

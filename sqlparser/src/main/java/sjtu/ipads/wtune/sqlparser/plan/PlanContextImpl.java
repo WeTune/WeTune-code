@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import com.google.common.collect.Multimap;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.IdentityHashMap;
@@ -13,6 +14,7 @@ class PlanContextImpl implements PlanContext {
   private final Map<Ref, Value> refTo = new IdentityHashMap<>();
   private final Map<Ref, PlanNode> refOwners = new IdentityHashMap<>();
   private final Map<Value, PlanNode> valueOwners = new IdentityHashMap<>();
+  private Multimap<Value, Value> redirections;
 
   PlanContextImpl(Schema schema) {
     this.schema = schema;

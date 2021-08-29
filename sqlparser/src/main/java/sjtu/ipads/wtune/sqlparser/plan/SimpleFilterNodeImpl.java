@@ -46,12 +46,12 @@ class SimpleFilterNodeImpl extends PlanNodeBase implements SimpleFilterNode {
   }
 
   @Override
-  public StringBuilder stringify0(StringBuilder builder) {
+  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
     builder.append("Filter{");
     builder.append(predicate);
-    stringifyRefs(builder);
+    stringifyRefs(builder, compact);
     builder.append('}');
-    stringifyChildren(builder);
+    stringifyChildren(builder, compact);
     return builder;
   }
 }

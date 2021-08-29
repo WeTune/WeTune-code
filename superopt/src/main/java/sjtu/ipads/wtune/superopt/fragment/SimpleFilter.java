@@ -6,7 +6,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.bindValues;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValues;
 
 public interface SimpleFilter extends Filter {
   Symbol predicate();
@@ -29,7 +29,8 @@ public interface SimpleFilter extends Filter {
     final PlanNode predecessor = predecessors()[0].instantiate(m, ctx);
 
     final Expr predicate = m.interpretPred(predicate());
-    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor);
+    final List<Value> values =
+        bindValues(m.interpretInAttrs(attrs()), predecessor, m.planContext());
     final List<Ref> refs = listMap(values, Value::selfish);
     final SimpleFilterNode f = SimpleFilterNode.mk(predicate, RefBag.mk(refs));
 

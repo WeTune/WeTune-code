@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.plan.*;
@@ -11,16 +13,20 @@ import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.function.Predicate.not;
-import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.UNIQUE;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findIC;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findRelatedIC;
 
 class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel {
   private final PlanContext plan;
   private final Constraints constraints;
+  private final Set<Symbol> trustedAssigned;
+  private ListMultimap<Symbol, List<Value>> outAttrsAssignments;
 
   ConstraintAwareModelImpl(PlanContext plan, Constraints constraints) {
     this(null, plan, constraints);
@@ -31,6 +37,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     super(base);
     this.plan = plan;
     this.constraints = constraints;
+    this.trustedAssigned = new HashSet<>(16);
   }
 
   @Override
@@ -41,6 +48,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   @Override
   public void reset() {
     assignments.clear();
+    trustedAssigned.clear();
   }
 
   @Override
@@ -54,11 +62,46 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   }
 
   @Override
+  public ConstraintAwareModel derive(PlanContext ctx) {
+    return new ConstraintAwareModelImpl(this, ctx, constraints);
+  }
+
+  @Override
+  public PlanContext planContext() {
+    return plan;
+  }
+
+  @Override
+  public List<Value> interpretInAttrs(Symbol attrs) {
+    return get0(attrs);
+  }
+
+  @Override
+  public List<List<Value>> interpretOutAttrs(Symbol attrs) {
+    final List<List<Value>> v = outAttrsAssignments == null ? null : outAttrsAssignments.get(attrs);
+    return v != null ? v : base == null ? emptyList() : base.interpretOutAttrs(attrs);
+  }
+
+  @Override
+  public boolean isAssignmentTrusted(Symbol sym) {
+    return trustedAssigned.contains(sym) || (base != null && base.isAssignmentTrusted(sym));
+  }
+
+  @Override
   protected boolean assign0(Symbol target, Object newVal) {
+    List<Value> outAttrs = null;
+    if (newVal instanceof Pair) {
+      outAttrs = ((Pair<?, List<Value>>) newVal).getRight();
+      newVal = ((Pair<?, ?>) newVal).getLeft();
+    }
+
     for (Symbol eqSym : constraints.eqClassOf(target)) {
       final Object oldVal = get0(eqSym);
       if (oldVal != null && !checkCompatible(newVal, oldVal)) return false;
-      if (shouldTransitiveAssign(target, eqSym, newVal, oldVal)) super.assign0(eqSym, newVal);
+      boolean trusted = target == eqSym;
+      if (oldVal == null || trusted) super.assign0(eqSym, newVal);
+      if (trusted) trustedAssigned.add(eqSym);
+      if (outAttrs != null) addOutAttrs(eqSym, outAttrs, trusted);
     }
     return true;
   }
@@ -78,14 +121,16 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   private boolean checkCompatible(Object newOne, Object oldOne) {
     if (oldOne == newOne) {
       return true;
-    } else if (oldOne instanceof PlanNode || oldOne instanceof Expr) {
-      return oldOne.toString().equals(newOne.toString());
-    } else if (oldOne instanceof Pair) {
-      final List<Value> oldAttrs = ((Pair<List<Value>, ?>) oldOne).getLeft();
-      final List<Value> newAttrs = ((Pair<List<Value>, ?>) newOne).getLeft();
-      return oldAttrs.equals(newAttrs);
+
+    } else if (oldOne instanceof List) {
+      return isCompatibleValues((List<Value>) oldOne, (List<Value>) newOne);
+
+    } else if (oldOne instanceof InputNode) {
+      return newOne instanceof InputNode
+          && ((InputNode) oldOne).table().equals(((InputNode) newOne).table());
+
     } else {
-      return assertFalse();
+      return oldOne.toString().equals(newOne.toString());
     }
   }
 
@@ -104,31 +149,47 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
   private boolean checkAttrSub(Constraint attrsSub) {
     assert attrsSub.kind() == Constraint.Kind.AttrsSub;
-    final List<Value> attrs = interpretInAttrs(attrsSub.symbols()[0]);
+    final Symbol attrsSym = attrsSub.symbols()[0];
+    final Symbol srcSym = attrsSub.symbols()[1];
+
+    final List<Value> attrs = interpretInAttrs(attrsSym);
     if (attrs == null) return true;
 
-    final Symbol src = attrsSub.symbols()[1];
-    if (src.kind() == Symbol.Kind.TABLE) {
-      final PlanNode inputNode = interpretTable(src);
-      return inputNode == null || inputNode.values().containsAll(attrs);
+    final List<Value> srcAttrs;
+    if (srcSym.kind() == Symbol.Kind.TABLE) {
+      final PlanNode inputNode = interpretTable(srcSym);
+      if (inputNode == null) return true;
+      srcAttrs = inputNode.values();
     } else {
-      final var pair = interpretAttrs(src);
-      return pair == null || pair.getRight().containsAll(attrs);
+      srcAttrs = getOutAttrs(srcSym);
+      if (srcAttrs == null) return true;
     }
+
+    final boolean strict = isAssignmentTrusted(attrsSym) && isAssignmentTrusted(srcSym);
+    if (strict) return srcAttrs.containsAll(attrs);
+    else return all(attrs, attr -> locateValue(srcAttrs, attr, plan, plan) != null);
   }
 
   private boolean checkUnique(Constraint unique) {
     assert unique.kind() == Constraint.Kind.Unique;
 
-    final List<Value> attrs = interpretInAttrs(unique.symbols()[1]);
+    final Symbol srcSym = unique.symbols()[0];
+    final Symbol attrsSym = unique.symbols()[1];
+
+    final List<Value> attrs = interpretInAttrs(attrsSym);
     if (attrs == null) return true;
 
     final List<Column> columns = resolveSourceColumns(attrs);
     if (columns == null) return false;
-    for (Column column : columns)
-      if (Iterables.isEmpty(findRelatedIC(plan.schema(), column, UNIQUE))) return false;
 
-    final PlanNode surface = interpretTable(unique.symbols()[0]);
+    for (Column column : columns)
+      if (Iterables.isEmpty(findRelatedIC(plan.schema(), column, UNIQUE))) {
+        return false;
+      }
+
+    if (!isAssignmentTrusted(srcSym) || !isAssignmentTrusted(attrsSym)) return true;
+
+    final PlanNode surface = interpretTable(srcSym);
     if (surface == null) return true;
 
     return isUniqueCoreOf(new HashSet<>(attrs), surface);
@@ -137,7 +198,11 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   private boolean checkReference(Constraint reference) {
     assert reference.kind() == Constraint.Kind.Reference;
 
-    final List<Value> referringAttrs = interpretInAttrs(reference.symbols()[1]);
+    final Symbol referringAttrsSym = reference.symbols()[1];
+    final Symbol referredSrcSym = reference.symbols()[2];
+    final Symbol referredAttrsSym = reference.symbols()[3];
+
+    final List<Value> referringAttrs = interpretInAttrs(referringAttrsSym);
     if (referringAttrs == null) return true;
 
     final List<Column> referringColumns = resolveSourceColumns(referringAttrs);
@@ -147,13 +212,14 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     final var fk = findIC(plan.schema(), referringColumns, ConstraintType.FOREIGN);
     if (fk == null) return false;
 
-    final List<Value> referredAttrs = interpretInAttrs(reference.symbols()[3]);
+    final List<Value> referredAttrs = interpretInAttrs(referredAttrsSym);
     if (referredAttrs == null) return true;
     if (!fk.refColumns().equals(resolveSourceColumns(referredAttrs))) return false;
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
-    final PlanNode surface = interpretTable(reference.symbols()[0]);
+    final PlanNode surface = interpretTable(referredSrcSym);
     if (surface == null) return true;
+    if (!isAssignmentTrusted(referredAttrsSym) || !isAssignmentTrusted(referredSrcSym)) return true;
 
     final PlanNode inputNode = plan.ownerOf(plan.sourceOf(referredAttrs.get(0)));
     assert inputNode.kind() == OperatorType.INPUT;
@@ -168,20 +234,27 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     return true;
   }
 
-  private boolean shouldTransitiveAssign(Symbol from, Symbol to, Object newVal, Object oldVal) {
-    assert from.kind() == to.kind();
+  private boolean isCompatibleValues(List<Value> values0, List<Value> values1) {
+    if (values0.size() != values1.size()) return false;
+    for (int i = 0, bound = values0.size(); i < bound; i++)
+      if (locateValue(singletonList(values0.get(i)), values1.get(i), plan, plan) == null) {
+        return false;
+      }
+    return true;
+  }
 
-    if (newVal == oldVal) return false;
+  private List<Value> getOutAttrs(Symbol sym) {
+    if (outAttrsAssignments == null) return null;
+    final List<List<Value>> lists = outAttrsAssignments.get(sym);
+    return lists.isEmpty() ? null : lists.get(0);
+  }
 
-    if (oldVal == null) return true;
-    if (from.ctx() == to.ctx()) return false;
-    if (from.kind() != Symbol.Kind.ATTRS) return false;
-
-    assert oldVal instanceof Pair && newVal instanceof Pair;
-    final Pair<?, List<Value>> oldPair = (Pair<?, List<Value>>) oldVal;
-    final Pair<?, ?> newPair = ((Pair<?, ?>) newVal);
-    return newPair.getRight() != null
-        && (oldPair.getRight() == null || all(oldPair.getRight(), it -> it.expr().isIdentity()));
+  private void addOutAttrs(Symbol sym, List<Value> values, boolean trusted) {
+    if (outAttrsAssignments == null)
+      outAttrsAssignments = MultimapBuilder.hashKeys(2).arrayListValues(2).build();
+    final List<List<Value>> lists = outAttrsAssignments.get(sym);
+    if (trusted) lists.add(0, values);
+    else lists.add(values);
   }
 
   private List<Column> resolveSourceColumns(List<Value> attrs) {

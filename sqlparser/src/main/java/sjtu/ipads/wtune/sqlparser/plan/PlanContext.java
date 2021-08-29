@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import sjtu.ipads.wtune.common.utils.TreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
+import java.util.Collection;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;

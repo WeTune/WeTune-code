@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.plan.Expr;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.Value;
 
@@ -24,11 +24,15 @@ public interface Model {
 
   List<Value> interpretInAttrs(Symbol attrs);
 
-  Pair<List<Value>, List<Value>> interpretAttrs(Symbol attrs);
+  List<List<Value>> interpretOutAttrs(Symbol attrs);
+
+  boolean isAssignmentTrusted(Symbol sym);
 
   Model base();
 
   Model derive();
+
+  PlanContext planContext();
 
   static Model mk() {
     return new ModelImpl(null);

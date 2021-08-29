@@ -7,7 +7,6 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 

@@ -16,9 +16,9 @@ import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.rebindRefsToRoot;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.reduceSort;
-import static sjtu.ipads.wtune.superopt.optimizer.PlanNormalizer.normalize;
 import static sjtu.ipads.wtune.superopt.optimizer.ReversedMatch.reversedMatch;
 
 class OptimizerImpl implements Optimizer {
@@ -66,7 +66,8 @@ class OptimizerImpl implements Optimizer {
       if (sortReduced) traceStep(plan0, plan1, null /* stand for reduce-sort */);
     }
 
-    return optimize0(plan1);
+    final Set<PlanNode> ret = optimize0(plan1);
+    return ret;
   }
 
   private Set<PlanNode> optimize0(PlanNode node) {
@@ -150,7 +151,7 @@ class OptimizerImpl implements Optimizer {
 
       for (Match match : matches) {
         // 3. generate new plan according to match
-        final PlanNode newNode = normalize(match.substitute(substitution._1()));
+        final PlanNode newNode = normalizePlan(match.substitute(substitution._1()));
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
@@ -170,7 +171,7 @@ class OptimizerImpl implements Optimizer {
     final List<Match> ret = new ArrayList<>();
 
     for (PlanNode n : reversedMatch(node, op, baseModel)) {
-      final ConstraintAwareModel model = baseModel.derive();
+      final ConstraintAwareModel model = baseModel.derive(n.context());
 
       if (!op.match(n, model)) continue;
 
@@ -212,7 +213,9 @@ class OptimizerImpl implements Optimizer {
       if (optChildren.isEmpty()) continue;
 
       assert optChildren.size() == parent.kind().numPredecessors();
-      ret.add(replaceGlobal(parent, optChildren));
+      final PlanNode newNode = replaceGlobal(parent, optChildren);
+      rebindRefsToRoot(newNode, parent.context());
+      ret.add(newNode);
     }
 
     return ret;

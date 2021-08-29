@@ -242,7 +242,7 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
             used[i] = true;
           }
 
-        stack[opIndex] = CombinedFilterNode.mk(filters);
+        stack[opIndex] = filters.size() == 1 ? filters.get(0) : CombinedFilterNode.mk(filters);
 
         next.match();
 
