@@ -52,7 +52,7 @@ getConnProp() {
     username=${3:-'root'}
     password=${4:-'admin'}
   elif [ "$dbType" = "$SQLSERVER" ]; then
-    host=${1:-'192.168.13.53'}
+    host=${1:-'10.0.0.103'}
     port=${2:-'1433'}
     username=${3:-'SA'}
     password=${4:-'mssql2019Admin'}
@@ -60,7 +60,7 @@ getConnProp() {
 }
 
 findDataDir() {
-  local path="$appName/$postfix"
+  local path="$postfix/$appName"
   dataDir=$(find . -type d -wholename "*/$path" | head -1)
   if [ ! "$dataDir" ]; then
     dataDir=$(find .. -type d -wholename "*/$path" | head -1)
@@ -97,7 +97,7 @@ doImportOne() {
   if [ "$dbType" = "$SQLSERVER" ]; then
     sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
       ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL;
-      BULK INSERT [${tableName}] FROM '/home/cleveland/yicun/wtune_data/dump/${appName}/base/${tableName}.csv' WITH( FIELDTERMINATOR=';', ROWTERMINATOR='\n' );
+      BULK INSERT [${tableName}] FROM '/home/yicun/wtune/wtune_code/wtune_data/dump/${postfix}/${appName}/${tableName}.csv' WITH( FIELDTERMINATOR=';', ROWTERMINATOR='\n' );
       ALTER TABLE [${tableName}] CHECK CONSTRAINT ALL;
       GO
 EOF
@@ -137,29 +137,29 @@ doImportData() {
   done
 }
 
-#if [ "$1" = '-t' ]; then
-#  table="$2"
-#  shift 2
-#fi
-#
-#dbType "$1" "$2"
-#getConnProp "$3" "$4" "$5" "$6"
-#findDataDir
-#
-#if [ -z "$table" ]; then
-#  doImportData
-#else
-#  doImportOne "$table"
-#fi
+if [ "$1" = '-all' ]; then
+  #for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
+  do
+    dbType "$db" "$2"
+    getConnProp "$3" "$4" "$5" "$6"
+    findDataDir
 
+    doImportData
+  done
+else
+  if [ "$1" = '-t' ]; then
+    table="$2"
+    shift 2
+  fi
 
-#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
-#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
-for db in 'broadleaf'
-do
-  dbType "$db" "$1"
-  getConnProp "$2" "$3" "$4" "$5"
+  dbType "$1" "$2"
+  getConnProp "$3" "$4" "$5" "$6"
   findDataDir
 
-  doImportData
-done
+  if [ -z "$table" ]; then
+    doImportData
+  else
+    doImportOne "$table"
+  fi
+fi

@@ -36,4 +36,8 @@ public interface App {
   static Collection<App> all() {
     return AppImpl.all();
   }
+
+  static boolean doingSQLServerTest(){
+    return true;
+  }
 }

@@ -9,7 +9,7 @@ import sjtu.ipads.wtune.testbed.common.Actuator;
 public interface Executor extends Actuator {
   boolean installParams(Map<ParamDesc, Object> params);
 
-  boolean execute();
+  long execute();
 
   ResultSet getResultSet();
 

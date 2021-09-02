@@ -61,7 +61,7 @@ getConnProp() {
     username=${3:-'root'}
     password=${4:-'admin'}
   elif [ "$dbType" = "$SQLSERVER" ]; then
-    host=${1:-'192.168.13.53'}
+    host=${1:-'10.0.0.103'}
     port=${2:-'1433'}
     username=${3:-'SA'}
     password=${4:-'mssql2019Admin'}

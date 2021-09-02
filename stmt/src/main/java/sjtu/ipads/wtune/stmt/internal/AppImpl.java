@@ -70,7 +70,7 @@ public class AppImpl implements App {
         connProps.setProperty("dbType", POSTGRESQL);
 
       } else if (SQLSERVER.equals(dbType)){
-        connProps.setProperty("jdbcUrl", "jdbc:sqlserver://192.168.13.53:1433;DatabaseName=" + name + "_base");
+        connProps.setProperty("jdbcUrl", "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=" + name + "_base");
         connProps.setProperty("username", "SA");
         connProps.setProperty("dbType", SQLSERVER);
       } else throw new IllegalArgumentException("unknown db type");

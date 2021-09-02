@@ -5,6 +5,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 
@@ -25,7 +27,9 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
       String.format(
           "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-  private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM wtune_opt_stmts ";
+  private static final String OPT_STMTS_TABLE =
+          App.doingSQLServerTest() ? "wtune_opt_stmts_syntax_norm" : "wtune_opt_stmts";
+  private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
 

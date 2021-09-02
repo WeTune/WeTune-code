@@ -18,8 +18,8 @@ public class NoOpExecutor implements Executor {
   }
 
   @Override
-  public boolean execute() {
-    return true;
+  public long execute() {
+    return 0L;
   }
 
   @Override

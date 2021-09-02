@@ -96,7 +96,7 @@ public class PopulationMain {
   @SuppressWarnings("all")
   private static Function<String, PrintWriter> fileDump(String appName, String postfix) {
     return tableName -> {
-      final Path baseDir = Paths.get(System.getProperty("user.dir"), "wtune_data/dump/%s/%s".formatted(appName, postfix));
+      final Path baseDir = Paths.get(System.getProperty("user.dir"), "wtune_data/dump/%s/%s".formatted(postfix, appName));
       try {
         baseDir.toFile().mkdirs();
 //        final Path path = Paths.get(System.getProperty("user.dir"), "wtune_data/dump/%s/%s/%s.csv".formatted(appName, postfix, tableName));
@@ -147,8 +147,8 @@ public class PopulationMain {
   }
 
   public static void main(String[] args) {
-    System.setProperty("user.dir", "D:\\study\\WeTune\\wtune-code");
-    TAG = BASE;
+    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
+    TAG = LARGE_ZIPF;
 
     //    final App app = App.of("discourse");
     //    final String table = "users";

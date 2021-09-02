@@ -169,12 +169,10 @@ class ProfilerImpl implements Profiler {
     final Map<ParamDesc, Object> params = this.params.get(cycle % this.params.size());
     if (!exectuor.installParams(params)) return false;
 
-    final long start = System.nanoTime();
-    if (!exectuor.execute()) return false;
-    final long end = System.nanoTime();
+    final long elapsed = exectuor.execute();
+    if (elapsed < 0) return false;
     exectuor.endOne();
 
-    final long elapsed = end - start;
     if (recording) metric.addRecord(elapsed);
 
     lastElapsed = elapsed;

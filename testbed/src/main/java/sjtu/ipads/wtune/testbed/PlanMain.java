@@ -42,7 +42,7 @@ public class PlanMain {
     }
 
     public static void main(String[] args) throws IOException, SQLException {
-        System.setProperty("user.dir", "D:\\study\\WeTune\\wtune-code\\");
+        System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
 
         List<File> files = Files.list(Paths.get(System.getProperty("user.dir"), STMTS_PATH))
                                 .map(Path::toFile).collect(Collectors.toList());

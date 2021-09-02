@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 
@@ -22,9 +23,13 @@ public class DbStatementDao extends DbDao implements StatementDao {
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
   static final String KEY_STACK_TRACE = "stackTrace";
+  private static final String STMTS_TABLE =
+      App.doingSQLServerTest() ? "wtune_stmts_syntax_norm" : "wtune_stmts";
 
   private static final String INSERT =
-      "INSERT INTO wtune_stmts (stmt_app_name, stmt_id, stmt_raw_sql, stmt_trace) "
+      "INSERT INTO "
+          + STMTS_TABLE
+          + " (stmt_app_name, stmt_id, stmt_raw_sql, stmt_trace) "
           + "VALUES (?, ?, ?, ?)";
 
   private static final String SELECT_ITEMS =
@@ -32,11 +37,11 @@ public class DbStatementDao extends DbDao implements StatementDao {
           "stmt_app_name AS %s, stmt_id AS %s, stmt_raw_sql AS %s, stmt_trace AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL, KEY_STACK_TRACE);
   private static final String FIND_ALL =
-      "SELECT " + SELECT_ITEMS + "FROM wtune_stmts WHERE stmt_app_name <> 'broadleaf_tmp' ";
+      "SELECT " + SELECT_ITEMS + "FROM " + STMTS_TABLE + " WHERE stmt_app_name <> 'broadleaf_tmp' ";
   private static final String FIND_ONE = FIND_ALL + "AND stmt_app_name = ? AND stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "AND stmt_app_name = ?";
   private static final String DELETE_ONE =
-      "DELETE FROM wtune_stmts WHERE stmt_app_name = ? AND stmt_id = ?";
+      "DELETE FROM " + STMTS_TABLE + " WHERE stmt_app_name = ? AND stmt_id = ?";
   private static final String INSERT_DELETED =
       "INSERT INTO wtune_deleted_stmts (stmt_app_name, stmt_id, stmt_raw_sql, cause) "
           + "VALUES (?, ?, ?, ?)";

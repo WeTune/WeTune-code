@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.testbed;
 
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.testbed.population.Generators;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
@@ -22,7 +23,6 @@ import java.util.function.Function;
 import java.util.logging.LogManager;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.SQLSERVER;
 import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.*;
 
@@ -66,12 +66,10 @@ public class ProfileMain {
     final String dbName = original.appName() + "_" + tag;
     config.setDryRun(dryRun);
     config.setDbProperties(
-        SQLSERVER.equals(original.app().dbType())
+        App.doingSQLServerTest()
             ? sqlserverProps(dbName)
             : (MYSQL.equals(original.app().dbType()) ? mysqlProps(dbName) : pgProps(dbName)));
     config.setParamSaveFile(paramSaveFile(tag));
-    //    config.setWarmupCycles(20);
-    //    config.setProfileCycles(201);
     config.setWarmupCycles(0);
     config.setProfileCycles(1);
 
@@ -103,7 +101,34 @@ public class ProfileMain {
     return true;
   }
 
-  private static final Set<String> BLACK_LIST = Set.of("solidus-33", "spree-857", "solidus-469");
+  private static final Set<String> BLACK_LIST_Z =
+      Set.of(
+          "shopizer-39",
+          "shopizer-3",
+          "shopizer-57",
+          "shopizer-24",
+          "shopizer-94",
+          "shopizer-60",
+          "shopizer-61",
+          "shopizer-68",
+          "shopizer-69");
+
+  //  private static final Set<String> BLACK_LIST_LZ = Set.of("solidus-33", "spree-857",
+  // "solidus-469");
+  private static final Set<String> BLACK_LIST_LZ =
+      Set.of(
+          "shopizer-39",
+          "shopizer-3",
+          "shopizer-57",
+          "shopizer-24",
+          "shopizer-94",
+          "shopizer-60",
+          "shopizer-61",
+          "shopizer-68",
+          "shopizer-69");
+
+  private static final Set<String> BLACK_LIST_ALL =
+      Set.of("lobsters-118", "gitlab-794", "gitlab-795");
 
   private static void run(String startPoint, boolean dryRun, boolean single) {
     boolean started = startPoint == null;
@@ -116,7 +141,9 @@ public class ProfileMain {
 
       if (!started && rewritten.toString().equals(startPoint)) started = true;
       if (!started) continue;
-      if (tag.equals(LARGE_ZIPF) && BLACK_LIST.contains(rewritten.toString())) continue;
+      if (tag.equals(ZIPF) && BLACK_LIST_Z.contains(rewritten.toString())) continue;
+      if (tag.equals(LARGE_ZIPF) && BLACK_LIST_LZ.contains(rewritten.toString())) continue;
+      if (BLACK_LIST_ALL.contains(rewritten.toString())) continue;
 
       final Statement original = rewritten.original();
 
@@ -152,15 +179,20 @@ public class ProfileMain {
   }
 
   public static void main(String[] args) throws IOException {
-    System.setProperty("user.dir", "D:\\study\\WeTune\\wtune-code");
-    tag = BASE;
-    out =
-        new PrintWriter(
-            Files.newOutputStream(
-                Paths.get(
-                    System.getProperty("user.dir"),
-                    String.format("wtune_data/profile_%s.csv", tag))));
-    //    run("discourse-3842", false, true);
-    run(null, false, false);
+    System.setProperty(
+        "user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
+    for (String oneTag : Set.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
+      tag = oneTag;
+      out =
+          new PrintWriter(
+              Files.newOutputStream(
+                  Paths.get(
+                      System.getProperty("user.dir"),
+                      String.format(
+                          "wtune_data/profile_%s_%s.csv",
+                          tag, App.doingSQLServerTest() ? "ss" : "mypg"))));
+      //    run("discourse-3842", false, true);
+      run(null, false, false);
+    }
   }
 }

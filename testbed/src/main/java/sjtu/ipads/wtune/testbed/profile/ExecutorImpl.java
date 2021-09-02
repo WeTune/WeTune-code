@@ -45,12 +45,15 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   }
 
   @Override
-  public boolean execute() {
+  public long execute() {
     try {
-      final String str = statement().toString();
-      System.out.println(str.substring(str.indexOf("SELECT")));
-      resultSet = statement().executeQuery();
-      return true;
+//      final String str = statement().toString();
+//      System.out.println(str.substring(str.indexOf("SELECT")));
+      PreparedStatement statement = statement();
+      final long start = System.nanoTime();
+      resultSet = statement.executeQuery();
+      final long end = System.nanoTime();
+      return end - start;
 
     } catch (SQLException exception) {
       LOG.log(
@@ -58,7 +61,7 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
           "encounter exception when execute query: [{0}] {1}",
           exception.getSQLState(),
           exception.getMessage());
-      return false;
+      return -1L;
     }
   }
 
@@ -88,6 +91,7 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   @Override
   protected PreparedStatement statement() throws SQLException {
     if (stmt != null) return stmt;
+    System.out.println(sql);
     return stmt = conn.prepareStatement(sql);
   }
 }

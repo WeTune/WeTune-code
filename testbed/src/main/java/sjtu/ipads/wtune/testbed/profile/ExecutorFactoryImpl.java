@@ -1,8 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.makeDataSource;
 
 import com.zaxxer.hikari.HikariDataSource;
+import sjtu.ipads.wtune.stmt.App;
+
 import java.sql.SQLException;
 import java.util.Properties;
 import javax.sql.DataSource;
@@ -23,6 +26,9 @@ class ExecutorFactoryImpl implements ExecutorFactory {
   @Override
   public Executor make(String sql) {
     try {
+      if(App.doingSQLServerTest()){ // need syntax transform in ExecutorSQLServerImpl
+        return new ExecutorSQLServerImpl(dataSource().getConnection(), sql);
+      }
       return new ExecutorImpl(dataSource().getConnection(), sql);
     } catch (SQLException ex) {
       throw new RuntimeException(ex);
