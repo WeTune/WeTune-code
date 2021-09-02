@@ -16,22 +16,24 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   private final Multimap<Fingerprint, Substitution> fingerprintIndex;
 
   SubstitutionBankImpl() {
-    this.substitutions = new HashSet<>(2048);
+    this.substitutions = new LinkedHashSet<>(2048);
     this.known = new HashSet<>(2048);
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
   }
 
-  static SubstitutionBank parse(List<String> lines) {
+  static SubstitutionBank parse(List<String> lines, boolean skipCheck) {
     final SubstitutionBank bank = new SubstitutionBankImpl();
 
     for (String line : lines) {
       if (!Character.isLetter(line.charAt(0))) continue;
 
       final Substitution substitution = Substitution.parse(line);
-      if (isEligible(substitution)) bank.add(substitution);
-
-      final Substitution flipped = flip(substitution);
-      if (isEligible(flipped)) bank.add(flipped);
+      if (skipCheck) bank.add(substitution);
+      else {
+        if (isEligible(substitution)) bank.add(substitution);
+        final Substitution flipped = flip(substitution);
+        if (isEligible(flipped)) bank.add(flipped);
+      }
     }
 
     return bank;

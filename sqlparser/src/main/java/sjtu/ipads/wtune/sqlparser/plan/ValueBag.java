@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 
 public interface ValueBag extends List<Value> {
   // if all values shares a common qualification, returns that,
@@ -12,16 +13,9 @@ public interface ValueBag extends List<Value> {
 
   void setQualification(String qualification);
 
-  static Value locateValue(
-      List<Value> values, Value target, PlanContext newCtx, PlanContext refCtx) {
-    final Value src0 = refCtx.sourceOf(target);
-    Value cached = null;
-    for (Value v : values) {
-      final Value src1;
-      if (v == target || (strictEq(src0, src1 = newCtx.sourceOf(v)))) return v;
-      else if (relaxedEq(src0, src1)) cached = v;
-    }
-    return cached;
+  static Value locateValue(List<Value> values, Value target, PlanContext ctx) {
+    final Value redirected = ctx.redirect(target);
+    return values.contains(redirected) ? redirected : null;
   }
 
   static Value locateValue(List<Value> values, String qualification, String name) {
@@ -32,6 +26,17 @@ public interface ValueBag extends List<Value> {
           && name.equals(value.name())) return value;
 
     return null;
+  }
+
+  static Value locateValueRelaxed(List<Value> values, Value target, PlanContext ctx) {
+    final Value src0 = coalesce(ctx.sourceOf(target), target);
+    Value cached = null;
+    for (Value v : values) {
+      Value src1;
+      if (v == target || strictEq(src0, src1 = ctx.sourceOf(v))) return v;
+      if (relaxedEq(src0, src1)) cached = v;
+    }
+    return cached;
   }
 
   static ValueBag empty() {

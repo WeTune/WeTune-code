@@ -42,6 +42,8 @@ public interface Expr {
 
   void setRefs(RefBag refs);
 
+  Expr copy();
+
   default void setRefs(List<Ref> refs) {
     setRefs(RefBag.mk(refs));
   }

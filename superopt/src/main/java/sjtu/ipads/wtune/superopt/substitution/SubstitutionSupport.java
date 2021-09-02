@@ -45,7 +45,11 @@ public class SubstitutionSupport {
   }
 
   public static SubstitutionBank loadBank(Path path) throws IOException {
-    return SubstitutionBank.parse(Files.readAllLines(path));
+    return loadBank(path, false);
+  }
+
+  public static SubstitutionBank loadBank(Path path, boolean skipCheck) throws IOException {
+    return SubstitutionBank.parse(Files.readAllLines(path), skipCheck);
   }
 
   public static SubstitutionBank minimize(SubstitutionBank bank) {
@@ -94,7 +98,7 @@ public class SubstitutionSupport {
 
   private static void removeDuplicated2(SubstitutionBank bank) {
     final List<Substitution> substitutions = new ArrayList<>(bank);
-    for (int i = 0; i < substitutions.size(); i++) {
+    for (int i = 4320; i < substitutions.size(); i++) {
       System.out.println(i);
       DuplicationChecker2.removeIfDuplicated(bank, substitutions.get(i));
     }

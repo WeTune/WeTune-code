@@ -5,6 +5,8 @@ public interface InSubFilterNode extends FilterNode {
 
   Expr lhsExpr();
 
+  RefBag rhsRefs();
+
   // RHS expression is the subquery expression.
   // e.g., a.id in (select x.id from x), RHS expr is (select x.id from x)
   // Since the subquery may depends on outer query's attributes (dependent subquery),

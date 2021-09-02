@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.superopt.fragment.ConstraintAwareModel;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.resolveSubqueryExpr;
 
 class Match {
   private PlanNode matchPoint;
@@ -21,7 +22,8 @@ class Match {
     final PlanNode instantiated = fragment.root().instantiate(model, newContext);
     final PlanNode newNode = displaceGlobal(matchPoint, instantiated, false);
     assert instantiated == newNode;
-    return instantiated;
+    // SubqueryNode's `predicate` and `rhsExpr` is lost during instantiation, so re-resolve here.
+    return resolveSubqueryExpr(instantiated);
   }
 
   ConstraintAwareModel model() {

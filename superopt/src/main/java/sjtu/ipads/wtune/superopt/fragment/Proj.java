@@ -1,13 +1,15 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
+import sjtu.ipads.wtune.superopt.constraint.Constraints;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.safeGet;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValues;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 public interface Proj extends Op {
   Symbol attrs();
@@ -35,9 +37,9 @@ public interface Proj extends Op {
     final List<Value> inValues = m.interpretInAttrs(attrs());
     final List<List<Value>> outCandidates = m.interpretOutAttrs(attrs());
     List<Value> outValues = safeGet(outCandidates, 0);
+    final boolean trusted = m.isAssignmentTrusted(attrs());
 
-    if (m.isAssignmentTrusted(attrs()))
-      assert outValues != null; // Only reachable when called from PlanTranslator.
+    if (trusted) assert outValues != null; // Only reachable when called from PlanTranslator.
     else {
       if (outValues != null) outValues = listMap(outValues, Value::renewRefs);
       else outValues = listMap(inValues, Value::wrapAsExprValue);
@@ -52,9 +54,26 @@ public interface Proj extends Op {
     ctx.registerValues(proj, proj.values());
     ctx.registerRefs(proj, proj.refs());
 
-    final List<Value> usedValues = bindValues(inValues, predecessor, m.planContext());
+    final List<Value> usedValues = trusted ? inValues : bindValuesRelaxed(inValues, m.planContext(), predecessor);
     zipForEach(proj.refs(), usedValues, ctx::setRef);
 
+//    setRedirectionIfNeeded(attrs(), outValues, m, ctx);
+
     return proj;
+  }
+
+  static void setRedirectionIfNeeded(Symbol sym, List<Value> values, Model m, PlanContext ctx) {
+    if (!(m instanceof final ConstraintAwareModel m1)) return;
+
+    final Constraints constraints = m1.constraints();
+    final PlanContext refCtx = m1.planContext();
+
+    for (Constraint constraint : constraints.ofKind(Constraint.Kind.AttrsSub)) {
+      if (constraint.symbols()[1] == sym) {
+        final List<Value> refValues = m.interpretInAttrs(constraint.symbols()[0]);
+        assert refValues.size() == values.size();
+        zipForEach(refValues, values, ctx::setRedirection);
+      }
+    }
   }
 }

@@ -18,7 +18,7 @@ import static java.util.Collections.singletonList;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.UNIQUE;
-import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findIC;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findRelatedIC;
 
@@ -107,11 +107,11 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   }
 
   @Override
-  public boolean checkConstraint() {
+  public boolean checkConstraint(boolean strict) {
     final Set<Symbol> assignedSymbols = assignments.keySet();
     for (Constraint constraint : constraints)
-      if (any(asList(constraint.symbols()), assignedSymbols::contains))
-        if (!checkConstraint(constraint)) {
+      if (strict || any(asList(constraint.symbols()), assignedSymbols::contains))
+        if (!checkConstraint(constraint, strict)) {
           return false;
         }
 
@@ -134,10 +134,10 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     }
   }
 
-  private boolean checkConstraint(Constraint constraint) {
+  private boolean checkConstraint(Constraint constraint, boolean strict) {
     switch (constraint.kind()) {
       case AttrsSub:
-        return checkAttrSub(constraint);
+        return checkAttrSub(constraint, strict);
       case Unique:
         return checkUnique(constraint);
       case Reference:
@@ -147,8 +147,13 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     }
   }
 
-  private boolean checkAttrSub(Constraint attrsSub) {
+  private boolean checkAttrSub(Constraint attrsSub, boolean strict) {
+    // "strict" mode
+    // Some rules have only AttrsSub on the RHS. e.g. ...|Proj<a3>(Proj<a4>(...))|AttrsSub(a3,a4)
+    // If a4 is not assigned with out-values, then the AttrsSub cannot be checked.
+    // So, in "strict" we will check against a4's in-values instead.
     assert attrsSub.kind() == Constraint.Kind.AttrsSub;
+
     final Symbol attrsSym = attrsSub.symbols()[0];
     final Symbol srcSym = attrsSub.symbols()[1];
 
@@ -161,13 +166,15 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
       if (inputNode == null) return true;
       srcAttrs = inputNode.values();
     } else {
-      srcAttrs = getOutAttrs(srcSym);
-      if (srcAttrs == null) return true;
+      final List<Value> tmp = getOutAttrs(srcSym);
+      if (tmp != null) srcAttrs = tmp;
+      else if (!strict) return true;
+      else srcAttrs = interpretInAttrs(srcSym);
     }
 
-    final boolean strict = isAssignmentTrusted(attrsSym) && isAssignmentTrusted(srcSym);
-    if (strict) return srcAttrs.containsAll(attrs);
-    else return all(attrs, attr -> locateValue(srcAttrs, attr, plan, plan) != null);
+    final boolean trusted = isAssignmentTrusted(attrsSym) && isAssignmentTrusted(srcSym);
+    if (trusted) return srcAttrs.containsAll(attrs);
+    else return all(attrs, attr -> locateValueRelaxed(srcAttrs, attr, plan) != null);
   }
 
   private boolean checkUnique(Constraint unique) {
@@ -237,7 +244,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   private boolean isCompatibleValues(List<Value> values0, List<Value> values1) {
     if (values0.size() != values1.size()) return false;
     for (int i = 0, bound = values0.size(); i < bound; i++)
-      if (locateValue(singletonList(values0.get(i)), values1.get(i), plan, plan) == null) {
+      if (locateValueRelaxed(singletonList(values0.get(i)), values1.get(i), plan) == null) {
         return false;
       }
     return true;
@@ -294,7 +301,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
     } else if (kind == OperatorType.PROJ) {
       final Set<Value> srcAttrs = setMap(attrs, it -> plan.deRef(it.expr().refs().get(0)));
-      return isUniqueCoreOf(srcAttrs, surface);
+      return isUniqueCoreOf(srcAttrs, surface.predecessors()[0]);
 
     } else if (kind == OperatorType.SIMPLE_FILTER) {
       final SimpleFilterNode filter = (SimpleFilterNode) surface;
@@ -302,7 +309,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
         final Value fixedAttr = plan.deRef(filter.refs().get(0));
         attrs.add(fixedAttr);
       }
-      return isUniqueCoreOf(attrs, surface);
+      return isUniqueCoreOf(attrs, surface.predecessors()[0]);
 
     } else if (kind == OperatorType.INPUT) {
       final InputNode inputNode = (InputNode) surface;
@@ -312,8 +319,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
       return any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
 
     } else {
-      assert surface.predecessors().length == 1;
-      return isUniqueCoreOf(attrs, surface);
+      return isUniqueCoreOf(attrs, surface.predecessors()[0]);
     }
   }
 }

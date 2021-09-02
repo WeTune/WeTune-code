@@ -8,7 +8,7 @@ public interface ConstraintAwareModel extends Model {
 
   void reset();
 
-  boolean checkConstraint();
+  boolean checkConstraint(boolean strict);
 
   @Override
   ConstraintAwareModel base();

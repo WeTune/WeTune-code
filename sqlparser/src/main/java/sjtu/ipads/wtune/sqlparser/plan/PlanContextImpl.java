@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import com.google.common.collect.Multimap;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
 
@@ -14,7 +16,7 @@ class PlanContextImpl implements PlanContext {
   private final Map<Ref, Value> refTo = new IdentityHashMap<>();
   private final Map<Ref, PlanNode> refOwners = new IdentityHashMap<>();
   private final Map<Value, PlanNode> valueOwners = new IdentityHashMap<>();
-  private Multimap<Value, Value> redirections;
+  private BiMap<Value, Value> redirections;
 
   PlanContextImpl(Schema schema) {
     this.schema = schema;
@@ -23,6 +25,16 @@ class PlanContextImpl implements PlanContext {
   @Override
   public Schema schema() {
     return schema;
+  }
+
+  @Override
+  public Set<Ref> refs() {
+    return refOwners.keySet();
+  }
+
+  @Override
+  public Set<Value> values() {
+    return valueOwners.keySet();
   }
 
   @Override
@@ -53,13 +65,34 @@ class PlanContextImpl implements PlanContext {
   @Override
   public Value sourceOf(Value v) {
     if (!(v instanceof ExprValue) || !v.expr().isIdentity()) return v;
-    else return sourceOf(deRef(v.expr().refs().get(0)));
+    else {
+      return sourceOf(deRef(v.expr().refs().get(0)));
+    }
   }
 
   @Override
-  public void changeIndirection(Value oldAttr, Value newAttr) {
+  public void replaceValue(Value oldAttr, Value newAttr, Set<Ref> excludedRefs) {
     if (!valueOwners.containsKey(newAttr)) throw new NoSuchElementException();
-    for (var pair : refTo.entrySet()) if (pair.getValue() == oldAttr) pair.setValue(newAttr);
+    for (var pair : refTo.entrySet())
+      if (pair.getValue() == oldAttr && !excludedRefs.contains(pair.getKey()))
+        pair.setValue(newAttr);
+  }
+
+  @Override
+  public void setRedirection(Value redirected, Value destination) {
+    if (redirected == destination) return;
+    if (redirections == null) redirections = HashBiMap.create();
+    redirections.put(redirected, destination);
+  }
+
+  @Override
+  public Value redirect(Value redirected) {
+    return redirections == null ? redirected : redirections.getOrDefault(redirected, redirected);
+  }
+
+  @Override
+  public void clearRedirections() {
+    redirections = null;
   }
 
   @Override

@@ -15,7 +15,7 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   }
 
   @Override
-  public void setExpr(Expr expr) {
+  public void setRhsExpr(Expr expr) {
     if (this.expr != null)
       throw new IllegalStateException("RHS expression of subquery filter is immutable once set");
 
@@ -48,6 +48,11 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   @Override
   public RefBag refs() {
     return refs;
+  }
+
+  @Override
+  public RefBag rhsRefs() {
+    return expr == null ? null : expr.refs();
   }
 
   @Override

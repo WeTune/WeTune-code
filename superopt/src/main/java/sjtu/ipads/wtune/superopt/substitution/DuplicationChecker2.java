@@ -19,6 +19,6 @@ public class DuplicationChecker2 {
     optimized0.remove(plan.toString());
     optimized1.remove(plan.toString());
 
-    if (!optimized1.containsAll(optimized0)) bank.add(sub);
+    if (optimized1.isEmpty() || !optimized1.containsAll(optimized0)) bank.add(sub);
   }
 }

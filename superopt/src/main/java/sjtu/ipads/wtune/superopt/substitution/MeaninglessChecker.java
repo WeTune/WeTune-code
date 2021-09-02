@@ -1,13 +1,21 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import sjtu.ipads.wtune.common.utils.IgnorableException;
+import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
+
 class MeaninglessChecker {
   static boolean isMeaningless(Substitution substitution) {
-    return isIdentical(substitution) || isUniform(substitution);
+    return isIdentical(substitution)
+        || isUniform(substitution)
+        || isConfusing(substitution)
+        || isIllegal(substitution);
   }
 
   private static boolean isIdentical(Substitution substitution) {
@@ -25,5 +33,22 @@ class MeaninglessChecker {
           return false;
         }
     return true;
+  }
+
+  private static boolean isConfusing(Substitution substitution) {
+    final Symbols rhs = substitution._1().symbols();
+    for (Constraint tableEq : substitution.constraints().ofKind(Constraint.Kind.TableEq)) {
+      if (tableEq.symbols()[0].ctx() == rhs && tableEq.symbols()[1].ctx() == rhs) return true;
+    }
+    return false;
+  }
+
+  private static boolean isIllegal(Substitution substitution) {
+    try {
+      translateAsPlan(substitution, false, false);
+      return false;
+    } catch (IgnorableException ex) {
+      return true;
+    }
   }
 }

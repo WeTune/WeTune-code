@@ -26,7 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
   private List<Filter> ops;
   private FilterChain chain;
-  private boolean isTrailing;
+  private boolean isLeading, isTrailing;
   private ConstraintAwareModel whatIf;
   private FilterNode[] stack;
   private boolean[] used;
@@ -38,11 +38,12 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
 
     ops = linearizeOps(op);
     chain = FilterChain.mk(plan, true);
+    isLeading = isLeadingChain(ops);
     isTrailing = isTrailingChain(ops);
     whatIf = model;
 
     if (ops.size() > chain.size()) return emptyList();
-    if (shouldFullCover(op)) return singletonList(fullCover(chain)); // fast path
+    if (isSimpleFullCover(op)) return singletonList(fullCover(chain)); // fast path
 
     List<FilterMatcher> matchers = mkMatchers();
     if (!validateMatchers(matchers)) return emptyList();
@@ -78,11 +79,15 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
     return op.successor() == null || !op.successor().kind().isFilter();
   }
 
+  private static boolean isLeadingChain(List<Filter> ops) {
+    return ops.get(0).successor() == null;
+  }
+
   private static boolean isTrailingChain(List<Filter> ops) {
     return tail(ops).predecessors()[0].kind() == INPUT;
   }
 
-  private static boolean shouldFullCover(Filter op) {
+  private static boolean isSimpleFullCover(Filter op) {
     return op.kind() == OperatorType.SIMPLE_FILTER
         && op.successor() != null
         && op.predecessors()[0].kind() != INPUT
@@ -198,7 +203,7 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
         if (used[i]) continue;
 
         final FilterNode f = chain.get(i);
-        if (op.match(f, whatIf) && whatIf.checkConstraint()) {
+        if (op.match(f, whatIf) && whatIf.checkConstraint(false)) {
           used[i] = true;
           stack[opIndex] = f;
 
@@ -256,7 +261,7 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
           if (used[i]) continue;
 
           final FilterNode f = chain.get(i);
-          if (op.match(f, whatIf) && whatIf.checkConstraint()) {
+          if (op.match(f, whatIf) && whatIf.checkConstraint(false)) {
             used[i] = true;
             stack[opIndex] = f;
 
@@ -290,6 +295,8 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
 
     @Override
     public void match() {
+      if (isLeading && isTrailing) for (boolean u : used) if (!u) return;
+
       final List<FilterNode> newChain = new ArrayList<>(chain.size());
 
       if (isTrailing) newChain.addAll(asList(stack));

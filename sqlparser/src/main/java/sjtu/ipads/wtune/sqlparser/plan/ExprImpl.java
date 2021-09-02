@@ -149,6 +149,11 @@ class ExprImpl implements Expr {
   }
 
   @Override
+  public Expr copy() {
+    return new ExprImpl(RefBag.mk(refs), template);
+  }
+
+  @Override
   public String toString() {
     return template.toString();
   }

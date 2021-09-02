@@ -9,14 +9,13 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import java.util.*;
 
 import static com.google.common.collect.Sets.cartesianProduct;
+import static java.util.Arrays.asList;
 import static java.util.Collections.*;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.rebindRefsToRoot;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.reduceSort;
 import static sjtu.ipads.wtune.superopt.optimizer.ReversedMatch.reversedMatch;
@@ -151,15 +150,17 @@ class OptimizerImpl implements Optimizer {
 
       for (Match match : matches) {
         // 3. generate new plan according to match
-        final PlanNode newNode = normalizePlan(match.substitute(substitution._1()));
+        if (!preValidate(match.model())) continue;
+        final PlanNode substituted = match.substitute(substitution._1());
+        if (!postValidate(substituted)) continue;
+        final PlanNode newNode = normalizePlan(substituted);
 
         // If the `newNode` has been bound with a group, then no need to further optimize it.
         // (because it must either have been or is being optimized.)
-        if (!memo.isRegistered(newNode)) {
+        if (!memo.isRegistered(newNode) && group.add(newNode)) {
           transformed.add(newNode);
           traceStep(n, newNode, substitution);
         }
-        group.add(newNode);
       }
     }
 
@@ -173,7 +174,7 @@ class OptimizerImpl implements Optimizer {
     for (PlanNode n : reversedMatch(node, op, baseModel)) {
       final ConstraintAwareModel model = baseModel.derive(n.context());
 
-      if (!op.match(n, model)) continue;
+      if (!op.match(n, model) || !model.checkConstraint(false)) continue;
 
       final PlanNode[] nodePredecessors = n.predecessors();
       final Op[] opPredecessors = op.predecessors();
@@ -214,7 +215,14 @@ class OptimizerImpl implements Optimizer {
 
       assert optChildren.size() == parent.kind().numPredecessors();
       final PlanNode newNode = replaceGlobal(parent, optChildren);
-      rebindRefsToRoot(newNode, parent.context());
+      if (newNode != parent) {
+        zipForEach(
+            asList(parent.predecessors()),
+            asList(newNode.predecessors()),
+            OptimizerImpl::alignOutValues);
+        newNode.rebindRefs(parent.context());
+        newNode.context().clearRedirections();
+      }
       ret.add(newNode);
     }
 
@@ -277,6 +285,15 @@ class OptimizerImpl implements Optimizer {
     }
   }
 
+  private boolean preValidate(ConstraintAwareModel model) {
+    return model.checkConstraint(true);
+  }
+
+  private boolean postValidate(PlanNode substituted) {
+    final OperatorType kind = substituted.kind();
+    return substituted.successor() != null || (!kind.isJoin() && !kind.isFilter() && kind != INPUT);
+  }
+
   private List<OptimizationStep> collectTrace(PlanNode node) {
     return collectTrace0(treeRootOf(node).toString(), 0);
   }
@@ -294,5 +311,13 @@ class OptimizerImpl implements Optimizer {
     final String originalKey = treeRootOf(original).toString();
     final String newKey = treeRootOf(transformed).toString();
     traces.computeIfAbsent(newKey, ignored -> new OptimizationStep(originalKey, substitution));
+  }
+
+  private static void alignOutValues(PlanNode from, PlanNode to) {
+    final ValueBag oldValues = from.values();
+    final ValueBag newValues = to.values();
+    assert oldValues.size() == newValues.size();
+    final PlanContext ctx = to.context();
+    zipForEach(oldValues, newValues, ctx::setRedirection);
   }
 }

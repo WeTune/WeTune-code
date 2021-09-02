@@ -48,7 +48,7 @@ class JoinReversedMatch implements ReversedMatch<JoinNode, Join> {
     boolean matched =
         op.match(joiner, whatIf)
             && op.predecessors()[1].match(joinee, whatIf)
-            && whatIf.checkConstraint();
+            && whatIf.checkConstraint(false);
 
     if (joineeIndex == 0) joiner.flip(null);
 

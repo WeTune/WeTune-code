@@ -35,7 +35,7 @@ public class TestProjNormalizer {
         mkPlan("Select sub.i From b Join (Select * From a Where a.i = 1) As sub On b.x = sub.i");
     final PlanNode toDelete = planNode.predecessors()[0].predecessors()[1];
     final PlanNode filter = displaceGlobal(toDelete, toDelete.predecessors()[0], true);
-    zipForEach(toDelete.values(), filter.values(), filter.context()::changeIndirection);
+    zipForEach(toDelete.values(), filter.values(), filter.context()::replaceValue);
 
     final PlanNode newNode = insertProjIfNeed(filter);
     final PlanNode newPlan = treeRootOf(newNode);

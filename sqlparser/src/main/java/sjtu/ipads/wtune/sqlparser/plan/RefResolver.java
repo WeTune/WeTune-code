@@ -30,9 +30,11 @@ class RefResolver {
   private void resolveSubqueryExpr0(PlanNode node) {
     for (PlanNode predecessor : node.predecessors()) resolveSubqueryExpr0(predecessor);
     if (node.kind() == IN_SUB_FILTER) {
-      ((InSubFilterNode) node).setRhsExpr(mkQueryExpr(node.predecessors()[1]));
+      final InSubFilterNode subFilter = (InSubFilterNode) node;
+      if (subFilter.rhsRefs() == null) subFilter.setRhsExpr(mkQueryExpr(node.predecessors()[1]));
     } else if (node.kind() == EXISTS_FILTER) {
-      ((ExistsFilterNode) node).setExpr(mkQueryExpr(node.predecessors()[1]));
+      final ExistsFilterNode subFilter = (ExistsFilterNode) node;
+      if (subFilter.rhsRefs() == null) subFilter.setRhsExpr(mkQueryExpr(node.predecessors()[1]));
     }
   }
 
@@ -105,7 +107,7 @@ class RefResolver {
     if (node.kind() == IN_SUB_FILTER) {
       ((InSubFilterNode) node).setRhsExpr(mkQueryExpr(node.predecessors()[1]));
     } else if (node.kind() == EXISTS_FILTER) {
-      ((ExistsFilterNode) node).setExpr(mkQueryExpr(node.predecessors()[1]));
+      ((ExistsFilterNode) node).setRhsExpr(mkQueryExpr(node.predecessors()[1]));
     }
   }
 

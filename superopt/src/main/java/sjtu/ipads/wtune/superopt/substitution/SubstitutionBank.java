@@ -11,6 +11,10 @@ public interface SubstitutionBank extends Set<Substitution> {
   Iterable<Substitution> matchByFingerprint(PlanNode plan);
 
   static SubstitutionBank parse(List<String> lines) {
-    return SubstitutionBankImpl.parse(lines);
+    return parse(lines, false);
+  }
+
+  static SubstitutionBank parse(List<String> lines, boolean skipCheck) {
+    return SubstitutionBankImpl.parse(lines, skipCheck);
   }
 }

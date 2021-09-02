@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValues;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 public interface InSubFilter extends Filter {
   @Override
@@ -26,7 +27,13 @@ public interface InSubFilter extends Filter {
   default PlanNode instantiate(Model m, PlanContext ctx) {
     final PlanNode predecessor0 = predecessors()[0].instantiate(m, ctx);
     final PlanNode predecessor1 = predecessors()[1].instantiate(m, ctx);
-    final List<Value> values = bindValues(m.interpretInAttrs(attrs()), predecessor0, m.planContext());
+    final List<Value> values =
+        bindValuesRelaxed(m.interpretInAttrs(attrs()), m.planContext(), predecessor0);
+
+    if (values.size() != predecessor1.values().size()) {
+      throw new IgnorableException("Ill-formed subquery", true);
+    }
+
     final List<Ref> refs = listMap(values, Value::selfish);
     final InSubFilterNode f = InSubFilterNode.mk(RefBag.mk(refs));
 

@@ -6,7 +6,6 @@ import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;

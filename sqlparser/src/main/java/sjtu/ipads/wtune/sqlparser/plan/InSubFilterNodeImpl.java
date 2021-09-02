@@ -52,6 +52,11 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   }
 
   @Override
+  public RefBag rhsRefs() {
+    return rhsExpr == null ? null : rhsExpr.refs();
+  }
+
+  @Override
   public RefBag lhsRefs() {
     return lhsRefs;
   }
@@ -85,7 +90,13 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
   public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
-    final InSubFilterNode copy = new InSubFilterNodeImpl(lhsExpr);
+    final InSubFilterNodeImpl copy = new InSubFilterNodeImpl(lhsExpr);
+    copy.refs = RefBag.mk(refs);
+    if (rhsExpr != null) {
+      copy.rhsExpr = rhsExpr.copy();
+      copy.predicate = predicate.copy();
+    }
+
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());

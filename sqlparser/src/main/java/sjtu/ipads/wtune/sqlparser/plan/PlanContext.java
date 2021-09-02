@@ -3,12 +3,17 @@ package sjtu.ipads.wtune.sqlparser.plan;
 import sjtu.ipads.wtune.common.utils.TreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public interface PlanContext extends TreeContext<PlanContext> {
+  Set<Ref> refs();
+
+  Set<Value> values();
+
   Schema schema();
 
   Value deRef(Ref ref);
@@ -23,14 +28,24 @@ public interface PlanContext extends TreeContext<PlanContext> {
 
   Value sourceOf(Value v);
 
+  void setRedirection(Value redirected, Value destination);
+
+  Value redirect(Value redirected);
+
+  void clearRedirections();
+
   void setRef(Ref ref, Value value);
 
-  void changeIndirection(Value oldAttr, Value newAttr);
+  void replaceValue(Value oldAttr, Value newAttr, Set<Ref> excludedRefs);
 
   boolean validate();
 
   default List<Value> deRef(List<Ref> refs) {
     return listMap(refs, this::deRef);
+  }
+
+  default void replaceValue(Value oldAttr, Value newAttr) {
+    replaceValue(oldAttr, newAttr, Collections.emptySet());
   }
 
   @Override

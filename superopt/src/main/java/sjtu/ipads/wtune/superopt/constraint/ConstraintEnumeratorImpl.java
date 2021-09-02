@@ -22,8 +22,8 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private static final int EQ = 0, CONFLICT = 1, INCOMPLETE = -1, TIMEOUT = 2;
@@ -550,7 +550,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         return prove0(enabled);
       } catch (IgnorableException ex) {
         if (ex.ignorable()) return CONFLICT;
-        throw ex;
+        else throw ex;
       }
     }
   }
