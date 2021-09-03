@@ -22,7 +22,7 @@ public class MinimizeSubstitutionBank implements Runner {
 
   @Override
   public void run() throws Exception {
-    final SubstitutionBank bank = SubstitutionSupport.loadBank(inputFile, true);
+    final SubstitutionBank bank = SubstitutionSupport.loadBank(inputFile, false);
     final int oldSize = bank.size();
     final SubstitutionBank minimized = SubstitutionSupport.minimize(bank);
     final int minSize = minimized.size();

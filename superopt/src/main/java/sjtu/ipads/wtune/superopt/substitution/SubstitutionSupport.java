@@ -55,7 +55,7 @@ public class SubstitutionSupport {
   public static SubstitutionBank minimize(SubstitutionBank bank) {
     //    removeTransitive(bank);
     //    removeDuplicated(bank);
-    //    removeMeaningless(bank);
+    // removeMeaningless(bank);
     removeDuplicated2(bank);
 
     return bank;
@@ -98,7 +98,7 @@ public class SubstitutionSupport {
 
   private static void removeDuplicated2(SubstitutionBank bank) {
     final List<Substitution> substitutions = new ArrayList<>(bank);
-    for (int i = 4320; i < substitutions.size(); i++) {
+    for (int i = 0; i < substitutions.size(); i++) {
       System.out.println(i);
       DuplicationChecker2.removeIfDuplicated(bank, substitutions.get(i));
     }

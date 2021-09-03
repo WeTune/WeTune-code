@@ -23,6 +23,7 @@ class MeaninglessChecker {
   }
 
   private static boolean isUniform(Substitution substitution) {
+    // All LHS attrs symbols are required equal.
     final Constraints constraints = substitution.constraints();
     final List<Symbol> attrs = substitution._0().symbols().symbolsOf(Symbol.Kind.ATTRS);
     if (attrs.size() <= 5) return false;
@@ -36,6 +37,8 @@ class MeaninglessChecker {
   }
 
   private static boolean isConfusing(Substitution substitution) {
+    // Two RHS table symbols are required equal.
+    // This disturbs value-binding during optimization. See PlanSupport::bindValuesRelaxed.
     final Symbols rhs = substitution._1().symbols();
     for (Constraint tableEq : substitution.constraints().ofKind(Constraint.Kind.TableEq)) {
       if (tableEq.symbols()[0].ctx() == rhs && tableEq.symbols()[1].ctx() == rhs) return true;
