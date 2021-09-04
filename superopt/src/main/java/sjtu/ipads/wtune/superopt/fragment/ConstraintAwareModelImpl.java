@@ -190,8 +190,8 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     if (columns == null) return false;
 
     for (Column column : columns)
-      if (Iterables.isEmpty(findRelatedIC(plan.schema(), column, UNIQUE))) {
-        return false;
+      if (!Iterables.isEmpty(findRelatedIC(plan.schema(), column, UNIQUE))) {
+        break;
       }
 
     if (!isAssignmentTrusted(srcSym) || !isAssignmentTrusted(attrsSym)) return true;
@@ -211,17 +211,26 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
     final List<Value> referringAttrs = interpretInAttrs(referringAttrsSym);
     if (referringAttrs == null) return true;
+    if (isAssignmentTrusted(referringAttrsSym)) {
+      // Check if the referring attributes is null-able due to Left Join.
+      // (Current impl is sloppy)
+      final PlanNode inputNode = plan.ownerOf(plan.sourceOf(referringAttrs.get(0)));
+      if (inputNode.successor().kind() == OperatorType.LEFT_JOIN
+          && inputNode.successor().predecessors()[1] == inputNode) return false;
+    }
 
     final List<Column> referringColumns = resolveSourceColumns(referringAttrs);
     if (referringColumns == null) return false;
 
     // Check integrity constraint on schema.
-    final var fk = findIC(plan.schema(), referringColumns, ConstraintType.FOREIGN);
-    if (fk == null) return false;
+    final var fks = findIC(plan.schema(), referringColumns, ConstraintType.FOREIGN);
+    if (fks.isEmpty()) return false;
 
     final List<Value> referredAttrs = interpretInAttrs(referredAttrsSym);
     if (referredAttrs == null) return true;
-    if (!fk.refColumns().equals(resolveSourceColumns(referredAttrs))) return false;
+    final List<Column> referredCols = resolveSourceColumns(referredAttrs);
+    final var fk = find(fks, it -> it.refColumns().equals(referredCols));
+    if (fk == null) return false;
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
     final PlanNode surface = interpretTable(referredSrcSym);
@@ -251,9 +260,8 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   }
 
   private List<Value> getOutAttrs(Symbol sym) {
-    if (outAttrsAssignments == null) return null;
-    final List<List<Value>> lists = outAttrsAssignments.get(sym);
-    return lists.isEmpty() ? null : lists.get(0);
+    final List<List<Value>> lists = interpretOutAttrs(sym);
+    return lists == null || lists.isEmpty() ? null : lists.get(0);
   }
 
   private void addOutAttrs(Symbol sym, List<Value> values, boolean trusted) {

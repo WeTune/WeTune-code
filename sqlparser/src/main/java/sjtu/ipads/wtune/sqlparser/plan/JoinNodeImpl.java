@@ -82,9 +82,10 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
   }
 
   @Override
-  public void rebindRefs(PlanContext refCtx) {
+  public boolean rebindRefs(PlanContext refCtx) {
     rebindRefs(refCtx, lhsRefs(), predecessors[0]);
     rebindRefs(refCtx, rhsRefs(), predecessors[1]);
+    return true;
   }
 
   @Override

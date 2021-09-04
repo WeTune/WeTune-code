@@ -1,16 +1,16 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 
 public interface OptimizerSupport {
@@ -57,5 +57,19 @@ public interface OptimizerSupport {
 
   static PlanNode normalizePlan(PlanNode root) {
     return PlanNormalizer.normalize(root);
+  }
+
+  static void alignOutValues(PlanNode from, PlanNode to) {
+    final ValueBag oldValues = from.values();
+    final ValueBag newValues = to.values();
+    assert oldValues.size() == newValues.size();
+    final List<Value> toAlignedOld = new ArrayList<>(oldValues);
+    final List<Value> toAlignedNew = new ArrayList<>(newValues);
+
+    toAlignedOld.removeIf(toAlignedNew::remove);
+    assert toAlignedOld.size() == toAlignedNew.size();
+
+    final PlanContext ctx = to.context();
+    zipForEach(toAlignedOld, toAlignedNew, ctx::setRedirection);
   }
 }

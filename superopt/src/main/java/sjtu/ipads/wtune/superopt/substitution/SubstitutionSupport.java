@@ -55,7 +55,7 @@ public class SubstitutionSupport {
   public static SubstitutionBank minimize(SubstitutionBank bank) {
     //    removeTransitive(bank);
     //    removeDuplicated(bank);
-    // removeMeaningless(bank);
+    //    removeMeaningless(bank);
     removeDuplicated2(bank);
 
     return bank;

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
@@ -25,6 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.ALL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption.DISTINCT;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.AGG;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.isDependentRef;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.isWildcardProj;
 
@@ -48,6 +50,7 @@ class AstTranslator {
     assert !builder.stack.isEmpty();
 
     final ASTNode ast = builder.stack.peek().assembleAsQuery();
+    ASTContext.manage(ast, plan.context().schema());
     return new ExprImpl(builder.dependentRefs == null ? RefBag.empty() : RefBag.mk(builder.dependentRefs), ast);
   }
 
@@ -160,7 +163,7 @@ class AstTranslator {
     assert !stack.isEmpty();
     final Query q = stack.peek();
     q.setLimit(interpolate0(node.limit()));
-    q.setOffset(interpolate0(node.limit()));
+    q.setOffset(interpolate0(node.offset()));
   }
 
   private void onUnion(SetOpNode node) {
@@ -177,6 +180,10 @@ class AstTranslator {
   }
 
   private ASTNode interpolate0(Expr expr) {
+    return interpolate0(expr, false);
+  }
+
+  private ASTNode interpolate0(Expr expr, boolean isAggExpr) {
     if (expr == null) return null;
 
     final RefBag refs = expr.refs();
@@ -191,7 +198,8 @@ class AstTranslator {
         }
       }
 
-    return expr.interpolate(values);
+    if (!isAggExpr) return expr.interpolateValues(values);
+    else return expr.interpolateASTs(listMap(values, it -> interpolate0(it.expr(), false)));
   }
 
   private RuntimeException failed(String reason) {
@@ -199,7 +207,14 @@ class AstTranslator {
   }
 
   private ASTNode toSelectItem(Value v) {
-    if (v instanceof ExprValue) return interpolate0(v.expr());
+    if (v instanceof ExprValue) {
+      final ASTNode expr = interpolate0(v.expr(), ctx.ownerOf(v).kind() == AGG);
+      final ASTNode selectItem = node(SELECT_ITEM);
+      final String name = v.name();
+      selectItem.set(SELECT_ITEM_EXPR, expr);
+      if (name != null && !name.isBlank()) selectItem.set(SELECT_ITEM_ALIAS, name);
+      return selectItem;
+    }
     if (v instanceof WildcardValue) return makeWildcard(v.qualification());
     throw new IllegalArgumentException();
   }
@@ -292,6 +307,12 @@ class AstTranslator {
 
     public void setAggregation(List<ASTNode> aggregation) {
       this.projection = aggregation;
+      if (!forcedDistinct) {
+        for (ASTNode astNode : aggregation) {
+          final ASTNode expr = astNode.get(SELECT_ITEM_EXPR);
+          if (AGGREGATE.isInstance(expr)) expr.unset(AGGREGATE_DISTINCT);
+        }
+      }
       this.forcedDistinct = false;
     }
 

@@ -18,7 +18,7 @@ class PlanNormalizer {
   private static PlanNode normalize0(PlanNode node, boolean isRoot) {
     PlanNode newNode = node;
     for (int i = 0, bound = node.kind().numPredecessors(); i < bound; i++)
-      newNode = normalize0(newNode.predecessors()[0], false);
+      newNode = normalize0(newNode.predecessors()[i], false);
     assert newNode.kind() == node.kind();
 
     final PlanNode successor = newNode.successor();

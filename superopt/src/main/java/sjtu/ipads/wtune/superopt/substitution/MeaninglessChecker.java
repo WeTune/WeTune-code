@@ -12,10 +12,7 @@ import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.transla
 
 class MeaninglessChecker {
   static boolean isMeaningless(Substitution substitution) {
-    return isIdentical(substitution)
-        || isUniform(substitution)
-        || isConfusing(substitution)
-        || isIllegal(substitution);
+    return isUniform(substitution) || isConfusing(substitution) || isIllegal(substitution);
   }
 
   private static boolean isIdentical(Substitution substitution) {

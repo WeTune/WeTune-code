@@ -12,7 +12,7 @@ public interface PlanNode extends TreeNode<PlanContext, PlanNode>, Showable {
 
   void setContext(PlanContext context);
 
-  void rebindRefs(PlanContext refCtx);
+  boolean rebindRefs(PlanContext refCtx);
 
   void freeze();
 

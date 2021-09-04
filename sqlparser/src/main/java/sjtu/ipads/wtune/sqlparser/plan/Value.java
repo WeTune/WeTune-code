@@ -34,7 +34,9 @@ public interface Value {
   }
 
   default Value renewRefs() {
-    return mk(qualification(), name(), Expr.mk(RefBag.mk(listMap(expr().refs(), RefImpl::new))));
+    final Expr exprCopy = expr().copy();
+    exprCopy.setRefs(RefBag.mk(listMap(exprCopy.refs(), RefImpl::new)));
+    return mk(qualification(), name(), exprCopy);
   }
 
   static Value mk(String qualification, String name, Expr expr) {

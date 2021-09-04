@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.TreeScaffold;
-import sjtu.ipads.wtune.sqlparser.plan.CombinedFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 class FilterChainImpl extends AbstractList<FilterNode> implements FilterChain {
   private final PlanNode successor, predecessor;
@@ -28,9 +29,19 @@ class FilterChainImpl extends AbstractList<FilterNode> implements FilterChain {
 
   static FilterChain mk(FilterNode chainHead, boolean expandCombination) {
     final List<FilterNode> filters = linearizeChain(chainHead, expandCombination);
-    final PlanNode successor = chainHead.successor();
-    final PlanNode predecessor = Commons.tail(filters).predecessors()[0];
+    final PlanNode successor = successorOfChain(chainHead);
+    final PlanNode predecessor = predecessorOfChain(chainHead);
     return mk(successor, predecessor, filters);
+  }
+
+  private static PlanNode successorOfChain(FilterNode chainHead) {
+    return chainHead.successor();
+  }
+
+  private static PlanNode predecessorOfChain(FilterNode chainHead) {
+    PlanNode path = chainHead;
+    while (path.kind().isFilter()) path = path.predecessors()[0];
+    return path;
   }
 
   @Override
@@ -73,14 +84,51 @@ class FilterChainImpl extends AbstractList<FilterNode> implements FilterChain {
 
     FilterNode path = chainHead;
     while (true) {
-      if (path instanceof CombinedFilterNode && expandCombination)
-        filters.addAll(((CombinedFilterNode) path).filters());
-      else filters.add(path);
+      if (!expandCombination) filters.add(path);
+      else {
+        if (path instanceof CombinedFilterNode)
+          filters.addAll(((CombinedFilterNode) path).filters());
+        else if (isCombinedExpr(path)) filters.addAll(splitCombinedPredicate(path));
+        else filters.add(path);
+      }
 
       if (path.predecessors()[0].kind().isFilter()) path = (FilterNode) path.predecessors()[0];
       else break;
     }
 
     return filters;
+  }
+
+  private static boolean isCombinedExpr(FilterNode filter) {
+    return filter.predicate().template().get(BINARY_OP) == BinaryOp.AND;
+  }
+
+  private static List<FilterNode> splitCombinedPredicate(FilterNode filter) {
+    final Expr predicate = filter.predicate();
+    final List<ASTNode> nodes = new ArrayList<>(4);
+    splitConjunction(predicate.template(), nodes);
+
+    final PlanContext ctx = filter.context();
+    final List<FilterNode> filters = new ArrayList<>(nodes.size());
+    final List<Ref> refs = filter.refs();
+    int index = 0;
+    for (ASTNode node : nodes) {
+      final int numRefs = gatherColumnRefs(node).size();
+      final RefBag usedRefs = RefBag.mk(refs.subList(index, index + numRefs));
+      final Expr expr = Expr.mk(node, usedRefs);
+      final SimpleFilterNode newFilter = SimpleFilterNode.mk(expr, usedRefs);
+      newFilter.setContext(ctx);
+      filters.add(newFilter);
+      index += numRefs;
+    }
+    return filters;
+  }
+
+  private static void splitConjunction(ASTNode node, List<ASTNode> nodes) {
+    if (node.get(BINARY_OP) != BinaryOp.AND) nodes.add(node.deepCopy());
+    else {
+      splitConjunction(node.get(BINARY_LEFT), nodes);
+      splitConjunction(node.get(BINARY_RIGHT), nodes);
+    }
   }
 }

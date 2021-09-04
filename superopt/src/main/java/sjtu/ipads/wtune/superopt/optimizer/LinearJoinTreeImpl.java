@@ -66,9 +66,10 @@ class LinearJoinTreeImpl implements LinearJoinTree {
       if (dependencies[i] == joineeIndex) return false;
     }
 
-    for (int i = joineeIndex, bound = joiners.size(); i < bound; ++i) {
-      if (joiners.get(i).kind() == OperatorType.LEFT_JOIN) return false;
-    }
+    if (joineeIndex == 0 && joiners.get(0).kind() == OperatorType.LEFT_JOIN)
+      for (int i = joineeIndex, bound = joiners.size(); i < bound; ++i) {
+        if (joiners.get(i).kind() == OperatorType.LEFT_JOIN) return false;
+      }
 
     return true;
   }

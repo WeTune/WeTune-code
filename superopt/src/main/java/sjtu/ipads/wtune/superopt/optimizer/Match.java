@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.superopt.fragment.Fragment;
 
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.resolveSubqueryExpr;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.alignOutValues;
 
 class Match {
   private PlanNode matchPoint;
@@ -23,11 +24,27 @@ class Match {
     final PlanNode newNode = displaceGlobal(matchPoint, instantiated, false);
     assert instantiated == newNode;
     // SubqueryNode's `predicate` and `rhsExpr` is lost during instantiation, so re-resolve here.
-    return resolveSubqueryExpr(instantiated);
+    return shiftToFilterChainHead(resolveSubqueryExpr(instantiated));
   }
 
   ConstraintAwareModel model() {
     return model;
+  }
+
+  PlanNode shiftToFilterChainHead(PlanNode instantiated) {
+    if (!instantiated.kind().isFilter() || !instantiated.successor().kind().isFilter())
+      return instantiated;
+
+    alignOutValues(matchPoint, instantiated);
+    PlanNode path = instantiated;
+
+    while (path.successor().kind().isFilter()) {
+      path = path.successor();
+      path.rebindRefs(matchPoint.context());
+    }
+
+    instantiated.context().clearRedirections();
+    return path;
   }
 
   void shiftMatchPoint() {

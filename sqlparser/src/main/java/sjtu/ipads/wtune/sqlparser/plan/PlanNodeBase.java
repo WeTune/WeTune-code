@@ -65,8 +65,9 @@ abstract class PlanNodeBase implements PlanNode {
   }
 
   @Override
-  public void rebindRefs(PlanContext refCtx) {
+  public boolean rebindRefs(PlanContext refCtx) {
     rebindRefs(refCtx, refs(), predecessors[0]);
+    return true;
   }
 
   @Override

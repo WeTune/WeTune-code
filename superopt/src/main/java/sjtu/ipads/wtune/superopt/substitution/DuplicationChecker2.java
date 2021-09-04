@@ -12,6 +12,7 @@ import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.transla
 public class DuplicationChecker2 {
   static void removeIfDuplicated(SubstitutionBank bank, Substitution sub) {
     final PlanNode plan = resolveSubqueryExpr(translateAsPlan(sub, false, true).getLeft());
+//    System.out.println(sub);
 
     final Set<String> optimized0 = setMap(optimize(bank, plan), Object::toString);
     bank.remove(sub);

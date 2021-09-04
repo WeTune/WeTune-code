@@ -1,9 +1,12 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 
 import java.util.Collection;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import java.util.EnumSet;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.*;
 
 public interface Table {
   String schema();
@@ -19,6 +22,10 @@ public interface Table {
   Collection<Constraint> constraints();
 
   default Iterable<Constraint> constraints(ConstraintType type) {
-    return lazyFilter(constraints(), it -> it.type() == type);
+    if (type == UNIQUE) return lazyFilter(constraints(), it -> UNIQUE_CONSTRAINT.contains(it.type()));
+    else return lazyFilter(constraints(), it -> it.type() == type);
   }
+
+  EnumSet<ConstraintType> INDEXED_CONSTRAINT = EnumSet.of(UNIQUE, PRIMARY, FOREIGN);
+  EnumSet<ConstraintType> UNIQUE_CONSTRAINT = EnumSet.of(UNIQUE, PRIMARY);
 }

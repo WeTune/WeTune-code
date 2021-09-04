@@ -122,7 +122,7 @@ class ExprImpl implements Expr {
   }
 
   @Override
-  public ASTNode interpolate(List<Value> values) {
+  public ASTNode interpolateValues(List<Value> values) {
     requireNonNull(values);
     if (values.size() != refs.size())
       throw new IllegalArgumentException("mismatched values and refs");
@@ -136,6 +136,21 @@ class ExprImpl implements Expr {
       final ASTNode name = columnRefs.get(i).get(COLUMN_REF_COLUMN);
       name.set(COLUMN_NAME_TABLE, value.qualification());
       name.set(COLUMN_NAME_COLUMN, value.name());
+    }
+    return node;
+  }
+
+  @Override
+  public ASTNode interpolateASTs(List<ASTNode> values) {
+    requireNonNull(values);
+    if (values.size() != refs.size())
+      throw new IllegalArgumentException("mismatched values and refs");
+
+    final ASTNode node = template.deepCopy();
+    final List<ASTNode> columnRefs = gatherColumnRefs(node);
+    for (int i = 0, bound = columnRefs.size(); i < bound; i++) {
+      final ASTNode value = values.get(i);
+      if (value != null) columnRefs.get(i).update(value.deepCopy());
     }
     return node;
   }

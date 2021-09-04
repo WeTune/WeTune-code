@@ -1,25 +1,22 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.utils.TreeScaffold;
-import sjtu.ipads.wtune.sqlparser.plan.CombinedFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 
@@ -124,11 +121,13 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
     final Constraints constraints = whatIf.constraints();
     final Symbols symbols = op.fragment().symbols();
     final TIntList buddies = new TIntArrayList(done.length);
+    boolean isOrphan = true;
 
     for (Symbol eqSym : constraints.eqClassOf(op.attrs())) {
       if (eqSym.ctx() != attrsSym.ctx()) continue;
 
       final Op owner = symbols.ownerOf(eqSym);
+      if (eqSym != attrsSym) isOrphan = false;
       if (!owner.kind().isFilter()) continue;
 
       final int buddyIndex = ops.indexOf(owner);
@@ -138,17 +137,15 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
       }
     }
 
-    return whatIf.isInterpreted(attrsSym)
-        ? new GroupedFilterMatcher(buddies.toArray(), 0)
-        : buddies.size() == 1
-            ? new FreeFilterMatcher(index, !isTrailing)
-            : new GroupedFilterMatcher(buddies.toArray(), 1);
+    if (whatIf.isInterpreted(attrsSym)) return new GroupedFilterMatcher(buddies.toArray(), 0);
+    if (isOrphan && !op.kind().isSubquery()) return new FreeFilterMatcher(index, !isTrailing);
+    else return new GroupedFilterMatcher(buddies.toArray(), op.kind().isSubquery() ? 2 : 1);
   }
 
   private boolean validateMatchers(List<FilterMatcher> matchers) {
     boolean isGreedyPresent = false;
     for (FilterMatcher matcher : matchers) {
-      if (matcher instanceof FreeFilterMatcher)
+      if (matcher instanceof FreeFilterMatcher && ((FreeFilterMatcher) matcher).greedy)
         if (isGreedyPresent) return false;
         else isGreedyPresent = true;
     }
@@ -247,7 +244,7 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
             used[i] = true;
           }
 
-        stack[opIndex] = filters.size() == 1 ? filters.get(0) : CombinedFilterNode.mk(filters);
+        stack[opIndex] = mkCombined(filters);
 
         next.match();
 
@@ -257,20 +254,29 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
       } else {
         whatIf = whatIf.derive();
 
-        for (int i = 0; i < used.length; ++i) {
-          if (used[i]) continue;
-
-          final FilterNode f = chain.get(i);
-          if (op.match(f, whatIf) && whatIf.checkConstraint(false)) {
-            used[i] = true;
-            stack[opIndex] = f;
-
-            next.match();
-
-            used[i] = false;
-            stack[opIndex] = null;
-            break; // Since this op is free, arbitrary one is okay.
+        final PlanContext ctx = chain.predecessor().context();
+        final Multimap<Set<PlanNode>, Integer> unused =
+            MultimapBuilder.hashKeys().arrayListValues().build();
+        for (int i = 0; i < used.length; ++i)
+          if (!used[i]) {
+            final FilterNode filter = chain.get(i);
+            final Set<PlanNode> sources = setMap(filter.refs(), it -> ctx.ownerOf(ctx.deRef(it)));
+            unused.put(sources, i);
           }
+
+        for (Collection<Integer> group : unused.asMap().values()) {
+          final List<FilterNode> groupedFilters = new ArrayList<>(group.size());
+          for (Integer index : group) {
+            used[index] = true;
+            groupedFilters.add(chain.get(index));
+          }
+
+          stack[opIndex] = mkCombined(groupedFilters);
+
+          next.match();
+
+          for (Integer index : group) used[index] = false;
+          stack[opIndex] = null;
 
           whatIf.reset();
         }
@@ -280,7 +286,7 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
     }
 
     public int priority() {
-      return 2;
+      return Integer.MAX_VALUE;
     }
   }
 
@@ -295,15 +301,31 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
 
     @Override
     public void match() {
-      if (isLeading && isTrailing) for (boolean u : used) if (!u) return;
+      if (!isLeading && !isTrailing) for (boolean u : used) if (!u) return;
 
-      final List<FilterNode> newChain = new ArrayList<>(chain.size());
+      final List<FilterNode> newFilters = new ArrayList<>(chain.size());
 
-      if (isTrailing) newChain.addAll(asList(stack));
-      for (int i = 0; i < used.length; i++) if (!used[i]) newChain.add(chain.get(i));
-      if (!isTrailing) newChain.addAll(asList(stack));
+      if (isTrailing) newFilters.addAll(asList(stack));
+      for (int i = 0; i < used.length; i++) if (!used[i]) newFilters.add(chain.get(i));
+      final int matchPointIndex = isTrailing ? 0 : newFilters.size();
+      if (!isTrailing) newFilters.addAll(asList(stack));
 
-      results.add(FilterChain.mk(chain.successor(), chain.predecessor(), newChain).buildChain());
+      final FilterNode newChain =
+          FilterChain.mk(chain.successor(), chain.predecessor(), newFilters).buildChain();
+      results.add((FilterNode) filterAt(newChain, matchPointIndex));
     }
+
+    private PlanNode filterAt(PlanNode head, int index) {
+      PlanNode node = head;
+      while (index > 0) {
+        node = node.predecessors()[0];
+        --index;
+      }
+      return node;
+    }
+  }
+
+  private static FilterNode mkCombined(List<FilterNode> filters) {
+    return filters.size() == 1 ? filters.get(0) : CombinedFilterNode.mk(filters);
   }
 }

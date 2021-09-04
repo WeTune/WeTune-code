@@ -1,8 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.plan.CombinedFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.Expr;
 import sjtu.ipads.wtune.sqlparser.plan.FilterNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
 
 class FilterChainNormalizer {
   static FilterNode normalize(FilterNode node) {
@@ -27,8 +31,13 @@ class FilterChainNormalizer {
     PlanNode path = chainHead;
     while (path.kind().isFilter()) {
       if (path instanceof CombinedFilterNode) return true;
+      if (isCombinedExpr(((FilterNode) path).predicate())) return true;
       path = path.predecessors()[0];
     }
     return false;
+  }
+
+  private static boolean isCombinedExpr(Expr expr) {
+    return expr.template().get(BINARY_OP) == BinaryOp.AND;
   }
 }

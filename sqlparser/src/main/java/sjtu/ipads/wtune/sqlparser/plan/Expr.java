@@ -23,7 +23,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
  * <p>users.salary + 1000<br>
  * &nbsp;=> refs: [users.salary], template: ?.? + 1000
  *
- * <p>2. {@link #interpolate(List<Value>)} interpolate the placeholder with the values.
+ * <p>2. {@link #interpolateValues(List<Value>)} interpolate the placeholder with the values.
  *
  * <p><b>Example</b><br>
  * Expr(user.id = 1).interpolate([user_role.user_id])<br>
@@ -38,7 +38,9 @@ public interface Expr {
 
   ASTNode template();
 
-  ASTNode interpolate(List<Value> values);
+  ASTNode interpolateValues(List<Value> values);
+
+  ASTNode interpolateASTs(List<ASTNode> values);
 
   void setRefs(RefBag refs);
 
@@ -69,15 +71,15 @@ public interface Expr {
             || (COLUMN_REF.isInstance(rhs) && LITERAL.isInstance(lhs)));
   }
 
-  default ASTNode interpolate(PlanContext ctx) {
-    return interpolate(ctx.deRef(refs()));
-  }
-
-  static Expr mk(ASTNode expr) {
-    return ExprImpl.mk(expr);
+  static Expr mk(ASTNode ast) {
+    return ExprImpl.mk(ast);
   }
 
   static Expr mk(RefBag refs) {
     return ExprImpl.mk(refs);
+  }
+
+  static Expr mk(ASTNode ast, RefBag refs) {
+    return new ExprImpl(refs, ast);
   }
 }

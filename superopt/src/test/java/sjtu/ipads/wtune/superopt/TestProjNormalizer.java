@@ -41,7 +41,7 @@ public class TestProjNormalizer {
     final PlanNode newPlan = treeRootOf(newNode);
     assertEquals(OperatorType.PROJ, newNode.kind());
     assertEquals(
-        "SELECT `sub_0`.`i` FROM `b` AS `b` INNER JOIN (SELECT `sub_0`.`i`, `sub_0`.`j`, `sub_0`.`k` FROM `a` AS `a` WHERE `sub_0`.`i` = 1) AS `sub_0` ON `b`.`x` = `sub_0`.`i`",
+        "SELECT `sub_0`.`i` FROM `b` AS `b` INNER JOIN (SELECT `a`.`i`, `a`.`j`, `a`.`k` FROM `a` AS `a` WHERE `a`.`i` = 1) AS `sub_0` ON `b`.`x` = `sub_0`.`i`",
         translateAsAst(disambiguate(newPlan)).toString());
   }
 }

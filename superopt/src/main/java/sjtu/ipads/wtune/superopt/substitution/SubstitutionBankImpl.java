@@ -25,7 +25,7 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
     final SubstitutionBank bank = new SubstitutionBankImpl();
 
     for (String line : lines) {
-      if (!Character.isLetter(line.charAt(0))) continue;
+      if (line.isEmpty() || !Character.isLetter(line.charAt(0))) continue;
 
       final Substitution substitution = Substitution.parse(line);
       if (skipCheck) bank.add(substitution);

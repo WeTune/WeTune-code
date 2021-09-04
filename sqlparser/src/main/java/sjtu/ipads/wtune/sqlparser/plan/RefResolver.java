@@ -5,9 +5,11 @@ import java.util.Collection;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.ExprImpl.mkColumnRef;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
 
 class RefResolver {
   private final PlanNode plan;
@@ -94,6 +96,7 @@ class RefResolver {
 
     node.setLhsRefs(RefBag.mk(lhsRefs));
     node.setRhsRefs(RefBag.mk(rhsRefs));
+    node.condition().setRefs(listJoin(lhsRefs, rhsRefs));
   }
 
   private void onFilter(FilterNode node) {
@@ -156,6 +159,15 @@ class RefResolver {
     final RefBag refs = node.refs();
     registerRefs(node, refs);
     resolveRefs(refs, false, false);
+
+    final List<Value> usedValues = ctx.deRef(refs);
+    final ValueBag inValues = node.predecessors()[0].values();
+    final int[] hints = new int[usedValues.size()];
+    for (int i = 0; i < usedValues.size(); i++) {
+      final Value value = locateValueRelaxed(inValues, usedValues.get(i), ctx);
+      hints[i] = value == null ? -1 : inValues.indexOf(value);
+    }
+    node.setRefHints(hints);
   }
 
   private void onLimit(LimitNode node) {

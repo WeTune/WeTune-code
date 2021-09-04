@@ -54,6 +54,8 @@ class OptimizerImpl implements Optimizer {
 
   @Override
   public Set<PlanNode> optimize(PlanNode plan) {
+    setTracing(true);
+
     final PlanNode plan0 = normalizePlan(plan);
     final PlanNode plan1 = reduceSort(plan0);
     final boolean sortReduced = plan0 != plan1;
@@ -219,13 +221,17 @@ class OptimizerImpl implements Optimizer {
         zipForEach(
             asList(parent.predecessors()),
             asList(newNode.predecessors()),
-            OptimizerImpl::alignOutValues);
-        newNode.rebindRefs(parent.context());
+            OptimizerSupport::alignOutValues);
+        if (!newNode.rebindRefs(parent.context())) {
+          // For Sort node the rebinding may fail.
+          continue;
+        }
         newNode.context().clearRedirections();
       }
       ret.add(newNode);
     }
 
+    if (ret.isEmpty()) ret.add(parent);
     return ret;
   }
 
@@ -311,13 +317,5 @@ class OptimizerImpl implements Optimizer {
     final String originalKey = treeRootOf(original).toString();
     final String newKey = treeRootOf(transformed).toString();
     traces.computeIfAbsent(newKey, ignored -> new OptimizationStep(originalKey, substitution));
-  }
-
-  private static void alignOutValues(PlanNode from, PlanNode to) {
-    final ValueBag oldValues = from.values();
-    final ValueBag newValues = to.values();
-    assert oldValues.size() == newValues.size();
-    final PlanContext ctx = to.context();
-    zipForEach(oldValues, newValues, ctx::setRedirection);
   }
 }
