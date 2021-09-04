@@ -18,7 +18,7 @@ public class TestInnerJoinInference {
         mkPlan("Select a.i From a Left Join b On a.i=b.x Left Join c On c.u=b.y Join d On d.p=c.v");
     final PlanNode newPlan = inferenceInnerJoin(plan);
     assertEquals(
-        "SELECT `a`.`i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `c` AS `c` ON `c`.`u` = `b`.`y` INNER JOIN `d` AS `d` ON `d`.`p` = `c`.`v`",
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `c` AS `c` ON `b`.`y` = `c`.`u` INNER JOIN `d` AS `d` ON `c`.`v` = `d`.`p`",
         translateAsAst(newPlan).toString());
   }
 
@@ -28,7 +28,7 @@ public class TestInnerJoinInference {
         mkPlan("Select a.i From a Left Join b On a.i=b.x Left Join c On c.u=b.y Where c.v=0");
     final PlanNode newPlan = inferenceInnerJoin(plan);
     assertEquals(
-        "SELECT `a`.`i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `c` AS `c` ON `c`.`u` = `b`.`y` WHERE `c`.`v` = 0",
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `c` AS `c` ON `b`.`y` = `c`.`u` WHERE `c`.`v` = 0",
         translateAsAst(newPlan).toString());
   }
 }

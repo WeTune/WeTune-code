@@ -99,7 +99,8 @@ public class SubstitutionSupport {
   private static void removeDuplicated2(SubstitutionBank bank) {
     final List<Substitution> substitutions = new ArrayList<>(bank);
     for (int i = 0; i < substitutions.size(); i++) {
-      System.out.println(i);
+      System.out.print(i + " ");
+      if (i % 10 == 0) System.out.println();
       DuplicationChecker2.removeIfDuplicated(bank, substitutions.get(i));
     }
   }

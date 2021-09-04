@@ -32,8 +32,11 @@ class Match {
   }
 
   PlanNode shiftToFilterChainHead(PlanNode instantiated) {
-    if (!instantiated.kind().isFilter() || !instantiated.successor().kind().isFilter())
+    if (!instantiated.kind().isFilter()
+        || instantiated.successor() == null
+        || !instantiated.successor().kind().isFilter()) {
       return instantiated;
+    }
 
     alignOutValues(matchPoint, instantiated);
     PlanNode path = instantiated;

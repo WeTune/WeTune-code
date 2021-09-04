@@ -62,7 +62,7 @@ public class TestSubstitution {
 
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT DISTINCT * FROM `a` AS `a` WHERE `a`.`i` = 1 AND `a`.`i` < 2",
+        "SELECT DISTINCT * FROM `a` AS `a` WHERE `a`.`i` < 2 AND `a`.`i` = 1",
         translateAsAst(Iterables.get(optimized, 0)).toString());
   }
 
@@ -107,7 +107,7 @@ public class TestSubstitution {
 
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT DISTINCT `b`.`j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
+        "SELECT DISTINCT `b`.`j` AS `j` FROM `b` AS `b` INNER JOIN `c` AS `c` ON `b`.`j` = `c`.`k`",
         translateAsAst(Iterables.get(optimized, 0)).toString());
   }
 }

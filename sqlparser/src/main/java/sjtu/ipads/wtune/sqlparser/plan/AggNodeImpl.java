@@ -134,7 +134,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     IntStream.range(startIdx, startIdx + numRefs)
         .mapToObj(it -> new RefImpl(null, "agg_key_" + it))
         .forEach(buffer::add);
-    expr.setRefs(buffer.subList(startIdx, startIdx + numRefs));
+    expr.setRefs(buffer);
     return numRefs;
   }
 }

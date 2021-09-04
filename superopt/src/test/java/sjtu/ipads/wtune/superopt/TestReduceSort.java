@@ -22,12 +22,12 @@ public class TestReduceSort {
                 + "And sub0.i In (Select a.i From a Order By a.j Limit 1)");
     final PlanNode newPlan = OptimizerSupport.reduceSort(plan);
     assertEquals(
-        "SELECT `sub0`.`i` "
-            + "FROM (SELECT `a`.`i` FROM `a` AS `a`) AS `sub0` "
-            + "INNER JOIN (SELECT `a`.`i` FROM `a` AS `a` ORDER BY `a`.`j` LIMIT 1 OFFSET 1) AS `sub1` "
+        "SELECT `sub0`.`i` AS `i` "
+            + "FROM (SELECT `a`.`i` AS `i` FROM `a` AS `a`) AS `sub0` "
+            + "INNER JOIN (SELECT `a`.`i` AS `i` FROM `a` AS `a` ORDER BY `a`.`j` LIMIT 1) AS `sub1` "
             + "ON `sub0`.`i` = `sub1`.`i` "
-            + "WHERE `sub0`.`i` IN (SELECT `a`.`i` FROM `a` AS `a` LIMIT 1 OFFSET 1) "
-            + "AND `sub0`.`i` IN (SELECT `a`.`i` FROM `a` AS `a`)",
+            + "WHERE `sub0`.`i` IN (SELECT `a`.`i` AS `i` FROM `a` AS `a` LIMIT 1) "
+            + "AND `sub0`.`i` IN (SELECT `a`.`i` AS `i` FROM `a` AS `a`)",
         translateAsAst(newPlan).toString());
   }
 }

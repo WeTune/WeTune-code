@@ -34,7 +34,7 @@ public class TestJoinReversedMatch {
     final PlanNode plan0 =
         treeRootOf(r.reverseMatch(join0, (Join) substitution._0().root(), model0).get(0));
     assertEquals(
-        "SELECT `a`.`i` FROM `d` AS `d` INNER JOIN `a` AS `a` ON `d`.`q` = `a`.`i` INNER JOIN `c` AS `c` ON `d`.`p` = `c`.`u`",
+        "SELECT `a`.`i` AS `i` FROM `d` AS `d` INNER JOIN `a` AS `a` ON `d`.`q` = `a`.`i` INNER JOIN `c` AS `c` ON `d`.`p` = `c`.`u`",
         translateAsAst(plan0).toString());
 
     final JoinNode join1 = mkJoin("c Join d On d.p=c.u Join a On d.q=a.i");
@@ -43,7 +43,7 @@ public class TestJoinReversedMatch {
     final PlanNode plan1 =
         treeRootOf(r.reverseMatch(join1, (Join) substitution._0().root(), model1).get(0));
     assertEquals(
-        "SELECT `a`.`i` FROM `d` AS `d` INNER JOIN `a` AS `a` ON `d`.`q` = `a`.`i` INNER JOIN `c` AS `c` ON `d`.`p` = `c`.`u`",
+        "SELECT `a`.`i` AS `i` FROM `d` AS `d` INNER JOIN `a` AS `a` ON `d`.`q` = `a`.`i` INNER JOIN `c` AS `c` ON `c`.`u` = `d`.`p`",
         translateAsAst(plan1).toString());
   }
 }

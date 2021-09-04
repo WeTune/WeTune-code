@@ -37,7 +37,7 @@ public class TestFilterChainNormalization {
     assertTrue(newFilter instanceof SimpleFilterNode);
     assertTrue(newFilter.predecessors()[0] instanceof SimpleFilterNode);
     assertEquals(
-        "SELECT `a`.`i` FROM `a` AS `a` WHERE `a`.`j` < 10 AND `a`.`i` = 0",
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a` WHERE `a`.`j` < 10 AND `a`.`i` = 0",
         translateAsAst(newPlan).toString());
   }
 }

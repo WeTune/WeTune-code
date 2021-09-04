@@ -43,7 +43,7 @@ class TestHelper {
 
     try {
       //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "substitutions"));
-      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "essential.txt"));
+      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "test_substitutions"));
       //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "test.txt"));
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);

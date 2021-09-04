@@ -118,6 +118,7 @@ public interface PlanSupport {
     for (Value value : values) {
       Value src = lookupCtx.redirect(value);
       if (src == value) src = refCtx.sourceOf(value);
+      if (src == null) src = value; // Anyway, don't play with null.
 
       final Value found;
       if ((found = locateValueRelaxed(lookup, src, lookupCtx)) == null)

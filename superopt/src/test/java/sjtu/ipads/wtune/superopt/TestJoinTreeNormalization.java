@@ -19,7 +19,7 @@ public class TestJoinTreeNormalization {
     final JoinNode joinNode = mkJoin("a Join (b Join (c Join d On c.v=d.q) On b.y=d.p) On a.i=b.x");
     final PlanNode plan = treeRootOf(normalizeJoinTree(joinNode));
     assertEquals(
-        "SELECT `a`.`i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `d` AS `d` ON `b`.`y` = `d`.`p` INNER JOIN `c` AS `c` ON `c`.`v` = `d`.`q`",
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a` INNER JOIN `b` AS `b` ON `a`.`i` = `b`.`x` INNER JOIN `d` AS `d` ON `b`.`y` = `d`.`p` INNER JOIN `c` AS `c` ON `c`.`v` = `d`.`q`",
         translateAsAst(plan).toString());
   }
 }
