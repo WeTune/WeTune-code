@@ -9,7 +9,6 @@ import java.util.NoSuchElementException;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
-import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
 
 public interface PlanSupport {
@@ -88,26 +87,8 @@ public interface PlanSupport {
     return true;
   }
 
-  static List<Value> bindValues(List<Value> values, PlanNode predecessor) {
-    if (values.isEmpty()) return values;
-
-    final List<Value> boundValues = new ArrayList<>(values.size());
-    final PlanContext ctx = predecessor.context();
-    final ValueBag lookup = predecessor.values();
-
-    boolean changed = false;
-    for (Value value : values) {
-      final Value boundValue = locateValue(lookup, value, ctx);
-      if (boundValue == null) throw new NoSuchElementException("cannot bind value: " + value);
-      boundValues.add(boundValue);
-      changed |= boundValue != value;
-    }
-
-    return changed ? boundValues : values;
-  }
-
   static List<Value> bindValuesRelaxed(
-      List<Value> values, PlanContext refCtx, PlanNode predecessor) {
+      List<Value> values, PlanContext refCtx, PlanNode predecessor, boolean ignoreNotFound) {
     if (values.isEmpty() || refCtx == null) return values;
 
     final List<Value> boundValues = new ArrayList<>(values.size());
@@ -122,11 +103,18 @@ public interface PlanSupport {
 
       final Value found;
       if ((found = locateValueRelaxed(lookup, src, lookupCtx)) == null)
-        throw new NoSuchElementException("cannot bind value: " + value);
+        if (ignoreNotFound) boundValues.add(null);
+        else throw new NoSuchElementException("cannot bind value: " + value);
+
       boundValues.add(found);
       changed |= found != value;
     }
 
     return changed ? boundValues : values;
+  }
+
+  static List<Value> bindValuesRelaxed(
+      List<Value> values, PlanContext refCtx, PlanNode predecessor) {
+    return bindValuesRelaxed(values, refCtx, predecessor, false);
   }
 }

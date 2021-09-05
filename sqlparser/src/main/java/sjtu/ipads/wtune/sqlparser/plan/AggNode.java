@@ -17,4 +17,6 @@ public interface AggNode extends PlanNode {
   default OperatorType kind() {
     return OperatorType.AGG;
   }
+
+    void setRefHints(int[] refHints);
 }

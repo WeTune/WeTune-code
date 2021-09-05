@@ -54,8 +54,6 @@ class OptimizerImpl implements Optimizer {
 
   @Override
   public Set<PlanNode> optimize(PlanNode plan) {
-    setTracing(true);
-
     final PlanNode plan0 = normalizePlan(plan);
     final PlanNode plan1 = reduceSort(plan0);
     final boolean sortReduced = plan0 != plan1;
@@ -301,7 +299,7 @@ class OptimizerImpl implements Optimizer {
   }
 
   private List<OptimizationStep> collectTrace(PlanNode node) {
-    return collectTrace0(treeRootOf(node).toString(), 0);
+    return collectTrace0(treeRootOf(node).toString(true), 0);
   }
 
   private List<OptimizationStep> collectTrace0(String key, int depth) {
@@ -314,8 +312,8 @@ class OptimizerImpl implements Optimizer {
 
   private void traceStep(PlanNode original, PlanNode transformed, Substitution substitution) {
     if (!tracing) return;
-    final String originalKey = treeRootOf(original).toString();
-    final String newKey = treeRootOf(transformed).toString();
+    final String originalKey = treeRootOf(original).toString(true);
+    final String newKey = treeRootOf(transformed).toString(true);
     traces.computeIfAbsent(newKey, ignored -> new OptimizationStep(originalKey, substitution));
   }
 }

@@ -32,10 +32,12 @@ class PlanNormalizer {
         if (successor != null && successor.kind().isJoin()) newNode2 = newNode;
         else newNode2 = normalizeJoinTree((JoinNode) newNode);
         break;
-      case SIMPLE_FILTER:
-      case IN_SUB_FILTER:
       case EXISTS_FILTER:
+      case IN_SUB_FILTER:
+        newNode = convertExistsFilterIfNeed(newNode);
+      case SIMPLE_FILTER:
         if (successor != null && successor.kind().isFilter()) newNode2 = newNode;
+        // Only normalize at chain head.
         else newNode2 = insertProjIfNeed(normalizeFilterChain((FilterNode) newNode));
         break;
       default:

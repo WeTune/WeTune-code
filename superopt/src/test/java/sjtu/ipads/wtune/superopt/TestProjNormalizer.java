@@ -26,7 +26,8 @@ public class TestProjNormalizer {
 
     final PlanNode newNode = removeProjIfNeed(planNode.predecessors()[0]);
     assertEquals(OperatorType.INPUT, newNode.kind());
-    assertEquals("SELECT `a`.`i` AS `i` FROM `a` AS `a`", translateAsAst(treeRootOf(newNode)).toString());
+    assertEquals(
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a`", translateAsAst(treeRootOf(newNode)).toString());
   }
 
   @Test

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
+import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -160,7 +160,7 @@ public class EnumSubstitution implements Runner {
 
       if (echo) substitutions.forEach(System.out::println);
 
-    } catch (IgnorableException ex) {
+    } catch (LeveledException ex) {
       if (!ex.ignorable()) throw ex;
 
     } catch (Throwable ex) {

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import sjtu.ipads.wtune.common.utils.IgnorableException;
+import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
@@ -548,7 +548,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     int enumerate() {
       try {
         return prove0(enabled);
-      } catch (IgnorableException ex) {
+      } catch (LeveledException ex) {
         if (ex.ignorable()) return CONFLICT;
         else throw ex;
       }

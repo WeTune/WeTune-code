@@ -40,6 +40,10 @@ public interface Fields {
     return key.get(this) == Boolean.TRUE;
   }
 
+  default boolean isPresent(FieldKey<?> key) {
+    return key.get(this) != null;
+  }
+
   default <E extends Enum<E>> void flag(FieldKey<EnumSet<E>> key, E element) {
     setIfAbsent(key, (Supplier<EnumSet<E>>) () -> EnumSet.noneOf(element.getDeclaringClass()))
         .add(element);

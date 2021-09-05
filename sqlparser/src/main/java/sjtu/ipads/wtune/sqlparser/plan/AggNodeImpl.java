@@ -16,6 +16,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   private final ValueBag values;
   private final List<Expr> groups;
   private final Expr having;
+  private int[] refHints;
 
   private final RefBag aggRefs, groupRefs, havingRefs;
 
@@ -46,8 +47,8 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     // replace the refs in exprs
     int acc = 0;
     for (Value value : values) acc += replaceRefs(value.expr(), acc, aggRefs);
-    for (Expr expr : groups) acc += replaceRefs(expr, acc, groupRefs);
-    if (having != null) acc += replaceRefs(having, acc, havingRefs);
+    for (Expr expr : groups) acc += replaceRefs(expr, 0, groupRefs);
+    if (having != null) acc += replaceRefs(having, 0, havingRefs);
 
     assert acc == aggRefs.size() + groupRefs.size() + havingRefs.size();
 
@@ -96,11 +97,27 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   @Override
+  public void setRefHints(int[] refHints) {
+    this.refHints = refHints;
+  }
+
+  @Override
+  public boolean rebindRefs(PlanContext refCtx) {
+    // Sort can reference to the attributes exposed by deeper node.
+    // For example: Select a.i From a Group By a.j
+    // Although this is not a standard, let's support this.
+    final PlanNode input0 = predecessors()[0];
+    final PlanNode input1 = predecessors()[0].predecessors()[0];
+    return rebindRefs(refCtx, refs(), refHints, input0, input1);
+  }
+
+  @Override
   public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
     final AggNode copy = new AggNodeImpl(values, groups, having, aggRefs, groupRefs, havingRefs);
     copy.setContext(ctx);
+    copy.setRefHints(refHints);
 
     final RefBag refs = refs();
     ctx.registerRefs(copy, refs);
@@ -134,7 +151,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     IntStream.range(startIdx, startIdx + numRefs)
         .mapToObj(it -> new RefImpl(null, "agg_key_" + it))
         .forEach(buffer::add);
-    expr.setRefs(buffer);
+    expr.setRefs(new ArrayList<>(buffer.subList(startIdx, startIdx + numRefs)));
     return numRefs;
   }
 }

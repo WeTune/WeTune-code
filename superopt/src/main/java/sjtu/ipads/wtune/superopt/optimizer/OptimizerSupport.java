@@ -39,6 +39,10 @@ public interface OptimizerSupport {
     return LinearJoinTreeImpl.mk(joinRoot);
   }
 
+  static PlanNode convertExistsFilterIfNeed(PlanNode node) {
+    return DependentFilterConverter.convert(node);
+  }
+
   static PlanNode insertProjIfNeed(PlanNode node) {
     return ProjNormalizer.insertProjIfNeed(node);
   }

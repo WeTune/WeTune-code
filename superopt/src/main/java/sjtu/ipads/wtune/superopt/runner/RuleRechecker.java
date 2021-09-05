@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
+import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -41,7 +41,7 @@ public class RuleRechecker implements Runner {
           proved =
               mkConstraintEnumerator(substitution._0(), substitution._1(), ctx)
                   .prove(substitution.constraints());
-        } catch (IgnorableException ex) {
+        } catch (LeveledException ex) {
           if (!ex.ignorable()) throw ex;
         } finally {
           ctx.close();

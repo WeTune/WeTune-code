@@ -10,6 +10,8 @@ import java.util.List;
 public interface Substitution {
   int id();
 
+  void setId(int i);
+
   Fragment _0();
 
   Fragment _1();

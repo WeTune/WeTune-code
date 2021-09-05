@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static sjtu.ipads.wtune.superopt.util.WeTuneHelper.pickMinCost;
+import static sjtu.ipads.wtune.superopt.profiler.ProfilerSupport.pickMinCost;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;

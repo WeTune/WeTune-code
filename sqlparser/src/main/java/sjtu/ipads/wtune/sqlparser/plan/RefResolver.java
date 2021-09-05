@@ -56,7 +56,7 @@ class RefResolver {
     switch (node.kind()) {
       case INPUT -> onInput((InputNode) node);
       case INNER_JOIN, LEFT_JOIN -> onJoin((JoinNode) node);
-      case SIMPLE_FILTER, IN_SUB_FILTER -> onFilter((FilterNode) node);
+      case SIMPLE_FILTER, IN_SUB_FILTER, EXISTS_FILTER -> onFilter((FilterNode) node);
       case PROJ -> onProj((ProjNode) node);
       case AGG -> onAgg((AggNode) node);
       case SORT -> onSort((SortNode) node);
@@ -138,19 +138,25 @@ class RefResolver {
     registerRefs(node, refs);
     resolveRefs(refs, false, true);
 
-    lookup.swap();
+    lookup.setupAux();
     registerValues(node, node.values());
   }
 
   private void onAgg(AggNode node) {
     onNode(node.predecessors()[0]);
 
-    final RefBag refs = node.refs();
-    registerRefs(node, refs);
-    resolveRefs(refs, true, false);
+    registerRefs(node, node.refs());
+
+    resolveRefs(node.aggRefs(), false, false);
+    // Refs in GROUP & HAVING clause can point to the values exposed by Aggregation
+    lookup.addAll(node.values());
+    resolveRefs(node.groupRefs(), true, false);
+    resolveRefs(node.havingRefs(), true, false);
 
     lookup.clear();
     registerValues(node, node.values());
+
+    node.setRefHints(resolveRefHints(node.refs(), node.predecessors()[0].values()));
   }
 
   private void onSort(SortNode node) {
@@ -160,14 +166,7 @@ class RefResolver {
     registerRefs(node, refs);
     resolveRefs(refs, false, false);
 
-    final List<Value> usedValues = ctx.deRef(refs);
-    final ValueBag inValues = node.predecessors()[0].values();
-    final int[] hints = new int[usedValues.size()];
-    for (int i = 0; i < usedValues.size(); i++) {
-      final Value value = locateValueRelaxed(inValues, usedValues.get(i), ctx);
-      hints[i] = value == null ? -1 : inValues.indexOf(value);
-    }
-    node.setRefHints(hints);
+    node.setRefHints(resolveRefHints(refs, node.predecessors()[0].values()));
   }
 
   private void onLimit(LimitNode node) {
@@ -225,6 +224,16 @@ class RefResolver {
     throw failed("%s not a descent of %s".formatted(savedDescent, root));
   }
 
+  private int[] resolveRefHints(List<Ref> refs, List<Value> inValues) {
+    final List<Value> usedValues = ctx.deRef(refs);
+    final int[] hints = new int[usedValues.size()];
+    for (int i = 0; i < usedValues.size(); i++) {
+      final Value value = locateValueRelaxed(inValues, usedValues.get(i), ctx);
+      hints[i] = value == null ? -1 : inValues.indexOf(value);
+    }
+    return hints;
+  }
+
   private Expr mkQueryExpr(PlanNode node) {
     return AstTranslator.translate(node, true);
   }
@@ -242,7 +251,7 @@ class RefResolver {
     final OperatorType nodeType = node.kind();
 
     if (succType == UNION) return true;
-    if (succType == IN_SUB_FILTER && successor.predecessors()[1] == node) return false; // needStack
+    if (succType.isSubquery() && successor.predecessors()[1] == node) return false; // needStack
     if (nodeType == INPUT || nodeType.isJoin()) return false;
     if (nodeType.isFilter()) return succType.isJoin();
     if (nodeType == PROJ) return succType != AGG && succType != SORT && succType != LIMIT;
@@ -254,7 +263,7 @@ class RefResolver {
   private static boolean needStackLookup(PlanNode node) {
     final PlanNode successor = node.successor();
     return successor != null
-        && successor.kind() == IN_SUB_FILTER
+        && successor.kind().isSubquery()
         && successor.predecessors()[1] == node;
   }
 
@@ -266,11 +275,12 @@ class RefResolver {
 
   private static class StackedLookup {
     private final StackedLookup previous;
-    private List<Value> values = new ArrayList<>();
+    private List<Value> values;
     private List<Value> auxValues;
 
     private StackedLookup(StackedLookup previous) {
       this.previous = previous;
+      this.values = new ArrayList<>();
     }
 
     Value lookup(String qualification, String name, boolean auxFirst, boolean recursive) {
@@ -305,7 +315,7 @@ class RefResolver {
       this.values.addAll(values);
     }
 
-    void swap() {
+    void setupAux() {
       assert auxValues == null;
       auxValues = values;
       values = new ArrayList<>();

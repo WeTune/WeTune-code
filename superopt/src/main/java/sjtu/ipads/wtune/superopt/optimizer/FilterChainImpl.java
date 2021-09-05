@@ -11,7 +11,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.plan.Expr.gatherPlaceholders;
 
 class FilterChainImpl extends AbstractList<FilterNode> implements FilterChain {
   private final PlanNode successor, predecessor;
@@ -113,7 +113,7 @@ class FilterChainImpl extends AbstractList<FilterNode> implements FilterChain {
     final List<Ref> refs = filter.refs();
     int index = 0;
     for (ASTNode node : nodes) {
-      final int numRefs = gatherColumnRefs(node).size();
+      final int numRefs = gatherPlaceholders(node).size();
       final RefBag usedRefs = RefBag.mk(refs.subList(index, index + numRefs));
       final Expr expr = Expr.mk(node, usedRefs);
       final SimpleFilterNode newFilter = SimpleFilterNode.mk(expr, usedRefs);

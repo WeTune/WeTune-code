@@ -26,10 +26,6 @@ class SubstitutionImpl implements Substitution {
     this.naming = naming;
   }
 
-  static Substitution parse(String str) {
-    return parse(str, false);
-  }
-
   static Substitution parse(String str, boolean backwardCompatible) {
     final String[] split = str.split("\\|");
     if (split.length != 3)
@@ -56,6 +52,11 @@ class SubstitutionImpl implements Substitution {
   @Override
   public int id() {
     return id;
+  }
+
+  @Override
+  public void setId(int id) {
+    this.id = id;
   }
 
   @Override

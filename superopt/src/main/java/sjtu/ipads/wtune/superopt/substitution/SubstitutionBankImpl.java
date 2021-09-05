@@ -53,6 +53,7 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   public boolean add(Substitution substitution) {
     if (!known.add(substitution.canonicalStringify())) return false;
     substitutions.add(substitution);
+    substitution.setId(substitutions.size());
     fingerprintIndex.put(Fingerprint.mk(substitution._0()), substitution);
     return true;
   }

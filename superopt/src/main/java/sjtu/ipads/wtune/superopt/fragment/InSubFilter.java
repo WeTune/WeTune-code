@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 public interface InSubFilter extends Filter {
@@ -31,7 +31,7 @@ public interface InSubFilter extends Filter {
         bindValuesRelaxed(m.interpretInAttrs(attrs()), m.planContext(), predecessor0);
 
     if (values.size() != predecessor1.values().size()) {
-      throw new IgnorableException("Ill-formed subquery", true);
+      throw ignorableEx("Ill-formed subquery");
     }
 
     final List<Ref> refs = listMap(values, Value::selfish);

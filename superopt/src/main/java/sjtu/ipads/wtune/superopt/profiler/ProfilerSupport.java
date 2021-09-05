@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.util;
+package sjtu.ipads.wtune.superopt.profiler;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.tuple.Pair;
@@ -11,8 +11,7 @@ import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
 import sjtu.ipads.wtune.stmt.resolver.Params;
 import sjtu.ipads.wtune.stmt.resolver.Resolution;
-import sjtu.ipads.wtune.superopt.profiler.CostQuery;
-import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
+import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -25,8 +24,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.buildPlan;
 
-public class WeTuneHelper {
-  public static Pair<ASTNode, double[]> pickMinCost(
+public interface ProfilerSupport {
+  static Pair<ASTNode, double[]> pickMinCost(
       Schema schema, ASTNode baseline, Iterable<ASTNode> candidates, Properties dbProps) {
     final ASTNode candidate0 = Iterables.getFirst(candidates, null);
     if (candidate0 == null) return null;
@@ -56,7 +55,7 @@ public class WeTuneHelper {
     else return Pair.of(minCostCandidate, new double[] {baseCost, minCost});
   }
 
-  public static double getCost(ASTNode ast, Properties dbProps) {
+  static double getCost(ASTNode ast, Properties dbProps) {
     final List<ASTNode> filled = fillParamMarker(ast);
     final String query = ast.toString();
     unFillParamMarker(filled);
@@ -67,7 +66,7 @@ public class WeTuneHelper {
     return CostQuery.make(dbType, dataSource::getConnection, query).getCost();
   }
 
-  private static List<ASTNode> fillParamMarker(ASTNode ast) {
+  static List<ASTNode> fillParamMarker(ASTNode ast) {
     final Params mgr = Resolution.resolveParamFull(ast);
     final List<ASTNode> filled = new ArrayList<>();
     for (ParamDesc param : mgr.params()) {
@@ -113,7 +112,7 @@ public class WeTuneHelper {
     return filled;
   }
 
-  private static void unFillParamMarker(List<ASTNode> filled) {
+  static void unFillParamMarker(List<ASTNode> filled) {
     for (ASTNode n : filled) {
       final ASTNode marker = ASTNode.expr(PARAM_MARKER);
       n.update(marker);

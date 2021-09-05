@@ -53,6 +53,6 @@ public interface ValueBag extends List<Value> {
   }
 
   private static boolean relaxedEq(Value v0, Value v1) {
-    return v0.column() != null && v0.column().equals(v1.column());
+    return v0 != null && v0.column() != null && v1 != null && v0.column().equals(v1.column());
   }
 }

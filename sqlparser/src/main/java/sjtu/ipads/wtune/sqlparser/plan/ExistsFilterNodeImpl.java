@@ -7,7 +7,7 @@ import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
 
 class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
-  private Expr expr, predicate;
+  private Expr rhsExpr, predicate;
   private RefBag refs;
 
   ExistsFilterNodeImpl() {
@@ -16,10 +16,10 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
 
   @Override
   public void setRhsExpr(Expr expr) {
-    if (this.expr != null)
+    if (this.rhsExpr != null)
       throw new IllegalStateException("RHS expression of subquery filter is immutable once set");
 
-    this.expr = requireNonNull(expr);
+    this.rhsExpr = requireNonNull(expr);
 
     // update refs
     refs = expr.refs();
@@ -52,14 +52,20 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
 
   @Override
   public RefBag rhsRefs() {
-    return expr == null ? null : expr.refs();
+    return rhsExpr == null ? null : rhsExpr.refs();
   }
 
   @Override
   public PlanNode copy(PlanContext ctx) {
     checkContextSet();
 
-    final ExistsFilterNode copy = new ExistsFilterNodeImpl();
+    final ExistsFilterNodeImpl copy = new ExistsFilterNodeImpl();
+    copy.refs = RefBag.mk(refs);
+    if (rhsExpr != null) {
+      copy.rhsExpr = rhsExpr.copy();
+      copy.predicate = predicate.copy();
+    }
+
     copy.setContext(ctx);
 
     ctx.registerRefs(copy, refs());

@@ -15,6 +15,8 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.LeveledException.unsupportedEx;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
@@ -50,13 +52,13 @@ class PlanBuilder {
 
     if (QUERY_SPEC.isInstance(queryBody)) {
       final ASTNode tableSource = queryBody.get(QUERY_SPEC_FROM);
+      if (tableSource == null) throw unsupportedEx("Query w/o table source is not supported");
       final ASTNode where = queryBody.get(QUERY_SPEC_WHERE);
       final List<ASTNode> selectItems = queryBody.get(QUERY_SPEC_SELECT_ITEMS);
       final List<ASTNode> groups = queryBody.get(QUERY_SPEC_GROUP_BY);
       final ASTNode having = queryBody.get(QUERY_SPEC_HAVING);
       final boolean distinct =
-          queryBody.getOr(QUERY_SPEC_DISTINCT, false)
-              || queryBody.get(QUERY_SPEC_DISTINCT_ON) != null;
+          queryBody.isFlag(QUERY_SPEC_DISTINCT) || queryBody.isPresent(QUERY_SPEC_DISTINCT_ON);
 
       node = buildTableSource(tableSource);
       node = buildFilters(where, node);
@@ -94,24 +96,25 @@ class PlanBuilder {
     if (containsAgg(selectItems)) {
       /*
        We translate aggregation as Agg(Proj(..)).
-       The inner Proj projects all the attributes used in aggregations, groups and having.
+       The inner Proj projects all the attributes used in aggregations.
        e.g., SELECT SUM(salary) FROM T GROUP BY dept HAVING MAX(age) > 40
-          => Proj[dept,salary,age]
+          => Proj[salary]
 
        (Actually such statement is invalid in standard SQL,
         in which all the columns appear in GROUP BY must also appear in selection.
         This is a vendor-extension.)
       */
 
+      if (any(selectItems, it1 -> it1.get(SELECT_ITEM_EXPR).isPresent(AGGREGATE_WINDOW_SPEC)))
+        throw unsupportedEx("Window function is not supported");
+
       // 1. Extract column refs used in selectItems, groups and having
       final List<ASTNode> columnRefs =
           new ArrayList<>(selectItems.size() + (groups == null ? 0 : groups.size()) + 1);
       columnRefs.addAll(gatherColumnRefs(selectItems));
-      if (groups != null) columnRefs.addAll(gatherColumnRefs(groups));
-      if (having != null) columnRefs.addAll(gatherColumnRefs(having));
       // 2. find there are DISTINCT inside aggregation
       final boolean containsDistinctAggregation =
-          selectItems.stream().map(SELECT_ITEM_EXPR::get).anyMatch(AGGREGATE_DISTINCT::isPresent);
+          any(selectItems, it -> it.get(SELECT_ITEM_EXPR).isFlag(AGGREGATE_DISTINCT));
       // 3. assign an temporary name for column refs and make select items
       final List<ASTNode> selections = new ArrayList<>(columnRefs.size());
       for (int i = 0, bound = columnRefs.size(); i < bound; i++) {

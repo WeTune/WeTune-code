@@ -82,4 +82,10 @@ public interface Expr {
   static Expr mk(ASTNode ast, RefBag refs) {
     return new ExprImpl(refs, ast);
   }
+
+  static List<ASTNode> gatherPlaceholders(ASTNode root) {
+    final PlaceholderCollector collector = new PlaceholderCollector();
+    root.accept(collector);
+    return collector.placeholders;
+  }
 }

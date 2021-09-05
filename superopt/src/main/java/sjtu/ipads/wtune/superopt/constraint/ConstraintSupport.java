@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
@@ -10,6 +9,7 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 
 public class ConstraintSupport {
   public static ConstraintEnumerator mkConstraintEnumerator(
@@ -38,6 +38,6 @@ public class ConstraintSupport {
   private static void checkOverwhelming(Fragment f0, Fragment f1) {
     final Symbols syms0 = f0.symbols(), syms1 = f1.symbols();
     if (syms0.symbolsOf(Symbol.Kind.ATTRS).size() + syms1.symbolsOf(Symbol.Kind.ATTRS).size() >= 10)
-      throw new IgnorableException("too many attrs symbols", true);
+      throw ignorableEx("too many attrs symbols");
   }
 }

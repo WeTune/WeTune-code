@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -109,6 +110,35 @@ abstract class PlanNodeBase implements PlanNode {
     final List<Value> oldValues = refCtx.deRef(refs);
     final List<Value> newValues = bindValuesRelaxed(oldValues, refCtx, predecessor);
     if (oldValues != newValues) zipForEach(refs, newValues, context::setRef);
+  }
+
+  protected boolean rebindRefs(
+      PlanContext refCtx, List<Ref> refs, int[] hints, PlanNode input0, PlanNode input1) {
+    final List<Value> oldValues = refCtx.deRef(refs);
+
+    final List<Value> newValues0 = bindValuesRelaxed(oldValues, refCtx, input0, true);
+    if (newValues0 == oldValues) return true;
+
+    final List<Value> newValues1 = bindValuesRelaxed(oldValues, refCtx, input1, true);
+    if (newValues1 == oldValues) return true;
+
+    final ValueBag inValues = input1.values();
+
+    final PlanContext ctx = context();
+    final List<Value> newValues = new ArrayList<>(oldValues.size());
+    for (int i = 0, bound = oldValues.size(); i < bound; i++) {
+      if (newValues0.get(i) != null) newValues.add(newValues0.get(i));
+      else if (newValues1.get(i) != null) newValues.add(newValues1.get(i));
+      else if (hints[i] != -1) {
+        final Value refValue = inValues.get(hints[i]);
+        final Value usedValue =
+            refValue.expr().isIdentity() ? ctx.deRef(refValue.expr().refs().get(0)) : refValue;
+        newValues.add(usedValue);
+      } else return false;
+    }
+
+    zipForEach(refs(), newValues, ctx::setRef);
+    return true;
   }
 
   protected final void stringifyAsSelectItem(Value v, StringBuilder builder, boolean compact) {

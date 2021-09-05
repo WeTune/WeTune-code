@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.sqlparser.util;
 
-import static java.util.Collections.singletonList;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 
 import java.util.ArrayList;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+
+import static java.util.Collections.singletonList;
 
 public final class ColumnRefCollector implements ASTVistor {
   private final List<ASTNode> nodes = new ArrayList<>();

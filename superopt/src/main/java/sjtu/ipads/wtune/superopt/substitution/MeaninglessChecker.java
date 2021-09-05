@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
+import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
@@ -47,7 +47,7 @@ class MeaninglessChecker {
     try {
       translateAsPlan(substitution, false, false);
       return false;
-    } catch (IgnorableException ex) {
+    } catch (LeveledException ex) {
       return true;
     }
   }

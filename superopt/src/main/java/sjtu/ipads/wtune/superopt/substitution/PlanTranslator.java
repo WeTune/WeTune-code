@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -17,6 +16,7 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.common.utils.NameSequence.mkIndexed;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
@@ -272,7 +272,7 @@ class PlanTranslator {
     if ((nullIdx = inValues.indexOf(null)) != -1)
       // Ignorable. May be caused by infeasible AttrsSub constraints.
       // e.g. AttrsSub(a0,a1) /\ AttrsSub(a1,a2) /\ AttrsEq(a0,a2)
-      throw new IgnorableException("attrs not found: " + attrs.attrNames.get(nullIdx), true);
+      throw ignorableEx("attrs not found: " + attrs.attrNames.get(nullIdx));
 
     final List<Value> outValues = listMap(inValues, Value::wrapAsExprValue);
     final String qualification = qualificationSeq.next();
@@ -288,7 +288,8 @@ class PlanTranslator {
     final PredDesc predDesc = predDescs.get(sym);
 
     if (predDesc.arity != 0 && predDesc.arity != arity)
-      throw new IgnorableException("mismatched arity", true);
+      // Ignorable. May be caused by infeasible PredicateEq & AttrsSub.
+      throw ignorableEx("mismatched arity");
 
     final ASTNode name = ASTNode.node(NodeType.NAME_2);
     name.set(NAME_2_1, predDesc.name);

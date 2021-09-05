@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.IgnorableException;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -13,9 +12,11 @@ import java.util.Objects;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
 
 class ExprImpl implements Expr {
@@ -63,8 +64,7 @@ class ExprImpl implements Expr {
 
   static Expr mkEquiCond(List<Ref> lhsRefs, List<Ref> rhsRefs) {
     if (lhsRefs.size() != rhsRefs.size())
-      throw new IgnorableException(
-          "unmatched #refs for equi condition. LHS=" + lhsRefs + ", RHS=" + rhsRefs, true);
+      throw ignorableEx("unmatched #refs for equi condition. LHS=" + lhsRefs + ", RHS=" + rhsRefs);
 
     final List<Ref> refs = new ArrayList<>(lhsRefs.size() << 1);
     for (int i = 0, bound = lhsRefs.size(); i < bound; i++) {
@@ -99,7 +99,7 @@ class ExprImpl implements Expr {
     colName.set(COLUMN_NAME_TABLE, "?");
     colName.set(COLUMN_NAME_COLUMN, "?");
 
-    final ASTNode colRef = ASTNode.expr(ExprKind.COLUMN_REF);
+    final ASTNode colRef = ASTNode.expr(COLUMN_REF);
     colRef.set(COLUMN_REF_COLUMN, colName);
 
     return colRef;
@@ -112,7 +112,7 @@ class ExprImpl implements Expr {
 
   @Override
   public List<ASTNode> holes() {
-    if (holes == null) holes = gatherColumnRefs(template);
+    if (holes == null) holes = Expr.gatherPlaceholders(template);
     return holes;
   }
 
@@ -128,7 +128,7 @@ class ExprImpl implements Expr {
       throw new IllegalArgumentException("mismatched values and refs");
 
     final ASTNode node = template.deepCopy();
-    final List<ASTNode> columnRefs = gatherColumnRefs(node);
+    final List<ASTNode> columnRefs = Expr.gatherPlaceholders(node);
     for (int i = 0, bound = columnRefs.size(); i < bound; i++) {
       final Value value = values.get(i);
       if (value == null) continue;
@@ -147,7 +147,7 @@ class ExprImpl implements Expr {
       throw new IllegalArgumentException("mismatched values and refs");
 
     final ASTNode node = template.deepCopy();
-    final List<ASTNode> columnRefs = gatherColumnRefs(node);
+    final List<ASTNode> columnRefs = Expr.gatherPlaceholders(node);
     for (int i = 0, bound = columnRefs.size(); i < bound; i++) {
       final ASTNode value = values.get(i);
       if (value != null) columnRefs.get(i).update(value.deepCopy());
