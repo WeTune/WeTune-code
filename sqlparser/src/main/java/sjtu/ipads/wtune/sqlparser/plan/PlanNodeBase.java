@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import gnu.trove.list.TIntList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -113,7 +115,7 @@ abstract class PlanNodeBase implements PlanNode {
   }
 
   protected boolean rebindRefs(
-      PlanContext refCtx, List<Ref> refs, int[] hints, PlanNode input0, PlanNode input1) {
+      PlanContext refCtx, List<Ref> refs, TIntList hints, PlanNode input0, PlanNode input1) {
     final List<Value> oldValues = refCtx.deRef(refs);
 
     final List<Value> newValues0 = bindValuesRelaxed(oldValues, refCtx, input0, true);
@@ -127,10 +129,11 @@ abstract class PlanNodeBase implements PlanNode {
     final PlanContext ctx = context();
     final List<Value> newValues = new ArrayList<>(oldValues.size());
     for (int i = 0, bound = oldValues.size(); i < bound; i++) {
-      if (newValues0.get(i) != null) newValues.add(newValues0.get(i));
+      if (values().contains(oldValues.get(i))) newValues.add(oldValues.get(i));
+      else if (newValues0.get(i) != null) newValues.add(newValues0.get(i));
       else if (newValues1.get(i) != null) newValues.add(newValues1.get(i));
-      else if (hints[i] != -1) {
-        final Value refValue = inValues.get(hints[i]);
+      else if (hints.get(i) != -1) {
+        final Value refValue = inValues.get(hints.get(i));
         final Value usedValue =
             refValue.expr().isIdentity() ? ctx.deRef(refValue.expr().refs().get(0)) : refValue;
         newValues.add(usedValue);

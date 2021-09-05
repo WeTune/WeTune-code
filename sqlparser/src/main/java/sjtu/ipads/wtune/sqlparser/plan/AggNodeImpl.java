@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
     // Although this is not a standard, let's support this.
     final PlanNode input0 = predecessors()[0];
     final PlanNode input1 = predecessors()[0].predecessors()[0];
-    return rebindRefs(refCtx, refs(), refHints, input0, input1);
+    return rebindRefs(refCtx, refs(), new TIntArrayList(refHints), input0, input1);
   }
 
   @Override

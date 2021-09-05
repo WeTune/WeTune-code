@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 
 public interface CostQuery {
   double getCost();
@@ -14,14 +13,16 @@ public interface CostQuery {
     return new PGCostQuery(provider, query);
   }
 
-  static CostQuery make(String dbType, ConnectionProvider provider, String query) {
-    switch (dbType) {
-      case MYSQL:
-        return mysql(provider, query);
-      case POSTGRESQL:
-        return pg(provider, query);
-      default:
-        throw new IllegalArgumentException("unknown db type");
-    }
+  static CostQuery sqlserver(ConnectionProvider provider, String query) {
+    return new SQLServerCostQuery(provider, query);
+  }
+
+  static CostQuery mk(String dbType, ConnectionProvider provider, String query) {
+    return switch (dbType) {
+      case MYSQL -> mysql(provider, query);
+      case POSTGRESQL -> pg(provider, query);
+      case SQLSERVER -> sqlserver(provider, query);
+      default -> throw new IllegalArgumentException("unknown db type");
+    };
   }
 }

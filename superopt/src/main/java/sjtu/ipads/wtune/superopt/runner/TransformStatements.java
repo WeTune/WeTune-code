@@ -23,8 +23,8 @@ import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
-public class OptimizeStatements implements Runner {
-  private Path inputFile, optOutFile, traceOutFile, errFile;
+public class TransformStatements implements Runner {
+  private Path inFile, outFile, traceFile, errFile;
   private String app, startFrom;
   private boolean single;
   private boolean echo;
@@ -33,10 +33,10 @@ public class OptimizeStatements implements Runner {
   @Override
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
-    inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions"));
-    optOutFile = Path.of(args.getOptional("-o", String.class, "wtune_data/optimization.out"));
-    traceOutFile = Path.of(args.getOptional("-t", String.class, "wtune_data/optimization.trace"));
-    errFile = Path.of(args.getOptional("-e", String.class, "wtune_data/optimization.err"));
+    inFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions"));
+    outFile = Path.of(args.getOptional("-o", String.class, "wtune_data/transformation.out"));
+    traceFile = Path.of(args.getOptional("-t", String.class, "wtune_data/transformation.trace"));
+    errFile = Path.of(args.getOptional("-e", String.class, "wtune_data/transformation.err"));
     app = args.getOptional("app", String.class, "");
     startFrom = args.getOptional("from", String.class, "");
     single = args.getOptional("single", boolean.class, false);
@@ -83,6 +83,7 @@ public class OptimizeStatements implements Runner {
           final ASTNode ast;
           try {
             ast = PlanSupport.translateAsAst(opt);
+            System.out.println(ast);
           } catch (Throwable ex) {
             continue;
           }
@@ -124,10 +125,10 @@ public class OptimizeStatements implements Runner {
 
   @Override
   public void run() throws Exception {
-    final SubstitutionBank bank = SubstitutionSupport.loadBank(inputFile);
+    final SubstitutionBank bank = SubstitutionSupport.loadBank(inFile);
 
-    out = new PrintWriter(Files.newOutputStream(optOutFile));
-    trace = new PrintWriter(Files.newOutputStream(traceOutFile));
+    out = new PrintWriter(Files.newOutputStream(outFile));
+    trace = new PrintWriter(Files.newOutputStream(traceFile));
     err = new PrintWriter(Files.newOutputStream(errFile));
 
     optimizeAll(bank, Statement.findAll());

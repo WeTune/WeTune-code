@@ -10,18 +10,21 @@ import java.util.Properties;
 
 public class DataSourceFactory {
   private static final DataSourceFactory INSTANCE = new DataSourceFactory();
+
   private final Map<String, DataSource> dataSources = new HashMap<>();
+
+  private DataSourceFactory() {}
 
   public static DataSourceFactory instance() {
     return INSTANCE;
   }
 
-  public synchronized DataSource make(Properties props) {
+  public synchronized DataSource mk(Properties props) {
     return dataSources.computeIfAbsent(
-        props.getProperty("jdbcUrl"), ignored -> makeDataSource(props));
+        props.getProperty("jdbcUrl"), ignored -> mkDataSource(props));
   }
 
-  private static DataSource makeDataSource(Properties props) {
+  private static DataSource mkDataSource(Properties props) {
     final HikariConfig config = new HikariConfig();
     final String url = props.getProperty("jdbcUrl");
     config.setJdbcUrl(url);

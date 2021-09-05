@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
+import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
@@ -22,8 +23,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static sjtu.ipads.wtune.superopt.profiler.ProfilerSupport.pickMinCost;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;
@@ -80,14 +79,13 @@ public class DaemonContextImpl implements DaemonContext {
   public ASTNode optimize(Statement stmt) {
     final Schema schema = stmt.app().schema("base");
     final Set<ASTNode> candidates = OptimizerSupport.optimize(bank, schema, stmt.parsed());
-    final var result = pickMinCost(schema, stmt.parsed(), candidates, stmt.app().dbProps());
-    return result == null ? null : result.getLeft();
+    return Iterables.get(candidates, 0); // TODO
   }
 
   private static Registration makeRegistration(App app) {
     final String dbType = app.dbType();
     final ConnectionProvider connPool =
-        DataSourceFactory.instance().make(app.dbProps())::getConnection;
+        DataSourceFactory.instance().mk(app.dbProps())::getConnection;
     return Registration.make(dbType, connPool);
   }
 

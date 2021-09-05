@@ -14,8 +14,7 @@ import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceGlobal;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.reduceSort;
 import static sjtu.ipads.wtune.superopt.optimizer.ReversedMatch.reversedMatch;
@@ -214,6 +213,8 @@ class OptimizerImpl implements Optimizer {
       if (optChildren.isEmpty()) continue;
 
       assert optChildren.size() == parent.kind().numPredecessors();
+      if (parent.kind() == AGG && optChildren.get(0).kind() != PROJ) continue;
+
       final PlanNode newNode = replaceGlobal(parent, optChildren);
       if (newNode != parent) {
         zipForEach(

@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
 
 class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
   private Expr rhsExpr, predicate;
@@ -26,7 +27,9 @@ class ExistsFilterNodeImpl extends PlanNodeBase implements ExistsFilterNode {
 
     // update predicate
     final ASTNode predicateExpr = ASTNode.expr(ExprKind.EXISTS);
-    predicateExpr.set(EXISTS_SUBQUERY_EXPR, expr.template().deepCopy());
+    final ASTNode queryExpr = ASTNode.expr(ExprKind.QUERY_EXPR);
+    queryExpr.set(QUERY_EXPR_QUERY, expr.template().deepCopy());
+    predicateExpr.set(EXISTS_SUBQUERY_EXPR, queryExpr);
 
     this.predicate = new ExprImpl(refs, predicateExpr);
   }

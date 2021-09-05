@@ -23,7 +23,7 @@ public class TestExistsConverter {
     assertEquals(SIMPLE_FILTER, newFilter.kind());
     assertEquals(1, newFilter.refs().size());
     assertEquals(
-        "SELECT `a`.`i` AS `i` FROM `a` AS `a` WHERE EXISTS SELECT 1 FROM `b` AS `b` WHERE `a`.`i` = `b`.`x`",
+        "SELECT `a`.`i` AS `i` FROM `a` AS `a` WHERE EXISTS (SELECT 1 FROM `b` AS `b` WHERE `a`.`i` = `b`.`x`)",
         translateAsAst(treeRootOf(newFilter)).toString());
   }
 }

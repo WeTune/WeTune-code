@@ -149,9 +149,9 @@ class AstTranslator {
     assert !stack.isEmpty();
     final Query q = stack.peek();
     q.setQualification(node.values().qualification());
-    q.setGroupKeys(listMap(node.groups(), this::interpolate0));
+    q.setGroupKeys(listMap(node.groups(), it -> interpolate0(it, true)));
     q.setAggregation(listMap(node.values(), this::toSelectItem));
-    q.setHaving(interpolate0(node.having()));
+    q.setHaving(interpolate0(node.having(), true));
   }
 
   private void onSort(SortNode node) {
@@ -212,7 +212,8 @@ class AstTranslator {
       final ASTNode selectItem = node(SELECT_ITEM);
       final String name = v.name();
       selectItem.set(SELECT_ITEM_EXPR, expr);
-      if (name != null && !name.isBlank()) selectItem.set(SELECT_ITEM_ALIAS, name);
+      if (name != null && !name.isBlank() && !name.startsWith("__"))
+        selectItem.set(SELECT_ITEM_ALIAS, name);
       return selectItem;
     }
     if (v instanceof WildcardValue) return makeWildcard(v.qualification());

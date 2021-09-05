@@ -22,6 +22,10 @@ public class LeveledException extends RuntimeException {
     return new LeveledException(cause, Level.UNSUPPORTED);
   }
 
+  public static boolean ignorable(Throwable ex) {
+    return ex instanceof LeveledException && ((LeveledException) ex).ignorable();
+  }
+
   public Level level() {
     return level;
   }
