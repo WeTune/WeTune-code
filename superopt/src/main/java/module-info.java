@@ -13,4 +13,5 @@ module sjtu.ipads.wtune.superopt {
   requires mysql.connector.java;
   requires org.postgresql.jdbc;
   requires com.zaxxer.hikari;
+  requires mssql.jdbc;
 }

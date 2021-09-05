@@ -71,7 +71,7 @@ public class TransformStatements implements Runner {
       if (isSimple(plan)) return;
 
       final Optimizer optimizer = Optimizer.mk(bank);
-      optimizer.setTimeout(30000);
+      optimizer.setTimeout(5000);
       optimizer.setTracing(true);
 
       final Set<PlanNode> optimized = optimizer.optimize(plan);

@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
@@ -24,7 +26,8 @@ public class PickMinCost implements Runner {
   private Path inFile, inTraceFile, outFile, outTraceFile, errFile;
   private boolean echo;
   private PrintWriter out, traceOut, err;
-  private Properties dbProps;
+  private Properties dbPropsSeed;
+  private Map<String, Properties> dbProps = new ConcurrentHashMap<>();
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -42,19 +45,27 @@ public class PickMinCost implements Runner {
     final String dbType = args.getOptional("dbType", String.class, null);
 
     if (jdbcUrl != null) {
-      dbProps = new Properties();
-      dbProps.setProperty("jdbcUrl", jdbcUrl);
-      dbProps.setProperty("username", username);
-      dbProps.setProperty("password", password);
-      dbProps.setProperty("dbType", dbType);
+      dbPropsSeed = new Properties();
+      dbPropsSeed.setProperty("jdbcUrl", jdbcUrl);
+      dbPropsSeed.setProperty("username", username);
+      dbPropsSeed.setProperty("dbType", dbType);
+      if (password != null) dbPropsSeed.setProperty("password", password);
     } else {
-      dbProps = null;
+      dbPropsSeed = null;
     }
   }
 
   private Properties mkDbProps(Statement stmt) {
-    if (dbProps != null) return dbProps;
-    else return stmt.app().dbProps();
+    if (dbPropsSeed != null) {
+      Properties props = dbProps.get(stmt.appName());
+      if (props != null) return props;
+
+      props = new Properties(dbPropsSeed);
+      props.setProperty("jdbcUrl", dbPropsSeed.get("jdbcUrl") + stmt.appName() + "_base");
+      dbProps.put(stmt.appName(), props);
+      return props;
+
+    } else return stmt.app().dbProps();
   }
 
   private PlanNode mkPlanSafe(Schema schema, String sql) {
@@ -91,7 +102,6 @@ public class PickMinCost implements Runner {
         }
       }
 
-      //      return -1;
       final Profiler profiler = Profiler.mk(mkDbProps(stmt));
       profiler.setBaseline(baseline);
       candidates.forEach(profiler::profile);
@@ -129,6 +139,7 @@ public class PickMinCost implements Runner {
     //    boolean start = "".equals(startPoint);
 
     for (int i = 0, bound = transformations.size(); i < bound; i++) {
+      if (echo && i % 500 == 0) System.out.println(i);
       final String transformation = transformations.get(i);
       final String[] fields = transformation.split("\t", 3);
 

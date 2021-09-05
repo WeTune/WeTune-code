@@ -26,8 +26,7 @@ public class DataSourceFactory {
 
   private static DataSource mkDataSource(Properties props) {
     final HikariConfig config = new HikariConfig();
-    final String url = props.getProperty("jdbcUrl");
-    config.setJdbcUrl(url);
+    config.setJdbcUrl(props.getProperty("jdbcUrl"));
     config.setUsername(props.getProperty("username"));
     config.setPassword(props.getProperty("password"));
     return new HikariDataSource(config);
