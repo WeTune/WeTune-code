@@ -19,3 +19,4 @@ data/
 *.tar.gz
 nohup.out
 enum_result*
+transform_result*
