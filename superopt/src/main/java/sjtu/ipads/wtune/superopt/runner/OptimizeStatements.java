@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.support.Workflow;
@@ -14,9 +15,13 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
+import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
 public class OptimizeStatements implements Runner {
   private Path inputFile, optOutFile, traceOutFile, errFile;
@@ -44,8 +49,7 @@ public class OptimizeStatements implements Runner {
       final ASTNode ast = stmt.parsed();
       ast.context().setSchema(schema);
       Workflow.normalize(ast);
-      final PlanNode plan = PlanSupport.assemblePlan(ast, schema);
-      return plan;
+      return PlanSupport.assemblePlan(ast, schema);
     } catch (LeveledException ex) {
       if (ex.level() != LeveledException.Level.UNSUPPORTED)
         System.out.printf("[Plan] %s: %s\n", stmt, ex.getMessage());
@@ -59,9 +63,13 @@ public class OptimizeStatements implements Runner {
 
   private void optimizeOne(SubstitutionBank bank, Statement stmt) {
     if (echo) System.out.println(stmt);
+    if (isTooComplex(stmt.rawSql())) return;
 
     try {
       final PlanNode plan = mkPlan(stmt);
+      if (plan == null) return;
+      if (isSimple(plan)) return;
+
       final Optimizer optimizer = Optimizer.mk(bank);
       optimizer.setTimeout(30000);
       optimizer.setTracing(true);
@@ -72,7 +80,14 @@ public class OptimizeStatements implements Runner {
 
       synchronized (out) {
         for (PlanNode opt : optimized) {
-          out.printf("%s\t%d\t%s\n", stmt, i, PlanSupport.translateAsAst(opt));
+          final ASTNode ast;
+          try {
+            ast = PlanSupport.translateAsAst(opt);
+          } catch (Throwable ex) {
+            continue;
+          }
+
+          out.printf("%s\t%d\t%s\n", stmt, i, ast);
           final String steps =
               joining(",", optimizer.traceOf(opt), it -> String.valueOf(it.substitutionId()));
           trace.printf("%s\t%d\t%s\n", stmt, i, steps);
@@ -83,7 +98,9 @@ public class OptimizeStatements implements Runner {
 
     } catch (Throwable ex) {
       if (!isIgnorable(ex)) {
+        if (echo) System.err.println(stmt + " error: " + ex.getMessage());
         synchronized (err) {
+          err.print("> ");
           err.println(stmt);
           ex.printStackTrace(err);
         }
@@ -91,16 +108,10 @@ public class OptimizeStatements implements Runner {
     }
   }
 
-  @Override
-  public void run() throws Exception {
-    final SubstitutionBank bank = SubstitutionSupport.loadBank(inputFile);
+  private void optimizeAll(SubstitutionBank bank, List<Statement> stmts) {
     boolean running = startFrom.equals("");
 
-    out = new PrintWriter(Files.newOutputStream(optOutFile));
-    trace = new PrintWriter(Files.newOutputStream(traceOutFile));
-    err = new PrintWriter(Files.newOutputStream(errFile));
-
-    for (Statement stmt : Statement.findAll()) {
+    for (Statement stmt : stmts) {
       if (startFrom.equals(stmt.toString())) running = true;
       if (!running) continue;
       if (!"".equals(app) && !app.equals(stmt.appName())) continue;
@@ -109,6 +120,17 @@ public class OptimizeStatements implements Runner {
 
       if (single) break;
     }
+  }
+
+  @Override
+  public void run() throws Exception {
+    final SubstitutionBank bank = SubstitutionSupport.loadBank(inputFile);
+
+    out = new PrintWriter(Files.newOutputStream(optOutFile));
+    trace = new PrintWriter(Files.newOutputStream(traceOutFile));
+    err = new PrintWriter(Files.newOutputStream(errFile));
+
+    optimizeAll(bank, Statement.findAll());
 
     out.close();
     trace.close();
@@ -117,5 +139,20 @@ public class OptimizeStatements implements Runner {
 
   private static boolean isIgnorable(Throwable ex) {
     return (ex instanceof LeveledException && ((LeveledException) ex).ignorable());
+  }
+
+  private static boolean isTooComplex(String sql) {
+    return countOccurrences(sql.toLowerCase(Locale.ROOT), "join") >= 10;
+  }
+
+  private static boolean isSimple(PlanNode plan) {
+    if (plan.kind() == LIMIT) plan = plan.predecessors()[0];
+    if (plan.kind() == SORT) plan = plan.predecessors()[0];
+    if (plan.kind() != PROJ || ((ProjNode) plan).isDeduplicated()) return false;
+
+    PlanNode path = plan.predecessors()[0];
+    while (path.kind() == SIMPLE_FILTER) path = path.predecessors()[0];
+
+    return path.kind() == INPUT;
   }
 }
