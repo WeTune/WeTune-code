@@ -28,6 +28,7 @@ public class PickMinCost implements Runner {
   private PrintWriter out, traceOut, err;
   private Properties dbPropsSeed;
   private Map<String, Properties> dbProps = new ConcurrentHashMap<>();
+  private String app;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -38,6 +39,8 @@ public class PickMinCost implements Runner {
     outTraceFile = Path.of(args.getOptional("-t", String.class, inTraceFile + ".opt"));
     errFile = Path.of(args.getOptional("-e", String.class, "wtune_data/profile.err"));
     echo = args.getOptional("echo", boolean.class, true);
+    app = args.getOptional("app", String.class, null);
+
 
     final String jdbcUrl = args.getOptional("dbUrl", String.class, null);
     final String username = args.getOptional("dbUser", String.class, null);
@@ -130,6 +133,7 @@ public class PickMinCost implements Runner {
     out = new PrintWriter(Files.newOutputStream(outFile));
     err = new PrintWriter(Files.newOutputStream(errFile));
     traceOut = traces == null ? null : new PrintWriter(Files.newOutputStream(outTraceFile));
+    if (traceOut == null) System.out.println("No Trace!");
 
     String stmtId = null;
     List<String> group = new ArrayList<>(16);
@@ -143,6 +147,7 @@ public class PickMinCost implements Runner {
       final String transformation = transformations.get(i);
       final String[] fields = transformation.split("\t", 3);
 
+      if (app != null && !fields[0].startsWith(app)) continue;
       //      if (fields[0].equals(startPoint)) start = true;
       //      if (!start) continue;
 
@@ -156,7 +161,11 @@ public class PickMinCost implements Runner {
         final int minIndex = pickMin(stmtId, group);
         if (minIndex != -1) {
           out.printf("%s\t%s\n", stmtId, group.get(minIndex));
-          if (traces != null) traceOut.printf("%s\t%s\n", stmtId, groupTrace.get(minIndex));
+          out.flush();
+          if (traces != null) {
+              traceOut.printf("%s\t%s\n", stmtId, groupTrace.get(minIndex));
+              traceOut.flush();
+          }
         }
       }
 

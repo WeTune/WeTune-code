@@ -2,6 +2,8 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -45,6 +47,8 @@ class ProfilerImpl implements Profiler {
     costs.clear();
     this.baseline = baseline;
     this.baseCost = queryCost(translateAsAst(baseline));
+
+    System.out.println("base: " + this.baseCost);
   }
 
   @Override
@@ -60,6 +64,8 @@ class ProfilerImpl implements Profiler {
 
     plans.add(plan);
     costs.add(cost);
+
+    System.out.println("cmp: " + cost);
   }
 
   @Override
@@ -102,9 +108,12 @@ class ProfilerImpl implements Profiler {
   }
 
   private double queryCost(ASTNode ast) {
-    final List<ASTNode> filled = fillParamMarker(ast);
     String query = ast.toString();
-    unFillParamMarker(filled);
+    if (query.contains("?") || query.contains("$")) {
+      final List<ASTNode> filled = fillParamMarker(ast);
+      query = ast.toString();
+      unFillParamMarker(filled);
+    }
 
     final String dbType = dbProps.getProperty("dbType");
     if (SQLSERVER.equals(dbType)) query = adaptToSqlserver(query);
@@ -124,8 +133,7 @@ class ProfilerImpl implements Profiler {
       if (modifier == null || modifier.type() != ParamModifier.Type.COLUMN_VALUE) continue;
 
       final Schema schema = ast.context().schema();
-      final Column column =
-          schema.table((String) modifier.args()[0]).column((String) modifier.args()[1]);
+      final Column column = (Column) modifier.args()[1];
       assert column != null;
 
       final ASTNode value = ASTNode.expr(LITERAL);

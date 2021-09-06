@@ -20,3 +20,4 @@ data/
 nohup.out
 enum_result*
 transform_result*
+opt_result*

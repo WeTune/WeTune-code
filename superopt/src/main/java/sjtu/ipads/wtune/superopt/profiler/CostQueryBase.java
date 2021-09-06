@@ -23,6 +23,8 @@ public abstract class CostQueryBase implements CostQuery {
     try {
       cost = doQuery();
     } catch (SQLException ex) {
+      System.out.println(query);
+      System.out.println(ex);
       cost = Double.MAX_VALUE;
     }
 
