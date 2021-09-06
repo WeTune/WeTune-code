@@ -96,7 +96,8 @@ class RefResolver {
 
     node.setLhsRefs(RefBag.mk(lhsRefs));
     node.setRhsRefs(RefBag.mk(rhsRefs));
-    node.condition().setRefs(listJoin(lhsRefs, rhsRefs));
+    if (node.isEquiJoin())
+      node.condition().setRefs(listJoin(lhsRefs, rhsRefs));
   }
 
   private void onFilter(FilterNode node) {

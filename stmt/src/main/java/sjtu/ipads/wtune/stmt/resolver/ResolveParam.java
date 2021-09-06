@@ -11,7 +11,6 @@ import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,7 +33,7 @@ import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
 
 class ResolveParam {
   private boolean negated;
-  private Deque<ParamModifier> stack;
+  private LinkedList<ParamModifier> stack;
 
   private ResolveParam() {}
 

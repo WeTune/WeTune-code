@@ -1,20 +1,22 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
-
-import java.io.Serializable;
-import java.util.Deque;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
+
+import java.io.Serializable;
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 
 class ParamDescImpl implements ParamDesc, Serializable {
   private int index;
 
   private final transient ASTNode node;
-  private final transient Deque<ParamModifier> modifiers;
+  private final transient List<ParamModifier> modifiers;
   private final String exprString;
 
-  ParamDescImpl(ASTNode expr, ASTNode node, Deque<ParamModifier> modifiers) {
+  ParamDescImpl(ASTNode expr, ASTNode node, List<ParamModifier> modifiers) {
     this.node = node;
     this.modifiers = modifiers;
     this.exprString = expr == null ? "param" : expr.toString();
@@ -36,12 +38,12 @@ class ParamDescImpl implements ParamDesc, Serializable {
   }
 
   @Override
-  public Deque<ParamModifier> modifiers() {
+  public List<ParamModifier> modifiers() {
     return modifiers;
   }
 
   public boolean isCheckNull() {
-    final Type lastModifierType = modifiers.getLast().type();
+    final Type lastModifierType = tail(modifiers).type();
     return lastModifierType == Type.CHECK_NULL || lastModifierType == Type.CHECK_NULL_NOT;
   }
 

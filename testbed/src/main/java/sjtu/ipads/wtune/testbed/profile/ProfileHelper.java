@@ -1,23 +1,5 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_FORCE_QUESTION;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.TUPLE_EXPRS;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
@@ -25,6 +7,21 @@ import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
 import sjtu.ipads.wtune.stmt.resolver.Params;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
+import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 public interface ProfileHelper {
   /**
@@ -50,7 +47,7 @@ public interface ProfileHelper {
   }
 
   private static void installParamMarker(ParamDesc desc) {
-    final Type lastModifierType = desc.modifiers().getLast().type();
+    final Type lastModifierType = tail(desc.modifiers()).type();
     if (lastModifierType == Type.CHECK_NULL) {
       desc.node().set(LITERAL_TYPE, LiteralType.NOT_NULL);
       return;

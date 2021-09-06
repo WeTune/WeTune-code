@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import java.util.Deque;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+
+import java.util.List;
 
 public interface ParamDesc {
   int index();
@@ -14,5 +15,5 @@ public interface ParamDesc {
 
   boolean isElement();
 
-  Deque<ParamModifier> modifiers();
+  List<ParamModifier> modifiers();
 }

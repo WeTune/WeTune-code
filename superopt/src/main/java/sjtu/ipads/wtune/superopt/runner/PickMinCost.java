@@ -41,7 +41,6 @@ public class PickMinCost implements Runner {
     echo = args.getOptional("echo", boolean.class, true);
     app = args.getOptional("app", String.class, null);
 
-
     final String jdbcUrl = args.getOptional("dbUrl", String.class, null);
     final String username = args.getOptional("dbUser", String.class, null);
     final String password = args.getOptional("dbPasswd", String.class, null);
@@ -139,7 +138,7 @@ public class PickMinCost implements Runner {
     List<String> group = new ArrayList<>(16);
     List<String> groupTrace = new ArrayList<>(16);
 
-    //    final String startPoint = "broadleaf-22";
+    //    final String startPoint = "solidus-154";
     //    boolean start = "".equals(startPoint);
 
     for (int i = 0, bound = transformations.size(); i < bound; i++) {
@@ -163,8 +162,8 @@ public class PickMinCost implements Runner {
           out.printf("%s\t%s\n", stmtId, group.get(minIndex));
           out.flush();
           if (traces != null) {
-              traceOut.printf("%s\t%s\n", stmtId, groupTrace.get(minIndex));
-              traceOut.flush();
+            traceOut.printf("%s\t%s\n", stmtId, groupTrace.get(minIndex));
+            traceOut.flush();
           }
         }
       }

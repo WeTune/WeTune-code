@@ -2,13 +2,10 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.Params;
@@ -20,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.SQLSERVER;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
@@ -27,6 +26,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
 
 class ProfilerImpl implements Profiler {
   private final Properties dbProps;
@@ -129,37 +129,38 @@ class ProfilerImpl implements Profiler {
       final ASTNode node = param.node();
       if (!PARAM_MARKER.isInstance(node)) continue;
 
-      final ParamModifier modifier = param.modifiers().getLast();
-      if (modifier == null || modifier.type() != ParamModifier.Type.COLUMN_VALUE) continue;
+      ParamModifier modifier = tail(param.modifiers());
+      if (modifier == null) continue;
+      if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
+        modifier = elemAt(param.modifiers(), -2);
+      if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
 
-      final Schema schema = ast.context().schema();
       final Column column = (Column) modifier.args()[1];
       assert column != null;
 
       final ASTNode value = ASTNode.expr(LITERAL);
       switch (column.dataType().category()) {
-        case INTEGRAL:
+        case INTEGRAL -> {
           value.set(LITERAL_TYPE, LiteralType.INTEGER);
           value.set(LITERAL_VALUE, 1);
-          break;
-        case FRACTION:
+        }
+        case FRACTION -> {
           value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
           value.set(LITERAL_VALUE, 1.0);
-          break;
-        case BOOLEAN:
+        }
+        case BOOLEAN -> {
           value.set(LITERAL_TYPE, LiteralType.BOOL);
           value.set(LITERAL_VALUE, false);
-          break;
-        case STRING:
+        }
+        case STRING -> {
           value.set(LITERAL_TYPE, LiteralType.TEXT);
           value.set(LITERAL_VALUE, "00001");
-          break;
-        case TIME:
+        }
+        case TIME -> {
           value.set(LITERAL_TYPE, LiteralType.TEXT);
           value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
-          break;
-        default:
-          value.set(LITERAL_TYPE, LiteralType.NULL);
+        }
+        default -> value.set(LITERAL_TYPE, LiteralType.NULL);
       }
       node.update(value);
       filled.add(node);
@@ -177,6 +178,9 @@ class ProfilerImpl implements Profiler {
   private static String adaptToSqlserver(String sql) {
     sql = sql.replaceAll("`([A-Za-z0-9_]+)`", "\\[$1\\]");
     sql = sql.replaceAll("\"([A-Za-z0-9_]+)\"", "\\[$1\\]");
+
+    sql = sql.replaceAll("TRUE", "1");
+    sql = sql.replaceAll("FALSE", "0");
 
     sql =
         sql.replaceAll(
