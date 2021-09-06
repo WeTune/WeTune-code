@@ -47,8 +47,6 @@ class ProfilerImpl implements Profiler {
     costs.clear();
     this.baseline = baseline;
     this.baseCost = queryCost(translateAsAst(baseline));
-
-    System.out.println("base: " + this.baseCost);
   }
 
   @Override
@@ -64,8 +62,6 @@ class ProfilerImpl implements Profiler {
 
     plans.add(plan);
     costs.add(cost);
-
-    System.out.println("cmp: " + cost);
   }
 
   @Override
@@ -131,41 +127,67 @@ class ProfilerImpl implements Profiler {
 
       ParamModifier modifier = tail(param.modifiers());
       if (modifier == null) continue;
-      if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
-        modifier = elemAt(param.modifiers(), -2);
-      if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
 
-      final Column column = (Column) modifier.args()[1];
-      assert column != null;
+      ASTNode value;
 
-      final ASTNode value = ASTNode.expr(LITERAL);
-      switch (column.dataType().category()) {
-        case INTEGRAL -> {
-          value.set(LITERAL_TYPE, LiteralType.INTEGER);
-          value.set(LITERAL_VALUE, 1);
-        }
-        case FRACTION -> {
-          value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
-          value.set(LITERAL_VALUE, 1.0);
-        }
-        case BOOLEAN -> {
-          value.set(LITERAL_TYPE, LiteralType.BOOL);
-          value.set(LITERAL_VALUE, false);
-        }
-        case STRING -> {
-          value.set(LITERAL_TYPE, LiteralType.TEXT);
-          value.set(LITERAL_VALUE, "00001");
-        }
-        case TIME -> {
-          value.set(LITERAL_TYPE, LiteralType.TEXT);
-          value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
-        }
-        default -> value.set(LITERAL_TYPE, LiteralType.NULL);
+      if (modifier.type() == OFFSET_VAL) value = fillOffset();
+      else if (modifier.type() == LIMIT_VAL) value = fillLimit();
+      else {
+        if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
+          modifier = elemAt(param.modifiers(), -2);
+        if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
+
+        final Column column = (Column) modifier.args()[1];
+        assert column != null;
+        value = fillColumnValue(column);
       }
+
       node.update(value);
       filled.add(node);
     }
     return filled;
+  }
+
+  private static ASTNode fillLimit() {
+    final ASTNode value = ASTNode.expr(LITERAL);
+    value.set(LITERAL_TYPE, LiteralType.INTEGER);
+    value.set(LITERAL_VALUE, 100);
+    return value;
+  }
+
+  private static ASTNode fillOffset() {
+    final ASTNode value = ASTNode.expr(LITERAL);
+    value.set(LITERAL_TYPE, LiteralType.INTEGER);
+    value.set(LITERAL_VALUE, 0);
+    return value;
+  }
+
+  private static ASTNode fillColumnValue(Column column) {
+    final ASTNode value = ASTNode.expr(LITERAL);
+    switch (column.dataType().category()) {
+      case INTEGRAL -> {
+        value.set(LITERAL_TYPE, LiteralType.INTEGER);
+        value.set(LITERAL_VALUE, 1);
+      }
+      case FRACTION -> {
+        value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
+        value.set(LITERAL_VALUE, 1.0);
+      }
+      case BOOLEAN -> {
+        value.set(LITERAL_TYPE, LiteralType.BOOL);
+        value.set(LITERAL_VALUE, false);
+      }
+      case STRING -> {
+        value.set(LITERAL_TYPE, LiteralType.TEXT);
+        value.set(LITERAL_VALUE, "00001");
+      }
+      case TIME -> {
+        value.set(LITERAL_TYPE, LiteralType.TEXT);
+        value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
+      }
+      default -> value.set(LITERAL_TYPE, LiteralType.NULL);
+    }
+    return value;
   }
 
   private static void unFillParamMarker(List<ASTNode> filled) {

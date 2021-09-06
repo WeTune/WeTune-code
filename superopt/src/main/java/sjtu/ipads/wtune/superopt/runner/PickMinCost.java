@@ -138,7 +138,7 @@ public class PickMinCost implements Runner {
     List<String> group = new ArrayList<>(16);
     List<String> groupTrace = new ArrayList<>(16);
 
-    //    final String startPoint = "solidus-154";
+    //    final String startPoint = "redmine-1229";
     //    boolean start = "".equals(startPoint);
 
     for (int i = 0, bound = transformations.size(); i < bound; i++) {

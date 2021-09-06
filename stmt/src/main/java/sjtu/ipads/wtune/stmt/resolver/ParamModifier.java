@@ -1,26 +1,16 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+
+import java.util.Arrays;
+
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.ADD;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_BOOL;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_BOOL_NOT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.CHECK_NULL_NOT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DECREASE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.DIVIDE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.INCREASE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.LIKE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.NEQ;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.REGEX;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.SUBTRACT;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.TIMES;
-
-import java.util.Arrays;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
 
 public class ParamModifier {
   public enum Type {
@@ -46,6 +36,8 @@ public class ParamModifier {
     DIRECT_VALUE,
     MAKE_TUPLE,
     MATCHING,
+    OFFSET_VAL,
+    LIMIT_VAL,
     GEN_OFFSET,
     GUESS,
     KEEP

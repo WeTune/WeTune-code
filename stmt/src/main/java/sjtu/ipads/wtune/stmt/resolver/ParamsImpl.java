@@ -1,23 +1,5 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.ARRAY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.MATCH;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TERNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TUPLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
-
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -25,6 +7,20 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+
+import java.util.*;
+
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.LIMIT_VAL;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.OFFSET_VAL;
+import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.modifier;
 
 public class ParamsImpl extends AttributeManagerBase<ParamDesc> implements Params {
   private final ASTNode ast;
@@ -130,6 +126,19 @@ class ExtractParam implements ASTVistor {
 
   @Override
   public boolean enter(ASTNode node) {
+    if (QUERY.isInstance(node)) {
+      final ASTNode offset = node.get(QUERY_OFFSET);
+      final ASTNode limit = node.get(QUERY_LIMIT);
+      if (offset != null) {
+        final ParamDesc desc = new ParamDescImpl(null, offset, singletonList(modifier(OFFSET_VAL)));
+        params.put(desc.node(), desc);
+      }
+      if (limit != null) {
+        final ParamDesc desc = new ParamDescImpl(null, limit, singletonList(modifier(LIMIT_VAL)));
+        params.put(desc.node(), desc);
+      }
+    }
+
     if (!EXPR.isInstance(node)) return true;
 
     final BoolExpr boolExpr = node.get(BOOL_EXPR);
@@ -144,7 +153,7 @@ class ExtractParam implements ASTVistor {
       params.put(desc.node(), desc);
     }
 
-    return node.get(BINARY_OP) == BinaryOp.IN_SUBQUERY;
+    return node.get(BINARY_OP) == BinaryOp.IN_SUBQUERY || EXISTS.isInstance(node);
   }
 }
 
