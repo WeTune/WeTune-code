@@ -91,7 +91,6 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   @Override
   protected PreparedStatement statement() throws SQLException {
     if (stmt != null) return stmt;
-    System.out.println(sql);
     return stmt = conn.prepareStatement(sql);
   }
 }

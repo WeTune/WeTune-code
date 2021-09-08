@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.testbed;
 
 import sjtu.ipads.wtune.testbed.plantree.PlanTree;
 import sjtu.ipads.wtune.testbed.plantree.PlanTreeNode;
-import sjtu.ipads.wtune.testbed.plantree.sqlserverRules;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -19,13 +18,16 @@ import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.makeDataSource;
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.sqlserverProps;
+import static sjtu.ipads.wtune.testbed.util.SQLServerStmtRewriteHelper.*;
 
 public class PlanMain {
+    private static final String ROOT_PATH = "wtune_data/plan/";
 
-    private static final String PLAN_OFF_PATH = "wtune_data/plan/off/";
-    private static final String PLAN_ON_PATH = "wtune_data/plan/on/";
-    private static final String STMTS_PATH = "wtune_data/plan/stmts_base/";
-    private static final String REWRITE_STMT_FILE_PATH = "wtune_data/plan/rewriteStmt.csv";
+    private static final String ORIGIN_STMTS_PATH = "wtune_data/plan/origin_stmts/";
+    private static final String PLAN_BASE_PATH = "wtune_data/plan/plan_base/";
+    private static final String PLAN_OPT_PATH = "wtune_data/plan/plan_opt/";
+
+    private static final String SAME_PLAN_FILE_PATH = "wtune_data/plan/samePlanStmt.csv";
 
     private static BufferedReader stmtReader;
     private static BufferedWriter stmtPlanWriter;  //write query plan struct info
@@ -35,111 +37,109 @@ public class PlanMain {
 
     private static Connection conn;
 
+    private static final String SHOW_PLAN_ON_CMD = "SET SHOWPLAN_ALL ON";
+    private static final String SHOW_PLAN_OFF_CMD = "SET SHOWPLAN_ALL OFF";
+
+    private static final String BASE = "base";
+    private static final String ZIPF = "zipf";
+    private static final String LARGE = "large";
+    private static final String LARGE_ZIPF = "large_zipf";
+
     private static void writeLine(BufferedWriter bw, String s) throws IOException{
         bw.write(s);
         bw.newLine();
         bw.flush();
     }
 
-    public static void main(String[] args) throws IOException, SQLException {
-        System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
-
-        List<File> files = Files.list(Paths.get(System.getProperty("user.dir"), STMTS_PATH))
-                                .map(Path::toFile).collect(Collectors.toList());
-
-        for(File file: files){
-            String appName = file.getName().substring(0, file.getName().indexOf("."));
-            runTwice(file, appName);
-        }
-        analysePlan();
-    }
-
-    private static final Set<String> BLACK_LIST = Set.of("lobsters-118");
-
-    private static void runTwice(File stmtFile, String appName) throws IOException, SQLException {
-        System.out.println("run twice of " + appName);
-        // Get connection
-        String db = appName + "_base";
+    private static void getConnAndShowPlanOn(String app, String tag) throws SQLException{
+        String db = app + "_" + tag;
         DataSource dataSource = makeDataSource(sqlserverProps(db));
         conn = dataSource.getConnection();
 
         // SET SHOWPLAN_ALL ON
-        Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        Boolean cmdRes = statement.execute("SET SHOWPLAN_ALL ON");
-        // Run, turn of rules and run again
-        run(stmtFile, "on");
-        turnOffRules();
-        run(stmtFile, "off");
-
-        conn.close();
+        Statement statement = conn.createStatement();
+        statement.execute(SHOW_PLAN_ON_CMD);
     }
 
-    private static void run(File stmtFile, String mode) throws IOException, SQLException{
-        stmtReader = new BufferedReader(new FileReader(stmtFile));
-        String oneLine, tag, stmt;
-        Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        //read one stmt and run it, record its query plan to a single file
-        while((oneLine = stmtReader.readLine()) != null){
-            String[] info = oneLine.split(";");
-            tag = info[0]; stmt = info[1]; //tag: broadleaf-119
-            if(BLACK_LIST.contains(tag)) continue;
+    private static void recordStmtPlan(String stmtId, String stmt, String tag, String mode) throws IOException, SQLException{
+        File outFile = Paths.get(System.getProperty("user.dir"),
+                "base".equals(mode) ? PLAN_BASE_PATH : PLAN_OPT_PATH, tag, stmtId + ".csv").toFile();
+        stmtPlanWriter = new BufferedWriter(new FileWriter(outFile));
 
-            String outFilePath = System.getProperty("user.dir")
-                                    + (mode.equals("off") ? PLAN_OFF_PATH : PLAN_ON_PATH) + tag + ".csv";
-            stmtPlanWriter = new BufferedWriter(new FileWriter(outFilePath));
-            ResultSet res = statement.executeQuery(stmt);
-            while(res.next()){
-                writeLine(stmtPlanWriter, String.join(";",
-                        res.getString("StmtText"),
-                        res.getString("NodeId"),
-                        res.getString("Parent"),
-                        res.getString("PhysicalOp"),
-                        res.getString("LogicalOp"),
-                        res.getString("Argument")));
+        Statement statement = conn.createStatement();
+        ResultSet res = statement.executeQuery(stmt);
+//        if(res.next()) {
+//            System.out.println(res.getString(3));
+//        }
+        while(res.next()){
+            writeLine(stmtPlanWriter, String.join(";",
+                    res.getString("StmtText"),
+                    res.getString("NodeId"),
+                    res.getString("Parent"),
+                    res.getString("PhysicalOp"),
+                    res.getString("LogicalOp"),
+                    res.getString("Argument")));
+        }
+        stmtPlanWriter.close();
+    }
+
+    public static void main(String[] args) throws IOException, SQLException {
+//        System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
+
+        for(String oneTag: List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)){
+            File stmtFile = Paths.get(System.getProperty("user.dir"), ORIGIN_STMTS_PATH, oneTag + ".csv").toFile();
+            stmtReader = new BufferedReader(new FileReader(stmtFile));
+            String line1, line2;
+            String stmtId, app, baseStmt, optStmt; // e.g. broadleaf-199
+            while((line1 = stmtReader.readLine()) != null && (line2 = stmtReader.readLine()) != null){
+                String[] info1 = line1.split(";"); String[] info2 = line2.split(";");
+                stmtId = info1[0].split("\\.")[0];
+                app = stmtId.split("-")[0];
+                baseStmt = regexRewriteForSQLServer(info1[1]); optStmt = regexRewriteForSQLServer(info2[1]);
+
+                System.out.println("executing sql: " + stmtId + " \tat workload " + oneTag);
+                getConnAndShowPlanOn(app, oneTag);
+
+                recordStmtPlan(stmtId, baseStmt, oneTag, "base");
+                recordStmtPlan(stmtId, optStmt, oneTag, "opt");
             }
-            stmtPlanWriter.close();
+
+            stmtReader.close();
         }
-        stmtReader.close();
+        for(String oneTag: Set.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
+            analysePlan(oneTag);
+        }
     }
 
-    private static void turnOffRules() throws SQLException{
-        Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        Boolean cmdRes;
-        for(String rule: sqlserverRules.logicalRules){
-            String cmd = String.format("DBCC RULEOFF('%s')", rule);
-            cmdRes = statement.execute(cmd);
-        }
-//        cmdRes = statement.execute("GO");
-    }
+    private static void analysePlan(String tag) throws IOException{
+        resultWriter = new BufferedWriter(
+                new FileWriter(Paths.get(System.getProperty("user.dir"), ROOT_PATH, "samePlan_" + tag + ".csv").toFile()));
+        Path basePath = Paths.get(System.getProperty("user.dir"), PLAN_BASE_PATH, tag);
+        Path optPath = Paths.get(System.getProperty("user.dir"), PLAN_OPT_PATH, tag);
 
-    private static void analysePlan() throws IOException{
-        resultWriter = new BufferedWriter(new FileWriter(System.getProperty("user.dir") + REWRITE_STMT_FILE_PATH));
-        String offPath = System.getProperty("user.dir") + PLAN_OFF_PATH;
-        String onPath = System.getProperty("user.dir") + PLAN_ON_PATH;
-
-        List<File> files = Files.list(Paths.get(offPath)).map(Path::toFile).collect(Collectors.toList());
+        List<File> files = Files.list(basePath).map(Path::toFile).collect(Collectors.toList());
         for (File f: files) {
             String fileName = f.getName(); //e.g. broadleaf-119.csv
             System.out.println("Analyzing " + fileName);
 
             String[] tags = fileName.substring(0, fileName.indexOf(".")).split("-");
-            PlanTree offPlanTree = constructPlanTree(offPath + fileName, tags[0], Integer.parseInt(tags[1]));
-            PlanTree onPlanTree = constructPlanTree(onPath + fileName, tags[0], Integer.parseInt(tags[1]));
-            if(!PlanTree.samePlan(offPlanTree, onPlanTree)){
-                writeLine(resultWriter, fileName.substring(0, fileName.indexOf(".")));
-            }
+            PlanTree offPlanTree = constructPlanTree(basePath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
+            PlanTree onPlanTree = constructPlanTree(optPath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
+
+            String result = PlanTree.samePlan(offPlanTree, onPlanTree) ? "same" : "diff";
+            writeLine(resultWriter, String.join(",", fileName.substring(0, fileName.indexOf(".")), result));
         }
         resultWriter.close();
     }
 
-    private static PlanTree constructPlanTree(String filePath, String appName, int stmtId) throws IOException{
-        stmtPlanReader = new BufferedReader(new FileReader(filePath));
+    private static PlanTree constructPlanTree(File file, String appName, int stmtId) throws IOException{
+        stmtPlanReader = new BufferedReader(new FileReader(file));
         String oneLine;
         PlanTree planTree = new PlanTree(appName, stmtId);
         while((oneLine = stmtPlanReader.readLine()) != null){
             String[] fields = oneLine.split(";");
             planTree.insertNode(new PlanTreeNode
-                            (fields[0], Integer.parseInt(fields[1]), fields[4]), Integer.parseInt(fields[2]));
+                    (fields[0], Integer.parseInt(fields[1]), fields[4]), Integer.parseInt(fields[2]));
         }
         stmtPlanReader.close();
         return planTree;

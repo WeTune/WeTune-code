@@ -103,9 +103,9 @@ public interface ProfileHelper {
       trySaveParams(profiler1, config);
     }
 
-    System.out.print(stmt0 + ".base ");
+    System.out.println(stmt0 + ".base ");
     if (!profiler0.run()) return null;
-    System.out.print(stmt0 + ".opt ");
+    System.out.println(stmt0 + ".opt ");
     if (!profiler1.run()) return null;
 
     profiler0.close();

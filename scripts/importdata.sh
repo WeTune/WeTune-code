@@ -139,7 +139,7 @@ doImportData() {
 
 if [ "$1" = '-all' ]; then
   #for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
-  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
+  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'forest_blog' 'gitlab' 'homeland' 'lobsters' 'redmine' 'refinerycms' 'shopizer' 'solidus' 'spree'
   do
     dbType "$db" "$2"
     getConnProp "$3" "$4" "$5" "$6"

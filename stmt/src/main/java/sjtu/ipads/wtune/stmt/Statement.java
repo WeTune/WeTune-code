@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt;
 
 import java.util.List;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.stmt.dao.OptBagStatementDao;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
@@ -57,5 +58,9 @@ public interface Statement {
 
   static List<Statement> findAllRewritten() {
     return OptStatementDao.instance().findAll();
+  }
+
+  static List<Statement> findAllRewrittenByBagSem(){
+    return OptBagStatementDao.instance().findAll();
   }
 }

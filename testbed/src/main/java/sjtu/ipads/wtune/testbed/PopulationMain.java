@@ -147,8 +147,8 @@ public class PopulationMain {
   }
 
   public static void main(String[] args) {
-    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
-    TAG = LARGE_ZIPF;
+//    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
+    TAG = BASE;
 
     //    final App app = App.of("discourse");
     //    final String table = "users";
@@ -158,7 +158,7 @@ public class PopulationMain {
     //    populateOne(config, app.name(), null, false);
 
     final Map<String, Set<Table>> usedTables =
-        getUsedTables(listMap(Statement.findAllRewritten(), Statement::original));
+        getUsedTables(listMap(Statement.findAllRewrittenByBagSem(), Statement::original));
 
     for (var pair : usedTables.entrySet()) {
       final App app = App.of(pair.getKey());

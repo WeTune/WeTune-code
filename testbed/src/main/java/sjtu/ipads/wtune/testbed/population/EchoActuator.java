@@ -92,7 +92,8 @@ public class EchoActuator implements BatchActuator {
   @Override
   public void setBlob(int index, InputStream in, int length) {
     try {
-      values.set(index, Arrays.toString(in.readAllBytes()));
+      values.set(index, byteArray2String(in.readAllBytes()));
+//      values.set(index, Arrays.toString(in.readAllBytes()));
 
     } catch (Exception ex) {
       values.set(index, "<EXCEPTION>");
@@ -101,15 +102,19 @@ public class EchoActuator implements BatchActuator {
 
   @Override
   public void setBytes(int index, byte[] bs) {
+    values.set(index, byteArray2String(bs));
+//    values.set(index, Arrays.toString(bs));
+  }
+
+  private String byteArray2String(byte[] bs){
     StringBuilder bStrBuilder = new StringBuilder();
     for (byte b: bs) {
-      bStrBuilder.append(Long.toHexString(b));
+      bStrBuilder.append(Integer.toHexString(b));
     }
     String bStr = bStrBuilder.toString();
     if(bStr.length() % 2 != 0)
       bStr = bStr.substring(0, bStr.length() - 1);
-    values.set(index, bStr);
-//    values.set(index, Arrays.toString(bs));
+    return bStr;
   }
 
   @Override

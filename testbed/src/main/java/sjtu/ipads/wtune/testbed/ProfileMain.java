@@ -135,7 +135,7 @@ public class ProfileMain {
 
     final List<String> failed = new ArrayList<>();
     //    for (TestCase testCase : TestCases.list) {
-    for (Statement rewritten : Statement.findAllRewritten()) {
+    for (Statement rewritten : Statement.findAllRewrittenByBagSem()) {
       //      final Statement original = Statement.findOne(testCase.app, testCase.id);
       //      final Statement rewritten = original.rewritten();
 
@@ -179,10 +179,13 @@ public class ProfileMain {
   }
 
   public static void main(String[] args) throws IOException {
-    System.setProperty(
-        "user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
-    for (String oneTag : Set.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
+    //    System.out.println(System.getProperty("user.dir"));
+    //    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"),
+    // "../").normalize().toString());
+    for (String oneTag : Set.of(BASE)) {
       tag = oneTag;
+      System.out.println(
+          "\n-----" + tag + "-----------------------------------------------------------------");
       out =
           new PrintWriter(
               Files.newOutputStream(
@@ -192,7 +195,7 @@ public class ProfileMain {
                           "wtune_data/profile_%s_%s.csv",
                           tag, App.doingSQLServerTest() ? "ss" : "mypg"))));
       //    run("discourse-3842", false, true);
-      run(null, false, false);
+      run("refinerycms-42", false, false);
     }
   }
 }
