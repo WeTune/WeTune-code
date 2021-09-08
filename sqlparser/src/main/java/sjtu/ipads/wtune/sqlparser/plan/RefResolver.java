@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.ExprImpl.mkColumnRef;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
@@ -96,8 +95,14 @@ class RefResolver {
 
     node.setLhsRefs(RefBag.mk(lhsRefs));
     node.setRhsRefs(RefBag.mk(rhsRefs));
-    if (node.isEquiJoin())
-      node.condition().setRefs(listJoin(lhsRefs, rhsRefs));
+    if (node.isEquiJoin()) {
+      final List<Ref> reorderedRefs = new ArrayList<>(lhsRefs.size() + rhsRefs.size());
+      for (int i = 0, bound = lhsRefs.size(); i < bound; i++) {
+        reorderedRefs.add(lhsRefs.get(i));
+        reorderedRefs.add(rhsRefs.get(i));
+      }
+      node.condition().setRefs(reorderedRefs);
+    }
   }
 
   private void onFilter(FilterNode node) {
