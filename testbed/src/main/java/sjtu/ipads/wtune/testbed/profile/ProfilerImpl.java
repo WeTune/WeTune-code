@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static java.lang.Math.abs;
-import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
-
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
+import sjtu.ipads.wtune.stmt.resolver.Params;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,15 +13,15 @@ import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.Params;
+
+import static java.lang.Math.abs;
+import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
 
 class ProfilerImpl implements Profiler {
   private final Statement statement;
   private final ProfileConfig config;
   private final ParamsGen paramsGen;
-  private final Executor exectuor;
+  private final Executor executor;
   private final Metric metric;
 
   private boolean recording;
@@ -37,7 +38,8 @@ class ProfilerImpl implements Profiler {
     this.config = config;
 
     this.paramsGen = ParamsGen.make(stmt.parsed().manager(Params.class), config.generators());
-    this.exectuor = config.executorFactory().make(stmt.parsed().toString());
+    this.executor =
+        config.dryRun() ? null : config.executorFactory().make(stmt.parsed().toString());
     this.metric = Metric.make(config.profileCycles());
 
     this.warmupCycles = config.warmupCycles();
@@ -142,7 +144,7 @@ class ProfilerImpl implements Profiler {
 
   @Override
   public void close() {
-    exectuor.close();
+    if (executor != null) executor.close();
   }
 
   @Override
@@ -167,11 +169,11 @@ class ProfilerImpl implements Profiler {
 
   private boolean run0(int cycle) {
     final Map<ParamDesc, Object> params = this.params.get(cycle % this.params.size());
-    if (!exectuor.installParams(params)) return false;
+    if (!executor.installParams(params)) return false;
 
-    final long elapsed = exectuor.execute();
+    final long elapsed = executor.execute();
     if (elapsed < 0) return false;
-    exectuor.endOne();
+    executor.endOne();
 
     if (recording) metric.addRecord(elapsed);
 

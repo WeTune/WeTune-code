@@ -1,15 +1,6 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
-
 import com.google.common.collect.Iterables;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -18,6 +9,11 @@ import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.Params;
 import sjtu.ipads.wtune.testbed.population.Generators;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
+
+import java.io.Serializable;
+import java.util.*;
+
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 
 public interface ParamsGen {
   Object NOT_NULL = new NotNull();
@@ -105,6 +101,7 @@ public interface ParamsGen {
 
     final List<Set<Relation>> scc0 = joins0.getSCC();
     final List<Set<Relation>> scc1 = joins1.getSCC();
+    final Set<Relation> used = new HashSet<>();
 
     final List<Relation> pivot0 = new ArrayList<>(scc0.size());
     final List<Relation> pivot1 = new ArrayList<>(scc1.size());
@@ -116,8 +113,10 @@ public interface ParamsGen {
       for (Relation t0 : component0) {
         final Relation t1 = findMatchRelation(t0, component1);
         if (t1 == null) continue;
+        if (used.contains(t1)) continue;
         pivot0.add(t0);
         pivot1.add(t1);
+        used.add(t1);
         break;
       }
     }

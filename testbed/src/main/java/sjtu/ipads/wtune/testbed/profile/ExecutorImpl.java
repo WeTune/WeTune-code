@@ -1,6 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
+import sjtu.ipads.wtune.common.utils.ITriConsumer;
+import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
+import sjtu.ipads.wtune.testbed.common.Actuator;
+import sjtu.ipads.wtune.testbed.population.PreparedStatementActuator;
+import sjtu.ipads.wtune.testbed.profile.ParamsGen.IsNull;
+import sjtu.ipads.wtune.testbed.profile.ParamsGen.NotNull;
 
 import java.lang.System.Logger.Level;
 import java.math.BigDecimal;
@@ -13,12 +18,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import sjtu.ipads.wtune.common.utils.ITriConsumer;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.testbed.common.Actuator;
-import sjtu.ipads.wtune.testbed.population.PreparedStatementActuator;
-import sjtu.ipads.wtune.testbed.profile.ParamsGen.IsNull;
-import sjtu.ipads.wtune.testbed.profile.ParamsGen.NotNull;
+
+import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
 
 class ExecutorImpl extends PreparedStatementActuator implements Executor {
   protected final String sql;
@@ -47,8 +48,8 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   @Override
   public long execute() {
     try {
-//      final String str = statement().toString();
-//      System.out.println(str.substring(str.indexOf("SELECT")));
+      //      final String str = statement().toString();
+      //      System.out.println(str.substring(str.indexOf("SELECT")));
       PreparedStatement statement = statement();
       final long start = System.nanoTime();
       resultSet = statement.executeQuery();

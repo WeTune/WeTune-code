@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
+import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type;
 import sjtu.ipads.wtune.stmt.resolver.Params;
 
@@ -18,6 +19,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
@@ -41,6 +43,7 @@ public interface ProfileHelper {
     normalize(ast);
 
     final Params params = resolveParamFull(ast);
+    params.params().removeIf(ProfileHelper::isLimitParam);
     params.params().forEach(ProfileHelper::installParamMarker);
 
     return params;
@@ -80,9 +83,22 @@ public interface ProfileHelper {
     if (PARAM_MARKER.isInstance(limitClause)) {
       final ASTNode literal = ASTNode.expr(LITERAL);
       literal.set(LITERAL_TYPE, LiteralType.INTEGER);
-      literal.set(LITERAL_VALUE, 100);
+      literal.set(LITERAL_VALUE, 1000000);
       limitClause.update(literal);
     }
+
+    final ASTNode offsetClause = node.get(QUERY_OFFSET);
+    if (PARAM_MARKER.isInstance(offsetClause)) {
+      final ASTNode literal = ASTNode.expr(LITERAL);
+      literal.set(LITERAL_TYPE, LiteralType.INTEGER);
+      literal.set(LITERAL_VALUE, 0);
+      offsetClause.update(literal);
+    }
+  }
+
+  private static boolean isLimitParam(ParamDesc desc) {
+    final ParamModifier mod = tail(desc.modifiers());
+    return mod != null && (mod.type() == Type.OFFSET_VAL || mod.type() == Type.LIMIT_VAL);
   }
 
   static Pair<Metric, Metric> compare(Statement stmt0, Statement stmt1, ProfileConfig config) {
