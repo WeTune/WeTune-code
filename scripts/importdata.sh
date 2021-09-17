@@ -78,7 +78,7 @@ doTruncateOne() {
     sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
       ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL";
       truncate table [${tableName}];
-      ALTER TABLE [${tableName}] CHECK CONSTRAINT ALL;
+      ALTER TABLE [${tableName}] WITH CHECK CHECK CONSTRAINT ALL;
       GO
 EOF
   fi
@@ -98,7 +98,7 @@ doImportOne() {
     sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
       ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL;
       BULK INSERT [${tableName}] FROM '/home/yicun/wtune/wtune_code/wtune_data/dump/${postfix}/${appName}/${tableName}.csv' WITH( FIELDTERMINATOR=';', ROWTERMINATOR='\n' );
-      ALTER TABLE [${tableName}] CHECK CONSTRAINT ALL;
+      ALTER TABLE [${tableName}] WITH CHECK CHECK CONSTRAINT ALL;
       GO
 EOF
   elif [ "$dbType" = "$MYSQL" ]; then

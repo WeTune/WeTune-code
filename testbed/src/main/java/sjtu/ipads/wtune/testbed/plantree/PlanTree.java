@@ -34,7 +34,7 @@ public class PlanTree {
         return getRoots().get(i);
     }
 
-    private int getRootNum(){
+    public int getRootNum(){
         return this.roots.size();
     }
 
@@ -49,6 +49,10 @@ public class PlanTree {
                 }
             }
         }
+    }
+
+    public boolean moreCostThan(PlanTree other){
+        return this.getRoot(0).getTotalSubtreeCost() > other.getRoot(0).getTotalSubtreeCost();
     }
 
     public static boolean samePlan(PlanTree plan1, PlanTree plan2){

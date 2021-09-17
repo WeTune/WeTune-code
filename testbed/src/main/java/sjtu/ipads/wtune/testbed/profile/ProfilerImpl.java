@@ -128,16 +128,23 @@ class ProfilerImpl implements Profiler {
     adjustNumCycles(); // for those long-running ones (e.g. > 5s), needn't to repeatedly run
 
     recording = false;
-    for (int i = 0, bound = warmupCycles; i < bound; ++i)
+    System.out.print(" warmup: ");
+    for (int i = 0, bound = warmupCycles; i < bound; ++i) {
+      if(i % 5 == 0) System.out.print(" " + i);
       if (!run0(i)) {
         return false;
       }
+    }
 
     recording = true;
-    for (int i = 0, bound = profileCycles; i < bound; ++i)
+    System.out.print(" profile: ");
+    for (int i = 0, bound = profileCycles; i < bound; ++i) {
+      if (i % 5 == 0) System.out.print(" " + i);
       if (!run0(i)) {
         return false;
       }
+    }
+    System.out.println();
 
     return true;
   }

@@ -70,8 +70,8 @@ public class ProfileMain {
             ? sqlserverProps(dbName)
             : (MYSQL.equals(original.app().dbType()) ? mysqlProps(dbName) : pgProps(dbName)));
     config.setParamSaveFile(paramSaveFile(tag));
-    config.setWarmupCycles(0);
-    config.setProfileCycles(1);
+    config.setWarmupCycles(10);
+    config.setProfileCycles(100);
 
     LOG.log(Level.INFO, "start profile {0}", original);
 
@@ -101,34 +101,19 @@ public class ProfileMain {
     return true;
   }
 
+  private static final Set<String> BLACK_LIST_L =
+      Set.of("redmine-1549",
+              "spree-464", "spree-471", "spree-601", "spree-605", "spree-1193", "spree-1197");
+
   private static final Set<String> BLACK_LIST_Z =
-      Set.of(
-          "shopizer-39",
-          "shopizer-3",
-          "shopizer-57",
-          "shopizer-24",
-          "shopizer-94",
-          "shopizer-60",
-          "shopizer-61",
-          "shopizer-68",
-          "shopizer-69");
+      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119");
 
-  //  private static final Set<String> BLACK_LIST_LZ = Set.of("solidus-33", "spree-857",
-  // "solidus-469");
   private static final Set<String> BLACK_LIST_LZ =
-      Set.of(
-          "shopizer-39",
-          "shopizer-3",
-          "shopizer-57",
-          "shopizer-24",
-          "shopizer-94",
-          "shopizer-60",
-          "shopizer-61",
-          "shopizer-68",
-          "shopizer-69");
+      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119",
+              "redmine-1229", "redmine-1240", "redmine-1247", "redmine-1318", "redmine-1432",
+              "spree-471", "spree-1197");
 
-  private static final Set<String> BLACK_LIST_ALL =
-      Set.of("lobsters-118", "gitlab-794", "gitlab-795");
+  private static final Set<String> BLACK_LIST_ALL = Set.of("lobsters-118", "redmine-1547");
 
   private static void run(String startPoint, boolean dryRun, boolean single) {
     boolean started = startPoint == null;
@@ -141,6 +126,7 @@ public class ProfileMain {
 
       if (!started && rewritten.toString().equals(startPoint)) started = true;
       if (!started) continue;
+      if (tag.equals(LARGE) && BLACK_LIST_L.contains(rewritten.toString())) continue;
       if (tag.equals(ZIPF) && BLACK_LIST_Z.contains(rewritten.toString())) continue;
       if (tag.equals(LARGE_ZIPF) && BLACK_LIST_LZ.contains(rewritten.toString())) continue;
       if (BLACK_LIST_ALL.contains(rewritten.toString())) continue;
@@ -182,7 +168,7 @@ public class ProfileMain {
     //    System.out.println(System.getProperty("user.dir"));
     //    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"),
     // "../").normalize().toString());
-    for (String oneTag : Set.of(BASE)) {
+    for (String oneTag : Set.of(LARGE_ZIPF)) {
       tag = oneTag;
       System.out.println(
           "\n-----" + tag + "-----------------------------------------------------------------");
@@ -195,7 +181,7 @@ public class ProfileMain {
                           "wtune_data/profile_%s_%s.csv",
                           tag, App.doingSQLServerTest() ? "ss" : "mypg"))));
       //    run("discourse-3842", false, true);
-      run("refinerycms-42", false, false);
+      run("spree-1201", false, false);
     }
   }
 }

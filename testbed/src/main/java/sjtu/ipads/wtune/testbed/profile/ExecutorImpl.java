@@ -31,6 +31,7 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
   ExecutorImpl(Connection conn, String sql) {
     this.conn = conn;
     this.sql = sql;
+    System.out.println(sql);
   }
 
   @Override

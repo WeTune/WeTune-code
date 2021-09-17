@@ -7,15 +7,16 @@ import java.util.List;
 public class PlanTreeNode implements Comparable<PlanTreeNode>{
     private final String stmtText;
     private final int nodeId;
-
     private final String logicalOp;
+    private final double totalSubtreeCost;
 
     private List<PlanTreeNode> children;
 
-    public PlanTreeNode(String stmtText, int nodeId, String logicalOp) {
+    public PlanTreeNode(String stmtText, int nodeId, String logicalOp, double totalSubtreeCost) {
         this.stmtText = stmtText;
         this.nodeId = nodeId;
         this.logicalOp = logicalOp;
+        this.totalSubtreeCost = totalSubtreeCost;
         this.children = new ArrayList<>();
     }
 
@@ -29,6 +30,10 @@ public class PlanTreeNode implements Comparable<PlanTreeNode>{
 
     public String getLogicalOp() {
         return logicalOp;
+    }
+
+    public double getTotalSubtreeCost() {
+        return totalSubtreeCost;
     }
 
     public List<PlanTreeNode> getChildren() {

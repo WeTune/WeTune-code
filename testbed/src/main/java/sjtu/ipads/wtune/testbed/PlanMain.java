@@ -78,15 +78,16 @@ public class PlanMain {
                     res.getString("Parent"),
                     res.getString("PhysicalOp"),
                     res.getString("LogicalOp"),
-                    res.getString("Argument")));
+                    res.getString("Argument"),
+                    res.getString("TotalSubtreeCost")));
         }
         stmtPlanWriter.close();
     }
 
     public static void main(String[] args) throws IOException, SQLException {
 //        System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"), "../").normalize().toString());
-
-        for(String oneTag: List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)){
+        for(String oneTag: List.of(LARGE_ZIPF)){
+            String currentApp = "";
             File stmtFile = Paths.get(System.getProperty("user.dir"), ORIGIN_STMTS_PATH, oneTag + ".csv").toFile();
             stmtReader = new BufferedReader(new FileReader(stmtFile));
             String line1, line2;
@@ -98,15 +99,17 @@ public class PlanMain {
                 baseStmt = regexRewriteForSQLServer(info1[1]); optStmt = regexRewriteForSQLServer(info2[1]);
 
                 System.out.println("executing sql: " + stmtId + " \tat workload " + oneTag);
-                getConnAndShowPlanOn(app, oneTag);
+                if(!currentApp.equals(app)){
+                    getConnAndShowPlanOn(app, oneTag);
+                    currentApp = app;
+                }
 
                 recordStmtPlan(stmtId, baseStmt, oneTag, "base");
                 recordStmtPlan(stmtId, optStmt, oneTag, "opt");
             }
 
             stmtReader.close();
-        }
-        for(String oneTag: Set.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
+
             analysePlan(oneTag);
         }
     }
@@ -123,10 +126,10 @@ public class PlanMain {
             System.out.println("Analyzing " + fileName);
 
             String[] tags = fileName.substring(0, fileName.indexOf(".")).split("-");
-            PlanTree offPlanTree = constructPlanTree(basePath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
-            PlanTree onPlanTree = constructPlanTree(optPath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
+            PlanTree basePlanTree = constructPlanTree(basePath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
+            PlanTree optPlanTree = constructPlanTree(optPath.resolve(fileName).toFile(), tags[0], Integer.parseInt(tags[1]));
 
-            String result = PlanTree.samePlan(offPlanTree, onPlanTree) ? "same" : "diff";
+            String result = PlanTree.samePlan(basePlanTree, optPlanTree) ? "same" : "diff";
             writeLine(resultWriter, String.join(",", fileName.substring(0, fileName.indexOf(".")), result));
         }
         resultWriter.close();
@@ -139,7 +142,8 @@ public class PlanMain {
         while((oneLine = stmtPlanReader.readLine()) != null){
             String[] fields = oneLine.split(";");
             planTree.insertNode(new PlanTreeNode
-                    (fields[0], Integer.parseInt(fields[1]), fields[4]), Integer.parseInt(fields[2]));
+                    (fields[0], Integer.parseInt(fields[1]), fields[4], Double.parseDouble(fields[6]))
+                    , Integer.parseInt(fields[2]));
         }
         stmtPlanReader.close();
         return planTree;
