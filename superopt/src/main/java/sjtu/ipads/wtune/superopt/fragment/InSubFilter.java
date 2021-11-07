@@ -9,7 +9,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
-public interface InSubFilter extends Filter {
+public interface InSubFilter extends AttrsFilter {
   @Override
   default OperatorType kind() {
     return OperatorType.IN_SUB_FILTER;

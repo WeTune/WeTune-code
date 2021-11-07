@@ -8,10 +8,12 @@ import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
@@ -132,5 +134,12 @@ public class TableImpl implements Table {
   @Override
   public String toString() {
     return name;
+  }
+
+  @Override
+  public StringBuilder toDdl(String dbType, StringBuilder buffer) {
+    buffer.append("CREATE TABLE ").append(ASTHelper.quoted(dbType, name)).append(" (");
+    return joining(", ", columns.values(), buffer, (it, builder) -> it.toDdl(dbType, builder))
+        .append(");");
   }
 }

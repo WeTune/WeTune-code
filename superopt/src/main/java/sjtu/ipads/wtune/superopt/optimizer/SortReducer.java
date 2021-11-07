@@ -56,7 +56,7 @@ class SortReducer {
       return sort0;
     }
 
-    if (node.kind().isJoin()) {
+    if (node.kind().isJoin() || node.kind() == SET_OP) {
       final SortSpec sort1 = resolveSortChain(node.predecessors()[1]);
       final boolean preserve0 = sort0 != null && sort0.limited;
       final boolean preserve1 = sort1 != null && sort1.limited;

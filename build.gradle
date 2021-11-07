@@ -24,7 +24,7 @@ subprojects {
         doFirst {
             options.compilerArgs += [
                     '--module-path', classpath.asPath,
-                    '--enable-preview'
+//                    '--enable-preview'
             ]
         }
     }
@@ -32,7 +32,9 @@ subprojects {
     tasks.withType(JavaExec) {
         doFirst {
             environment 'LD_LIBRARY_PATH', "$rootDir/lib/"
-            jvmArgs += ["-Djava.library.path=$rootDir/lib", '--enable-preview']
+            jvmArgs += ["-Djava.library.path=$rootDir/lib",
+//                        '--enable-preview'
+            ]
             workingDir(rootDir)
         }
     }
@@ -41,7 +43,7 @@ subprojects {
         systemProperty('java.library.path', "$rootDir/lib/")
         environment('LD_LIBRARY_PATH', "$rootDir/lib/")
         useJUnitPlatform()
-        jvmArgs(['--enable-preview'])
+//        jvmArgs(['--enable-preview'])
         workingDir(rootDir)
     }
 

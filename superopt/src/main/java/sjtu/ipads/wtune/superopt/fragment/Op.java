@@ -18,7 +18,7 @@ public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
       case AGG -> new AggOp();
       case SORT -> new SortOp();
       case LIMIT -> new LimitOp();
-      case UNION -> new UnionOp();
+      case SET_OP -> new UnionOp();
     };
   }
 

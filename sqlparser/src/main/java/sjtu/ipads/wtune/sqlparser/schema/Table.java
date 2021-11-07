@@ -21,8 +21,11 @@ public interface Table {
 
   Collection<Constraint> constraints();
 
+  StringBuilder toDdl(String dbType, StringBuilder buffer);
+
   default Iterable<Constraint> constraints(ConstraintType type) {
-    if (type == UNIQUE) return lazyFilter(constraints(), it -> UNIQUE_CONSTRAINT.contains(it.type()));
+    if (type == UNIQUE)
+      return lazyFilter(constraints(), it -> UNIQUE_CONSTRAINT.contains(it.type()));
     else return lazyFilter(constraints(), it -> it.type() == type);
   }
 

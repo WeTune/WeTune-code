@@ -371,7 +371,7 @@ class PlanTranslator {
       case SIMPLE_FILTER:
         {
           if (prev != op.predecessors()[0]) return;
-          final Symbol attrs = ((Filter) op).attrs();
+          final Symbol attrs = ((AttrsFilter) op).attrs();
           if (constraints.sourceOf(attrs) == null)
             constraints.add(Constraint.mk(AttrsFrom, attrs, source));
           propagateAttrsSource(op.successor(), op, source);
@@ -413,7 +413,7 @@ class PlanTranslator {
       case SIMPLE_FILTER:
         {
           if (prev != op.predecessors()[0]) return;
-          final Symbol attrs = ((Filter) op).attrs();
+          final Symbol attrs = ((AttrsFilter) op).attrs();
           if (constraints.sourceOf(attrs) == constraints.sourceOf(bound))
             constraints.add(Constraint.mk(AttrsEq, attrs, bound));
           propagateAttrsBound(op.successor(), op, bound);
@@ -458,7 +458,7 @@ class PlanTranslator {
     // Specifically, check if the root node is not Union/Proj.
     // (ignore Sort/Limit)
     final OperatorType type = node.kind();
-    return type != UNION
+    return type != SET_OP
         && type != PROJ
         && (type != SORT && type != LIMIT && type != AGG || isFragment(node.predecessors()[0]));
   }

@@ -189,6 +189,15 @@ public interface Commons {
     else return xs.get(index);
   }
 
+  static <T> T pop(List<T> xs) {
+    if (xs.isEmpty()) return null;
+    return xs.remove(xs.size() - 1);
+  }
+
+  static <T> void push(List<T> xs, T x) {
+    xs.add(x);
+  }
+
   static boolean isEmpty(Collection<?> xs) {
     return xs == null || xs.isEmpty();
   }

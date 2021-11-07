@@ -39,6 +39,8 @@ public interface Column {
 
   Collection<Constraint> constraints();
 
+  StringBuilder toDdl(String dbType, StringBuilder buffer);
+
   default Collection<Constraint> constraints(ConstraintType type) {
     return listFilter(constraints(), it -> it.type() == type);
   }

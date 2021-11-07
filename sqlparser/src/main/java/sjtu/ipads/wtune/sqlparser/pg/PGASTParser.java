@@ -5,6 +5,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import java.util.function.Function;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
@@ -13,11 +14,15 @@ import sjtu.ipads.wtune.sqlparser.pg.internal.PGLexer;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 public class PGASTParser implements ASTParser {
+  public static boolean IS_ERROR_MUTED = false;
 
   public <T extends ParserRuleContext> T parse0(String str, Function<PGParser, T> rule) {
     final PGLexer lexer = new PGLexer(CharStreams.fromString(str));
-
     final PGParser parser = new PGParser(new CommonTokenStream(lexer));
+    if (IS_ERROR_MUTED) {
+      lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+      parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
+    }
 
     //    lexer.getInterpreter().clearDFA();
     //    parser.getInterpreter().clearDFA();

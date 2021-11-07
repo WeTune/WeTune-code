@@ -71,7 +71,7 @@ class AstTranslator {
       case AGG -> onAgg((AggNode) node);
       case SORT -> onSort((SortNode) node);
       case LIMIT -> onLimit((LimitNode) node);
-      case UNION -> onUnion((SetOpNode) node);
+      case SET_OP -> onUnion((SetOpNode) node);
       default -> throw failed("unsupported operator " + node.kind());
     }
   }

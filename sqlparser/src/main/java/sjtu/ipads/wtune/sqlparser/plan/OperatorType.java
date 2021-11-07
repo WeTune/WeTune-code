@@ -12,7 +12,7 @@ public enum OperatorType {
   AGG(1, "Agg"),
   SORT(1, "Sort"),
   LIMIT(1, "Limit"),
-  UNION(2, "Union");
+  SET_OP(2, "Union");
 
   private final int numPredecessors;
   private final String text;

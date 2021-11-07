@@ -11,6 +11,10 @@ import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.Commons.listSwap;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.quoted;
+
 public class ConstraintImpl implements Constraint {
   private final ConstraintType type;
   private final List<Column> columns;
@@ -99,5 +103,21 @@ public class ConstraintImpl implements Constraint {
       Commons.joining("[", ",", "]", false, refColumns, builder);
     }
     return builder.toString();
+  }
+
+  @Override
+  public StringBuilder toDdl(String dbType, StringBuilder buffer) {
+    if (type == ConstraintType.FOREIGN) {
+      buffer
+          .append("ALTER TABLE ")
+          .append(quoted(dbType, columns.get(0).tableName()))
+          .append(" ADD FOREIGN KEY (");
+      joining(",", columns, buffer, Column::name);
+      buffer.append(") REFERENCES ").append(quoted(dbType, refTable.name())).append('(');
+      joining(",", refColumns, buffer, Column::name);
+      buffer.append(");\n");
+    }
+
+    return buffer;
   }
 }

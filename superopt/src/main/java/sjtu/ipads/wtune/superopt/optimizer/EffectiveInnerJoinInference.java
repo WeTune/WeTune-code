@@ -34,6 +34,10 @@ class EffectiveInnerJoinInference {
     PlanNode path = ctx.ownerOf(ctx.deRef(ref));
     while (path.successor() != surface) {
       final PlanNode successor = path.successor();
+      // A tentative patch.
+      // `successor` shouldn't be null by design. But some uncovered bugs makes it happen.
+      if (successor == null) return;
+
       if (successor.kind() == OperatorType.LEFT_JOIN && successor.predecessors()[1] == path) {
         ((JoinNode) successor).setJoinType(OperatorType.INNER_JOIN);
       }

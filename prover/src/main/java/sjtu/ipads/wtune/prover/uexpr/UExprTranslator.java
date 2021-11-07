@@ -61,7 +61,7 @@ public class UExprTranslator {
       case SIMPLE_FILTER -> onPlainFilter((SimpleFilterNode) node);
       case IN_SUB_FILTER -> onInSubFilter((InSubFilterNode) node);
       case EXISTS_FILTER -> onExistsFilter((ExistsFilterNode) node);
-      case UNION -> onUnion((SetOpNode) node);
+      case SET_OP -> onUnion((SetOpNode) node);
       case AGG, SORT, LIMIT -> onNode(node.predecessors()[0]);
     };
   }
@@ -308,7 +308,7 @@ public class UExprTranslator {
       final PlanNode succ = n.successor();
       final OperatorType succType = succ.kind();
 
-      if (succType == UNION) return false;
+      if (succType == SET_OP) return false;
       if (succType == SORT || succType == LIMIT) n = succ;
       else return true;
     }

@@ -267,6 +267,10 @@ class OptimizerImpl implements Optimizer {
     return optimizeChild(agg);
   }
 
+  protected Set<PlanNode> onSetOp(SetOpNode setOp) {
+    return optimizeChild(setOp);
+  }
+
   private Set<PlanNode> dispatch(PlanNode node) {
     switch (node.kind()) {
       case INPUT:
@@ -285,6 +289,8 @@ class OptimizerImpl implements Optimizer {
         return onSort((SortNode) node);
       case AGG:
         return onAgg((AggNode) node);
+      case SET_OP:
+        return onSetOp((SetOpNode) node);
       default:
         throw new IllegalArgumentException();
     }

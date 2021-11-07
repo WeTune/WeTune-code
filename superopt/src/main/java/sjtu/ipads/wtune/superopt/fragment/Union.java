@@ -5,6 +5,6 @@ import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 public interface Union extends Op {
   @Override
   default OperatorType kind() {
-    return OperatorType.UNION;
+    return OperatorType.SET_OP;
   }
 }

@@ -13,6 +13,8 @@ public interface Schema {
 
   void patch(Iterable<SchemaPatch> patches);
 
+  StringBuilder toDdl(String dbType, StringBuilder buffer);
+
   static Schema parse(String dbType, String str) {
     return SchemaImpl.build(dbType, str);
   }

@@ -112,6 +112,9 @@ class PlanBuilder {
       final List<ASTNode> columnRefs =
           new ArrayList<>(selectItems.size() + (groups == null ? 0 : groups.size()) + 1);
       columnRefs.addAll(gatherColumnRefs(selectItems));
+      if (groups != null) columnRefs.addAll(gatherColumnRefs(groups));
+      if (having != null) columnRefs.addAll(gatherColumnRefs(having));
+
       // 2. find there are DISTINCT inside aggregation
       final boolean containsDistinctAggregation =
           any(selectItems, it -> it.get(SELECT_ITEM_EXPR).isFlag(AGGREGATE_DISTINCT));

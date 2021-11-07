@@ -8,7 +8,7 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
-public interface SimpleFilter extends Filter {
+public interface SimpleFilter extends AttrsFilter {
   Symbol predicate();
 
   @Override

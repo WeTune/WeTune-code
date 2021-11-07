@@ -18,6 +18,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.EXISTS_FILTER;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
 
 class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
@@ -117,13 +118,18 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
 
   private FilterMatcher mkMatcher(int index, boolean[] done) {
     final Filter op = ops.get(index);
-    final Symbol attrsSym = op.attrs();
+    if (op.kind() == EXISTS_FILTER) {
+      done[index] = true;
+      return new ExistsFilterMatcher(index);
+    }
+
+    final Symbol attrsSym = ((AttrsFilter) op).attrs();
     final Constraints constraints = whatIf.constraints();
     final Symbols symbols = op.fragment().symbols();
     final TIntList buddies = new TIntArrayList(done.length);
     boolean isOrphan = true;
 
-    for (Symbol eqSym : constraints.eqClassOf(op.attrs())) {
+    for (Symbol eqSym : constraints.eqClassOf(attrsSym)) {
       if (eqSym.ctx() != attrsSym.ctx()) continue;
 
       final Op owner = symbols.ownerOf(eqSym);
@@ -287,6 +293,34 @@ class FilterReversedMatch implements ReversedMatch<FilterNode, Filter> {
 
     public int priority() {
       return Integer.MAX_VALUE;
+    }
+  }
+
+  private class ExistsFilterMatcher extends FilterMatcherBase {
+    private final int opIndex;
+
+    private ExistsFilterMatcher(int index) {
+      this.opIndex = index;
+    }
+
+    @Override
+    public int priority() {
+      return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void match() {
+      for (int i = 0; i < chain.size(); i++) {
+        if (used[i]) continue;
+        final FilterNode f = chain.get(i);
+        if (f.kind() == EXISTS_FILTER) {
+          used[i] = true;
+          stack[opIndex] = f;
+          next.match();
+          stack[opIndex] = null;
+          used[i] = false;
+        }
+      }
     }
   }
 

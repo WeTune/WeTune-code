@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.sqlparser;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.mysql.MySQLASTParser;
 import sjtu.ipads.wtune.sqlparser.pg.PGASTParser;
 
-public interface ASTParser {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+
+public interface ASTParser {
   ASTNode parse(String string, boolean managed);
 
   default void setProperties(Properties props) {}
@@ -22,6 +22,11 @@ public interface ASTParser {
 
   default ASTNode parse(String string) {
     return parse(string, true);
+  }
+
+  static void setErrorMuted(boolean muted) {
+    MySQLASTParser.IS_ERROR_MUTED = muted;
+    PGASTParser.IS_ERROR_MUTED = muted;
   }
 
   static ASTParser ofDb(String dbType) {

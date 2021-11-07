@@ -7,6 +7,7 @@ import java.util.Properties;
 import java.util.function.Function;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
@@ -15,6 +16,8 @@ import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 public class MySQLASTParser implements ASTParser {
+  public static boolean IS_ERROR_MUTED = false;
+
   private long serverVersion = 0;
   private int sqlMode = NoMode;
 
@@ -35,6 +38,11 @@ public class MySQLASTParser implements ASTParser {
     parser.setServerVersion(serverVersion);
     parser.setSqlMode(sqlMode);
 
+    if (IS_ERROR_MUTED) {
+      lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+      parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
+    }
+
     return rule.apply(parser);
   }
 
@@ -45,7 +53,7 @@ public class MySQLASTParser implements ASTParser {
   public ASTNode parse(String str, boolean managed, Function<MySQLParser, ParserRuleContext> rule) {
     try {
       final ASTNode root = parse0(str, rule).accept(new MySQLASTBuilder());
-      if (root != null && managed){
+      if (root != null && managed) {
         ASTContext.manage(root, ASTContext.build());
         root.context().setDbType(MYSQL);
       }

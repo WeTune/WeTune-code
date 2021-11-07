@@ -82,7 +82,7 @@ class Disambiguation {
     PlanNode successor = proj.successor();
     while (successor != null) {
       final OperatorType succType = successor.kind();
-      if (succType == UNION) return false;
+      if (succType == SET_OP) return false;
       if (succType == PROJ) return true;
       if (succType.isJoin()) return true;
       if (succType.isFilter()) return successor.predecessors()[0] == proj;

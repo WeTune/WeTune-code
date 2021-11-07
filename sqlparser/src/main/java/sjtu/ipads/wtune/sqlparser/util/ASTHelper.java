@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.FieldDomain;
@@ -93,6 +94,13 @@ public interface ASTHelper {
     final ConformityChecker checker = new ConformityChecker();
     node.accept(checker);
     return checker.invalidPair;
+  }
+
+  static String quoted(String dbType, String name) {
+    if ("mysql".equals(dbType)) return '`' + name + '`';
+    else if ("postgresql".equals(dbType)) return '"' + name + '"';
+    else if ("mssql".equals(dbType)) return '[' + name + ']';
+    else throw new IllegalArgumentException("unknown db type: " + dbType);
   }
 
   static String simpleName(String name) {

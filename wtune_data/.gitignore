@@ -5,3 +5,4 @@
 !schemas/*
 !substitutions
 !test_substitutitions
+!calcite_tests

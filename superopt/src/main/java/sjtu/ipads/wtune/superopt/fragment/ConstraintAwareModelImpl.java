@@ -326,6 +326,18 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
       return any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
 
+    } else if (kind == OperatorType.AGG) {
+      final PlanContext context = surface.context();
+      final RefBag groupRefs = ((AggNode) surface).groupRefs();
+      final List<Value> groupAttrs = context.deRef(groupRefs);
+      final boolean[] isPresent = new boolean[groupAttrs.size()];
+      for (Value attr : attrs) {
+        final Value value = locateValueRelaxed(groupAttrs, attr, context);
+        if (value != null) isPresent[groupAttrs.indexOf(value)] = true;
+      }
+      for (boolean b : isPresent) if (!b) return false;
+      return true;
+
     } else {
       return isUniqueCoreOf(attrs, surface.predecessors()[0]);
     }

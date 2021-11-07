@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
@@ -18,6 +19,8 @@ public interface Constraints extends List<Constraint> {
   StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder);
 
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
+
+  NaturalCongruence<Symbol> congruence();
 
   default String stringify(SymbolNaming naming) {
     return stringify(naming, new StringBuilder()).toString();

@@ -8,9 +8,7 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
@@ -121,5 +119,22 @@ public class SchemaImpl implements Schema {
 
   private void addTable(TableImpl table) {
     tables.put(table.name(), table);
+  }
+
+  @Override
+  public StringBuilder toDdl(String dbType, StringBuilder buffer) {
+    for (TableImpl value : tables.values()) {
+      value.toDdl(dbType, buffer);
+      buffer.append('\n');
+    }
+    final Set<Constraint> done = new HashSet<>();
+    for (TableImpl value : tables.values()) {
+      for (Constraint constraint : value.constraints()) {
+        if (done.contains(constraint)) continue;
+        done.add(constraint);
+        constraint.toDdl(dbType, buffer);
+      }
+    }
+    return buffer;
   }
 }

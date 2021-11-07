@@ -60,7 +60,7 @@ class RefResolver {
       case AGG -> onAgg((AggNode) node);
       case SORT -> onSort((SortNode) node);
       case LIMIT -> onLimit((LimitNode) node);
-      case UNION -> onUnion((SetOpNode) node);
+      case SET_OP -> onUnion((SetOpNode) node);
       default -> throw failed("unsupported operator " + node.kind());
     }
 
@@ -256,14 +256,14 @@ class RefResolver {
     final OperatorType succType = successor.kind();
     final OperatorType nodeType = node.kind();
 
-    if (succType == UNION) return true;
+    if (succType == SET_OP) return true;
     if (succType.isSubquery() && successor.predecessors()[1] == node) return false; // needStack
     if (nodeType == INPUT || nodeType.isJoin()) return false;
     if (nodeType.isFilter()) return succType.isJoin();
     if (nodeType == PROJ) return succType != AGG && succType != SORT && succType != LIMIT;
     if (nodeType == AGG) return succType != SORT && succType != LIMIT;
     if (nodeType == SORT) return succType != LIMIT;
-    return nodeType == LIMIT || nodeType == UNION;
+    return nodeType == LIMIT || nodeType == SET_OP;
   }
 
   private static boolean needStackLookup(PlanNode node) {
@@ -276,7 +276,7 @@ class RefResolver {
   private static boolean needMergeLookup(boolean needNew, PlanNode node) {
     final PlanNode successor = node.successor();
     if (successor == null) return false;
-    return needNew && (successor.kind() != UNION || node == successor.predecessors()[0]);
+    return needNew && (successor.kind() != SET_OP || node == successor.predecessors()[0]);
   }
 
   private static class StackedLookup {

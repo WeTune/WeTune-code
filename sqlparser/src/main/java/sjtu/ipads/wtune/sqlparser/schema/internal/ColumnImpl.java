@@ -33,6 +33,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 public class ColumnImpl implements Column {
   private final String table;
@@ -161,5 +162,14 @@ public class ColumnImpl implements Column {
   @Override
   public int hashCode() {
     return Objects.hash(table, name);
+  }
+
+  @Override
+  public StringBuilder toDdl(String dbType, StringBuilder buffer) {
+     buffer.append(ASTHelper.quoted(dbType, name)).append(' ').append(dataType.toString());
+     if (isFlag(PRIMARY)) buffer.append(' ').append("PRIMARY KEY");
+     else if (isFlag(UNIQUE)) buffer.append(' ').append("UNIQUE");
+     if (isFlag(NOT_NULL) && !isFlag(PRIMARY)) buffer.append(' ').append("NOT NULL");
+     return buffer;
   }
 }

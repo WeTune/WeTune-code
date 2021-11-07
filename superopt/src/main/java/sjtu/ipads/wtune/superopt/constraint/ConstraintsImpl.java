@@ -108,6 +108,11 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
+  public NaturalCongruence<Symbol> congruence() {
+    return congruence;
+  }
+
+  @Override
   public StringBuilder stringify(SymbolNaming naming, StringBuilder builder) {
     return Commons.joining(";", constraints, builder, (it, b) -> it.stringify(naming, b));
   }

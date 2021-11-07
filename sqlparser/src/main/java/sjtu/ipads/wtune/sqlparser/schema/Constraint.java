@@ -18,6 +18,8 @@ public interface Constraint {
 
   List<Column> refColumns();
 
+  StringBuilder toDdl(String dbType, StringBuilder buffer);
+
   default boolean isIndex() {
     return type() != ConstraintType.NOT_NULL && type() != ConstraintType.CHECK;
   }
