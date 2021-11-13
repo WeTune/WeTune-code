@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sqlparser.AstSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -13,7 +14,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
 
 public class SchemaTest {
   @Test
@@ -30,7 +31,7 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final Schema schema = Schema.parse(MYSQL, createTable);
+    final Schema schema = AstSupport.parseSchema(MYSQL, createTable);
 
     assertEquals(2, schema.tables().size());
 

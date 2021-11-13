@@ -16,10 +16,6 @@ public interface ASTParser {
 
   default void setProperties(Properties props) {}
 
-  default ASTNode parseRaw(String string) {
-    return parse(string, false);
-  }
-
   default ASTNode parse(String string) {
     return parse(string, true);
   }

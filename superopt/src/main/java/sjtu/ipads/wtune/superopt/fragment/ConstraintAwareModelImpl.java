@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -17,7 +16,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.UNIQUE;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.UNIQUE;
 import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findIC;
 import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findRelatedIC;
@@ -223,7 +223,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     if (referringColumns == null) return false;
 
     // Check integrity constraint on schema.
-    final var fks = findIC(plan.schema(), referringColumns, ConstraintType.FOREIGN);
+    final var fks = findIC(plan.schema(), referringColumns, FOREIGN);
     if (fks.isEmpty()) return false;
 
     final List<Value> referredAttrs = interpretInAttrs(referredAttrsSym);

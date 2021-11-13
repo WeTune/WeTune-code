@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.util.stream.IntStream;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
+import java.util.stream.IntStream;
 
 public class IntegralConverter implements Converter {
   private final String typeName;
   private final int max;
   private final boolean isArray;
 
-  public IntegralConverter(SQLDataType dataType) {
+  public IntegralConverter(SqlDataType dataType) {
     assert dataType.category() == Category.INTEGRAL;
 
     typeName = dataType.name();

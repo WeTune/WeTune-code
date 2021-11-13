@@ -204,7 +204,7 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
       case "key":
       case "index":
         c = null;
-        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexOption(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
@@ -222,13 +222,13 @@ public class MySQLASTBuilder extends MySQLParserBaseVisitor<ASTNode> implements 
 
       case "primary":
         c = PRIMARY;
-        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexOption(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 
       case "unique":
         c = UNIQUE;
-        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexType(indexOptions));
+        t = Commons.coalesce(parseIndexType(indexNameAndType), parseIndexOption(indexOptions));
         name = stringifyIndexName(indexNameAndType);
         break;
 

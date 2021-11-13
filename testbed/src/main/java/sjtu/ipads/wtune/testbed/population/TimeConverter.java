@@ -1,14 +1,15 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import org.apache.commons.lang3.NotImplementedException;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.DataTypeName;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 class TimeConverter implements Converter {
   private static final LocalDateTime TIME_BASE = LocalDateTime.of(2004, 1, 1, 0, 0, 0);
@@ -17,9 +18,9 @@ class TimeConverter implements Converter {
   private static final LocalDateTime DATE_MIN = LocalDateTime.of(1000, 1, 1, 0, 0, 0);
   private static final LocalDateTime DATE_MAX = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
 
-  private final SQLDataType dataType;
+  private final SqlDataType dataType;
 
-  TimeConverter(SQLDataType dataType) {
+  TimeConverter(SqlDataType dataType) {
     assert dataType.category() == Category.TIME;
     this.dataType = dataType;
   }
@@ -30,20 +31,11 @@ class TimeConverter implements Converter {
     if (dataType.name().equals(DataTypeName.YEAR)) actuator.appendInt(1901 + (seed % 155));
     else {
       switch (dataType.name()) {
-        case DataTypeName.DATE:
-          actuator.appendDate(coerceDateIntoRange(TIME_BASE.plus(seed, ChronoUnit.DAYS)));
-          break;
-        case DataTypeName.TIME:
-        case DataTypeName.TIMETZ:
-          actuator.appendTime(TIME_BASE.plus(seed, ChronoUnit.SECONDS).toLocalTime());
-          break;
-        case DataTypeName.DATETIME:
-          actuator.appendDateTime(TIME_BASE.plus(seed, ChronoUnit.SECONDS));
-          break;
-        case DataTypeName.TIMESTAMP:
-        case DataTypeName.TIMESTAMPTZ:
-          actuator.appendDateTime(coerceTsIntoRange(TIME_BASE.plus(seed, ChronoUnit.MILLIS)));
-          break;
+        case DataTypeName.DATE -> actuator.appendDate(coerceDateIntoRange(TIME_BASE.plus(seed, ChronoUnit.DAYS)));
+        case DataTypeName.TIME, DataTypeName.TIMETZ -> actuator.appendTime(TIME_BASE.plus(seed, ChronoUnit.SECONDS)
+                                                                                    .toLocalTime());
+        case DataTypeName.DATETIME -> actuator.appendDateTime(TIME_BASE.plus(seed, ChronoUnit.SECONDS));
+        case DataTypeName.TIMESTAMP, DataTypeName.TIMESTAMPTZ -> actuator.appendDateTime(coerceTsIntoRange(TIME_BASE.plus(seed, ChronoUnit.MILLIS)));
       }
     }
   }

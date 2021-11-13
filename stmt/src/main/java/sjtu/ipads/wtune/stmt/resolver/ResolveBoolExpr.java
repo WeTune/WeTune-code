@@ -1,26 +1,18 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.CASE_COND;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WHEN_COND;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
-
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_HAVING;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 
 class ResolveBoolExpr implements ASTVistor {
   public static BoolExprManager resolve(ASTNode node) {

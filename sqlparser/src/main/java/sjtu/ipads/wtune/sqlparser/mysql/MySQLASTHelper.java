@@ -1,42 +1,28 @@
 package sjtu.ipads.wtune.sqlparser.mysql;
 
-import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_AUTOINCREMENT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_CONS;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DEFAULT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_SCHEMA;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
-
-import java.util.List;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.attrs.Fields;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
-import sjtu.ipads.wtune.sqlparser.ast.constants.IndexHintTarget;
-import sjtu.ipads.wtune.sqlparser.ast.constants.IndexHintType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.IntervalUnit;
-import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.OLAPOption;
+import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeFactory;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.IndexKind;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
+
+import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
+import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.ASC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection.DESC;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 
 public interface MySQLASTHelper {
   static String stringifyText(MySQLParser.TextStringContext text) {
@@ -215,7 +201,7 @@ public interface MySQLASTHelper {
     return parseIndexType(ctx.indexType());
   }
 
-  static IndexType parseIndexType(List<MySQLParser.IndexOptionContext> ctx) {
+  static IndexType parseIndexOption(List<MySQLParser.IndexOptionContext> ctx) {
     for (MySQLParser.IndexOptionContext option : ctx) {
       final var indexTypeClause = option.indexTypeClause();
       if (indexTypeClause != null) return parseIndexType(indexTypeClause.indexType());

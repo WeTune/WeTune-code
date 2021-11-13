@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.schema.internal.ColumnImpl;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
 
 import java.util.Collection;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
 
 public interface Column {
   enum Flag {
@@ -31,7 +31,7 @@ public interface Column {
 
   String rawDataType();
 
-  SQLDataType dataType();
+  SqlDataType dataType();
 
   Collection<SchemaPatch> patches();
 
@@ -41,19 +41,19 @@ public interface Column {
 
   StringBuilder toDdl(String dbType, StringBuilder buffer);
 
-  default Collection<Constraint> constraints(ConstraintType type) {
-    return listFilter(constraints(), it -> it.type() == type);
+  default Collection<Constraint> constraints(ConstraintKind type) {
+    return listFilter(constraints(), it -> it.kind() == type);
   }
 
   default boolean references(List<Column> referred) {
     if (!isFlag(Flag.FOREIGN_KEY)) return false;
 
-    final Collection<Constraint> fks = constraints(ConstraintType.FOREIGN);
+    final Collection<Constraint> fks = constraints(FOREIGN);
     return fks.isEmpty() // not native FK, then it must be patched
         || fks.stream().map(Constraint::refColumns).anyMatch(referred::equals);
   }
 
-  static Column make(String table, ASTNode colDef) {
+  static Column mk(String table, SqlNode colDef) {
     return ColumnImpl.build(table, colDef);
   }
 }

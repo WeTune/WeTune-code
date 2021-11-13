@@ -1,13 +1,9 @@
-package sjtu.ipads.wtune.sqlparser.schema.internal;
+package sjtu.ipads.wtune.sqlparser.schema;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
 import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 import java.util.*;
@@ -16,10 +12,14 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.ColName;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableName;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.UNIQUE;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
-public class TableImpl implements Table {
+class TableImpl implements Table {
   private final String schema;
   private final String name;
   private final String engine;
@@ -33,14 +33,14 @@ public class TableImpl implements Table {
     this.columns = new LinkedHashMap<>();
   }
 
-  public static TableImpl build(ASTNode tableDef) {
-    final ASTNode tableName = tableDef.get(CREATE_TABLE_NAME);
-    final String schema = simpleName(tableName.get(TABLE_NAME_SCHEMA));
-    final String name = simpleName(tableName.get(TABLE_NAME_TABLE));
+  public static TableImpl build(SqlNode tableDef) {
+    final SqlNode tableName = tableDef.$(CreateTable_Name);
+    final String schema = simpleName(tableName.$(TableName_Schema));
+    final String name = simpleName(tableName.$(TableName_Table));
     final String engine =
         POSTGRESQL.equals(tableDef.dbType())
             ? POSTGRESQL
-            : coalesce(tableDef.get(CREATE_TABLE_ENGINE), "innodb");
+            : coalesce(tableDef.$(CreateTable_Engine), "innodb");
 
     return new TableImpl(schema, name, engine);
   }
@@ -83,7 +83,7 @@ public class TableImpl implements Table {
 
     if (patch.type() == SchemaPatch.Type.UNIQUE) {
       final List<Column> columns = listMap(patch.columns(), this::column);
-      final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.UNIQUE, columns);
+      final ConstraintImpl constraint = ConstraintImpl.build(UNIQUE, columns);
 
       addConstraint(constraint);
       columns.forEach(it -> ((ColumnImpl) it).addConstraint(constraint));
@@ -91,18 +91,19 @@ public class TableImpl implements Table {
 
     if (patch.type() == Type.FOREIGN_KEY) {
       final List<Column> columns = listMap(patch.columns(), this::column);
-      final ConstraintImpl constraint = ConstraintImpl.build(ConstraintType.FOREIGN, columns);
+      final ConstraintImpl constraint = ConstraintImpl.build(FOREIGN, columns);
 
       final String[] split = patch.reference().split("\\.");
       if (split.length != 2) throw new IllegalArgumentException("illegal patch: " + patch);
 
-      final ASTNode tableName = ASTNode.node(NodeType.TABLE_NAME);
-      tableName.set(TABLE_NAME_TABLE, split[0]);
+      final SqlContext ctx = SqlContext.mk(4);
+      final SqlNode tableName = SqlNode.mk(ctx, TableName);
+      tableName.$(TableName_Table, split[0]);
       constraint.setRefTableName(tableName);
 
-      final ASTNode colName = ASTNode.node(NodeType.COLUMN_NAME);
-      colName.set(COLUMN_NAME_COLUMN, split[1]);
-      constraint.setRefColNames(Collections.singletonList(colName));
+      final SqlNode colName = SqlNode.mk(ctx, ColName);
+      colName.$(ColName_Col, split[1]);
+      constraint.setRefColNames(SqlNodes.mk(ctx, Collections.singletonList(colName)));
 
       addConstraint(constraint);
       columns.forEach(it -> ((ColumnImpl) it).addConstraint(constraint));

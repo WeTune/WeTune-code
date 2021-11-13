@@ -1,28 +1,27 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.DECIMAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.FIXED;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.NUMERIC;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.base10;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10;
-import static sjtu.ipads.wtune.testbed.util.RandomHelper.GLOBAL_SEED;
-
 import com.google.common.collect.Iterables;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Element;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.base10;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10;
+import static sjtu.ipads.wtune.testbed.util.RandomHelper.GLOBAL_SEED;
 
 class SQLGenerators implements Generators {
   private final PopulationConfig config;
@@ -79,7 +78,7 @@ class SQLGenerators implements Generators {
   }
 
   private static Column getReferencedColumn(Column column) {
-    final Collection<Constraint> fks = column.constraints(ConstraintType.FOREIGN);
+    final Collection<Constraint> fks = column.constraints(FOREIGN);
     if (fks.isEmpty()) return null;
 
     final Constraint fk = Iterables.get(fks, 0);
@@ -87,11 +86,10 @@ class SQLGenerators implements Generators {
   }
 
   private static Constraint getUniqueKey(Column column) {
-    final Collection<Constraint> pks = column.constraints(ConstraintType.PRIMARY);
-    final Constraint pk = pks.isEmpty() ? null : Iterables.get(pks, 0);
+    final Collection<Constraint> pks = column.constraints(PRIMARY);
+    Constraint shortestUk = pks.isEmpty() ? null : Iterables.get(pks, 0);
 
-    Constraint shortestUk = pk;
-    final Collection<Constraint> uks = column.constraints(ConstraintType.UNIQUE);
+    final Collection<Constraint> uks = column.constraints(UNIQUE);
     for (Constraint uk : uks)
       if (shortestUk == null || uk.columns().size() < shortestUk.columns().size()) shortestUk = uk;
 
@@ -197,7 +195,7 @@ class SQLGenerators implements Generators {
 
       final int cardinalityRequirement = base10(unitCount);
 
-      final SQLDataType dataType = column.dataType();
+      final SqlDataType dataType = column.dataType();
       final int storageRequirement;
       switch (dataType.category()) {
         case INTEGRAL:

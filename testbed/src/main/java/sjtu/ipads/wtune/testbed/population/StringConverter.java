@@ -1,18 +1,19 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static java.lang.Integer.parseInt;
-
-import java.util.stream.IntStream;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.util.MathHelper;
 
+import java.util.stream.IntStream;
+
+import static java.lang.Integer.parseInt;
+
 class StringConverter implements Converter {
   private final int width;
-  private boolean isArray;
+  private final boolean isArray;
 
-  StringConverter(SQLDataType dataType) {
+  StringConverter(SqlDataType dataType) {
     assert dataType.category() == Category.STRING;
 
     if (dataType.width() < 0) width = 128;

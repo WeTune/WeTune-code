@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.util.List;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
-class EnumConverter implements Converter {
-  private final SQLDataType dataType;
+import java.util.List;
+import java.util.stream.IntStream;
 
-  EnumConverter(SQLDataType dataType) {
+class EnumConverter implements Converter {
+  private final SqlDataType dataType;
+
+  EnumConverter(SqlDataType dataType) {
     assert dataType.category() == Category.ENUM;
     this.dataType = dataType;
   }

@@ -1,35 +1,27 @@
 package sjtu.ipads.wtune.sqlparser.relational;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.common.multiversion.Snapshot;
+import sjtu.ipads.wtune.sqlparser.ASTContext;
+import sjtu.ipads.wtune.sqlparser.ASTParser;
+import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.EXISTS_SUBQUERY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.SIMPLE_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_NAME;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-
-import java.util.List;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.multiversion.Snapshot;
-import sjtu.ipads.wtune.sqlparser.ASTContext;
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public class RelationTest {
   @Test
@@ -48,7 +40,7 @@ public class RelationTest {
             + " JOIN b ON a.x = b.i "
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
-    final Schema schema = Schema.parse(MYSQL, schemaDef);
+    final Schema schema = AstSupport.parseSchema(MYSQL, schemaDef);
     final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
     node.context().setSchema(schema);
 
@@ -105,7 +97,7 @@ public class RelationTest {
             + " JOIN b ON a.x = b.i "
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
-    final Schema schema = Schema.parse(MYSQL, schemaDef);
+    final Schema schema = AstSupport.parseSchema(MYSQL, schemaDef);
     final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
     final ASTContext context = node.context();
 

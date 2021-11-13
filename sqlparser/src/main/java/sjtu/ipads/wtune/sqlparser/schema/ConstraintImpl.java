@@ -1,38 +1,36 @@
-package sjtu.ipads.wtune.sqlparser.schema.internal;
+package sjtu.ipads.wtune.sqlparser.schema;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.IndexType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.KeyDirection;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.IndexKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.KeyDirection;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.Commons.listSwap;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.quoted;
 
-public class ConstraintImpl implements Constraint {
-  private final ConstraintType type;
+class ConstraintImpl implements Constraint {
+  private final ConstraintKind type;
   private final List<Column> columns;
   private List<KeyDirection> directions;
-  private IndexType indexType;
+  private IndexKind indexType;
 
-  private ASTNode refTableName;
-  private List<ASTNode> refColNames;
+  private SqlNode refTableName;
+  private SqlNodes refColNames;
 
   private Table refTable;
   private List<Column> refColumns;
 
-  private ConstraintImpl(ConstraintType type, List<Column> columns) {
+  private ConstraintImpl(ConstraintKind type, List<Column> columns) {
     this.type = type;
     this.columns = columns;
   }
 
-  static ConstraintImpl build(ConstraintType type, List<Column> columns) {
+  static ConstraintImpl build(ConstraintKind type, List<Column> columns) {
     return new ConstraintImpl(type, columns);
   }
 
@@ -47,7 +45,7 @@ public class ConstraintImpl implements Constraint {
   }
 
   @Override
-  public ConstraintType type() {
+  public ConstraintKind kind() {
     return type;
   }
 
@@ -61,11 +59,11 @@ public class ConstraintImpl implements Constraint {
     return refColumns;
   }
 
-  ASTNode refTableName() {
+  SqlNode refTableName() {
     return refTableName;
   }
 
-  List<ASTNode> refColNames() {
+  SqlNodes refColNames() {
     return refColNames;
   }
 
@@ -77,15 +75,15 @@ public class ConstraintImpl implements Constraint {
     this.refColumns = refColumns;
   }
 
-  void setRefTableName(ASTNode refTableName) {
+  void setRefTableName(SqlNode refTableName) {
     this.refTableName = refTableName;
   }
 
-  void setRefColNames(List<ASTNode> refColNames) {
+  void setRefColNames(SqlNodes refColNames) {
     this.refColNames = refColNames;
   }
 
-  void setIndexType(IndexType indexType) {
+  void setIndexType(IndexKind indexType) {
     this.indexType = indexType;
   }
 
@@ -98,7 +96,7 @@ public class ConstraintImpl implements Constraint {
     final StringBuilder builder =
         new StringBuilder(32).append(type == null ? "INDEX" : type.name()).append(' ');
     Commons.joining("[", ",", "]", false, columns, builder);
-    if (type == ConstraintType.FOREIGN) {
+    if (type == FOREIGN) {
       builder.append(" -> ");
       Commons.joining("[", ",", "]", false, refColumns, builder);
     }
@@ -107,7 +105,7 @@ public class ConstraintImpl implements Constraint {
 
   @Override
   public StringBuilder toDdl(String dbType, StringBuilder buffer) {
-    if (type == ConstraintType.FOREIGN) {
+    if (type == FOREIGN) {
       buffer
           .append("ALTER TABLE ")
           .append(quoted(dbType, columns.get(0).tableName()))

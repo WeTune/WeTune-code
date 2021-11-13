@@ -1,32 +1,5 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.consumer2;
-import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_FROM;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_SPEC_WHERE;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_ON;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.JOINED_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
@@ -36,6 +9,19 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.sqlparser.relational.Attribute;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
+
+import java.util.*;
+
+import static java.lang.System.Logger.Level.WARNING;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.consumer2;
+import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
+import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
+import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
 
 class NormalizeJoinCondition {
   public static ASTNode normalize(ASTNode root) {

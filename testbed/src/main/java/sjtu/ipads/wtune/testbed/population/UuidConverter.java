@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import org.apache.commons.lang3.NotImplementedException;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
 import java.sql.Types;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 class UuidConverter implements Converter {
-  UuidConverter(SQLDataType dataType) {
+  UuidConverter(SqlDataType dataType) {
     assert dataType.category() == Category.UUID;
   }
 

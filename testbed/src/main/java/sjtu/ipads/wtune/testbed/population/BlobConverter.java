@@ -1,18 +1,19 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
+import org.apache.commons.lang3.NotImplementedException;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 import java.io.ByteArrayInputStream;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
+import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
 
 class BlobConverter implements Converter {
   private static final int NUM_BYTES = 128;
 
-  BlobConverter(SQLDataType dataType) {
+  BlobConverter(SqlDataType dataType) {
     assert dataType.category() == Category.BLOB;
   }
 

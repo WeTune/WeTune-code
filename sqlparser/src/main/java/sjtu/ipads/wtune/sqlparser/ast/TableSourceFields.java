@@ -12,22 +12,22 @@ import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.*;
 
 public interface TableSourceFields {
   //// Simple
-  FieldKey<ASTNode> SIMPLE_TABLE = SIMPLE_SOURCE.nodeAttr("table");
-  FieldKey<List<String>> SIMPLE_PARTITIONS = SIMPLE_SOURCE.attr("partitions", List.class);
-  FieldKey<String> SIMPLE_ALIAS = SIMPLE_SOURCE.strAttr("alias");
+  FieldKey<ASTNode> SIMPLE_TABLE = SIMPLE_SOURCE.nodeAttr("Table");
+  FieldKey<List<String>> SIMPLE_PARTITIONS = SIMPLE_SOURCE.attr("Partitions", List.class);
+  FieldKey<String> SIMPLE_ALIAS = SIMPLE_SOURCE.strAttr("Alias");
   // mysql only
-  FieldKey<List<ASTNode>> SIMPLE_HINTS = SIMPLE_SOURCE.nodesAttr("hints");
+  FieldKey<List<ASTNode>> SIMPLE_HINTS = SIMPLE_SOURCE.nodesAttr("Hints");
   //// Joined
-  FieldKey<ASTNode> JOINED_LEFT = JOINED_SOURCE.nodeAttr("left");
-  FieldKey<ASTNode> JOINED_RIGHT = JOINED_SOURCE.nodeAttr("right");
-  FieldKey<JoinType> JOINED_TYPE = JOINED_SOURCE.attr("type", JoinType.class);
-  FieldKey<ASTNode> JOINED_ON = JOINED_SOURCE.nodeAttr("on");
-  FieldKey<List<String>> JOINED_USING = JOINED_SOURCE.attr("using", List.class);
+  FieldKey<ASTNode> JOINED_LEFT = JOINED_SOURCE.nodeAttr("Left");
+  FieldKey<ASTNode> JOINED_RIGHT = JOINED_SOURCE.nodeAttr("Right");
+  FieldKey<JoinType> JOINED_TYPE = JOINED_SOURCE.attr("Type", JoinType.class);
+  FieldKey<ASTNode> JOINED_ON = JOINED_SOURCE.nodeAttr("On");
+  FieldKey<List<String>> JOINED_USING = JOINED_SOURCE.attr("Using", List.class);
   //// Derived
-  FieldKey<ASTNode> DERIVED_SUBQUERY = DERIVED_SOURCE.nodeAttr("subquery");
-  FieldKey<String> DERIVED_ALIAS = DERIVED_SOURCE.strAttr("alias");
-  FieldKey<Boolean> DERIVED_LATERAL = DERIVED_SOURCE.boolAttr("lateral");
-  FieldKey<List<String>> DERIVED_INTERNAL_REFS = DERIVED_SOURCE.attr("internalRefs", List.class);
+  FieldKey<ASTNode> DERIVED_SUBQUERY = DERIVED_SOURCE.nodeAttr("Subquery");
+  FieldKey<String> DERIVED_ALIAS = DERIVED_SOURCE.strAttr("Alias");
+  FieldKey<Boolean> DERIVED_LATERAL = DERIVED_SOURCE.boolAttr("Lateral");
+  FieldKey<List<String>> DERIVED_INTERNAL_REFS = DERIVED_SOURCE.attr("InternalRefs", List.class);
 
   static String tableSourceName(ASTNode node) {
     if (!TABLE_SOURCE.isInstance(node)) return null;

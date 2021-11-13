@@ -5,7 +5,6 @@ import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.schema.internal.SchemaPatchImpl;
 
 public interface SchemaPatch {
   enum Type {

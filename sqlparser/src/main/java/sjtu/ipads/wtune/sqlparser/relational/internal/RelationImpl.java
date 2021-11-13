@@ -1,23 +1,22 @@
 package sjtu.ipads.wtune.sqlparser.relational.internal;
 
+import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sqlparser.relational.Attribute;
+import sjtu.ipads.wtune.sqlparser.relational.Relation;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_BODY;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SET_OP_LEFT;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.DERIVED_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.tableSourceName;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.SET_OP;
+import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
-import java.util.ArrayList;
-import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
 
 public class RelationImpl implements Relation {
   private final ASTNode node;

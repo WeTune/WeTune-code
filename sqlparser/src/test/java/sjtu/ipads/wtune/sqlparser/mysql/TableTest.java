@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sqlparser.AstSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
@@ -24,7 +25,7 @@ public class TableTest {
             + "unique (j DESC) using rtree,"
             + "constraint fk_cons foreign key fk (k) references b(y)"
             + ") ENGINE = 'myisam';";
-    final Schema schema = Schema.parse(MYSQL, createTable);
+    final Schema schema = AstSupport.parseSchema(MYSQL, createTable);
     final Table table = schema.table("t");
 
     {

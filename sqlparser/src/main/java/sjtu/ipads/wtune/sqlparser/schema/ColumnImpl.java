@@ -1,50 +1,26 @@
-package sjtu.ipads.wtune.sqlparser.schema.internal;
+package sjtu.ipads.wtune.sqlparser.schema;
 
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_AUTOINCREMENT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DATATYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DATATYPE_RAW;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_DEFAULT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_GENERATED;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_DEF_NAME;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.GENERATED;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.HAS_CHECK;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.HAS_DEFAULT;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.INDEXED;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.IS_BOOLEAN;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.IS_ENUM;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.NOT_NULL;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.PRIMARY;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.UNIQUE;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
 import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
-public class ColumnImpl implements Column {
+import java.util.*;
+
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.*;
+import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
+
+class ColumnImpl implements Column {
   private final String table;
   private final String name;
   private final String rawDataType;
-  private final SQLDataType dataType;
+  private final SqlDataType dataType;
   private final EnumSet<Flag> flags;
   private List<Constraint> constraints;
   private List<SchemaPatch> patches;
 
-  private ColumnImpl(String table, String name, String rawDataType, SQLDataType dataType) {
+  private ColumnImpl(String table, String name, String rawDataType, SqlDataType dataType) {
     this.table = table;
     this.name = name;
     this.rawDataType = rawDataType;
@@ -55,16 +31,16 @@ public class ColumnImpl implements Column {
     else if (dataType.category() == Category.ENUM) flags.add(IS_ENUM);
   }
 
-  public static ColumnImpl build(String table, ASTNode colDef) {
-    final String colName = simpleName(colDef.get(COLUMN_DEF_NAME).get(COLUMN_NAME_COLUMN));
-    final String rawDataType = colDef.get(COLUMN_DEF_DATATYPE_RAW);
-    final SQLDataType dataType = colDef.get(COLUMN_DEF_DATATYPE);
+  public static ColumnImpl build(String table, SqlNode colDef) {
+    final String colName = simpleName(colDef.$(ColDef_Name).$(ColName_Col));
+    final String rawDataType = colDef.$(ColDef_RawType);
+    final SqlDataType dataType = colDef.$(ColDef_DataType);
 
     final ColumnImpl column = new ColumnImpl(table, colName, rawDataType, dataType);
 
-    if (colDef.isFlag(COLUMN_DEF_GENERATED)) column.flag(GENERATED);
-    if (colDef.isFlag(COLUMN_DEF_DEFAULT)) column.flag(HAS_DEFAULT);
-    if (colDef.isFlag(COLUMN_DEF_AUTOINCREMENT)) column.flag(AUTO_INCREMENT);
+    if (colDef.isFlag(ColDef_Generated)) column.flag(GENERATED);
+    if (colDef.isFlag(ColDef_Default)) column.flag(HAS_DEFAULT);
+    if (colDef.isFlag(ColDef_AutoInc)) column.flag(AUTO_INCREMENT);
 
     return column;
   }
@@ -89,7 +65,7 @@ public class ColumnImpl implements Column {
   }
 
   @Override
-  public SQLDataType dataType() {
+  public SqlDataType dataType() {
     return dataType;
   }
 
@@ -111,9 +87,9 @@ public class ColumnImpl implements Column {
   void addConstraint(Constraint constraint) {
     if (constraints == null) constraints = new ArrayList<>(3);
     constraints.add(constraint);
-    if (constraint.type() == null) flags.add(INDEXED);
+    if (constraint.kind() == null) flags.add(INDEXED);
     else
-      switch (constraint.type()) {
+      switch (constraint.kind()) {
         case PRIMARY:
           flags.add(PRIMARY);
           flags.add(NOT_NULL);

@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.postgresql.util.PGobject;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.DataTypeName;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.NotImplementedException;
-import org.postgresql.util.PGobject;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 class TsVectorConverter implements Converter {
-  TsVectorConverter(SQLDataType dataType) {
+  TsVectorConverter(SqlDataType dataType) {
     assert dataType.name().equals(DataTypeName.TSVECTOR);
   }
 

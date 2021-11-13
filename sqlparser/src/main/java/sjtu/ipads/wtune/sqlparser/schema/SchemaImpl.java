@@ -1,23 +1,19 @@
-package sjtu.ipads.wtune.sqlparser.schema.internal;
+package sjtu.ipads.wtune.sqlparser.schema;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.ASTParser.splitSql;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sqlparser.AstSupport.parseSql;
+import static sjtu.ipads.wtune.sqlparser.AstSupport.splitSql;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
-public class SchemaImpl implements Schema {
+class SchemaImpl implements Schema {
   private final String dbType;
   private final Map<String, TableImpl> tables;
 
@@ -26,15 +22,15 @@ public class SchemaImpl implements Schema {
     this.tables = new HashMap<>();
   }
 
-  public static Schema build(String dbType, Iterable<ASTNode> defs) {
+  static Schema build(String dbType, Iterable<SqlNode> defs) {
     final Map<String, TableBuilder> builders = new HashMap<>();
-    for (ASTNode def : defs) {
+    for (SqlNode def : defs) {
       if (def == null) continue; // skip comment
-      final NodeType type = def.nodeType();
-      if (type == CREATE_TABLE) addCreateTable(def, builders);
-      else if (type == ALTER_SEQUENCE) addAlterSequence(def, builders);
-      else if (type == ALTER_TABLE) addAlterTable(def, builders);
-      else if (type == INDEX_DEF) addIndexDef(def, builders);
+      final SqlKind type = def.kind();
+      if (type == CreateTable) addCreateTable(def, builders);
+      else if (type == AlterSeq) addAlterSequence(def, builders);
+      else if (type == AlterTable) addAlterTable(def, builders);
+      else if (type == IndexDef) addIndexDef(def, builders);
     }
     final SchemaImpl schema = new SchemaImpl(dbType);
     builders.values().forEach(it -> schema.addTable(it.table()));
@@ -42,38 +38,34 @@ public class SchemaImpl implements Schema {
     return schema;
   }
 
-  public static Schema build(String dbType, String str) {
-    return build(dbType, listMap(splitSql(str), ASTParser.ofDb(dbType)::parseRaw));
-  }
-
-  private static void addCreateTable(ASTNode node, Map<String, TableBuilder> builders) {
+  private static void addCreateTable(SqlNode node, Map<String, TableBuilder> builders) {
     final TableBuilder builder = TableBuilder.fromCreateTable(node);
     builders.put(builder.table().name(), builder);
   }
 
-  private static void addAlterSequence(ASTNode node, Map<String, TableBuilder> builders) {
-    final String operation = node.get(ALTER_SEQUENCE_OPERATION);
-    final Object payload = node.get(ALTER_SEQUENCE_PAYLOAD);
+  private static void addAlterSequence(SqlNode node, Map<String, TableBuilder> builders) {
+    final String operation = node.$(AlterSeq_Op);
+    final Object payload = node.$(AlterSeq_Payload);
     if ("owned_by".equals(operation)) {
-      final ASTNode columnName = (ASTNode) payload;
+      final SqlNode colName = (SqlNode) payload;
 
-      final TableBuilder builder = builders.get(columnName.get(COLUMN_NAME_TABLE));
+      final TableBuilder builder = builders.get(colName.$(ColName_Table));
       if (builder == null) return;
 
-      final ColumnImpl column = builder.table().column(columnName.get(COLUMN_NAME_COLUMN));
+      final ColumnImpl column = builder.table().column(colName.$(ColName_Col));
       if (column == null) return;
 
       column.flag(AUTO_INCREMENT);
     }
   }
 
-  private static void addAlterTable(ASTNode node, Map<String, TableBuilder> builders) {
-    final TableBuilder builder = builders.get(node.get(ALTER_TABLE_NAME).get(TABLE_NAME_TABLE));
+  private static void addAlterTable(SqlNode node, Map<String, TableBuilder> builders) {
+    final TableBuilder builder = builders.get(node.$(AlterTable_Name).$(TableName_Table));
     if (builder != null) builder.fromAlterTable(node);
   }
 
-  private static void addIndexDef(ASTNode node, Map<String, TableBuilder> builders) {
-    final TableBuilder builder = builders.get(node.get(INDEX_DEF_TABLE).get(TABLE_NAME_TABLE));
+  private static void addIndexDef(SqlNode node, Map<String, TableBuilder> builders) {
+    final TableBuilder builder = builders.get(node.$(IndexDef_Table).$(TableName_Table));
     if (builder != null) builder.fromCreateIndex(node);
   }
 
@@ -82,13 +74,13 @@ public class SchemaImpl implements Schema {
       if (table.constraints() != null)
         for (Constraint constraint0 : table.constraints()) {
           final ConstraintImpl constraint = (ConstraintImpl) constraint0;
-          final ASTNode refTableName = constraint.refTableName();
+          final SqlNode refTableName = constraint.refTableName();
           if (refTableName != null) {
-            final Table ref = table(refTableName.get(TABLE_NAME_TABLE));
+            final Table ref = table(refTableName.$(TableName_Table));
             if (ref == null) continue;
             constraint.setRefTable(ref);
             constraint.setRefColumns(
-                listMap(constraint.refColNames(), it -> ref.column(it.get(COLUMN_NAME_COLUMN))));
+                listMap(constraint.refColNames(), it -> ref.column(it.$(ColName_Col))));
           }
         }
   }

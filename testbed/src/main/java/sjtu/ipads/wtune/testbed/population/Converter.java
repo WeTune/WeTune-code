@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.DataTypeName;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
@@ -17,7 +17,7 @@ public interface Converter extends Generator {
   }
 
   static Converter makeConverter(Column column) {
-    final SQLDataType dataType = column.dataType();
+    final SqlDataType dataType = column.dataType();
     if (column.isFlag(Flag.IS_BOOLEAN)
         && dataType.category() != Category.BOOLEAN
         && dataType.category() != Category.BIT_STRING) {

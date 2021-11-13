@@ -96,7 +96,7 @@ class LogicTranslator {
   }
 
   Proposition translate(Constraint constraint) {
-    switch (constraint.type()) {
+    switch (constraint.kind()) {
       case FOREIGN:
         return translateForeignKey(constraint.columns(), constraint.refColumns());
       case NOT_NULL:

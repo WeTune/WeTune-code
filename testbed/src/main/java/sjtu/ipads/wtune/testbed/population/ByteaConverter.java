@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
+import java.util.stream.IntStream;
+
 class ByteaConverter implements Converter {
-  ByteaConverter(SQLDataType dataType) {
+  ByteaConverter(SqlDataType dataType) {
     assert dataType.name().equals("bytea");
   }
 

@@ -6,6 +6,8 @@ module sjtu.ipads.wtune.sqlparser {
   exports sjtu.ipads.wtune.sqlparser.schema;
   exports sjtu.ipads.wtune.sqlparser.relational;
   exports sjtu.ipads.wtune.sqlparser.plan;
+  exports sjtu.ipads.wtune.sqlparser.ast1;
+  exports sjtu.ipads.wtune.sqlparser.ast1.constants;
 
   requires sjtu.ipads.wtune.common;
   requires org.antlr.antlr4.runtime;

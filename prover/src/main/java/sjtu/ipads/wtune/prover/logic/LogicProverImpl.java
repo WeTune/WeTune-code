@@ -14,8 +14,8 @@ import java.util.Set;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.FOREIGN;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ConstraintType.NOT_NULL;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.NOT_NULL;
 
 class LogicProverImpl implements LogicProver {
   private final Schema schema;
