@@ -33,7 +33,10 @@ public class TestEnumeration {
   private static void doTest(String fragment0, String fragment1, String... expectation) {
     final Fragment f0 = Fragment.parse(fragment0, null);
     final Fragment f1 = Fragment.parse(fragment1, null);
+    long startTime = System.currentTimeMillis();
     final List<Substitution> results = enumConstraints(f0, f1, mkLogicCtx());
+    long endTime = System.currentTimeMillis();
+    System.out.println("Execution time: " + (endTime - startTime) + "ms.");
 
     //    if (echo) results.forEach(TestEnumeration::printReadable);
     results.forEach(System.out::println);

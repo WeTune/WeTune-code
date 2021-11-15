@@ -52,6 +52,7 @@ class ExecutorImpl extends PreparedStatementActuator implements Executor {
       //      final String str = statement().toString();
       //      System.out.println(str.substring(str.indexOf("SELECT")));
       PreparedStatement statement = statement();
+      statement.setQueryTimeout(100);
       final long start = System.nanoTime();
       resultSet = statement.executeQuery();
       final long end = System.nanoTime();

@@ -101,17 +101,17 @@ public class ProfileMain {
     return true;
   }
 
-  private static final Set<String> BLACK_LIST_L =
-      Set.of("redmine-1549",
-              "spree-464", "spree-471", "spree-601", "spree-605", "spree-1193", "spree-1197");
+  private static final Set<String> BLACK_LIST_L = Set.of();
+//      Set.of("redmine-1549",
+//              "spree-464", "spree-471", "spree-601", "spree-605", "spree-1193", "spree-1197");
 
-  private static final Set<String> BLACK_LIST_Z =
-      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119");
+  private static final Set<String> BLACK_LIST_Z = Set.of();
+//      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119");
 
-  private static final Set<String> BLACK_LIST_LZ =
-      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119",
-              "redmine-1229", "redmine-1240", "redmine-1247", "redmine-1318", "redmine-1432",
-              "spree-471", "spree-1197");
+  private static final Set<String> BLACK_LIST_LZ = Set.of();
+//      Set.of("redmine-1512", "redmine-1514", "redmine-1549", "shopizer-119",
+//              "redmine-1229", "redmine-1240", "redmine-1247", "redmine-1318", "redmine-1432",
+//              "spree-471", "spree-1197");
 
   private static final Set<String> BLACK_LIST_ALL = Set.of("lobsters-118", "redmine-1547");
 
@@ -168,7 +168,7 @@ public class ProfileMain {
     //    System.out.println(System.getProperty("user.dir"));
     //    System.setProperty("user.dir", Paths.get(System.getProperty("user.dir"),
     // "../").normalize().toString());
-    for (String oneTag : Set.of(LARGE_ZIPF)) {
+    for (String oneTag : Set.of(LARGE, LARGE_ZIPF)) {
       tag = oneTag;
       System.out.println(
           "\n-----" + tag + "-----------------------------------------------------------------");
@@ -181,7 +181,7 @@ public class ProfileMain {
                           "wtune_data/profile_%s_%s.csv",
                           tag, App.doingSQLServerTest() ? "ss" : "mypg"))));
       //    run("discourse-3842", false, true);
-      run("spree-1201", false, false);
+      run(null, false, false);
     }
   }
 }

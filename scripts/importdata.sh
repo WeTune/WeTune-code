@@ -33,7 +33,7 @@ dbType() {
 #    fi
 #  fi
 
-  dbType=${SQLSERVER}
+  dbType=${MYSQL}
   appName=${1}
 
   postfix=${2?:"no postfix specified"}
