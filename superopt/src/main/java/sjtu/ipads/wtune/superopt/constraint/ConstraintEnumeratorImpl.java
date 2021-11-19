@@ -207,20 +207,12 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     return x == y || (x.kind() == y.kind() && enabled[constraints.indexOfEq(x, y)]);
   }
 
-  //  private boolean isIndirectEq(Symbol x, Symbol y) {
-  //    return x == y || (x.kind() == y.kind() && getCurrCongruence().isCongruent(x, y));
-  //  }
-  //
-  //  private NaturalCongruence<Symbol> getCurrCongruence() {
-  //    final NaturalCongruence<Symbol> congruence = NaturalCongruence.mk();
-  //    for (int i = 0; i < constraints.size(); i++)
-  //      if (constraints.get(i).kind().isEq() && enabled[i]){
-  //        congruence.putCongruent(constraints.get(i).symbols()[0],
-  // constraints.get(i).symbols()[1]);
-  //      }
-  //
-  //    return congruence;
-  //  }
+  private boolean indirectEq(Symbol x, Symbol y) {
+    if (isEq(x, y)) return true;
+    if (x.kind() == TABLE) return false;
+
+    return indirectEq(directSourceOf(x), y);
+  }
 
   private Symbol directSourceOf(Symbol x) {
     assert x.kind() == ATTRS;
@@ -266,7 +258,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     for (Symbol symbol :
         ListSupport.join(f1.symbols().symbolsOf(TABLE), f1.symbols().symbolsOf(ATTRS)))
-      if (isEq(eqSource, symbol)) return symbol;
+      if (indirectEq(eqSource, symbol)) return symbol;
 
     return null;
   }

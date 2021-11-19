@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import com.google.common.collect.Sets;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
@@ -99,30 +100,44 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
     return congruence.eqClassOf(symbol);
   }
 
+  private Set<Symbol> indirectEqClassOf(Symbol symbol) {
+    Set<Symbol> res = eqClassOf(symbol);
+    if (symbol.kind() == Symbol.Kind.TABLE) return res;
+
+    return Sets.union(res, indirectEqClassOf(directSourceOf(symbol)));
+  }
+
   @Override
   public Symbol sourceOf(Symbol attrSym) {
+    Symbol source = directSourceOf(attrSym);
+    if (source != null) return source;
+
+    // No direct constraint, try to search source in eqClasses
+    for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
+      if (isEq(constraint.symbols()[0], attrSym)) {
+        Set<Symbol> sameCtxSources =
+            setFilter(indirectEqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
+        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
+      }
+    }
+    for (Constraint constraint : ofKind(Kind.AttrsSub)) {
+      if (isEq(constraint.symbols()[0], attrSym)) {
+        Set<Symbol> sameCtxSources =
+            setFilter(indirectEqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
+        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
+      }
+    }
+
+    return null;
+  }
+
+  private Symbol directSourceOf(Symbol attrSym) {
     // AttrsFrom takes priority.
     for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
       if (constraint.symbols()[0] == attrSym) return constraint.symbols()[1];
     }
     for (Constraint constraint : ofKind(Kind.AttrsSub)) {
       if (constraint.symbols()[0] == attrSym) return constraint.symbols()[1];
-    }
-
-    // No direct constraint, try to search source in eqClasses
-    for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
-      if (isEq(constraint.symbols()[0], attrSym)) {
-        Set<Symbol> sameCtxSources =
-            setFilter(eqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
-        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
-      }
-    }
-    for (Constraint constraint : ofKind(Kind.AttrsSub)) {
-      if (isEq(constraint.symbols()[0], attrSym)) {
-        Set<Symbol> sameCtxSources =
-            setFilter(eqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
-        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
-      }
     }
 
     return null;

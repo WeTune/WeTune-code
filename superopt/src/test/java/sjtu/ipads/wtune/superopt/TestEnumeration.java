@@ -49,7 +49,8 @@ public class TestEnumeration {
     doTest(
         "Proj(InnerJoin(Input,Input))",
         "Proj(Input)"
-//        "Proj<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2);NotNull(t0,a1);Reference(t0,a1,t1,a2)");
+//            "Proj<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t0,a1);Unique(t1,a2);NotNull(t0,a1);NotNull(t1,a2)",
+//            "Proj<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2);NotNull(t0,a1);Reference(t0,a1,t1,a2)"
     );
   }
 
@@ -58,8 +59,10 @@ public class TestEnumeration {
     doTest(
         "Proj*(InnerJoin(Input,Input))",
         "Proj*(Input)");
-//        "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);NotNull(t0,a1);Reference(t0,a1,t1,a2)",
-//        "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);NotNull(t0,a1);NotNull(t2,a3);Reference(t0,a1,t1,a2)");
+//            "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);NotNull(t0,a1);NotNull(t1,a2)",
+//            "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);NotNull(t0,a1);NotNull(t1,a2)",
+//            "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);NotNull(t0,a1);NotNull(t2,a3);Reference(t0,a1,t1,a2)",
+//            "Proj*<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);NotNull(t0,a1);Reference(t0,a1,t1,a2)"
   }
 
   @Test
@@ -67,8 +70,9 @@ public class TestEnumeration {
     doTest(
         "Proj(PlainFilter(InnerJoin(Input,Input)))",
         "Proj(PlainFilter(Input))");
-//        "Proj<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
-//        "Proj<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);Unique(t1,a1);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)");
+//            "Proj<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);AttrsEq(a2,a3);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t0,a2);Unique(t1,a3);NotNull(t0,a2);NotNull(t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);Unique(t1,a1);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
   }
 
   @Test
@@ -76,10 +80,11 @@ public class TestEnumeration {
     doTest(
         "Proj*(PlainFilter(InnerJoin(Input,Input)))",
         "Proj*(PlainFilter(Input))");
-//        "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
-//        "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)",
-//        "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a4);Reference(t0,a2,t1,a3)",
-//        "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a1);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a5);NotNull(t2,a4);Reference(t0,a2,t1,a3)");
+//            "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);AttrsEq(a2,a3);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a1);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a5);NotNull(t2,a4);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a4);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(InnerJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);NotNull(t0,a2);Reference(t0,a2,t1,a3)",
   }
 
   @Test
@@ -87,7 +92,9 @@ public class TestEnumeration {
     doTest(
         "Proj(LeftJoin(Input,Input))",
         "Proj(Input)");
-//        "Proj<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2);NotNull(t0,a1)");
+//            "Proj<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2)",
+//            "Proj<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a1);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2)",
+//            "Proj<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2);Unique(t1,a2);NotNull(t0,a1)",
   }
 
   @Test
@@ -95,8 +102,10 @@ public class TestEnumeration {
     doTest(
         "Proj*(LeftJoin(Input,Input))",
         "Proj*(Input)");
-//        "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2)",
-//        "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);Reference(t0,a1,t1,a2)");
+//            "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2)",
+//            "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);NotNull(t0,a1);NotNull(t1,a2)",
+//            "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a3,t2);Reference(t0,a1,t1,a2)",
+//            "Proj*<a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|Proj*<a3>(Input<t2>)|TableEq(t0,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a3,t2)",
   }
 
   @Test
@@ -104,8 +113,11 @@ public class TestEnumeration {
     doTest(
         "Proj(Filter(LeftJoin(Input,Input)))",
         "Proj(Filter(Input))");
-//        "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2)",
-//        "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);Unique(t1,a1);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)");
+//            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a0,a4);AttrsEq(a0,a5);AttrsEq(a1,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);Unique(t1,a1);Reference(t0,a2,t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a2);AttrsEq(a0,a4);AttrsEq(a1,a5);AttrsEq(a2,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);Unique(t1,a1);NotNull(t0,a2);NotNull(t2,a5);Reference(t0,a2,t1,a3)",
+//            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Unique(t1,a3);NotNull(t0,a2)",
   }
 
   @Test
@@ -113,10 +125,13 @@ public class TestEnumeration {
     doTest(
         "Proj*(Filter(LeftJoin(Input,Input)))",
         "Proj*(Filter(Input))");
-//        "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2)",
-//        "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)",
-//        "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)",
-//        "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a1);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)");
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a0,a5);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a1,a4);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a3,a4);AttrsEq(a3,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a3,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a4);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a5);AttrsEq(a3,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a1);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a4);AttrsEq(a2,a5);AttrsEq(a4,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t1);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a3);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t1);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2);Reference(t0,a2,t1,a3)",
+//            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|Proj*<a4>(Filter<p1 a5>(Input<t2>))|TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a5,t2);AttrsSub(a4,t2)",
   }
 
   @Test
@@ -124,7 +139,8 @@ public class TestEnumeration {
     doTest(
         "LeftJoin(Input,Input)",
         "InnerJoin(Input,Input)");
-//        "LeftJoin<a0 a1>(Input<t0>,Input<t1>)|InnerJoin<a2 a3>(Input<t2>,Input<t3>)|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t2);AttrsSub(a3,t3);NotNull(t0,a0);NotNull(t2,a2);Reference(t0,a0,t1,a1);Reference(t2,a2,t3,a3)");
+//            "LeftJoin<a0 a1>(Input<t0>,Input<t1>)|InnerJoin<a2 a3>(Input<t2>,Input<t3>)|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t2);AttrsSub(a3,t3);NotNull(t0,a0);NotNull(t1,a1);NotNull(t2,a2);NotNull(t3,a3)",
+//            "LeftJoin<a0 a1>(Input<t0>,Input<t1>)|InnerJoin<a2 a3>(Input<t2>,Input<t3>)|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a2);AttrsEq(a1,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t2);AttrsSub(a3,t3);NotNull(t0,a0);NotNull(t2,a2);Reference(t0,a0,t1,a1);Reference(t2,a2,t3,a3)",
   }
 
   @Test
@@ -132,8 +148,13 @@ public class TestEnumeration {
     doTest(
         "Proj(InSubFilter(Input,Proj(Input)))",
         "Proj(InnerJoin(Input,Input))");
-//        "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a5);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t1,a2);Unique(t2,a4);Unique(t2,a3)",
-//        "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t1,a2);Unique(t3,a5)");
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsEq(a4,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t2,a4);Unique(t3,a5);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a0,a5);AttrsEq(a1,a2);AttrsEq(a3,a4);AttrsEq(a3,a5);AttrsEq(a4,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t0,a0);Unique(t2,a4);Unique(t3,a5);Unique(t2,a3);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a1,a2);AttrsEq(a1,a5);AttrsEq(a2,a5);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t1,a2);Unique(t0,a1);Unique(t3,a5);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3);Reference(t2,a4,t3,a5)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t3,a5);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t2,a3);Reference(t2,a4,t3,a5)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a4);AttrsEq(a2,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t3,a5);Reference(t2,a4,t3,a5)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t1,a2);Unique(t3,a5)",
+//            "Proj<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a5);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Unique(t1,a2);Unique(t2,a4);Unique(t2,a3)",
   }
 
   @Test
@@ -141,10 +162,16 @@ public class TestEnumeration {
     doTest(
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))");
-//        "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)",
-//        "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a5);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
-//        "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
-//        "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a1);AttrsEq(a0,a4);AttrsEq(a1,a4);AttrsEq(a2,a3);AttrsEq(a2,a5);AttrsEq(a3,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)");
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsEq(a4,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a0,a5);AttrsEq(a1,a2);AttrsEq(a3,a4);AttrsEq(a3,a5);AttrsEq(a4,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t0,t3);TableEq(t1,t2);TableEq(t1,t3);TableEq(t2,t3);AttrsEq(a0,a3);AttrsEq(a0,a4);AttrsEq(a1,a2);AttrsEq(a1,a5);AttrsEq(a2,a5);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t3,a5);NotNull(t2,a3);Reference(t2,a4,t3,a5)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);NotNull(t1,a2);NotNull(t0,a1);NotNull(t0,a0);NotNull(t2,a4);NotNull(t2,a3);Reference(t2,a4,t3,a5)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a4);AttrsEq(a1,a2);AttrsEq(a1,a4);AttrsEq(a2,a4);AttrsEq(a3,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3);Reference(t2,a4,t3,a5)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a4);AttrsEq(a2,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2);Reference(t2,a4,t3,a5)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a1);AttrsEq(a0,a4);AttrsEq(a1,a4);AttrsEq(a2,a3);AttrsEq(a2,a5);AttrsEq(a3,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a1);AttrsEq(a0,a5);AttrsEq(a1,a5);AttrsEq(a2,a3);AttrsEq(a2,a4);AttrsEq(a3,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
+//            "Proj*<a0>(InSubFilter<a1>(Input<t0>,Proj<a2>(Input<t1>)))|Proj*<a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t3);TableEq(t1,t2);AttrsEq(a0,a3);AttrsEq(a1,a5);AttrsEq(a2,a4);AttrsSub(a2,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)",
   }
 
   @Test
@@ -187,7 +214,7 @@ public class TestEnumeration {
 //        "Proj*<a0>(Input<t0>)|Proj<a1>(Input<t1>)|TableEq(t0,t1);AttrsEq(a0,a1);AttrsSub(a0,t0);AttrsSub(a1,t1);Unique(t0,a0);Unique(t1,a1)");
   }
 
-  @Test
+//  @Test
   void testFlattenJoinSubquery() {
     doTest(
         "Proj(InnerJoin(Input,Proj(Filter(Input))))",
@@ -199,8 +226,11 @@ public class TestEnumeration {
   void testSubstituteAttr0() {
     doTest(
         "Filter(InnerJoin(Input,Input))",
-        "Filter(InnerJoin(Input,Input))",
-        "Filter<p0 a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Filter<p1 a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a1);AttrsEq(a0,a4);AttrsEq(a1,a4);AttrsEq(a2,a3);AttrsEq(a2,a5);AttrsEq(a3,a5);PredicateEq(p0,p1);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)");
+        "Filter(InnerJoin(Input,Input))");
+//            "Filter<p0 a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Filter<p1 a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a1);AttrsEq(a0,a4);AttrsEq(a1,a4);AttrsEq(a2,a3);AttrsEq(a2,a5);AttrsEq(a3,a5);PredicateEq(p0,p1);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)",
+//            "Filter<p0 a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Filter<p1 a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a2);AttrsEq(a0,a5);AttrsEq(a1,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);AttrsEq(a3,a4);PredicateEq(p0,p1);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
+//            "Filter<p0 a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Filter<p1 a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t0);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t2)",
+//            "Filter<p0 a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|Filter<p1 a3>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|TableEq(t0,t2);TableEq(t1,t3);AttrsEq(a0,a3);AttrsEq(a1,a4);AttrsEq(a2,a5);PredicateEq(p0,p1);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1);AttrsSub(a4,t2);AttrsSub(a5,t3);AttrsSub(a3,t3)",
   }
 
   //  @Test
