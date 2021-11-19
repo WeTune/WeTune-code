@@ -81,7 +81,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     begin = System.currentTimeMillis();
 
     head(enumerators).enumerate();
-    System.out.println(proverInvokeTimes);
+    System.out.println("Invoke prover times: " + proverInvokeTimes);
     return results();
   }
 
