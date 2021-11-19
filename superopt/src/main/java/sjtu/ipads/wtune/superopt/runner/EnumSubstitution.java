@@ -147,6 +147,7 @@ public class EnumSubstitution implements Runner {
       System.out.println(f1);
     }
     enumerate(f0, f1);
+    enumerate(f1, f0);
   }
 
   private void enumerate(Fragment f0, Fragment f1) {

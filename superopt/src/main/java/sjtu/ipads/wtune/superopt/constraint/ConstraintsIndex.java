@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 import com.google.common.collect.Multimap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
 
@@ -14,8 +15,8 @@ import java.util.List;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.MultimapBuilder.linkedHashKeys;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
@@ -61,23 +62,27 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     final List<Symbol> tables0 = symbols0.symbolsOf(TABLE), tables1 = symbols1.symbolsOf(TABLE);
     final List<Symbol> attrs0 = symbols0.symbolsOf(ATTRS), attrs1 = symbols1.symbolsOf(ATTRS);
     final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
-    final Multimap<Symbol, Symbol> sources = linkedHashKeys().arrayListValues().build();
-    analyzeSources(f0, sources);
-    analyzeSources(f1, sources);
+    final Multimap<Symbol, Symbol> sources0 = linkedHashKeys().arrayListValues().build();
+    //    final Multimap<Symbol, Symbol> sources1 = linkedHashKeys().arrayListValues().build();
+    analyzeSources(f0, sources0);
+    //    analyzeSources(f1, sources1);
 
-    mkEqRel(TableEq, join(tables0, tables1), constraints);
-    mkEqRel(AttrsEq, join(attrs0, attrs1), constraints);
-    mkEqRel(PredicateEq, join(preds0, preds1), constraints);
-    mkAttrsSub(sources, constraints);
-    mkUnique(sources, constraints);
-    mkNotNull(sources, constraints);
-    mkReferences(f0, sources, constraints);
-    mkReferences(f1, sources, constraints);
+    mkEqRel(TableEq, tables0, tables1, constraints);
+    mkEqRel(AttrsEq, attrs0, attrs1, constraints);
+    mkEqRel(PredicateEq, preds0, preds1, constraints);
 
-    return new ConstraintsIndex(f0, f1, constraints, sources);
+    // constraints below only used in precondition constraints (in source template)
+    mkAttrsSub(sources0, constraints);
+    mkUnique(sources0, constraints);
+    mkNotNull(sources0, constraints);
+    mkReferences(f0, sources0, constraints);
+
+    return new ConstraintsIndex(f0, f1, constraints, sources0);
   }
 
-  private static void mkEqRel(Constraint.Kind kind, List<Symbol> symbols, List<Constraint> buffer) {
+  private static void mkEqRel(
+      Constraint.Kind kind, List<Symbol> symbols0, List<Symbol> symbols1, List<Constraint> buffer) {
+    List<Symbol> symbols = ListSupport.join(symbols0, symbols1);
     for (int i = 0, bound = symbols.size(); i < bound - 1; i++)
       for (int j = i + 1; j < bound; j++) {
         buffer.add(Constraint.mk(kind, symbols.get(i), symbols.get(j)));

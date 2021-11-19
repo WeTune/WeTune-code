@@ -7,11 +7,13 @@ import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.*;
 
 class FragmentImpl implements Fragment {
   private int id;
   private Op root;
+  private boolean hasDedup = false;
 
   private final Lazy<Symbols> symbols;
 
@@ -19,12 +21,14 @@ class FragmentImpl implements Fragment {
     this.root = root;
     this.symbols = Lazy.mk(symbols);
     if (setupContext) root.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(this)));
+    root.acceptVisitor(OpVisitor.traverse(it -> this.setIfHasDedup(it)));
   }
 
   FragmentImpl(Op root) {
     this.root = root;
     this.symbols = Lazy.mk(this::initSymbols);
     // must be the `root()` accessor instead of `root`
+    root.acceptVisitor(OpVisitor.traverse(it -> this.setIfHasDedup(it)));
   }
 
   static Fragment parse(String str, SymbolNaming naming) {
@@ -120,5 +124,15 @@ class FragmentImpl implements Fragment {
     final Symbols symbols = Symbols.mk();
     root().acceptVisitor(OpVisitor.traverse(symbols::bindSymbol));
     return symbols;
+  }
+
+  @Override
+  public boolean hasDedup() {
+    return hasDedup;
+  }
+
+  private void setIfHasDedup(Op op) {
+    if (op.kind() == PROJ && ((ProjOp) op).isDeduplicated())
+      this.hasDedup = true;
   }
 }

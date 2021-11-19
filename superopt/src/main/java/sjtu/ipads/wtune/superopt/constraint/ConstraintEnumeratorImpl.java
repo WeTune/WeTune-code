@@ -17,7 +17,8 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
+import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.ProverSupport.*;
@@ -36,8 +37,12 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
   private final List<boolean[]> results;
   private final List<Enumerator> enumerators;
   private SymbolNaming naming;
+  private final Map<Symbol.Kind, byte[][]> currPartitions;
 
   private long timeout, begin;
+
+  // Statistics
+  private int proverInvokeTimes;
 
   ConstraintEnumeratorImpl(
       Fragment f0, Fragment f1, ConstraintsIndex constraints, LogicCtx logicCtx) {
@@ -50,6 +55,11 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     this.results = new LinkedList<>();
     this.enumerators = mkEnumerators();
     this.timeout = Long.MAX_VALUE;
+
+    this.currPartitions = new EnumMap<Symbol.Kind, byte[][]>(Symbol.Kind.class);
+    this.currPartitions.put(TABLE, null);
+    this.currPartitions.put(ATTRS, null);
+    this.currPartitions.put(PRED, null);
 
     markMandatory();
     chainEnumerators(enumerators);
@@ -71,6 +81,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     begin = System.currentTimeMillis();
 
     head(enumerators).enumerate();
+    System.out.println(proverInvokeTimes);
     return results();
   }
 
@@ -140,11 +151,13 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
 
     final List<Enumerator> enumerators =
-        new ArrayList<>(constraints.size() - constraints.beginIndexOf(AttrsSub) + 5);
+        new ArrayList<>(
+            constraints.size() - constraints.beginIndexOf(AttrsSub) + symbols1.size() + 12);
 
-    enumerators.add(mkEqRelEnumerator(tables0, tables1));
-    enumerators.add(mkEqRelEnumerator(attrs0, attrs1));
-    enumerators.add(mkEqRelEnumerator(preds0, preds1));
+    // Set precondition stage
+    enumerators.add(new EqRelEnumerator(tables0));
+    enumerators.add(new EqRelEnumerator(attrs0));
+    enumerators.add(new EqRelEnumerator(preds0));
     enumerators.add(new Timeout());
 
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
@@ -152,7 +165,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     for (int i = attrSubBegin; i < attrSubEnd; ++i) enumerators.add(new AttrsSubEnumerator(i));
     enumerators.add(new Timeout());
 
-    enumerators.add(new SourceChecker(ListSupport.join(attrs0, attrs1)));
+    enumerators.add(new SourceChecker(attrs0));
 
     final int notNullBegin = constraints.beginIndexOf(NotNull);
     final int notNullEnd = constraints.endIndexOf(NotNull);
@@ -165,6 +178,17 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     final int refBegin = constraints.beginIndexOf(Reference);
     final int refEnd = constraints.endIndexOf(Reference);
     for (int i = refBegin; i < refEnd; ++i) enumerators.add(new ReferenceEnumerator(i));
+    enumerators.add(new Timeout());
+
+    // Instantiate stage
+    for (int i = 0; i < tables1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(tables1.get(i), tables0));
+    for (int i = 0; i < attrs1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(attrs1.get(i), attrs0));
+    for (int i = 0; i < preds1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(preds1.get(i), preds0));
+
+    enumerators.add(new InstanceSourceChecker(attrs1));
 
     enumerators.add(new Timeout());
     enumerators.add(new Recorder());
@@ -172,10 +196,6 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     enumerators.add(new Proof());
 
     return enumerators;
-  }
-
-  private Enumerator mkEqRelEnumerator(List<Symbol> symbols0, List<Symbol> symbols1) {
-    return new EqRelEnumerator(symbols0, symbols1);
   }
 
   private void chainEnumerators(List<Enumerator> enumerators) {
@@ -187,7 +207,22 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     return x == y || (x.kind() == y.kind() && enabled[constraints.indexOfEq(x, y)]);
   }
 
-  private Symbol sourceOf(Symbol x) {
+  //  private boolean isIndirectEq(Symbol x, Symbol y) {
+  //    return x == y || (x.kind() == y.kind() && getCurrCongruence().isCongruent(x, y));
+  //  }
+  //
+  //  private NaturalCongruence<Symbol> getCurrCongruence() {
+  //    final NaturalCongruence<Symbol> congruence = NaturalCongruence.mk();
+  //    for (int i = 0; i < constraints.size(); i++)
+  //      if (constraints.get(i).kind().isEq() && enabled[i]){
+  //        congruence.putCongruent(constraints.get(i).symbols()[0],
+  // constraints.get(i).symbols()[1]);
+  //      }
+  //
+  //    return congruence;
+  //  }
+
+  private Symbol directSourceOf(Symbol x) {
     assert x.kind() == ATTRS;
 
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
@@ -201,7 +236,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     return null;
   }
 
-  private Symbol fastSourceOf(Symbol x, int indexHint) {
+  private Symbol fastDirectSourceOf(Symbol x, int indexHint) {
     assert x.kind() == ATTRS;
     final int attrsSubBegin = constraints.beginIndexOf(AttrsSub);
     for (int i = indexHint; i >= attrsSubBegin; i--) {
@@ -211,6 +246,27 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         else return constraint.symbols()[1];
       }
     }
+
+    return null;
+  }
+
+  private Symbol indirectSourceOf(Symbol x) {
+    assert x.kind() == ATTRS;
+    assert x.ctx() == f1.symbols();
+
+    Symbol eqSym = null, eqSource = null;
+    for (Symbol symbol : f0.symbols().symbolsOf(ATTRS))
+      if (isEq(x, symbol)) {
+        eqSym = symbol;
+        break;
+      }
+
+    if (eqSym == null) return null;
+    if ((eqSource = directSourceOf(eqSym)) == null) return null;
+
+    for (Symbol symbol :
+        ListSupport.join(f1.symbols().symbolsOf(TABLE), f1.symbols().symbolsOf(ATTRS)))
+      if (isEq(eqSource, symbol)) return symbol;
 
     return null;
   }
@@ -254,6 +310,13 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     int enumerate() {
+      //      if (constraints.get(index).kind() == Unique && f1.hasDedup())
+      //        return relaxBackward();
+
+      return relaxForward();
+    }
+
+    private int relaxForward() {
       final boolean original = enabled[index];
       final boolean canRelax = !original && !isImplied();
       int answer = CONFLICT;
@@ -270,6 +333,26 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
       final int answer1 = next.enumerate();
       return answer == EQ ? EQ : answer1;
+    }
+
+    private int relaxBackward() {
+      final boolean original = enabled[index];
+      final boolean canRelax = !original && !isImplied(); // mandatory or implied(remain true)
+      int answer = CONFLICT;
+
+      if (canRelax) {
+        enabled[index] = false;
+        answer = next.enumerate();
+        if (answer == EQ) return answer;
+      }
+
+      enabled[index] = true;
+      if (answer == TIMEOUT) return answer;
+
+      if (checkNoConflict()) answer = next.enumerate();
+      else return answer;
+
+      return answer;
     }
 
     protected boolean isImplied() {
@@ -297,9 +380,9 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     private final List<Symbol> symbols;
     private final Partitioner partitioner;
 
-    private EqRelEnumerator(List<Symbol> lhsSymbols, List<Symbol> rhsSymbols) {
-      this.segIndex = lhsSymbols.size();
-      this.symbols = ListSupport.join(lhsSymbols, rhsSymbols);
+    private EqRelEnumerator(List<Symbol> symbols) {
+      this.segIndex = symbols.size();
+      this.symbols = symbols;
       this.partitioner = new Partitioner((byte) symbols.size());
     }
 
@@ -313,9 +396,10 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       do {
         final int originalBias = bias;
         final byte[][] partitions = partitioner.partition();
+        currPartitions.put(symbols.get(0).kind(), partitions);
 
         if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
-        if (!checkComplete(partitions)) continue;
+        //        if (!checkComplete(partitions)) continue;
 
         for (byte[] partition : partitions)
           for (int i = 0, bound = partition.length; i < bound - 1; ++i)
@@ -385,7 +469,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     int enumerate() {
-      for (Symbol symbol : symbols) if (sourceOf(symbol) == null) return CONFLICT;
+      for (Symbol symbol : symbols) if (directSourceOf(symbol) == null) return CONFLICT;
       return next.enumerate();
     }
   }
@@ -402,8 +486,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     protected boolean checkNoConflict() {
-      return checkSingleSource() // Check no other equal attrs has incompatible source.
-          && checkCompatible(); // Check no other AttrsSub of this attrs is enabled.
+      return checkSingleSource() // Check no other AttrsSub of this attrs is enabled.
+          && checkCompatible(); // Check no other equal attrs has incompatible source.
     }
 
     @Override
@@ -413,7 +497,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     }
 
     private boolean checkSingleSource() {
-      return fastSourceOf(attrs, index - 1) == null;
+      return fastDirectSourceOf(attrs, index - 1) == null;
     }
 
     private boolean checkCompatible() {
@@ -435,8 +519,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       if (src0 == null || src1 == null) return false;
 
       if (src1.kind() == src0.kind()) return isEq(src0, src1);
-      if (src0.kind() == ATTRS) return checkSourceCompatible(sourceOf(src0), src1);
-      if (src1.kind() == ATTRS) return checkSourceCompatible(src0, sourceOf(src1));
+      if (src0.kind() == ATTRS) return checkSourceCompatible(directSourceOf(src0), src1);
+      if (src1.kind() == ATTRS) return checkSourceCompatible(src0, directSourceOf(src1));
 
       return assertFalse();
     }
@@ -454,7 +538,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     protected boolean checkNoConflict() {
-      if (source != sourceOf(attr)) return false;
+      if (source != directSourceOf(attr)) return false;
       final Constraint me = constraints.get(index);
       final int begin = constraints.beginIndexOf(me.kind());
       for (int i = begin; i < index; ++i)
@@ -468,7 +552,9 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     protected boolean canImply(Constraint pre, Constraint post) {
       final Symbol[] syms0 = pre.symbols();
       final Symbol[] syms1 = post.symbols();
-      return isEq(syms0[1], syms1[1]) && isEq(syms0[0], syms1[0]) && sourceOf(syms1[1]) == syms1[0];
+      return isEq(syms0[1], syms1[1])
+          && isEq(syms0[0], syms1[0])
+          && directSourceOf(syms1[1]) == syms1[0];
     }
   }
 
@@ -486,7 +572,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     protected boolean checkNoConflict() {
-      if (!(source0 == sourceOf(attr0) && source1 == sourceOf(attr1))) return false;
+      if (!(source0 == directSourceOf(attr0) && source1 == directSourceOf(attr1))) return false;
 
       final int begin = constraints.beginIndexOf(Reference);
       final Constraint me = constraints.get(index);
@@ -508,8 +594,56 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       final Symbol src00 = syms0[0], src01 = syms0[2], src10 = syms1[0], src11 = syms1[2];
       return isEq(src00, src10)
           && isEq(src01, src11)
-          && sourceOf(attrs10) == src10
-          && sourceOf(attrs11) == src11;
+          && directSourceOf(attrs10) == src10
+          && directSourceOf(attrs11) == src11;
+    }
+  }
+
+  private class InstantiateEnumerator extends Enumerator {
+    private final Symbol targetSym;
+    private final List<Symbol> mappingSyms;
+
+    protected InstantiateEnumerator(Symbol symbol, List<Symbol> symbols) {
+      this.targetSym = symbol;
+      this.mappingSyms = symbols;
+    }
+
+    @Override
+    int enumerate() {
+      byte[][] partitions = currPartitions.get(targetSym.kind());
+      if (partitions == null) return CONFLICT;
+
+      int result, finalResult = CONFLICT;
+      final TIntList buffer = new TIntArrayList(mappingSyms.size());
+      for (byte[] partition : partitions) {
+        for (int i = 0, bound = partition.length; i < bound; ++i) {
+          final int index = constraints.indexOfEq(mappingSyms.get(partition[i]), targetSym);
+          enabled[index] = true;
+          buffer.add(index);
+        }
+
+        result = next.enumerate();
+        if (result == TIMEOUT) return TIMEOUT;
+        if (result == INCOMPLETE || result == EQ) finalResult = finalResult == EQ ? EQ : result;
+
+        for (int i = 0, bound = buffer.size(); i < bound; ++i) enabled[buffer.get(i)] = false;
+        buffer.clear();
+      }
+      return finalResult;
+    }
+  }
+
+  private class InstanceSourceChecker extends Enumerator {
+    private final Collection<Symbol> symbols;
+
+    private InstanceSourceChecker(Collection<Symbol> attrSyms) {
+      symbols = attrSyms;
+    }
+
+    @Override
+    int enumerate() {
+      for (Symbol symbol : symbols) if (indirectSourceOf(symbol) == null) return CONFLICT;
+      return next.enumerate();
     }
   }
 
@@ -552,6 +686,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       } catch (LeveledException ex) {
         if (ex.ignorable()) return CONFLICT;
         else throw ex;
+      } finally {
+        ++proverInvokeTimes;
       }
     }
   }

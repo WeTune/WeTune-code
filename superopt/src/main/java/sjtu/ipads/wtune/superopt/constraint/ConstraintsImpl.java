@@ -11,8 +11,7 @@ import java.util.*;
 
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
 
@@ -109,6 +108,23 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
     for (Constraint constraint : ofKind(Kind.AttrsSub)) {
       if (constraint.symbols()[0] == attrSym) return constraint.symbols()[1];
     }
+
+    // No direct constraint, try to search source in eqClasses
+    for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
+      if (isEq(constraint.symbols()[0], attrSym)) {
+        Set<Symbol> sameCtxSources =
+            setFilter(eqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
+        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
+      }
+    }
+    for (Constraint constraint : ofKind(Kind.AttrsSub)) {
+      if (isEq(constraint.symbols()[0], attrSym)) {
+        Set<Symbol> sameCtxSources =
+            setFilter(eqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
+        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
+      }
+    }
+
     return null;
   }
 
