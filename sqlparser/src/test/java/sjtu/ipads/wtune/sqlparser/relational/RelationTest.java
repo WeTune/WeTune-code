@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.multiversion.Snapshot;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -40,7 +40,7 @@ public class RelationTest {
             + " JOIN b ON a.x = b.i "
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
-    final Schema schema = AstSupport.parseSchema(MYSQL, schemaDef);
+    final Schema schema = SqlSupport.parseSchema(MYSQL, schemaDef);
     final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
     node.context().setSchema(schema);
 
@@ -97,7 +97,7 @@ public class RelationTest {
             + " JOIN b ON a.x = b.i "
             + "WHERE EXISTS (SELECT *, a.*, `c`.`p` FROM c)";
 
-    final Schema schema = AstSupport.parseSchema(MYSQL, schemaDef);
+    final Schema schema = SqlSupport.parseSchema(MYSQL, schemaDef);
     final ASTNode node = ASTParser.ofDb(MYSQL).parse(sql);
     final ASTContext context = node.context();
 

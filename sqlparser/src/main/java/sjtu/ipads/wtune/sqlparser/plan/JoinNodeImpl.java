@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
 
@@ -78,7 +78,7 @@ class JoinNodeImpl extends PlanNodeBase implements JoinNode {
 
   @Override
   public ValueBag values() {
-    return ValueBag.mk(listJoin(predecessors[0].values(), predecessors[1].values()));
+    return ValueBag.mk(join(predecessors[0].values(), predecessors[1].values()));
   }
 
   @Override

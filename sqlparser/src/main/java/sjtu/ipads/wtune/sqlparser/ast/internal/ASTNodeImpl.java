@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
@@ -141,7 +141,7 @@ public class ASTNodeImpl implements ASTNode {
     final TableSourceKind sourceKind = get(TABLE_SOURCE_KIND);
     final List<FieldKey> sourceFields = sourceKind == null ? emptyList() : sourceKind.fields();
 
-    return listJoin(nodeFields, exprFields, sourceFields);
+    return join(nodeFields, exprFields, sourceFields);
   }
 
   @Override

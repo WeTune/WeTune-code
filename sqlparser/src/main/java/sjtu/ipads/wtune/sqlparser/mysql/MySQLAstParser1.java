@@ -47,6 +47,7 @@ public class MySQLAstParser1 implements AstParser {
   @Override
   public SqlNode parse(String string) {
     final SqlNode ast = parse(string, MySQLParser::query);
+    if (ast == null) return null;
     ast.context().setDbType(MySQL);
     return ast;
   }

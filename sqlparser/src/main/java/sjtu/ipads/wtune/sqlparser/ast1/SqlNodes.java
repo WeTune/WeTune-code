@@ -1,30 +1,23 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
-import sjtu.ipads.wtune.common.tree.AstNodes;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.tree.LabeledTreeNodes;
 
 import java.util.List;
 
-public interface SqlNodes extends AstNodes<SqlKind> {
-  @Override
-  SqlContext context();
-
-  @Override
-  SqlNode get(int index);
-
-  @Override
-  List<SqlNode> asList();
-
-  static SqlNodes mk(SqlContext context, int[] nodeIds) {
-    return new SqlNodesImpl(context, nodeIds);
-  }
-
+public interface SqlNodes extends LabeledTreeNodes<SqlKind, SqlContext, SqlNode> {
   static SqlNodes mkEmpty() {
     return new SqlNodesImpl(null, null);
   }
 
   static SqlNodes mk(SqlContext context, List<SqlNode> nodes) {
-    final int[] nodeIds = new int[nodes.size()];
-    for (int i = 0; i < nodes.size(); i++) nodeIds[i] = nodes.get(i).nodeId();
+    final TIntList nodeIds = new TIntArrayList(nodes.size());
+    for (SqlNode node : nodes) nodeIds.add(node.nodeId());
     return mk(context, nodeIds);
+  }
+
+  static SqlNodes mk(SqlContext context, TIntList nodeIds) {
+    return new SqlNodesImpl(context, nodeIds);
   }
 }

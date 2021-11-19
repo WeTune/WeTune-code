@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class AggNodeImpl extends PlanNodeBase implements AggNode {
@@ -94,7 +94,7 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
 
   @Override
   public RefBag refs() {
-    return RefBag.mk(listJoin(aggRefs, groupRefs, havingRefs));
+    return RefBag.mk(join(aggRefs, groupRefs, havingRefs));
   }
 
   @Override

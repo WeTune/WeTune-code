@@ -6,8 +6,6 @@ import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.AstSupport.parseSql;
-import static sjtu.ipads.wtune.sqlparser.AstSupport.splitSql;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;

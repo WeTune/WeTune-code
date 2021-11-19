@@ -9,7 +9,7 @@ import java.util.Objects;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
@@ -162,7 +162,7 @@ abstract class PlanNodeBase implements PlanNode {
         final List<Value> lookup =
             predecessors.length == 1
                 ? predecessors[0].values()
-                : listJoin(predecessors[0].values(), predecessors[1].values());
+                : join(predecessors[0].values(), predecessors[1].values());
         joining("[", "", ",", "", "]", values, builder, (v, b) -> b.append(lookup.indexOf(v)));
       }
     }

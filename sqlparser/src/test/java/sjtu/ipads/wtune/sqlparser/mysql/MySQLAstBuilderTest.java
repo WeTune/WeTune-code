@@ -4,13 +4,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.tree.AstNode;
-import sjtu.ipads.wtune.sqlparser.AstSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlVisitor;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.VariableScope;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
@@ -556,7 +552,7 @@ public class MySQLAstBuilderTest {
     {
       PARSER.setServerVersion(80000);
       final SqlNode node = helper.sql("group_concat(a order by b separator ',') over ()");
-      System.out.println(AstSupport.dumpAst(node));
+      System.out.println(SqlSupport.dumpAst(node));
       assertEquals("GROUP_CONCAT(`a` ORDER BY `b` SEPARATOR ',') OVER ()", node.toString());
     }
   }

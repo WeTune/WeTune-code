@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.utils.LeveledException;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.prover.logic.LogicCtx;
 import sjtu.ipads.wtune.prover.logic.LogicProver;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
@@ -151,7 +152,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     for (int i = attrSubBegin; i < attrSubEnd; ++i) enumerators.add(new AttrsSubEnumerator(i));
     enumerators.add(new Timeout());
 
-    enumerators.add(new SourceChecker(listJoin(attrs0, attrs1)));
+    enumerators.add(new SourceChecker(ListSupport.join(attrs0, attrs1)));
 
     final int notNullBegin = constraints.beginIndexOf(NotNull);
     final int notNullEnd = constraints.endIndexOf(NotNull);
@@ -298,7 +299,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     private EqRelEnumerator(List<Symbol> lhsSymbols, List<Symbol> rhsSymbols) {
       this.segIndex = lhsSymbols.size();
-      this.symbols = listJoin(lhsSymbols, rhsSymbols);
+      this.symbols = ListSupport.join(lhsSymbols, rhsSymbols);
       this.partitioner = new Partitioner((byte) symbols.size());
     }
 

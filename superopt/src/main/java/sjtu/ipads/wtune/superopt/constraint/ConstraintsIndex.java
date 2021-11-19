@@ -14,7 +14,7 @@ import java.util.List;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.MultimapBuilder.linkedHashKeys;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
@@ -65,9 +65,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     analyzeSources(f0, sources);
     analyzeSources(f1, sources);
 
-    mkEqRel(TableEq, listJoin(tables0, tables1), constraints);
-    mkEqRel(AttrsEq, listJoin(attrs0, attrs1), constraints);
-    mkEqRel(PredicateEq, listJoin(preds0, preds1), constraints);
+    mkEqRel(TableEq, join(tables0, tables1), constraints);
+    mkEqRel(AttrsEq, join(attrs0, attrs1), constraints);
+    mkEqRel(PredicateEq, join(preds0, preds1), constraints);
     mkAttrsSub(sources, constraints);
     mkUnique(sources, constraints);
     mkNotNull(sources, constraints);
@@ -260,7 +260,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
           {
             sources.putAll(symbols.symbolAt(op, ATTRS, 0), lhs);
             sources.putAll(symbols.symbolAt(op, ATTRS, 1), rhs);
-            return listJoin(lhs, rhs);
+            return join(lhs, rhs);
           }
         case SIMPLE_FILTER:
         case IN_SUB_FILTER:

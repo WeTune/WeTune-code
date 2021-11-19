@@ -37,7 +37,7 @@ public interface App {
     return AppImpl.all();
   }
 
-  static boolean doingSQLServerTest(){
-    return true;
+  static boolean doingSQLServerTest() {
+    return false;
   }
 }

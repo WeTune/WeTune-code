@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.sqlparser.schema;
 import java.util.Collection;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-import static sjtu.ipads.wtune.sqlparser.AstSupport.parseSql;
-import static sjtu.ipads.wtune.sqlparser.AstSupport.splitSql;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.splitSql;
 
 public interface Schema {
   Collection<? extends Table> tables();

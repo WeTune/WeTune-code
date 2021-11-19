@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
-import sjtu.ipads.wtune.common.tree.AstNode;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.*;
 
 import java.util.List;
@@ -204,8 +203,8 @@ public class SqlFormatter implements SqlVisitor{
     final var columns = ref.$(Reference_Cols);
     if (columns != null) {
       try (final var ignored = withParen(true)) {
-        for (AstNode<SqlKind> column : columns) {
-          safeVisit((SqlNode) column);
+        for (SqlNode column : columns) {
+          safeVisit(column);
           append(", ");
         }
         builder.delete(builder.length() - 2, builder.length());
@@ -241,8 +240,8 @@ public class SqlFormatter implements SqlVisitor{
     if (name != null) appendName(indexDef, name, false);
 
     try (final var ignored = withParen(true)) {
-      for (AstNode<SqlKind> key : keys) {
-        safeVisit((SqlNode) key);
+      for (SqlNode key : keys) {
+        safeVisit(key);
         append(", ");
       }
       builder.delete(builder.length() - 2, builder.length());
@@ -660,9 +659,9 @@ public class SqlFormatter implements SqlVisitor{
     }
 
     increaseIndent();
-    for (AstNode<SqlKind> when : _case.$(Case_Whens)) {
+    for (SqlNode when : _case.$(Case_Whens)) {
       breakLine();
-      safeVisit((SqlNode) when);
+      safeVisit(when);
     }
 
     final SqlNode _else = _case.$(Case_Else);

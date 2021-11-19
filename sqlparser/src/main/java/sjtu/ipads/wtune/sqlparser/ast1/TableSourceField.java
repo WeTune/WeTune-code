@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.ast1;
 
 import sjtu.ipads.wtune.common.field.Fields;
 
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.Expr_Kind;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.TableSource_Kind;
 
 class TableSourceField<T> extends SqlFieldBase<T> {
@@ -19,8 +20,10 @@ class TableSourceField<T> extends SqlFieldBase<T> {
   }
 
   @Override
-  public void setTo(Fields target, T value) {
+  public T setTo(Fields target, T value) {
     checkValueType(value);
-    if (ownerKind == target.$(TableSource_Kind)) target.$(this, value);
+    if (ownerKind == target.$(TableSource_Kind)) return target.$(this, value);
+    throw new IllegalArgumentException(
+        "cannot set field. %s %s".formatted(name(), target.$(TableSource_Kind)));
   }
 }

@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
-import sjtu.ipads.wtune.common.tree.AstContext;
+import sjtu.ipads.wtune.common.tree.LabeledTreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
-public interface SqlContext extends AstContext<SqlKind> {
+public interface SqlContext extends LabeledTreeContext<SqlKind> {
   Schema schema();
 
   String dbType();

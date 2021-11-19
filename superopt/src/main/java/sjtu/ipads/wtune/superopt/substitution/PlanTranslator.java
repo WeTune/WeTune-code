@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.NameSequence;
-import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
@@ -235,7 +235,7 @@ class PlanTranslator {
       builder.append(");\n");
     }
 
-    return AstSupport.parseSchema(MYSQL, builder.toString());
+    return SqlSupport.parseSchema(MYSQL, builder.toString());
   }
 
   private Model mkModel(Schema schema) {

@@ -56,4 +56,8 @@ public interface Column {
   static Column mk(String table, SqlNode colDef) {
     return ColumnImpl.build(table, colDef);
   }
+
+  static Column mk(String table, String name, String rawDataType, SqlDataType dataType) {
+    return new ColumnImpl(table, name, rawDataType, dataType);
+  }
 }

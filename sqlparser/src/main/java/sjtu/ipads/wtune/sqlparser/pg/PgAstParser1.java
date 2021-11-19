@@ -31,6 +31,7 @@ public class PgAstParser1 implements AstParser {
   @Override
   public SqlNode parse(String string) {
     final SqlNode ast = parse(string, PGParser::statement);
+    if (ast == null) return null;
     ast.context().setDbType(PostgreSQL);
     return ast;
   }

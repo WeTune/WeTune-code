@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
 import sjtu.ipads.wtune.common.field.Fields;
-import sjtu.ipads.wtune.common.tree.AstFields;
+import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
 
 class SqlNodeField<T> extends SqlFieldBase<T> {
   private final SqlKind ownerKind;
@@ -13,13 +13,15 @@ class SqlNodeField<T> extends SqlFieldBase<T> {
 
   @Override
   public T getFrom(Fields target) {
-    if (ownerKind != ((AstFields) target).kind()) return null;
+    if (ownerKind != ((LabeledTreeFields) target).kind()) return null;
     else return target.$(this);
   }
 
   @Override
-  public void setTo(Fields target, T value) {
+  public T setTo(Fields target, T value) {
     checkValueType(value);
-    if (ownerKind == ((AstFields) target).kind()) target.$(this, value);
+    if (ownerKind == ((LabeledTreeFields) target).kind()) return target.$(this, value);
+    throw new IllegalArgumentException(
+        "cannot set field. %s %s".formatted(name(), ((LabeledTreeFields<?>) target).kind()));
   }
 }

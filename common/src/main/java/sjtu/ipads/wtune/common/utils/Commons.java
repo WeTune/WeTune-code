@@ -209,20 +209,6 @@ public interface Commons {
     return ts;
   }
 
-  @SafeVarargs
-  static <T> List<T> listJoin(List<T>... ts) {
-    switch (ts.length) {
-      case 0:
-        return emptyList();
-      case 1:
-        return ts[0];
-      case 2:
-        return new BinaryJoinedList<>(ts[0], ts[1]);
-      default:
-        return new JoinedList<>(Arrays.asList(ts));
-    }
-  }
-
   static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {
     arr.sort(comparator);
     return arr;

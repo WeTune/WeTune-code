@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Constraint;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -31,7 +31,7 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final Schema schema = AstSupport.parseSchema(MYSQL, createTable);
+    final Schema schema = SqlSupport.parseSchema(MYSQL, createTable);
 
     assertEquals(2, schema.tables().size());
 

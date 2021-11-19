@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sqlparser.ast1;
 
 
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.tree.AstNode;
 
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Expr;
@@ -204,7 +203,7 @@ interface SqlVisitorDriver {
   private static void safeVisitList(FieldKey<SqlNodes> key, SqlNode n, SqlVisitor v) {
     final SqlNodes children = n.$(key);
     if (v.enterChildren(n, key, children))
-      if (children != null) for (AstNode<SqlKind> child : children) safeAccept((SqlNode) child, v);
+      if (children != null) for (SqlNode child : children) safeAccept(child, v);
     v.leaveChildren(n, key, children);
   }
 

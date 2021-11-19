@@ -1,85 +1,98 @@
 package sjtu.ipads.wtune.common.tree;
 
 import java.util.Arrays;
-import java.util.NoSuchElementException;
 
-abstract class TreeContextBase<Kind> implements TypedTreeContext<Kind> {
-  protected int numNodes;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
 
-  protected Object[] kinds; // kinds[i] is the kind of node i;
-  protected int[] parents; // parents[i] is the parent of node i.
+public abstract class TreeContextBase<Kind, Nd extends TreeContextBase.NdBase<Kind>>
+    implements TreeContext<Kind> {
+  protected int maxNodeId;
+  protected Nd[] nodes;
 
-  TreeContextBase(int expectedNumNodes) {
-    expectedNumNodes = expectedNumNodes == -1 ? 16 : expectedNumNodes;
-    this.kinds = new Object[expectedNumNodes];
-    this.parents = new int[expectedNumNodes];
+  protected TreeContextBase(Nd[] nodes) {
+    this.maxNodeId = 0;
+    this.nodes = nodes;
   }
 
-  public int numNodes() {
-    return numNodes;
+  @Override
+  public int maxNodeId() {
+    return maxNodeId;
   }
 
+  @Override
+  public boolean isPresent(int nodeId) {
+    return nodeId > 0 && nodeId <= maxNodeId && nodes[nodeId] != null;
+  }
+
+  @Override
   public Kind kindOf(int nodeId) {
-    checkNodePresent(nodeId);
-    return (Kind) kinds[nodeId]; // Any known node must have been in `kinds`.
+    checkNodePresent(this, nodeId);
+    return nodes[nodeId].kind();
   }
 
   @Override
   public int parentOf(int nodeId) {
-    checkNodePresent(nodeId);
-    return safeGet(parents, nodeId, NO_SUCH_NODE);
+    checkNodePresent(this, nodeId);
+    return nodes[nodeId].parentId();
   }
 
   @Override
-  public int childOf(int nodeId, int index) {
-    checkNodePresent(nodeId);
-    return safeGet(childrenOf(nodeId), index, NO_SUCH_NODE);
+  public boolean isChildOf(int parentId, int nodeId) {
+    checkNodePresent(this, nodeId);
+    checkNodePresent(this, parentId);
+    return nodes[nodeId].parentId() == parentId;
   }
 
   @Override
   public int mkNode(Kind kind) {
-    final int newNodeId = ++numNodes;
-    kinds = ensureCapacity(kinds, newNodeId, -1);
-    kinds[newNodeId] = kind;
+    final int newNodeId = ++maxNodeId;
+    nodes = ensureCapacity(nodes, newNodeId, nodes.length << 1);
+    nodes[newNodeId] = mk(kind);
     return newNodeId;
   }
 
-  protected void setParent(int childNodeId, int parentNodeId) {
-    parents = ensureCapacity(parents, childNodeId, kinds.length);
-    parents[childNodeId] = parentNodeId;
+  @Override
+  public void deleteNode(int nodeId) {
+    detachNode(nodeId);
+    nodes[nodeId] = null;
+    if (nodeId == maxNodeId) --maxNodeId;
   }
 
-  protected void unsetParent(int childNodeId) {
-    parents[childNodeId] = NO_SUCH_NODE;
+  @Override
+  public void compact() {
+    if (maxNodeId <= 1) return;
+
+    int forwardIdx = 1, backwardIdx = maxNodeId;
+    while (true) {
+      while (nodes[forwardIdx] != null && forwardIdx < backwardIdx) ++forwardIdx;
+      while (nodes[backwardIdx] == null && backwardIdx > forwardIdx) --backwardIdx;
+      if (forwardIdx == backwardIdx) break;
+      reNumber(backwardIdx, forwardIdx);
+    }
+
+    maxNodeId = nodes[backwardIdx] == null ? backwardIdx - 1 : backwardIdx;
+    if (maxNodeId <= (nodes.length >> 1)) nodes = Arrays.copyOf(nodes, maxNodeId);
   }
 
-  protected void checkNodePresent(int nodeId) {
-    if (nodeId <= 0 || nodeId > numNodes)
-      throw new NoSuchElementException("no such node in this tree: " + nodeId);
-  }
+  protected abstract void reNumber(int from, int to);
 
-  protected <T> T[] ensureCapacity(T[] array, int requirement, int newCapacity) {
+  protected abstract Nd mk(Kind kind);
+
+  protected static <T> T[] ensureCapacity(T[] array, int requirement, int newCapacity) {
     if (array.length <= requirement)
       return Arrays.copyOf(array, newCapacity <= requirement ? (requirement + 1) : newCapacity);
     else return array;
   }
 
-  protected int[] ensureCapacity(int[] array, int requirement, int newCapacity) {
-    if (array == null) return new int[Math.max(requirement + 1, newCapacity)];
-    else if (array.length <= requirement)
+  protected static int[] ensureCapacity(int[] array, int requirement, int newCapacity) {
+    if (array.length <= requirement)
       return Arrays.copyOf(array, newCapacity <= requirement ? (requirement + 1) : newCapacity);
     else return array;
   }
 
-  protected static int safeGet(int[] array, int index, int defaultVal) {
-    if (index < array.length) return array[index];
-    else return defaultVal;
-  }
+  public interface NdBase<Kind> {
+    int parentId();
 
-  protected static <T> T safeGet(T[] array, int index, T defaultVal) {
-    if (index < array.length) return array[index];
-    else return defaultVal;
+    Kind kind();
   }
-
-  protected static final int[] EMPTY_INT_ARRAY = new int[0];
 }

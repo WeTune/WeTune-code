@@ -20,7 +20,7 @@ class ColumnImpl implements Column {
   private List<Constraint> constraints;
   private List<SchemaPatch> patches;
 
-  private ColumnImpl(String table, String name, String rawDataType, SqlDataType dataType) {
+  ColumnImpl(String table, String name, String rawDataType, SqlDataType dataType) {
     this.table = table;
     this.name = name;
     this.rawDataType = rawDataType;
@@ -31,7 +31,7 @@ class ColumnImpl implements Column {
     else if (dataType.category() == Category.ENUM) flags.add(IS_ENUM);
   }
 
-  public static ColumnImpl build(String table, SqlNode colDef) {
+  static ColumnImpl build(String table, SqlNode colDef) {
     final String colName = simpleName(colDef.$(ColDef_Name).$(ColName_Col));
     final String rawDataType = colDef.$(ColDef_RawType);
     final SqlDataType dataType = colDef.$(ColDef_DataType);

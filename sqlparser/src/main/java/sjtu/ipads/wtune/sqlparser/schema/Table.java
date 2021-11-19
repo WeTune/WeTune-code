@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
@@ -27,6 +28,12 @@ public interface Table {
     if (kind == UNIQUE)
       return lazyFilter(constraints(), it -> UNIQUE_CONSTRAINT.contains(it.kind()));
     else return lazyFilter(constraints(), it -> it.kind() == kind);
+  }
+
+  static Table mk(String schema, String name, String engine, List<Column> columns) {
+    final TableImpl table = new TableImpl(schema, name, engine);
+    for (Column column : columns) table.addColumn(column);
+    return table;
   }
 
   EnumSet<ConstraintKind> INDEXED_CONSTRAINT = EnumSet.of(UNIQUE, PRIMARY, FOREIGN);

@@ -1,8 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.field.Fields;
-import sjtu.ipads.wtune.common.tree.AstFields;
 
 import static java.util.Objects.requireNonNull;
 

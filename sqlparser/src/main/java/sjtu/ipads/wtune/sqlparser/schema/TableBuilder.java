@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import sjtu.ipads.wtune.common.tree.AstNode;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
@@ -27,14 +25,14 @@ class TableBuilder {
   static TableBuilder fromCreateTable(SqlNode tableDef) {
     final TableBuilder builder = new TableBuilder(TableImpl.build(tableDef));
 
-    tableDef.$(CreateTable_Cols).forEach(it -> builder.setColumn((SqlNode) it));
-    tableDef.$(CreateTable_Cons).forEach(it -> builder.setConstraint((SqlNode) it));
+    tableDef.$(CreateTable_Cols).forEach(builder::setColumn);
+    tableDef.$(CreateTable_Cons).forEach(builder::setConstraint);
 
     return builder;
   }
 
   TableBuilder fromAlterTable(SqlNode alterTable) {
-    for (AstNode<SqlKind> action : alterTable.$(AlterTable_Actions))
+    for (SqlNode action : alterTable.$(AlterTable_Actions))
       switch (action.$(AlterTableAction_Name)) {
         case "add_constraint" -> setConstraint((SqlNode) action.$(AlterTableAction_Payload));
         case "modify_column" -> setColumn((SqlNode) action.get(AlterTableAction_Payload));
@@ -79,7 +77,7 @@ class TableBuilder {
     final SqlNodes keys = constraintDef.$(IndexDef_Keys);
     final List<Column> columns = new ArrayList<>(keys.size());
     final List<KeyDirection> directions = new ArrayList<>(keys.size());
-    for (AstNode<SqlKind> key : keys) {
+    for (SqlNode key : keys) {
       final String columnName = key.$(KeyPart_Col);
       final ColumnImpl column = table.column(columnName);
       if (column == null) return;

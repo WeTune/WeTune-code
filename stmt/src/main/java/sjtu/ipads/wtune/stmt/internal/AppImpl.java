@@ -11,7 +11,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
@@ -98,7 +98,7 @@ public class AppImpl implements App {
 
   private Schema readSchema(String tag) {
     final String str = FileUtils.readFile("schemas", name + "." + tag + ".schema.sql");
-    return AstSupport.parseSchema(dbType, str);
+    return SqlSupport.parseSchema(dbType, str);
   }
 
   private static final String[] APP_NAMES = {

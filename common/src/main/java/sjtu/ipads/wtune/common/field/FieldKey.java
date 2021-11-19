@@ -5,5 +5,5 @@ public interface FieldKey<T> {
 
   T getFrom(Fields target);
 
-  void setTo(Fields target, T value);
+  T setTo(Fields target, T value);
 }

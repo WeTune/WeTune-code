@@ -26,14 +26,14 @@ class TableImpl implements Table {
   private final Map<String, Column> columns;
   private List<Constraint> constraints;
 
-  public TableImpl(String schema, String name, String engine) {
+  TableImpl(String schema, String name, String engine) {
     this.schema = schema;
     this.name = name;
     this.engine = engine;
     this.columns = new LinkedHashMap<>();
   }
 
-  public static TableImpl build(SqlNode tableDef) {
+  static TableImpl build(SqlNode tableDef) {
     final SqlNode tableName = tableDef.$(CreateTable_Name);
     final String schema = simpleName(tableName.$(TableName_Schema));
     final String name = simpleName(tableName.$(TableName_Table));
@@ -110,7 +110,7 @@ class TableImpl implements Table {
     }
   }
 
-  void addColumn(ColumnImpl column) {
+  void addColumn(Column column) {
     columns.put(column.name(), column);
   }
 

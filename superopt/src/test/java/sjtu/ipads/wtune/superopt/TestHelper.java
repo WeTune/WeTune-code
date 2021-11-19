@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.AstSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -34,7 +34,7 @@ class TestHelper {
   }
 
   static PlanNode mkPlan(String sql, String schemaSQL) {
-    final Schema schema = AstSupport.parseSchema(MYSQL, schemaSQL);
+    final Schema schema = SqlSupport.parseSchema(MYSQL, schemaSQL);
     final ASTNode ast = ASTParser.mysql().parse(sql);
     return assemblePlan(ast, schema);
   }

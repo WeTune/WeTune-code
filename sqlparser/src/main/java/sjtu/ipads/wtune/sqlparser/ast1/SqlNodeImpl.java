@@ -1,15 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
-import sjtu.ipads.wtune.common.tree.AstNodeBase;
+import sjtu.ipads.wtune.common.tree.LabeledTreeNodeBase;
 
-class SqlNodeImpl extends AstNodeBase<SqlKind> implements SqlNode {
+class SqlNodeImpl extends LabeledTreeNodeBase<SqlKind, SqlContext, SqlNode> implements SqlNode {
   SqlNodeImpl(SqlContext context, int nodeId) {
     super(context, nodeId);
-  }
-
-  @Override
-  public SqlContext context() {
-    return (SqlContext) super.context();
   }
 
   @Override
@@ -28,5 +23,15 @@ class SqlNodeImpl extends AstNodeBase<SqlKind> implements SqlNode {
     final SqlFormatter formatter = new SqlFormatter(oneLine);
     accept(formatter);
     return formatter.toString();
+  }
+
+  @Override
+  public String dbType() {
+    return context().dbType();
+  }
+
+  @Override
+  protected SqlNode mk(SqlContext context, int nodeId) {
+    return new SqlNodeImpl(context, nodeId);
   }
 }

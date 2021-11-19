@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
@@ -380,7 +381,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
               right,
               ctx.EXP() != null ? EXP : BinaryOpKind.ofOp(ctx.binary_operator.getText()));
       if (ComparisonMod.isInstance(right)) {
-        node.$(Binary_Right, right.$(ComparisonMod_Expr));
+        node.$(Binary_Right, copyAst(right.$(ComparisonMod_Expr), ast));
         node.$(Binary_SubqueryOption, right.$(ComparisonMod_Option));
       }
       return ctx.NOT() != null ? mkUnary(node, NOT) : node;
@@ -625,7 +626,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
       if (ctx.indirection_list() == null) return mkColRef(null, null, identifier);
       else {
         final SqlNodes indirections = parseIndirectionList(ctx.indirection_list());
-        return buildIndirection(identifier, indirections.asList());
+        return buildIndirection(identifier, indirections);
       }
 
     } else return assertFalse();

@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
-import static sjtu.ipads.wtune.common.utils.Commons.listJoin;
+import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
@@ -109,7 +109,7 @@ final class ConjunctionImpl implements Conjunction {
   @Override
   public UExpr toExpr() {
     final UExpr factor0 =
-        listJoin(predicates, tables).stream().map(UExpr::copy).reduce(UExpr::mul).orElse(null);
+        join(predicates, tables).stream().map(UExpr::copy).reduce(UExpr::mul).orElse(null);
     final UExpr factor1 = negation == null ? null : UExpr.not(negation.toExpr());
     final UExpr factor2 = squash == null ? null : UExpr.squash(squash.toExpr());
 

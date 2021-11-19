@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.sqlparser;
 
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.tree.AstFields;
-import sjtu.ipads.wtune.common.tree.AstNode;
+import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
@@ -14,11 +12,17 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public abstract class AstSupport {
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Expr;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.Expr_Kind;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.TableSource_Kind;
+
+public abstract class SqlSupport {
   private static boolean PARSING_ERROR_MUTED = false;
 
-  private AstSupport() {}
+  private SqlSupport() {}
 
   public static void muteParsingError() {
     PARSING_ERROR_MUTED = true;
@@ -102,6 +106,40 @@ public abstract class AstSupport {
     return list;
   }
 
+  public static SqlNode copyAst(SqlNode node, SqlContext toCtx) {
+    if (toCtx == null) toCtx = node.context();
+    final int newNodeId = toCtx.mkNode(node.kind());
+
+    if (TableSource.isInstance(node)) {
+      toCtx.setFieldOf(newNodeId, TableSource_Kind, node.$(TableSource_Kind));
+    }
+    if (Expr.isInstance(node)) {
+      toCtx.setFieldOf(newNodeId, Expr_Kind, node.$(Expr_Kind));
+    }
+
+    for (Map.Entry<FieldKey<?>, Object> pair : node.entrySet()) {
+      final FieldKey key = pair.getKey();
+      final Object value = pair.getValue();
+      final Object copiedValue;
+      if (value instanceof SqlNode) {
+        copiedValue = copyAst((SqlNode) value, toCtx);
+
+      } else if (value instanceof SqlNodes) {
+        final SqlNodes nodes = (SqlNodes) value;
+        final List<SqlNode> newChildren = new ArrayList<>(nodes.size());
+        for (SqlNode sqlNode : nodes) newChildren.add(copyAst(sqlNode, toCtx));
+        copiedValue = SqlNodes.mk(toCtx, newChildren);
+
+      } else {
+        copiedValue = value;
+      }
+
+      toCtx.setFieldOf(newNodeId, key, copiedValue);
+    }
+
+    return SqlNode.mk(toCtx, newNodeId);
+  }
+
   public static String dumpAst(SqlNode root) {
     return dumpAst(root, new StringBuilder(), 0).toString();
   }
@@ -114,21 +152,21 @@ public abstract class AstSupport {
     if (root == null) return builder;
 
     final SqlContext context = root.context();
-    final AstFields<SqlKind> fields = context.fieldsOf(root.nodeId());
+    final LabeledTreeFields<SqlKind> fields = context.fieldsOf(root.nodeId());
 
     builder.append(" ".repeat(level)).append(root.nodeId()).append(' ').append(root.kind());
     builder.append('\n');
 
     if (fields == null) return builder;
 
-    for (Pair<FieldKey<?>, Object> pair : fields) {
+    for (Map.Entry<FieldKey<?>, Object> pair : fields.entrySet()) {
       final FieldKey<?> key = pair.getKey();
       final Object value = pair.getValue();
       if (value instanceof SqlNode || value instanceof SqlNodes) continue;
       builder.append(" ".repeat(level + 1)).append(key).append('=').append(value).append('\n');
     }
 
-    for (Pair<FieldKey<?>, Object> pair : fields) {
+    for (Map.Entry<FieldKey<?>, Object> pair : fields.entrySet()) {
       final FieldKey<?> key = pair.getKey();
       final Object value = pair.getValue();
       if (value instanceof SqlNode) {
@@ -137,13 +175,14 @@ public abstract class AstSupport {
       }
     }
 
-    for (Pair<FieldKey<?>, Object> pair : fields) {
+    for (Map.Entry<FieldKey<?>, Object> pair : fields.entrySet()) {
       final FieldKey<?> key = pair.getKey();
       final Object value = pair.getValue();
       if (value instanceof SqlNodes) {
         builder.append(" ".repeat(level + 1)).append(key).append('=').append('\n');
-        for (AstNode<SqlKind> child : ((SqlNodes) value))
-          dumpAst((SqlNode) child, builder, level + 1);
+        for (SqlNode child : ((SqlNodes) value)) {
+          dumpAst(child, builder, level + 1);
+        }
       }
     }
 

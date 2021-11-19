@@ -1,20 +1,19 @@
 package sjtu.ipads.wtune.common.field;
 
-import sjtu.ipads.wtune.common.utils.MapLike;
-
 import java.util.EnumSet;
+import java.util.Map;
 
-public interface Fields extends MapLike<FieldKey<?>, Object> {
-  <T> T getField(FieldKey<T> field);
+public interface Fields extends Map<FieldKey<?>, Object> {
+  <T> T field(FieldKey<T> field);
 
-  <T> void setField(FieldKey<T> field, T value);
+  <T> T setField(FieldKey<T> field, T value);
 
   default <T> T $(FieldKey<T> field) {
-    return getField(field);
+    return field(field);
   }
 
-  default <T> void $(FieldKey<T> field, T value) {
-    setField(field, value);
+  default <T> T $(FieldKey<T> field, T value) {
+    return setField(field, value);
   }
 
   default <T extends Enum<T>> void flag(FieldKey<EnumSet<T>> key, T value) {
@@ -34,12 +33,5 @@ public interface Fields extends MapLike<FieldKey<?>, Object> {
   default <T extends Enum<T>> boolean isFlag(FieldKey<EnumSet<T>> key, T value) {
     final EnumSet<T> set = $(key);
     return set != null && set.contains(value);
-  }
-
-  @Override
-  default Object get(Object key) {
-    if (!(key instanceof FieldKey))
-      throw new IllegalArgumentException("only accept FieldKey as key");
-    return getField((FieldKey<?>) key);
   }
 }

@@ -19,8 +19,10 @@ class ExprField<T> extends SqlFieldBase<T> {
   }
 
   @Override
-  public void setTo(Fields target, T value) {
+  public T setTo(Fields target, T value) {
     checkValueType(value);
-    if (ownerKind == target.$(Expr_Kind)) target.$(this, value);
+    if (ownerKind == target.$(Expr_Kind)) return target.$(this, value);
+    throw new IllegalArgumentException(
+        "cannot set field. %s %s".formatted(name(), target.$(Expr_Kind)));
   }
 }

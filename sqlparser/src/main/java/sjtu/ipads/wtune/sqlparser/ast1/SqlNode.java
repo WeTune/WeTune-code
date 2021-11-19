@@ -1,14 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.ast1;
 
-import sjtu.ipads.wtune.common.tree.AstNode;
+import sjtu.ipads.wtune.common.tree.LabeledTreeNode;
 
-public interface SqlNode extends AstNode<SqlKind> {
+public interface SqlNode extends LabeledTreeNode<SqlKind, SqlContext, SqlNode> {
   String MySQL = "mysql";
   String PostgreSQL = "postgresql";
   String SQLServer = "sqlserver";
-
-  @Override
-  SqlContext context();
 
   void accept(SqlVisitor visitor);
 
