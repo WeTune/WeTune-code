@@ -26,7 +26,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
   private final Symbols symbols0, symbols1;
   private final List<Constraint> constraints;
   // Possible sources of attributes. Key: Attrs symbols. Value: Attrs/Table symbols.
-  private final Multimap<Symbol, Symbol> sources;
+  private final Multimap<Symbol, Symbol> sources0, sources1;
   private final boolean[] mandatory; // Indicates whether a constraint must be present.
   // The constraints are organized by the kind. i.e., [TablEqs, AttrsEqs, PredEqs, AttrSubs,...]
   // `segBase` is the beginning index of each segment.
@@ -36,13 +36,18 @@ class ConstraintsIndex extends AbstractList<Constraint> {
   private final TObjectIntMap<Symbol> symbolsIndex;
 
   ConstraintsIndex(
-      Fragment f0, Fragment f1, List<Constraint> constraints, Multimap<Symbol, Symbol> sources) {
+      Fragment f0,
+      Fragment f1,
+      List<Constraint> constraints,
+      Multimap<Symbol, Symbol> sources0,
+      Multimap<Symbol, Symbol> sources1) {
     this.f0 = f0;
     this.f1 = f1;
     this.symbols0 = f0.symbols();
     this.symbols1 = f1.symbols();
     this.constraints = constraints;
-    this.sources = sources;
+    this.sources0 = sources0;
+    this.sources1 = sources1;
     this.mandatory = new boolean[constraints.size()];
     this.segBases = new int[Constraint.Kind.values().length];
     this.symCounts = new int[3];
@@ -63,9 +68,9 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     final List<Symbol> attrs0 = symbols0.symbolsOf(ATTRS), attrs1 = symbols1.symbolsOf(ATTRS);
     final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
     final Multimap<Symbol, Symbol> sources0 = linkedHashKeys().arrayListValues().build();
-    //    final Multimap<Symbol, Symbol> sources1 = linkedHashKeys().arrayListValues().build();
+    final Multimap<Symbol, Symbol> sources1 = linkedHashKeys().arrayListValues().build();
     analyzeSources(f0, sources0);
-    //    analyzeSources(f1, sources1);
+    analyzeSources(f1, sources1);
 
     mkEqRel(TableEq, tables0, tables1, constraints);
     mkEqRel(AttrsEq, attrs0, attrs1, constraints);
@@ -77,7 +82,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     mkNotNull(sources0, constraints);
     mkReferences(f0, sources0, constraints);
 
-    return new ConstraintsIndex(f0, f1, constraints, sources0);
+    return new ConstraintsIndex(f0, f1, constraints, sources0, sources1);
   }
 
   private static void mkEqRel(
@@ -170,7 +175,7 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     // The only possible AttrsSub of an attrs must be mandatory.
     final int begin = segBases[AttrsSub.ordinal()], end = segBases[AttrsSub.ordinal() + 1];
     for (int i = begin; i < end; i++)
-      if (sources.get(constraints.get(i).symbols()[0]).size() <= 1) {
+      if (sources0.get(constraints.get(i).symbols()[0]).size() <= 1) {
         mandatory[i] = true;
       }
   }
@@ -204,8 +209,17 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     return mandatory;
   }
 
-  Multimap<Symbol, Symbol> attrSources() {
-    return sources;
+  Multimap<Symbol, Symbol> attrSources0() {
+    return sources0;
+  }
+
+  Multimap<Symbol, Symbol> attrSources1() {
+    return sources1;
+  }
+
+  Collection<Symbol> getAttrSources(Symbol symbol) {
+    if (f0.symbols().contains(symbol)) return sources0.get(symbol);
+    return sources1.get(symbol);
   }
 
   int beginIndexOf(Constraint.Kind kind) {

@@ -160,12 +160,22 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     enumerators.add(new EqRelEnumerator(preds0));
     enumerators.add(new Timeout());
 
+    // Instantiate stage
+    for (int i = 0; i < tables1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(tables1.get(i), tables0));
+    for (int i = 0; i < attrs1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(attrs1.get(i), attrs0));
+    for (int i = 0; i < preds1.size(); ++i)
+      enumerators.add(new InstantiateEnumerator(preds1.get(i), preds0));
+    enumerators.add(new Timeout());
+
     final int attrSubBegin = constraints.beginIndexOf(AttrsSub);
     final int attrSubEnd = constraints.endIndexOf(AttrsSub);
     for (int i = attrSubBegin; i < attrSubEnd; ++i) enumerators.add(new AttrsSubEnumerator(i));
     enumerators.add(new Timeout());
 
     enumerators.add(new SourceChecker(attrs0));
+    enumerators.add(new InstanceSourceChecker(attrs1));
 
     final int notNullBegin = constraints.beginIndexOf(NotNull);
     final int notNullEnd = constraints.endIndexOf(NotNull);
@@ -178,21 +188,9 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     final int refBegin = constraints.beginIndexOf(Reference);
     final int refEnd = constraints.endIndexOf(Reference);
     for (int i = refBegin; i < refEnd; ++i) enumerators.add(new ReferenceEnumerator(i));
-    enumerators.add(new Timeout());
-
-    // Instantiate stage
-    for (int i = 0; i < tables1.size(); ++i)
-      enumerators.add(new InstantiateEnumerator(tables1.get(i), tables0));
-    for (int i = 0; i < attrs1.size(); ++i)
-      enumerators.add(new InstantiateEnumerator(attrs1.get(i), attrs0));
-    for (int i = 0; i < preds1.size(); ++i)
-      enumerators.add(new InstantiateEnumerator(preds1.get(i), preds0));
-
-    enumerators.add(new InstanceSourceChecker(attrs1));
 
     enumerators.add(new Timeout());
     enumerators.add(new Recorder());
-    //    enumerators.add(new Dummy());
     enumerators.add(new Proof());
 
     return enumerators;
@@ -256,9 +254,10 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     if (eqSym == null) return null;
     if ((eqSource = directSourceOf(eqSym)) == null) return null;
 
+    Collection<Symbol> candidateSources = constraints.getAttrSources(x);
     for (Symbol symbol :
         ListSupport.join(f1.symbols().symbolsOf(TABLE), f1.symbols().symbolsOf(ATTRS)))
-      if (indirectEq(eqSource, symbol)) return symbol;
+      if (indirectEq(eqSource, symbol) && candidateSources.contains(symbol)) return symbol;
 
     return null;
   }
@@ -391,7 +390,6 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         currPartitions.put(symbols.get(0).kind(), partitions);
 
         if (System.currentTimeMillis() - begin > timeout) return TIMEOUT;
-        //        if (!checkComplete(partitions)) continue;
 
         for (byte[] partition : partitions)
           for (int i = 0, bound = partition.length; i < bound - 1; ++i)
@@ -533,11 +531,16 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       if (source != directSourceOf(attr)) return false;
       final Constraint me = constraints.get(index);
       final int begin = constraints.beginIndexOf(me.kind());
+
+      boolean canImplyMe = false;
+      for (int i = begin; i < index; ++i) if (canImply(constraints.get(i), me)) canImplyMe = true;
+
+      if (!canImplyMe) return true;
+
       for (int i = begin; i < index; ++i)
-        if (!enabled[i] && canImply(constraints.get(i), me)) {
-          return false; // We are suppressed.
-        }
-      return true;
+        if (enabled[i] && canImply(constraints.get(i), me)) return true;
+
+      return false;
     }
 
     @Override
@@ -652,12 +655,12 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     @Override
     int enumerate() {
-      //      System.out.print(i++);
-      //      System.out.print(" ");
       final int answer = next.enumerate();
-      //      System.out.println("=> " + answer);
+
       if (answer == EQ) {
         final boolean[] result = Arrays.copyOf(enabled, enabled.length);
+        for (boolean[] existRes : results) if (isWeakerThan(existRes, result)) return answer;
+
         results.removeIf(it -> isWeakerThan(result, it));
         results.add(result);
       }

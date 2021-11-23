@@ -56,7 +56,7 @@ class Partitioner {
 
     int idx = 0;
     for (byte[][] basePartition : base)
-      for (int i = 0, bound = basePartition.length; i <= bound; i++)
+      for (int i = basePartition.length; i >= 0; i--)
         partitions[idx++] = addElementTo(basePartition, element, i);
 
     assert idx == NUM_PARTITIONS[cardinality];
