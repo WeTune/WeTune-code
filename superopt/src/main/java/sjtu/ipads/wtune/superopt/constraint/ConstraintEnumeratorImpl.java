@@ -341,7 +341,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       if (answer == TIMEOUT) return answer;
 
       if (checkNoConflict()) answer = next.enumerate();
-      else return answer;
+      enabled[index] = original;
 
       return answer;
     }
