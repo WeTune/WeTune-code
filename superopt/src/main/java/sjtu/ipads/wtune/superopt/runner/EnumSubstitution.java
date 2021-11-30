@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.runner;
 import sjtu.ipads.wtune.common.utils.LeveledException;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
 import static sjtu.ipads.wtune.prover.ProverSupport.mkLogicCtx;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 
 public class EnumSubstitution implements Runner {
   private PrintWriter out;
@@ -147,12 +149,22 @@ public class EnumSubstitution implements Runner {
       System.out.println(f1);
     }
     enumerate(f0, f1);
-    enumerate(f1, f0);
   }
 
   private void enumerate(Fragment f0, Fragment f1) {
     try {
-      final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
+      final List<Substitution> substitutions;
+      if (f0.symbolCount(Symbol.Kind.TABLE) == f1.symbolCount(Symbol.Kind.TABLE)) {
+        final List<Substitution> substitutions1 = enumConstraints(f0, f1, mkLogicCtx(), timeout);
+        final List<Substitution> substitutions2 = enumConstraints(f1, f0, mkLogicCtx(), timeout);
+        substitutions = listConcat(substitutions1, substitutions2);
+      } else {
+        if (f0.symbolCount(Symbol.Kind.TABLE) > f1.symbolCount(Symbol.Kind.TABLE))
+          substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
+        else
+          substitutions = enumConstraints(f1, f0, mkLogicCtx(), timeout);
+      }
+//      final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
 
       synchronized (out) {
         for (Substitution substitution : substitutions) out.println(substitution);

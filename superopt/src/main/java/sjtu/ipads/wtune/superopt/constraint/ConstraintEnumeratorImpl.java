@@ -43,6 +43,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
   // Statistics
   private int proverInvokeTimes;
+  // debug
+  private int partitionCount;
 
   ConstraintEnumeratorImpl(
       Fragment f0, Fragment f1, ConstraintsIndex constraints, LogicCtx logicCtx) {
@@ -82,6 +84,8 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
 
     head(enumerators).enumerate();
     System.out.println("Invoke prover times: " + proverInvokeTimes);
+    System.out.println("Partition times: " + partitionCount);
+    System.out.println("Rule nums: " + results.size());
     return results();
   }
 
@@ -175,7 +179,7 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
     enumerators.add(new Timeout());
 
     enumerators.add(new SourceChecker(attrs0));
-    enumerators.add(new InstanceSourceChecker(attrs1));
+    enumerators.add(new InstanceSourceChecker(symbols1));
 
     final int notNullBegin = constraints.beginIndexOf(NotNull);
     final int notNullEnd = constraints.endIndexOf(NotNull);
@@ -337,9 +341,9 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
         if (answer == EQ) return answer;
       }
 
-      enabled[index] = true;
       if (answer == TIMEOUT) return answer;
 
+      enabled[index] = true;
       if (checkNoConflict()) answer = next.enumerate();
       enabled[index] = original;
 
@@ -609,36 +613,67 @@ class ConstraintEnumeratorImpl implements ConstraintEnumerator {
       if (partitions == null) return CONFLICT;
 
       int result, finalResult = CONFLICT;
-      final TIntList buffer = new TIntArrayList(mappingSyms.size());
+      //      final TIntList buffer = new TIntArrayList(mappingSyms.size());
       for (byte[] partition : partitions) {
         for (int i = 0, bound = partition.length; i < bound; ++i) {
           final int index = constraints.indexOfEq(mappingSyms.get(partition[i]), targetSym);
           enabled[index] = true;
-          buffer.add(index);
+          //          buffer.add(index);
+
+          if (!(next instanceof InstantiateEnumerator)) partitionCount++;
+
+          result = next.enumerate();
+          if (result == TIMEOUT) return TIMEOUT;
+          if (result == INCOMPLETE || result == EQ) finalResult = finalResult == EQ ? EQ : result;
+
+          enabled[index] = false;
         }
-
-        result = next.enumerate();
-        if (result == TIMEOUT) return TIMEOUT;
-        if (result == INCOMPLETE || result == EQ) finalResult = finalResult == EQ ? EQ : result;
-
-        for (int i = 0, bound = buffer.size(); i < bound; ++i) enabled[buffer.get(i)] = false;
-        buffer.clear();
+        //        for (int i = 0, bound = buffer.size(); i < bound; ++i) enabled[buffer.get(i)] =
+        // false;
+        //        buffer.clear();
       }
       return finalResult;
     }
   }
 
   private class InstanceSourceChecker extends Enumerator {
-    private final Collection<Symbol> symbols;
+    private final Symbols allSymbols;
 
-    private InstanceSourceChecker(Collection<Symbol> attrSyms) {
-      symbols = attrSyms;
+    private InstanceSourceChecker(Symbols attrSyms) {
+      allSymbols = attrSyms;
     }
 
     @Override
     int enumerate() {
-      for (Symbol symbol : symbols) if (indirectSourceOf(symbol) == null) return CONFLICT;
+      // Check symbol `indirect` sources, like SourceCheck
+      for (Symbol symbol : allSymbols.symbolsOf(ATTRS))
+        if (indirectSourceOf(symbol) == null) return CONFLICT;
+
+      // Check whether exclusive instantiation (for TABLE and ATTR symbols)
+      // TABLE: no 2 symbols in f1 are instantiated to the same symbol in f0
+      List<Constraint> tableInstantiations = getInstantiations(TableEq);
+      for (int i = 0, bound = tableInstantiations.size(); i < bound; i++)
+        for (int j = i + 1; j < bound; j++)
+          if (tableInstantiations.get(i).symbols()[0] == tableInstantiations.get(j).symbols()[0]) {
+            return CONFLICT;
+          }
+
+      // ATTRS: a symbol in f1 cannot be instantiated to multiple symbols with diff sources (no need
+      // to check now)
+
       return next.enumerate();
+    }
+
+    private List<Constraint> getInstantiations(Constraint.Kind kind) {
+      assert kind.isEq();
+
+      List<Constraint> instantiations = new ArrayList<>();
+      for (int i = 0, bound = constraints.size(); i < bound; i++) {
+        Constraint constraint = constraints.get(i);
+        if (!enabled[i] || constraint.kind() != kind) continue;
+        if (allSymbols.contains(constraint.symbols()[1])) instantiations.add(constraint);
+      }
+      return instantiations;
     }
   }
 

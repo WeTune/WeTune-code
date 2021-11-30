@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintEnumerator;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -20,6 +19,7 @@ import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.transla
 
 @Tag("slow")
 @Tag("enumeration")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestEnumeration {
   private static boolean echo = true;
 
@@ -44,7 +44,14 @@ public class TestEnumeration {
     assertTrue(listMap(results, Object::toString).containsAll(asList(expectation)));
   }
 
+  @BeforeEach
+  void init(TestInfo testInfo) {
+    String methodName = testInfo.getTestMethod().orElseThrow().getName();
+    System.out.println("----------" + methodName + "----------");
+  }
+
   @Test
+  @Order(1)
   void testInnerJoinElimination0() {
     doTest(
         "Proj(InnerJoin(Input,Input))",
@@ -55,6 +62,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(2)
   void testInnerJoinElimination1() {
     doTest(
         "Proj*(InnerJoin(Input,Input))",
@@ -66,6 +74,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(3)
   void testInnerJoinElimination2() {
     doTest(
         "Proj(PlainFilter(InnerJoin(Input,Input)))",
@@ -76,6 +85,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(4)
   void testInnerJoinElimination3() {
     doTest(
         "Proj*(PlainFilter(InnerJoin(Input,Input)))",
@@ -88,6 +98,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(5)
   void testLeftJoinElimination0() {
     doTest(
         "Proj(LeftJoin(Input,Input))",
@@ -98,6 +109,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(6)
   void testLeftJoinElimination1() {
     doTest(
         "Proj*(LeftJoin(Input,Input))",
@@ -109,6 +121,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(7)
   void testLeftJoinElimination2() {
     doTest(
         "Proj(Filter(LeftJoin(Input,Input)))",
@@ -121,6 +134,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(8)
   void testLeftJoinElimination3() {
     doTest(
         "Proj*(Filter(LeftJoin(Input,Input)))",
@@ -135,6 +149,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(9)
   void testLeftJoin2InnerJoin() {
     doTest(
         "LeftJoin(Input,Input)",
@@ -144,6 +159,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(10)
   void testIN2InnerJoin0() {
     doTest(
         "Proj(InSubFilter(Input,Proj(Input)))",
@@ -158,6 +174,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(11)
   void testIN2InnerJoin1() {
     doTest(
         "Proj*(InSubFilter(Input,Proj(Input)))",
@@ -175,6 +192,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(12)
   void testPlainFilterCollapsing() {
     doTest(
         "PlainFilter(PlainFilter(Input))",
@@ -183,6 +201,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(13)
   void testINSubFilterCollapsing() {
     doTest(
         "InSubFilter(InSubFilter(Input,Input),Input)",
@@ -191,6 +210,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(14)
   void testProjCollapsing0() {
     doTest(
         "Proj(Proj(Input))",
@@ -199,6 +219,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(15)
   void testInSubFilterElimination() {
     doTest(
         "InSubFilter(Input,Proj(Input))",
@@ -207,6 +228,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(16)
   void testRemoveDeduplication() {
     doTest(
         "Proj*(Input)",
@@ -223,6 +245,7 @@ public class TestEnumeration {
   }
 
   @Test
+  @Order(17)
   void testSubstituteAttr0() {
     doTest(
         "Filter(InnerJoin(Input,Input))",

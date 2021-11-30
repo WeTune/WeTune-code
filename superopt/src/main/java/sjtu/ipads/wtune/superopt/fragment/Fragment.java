@@ -21,6 +21,10 @@ public interface Fragment extends Copyable<Fragment> {
     return stringify(naming, new StringBuilder()).toString();
   }
 
+  default int symbolCount(Symbol.Kind kind) {
+    return symbols().symbolsOf(kind).size();
+  }
+
   static Fragment mk(/* nullable */ Op head) {
     return new FragmentImpl(head);
   }
