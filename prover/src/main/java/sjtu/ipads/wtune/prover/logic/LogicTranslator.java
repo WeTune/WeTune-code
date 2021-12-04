@@ -5,6 +5,7 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Cascade;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
@@ -167,13 +168,13 @@ class LogicTranslator {
 
   private Func mkFunc(Name funcName) {
     final int arity = lookup.funcArityOf(funcName);
-    final DataType[] argTypes = generate(arity, i -> ctx.mkIntType(), DataType.class);
+    final DataType[] argTypes = ArraySupport.generate(arity, i -> ctx.mkIntType(), DataType.class);
     return ctx.mkFunc(funcNameSeq.next(), ctx.mkIntType(), argTypes);
   }
 
   private Func mkPred(Name predName) {
     final int arity = lookup.predArityOf(predName);
-    final DataType[] argTypes = generate(arity, i -> ctx.mkIntType(), DataType.class);
+    final DataType[] argTypes = ArraySupport.generate(arity, i -> ctx.mkIntType(), DataType.class);
     return ctx.mkFunc(funcNameSeq.next(), ctx.mkBoolType(), argTypes);
   }
 
@@ -182,10 +183,10 @@ class LogicTranslator {
 
     // The type of output tuple won't be cached
     if (nameSuffix.equals(OUT_TUPLE_TYPE_NAME))
-      return ctx.mkTupleType(name, arrayMap(members, Object::toString, String.class));
+      return ctx.mkTupleType(name, ArraySupport.map(members, Object::toString, String.class));
 
     return knownTypes.computeIfAbsent(
-        members, ms -> ctx.mkTupleType(name, arrayMap(ms, Object::toString, String.class)));
+        members, ms -> ctx.mkTupleType(name, ArraySupport.map(ms, Object::toString, String.class)));
   }
 
   private Value mkConst(Name constant) {
@@ -221,7 +222,7 @@ class LogicTranslator {
     if (v.isFunc()) {
       final Var[] args = v.base();
       assert none(asList(args), Var::isBase);
-      return funcs.get(name).apply(arrayMap(args, this::mkVal, Value.class));
+      return funcs.get(name).apply(ArraySupport.map(args, this::mkVal, Value.class));
     }
 
     return assertFalse();
@@ -284,7 +285,7 @@ class LogicTranslator {
     // 3. (optional) constants
     final Var[] vars = p.vars();
     assert none(asList(vars), Var::isBase);
-    final Value[] args = arrayMap(vars, LogicTranslator.this::mkVal, Value.class);
+    final Value[] args = ArraySupport.map(vars, LogicTranslator.this::mkVal, Value.class);
     return ((Proposition) funcs.get(p.name()).apply(args));
   }
 
@@ -330,10 +331,10 @@ class LogicTranslator {
     assert !c.vars().isEmpty();
     final Value body = translateBag0(c);
     // Declare the function.
-    final DataType[] argsTypes = arrayMap(c.vars(), it -> varMeta.get(it).dataType, DataType.class);
+    final DataType[] argsTypes = ArraySupport.map(c.vars(), it -> varMeta.get(it).dataType, DataType.class);
     final Func func = mkMainFunc(ctx.mkIntType(), argsTypes);
     // Define the function.
-    final Value[] argsValues = arrayMap(c.vars(), this::mkVal, Value.class);
+    final Value[] argsValues = ArraySupport.map(c.vars(), this::mkVal, Value.class);
     final Value funcVal = func.apply(argsValues);
     assertions.add(ctx.mkForall(argsValues, funcVal.eq(body)));
 
@@ -346,7 +347,7 @@ class LogicTranslator {
   }
 
   private Proposition translateSet(Disjunction d) {
-    return ctx.mkDisjunction(arrayMap(d.conjunctions(), this::translateSet, Proposition.class));
+    return ctx.mkDisjunction(ArraySupport.map(d.conjunctions(), this::translateSet, Proposition.class));
   }
 
   private Proposition translateSet(Conjunction c) {
@@ -359,11 +360,11 @@ class LogicTranslator {
     }
 
     final Proposition prop =
-        ctx.mkConjunction(arrayMap(values, it -> (Proposition) it, Proposition.class));
+        ctx.mkConjunction(ArraySupport.map(values, it -> (Proposition) it, Proposition.class));
 
     return c.vars().isEmpty()
         ? prop
-        : ctx.mkExists(arrayMap(c.vars(), this::mkVal, Value.class), prop);
+        : ctx.mkExists(ArraySupport.map(c.vars(), this::mkVal, Value.class), prop);
   }
 
   private Proposition translateForeignKey(List<Column> columns, List<Column> refColumns) {

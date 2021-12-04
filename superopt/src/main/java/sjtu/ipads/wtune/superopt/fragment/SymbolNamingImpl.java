@@ -7,7 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 
 class SymbolNamingImpl implements SymbolNaming {
   private final BiMap<Symbol, String> names;
@@ -51,7 +51,7 @@ class SymbolNamingImpl implements SymbolNaming {
   public Symbol symbolOf(String name) {
     final Symbol symbol = names.inverse().get(name);
     if (symbol != null) return symbol;
-    final Pair<String, Symbol> pair = find(extraNaming, it -> name.equals(it.getKey()));
+    final Pair<String, Symbol> pair = linearFind(extraNaming, it -> name.equals(it.getKey()));
     return pair == null ? null : pair.getRight();
   }
 

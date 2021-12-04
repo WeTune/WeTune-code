@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.logic;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
 
 import java.util.Objects;
 
@@ -24,7 +24,7 @@ class DataTypeImpl extends LogicObjImpl implements DataType {
   @Override
   public Func accessor(String name) {
     if (accessors == null) return null;
-    return find(accessors, it -> it.name().equals(name));
+    return linearFind(accessors, it -> it.name().equals(name));
   }
 
   @Override

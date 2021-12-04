@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
@@ -8,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.map;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class ConstraintImpl implements Constraint {
@@ -28,7 +29,7 @@ class ConstraintImpl implements Constraint {
       throw new IllegalArgumentException("invalid serialized constraint: " + str);
 
     final Symbol[] symbols =
-        arrayMap(asList(fields).subList(1, fields.length), naming::symbolOf, Symbol.class);
+        ArraySupport.map(asList(fields).subList(1, fields.length), naming::symbolOf, Symbol.class);
 
     return new ConstraintImpl(kind, symbols);
   }

@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.prover.logic;
 
 import com.microsoft.z3.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.arrayMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.generate;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.map;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.generate;
 
 class Z3LogicCtx implements LogicCtx {
   static {
@@ -76,28 +76,28 @@ class Z3LogicCtx implements LogicCtx {
   public Value mkProduct(Value... vs) {
     if (vs.length == 1) return vs[0];
 
-    final ArithExpr[] operands = arrayMap(vs, it -> (ArithExpr) unwrap(it), ArithExpr.class);
+    final ArithExpr[] operands = map(vs, it -> (ArithExpr) unwrap(it), ArithExpr.class);
     return wrap(z3.mkMul(operands));
   }
 
   @Override
   public Value mkSum(Value... vs) {
     if (vs.length == 1) return vs[0];
-    final ArithExpr[] operands = arrayMap(vs, it -> (ArithExpr) unwrap(it), ArithExpr.class);
+    final ArithExpr[] operands = map(vs, it -> (ArithExpr) unwrap(it), ArithExpr.class);
     return wrap(z3.mkAdd(operands));
   }
 
   @Override
   public Proposition mkDisjunction(Proposition... ps) {
     if (ps.length == 1) return ps[0];
-    final BoolExpr[] operands = arrayMap(ps, Z3LogicCtx::unwrap, BoolExpr.class);
+    final BoolExpr[] operands = map(ps, Z3LogicCtx::unwrap, BoolExpr.class);
     return wrap(z3.mkOr(operands));
   }
 
   @Override
   public Proposition mkConjunction(Proposition... ps) {
     if (ps.length == 1) return ps[0];
-    final BoolExpr[] operands = arrayMap(ps, Z3LogicCtx::unwrap, BoolExpr.class);
+    final BoolExpr[] operands = map(ps, Z3LogicCtx::unwrap, BoolExpr.class);
     return wrap(z3.mkAnd(operands));
   }
 
@@ -170,7 +170,7 @@ class Z3LogicCtx implements LogicCtx {
         this,
         decl,
         decl.getName().toString(),
-        arrayMap(decl.getDomain(), this::wrap, DataType.class));
+        map(decl.getDomain(), this::wrap, DataType.class));
   }
 
   private DataType wrap(Sort sort) {
@@ -180,7 +180,7 @@ class Z3LogicCtx implements LogicCtx {
           this,
           sort,
           wrap(dt.getConstructors()[0]),
-          arrayMap(
+          map(
               dt.getAccessors()[0],
               it -> Func.wrap(this, it, it.getName().toString(), null),
               Func.class));
@@ -194,7 +194,7 @@ class Z3LogicCtx implements LogicCtx {
   }
 
   static Sort[] unwrap(DataType... ts) {
-    return arrayMap(ts, Z3LogicCtx::unwrap, Sort.class);
+    return map(ts, Z3LogicCtx::unwrap, Sort.class);
   }
 
   static Expr unwrap(Value v) {
@@ -202,7 +202,7 @@ class Z3LogicCtx implements LogicCtx {
   }
 
   static Expr[] unwrap(Value... vs) {
-    return arrayMap(vs, Z3LogicCtx::unwrap, Expr.class);
+    return map(vs, Z3LogicCtx::unwrap, Expr.class);
   }
 
   static BoolExpr unwrap(Proposition p) {

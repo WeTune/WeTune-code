@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import sjtu.ipads.wtune.common.utils.FuncUtils;
+
+import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
@@ -226,7 +227,7 @@ class ParamGen {
         stack.push(((String) args[0]).toLowerCase());
         return true;
       case "coalesce":
-        stack.push(FuncUtils.find(args, Objects::nonNull));
+        stack.push(ArraySupport.linearFind(args, Objects::nonNull));
         return true;
       case "string_to_array":
         stack.push(args[0]);

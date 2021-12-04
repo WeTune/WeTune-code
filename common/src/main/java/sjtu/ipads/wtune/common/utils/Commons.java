@@ -60,21 +60,9 @@ public interface Commons {
     return val == null ? other.get() : val;
   }
 
-  @SuppressWarnings("unchecked")
-  static <T> T[] makeArray(Class<T> cls, int n) {
-    return (T[]) Array.newInstance(cls, n);
-  }
-
   @SafeVarargs
   static <T> T[] asArray(T... vals) {
     return vals;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T> T[] repeat(T value, int times) {
-    final T[] arr = (T[]) Array.newInstance(value.getClass(), times);
-    Arrays.fill(arr, value);
-    return arr;
   }
 
   static <T> T[] sorted(T[] arr, Comparator<? super T> comparator) {
@@ -189,24 +177,12 @@ public interface Commons {
     else return xs.get(index);
   }
 
-  static <T> T pop(List<T> xs) {
-    if (xs.isEmpty()) return null;
-    return xs.remove(xs.size() - 1);
-  }
-
   static <T> void push(List<T> xs, T x) {
     xs.add(x);
   }
 
   static boolean isEmpty(Collection<?> xs) {
     return xs == null || xs.isEmpty();
-  }
-
-  static <T> List<T> listConcat(List<T> ts0, List<T> ts1) {
-    final List<T> ts = new ArrayList<>(ts0.size() + ts1.size());
-    ts.addAll(ts0);
-    ts.addAll(ts1);
-    return ts;
   }
 
   static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {

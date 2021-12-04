@@ -9,7 +9,7 @@ import java.util.List;
 
 import static java.lang.Integer.max;
 import static sjtu.ipads.wtune.common.utils.Commons.listSwap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceLocal;
 

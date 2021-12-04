@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.Commons;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.ExprKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
@@ -393,7 +394,7 @@ class MySQLAstBuilder1 extends MySQLParserBaseVisitor<SqlNode> implements AstBui
     final SqlNode node = mkNode(QuerySpec);
 
     if (ctx.selectOption() != null
-        && find(ctx.selectOption(), it -> "DISTINCT".equalsIgnoreCase(it.getText())) != null)
+        && IterableSupport.linearFind(ctx.selectOption(), it -> "DISTINCT".equalsIgnoreCase(it.getText())) != null)
       node.flag(QuerySpec_Distinct);
 
     final var selectItemList = ctx.selectItemList();

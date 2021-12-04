@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.constants.KeyDirection;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.lazyFilter;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
 
 public interface Constraint {

@@ -21,7 +21,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;

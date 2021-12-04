@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.superopt.fragment.pruning.*;
 import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.find;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 
@@ -26,7 +26,7 @@ public class FragmentSupport {
           new MeaninglessDedup());
 
   static {
-    ((Proj) find(FragmentSupport.DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);
+    ((Proj) linearFind(FragmentSupport.DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);
   }
 
   public static List<Fragment> enumFragments() {

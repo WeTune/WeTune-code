@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 
 import java.util.List;
 import java.util.Set;
@@ -20,13 +21,16 @@ public interface Constraints extends List<Constraint> {
 
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
 
-  NaturalCongruence<Symbol> congruence();
+  NaturalCongruence<Symbol> eqSymbols();
+
+  Symbol instantiationSourceOf(Symbol tgtSym);
 
   default String stringify(SymbolNaming naming) {
     return stringify(naming, new StringBuilder()).toString();
   }
 
-  static Constraints mk(List<Constraint> constraints) {
-    return ConstraintsImpl.mk(constraints);
+  /** srcSyms: symbols at the source side. */
+  static Constraints mk(Symbols srcSyms, List<Constraint> constraints) {
+    return ConstraintsImpl.mk(srcSyms, constraints);
   }
 }

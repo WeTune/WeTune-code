@@ -15,7 +15,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.LeveledException.unsupportedEx;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;

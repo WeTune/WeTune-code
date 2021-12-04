@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 
 import sjtu.ipads.wtune.prover.uexpr.SumExpr;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;

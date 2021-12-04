@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.prover.normalform;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 import java.util.List;

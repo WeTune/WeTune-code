@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 
 class ParamDescImpl implements ParamDesc, Serializable {
   private int index;

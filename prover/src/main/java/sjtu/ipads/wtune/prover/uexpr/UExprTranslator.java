@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.uexpr;
 
+import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.prover.utils.UExprUtils;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
@@ -250,7 +251,7 @@ public class UExprTranslator {
   }
 
   private Var[] asTuples(Collection<Ref> refs) {
-    return arrayMap(refs, this::asTuple, Var.class);
+    return ArraySupport.map(refs, this::asTuple, Var.class);
   }
 
   private UExpr mkUninterpretedPred(Expr expr) {

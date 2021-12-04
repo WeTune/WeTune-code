@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
 
 import java.util.Collections;
@@ -27,6 +28,6 @@ public class SchemaSupport {
     final String ownerTable = column.tableName();
     final Table table = schema.table(ownerTable);
     if (table == null) throw new NoSuchElementException("no such table: " + ownerTable);
-    return lazyFilter(table.constraints(type), it -> it.columns().contains(column));
+    return IterableSupport.lazyFilter(table.constraints(type), it -> it.columns().contains(column));
   }
 }

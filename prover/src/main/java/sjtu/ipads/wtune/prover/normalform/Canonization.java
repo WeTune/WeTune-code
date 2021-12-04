@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.prover.normalform;
 
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.prover.uexpr.TableTerm;
 import sjtu.ipads.wtune.prover.uexpr.UExpr;
@@ -67,8 +68,8 @@ public final class Canonization {
 
     final Map<Var, Var> toSubstVar = new HashMap<>();
 
-    for (Var val : lazyFilter(congruence.keys(), UExprUtils::isConstantVar))
-      for (Var t : lazyFilter(congruence.eqClassOf(val), Var::isBase)) {
+    for (Var val : IterableSupport.lazyFilter(congruence.keys(), UExprUtils::isConstantVar))
+      for (Var t : IterableSupport.lazyFilter(congruence.eqClassOf(val), Var::isBase)) {
         toSubstVar.put(t, val);
       }
 
@@ -123,7 +124,7 @@ public final class Canonization {
         // e.g. say we have UK (post.author,post.name)
         // then we will check if there is a predicate [post.author = t.x] and [post.name = s.y],
         // where t != post and s != post
-        if (any(vars, tup -> none(tmp.eqClassOf(tup), tup2 -> !tup2.root().equals(base)))) continue;
+        if (IterableSupport.any(vars, tup -> none(tmp.eqClassOf(tup), tup2 -> !tup2.root().equals(base)))) continue;
 
         iter.remove();
         toMoveVars.add(base);
@@ -146,7 +147,7 @@ public final class Canonization {
     c.tables().removeAll(toMoveTerms);
     // predicates have been removed
 
-    final boolean removeNeg = c.neg() != null && any(toMoveVars, c.neg()::uses);
+    final boolean removeNeg = c.neg() != null && IterableSupport.any(toMoveVars, c.neg()::uses);
     if (removeNeg) toMoveTerms.add(not(c.neg().toExpr()));
 
     final UExpr addedSqExpr = sum(toMoveVars, mkProduct(toMoveTerms, true));
@@ -169,7 +170,7 @@ public final class Canonization {
     // ... and its projection is used in an equi-pred ...
     final NaturalCongruence<Var> cong = TupleCongruence.mk(c.preds());
     for (Var key : cong.keys()) {
-      final Var tmpVar = find(tmpVars, key::uses);
+      final Var tmpVar = IterableSupport.linearFind(tmpVars, key::uses);
       if (tmpVar == null) continue;
 
       final Set<Var> group = cong.eqClassOf(key);
@@ -177,7 +178,7 @@ public final class Canonization {
 
       // ..., substitute such variable with another variable equal to it
       c.vars().remove(tmpVar);
-      c.subst(key, find(group, it -> none(tmpVars, it::uses)));
+      c.subst(key, IterableSupport.linearFind(group, it -> none(tmpVars, it::uses)));
     }
 
     return c;

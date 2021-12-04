@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.testbed.profile;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 import sjtu.ipads.wtune.stmt.resolver.JoinGraph;
@@ -131,7 +132,7 @@ public interface ParamsGen {
     if (scc1.size() == 1) return scc1.get(0);
 
     for (Set<Relation> component1 : scc1)
-      if (all(component1, t0 -> any(component0, t1 -> t0.table().equals(t1.table())))) {
+      if (all(component1, t0 -> IterableSupport.any(component0, t1 -> t0.table().equals(t1.table())))) {
         return component1;
       }
 

@@ -5,37 +5,62 @@ import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.Symbols;
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
 
 class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   private final List<Constraint> constraints;
   private final NaturalCongruence<Symbol> congruence;
+  private final Map<Symbol, Symbol> instantiationSource;
   private final int[] segBases;
 
-  ConstraintsImpl(List<Constraint> constraints, NaturalCongruence<Symbol> congruence) {
+  ConstraintsImpl(
+      List<Constraint> constraints,
+      NaturalCongruence<Symbol> congruence,
+      Map<Symbol, Symbol> instantiationSource) {
     this.constraints = constraints;
     this.congruence = congruence;
-    this.segBases = new int[Constraint.Kind.values().length];
+    this.instantiationSource = instantiationSource;
 
+    this.segBases = new int[Constraint.Kind.values().length];
     calcSegments();
   }
 
-  static Constraints mk(List<Constraint> constraints) {
-    final NaturalCongruence<Symbol> congruence = NaturalCongruence.mk();
-    for (Constraint constraint : constraints)
-      if (constraint.kind().isEq())
-        congruence.putCongruent(constraint.symbols()[0], constraint.symbols()[1]);
+  static Constraints mk(Symbols srcSyms, List<Constraint> constraints) {
+    // This congruence contains only the symbols at the source side
+    final NaturalCongruence<Symbol> eqSymbols = NaturalCongruence.mk();
+    for (Constraint c : lazyFilter(constraints, it -> it.kind().isEq())) {
+      if (any(asList(c.symbols()), it -> it.ctx() != srcSyms)) continue;
+      eqSymbols.putCongruent(c.symbols()[0], c.symbols()[1]);
+    }
+
+    // This map contains <tgtSym -> srcSym>, which means the `tgtSym` is instantiated from `srcSym`
+    final Map<Symbol, Symbol> instantiationSource = new IdentityHashMap<>();
+    for (Constraint c : lazyFilter(constraints, it -> it.kind().isEq())) {
+      Symbol sym0 = c.symbols()[0], sym1 = c.symbols()[1];
+      if (sym1.ctx() == srcSyms && sym0.ctx() != srcSyms) {
+        Symbol tmp = sym0;
+        sym0 = sym1;
+        sym1 = tmp;
+      }
+
+      // add this after migration completion:
+      //      assert sym0.ctx() == srcSyms && sym1.ctx() != srcSyms;
+
+      instantiationSource.put(sym1, sym0);
+    }
 
     constraints.sort(comparing(Constraint::kind));
 
-    return new ConstraintsImpl(constraints, congruence);
+    return new ConstraintsImpl(constraints, eqSymbols, instantiationSource);
   }
 
   private void calcSegments() {
@@ -108,8 +133,13 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
-  public NaturalCongruence<Symbol> congruence() {
+  public NaturalCongruence<Symbol> eqSymbols() {
     return congruence;
+  }
+
+  @Override
+  public Symbol instantiationSourceOf(Symbol tgtSym) {
+    return instantiationSource.get(tgtSym);
   }
 
   @Override

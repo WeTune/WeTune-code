@@ -37,14 +37,15 @@ class SubstitutionImpl implements Substitution {
     final List<Constraint> constraints =
         listMap(split[2].split(";"), it -> Constraint.parse(it, naming));
 
-    return new SubstitutionImpl(_0, _1, Constraints.mk(constraints), naming);
+    return new SubstitutionImpl(
+        _0, _1, Constraints.mk(_0.symbols(), constraints), naming);
   }
 
   static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {
     final Constraints cs =
         constraints instanceof Constraints
             ? (Constraints) constraints
-            : Constraints.mk(constraints);
+            : Constraints.mk(f0.symbols(), constraints);
 
     return new SubstitutionImpl(f0, f1, cs, null);
   }

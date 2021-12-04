@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.listConcat;
+import static sjtu.ipads.wtune.common.utils.ListSupport.concat;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
 
@@ -74,7 +74,7 @@ class InSubFilterNodeImpl extends PlanNodeBase implements InSubFilterNode {
     this.rhsExpr = requireNonNull(rhsExpr);
 
     // update refs
-    if (!rhsExpr.refs().isEmpty()) this.refs = RefBag.mk(listConcat(lhsRefs, rhsExpr.refs()));
+    if (!rhsExpr.refs().isEmpty()) this.refs = RefBag.mk(concat(lhsRefs, rhsExpr.refs()));
 
     // update predicate
     final ASTNode queryExpr = ASTNode.expr(QUERY_EXPR);

@@ -1,0 +1,42 @@
+package sjtu.ipads.wtune.superopt.uexpr;
+
+import java.util.Arrays;
+
+import static java.util.Arrays.asList;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
+
+record UVarImpl(VarKind kind, UName name, UVar[] arguments) implements UVar {
+  @Override
+  public UVar replaceBaseVar(UVar baseVar, UVar repVar) {
+    if (baseVar.kind() != VarKind.BASE) throw new IllegalArgumentException();
+    if (this.kind == VarKind.BASE)
+      return name.equals(baseVar.name()) ? repVar : this;
+
+    UVar[] vars = arguments;
+    for (int i = 0, bound = vars.length; i < bound; i++) {
+      final UVar var = vars[i];
+      final UVar v = vars[i].replaceBaseVar(baseVar, repVar);
+      if (v != var) {
+        if (vars == arguments) vars = Arrays.copyOf(arguments, arguments.length);
+        vars[i] = v;
+      }
+    }
+
+    if (vars != arguments) return new UVarImpl(kind, name, vars);
+    else return this;
+  }
+
+  @Override
+  public UVar[] argument() {
+    return arguments;
+  }
+
+  @Override
+  public String toString() {
+    if (kind == VarKind.BASE) return name.toString();
+    if (kind == VarKind.EQ) return arguments[0] + " = " + arguments[1];
+
+    final StringBuilder builder = new StringBuilder(name.toString());
+    return joining("(", ",", ")", false, asList(arguments), builder).toString();
+  }
+}

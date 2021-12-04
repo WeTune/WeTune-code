@@ -4,6 +4,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -110,7 +111,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
   public boolean checkConstraint(boolean strict) {
     final Set<Symbol> assignedSymbols = assignments.keySet();
     for (Constraint constraint : constraints)
-      if (strict || any(asList(constraint.symbols()), assignedSymbols::contains))
+      if (strict || IterableSupport.any(asList(constraint.symbols()), assignedSymbols::contains))
         if (!checkConstraint(constraint, strict)) {
           return false;
         }
@@ -229,7 +230,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     final List<Value> referredAttrs = interpretInAttrs(referredAttrsSym);
     if (referredAttrs == null) return true;
     final List<Column> referredCols = resolveSourceColumns(referredAttrs);
-    final var fk = find(fks, it -> it.refColumns().equals(referredCols));
+    final var fk = IterableSupport.linearFind(fks, it -> it.refColumns().equals(referredCols));
     if (fk == null) return false;
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
@@ -324,7 +325,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
       final Set<Column> columns = setMap(attrs, Value::column);
       assert none(columns, Objects::isNull);
 
-      return any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
+      return IterableSupport.any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
 
     } else if (kind == OperatorType.AGG) {
       final PlanContext context = surface.context();

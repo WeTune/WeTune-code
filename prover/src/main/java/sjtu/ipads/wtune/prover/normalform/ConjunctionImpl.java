@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.Kind.TABLE;
 import static sjtu.ipads.wtune.prover.uexpr.UExpr.mul;

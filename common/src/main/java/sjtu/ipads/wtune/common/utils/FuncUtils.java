@@ -91,10 +91,6 @@ public interface FuncUtils {
     return xs == null || stream(xs).allMatch(check);
   }
 
-  static <T> boolean any(Iterable<T> xs, Predicate<T> check) {
-    return xs != null && stream(xs).anyMatch(check);
-  }
-
   static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
     return xs == null || stream(xs).noneMatch(check);
   }
@@ -128,10 +124,6 @@ public interface FuncUtils {
     return true;
   }
 
-  static <T> Iterable<T> lazyFilter(Iterable<T> os, Predicate<? super T> predicate) {
-    return () -> new FilteredIterator<>(os.iterator(), predicate);
-  }
-
   static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
   }
@@ -145,29 +137,12 @@ public interface FuncUtils {
     return stream(os).filter(func).collect(Collectors.toCollection(supplier));
   }
 
-  static <T, R> R[] arrayMap(T[] ts, Function<? super T, R> func, Class<R> retType) {
-    final R[] rs = Commons.makeArray(retType, ts.length);
-    for (int i = 0, bound = ts.length; i < bound; i++) rs[i] = func.apply(ts[i]);
-    return rs;
-  }
-
-  static <T, R> R[] arrayMap(Collection<T> ts, Function<? super T, R> func, Class<R> retType) {
-    final R[] rs = Commons.makeArray(retType, ts.size());
-    int i = 0;
-    for (T t : ts) rs[i++] = func.apply(t);
-    return rs;
-  }
-
   @SafeVarargs
   @SuppressWarnings("unchecked")
   static <T> T[] arrayFilter(Predicate<T> test, T... arr) {
     return stream(arr)
         .filter(test)
         .toArray(n -> (T[]) Array.newInstance(arr.getClass().getComponentType(), n));
-  }
-
-  static <T> T[] generate(int n, IntFunction<T> func, Class<T> retType) {
-    return IntStream.range(0, n).mapToObj(func).toArray(len -> Commons.makeArray(retType, len));
   }
 
   static <T> int locate(Iterable<T> os, Predicate<T> pred) {
@@ -177,16 +152,6 @@ public interface FuncUtils {
       index++;
     }
     return -1;
-  }
-
-  static <T> T find(Iterable<T> os, Predicate<T> pred) {
-    for (T o : os) if (pred.test(o)) return o;
-    return null;
-  }
-
-  static <T> T find(T[] ts, Predicate<T> pred) {
-    for (T t : ts) if (pred.test(t)) return t;
-    return null;
   }
 
   static <T> Stream<T> stream(Iterable<T> iterable) {

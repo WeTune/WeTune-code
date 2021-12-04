@@ -14,4 +14,5 @@ module sjtu.ipads.wtune.superopt {
   requires com.zaxxer.hikari;
   requires mssql.jdbc;
   requires trove4j;
+  requires z3;
 }

@@ -71,6 +71,7 @@ public class SubstitutionSupport {
   public static Constraints partialConstraintsOf(Substitution substitution, boolean lhs) {
     final Symbols ctx = (lhs ? substitution._0() : substitution._1()).symbols();
     return Constraints.mk(
+        ctx,
         listFilter(
             substitution.constraints(), it -> all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
   }

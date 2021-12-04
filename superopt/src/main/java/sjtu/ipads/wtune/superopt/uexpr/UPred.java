@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.uexpr2;
+package sjtu.ipads.wtune.superopt.uexpr;
 
 public interface UPred extends UAtom {
   UVar var();

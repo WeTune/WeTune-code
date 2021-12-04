@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.prover.uexpr2;
+package sjtu.ipads.wtune.superopt.uexpr;
 
 public interface UTable extends UAtom {
   UName tableName();
