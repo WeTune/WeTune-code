@@ -317,14 +317,14 @@ class PlanTranslator {
   }
 
   private static class TableDesc {
-    private final Set<AttrsDesc> subValues = new HashSet<>();
+    private final List<AttrsDesc> subValues = new ArrayList<>();
     private final List<String> columnNames = new ArrayList<>();
     private String name;
     private boolean initialized;
   }
 
   private static class AttrsDesc {
-    private final Set<AttrsDesc> subValues = new HashSet<>();
+    private final List<AttrsDesc> subValues = new ArrayList<>();
     private List<String> attrNames;
   }
 
