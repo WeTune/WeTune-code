@@ -138,7 +138,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
-  public Symbol instantiationSourceOf(Symbol tgtSym) {
+  public Symbol instantiationOf(Symbol tgtSym) {
     return instantiationSource.get(tgtSym);
   }
 

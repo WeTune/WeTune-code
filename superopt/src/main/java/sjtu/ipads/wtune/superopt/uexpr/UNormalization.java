@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.transformSubTerms;
@@ -19,9 +21,54 @@ class UNormalization {
 
   private UTerm normalizeTerm0(UTerm expr) {
     // Essential normalization.
+    expr = promoteSummation(expr);
     expr = mergeSummation(expr);
     // Not critical, just make `expr` more readable.
     expr = eliminateSquash(expr);
+    return expr;
+  }
+
+  // .. * Sum[x](..) -> Sum[x](.. * ..)
+  private UTerm promoteSummation(UTerm expr) {
+    expr = transformSubTerms(expr, this::promoteSummation);
+    if (expr.kind() != MULTIPLY) return expr;
+
+    Set<UVar> freeVars = null;
+    final ListIterator<UTerm> iter = expr.subTerms().listIterator();
+    while (iter.hasNext()) {
+      final UTerm factor = iter.next();
+      if (factor.kind() == SUMMATION) {
+        final USum sum = (USum) factor;
+        if (freeVars == null) freeVars = new HashSet<>(sum.boundedVars().size());
+        freeVars.addAll(sum.boundedVars());
+        iter.set(sum.body());
+      }
+    }
+    if (freeVars != null) return USum.mk(freeVars, expr);
+    else return expr;
+  }
+
+  // Sum[x](Sum[y](..)) -> Sum[x,y](..)
+  private UTerm mergeSummation(UTerm expr) {
+    expr = transformSubTerms(expr, this::mergeSummation);
+    if (expr.kind() != SUMMATION) return expr;
+
+    final USum summation = (USum) expr;
+    final Set<UVar> boundedVars = summation.boundedVars();
+    assert summation.body().kind() == MULTIPLY;
+
+    // Sum[x](Prod(..,Sum[y](..),..) -> Sum[x,y](..,..,..)
+    final List<UTerm> subTerms = summation.body().subTerms();
+    for (int i = 0; i < subTerms.size(); i++) {
+      final UTerm subTerm = subTerms.get(i);
+      if (subTerm.kind() != SUMMATION) continue;
+      final USum subSummation = (USum) subTerm;
+      boundedVars.addAll(subSummation.boundedVars());
+      subTerms.addAll(subSummation.body().subTerms());
+      isModified = true;
+    }
+    subTerms.removeIf(it -> it.kind() == SUMMATION);
+
     return expr;
   }
 
@@ -57,30 +104,6 @@ class UNormalization {
     }
 
     isModified = subTerms.removeIf(t -> t.kind() == kind);
-    return expr;
-  }
-
-  // Sum[x](Sum[y](..)) -> Sum[x,y](..)
-  private UTerm mergeSummation(UTerm expr) {
-    expr = transformSubTerms(expr, this::mergeSummation);
-    if (expr.kind() != SUMMATION) return expr;
-
-    final USum summation = (USum) expr;
-    final Set<UVar> boundedVars = summation.boundedVars();
-    assert summation.body().kind() == MULTIPLY;
-
-    // Sum[x](Prod(..,Sum[y](..),..) -> Sum[x,y](..,..,..)
-    final List<UTerm> subTerms = summation.body().subTerms();
-    for (int i = 0; i < subTerms.size(); i++) {
-      final UTerm subTerm = subTerms.get(i);
-      if (subTerm.kind() != SUMMATION) continue;
-      final USum subSummation = (USum) subTerm;
-      boundedVars.addAll(subSummation.boundedVars());
-      subTerms.addAll(subSummation.body().subTerms());
-      isModified = true;
-    }
-    subTerms.removeIf(it -> it.kind() == SUMMATION);
-
     return expr;
   }
 }

@@ -16,7 +16,7 @@ public interface ExprFields {
   // Col Ref
   FieldKey<SqlNode> ColRef_ColName = ColRef.nodeField("Column"); // ColName
   // Func Call
-  FieldKey<SqlNode> FuncCall_Name = FuncCall.nodeField("Name"); // NAME2
+  FieldKey<SqlNode> FuncCall_Name = FuncCall.nodeField("Name"); // Name2
   FieldKey<SqlNodes> FuncCall_Args = FuncCall.nodesField("Args"); // Expr
   // Collate
   FieldKey<SqlNode> Collate_Expr = Collate.nodeField("Expr"); // Expr

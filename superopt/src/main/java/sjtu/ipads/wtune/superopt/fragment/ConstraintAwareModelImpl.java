@@ -175,7 +175,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
     final boolean trusted = isAssignmentTrusted(attrsSym) && isAssignmentTrusted(srcSym);
     if (trusted) return srcAttrs.containsAll(attrs);
-    else return all(attrs, attr -> locateValueRelaxed(srcAttrs, attr, plan) != null);
+    else return IterableSupport.all(attrs, attr -> locateValueRelaxed(srcAttrs, attr, plan) != null);
   }
 
   private boolean checkUnique(Constraint unique) {
@@ -323,7 +323,7 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     } else if (kind == OperatorType.INPUT) {
       final InputNode inputNode = (InputNode) surface;
       final Set<Column> columns = setMap(attrs, Value::column);
-      assert none(columns, Objects::isNull);
+      assert IterableSupport.none(columns, Objects::isNull);
 
       return IterableSupport.any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
 

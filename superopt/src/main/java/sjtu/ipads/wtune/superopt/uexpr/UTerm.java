@@ -10,5 +10,7 @@ public interface UTerm {
 
   List<UTerm> subTerms();
 
+  boolean isUsing(UVar var);
+
   UTerm replaceBaseVar(UVar baseVar, UVar repVar);
 }

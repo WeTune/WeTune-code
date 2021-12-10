@@ -4,8 +4,16 @@ import java.util.Arrays;
 
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 
 record UVarImpl(VarKind kind, UName name, UVar[] arguments) implements UVar {
+  @Override
+  public boolean isUsing(UVar var) {
+    assert var.kind() == VarKind.BASE;
+    if (this.kind == VarKind.BASE) return var.name().equals(this.name());
+    else return any(asList(arguments), it -> it.isUsing(var));
+  }
+
   @Override
   public UVar replaceBaseVar(UVar baseVar, UVar repVar) {
     if (baseVar.kind() != VarKind.BASE) throw new IllegalArgumentException();
@@ -27,7 +35,7 @@ record UVarImpl(VarKind kind, UName name, UVar[] arguments) implements UVar {
   }
 
   @Override
-  public UVar[] argument() {
+  public UVar[] args() {
     return arguments;
   }
 

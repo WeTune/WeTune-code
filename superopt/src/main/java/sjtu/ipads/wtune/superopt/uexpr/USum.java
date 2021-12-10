@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.uexpr;
 
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.BASE;
 
 public interface USum extends UUnary {

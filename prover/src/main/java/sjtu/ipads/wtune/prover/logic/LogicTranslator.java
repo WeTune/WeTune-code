@@ -7,6 +7,7 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Cascade;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.prover.normalform.Conjunction;
 import sjtu.ipads.wtune.prover.normalform.Disjunction;
@@ -221,7 +222,7 @@ class LogicTranslator {
 
     if (v.isFunc()) {
       final Var[] args = v.base();
-      assert none(asList(args), Var::isBase);
+      assert IterableSupport.none(asList(args), Var::isBase);
       return funcs.get(name).apply(ArraySupport.map(args, this::mkVal, Value.class));
     }
 
@@ -284,7 +285,7 @@ class LogicTranslator {
     // 2. a term apply the predicate to the arguments
     // 3. (optional) constants
     final Var[] vars = p.vars();
-    assert none(asList(vars), Var::isBase);
+    assert IterableSupport.none(asList(vars), Var::isBase);
     final Value[] args = ArraySupport.map(vars, LogicTranslator.this::mkVal, Value.class);
     return ((Proposition) funcs.get(p.name()).apply(args));
   }

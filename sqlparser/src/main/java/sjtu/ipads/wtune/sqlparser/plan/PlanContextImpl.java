@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.all;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 
 class PlanContextImpl implements PlanContext {
   private final Schema schema;

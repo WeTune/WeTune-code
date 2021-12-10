@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.common.utils.NameSequence;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
@@ -9,12 +10,9 @@ import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.ColName;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Expr;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.*;
 
 public abstract class PlanSupport {
@@ -48,6 +46,14 @@ public abstract class PlanSupport {
    */
   public static PlanContext assemblePlan(SqlNode ast, Schema schema) {
     return disambiguateQualification(resolvePlan(buildPlan(ast, schema)));
+  }
+
+  public static String stringifyNode(PlanContext ctx, int id) {
+    return PlanStringifier.stringifyNode(ctx, id);
+  }
+
+  public static String stringifyTree(PlanContext ctx, int id) {
+    return PlanStringifier.stringifyTree(ctx, id);
   }
 
   // Must be invoked after `resolvePlan`
@@ -97,27 +103,13 @@ public abstract class PlanSupport {
 
   //// Expression-related
   static Expression mkColRefExpr(Value value, SqlContext sqlCtx) {
-    final SqlNode colName = SqlNode.mk(sqlCtx, sqlCtx.mkNode(ColName));
-    final SqlNode colRef = SqlNode.mk(sqlCtx, sqlCtx.mkNode(Expr));
-    colName.$(ColName_Table, value.qualification());
-    colName.$(ColName_Col, value.name());
-    colRef.$(Expr_Kind, ColRef);
-    colRef.$(ColRef_ColName, colName);
-    return Expression.mk(colRef);
+    return Expression.mk(SqlSupport.mkColRef(sqlCtx, value.qualification(), value.name()));
   }
 
   static SqlNode normalizePredicate(SqlNode exprAst, SqlContext sqlCtx) {
     if (ColRef.isInstance(exprAst)) {
-      final SqlNode literal = SqlNode.mk(sqlCtx, Expr);
-      final SqlNode binary = SqlNode.mk(sqlCtx, Expr);
-      literal.$(Expr_Kind, Literal);
-      literal.$(Literal_Kind, LiteralKind.BOOL);
-      literal.$(Literal_Value, Boolean.TRUE);
-      binary.$(Expr_Kind, Binary);
-      binary.$(Binary_Left, copyAst(exprAst, sqlCtx));
-      binary.$(Binary_Op, BinaryOpKind.IS);
-      binary.$(Binary_Right, literal);
-      return binary;
+      final SqlNode literal = mkLiteral(sqlCtx, LiteralKind.BOOL, Boolean.TRUE);
+      return mkBinary(sqlCtx, BinaryOpKind.IS, copyAst(exprAst, sqlCtx), literal);
     } else {
       return exprAst;
     }

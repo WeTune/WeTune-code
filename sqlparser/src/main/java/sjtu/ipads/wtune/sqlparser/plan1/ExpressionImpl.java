@@ -62,4 +62,9 @@ public class ExpressionImpl implements Expression {
 
     return newAst;
   }
+
+  @Override
+  public String toString() {
+    return template.toString();
+  }
 }

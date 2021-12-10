@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.none;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.none;
 import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.gatherHoles;
 import static sjtu.ipads.wtune.superopt.fragment.FragmentUtils.structuralCompare;
 

@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
-import com.google.common.collect.Lists;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.transformTerms;
 
 final class UMulImpl implements UMul {
@@ -17,11 +16,13 @@ final class UMulImpl implements UMul {
   }
 
   static UMul mk(UTerm e) {
-    return new UMulImpl(Lists.newArrayList(e));
+    final List<UTerm> factors = new ArrayList<>(e.subTerms().size() + 1);
+    addFactor(factors, e);
+    return new UMulImpl(factors);
   }
 
   static UMul mk(UTerm e0, UTerm e1) {
-    final List<UTerm> factors = new ArrayList<>(e0.subTerms().size() + e1.subTerms().size());
+    final List<UTerm> factors = new ArrayList<>(e0.subTerms().size() + e1.subTerms().size() + 1);
     addFactor(factors, e0);
     addFactor(factors, e1);
     return new UMulImpl(factors);
@@ -29,7 +30,8 @@ final class UMulImpl implements UMul {
 
   static UMul mk(UTerm e0, UTerm e1, UTerm... others) {
     final int sum = Arrays.stream(others).map(UTerm::subTerms).mapToInt(List::size).sum();
-    final List<UTerm> factors = new ArrayList<>(e0.subTerms().size() + e1.subTerms().size() + sum);
+    final List<UTerm> factors =
+        new ArrayList<>(e0.subTerms().size() + e1.subTerms().size() + sum + 1);
     addFactor(factors, e0);
     addFactor(factors, e1);
     for (UTerm factor : others) addFactor(factors, factor);
@@ -44,6 +46,11 @@ final class UMulImpl implements UMul {
   @Override
   public List<UTerm> subTerms() {
     return factors;
+  }
+
+  @Override
+  public boolean isUsing(UVar var) {
+    return any(factors, it -> it.isUsing(var));
   }
 
   @Override

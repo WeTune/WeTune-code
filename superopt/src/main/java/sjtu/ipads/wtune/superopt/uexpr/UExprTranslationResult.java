@@ -18,7 +18,7 @@ public class UExprTranslationResult {
   final TObjectIntMap<Symbol> symSchemas;
   final TObjectIntMap<UVar> varSchemas;
   UTerm srcExpr, tgtExpr;
-  UVar srcFreeVar, tgtFreeVar;
+  UVar srcOutVar, tgtOutVar;
 
   UExprTranslationResult(Substitution rule) {
     this.rule = rule;
@@ -46,11 +46,11 @@ public class UExprTranslationResult {
   }
 
   public UVar sourceFreeVar() {
-    return srcFreeVar;
+    return srcOutVar;
   }
 
   public UVar targetFreeVar() {
-    return tgtFreeVar;
+    return tgtOutVar;
   }
 
   public int schemaOf(UVar var) {

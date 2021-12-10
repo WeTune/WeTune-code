@@ -74,6 +74,11 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
     return new PlanNd(planKind);
   }
 
+  @Override
+  public String toString() {
+    return PlanSupport.stringifyTree(this, root());
+  }
+
   private static <K> TObjectIntMap<K> mkIdentityMap() {
     return new TObjectIntCustomHashMap<>(IdentityHashingStrategy.INSTANCE);
   }

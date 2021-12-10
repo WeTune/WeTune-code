@@ -23,7 +23,7 @@ public interface Constraints extends List<Constraint> {
 
   NaturalCongruence<Symbol> eqSymbols();
 
-  Symbol instantiationSourceOf(Symbol tgtSym);
+  Symbol instantiationOf(Symbol tgtSym);
 
   default String stringify(SymbolNaming naming) {
     return stringify(naming, new StringBuilder()).toString();

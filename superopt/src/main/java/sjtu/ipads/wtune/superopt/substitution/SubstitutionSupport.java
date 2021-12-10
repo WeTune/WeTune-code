@@ -3,7 +3,9 @@ package sjtu.ipads.wtune.superopt.substitution;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 
@@ -34,7 +36,7 @@ public class SubstitutionSupport {
 
     for (Symbol.Kind kind : Symbol.Kind.values())
       for (Symbol symbol : symbols.symbolsOf(kind))
-        if (none(constraints.eqClassOf(symbol), it -> it.ctx() != symbol.ctx())) {
+        if (IterableSupport.none(constraints.eqClassOf(symbol), it -> it.ctx() != symbol.ctx())) {
           return false;
         }
 
@@ -73,7 +75,8 @@ public class SubstitutionSupport {
     return Constraints.mk(
         ctx,
         listFilter(
-            substitution.constraints(), it -> all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
+            substitution.constraints(),
+            it -> IterableSupport.all(asList(it.symbols()), sym -> sym.ctx() == ctx)));
   }
 
   public static Pair<Substitution, Substitution> cutSubstitution(
@@ -127,5 +130,9 @@ public class SubstitutionSupport {
   public static Pair<PlanNode, PlanNode> translateAsPlan(
       Substitution substitution, boolean backwardCompatible, boolean wrapIfNeeded) {
     return new PlanTranslator().translate(substitution, backwardCompatible, wrapIfNeeded);
+  }
+
+  public static Pair<PlanContext, PlanContext> translateAsPlan(Substitution rule) {
+    return new PlanTranslator2(rule).translate();
   }
 }

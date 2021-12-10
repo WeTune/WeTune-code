@@ -15,4 +15,12 @@ public interface IterableSupport {
   static <T> Iterable<T> lazyFilter(Iterable<T> os, Predicate<? super T> predicate) {
     return () -> new FilteredIterator<>(os.iterator(), predicate);
   }
+
+  static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
+    return xs == null || FuncUtils.stream(xs).noneMatch(check);
+  }
+
+  static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
+    return xs == null || FuncUtils.stream(xs).allMatch(check);
+  }
 }

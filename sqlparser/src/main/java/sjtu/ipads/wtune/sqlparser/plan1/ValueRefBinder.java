@@ -107,7 +107,7 @@ class ValueRefBinder {
   }
 
   private void bindJoin(int nodeId) {
-    final Values lookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final Values lookup = valuesReg.valuesOf(nodeId);
     final Expression joinCond = ((JoinNode) plan.nodeAt(nodeId)).joinCond();
     if (joinCond == null) return;
     final List<Value> valueRefs = ListSupport.map(joinCond.colRefs(), it -> bindRef(it, lookup));
@@ -134,6 +134,7 @@ class ValueRefBinder {
     final Expression expr = ((InSubNode) plan.nodeAt(nodeId)).expr();
     final List<Value> valueRefs = ListSupport.map(expr.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(expr, valueRefs);
+    bind0(plan.childOf(nodeId, 1), lookup);
   }
 
   private void bindSort(int nodeId) {
@@ -171,7 +172,7 @@ class ValueRefBinder {
 
     for (Value value : lookup) {
       if ((qualification == null || qualification.equals(value.qualification()))
-          && name.equals(qualification)) {
+          && name.equals(value.name())) {
         return value;
       }
     }

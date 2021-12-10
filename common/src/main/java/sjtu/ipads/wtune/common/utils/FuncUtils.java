@@ -87,14 +87,6 @@ public interface FuncUtils {
     return listFlatMap(Arrays.asList(os), func);
   }
 
-  static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
-    return xs == null || stream(xs).allMatch(check);
-  }
-
-  static <T> boolean none(Iterable<T> xs, Predicate<T> check) {
-    return xs == null || stream(xs).noneMatch(check);
-  }
-
   static <P0, P1, R> List<R> zipMap(
       Collection<P0> l0, Collection<P1> l1, BiFunction<? super P0, ? super P1, R> func) {
     final int bound = Math.min(l0.size(), l1.size());

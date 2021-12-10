@@ -7,6 +7,8 @@ import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind;
 import sjtu.ipads.wtune.sqlparser.parser.AstParser;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
@@ -14,10 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Expr;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableSource;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.Expr_Kind;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.TableSource_Kind;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 
 public abstract class SqlSupport {
   private static boolean PARSING_ERROR_MUTED = false;
@@ -187,5 +189,56 @@ public abstract class SqlSupport {
     }
 
     return builder;
+  }
+
+  public static SqlNode mkName2(SqlContext ctx, String piece0, String piece1) {
+    final SqlNode node = SqlNode.mk(ctx, Name2);
+    if (piece0 != null) node.$(Name2_0, piece0);
+    node.$(Name2_1, piece1);
+    return node;
+  }
+
+  public static SqlNode mkColName(SqlContext ctx, String qualification, String name) {
+    final SqlNode colName = SqlNode.mk(ctx, ColName);
+    colName.$(ColName_Table, qualification);
+    colName.$(ColName_Col, name);
+    return colName;
+  }
+
+  public static SqlNode mkColRef(SqlContext ctx, String qualification, String name) {
+    final SqlNode colName = mkColName(ctx, qualification, name);
+    final SqlNode colRef = SqlNode.mk(ctx, ColRef);
+    colRef.$(ColRef_ColName, colName);
+    return colRef;
+  }
+
+  public static SqlNode mkBinary(SqlContext ctx, BinaryOpKind op, SqlNode lhs, SqlNode rhs) {
+    final SqlNode binary = SqlNode.mk(ctx, Binary);
+    binary.$(Binary_Op, op);
+    binary.$(Binary_Left, lhs);
+    binary.$(Binary_Right, rhs);
+    return binary;
+  }
+
+  public static SqlNode mkFuncCall(SqlContext ctx, String funcName, List<SqlNode> args) {
+    final SqlNode funcCall = SqlNode.mk(ctx, FuncCall);
+    final SqlNodes argPack = SqlNodes.mk(ctx, args);
+    funcCall.$(FuncCall_Name, mkName2(ctx, null, funcName));
+    funcCall.$(FuncCall_Args, argPack);
+    return funcCall;
+  }
+
+  public static SqlNode mkSelectItem(SqlContext ctx, SqlNode expr, String alias) {
+    final SqlNode selectItem = SqlNode.mk(ctx, SelectItem);
+    selectItem.$(SelectItem_Expr, expr);
+    selectItem.$(SelectItem_Alias, alias);
+    return selectItem;
+  }
+
+  public static SqlNode mkLiteral(SqlContext ctx, LiteralKind kind, Object value) {
+    final SqlNode literal = SqlNode.mk(ctx, Literal);
+    literal.$(Literal_Kind, kind);
+    literal.$(Literal_Value, value);
+    return literal;
   }
 }

@@ -71,8 +71,8 @@ class LogicProverImpl implements LogicProver {
   }
 
   private boolean fastReject(Disjunction expr0, Disjunction expr1) {
-    return none(expr0, c0 -> IterableSupport.any(expr1, c1 -> matchVars(c0, c1)))
-        || none(expr1, c1 -> IterableSupport.any(expr0, c0 -> matchVars(c1, c0)));
+    return IterableSupport.none(expr0, c0 -> IterableSupport.any(expr1, c1 -> matchVars(c0, c1)))
+        || IterableSupport.none(expr1, c1 -> IterableSupport.any(expr0, c0 -> matchVars(c1, c0)));
 
     //    return !all(expr0, c0 -> any(expr1, c1 -> matchVars(c0, c1)))
     //        || !all(expr1, c1 -> any(expr0, c0 -> matchVars(c1, c0)));

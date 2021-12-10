@@ -14,7 +14,7 @@ public class SchemaSupport {
     if (columns.isEmpty()) return Collections.emptyList();
 
     final String ownerTable = columns.get(0).tableName();
-    if (!all(columns, it -> ownerTable.equals(it.tableName()))) return Collections.emptyList();
+    if (!IterableSupport.all(columns, it -> ownerTable.equals(it.tableName()))) return Collections.emptyList();
 
     final Table table = schema.table(ownerTable);
     if (table == null) throw new NoSuchElementException("no such table: " + ownerTable);

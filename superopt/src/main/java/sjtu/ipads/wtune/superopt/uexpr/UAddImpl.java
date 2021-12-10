@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.transformTerms;
 
 final class UAddImpl implements UAdd {
@@ -29,6 +30,11 @@ final class UAddImpl implements UAdd {
   @Override
   public List<UTerm> subTerms() {
     return factors;
+  }
+
+  @Override
+  public boolean isUsing(UVar var) {
+    return any(factors, it -> it.isUsing(var));
   }
 
   @Override

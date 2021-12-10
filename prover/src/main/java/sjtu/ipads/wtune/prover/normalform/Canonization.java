@@ -124,7 +124,7 @@ public final class Canonization {
         // e.g. say we have UK (post.author,post.name)
         // then we will check if there is a predicate [post.author = t.x] and [post.name = s.y],
         // where t != post and s != post
-        if (IterableSupport.any(vars, tup -> none(tmp.eqClassOf(tup), tup2 -> !tup2.root().equals(base)))) continue;
+        if (IterableSupport.any(vars, tup -> IterableSupport.none(tmp.eqClassOf(tup), tup2 -> !tup2.root().equals(base)))) continue;
 
         iter.remove();
         toMoveVars.add(base);
@@ -164,7 +164,7 @@ public final class Canonization {
     if (c.squash() != null) applyMinimization(c.squash());
     if (c.neg() != null) applyMinimization(c.neg());
     // For those variable from no table ...
-    final List<Var> tmpVars = listFilter(c.vars(), v -> none(c.tables(), it -> it.uses(v)));
+    final List<Var> tmpVars = listFilter(c.vars(), v -> IterableSupport.none(c.tables(), it -> it.uses(v)));
     if (tmpVars.isEmpty()) return c;
 
     // ... and its projection is used in an equi-pred ...
@@ -178,7 +178,7 @@ public final class Canonization {
 
       // ..., substitute such variable with another variable equal to it
       c.vars().remove(tmpVar);
-      c.subst(key, IterableSupport.linearFind(group, it -> none(tmpVars, it::uses)));
+      c.subst(key, IterableSupport.linearFind(group, it -> IterableSupport.none(tmpVars, it::uses)));
     }
 
     return c;
