@@ -28,6 +28,10 @@ public interface Constraint {
     public boolean isEq() {
       return this == TableEq || this == AttrsEq || this == PredicateEq;
     }
+
+    public boolean isIntegrityConstraint() {
+      return this == Unique || this == NotNull || this == Reference;
+    }
   }
 
   Kind kind();

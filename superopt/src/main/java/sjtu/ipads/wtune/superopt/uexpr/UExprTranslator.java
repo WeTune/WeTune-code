@@ -215,6 +215,12 @@ class UExprTranslator {
       // then a(concat(x,y)) becomes a(y).
       final int schema = schemaOf(base);
       int restriction = mkSchema(source);
+
+      // indirection source cases.
+      //  e.g. Proj<a0>(Proj<a1>(t0)) vs. Proj<a2>(t0)
+      //       AttrsSub(a1,t0) /\ AttrsSub(a0,a1) /\ AttrsEq(a2,a0)
+      //  In this case, a2 see a tuple of schema t0, while a1 see a tuple of schema a1.
+      //  We have to further trace the source of a1.
       while ((schema & restriction) == 0) {
         source = rule.constraints().sourceOf(source);
         assert source != null : "bug in instantiation enum!";

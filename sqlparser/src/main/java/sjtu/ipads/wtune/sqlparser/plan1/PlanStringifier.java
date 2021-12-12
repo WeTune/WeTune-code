@@ -44,36 +44,16 @@ class PlanStringifier {
 
   private void stringifyNode(int nodeId) {
     switch (plan.kindOf(nodeId)) {
-      case SetOp:
-        appendSetOp(nodeId);
-        break;
-      case Limit:
-        appendLimit(nodeId);
-        break;
-      case Sort:
-        appendSort(nodeId);
-        break;
-      case Agg:
-        appendAgg(nodeId);
-        break;
-      case Proj:
-        appendProj(nodeId);
-        break;
-      case Filter:
-        appendFilter(nodeId);
-        break;
-      case InSub:
-        appendInSub(nodeId);
-        break;
-      case Exists:
-        appendExists(nodeId);
-        break;
-      case Join:
-        appendJoin(nodeId);
-        break;
-      case Input:
-        appendInput(nodeId);
-        break;
+      case SetOp -> appendSetOp(nodeId);
+      case Limit -> appendLimit(nodeId);
+      case Sort -> appendSort(nodeId);
+      case Agg -> appendAgg(nodeId);
+      case Proj -> appendProj(nodeId);
+      case Filter -> appendFilter(nodeId);
+      case InSub -> appendInSub(nodeId);
+      case Exists -> appendExists(nodeId);
+      case Join -> appendJoin(nodeId);
+      case Input -> appendInput(nodeId);
     }
   }
 
@@ -136,7 +116,7 @@ class PlanStringifier {
     for (Expression expr : exprs) appendRefs(expr);
     builder.append("]");
     if (proj.qualification() != null) {
-      builder.append(",qual=" + proj.qualification());
+      builder.append(",qual=").append(proj.qualification());
     }
     builder.append("}");
   }
@@ -186,19 +166,13 @@ class PlanStringifier {
   }
 
   private static String stringifyJoinKind(JoinKind kind) {
-    switch (kind) {
-      case CROSS_JOIN:
-        return "CrossJoin";
-      case INNER_JOIN:
-        return "InnerJoin";
-      case LEFT_JOIN:
-        return "LeftJoin";
-      case RIGHT_JOIN:
-        return "RightJoin";
-      case FULL_JOIN:
-        return "FullJoin";
-      default:
-        throw new IllegalArgumentException("unknown join kind");
-    }
+    return switch (kind) {
+      case CROSS_JOIN -> "CrossJoin";
+      case INNER_JOIN -> "InnerJoin";
+      case LEFT_JOIN -> "LeftJoin";
+      case RIGHT_JOIN -> "RightJoin";
+      case FULL_JOIN -> "FullJoin";
+      default -> throw new IllegalArgumentException("unknown join kind");
+    };
   }
 }

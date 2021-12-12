@@ -18,7 +18,7 @@ import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.TABLE;
-import static sjtu.ipads.wtune.superopt.logic.LogicSupport.FAST_REJECTED;
+import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UKind.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UTerm.FUNC_IS_NULL_NAME;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.*;
@@ -40,21 +40,13 @@ class LogicProver {
   }
 
   int proveEq() {
-    // fast reject: different output schema
-    final int srcOutSchema = uExprs.schemaOf(uExprs.sourceOutVar());
-    final int tgtOutSchema = uExprs.schemaOf(uExprs.targetOutVar());
-    assert srcOutSchema != 0 && tgtOutSchema != 0;
-    if (srcOutSchema != tgtOutSchema) return FAST_REJECTED;
-    // fast reject: unaligned variables
-    // master: the side with more bounded variables, or the source side if the numbers are equal
-    // master: the side with less bounded variables, or the target side if the numbers are equal
-    final UTerm srcTerm = uExprs.sourceExpr(), tgtTerm = uExprs.targetExpr();
-    final UTerm masterTerm = getMaster(srcTerm, tgtTerm);
-    final UTerm slaveTerm = getSlave(srcTerm, tgtTerm);
-    if (!getBoundedVars(masterTerm).containsAll(getBoundedVars(slaveTerm))) return FAST_REJECTED;
+    if (isFastRejected(uExprs)) return FAST_REJECTED;
 
     trConstraints();
-    return proveEq0(masterTerm, slaveTerm);
+    // master: the side with more bounded variables, or the source side if the numbers are equal
+    // slave: the side with less bounded variables, or the target side if the numbers are equal
+    final UTerm srcTerm = uExprs.sourceExpr(), tgtTerm = uExprs.targetExpr();
+    return proveEq0(getMaster(srcTerm, tgtTerm), getSlave(srcTerm, tgtTerm));
   }
 
   private void trConstraints() {
@@ -217,8 +209,8 @@ class LogicProver {
   private int proveEq0(UTerm masterTerm, UTerm slaveTerm) {
     final UTerm masterBody = getBody(masterTerm);
     final UTerm slaveBody = getBody(slaveTerm);
-    final Set<UVar> masterVars = getBoundedVars(masterTerm);
-    final Set<UVar> slaveVars = getBoundedVars(slaveTerm);
+    final Set<UVar> masterVars = LogicSupport.getBoundedVars(masterTerm);
+    final Set<UVar> slaveVars = LogicSupport.getBoundedVars(slaveTerm);
     final Solver solver = z3.mkSolver();
     solver.add(constraints.toArray(BoolExpr[]::new));
 
@@ -493,20 +485,6 @@ class LogicProver {
     else return expr;
   }
 
-  private static UTerm getMaster(UTerm e0, UTerm e1) {
-    final Set<UVar> vars0 = getBoundedVars(e0);
-    final Set<UVar> vars1 = getBoundedVars(e1);
-    if (vars0.size() >= vars1.size()) return e0;
-    else return e1;
-  }
-
-  private static UTerm getSlave(UTerm e0, UTerm e1) {
-    final Set<UVar> vars0 = getBoundedVars(e0);
-    final Set<UVar> vars1 = getBoundedVars(e1);
-    if (vars0.size() < vars1.size()) return e0;
-    else return e1;
-  }
-
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {
     final List<UTerm> factors = mul.subTerms();
     final List<UTerm> termsY = new ArrayList<>(factors.size());
@@ -516,12 +494,6 @@ class LogicProver {
       else termsY.add(term);
     }
     return Pair.of(UMul.mk(termsY), UMul.mk(termsZ));
-  }
-
-  private static Set<UVar> getBoundedVars(UTerm expr) {
-    // Returns the summation variables for a summation, otherwise an empty list.
-    if (expr.kind() == UKind.SUMMATION) return ((USum) expr).boundedVars();
-    else return Collections.emptySet();
   }
 
   private FuncDecl mkConcatFunc(int arity) {

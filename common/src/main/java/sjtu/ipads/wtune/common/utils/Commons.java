@@ -11,7 +11,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface Commons {
@@ -60,65 +59,9 @@ public interface Commons {
     return val == null ? other.get() : val;
   }
 
-  @SafeVarargs
-  static <T> T[] asArray(T... vals) {
-    return vals;
-  }
-
   static <T> T[] sorted(T[] arr, Comparator<? super T> comparator) {
     Arrays.sort(arr, comparator);
     return arr;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T> T[] subArray(T[] arr, int start) {
-    if (start < 0 || start > arr.length) throw new IndexOutOfBoundsException();
-    final T[] subArr =
-        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length - start);
-    System.arraycopy(arr, start, subArr, 0, subArr.length);
-    return subArr;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T> T[] maskArray(T[] arr, int seed) {
-    final T[] ret =
-        (T[]) Array.newInstance(arr.getClass().getComponentType(), Integer.bitCount(seed));
-
-    final int wall = arr.length - 1;
-    for (int i = 0, j = 0, bound = arr.length; i < bound; i++)
-      if ((seed & (1 << (wall - i))) != 0) ret[j++] = arr[i];
-
-    return ret;
-  }
-
-  /**
-   * Select elements in `arr` according to 1 bit in `seed`, and comprise a new array. <br>
-   * Note: that the lowest bit corresponds to the last element in array. The bits that higher than
-   * `arr.length` is ignored.<br>
-   * Example: given arr=[1,2,3] seed=0b011, return value is [2,3]
-   */
-  @SuppressWarnings("unchecked")
-  static <T> T[] maskArray(T[] arr, long seed) {
-    final T[] ret = (T[]) Array.newInstance(arr.getClass().getComponentType(), Long.bitCount(seed));
-
-    final int wall = arr.length - 1;
-    for (int i = 0, j = 0, bound = arr.length; i < bound; i++)
-      if ((seed & (1L << (wall - i))) != 0) ret[j++] = arr[i];
-
-    return ret;
-  }
-
-  static boolean isSubSequence(Object[] container, Object[] contained) {
-    if (contained.length > container.length) return false;
-    if (contained.length == 0) return true;
-
-    for (int i = 0, j = 0; i < container.length; i++)
-      if (Objects.equals(container[i], contained[j])) {
-        j++;
-        if (j >= contained.length) return true;
-      }
-
-    return false;
   }
 
   @SuppressWarnings("unchecked")

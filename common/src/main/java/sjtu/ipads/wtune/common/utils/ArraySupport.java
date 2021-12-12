@@ -8,7 +8,37 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
+import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
+
 public interface ArraySupport {
+  /**
+   * Compare two arrays of bools on a partial order.
+   *
+   * <p>The partial order is defined as
+   *
+   * <ul>
+   *   <li>if \forall i, bs0[i] || !bs1[i], then bs0 > bs1
+   *   <li>if \forall i, bs1[i] || !bs0[i], then bs0 < bs1
+   *   <li>if \forall i, bs0[i] == bs1[i], then bs0 == bs1
+   *   <li>otherwise, incomparable.
+   * </ul>
+   */
+  static PartialOrder compareBools(boolean[] bs0, boolean[] bs1) {
+    if (bs0.length != bs1.length)
+      throw new IllegalArgumentException("cannot compare arrays of different lengths");
+
+    PartialOrder cmp = SAME;
+    for (int i = 0, bound = bs0.length; i < bound; ++i) {
+      if (bs0[i] && !bs1[i])
+        if (cmp == LESS_THAN) return INCOMPARABLE;
+        else cmp = GREATER_THAN;
+      else if (!bs0[i] && bs1[i])
+        if (cmp == GREATER_THAN) return INCOMPARABLE;
+        else cmp = LESS_THAN;
+    }
+    return SAME;
+  }
+
   static int sequentialFind(int[] arr, int target, int fromIndex) {
     if (arr == null) return -1;
     for (int i = fromIndex, bound = arr.length; i < bound; i++) if (arr[i] == target) return i;
