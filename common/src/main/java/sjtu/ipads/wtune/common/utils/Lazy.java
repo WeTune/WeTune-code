@@ -3,15 +3,15 @@ package sjtu.ipads.wtune.common.utils;
 import java.util.function.Supplier;
 
 public final class Lazy<T> {
-  private final Supplier<T> suppiler;
+  private final Supplier<T> supplier;
   private T val;
 
-  private Lazy(Supplier<T> suppiler) {
-    this.suppiler = suppiler;
+  private Lazy(Supplier<T> supplier) {
+    this.supplier = supplier;
   }
 
   private Lazy(T val) {
-    this.suppiler = null;
+    this.supplier = null;
     this.val = val;
   }
 
@@ -23,12 +23,12 @@ public final class Lazy<T> {
     return new Lazy<>(val);
   }
 
-  public final T get() {
-    if (val == null) val = suppiler.get();
+  public T get() {
+    if (val == null) val = supplier.get();
     return val;
   }
 
-  public final void set(T val) {
+  public void set(T val) {
     this.val = val;
   }
 }

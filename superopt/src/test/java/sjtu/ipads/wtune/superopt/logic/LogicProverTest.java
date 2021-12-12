@@ -159,7 +159,7 @@ class LogicProverTest {
   }
 
   @Test
-  void testLeftJoinElimination2() {
+  void testLeftJoinElimination0() {
     final Substitution rule =
         Substitution.parse(
             "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|"
@@ -173,15 +173,29 @@ class LogicProverTest {
   }
 
   @Test
-  void testLeftJoinElimination3() {
+  void testLeftJoinElimination1() {
     final Substitution rule =
         Substitution.parse(
-            "Proj<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|"
-                + "Proj<a4>(Filter<p1 a5>(Input<t2>))|"
+            "Proj*<a0>(Filter<p0 a1>(LeftJoin<a2 a3>(Input<t0>,Input<t1>)))|"
+                + "Proj*<a4>(Filter<p1 a5>(Input<t2>))|"
                 + "TableEq(t0,t2);AttrsEq(a0,a4);AttrsEq(a1,a5);PredicateEq(p0,p1);"
-                + "AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0);"
-                + "Unique(t1,a3)");
+                + "AttrsSub(a2,t0);AttrsSub(a3,t1);AttrsSub(a1,t0);AttrsSub(a0,t0)");
     final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
     final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result);
+  }
+
+  @Test
+  void testLeftJoinToInnerJoin() {
+    final Substitution rule =
+        Substitution.parse(
+            "LeftJoin<k0 k1>(Input<t0>,Input<t1>)|"
+                + "InnerJoin<k2 k3>(Input<t2>,Input<t3>)|"
+                + "TableEq(t0,t2);TableEq(t1,t3);AttrsEq(k0,k2);AttrsEq(k1,k3);"
+                + "AttrsSub(k0,t0);AttrsSub(k1,t1);AttrsSub(k2,t2);AttrsSub(k3,t3);"
+                + "NotNull(t0,k0);Reference(t0,k0,t1,k1)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result);
   }
 }

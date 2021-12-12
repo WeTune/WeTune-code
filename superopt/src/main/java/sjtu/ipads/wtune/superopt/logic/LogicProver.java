@@ -2,6 +2,8 @@ package sjtu.ipads.wtune.superopt.logic;
 
 import com.microsoft.z3.*;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.Lazy;
+import sjtu.ipads.wtune.common.utils.MapSupport;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -12,30 +14,35 @@ import java.util.*;
 import static com.google.common.collect.Sets.difference;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.TABLE;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.FAST_REJECTED;
 import static sjtu.ipads.wtune.superopt.uexpr.UKind.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UTerm.FUNC_IS_NULL_NAME;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.*;
+import static sjtu.ipads.wtune.superopt.uexpr.UVar.getBaseVars;
 
 class LogicProver {
   private final Substitution rule;
   private final UExprTranslationResult uExprs;
   private final Context z3;
   private final List<BoolExpr> constraints;
+  private final Cache cache;
 
   LogicProver(UExprTranslationResult uExprs, Context z3) {
     this.rule = uExprs.rule();
     this.uExprs = uExprs;
     this.z3 = z3;
     this.constraints = new ArrayList<>();
+    this.cache = new Cache();
   }
 
   int proveEq() {
     // fast reject: different output schema
-    final int srcOutSchema = uExprs.schemaOf(uExprs.sourceFreeVar());
-    final int tgtOutSchema = uExprs.schemaOf(uExprs.targetFreeVar());
+    final int srcOutSchema = uExprs.schemaOf(uExprs.sourceOutVar());
+    final int tgtOutSchema = uExprs.schemaOf(uExprs.targetOutVar());
     assert srcOutSchema != 0 && tgtOutSchema != 0;
     if (srcOutSchema != tgtOutSchema) return FAST_REJECTED;
     // fast reject: unaligned variables
@@ -52,37 +59,67 @@ class LogicProver {
 
   private void trConstraints() {
     final Symbols srcSide = rule._0().symbols();
+    final Set<String> enforced = new HashSet<>();
 
     for (var tableSym : srcSide.symbolsOf(TABLE)) {
-      trBasic(uExprs.tableDescOf(tableSym).term());
+      final String tableName = uExprs.tableNameOf(tableSym);
+      if (enforced.add(tableName)) trTableBasic(tableName);
     }
+    enforced.clear();
+
+    for (var attrsSym : srcSide.symbolsOf(ATTRS)) {
+      final String attrsName = uExprs.attrsNameOf(attrsSym);
+      if (enforced.add(attrsName)) trAttrsBasic(attrsName);
+    }
+    enforced.clear();
 
     for (Constraint c : rule.constraints().ofKind(AttrsEq)) {
-      if (c.symbols()[0].ctx() == srcSide && c.symbols()[1].ctx() == srcSide) {
-        trAttrsEq(c);
-      }
+      if (c.symbols()[0].ctx() == srcSide && c.symbols()[1].ctx() == srcSide) trAttrsEq(c);
     }
+    //noinspection RedundantOperationOnEmptyContainer
+    enforced.clear();
 
     for (Constraint c : rule.constraints().ofKind(NotNull)) {
-      trNotNull(c);
+      if (enforced.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
+        trNotNull(c);
     }
+    enforced.clear();
 
     for (Constraint c : rule.constraints().ofKind(Unique)) {
-      trUnique(c);
+      if (enforced.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
+        trUnique(c);
     }
+    enforced.clear();
 
     for (Constraint c : rule.constraints().ofKind(Reference)) {
-      trReferences(c);
+      final String t0 = uExprs.tableNameOf(c.symbols()[0]);
+      final String a0 = uExprs.tableNameOf(c.symbols()[1]);
+      final String t1 = uExprs.tableNameOf(c.symbols()[2]);
+      final String a1 = uExprs.tableNameOf(c.symbols()[3]);
+      if (enforced.add(t0 + a0 + t1 + a1)) trReferences(c);
     }
+    enforced.clear();
 
-    constraints.add(z3.mkEq(trVar(uExprs.sourceFreeVar()), trVar(uExprs.targetFreeVar())));
+    trOutVarEq(uExprs.sourceOutVar(), uExprs.targetOutVar());
   }
 
-  private void trBasic(UTable tableTerm) {
-    final FuncDecl tableFunc = mkTableFunc(tableTerm.tableName().toString());
+  private void trTableBasic(String tableName) {
+    final FuncDecl tableFunc = tableFunc(tableName);
     final Expr tuple = z3.mkConst("x", tupleSort());
     final Expr[] vars = new Expr[] {tuple};
     final Expr body = z3.mkGe((ArithExpr) tableFunc.apply(tuple), zero());
+    final BoolExpr assertion = mkForall(vars, body);
+    constraints.add(assertion);
+  }
+
+  private void trAttrsBasic(String attrsName) {
+    final FuncDecl projFunc = projFunc(attrsName);
+    final Expr tuple = z3.mkConst("x", tupleSort());
+    final IntExpr schema = z3.mkIntConst("s");
+    final Expr[] vars = new Expr[] {tuple, schema};
+    final BoolExpr projIsNull = z3.mkEq(projFunc.apply(schema, tuple), nullTuple());
+    final BoolExpr tupleIsNull = z3.mkEq(tuple, nullTuple());
+    final BoolExpr body = z3.mkImplies(tupleIsNull, projIsNull);
     final BoolExpr assertion = mkForall(vars, body);
     constraints.add(assertion);
   }
@@ -93,7 +130,7 @@ class LogicProver {
     if (schema0 == schema1) return;
 
     final IntNum s0 = z3.mkInt(schema0), s1 = z3.mkInt(schema1);
-    final FuncDecl projFunc = mkProjFunc(uExprs.attrsDescOf(c.symbols()[0]).name().toString());
+    final FuncDecl projFunc = projFunc(uExprs.attrsDescOf(c.symbols()[0]).name().toString());
     final Expr tuple = z3.mkConst("x", tupleSort());
     final Expr[] vars = new Expr[] {tuple};
     final BoolExpr body = z3.mkEq(projFunc.apply(s0, tuple), projFunc.apply(s1, tuple));
@@ -104,12 +141,12 @@ class LogicProver {
   private void trNotNull(Constraint c) {
     final String tableName = uExprs.tableDescOf(c.symbols()[0]).term().tableName().toString();
     final String attrsName = uExprs.attrsDescOf(c.symbols()[1]).name().toString();
-    final FuncDecl tableFunc = mkTableFunc(tableName);
-    final FuncDecl projFunc = mkProjFunc(attrsName);
+    final FuncDecl tableFunc = tableFunc(tableName);
+    final FuncDecl projFunc = projFunc(attrsName);
     final Expr tuple = z3.mkConst("x", tupleSort());
     final IntNum schema = z3.mkInt(uExprs.schemaOf(c.symbols()[0]));
     final BoolExpr p0 = z3.mkGt((ArithExpr) tableFunc.apply(tuple), zero());
-    final BoolExpr p1 = z3.mkNot((BoolExpr) mkIsNullFunc().apply(projFunc.apply(schema, tuple)));
+    final BoolExpr p1 = z3.mkNot(mkIsNull(projFunc.apply(schema, tuple)));
 
     final Expr[] vars = new Expr[] {tuple};
     final Expr body = z3.mkIff(p0, p1);
@@ -121,8 +158,8 @@ class LogicProver {
   private void trUnique(Constraint c) {
     final String tableName = uExprs.tableDescOf(c.symbols()[0]).term().tableName().toString();
     final String attrsName = uExprs.attrsDescOf(c.symbols()[1]).name().toString();
-    final FuncDecl projFunc = mkProjFunc(attrsName);
-    final FuncDecl tableFunc = mkTableFunc(tableName);
+    final FuncDecl projFunc = projFunc(attrsName);
+    final FuncDecl tableFunc = tableFunc(tableName);
 
     final Expr xTuple = z3.mkConst("x", tupleSort());
     final Expr[] vars0 = new Expr[] {xTuple};
@@ -149,23 +186,32 @@ class LogicProver {
     final String attrsName1 = uExprs.attrsDescOf(c.symbols()[3]).name().toString();
     final int schema0 = uExprs.schemaOf(c.symbols()[0]), schema1 = uExprs.schemaOf(c.symbols()[2]);
 
-    final FuncDecl tableFunc0 = mkTableFunc(tableName0), tableFunc1 = mkTableFunc(tableName1);
-    final FuncDecl projFunc0 = mkProjFunc(attrsName0), projFunc1 = mkProjFunc(attrsName1);
+    final FuncDecl tableFunc0 = tableFunc(tableName0), tableFunc1 = tableFunc(tableName1);
+    final FuncDecl projFunc0 = projFunc(attrsName0), projFunc1 = projFunc(attrsName1);
     final IntNum zero = zero();
 
     final Expr xTuple = z3.mkConst("x", tupleSort()), yTuple = z3.mkConst("y", tupleSort());
     final IntNum xSchema = z3.mkInt(schema0), ySchema = z3.mkInt(schema1);
     final Expr xProj = projFunc0.apply(xSchema, xTuple), yProj = projFunc1.apply(ySchema, yTuple);
     final BoolExpr b0 = z3.mkGt((ArithExpr) tableFunc0.apply(xTuple), zero);
-    final BoolExpr b1 = z3.mkNot((BoolExpr) mkIsNullFunc().apply(xProj));
+    final BoolExpr b1 = z3.mkNot(mkIsNull(xProj));
     final BoolExpr b2 = z3.mkGt((ArithExpr) tableFunc1.apply(yTuple), zero);
-    final BoolExpr b3 = z3.mkNot((BoolExpr) mkIsNullFunc().apply(yProj));
+    final BoolExpr b3 = z3.mkNot(mkIsNull(yProj));
     final BoolExpr b4 = z3.mkEq(xProj, yProj);
     final Expr[] innerVars = new Expr[] {yTuple}, outerVars = new Expr[] {xTuple};
     final BoolExpr body = z3.mkImplies(z3.mkAnd(b0, b1), mkExists(innerVars, z3.mkAnd(b2, b3, b4)));
     final BoolExpr assertion = mkForall(outerVars, body);
 
     constraints.add(assertion);
+  }
+
+  private void trOutVarEq(UVar var0, UVar var1) {
+    final Set<UVar> baseVars0 = getBaseVars(var0);
+    final Set<UVar> baseVars1 = getBaseVars(var1);
+    assert baseVars0.size() == baseVars1.size();
+    for (var pair : zip(baseVars0, baseVars1)) {
+      constraints.add(z3.mkEq(trVar(pair.getLeft()), trVar(pair.getRight())));
+    }
   }
 
   private int proveEq0(UTerm masterTerm, UTerm slaveTerm) {
@@ -212,6 +258,7 @@ class LogicProver {
     Status answer;
     final HashSet<UVar> diffVars = new HashSet<>(difference(masterVars, slaveVars));
     final var pair = separateFactors(masterBody, diffVars);
+    //noinspection UnnecessaryLocalVariable
     final UTerm exprX = slaveBody, exprY = pair.getLeft(), exprZ = pair.getRight();
     final ArithExpr valueX = trAsBag(exprX);
     final ArithExpr valueY = trAsBag(exprY);
@@ -264,13 +311,14 @@ class LogicProver {
       final List<ArithExpr> nums = new ArrayList<>(uExpr.subTerms().size());
       for (UTerm term : uExpr.subTerms()) {
         if (term instanceof UTable) nums.add((ArithExpr) trAtom(term, false));
+        else if (term instanceof UAdd) nums.add(trAsBag(term));
         else bools.add(trAsSet(term));
       }
       final ArithExpr[] factors = nums.toArray(ArithExpr[]::new);
-      if (bools.isEmpty()) return z3.mkMul(factors);
+      if (bools.isEmpty()) return mkMul(factors);
       else {
         final BoolExpr[] preconditions = bools.toArray(BoolExpr[]::new);
-        return (ArithExpr) z3.mkITE(z3.mkAnd(preconditions), z3.mkMul(factors), zero());
+        return (ArithExpr) z3.mkITE(mkAnd(preconditions), mkMul(factors), zero());
       }
 
     } else if (kind == ADD) {
@@ -285,6 +333,14 @@ class LogicProver {
     }
   }
 
+  private BoolExpr mkAnd(BoolExpr[] preconditions) {
+    return preconditions.length == 0 ? z3.mkBool(true) : z3.mkAnd(preconditions);
+  }
+
+  private ArithExpr mkMul(ArithExpr[] factors) {
+    return factors.length == 0 ? one() : z3.mkMul(factors);
+  }
+
   // Translate a u-expression inside squash/negation.
   private BoolExpr trAsSet(UTerm uExpr) {
     final UKind kind = uExpr.kind();
@@ -296,7 +352,7 @@ class LogicProver {
       if (uExpr.subTerms().isEmpty()) return z3.mkBool(true);
 
       final BoolExpr[] es = map(uExpr.subTerms(), this::trAsSet, BoolExpr.class);
-      return kind == UKind.MULTIPLY ? z3.mkAnd(es) : z3.mkOr(es);
+      return kind == UKind.MULTIPLY ? mkAnd(es) : z3.mkOr(es);
 
     } else if (kind == SUMMATION) {
       final USum sum = (USum) uExpr;
@@ -325,7 +381,7 @@ class LogicProver {
     }
     if (kind == PROJ) {
       assert var.args().length == 1;
-      final FuncDecl projFunc = mkProjFunc(name);
+      final FuncDecl projFunc = projFunc(name);
       final int schema = uExprs.schemaOf(var.args()[0]);
       final Expr arg = trVar(var.args()[0]);
       return projFunc.apply(z3.mkInt(schema), arg);
@@ -351,7 +407,7 @@ class LogicProver {
   private ArithExpr trTableAtom(UTable tableTerm) {
     final String tableName = tableTerm.tableName().toString();
     final String varName = tableTerm.var().name().toString();
-    final FuncDecl func = mkTableFunc(tableName);
+    final FuncDecl func = tableFunc(tableName);
     final Expr var = z3.mkConst(varName, tupleSort());
     return (ArithExpr) func.apply(var);
   }
@@ -362,9 +418,11 @@ class LogicProver {
     assert kind == FUNC || kind == UVar.VarKind.EQ;
     if (kind == FUNC) {
       assert var.args().length == 1;
-      final FuncDecl func = z3.mkFuncDecl(var.name().toString(), tupleSort(), z3.getBoolSort());
+      final String funcName = var.name().toString();
       final Expr arg = trVar(var.args()[0]);
-      return (BoolExpr) func.apply(arg);
+
+      if (FUNC_IS_NULL_NAME.equals(funcName)) return mkIsNull(arg);
+      else return (BoolExpr) predFunc(funcName).apply(arg);
 
     } else { // kind == EQ
       assert var.args().length == 2;
@@ -375,11 +433,35 @@ class LogicProver {
   }
 
   private IntNum one() {
-    return z3.mkInt(1);
+    return cache.one.get();
   }
 
   private IntNum zero() {
-    return z3.mkInt(0);
+    return cache.zero.get();
+  }
+
+  private Sort tupleSort() {
+    return cache.tupleSort.get();
+  }
+
+  private Expr nullTuple() {
+    return cache.nullTuple.get();
+  }
+
+  private FuncDecl tableFunc(String name) {
+    return cache.tableFuncs.get(name);
+  }
+
+  private FuncDecl projFunc(String name) {
+    return cache.projFuncs.get(name);
+  }
+
+  private FuncDecl predFunc(String name) {
+    return cache.predFuncs.get(name);
+  }
+
+  private BoolExpr mkIsNull(Expr var) {
+    return z3.mkEq(var, nullTuple());
   }
 
   private Quantifier mkForall(Expr[] vars, Expr body) {
@@ -388,27 +470,6 @@ class LogicProver {
 
   private Quantifier mkExists(Expr[] vars, Expr body) {
     return z3.mkExists(vars, body, 1, null, null, null, null);
-  }
-
-  private Sort tupleSort() {
-    return z3.mkUninterpretedSort("Tuple");
-  }
-
-  private FuncDecl mkTableFunc(String name) {
-    return z3.mkFuncDecl(name, tupleSort(), z3.getIntSort());
-  }
-
-  private FuncDecl mkProjFunc(String name) {
-    return z3.mkFuncDecl(name, new Sort[] {z3.getIntSort(), tupleSort()}, tupleSort());
-  }
-
-  private FuncDecl mkIsNullFunc() {
-    return z3.mkFuncDecl(FUNC_IS_NULL_NAME, tupleSort(), z3.getBoolSort());
-  }
-
-  private FuncDecl mkConcatFunc(int arity) {
-    final Sort[] argSorts = repeat(tupleSort(), arity);
-    return z3.mkFuncDecl("concat" + arity, argSorts, tupleSort());
   }
 
   private int trResult(Status res) {
@@ -461,5 +522,25 @@ class LogicProver {
     // Returns the summation variables for a summation, otherwise an empty list.
     if (expr.kind() == UKind.SUMMATION) return ((USum) expr).boundedVars();
     else return Collections.emptySet();
+  }
+
+  private FuncDecl mkConcatFunc(int arity) {
+    final Sort[] argSorts = repeat(tupleSort(), arity);
+    return z3.mkFuncDecl("concat" + arity, argSorts, tupleSort());
+  }
+
+  private class Cache {
+    private final Lazy<IntNum> zero = Lazy.mk(() -> z3.mkInt(0));
+    private final Lazy<IntNum> one = Lazy.mk(() -> z3.mkInt(1));
+    private final Lazy<Sort> tupleSort = Lazy.mk(() -> z3.mkUninterpretedSort("Tuple"));
+    private final Lazy<Expr> nullTuple = Lazy.mk(() -> z3.mkConst("Null", tupleSort.get()));
+    private final Lazy<Sort[]> projFuncArgSorts =
+        Lazy.mk(() -> new Sort[] {z3.getIntSort(), tupleSort.get()});
+    private final Map<String, FuncDecl> tableFuncs =
+        MapSupport.mkLazy(it -> z3.mkFuncDecl(it, tupleSort.get(), z3.getIntSort()));
+    private final Map<String, FuncDecl> projFuncs =
+        MapSupport.mkLazy(it -> z3.mkFuncDecl(it, projFuncArgSorts.get(), tupleSort.get()));
+    private final Map<String, FuncDecl> predFuncs =
+        MapSupport.mkLazy(it -> z3.mkFuncDecl(it, tupleSort.get(), z3.getBoolSort()));
   }
 }

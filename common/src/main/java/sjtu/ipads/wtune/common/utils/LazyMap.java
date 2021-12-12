@@ -1,89 +1,35 @@
 package sjtu.ipads.wtune.common.utils;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Function;
 
-import static java.util.Collections.emptyMap;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static java.util.Objects.requireNonNull;
 
-class LazyMap<K, V> implements Map<K, V> {
-  private Map<K, V> map;
+class LazyMap<K, V> extends DelegatedMap<K, V> implements Map<K, V> {
+  private final Map<K, V> map;
+  private final Function<K, V> initializer;
 
-  private Map<K, V> getOrEmpty() {
-    return coalesce(map, emptyMap());
+  LazyMap(Function<K, V> initializer) {
+    this(MapSupport.mkLate(), initializer);
   }
 
-  private Map<K, V> getOrCreate() {
-    if (map == null) map = new HashMap<>();
+  LazyMap(Map<K, V> map, Function<K, V> initializer) {
+    this.map = map;
+    this.initializer = requireNonNull(initializer);
+  }
+
+  @Override
+  protected Map<K, V> delegation() {
     return map;
   }
 
   @Override
-  public int size() {
-    return getOrEmpty().size();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return getOrEmpty().isEmpty();
-  }
-
-  @Override
-  public boolean containsKey(Object key) {
-    return getOrEmpty().containsKey(key);
-  }
-
-  @Override
-  public boolean containsValue(Object value) {
-    return getOrEmpty().containsValue(value);
-  }
-
-  @Override
   public V get(Object key) {
-    return getOrEmpty().get(key);
-  }
+    final V existed = super.get(key);
+    if (existed != null) return existed;
 
-  @Nullable
-  @Override
-  public V put(K key, V value) {
-    return getOrCreate().put(key, value);
-  }
-
-  @Override
-  public V remove(Object key) {
-    return getOrEmpty().remove(key);
-  }
-
-  @Override
-  public void putAll(@NotNull Map<? extends K, ? extends V> m) {
-    getOrCreate().putAll(m);
-  }
-
-  @Override
-  public void clear() {
-    getOrEmpty().clear();
-  }
-
-  @NotNull
-  @Override
-  public Set<K> keySet() {
-    return getOrEmpty().keySet();
-  }
-
-  @NotNull
-  @Override
-  public Collection<V> values() {
-    return getOrEmpty().values();
-  }
-
-  @NotNull
-  @Override
-  public Set<Entry<K, V>> entrySet() {
-    return getOrEmpty().entrySet();
+    final V newValue = initializer.apply((K) key);
+    map.put((K) key, newValue);
+    return newValue;
   }
 }

@@ -19,7 +19,6 @@ import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Unique;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.normalizeExpr;
 import static sjtu.ipads.wtune.superopt.uexpr.UTerm.FUNC_IS_NULL_NAME;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.*;
-import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.BASE;
 
 /**
  * Translate a <b>valid</b> candidate rule to U-expr.
@@ -499,16 +498,6 @@ class UExprTranslator {
 
       assert false;
       return false;
-    }
-
-    private Set<UVar> getBaseVars(UVar var) {
-      final Set<UVar> baseVars = new HashSet<>(var.args().length);
-      for (UVar arg : var.args()) {
-        if (arg.kind() == BASE) baseVars.add(arg);
-        else if (arg.kind() == VarKind.PROJ) baseVars.add(arg.args()[0]);
-        else assert false;
-      }
-      return baseVars;
     }
   }
 }

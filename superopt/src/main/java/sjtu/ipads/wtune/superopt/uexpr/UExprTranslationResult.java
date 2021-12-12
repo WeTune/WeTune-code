@@ -45,11 +45,11 @@ public class UExprTranslationResult {
     return tgtExpr;
   }
 
-  public UVar sourceFreeVar() {
+  public UVar sourceOutVar() {
     return srcOutVar;
   }
 
-  public UVar targetFreeVar() {
+  public UVar targetOutVar() {
     return tgtOutVar;
   }
 
@@ -71,5 +71,20 @@ public class UExprTranslationResult {
 
   public PredDesc predDescOf(Symbol sym) {
     return symToPred.get(sym);
+  }
+
+  public String tableNameOf(Symbol sym) {
+    final TableDesc tableDesc = symToTable.get(sym);
+    return tableDesc == null ? null : tableDesc.term().tableName().toString();
+  }
+
+  public String attrsNameOf(Symbol sym) {
+    final AttrsDesc attrsDesc = symToAttrs.get(sym);
+    return attrsDesc == null ? null : attrsDesc.name().toString();
+  }
+
+  public String predNameOf(Symbol sym) {
+    final PredDesc predDesc = symToPred.get(sym);
+    return predDesc == null ? null : predDesc.name().toString();
   }
 }

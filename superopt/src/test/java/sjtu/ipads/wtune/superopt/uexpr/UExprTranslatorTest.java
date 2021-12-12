@@ -21,8 +21,8 @@ class UExprTranslatorTest {
     assertEquals(4, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -40,8 +40,8 @@ class UExprTranslatorTest {
     assertEquals(5, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -60,8 +60,8 @@ class UExprTranslatorTest {
     assertEquals(5, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -80,8 +80,8 @@ class UExprTranslatorTest {
     assertEquals(6, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -99,8 +99,8 @@ class UExprTranslatorTest {
     assertEquals(4, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -118,8 +118,8 @@ class UExprTranslatorTest {
     assertEquals(3, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -137,8 +137,8 @@ class UExprTranslatorTest {
     assertEquals(4, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 
   @Test
@@ -156,7 +156,7 @@ class UExprTranslatorTest {
     assertEquals(3, result.symSchemas.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
-    System.out.println(result.sourceFreeVar());
-    System.out.println(result.targetFreeVar());
+    System.out.println(result.sourceOutVar());
+    System.out.println(result.targetOutVar());
   }
 }

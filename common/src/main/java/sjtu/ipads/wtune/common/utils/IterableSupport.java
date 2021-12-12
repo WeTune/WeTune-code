@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.common.utils;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.function.Predicate;
 
 public interface IterableSupport {
@@ -22,5 +24,9 @@ public interface IterableSupport {
 
   static <T> boolean all(Iterable<T> xs, Predicate<T> check) {
     return xs == null || FuncUtils.stream(xs).allMatch(check);
+  }
+
+  static <X, Y> Iterable<Pair<X, Y>> zip(Iterable<X> xs, Iterable<Y> ys) {
+    return () -> new ZippedIterator<>(xs.iterator(), ys.iterator());
   }
 }

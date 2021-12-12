@@ -6,7 +6,7 @@ import java.util.Map;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkIsValidChild;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
-import static sjtu.ipads.wtune.common.utils.MapSupport.mkLazy;
+import static sjtu.ipads.wtune.common.utils.MapSupport.mkLate;
 
 public class LabeledTreeContextBase<Kind>
     extends TreeContextBase<Kind, LabeledTreeContextBase.Nd<Kind>>
@@ -154,7 +154,7 @@ public class LabeledTreeContextBase<Kind>
     private Nd(Kind kind) {
       this.kind = kind;
       this.parentId = NO_SUCH_NODE;
-      this.fields = mkLazy();
+      this.fields = mkLate();
     }
 
     @Override

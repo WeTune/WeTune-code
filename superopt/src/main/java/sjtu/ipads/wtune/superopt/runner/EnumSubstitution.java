@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.LeveledException;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
@@ -157,14 +158,14 @@ public class EnumSubstitution implements Runner {
       if (f0.symbolCount(Symbol.Kind.TABLE) == f1.symbolCount(Symbol.Kind.TABLE)) {
         final List<Substitution> substitutions1 = enumConstraints(f0, f1, mkLogicCtx(), timeout);
         final List<Substitution> substitutions2 = enumConstraints(f1, f0, mkLogicCtx(), timeout);
-        substitutions = listConcat(substitutions1, substitutions2);
+        substitutions = ListSupport.concat(substitutions1, substitutions2);
       } else {
         if (f0.symbolCount(Symbol.Kind.TABLE) > f1.symbolCount(Symbol.Kind.TABLE))
           substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
-        else
-          substitutions = enumConstraints(f1, f0, mkLogicCtx(), timeout);
+        else substitutions = enumConstraints(f1, f0, mkLogicCtx(), timeout);
       }
-//      final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
+      //      final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(),
+      // timeout);
 
       synchronized (out) {
         for (Substitution substitution : substitutions) out.println(substitution);
