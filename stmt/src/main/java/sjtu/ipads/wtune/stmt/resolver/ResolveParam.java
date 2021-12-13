@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import com.google.common.collect.Lists;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
@@ -13,9 +14,9 @@ import sjtu.ipads.wtune.sqlparser.schema.Column;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.NAME_2_1;
@@ -49,7 +50,7 @@ class ResolveParam {
     final List<ASTNode> params = collectParams(expr);
     if (params.isEmpty()) return emptyList();
 
-    return listMap(params, it -> resolve0(expr, it));
+    return ListSupport.map((Iterable<ASTNode>) params, (Function<? super ASTNode, ? extends ParamDesc>) it -> resolve0(expr, it));
   }
 
   private ParamDesc resolve0(ASTNode expr, ASTNode paramNode) {

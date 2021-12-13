@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.superopt.constraint;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
+
 public interface Constraint {
   enum Kind {
     TableEq(2),
@@ -12,8 +14,16 @@ public interface Constraint {
     Unique(2),
     NotNull(2),
     Reference(4),
-    AttrsFrom(2),
     ; // DON'T change the order. Some implementations trick depends on this.
+
+    private static final Constraint.Kind[] EQ_CONSTRAINT_KIND_OF_SYM_KIND =
+        new Constraint.Kind[Symbol.Kind.values().length];
+
+    static {
+      EQ_CONSTRAINT_KIND_OF_SYM_KIND[TABLE.ordinal()] = TableEq;
+      EQ_CONSTRAINT_KIND_OF_SYM_KIND[ATTRS.ordinal()] = AttrsEq;
+      EQ_CONSTRAINT_KIND_OF_SYM_KIND[PRED.ordinal()] = PredicateEq;
+    }
 
     private final int numSyms;
 
@@ -31,6 +41,10 @@ public interface Constraint {
 
     public boolean isIntegrityConstraint() {
       return this == Unique || this == NotNull || this == Reference;
+    }
+
+    public static Constraint.Kind eqOfSymbol(Symbol.Kind symKind) {
+      return EQ_CONSTRAINT_KIND_OF_SYM_KIND[symKind.ordinal()];
     }
   }
 

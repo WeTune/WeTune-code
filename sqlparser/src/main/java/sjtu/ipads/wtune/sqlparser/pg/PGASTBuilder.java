@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
 import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeFactory;
@@ -11,10 +12,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
@@ -157,7 +158,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     }
 
     final List<ASTNode> keyParts =
-        listMap(restCtx.index_sort().sort_specifier_list().sort_specifier(), this::toKeyPart);
+            ListSupport.map((Iterable<PGParser.Sort_specifierContext>) restCtx.index_sort().sort_specifier_list().sort_specifier(), (Function<? super PGParser.Sort_specifierContext, ? extends ASTNode>) this::toKeyPart);
 
     node.set(INDEX_DEF_KEYS, keyParts);
 
@@ -246,13 +247,13 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     if (ctx.set_qualifier() != null && ctx.set_qualifier().DISTINCT() != null) {
       node.flag(QUERY_SPEC_DISTINCT);
       if (ctx.distinct != null)
-        node.set(QUERY_SPEC_DISTINCT_ON, listMap(ctx.distinct, this::visitVex));
+        node.set(QUERY_SPEC_DISTINCT_ON, ListSupport.map((Iterable<PGParser.VexContext>) ctx.distinct, (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
     }
 
     if (ctx.select_list() != null)
       node.set(
           QUERY_SPEC_SELECT_ITEMS,
-          listMap(ctx.select_list().select_sublist(), this::visitSelect_sublist));
+              ListSupport.map((Iterable<PGParser.Select_sublistContext>) ctx.select_list().select_sublist(), (Function<? super PGParser.Select_sublistContext, ? extends ASTNode>) this::visitSelect_sublist));
 
     final var fromItems = ctx.from_item();
     if (fromItems != null) {
@@ -270,9 +271,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     if (ctx.groupby_clause() != null)
       node.set(
           QUERY_SPEC_GROUP_BY,
-          listMap(
-              ctx.groupby_clause().grouping_element_list().grouping_element(), this::visitGrouping_element
-          ));
+              ListSupport.map((Iterable<PGParser.Grouping_elementContext>) ctx.groupby_clause().grouping_element_list().grouping_element(), (Function<? super PGParser.Grouping_elementContext, ? extends ASTNode>) this::visitGrouping_element));
 
     // TODO: WINDOW
 
@@ -399,7 +398,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
       else {
         final var vexs = ctx.vex();
         final ASTNode tuple = newNode(ExprKind.TUPLE);
-        tuple.set(TUPLE_EXPRS, listMap(vexs.subList(1, vexs.size()), this::visitVex));
+        tuple.set(TUPLE_EXPRS, ListSupport.map((Iterable<PGParser.VexContext>) vexs.subList(1, vexs.size()), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
         node = binary(left, tuple, BinaryOp.IN_LIST);
       }
       return ctx.NOT() == null ? node : unary(node, UnaryOp.NOT);
@@ -467,7 +466,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
     } else if (ctx.vex().size() >= 1) {
       final ASTNode tuple = newNode(ExprKind.TUPLE);
-      tuple.set(TUPLE_EXPRS, listMap(ctx.vex(), this::visitVex));
+      tuple.set(TUPLE_EXPRS, ListSupport.map((Iterable<PGParser.VexContext>) ctx.vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
       return tuple;
 
     } else return assertFalse();
@@ -554,7 +553,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
     } else if (ctx.vex().size() >= 1) {
       final ASTNode tuple = newNode(ExprKind.TUPLE);
-      tuple.set(TUPLE_EXPRS, listMap(ctx.vex(), this::visitVex));
+      tuple.set(TUPLE_EXPRS, ListSupport.map((Iterable<PGParser.VexContext>) ctx.vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
       return tuple;
 
     } else return assertFalse();
@@ -700,7 +699,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   @Override
   public ASTNode visitArray_elements(PGParser.Array_elementsContext ctx) {
     final ASTNode node = newNode(ExprKind.ARRAY);
-    final List<ASTNode> elements = listMap(ctx.array_element(), this::visitArray_element);
+    final List<ASTNode> elements = ListSupport.map((Iterable<PGParser.Array_elementContext>) ctx.array_element(), (Function<? super PGParser.Array_elementContext, ? extends ASTNode>) this::visitArray_element);
     node.set(ARRAY_ELEMENTS, elements);
     return node;
   }
@@ -736,7 +735,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
 
     if (ctx.identifier() != null) node.set(WINDOW_SPEC_NAME, stringifyIdentifier(ctx.identifier()));
     if (ctx.partition_by_columns() != null)
-      node.set(WINDOW_SPEC_PARTITION, listMap(ctx.partition_by_columns().vex(), this::visitVex));
+      node.set(WINDOW_SPEC_PARTITION, ListSupport.map((Iterable<PGParser.VexContext>) ctx.partition_by_columns().vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
     if (ctx.orderby_clause() != null)
       node.set(WINDOW_SPEC_ORDER, toOrderItems(ctx.orderby_clause()));
     if (ctx.frame_clause() != null) node.set(WINDOW_SPEC_FRAME, ctx.frame_clause().accept(this));
@@ -861,11 +860,11 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
   }
 
   private List<ASTNode> toOrderItems(PGParser.Orderby_clauseContext ctx) {
-    return listMap(ctx.sort_specifier_list().sort_specifier(), this::toOrderItem);
+    return ListSupport.map((Iterable<PGParser.Sort_specifierContext>) ctx.sort_specifier_list().sort_specifier(), (Function<? super PGParser.Sort_specifierContext, ? extends ASTNode>) this::toOrderItem);
   }
 
   private List<ASTNode> parseIndirectionList(PGParser.Indirection_listContext ctx) {
-    final List<ASTNode> indirections = listMap(ctx.indirection(), this::visitIndirection);
+    final List<ASTNode> indirections = ListSupport.map((Iterable<PGParser.IndirectionContext>) ctx.indirection(), (Function<? super PGParser.IndirectionContext, ? extends ASTNode>) this::visitIndirection);
     if (ctx.MULTIPLY() != null) {
       final ASTNode node = newNode(ExprKind.INDIRECTION_COMP);
       node.set(INDIRECTION_COMP_START, wildcard());
@@ -879,19 +878,19 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
     if (name != null) {
       node.set(FUNC_CALL_NAME, name2(name));
       node.set(
-          FUNC_CALL_ARGS, listMap(ctx.vex_or_named_notation(), this::visitVex_or_named_notation));
+          FUNC_CALL_ARGS, ListSupport.map((Iterable<PGParser.Vex_or_named_notationContext>) ctx.vex_or_named_notation(), (Function<? super PGParser.Vex_or_named_notationContext, ? extends ASTNode>) this::visitVex_or_named_notation));
       return node;
 
     } else if (ctx.function_construct() != null) {
       final var funcConstructCtx = ctx.function_construct();
       if (funcConstructCtx.funcName != null) {
         node.set(FUNC_CALL_NAME, name2(null, funcConstructCtx.funcName.getText()));
-        node.set(FUNC_CALL_ARGS, listMap(funcConstructCtx.vex(), this::visitVex));
+        node.set(FUNC_CALL_ARGS, ListSupport.map((Iterable<PGParser.VexContext>) funcConstructCtx.vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
         return node;
 
       } else if (funcConstructCtx.ROW() != null) {
         final ASTNode tupleNode = newNode(TUPLE);
-        tupleNode.set(TUPLE_EXPRS, listMap(funcConstructCtx.vex(), this::visitVex));
+        tupleNode.set(TUPLE_EXPRS, ListSupport.map((Iterable<PGParser.VexContext>) funcConstructCtx.vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
         tupleNode.flag(TUPLE_AS_ROW);
         return tupleNode;
       } else return assertFalse();
@@ -955,7 +954,7 @@ public class PGASTBuilder extends PGParserBaseVisitor<ASTNode> implements ASTNod
             Arrays.asList(
                 strValueFuncCtx.vex_b().accept(this), strValueFuncCtx.vex(0).accept(this)));
 
-      } else node.set(FUNC_CALL_ARGS, listMap(strValueFuncCtx.vex(), this::visitVex));
+      } else node.set(FUNC_CALL_ARGS, ListSupport.map((Iterable<PGParser.VexContext>) strValueFuncCtx.vex(), (Function<? super PGParser.VexContext, ? extends ASTNode>) this::visitVex));
 
       return node;
 

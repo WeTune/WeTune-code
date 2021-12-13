@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.mysql;
 
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.*;
@@ -9,11 +10,11 @@ import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLLexer;
 import sjtu.ipads.wtune.sqlparser.mysql.internal.MySQLParser;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.KeyDirection.ASC;
@@ -31,7 +32,7 @@ interface MySQLAstHelper1 {
   }
 
   static String stringifyText(MySQLParser.TextLiteralContext text) {
-    return String.join("", listMap(text.textStringLiteral(), MySQLAstHelper1::stringifyText));
+    return String.join("", ListSupport.<MySQLParser.TextStringLiteralContext, String>map((Iterable<MySQLParser.TextStringLiteralContext>) text.textStringLiteral(), (Function<? super MySQLParser.TextStringLiteralContext, ? extends String>) MySQLAstHelper1::stringifyText));
   }
 
   static String stringifyText(MySQLParser.TextStringLiteralContext text) {
@@ -290,7 +291,7 @@ interface MySQLAstHelper1 {
     final List<String> valuesList =
         stringList == null
             ? emptyList()
-            : listMap(stringList.textString(), MySQLParser.TextStringContext::getText);
+            : ListSupport.map((Iterable<MySQLParser.TextStringContext>) stringList.textString(), (Function<? super MySQLParser.TextStringContext, ? extends String>) MySQLParser.TextStringContext::getText);
 
     return SqlDataType.mk(category, name, w, p).setUnsigned(unsigned).setValuesList(valuesList);
   }

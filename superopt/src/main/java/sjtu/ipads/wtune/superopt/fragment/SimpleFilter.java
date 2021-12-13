@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
+import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
@@ -31,7 +32,7 @@ public interface SimpleFilter extends AttrsFilter {
     final Expr predicate = m.interpretPred(predicate());
     final List<Value> values =
         bindValuesRelaxed(m.interpretInAttrs(attrs()), m.planContext(), predecessor);
-    final List<Ref> refs = listMap(values, Value::selfish);
+    final List<Ref> refs = ListSupport.map((Iterable<Value>) values, (Function<? super Value, ? extends Ref>) Value::selfish);
     final SimpleFilterNode f = SimpleFilterNode.mk(predicate, RefBag.mk(refs));
 
     f.setContext(ctx);

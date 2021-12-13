@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
+import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
@@ -34,7 +35,7 @@ public interface InSubFilter extends AttrsFilter {
       throw ignorableEx("Ill-formed subquery");
     }
 
-    final List<Ref> refs = listMap(values, Value::selfish);
+    final List<Ref> refs = ListSupport.map((Iterable<Value>) values, (Function<? super Value, ? extends Ref>) Value::selfish);
     final InSubFilterNode f = InSubFilterNode.mk(RefBag.mk(refs));
 
     f.setContext(ctx);

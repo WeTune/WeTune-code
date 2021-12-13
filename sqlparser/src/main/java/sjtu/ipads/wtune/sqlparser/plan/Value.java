@@ -1,9 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
+import java.util.function.Function;
+
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 public interface Value {
   String qualification();
@@ -35,7 +37,7 @@ public interface Value {
 
   default Value renewRefs() {
     final Expr exprCopy = expr().copy();
-    exprCopy.setRefs(RefBag.mk(listMap(exprCopy.refs(), RefImpl::new)));
+    exprCopy.setRefs(RefBag.mk(ListSupport.map((Iterable<Ref>) exprCopy.refs(), (Function<? super Ref, ? extends Ref>) RefImpl::new)));
     return mk(qualification(), name(), exprCopy);
   }
 

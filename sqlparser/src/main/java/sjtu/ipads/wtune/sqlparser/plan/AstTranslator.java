@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -9,11 +10,11 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.isEmpty;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
@@ -139,7 +140,7 @@ class AstTranslator {
     final Query q = stack.peek();
     if (node.successor() == null && isWildcardProj(node))
       q.setProjection(singletonList(makeWildcard(null)));
-    else q.setProjection(listMap(node.values(), this::toSelectItem));
+    else q.setProjection(ListSupport.map((Iterable<Value>) node.values(), (Function<? super Value, ? extends ASTNode>) this::toSelectItem));
 
     q.setQualification(node.values().qualification());
     q.setForcedDistinct(node.isDeduplicated());
@@ -149,14 +150,14 @@ class AstTranslator {
     assert !stack.isEmpty();
     final Query q = stack.peek();
     q.setQualification(node.values().qualification());
-    q.setGroupKeys(listMap(node.groups(), it -> interpolate0(it, true)));
-    q.setAggregation(listMap(node.values(), this::toSelectItem));
+    q.setGroupKeys(ListSupport.map((Iterable<Expr>) node.groups(), (Function<? super Expr, ? extends ASTNode>) it -> interpolate0(it, true)));
+    q.setAggregation(ListSupport.map((Iterable<Value>) node.values(), (Function<? super Value, ? extends ASTNode>) this::toSelectItem));
     q.setHaving(interpolate0(node.having(), true));
   }
 
   private void onSort(SortNode node) {
     assert !stack.isEmpty();
-    stack.peek().setOrderKeys(listMap(node.orders(), this::interpolate0));
+    stack.peek().setOrderKeys(ListSupport.map((Iterable<Expr>) node.orders(), (Function<? super Expr, ? extends ASTNode>) this::interpolate0));
   }
 
   private void onLimit(LimitNode node) {
@@ -199,7 +200,8 @@ class AstTranslator {
       }
 
     if (!isAggExpr) return expr.interpolateValues(values);
-    else return expr.interpolateASTs(listMap(values, it -> interpolate0(it.expr(), false)));
+    else
+      return expr.interpolateASTs(ListSupport.map((Iterable<Value>) values, (Function<? super Value, ? extends ASTNode>) it -> interpolate0(it.expr(), false)));
   }
 
   private RuntimeException failed(String reason) {

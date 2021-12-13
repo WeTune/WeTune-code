@@ -15,6 +15,7 @@ public interface Symbols extends TreeContext<Symbols> {
 
   List<Symbol> symbolAt(Op op, Symbol.Kind kind);
 
+  // Guarantee: keep the prefix appearance order.
   List<Symbol> symbolsOf(Symbol.Kind kind);
 
   Op ownerOf(Symbol symbol);

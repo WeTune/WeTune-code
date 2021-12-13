@@ -9,28 +9,32 @@ import java.util.List;
 import java.util.Set;
 
 public interface Constraints extends List<Constraint> {
-  boolean isEq(Symbol s0, Symbol s1);
+  Symbols sourceSymbols();
 
-  Set<Symbol> eqClassOf(Symbol symbol);
+  Symbols targetSymbols();
+
+  List<Constraint> ofKind(Constraint.Kind kind);
+
+  NaturalCongruence<Symbol> eqSymbols();
 
   Symbol sourceOf(Symbol attrSym);
 
-  List<Constraint> ofKind(Constraint.Kind kind);
+  Symbol instantiationOf(Symbol tgtSym);
 
   StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder);
 
   StringBuilder stringify(SymbolNaming naming, StringBuilder builder);
 
-  NaturalCongruence<Symbol> eqSymbols();
+  default boolean isEq(Symbol s0, Symbol s1) {
+    return eqSymbols().isCongruent(s0, s1);
+  }
 
-  Symbol instantiationOf(Symbol tgtSym);
-
-  default String stringify(SymbolNaming naming) {
-    return stringify(naming, new StringBuilder()).toString();
+  default Set<Symbol> eqClassOf(Symbol symbol) {
+    return eqSymbols().eqClassOf(symbol);
   }
 
   /** srcSyms: symbols at the source side. */
-  static Constraints mk(Symbols srcSyms, List<Constraint> constraints) {
-    return ConstraintsImpl.mk(srcSyms, constraints);
+  static Constraints mk(Symbols srcSyms, Symbols tgtSyms, List<Constraint> constraints) {
+    return ConstraintsImpl.mk(srcSyms, tgtSyms, constraints);
   }
 }

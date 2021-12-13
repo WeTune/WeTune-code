@@ -1,13 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class SortNodeImpl extends PlanNodeBase implements SortNode {
   private final List<Expr> orders;
@@ -20,7 +21,7 @@ class SortNodeImpl extends PlanNodeBase implements SortNode {
   }
 
   static SortNode mk(List<ASTNode> orders) {
-    final List<Expr> exprs = listMap(orders, ExprImpl::mk);
+    final List<Expr> exprs = ListSupport.map((Iterable<ASTNode>) orders, (Function<? super ASTNode, ? extends Expr>) ExprImpl::mk);
     return new SortNodeImpl(exprs, RefBag.mk(listFlatMap(exprs, Expr::refs)));
   }
 

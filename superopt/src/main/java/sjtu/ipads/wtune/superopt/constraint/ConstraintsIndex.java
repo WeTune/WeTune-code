@@ -1,243 +1,211 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.MultimapBuilder.linkedHashKeys;
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.locate;
-import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
-// The class maintains a collection of constraint and corresponding metadata.
-class ConstraintsIndex extends AbstractList<Constraint> {
-  private final Fragment f0, f1;
-  private final Symbols symbols0, symbols1;
+class ConstraintsIndex extends AbstractList<Constraint> implements List<Constraint> {
+  private static final int NUM_KINDS_OF_CONSTRAINTS = Constraint.Kind.values().length;
+  private static final int NUM_KINDS_OF_SYMBOLS = Symbol.Kind.values().length;
+
+  private final Fragment source, target;
   private final List<Constraint> constraints;
-  // Possible sources of attributes. Key: Attrs symbols. Value: Attrs/Table symbols.
-  private final Multimap<Symbol, Symbol> sources0, sources1;
-  private final boolean[] mandatory; // Indicates whether a constraint must be present.
-  // The constraints are organized by the kind. i.e., [TablEqs, AttrsEqs, PredEqs, AttrSubs,...]
-  // `segBase` is the beginning index of each segment.
-  private final int[] segBases;
-  private final int[] symCounts; // The count of symbols of each kinds.
-  // The ordinal of a symbol. Used to quickly calculates the index of XxEq constraint.
-  private final TObjectIntMap<Symbol> symbolsIndex;
+  private final TObjectIntMap<Symbol> symOrdinals;
+  private final ListMultimap<Symbol, Symbol> viableSources;
+  private final int[] segmentBase;
 
-  ConstraintsIndex(
-      Fragment f0,
-      Fragment f1,
-      List<Constraint> constraints,
-      Multimap<Symbol, Symbol> sources0,
-      Multimap<Symbol, Symbol> sources1) {
-    this.f0 = f0;
-    this.f1 = f1;
-    this.symbols0 = f0.symbols();
-    this.symbols1 = f1.symbols();
-    this.constraints = constraints;
-    this.sources0 = sources0;
-    this.sources1 = sources1;
-    this.mandatory = new boolean[constraints.size()];
-    this.segBases = new int[Constraint.Kind.values().length];
-    this.symCounts = new int[3];
-    this.symbolsIndex = new TObjectIntHashMap<>();
+  ConstraintsIndex(Fragment source, Fragment target) {
+    this.source = source;
+    this.target = target;
+    this.constraints = new ArrayList<>();
+    this.symOrdinals = new TObjectIntHashMap<>();
+    this.viableSources = MultimapBuilder.hashKeys().linkedListValues().build();
+    this.segmentBase = new int[NUM_KINDS_OF_CONSTRAINTS + NUM_KINDS_OF_SYMBOLS];
 
-    calcSegments();
-    calcMandatory();
-    buildSymbolsIndex();
+    initSymbolOrdinals();
+    initPreconditions();
+    initInstantiations();
   }
 
-  static ConstraintsIndex mk(Fragment f0, Fragment f1) {
-    final Symbols symbols0 = f0.symbols();
-    final Symbols symbols1 = f1.symbols();
-
-    final List<Constraint> constraints = new ArrayList<>(symbols0.size() * symbols1.size());
-
-    final List<Symbol> tables0 = symbols0.symbolsOf(TABLE), tables1 = symbols1.symbolsOf(TABLE);
-    final List<Symbol> attrs0 = symbols0.symbolsOf(ATTRS), attrs1 = symbols1.symbolsOf(ATTRS);
-    final List<Symbol> preds0 = symbols0.symbolsOf(PRED), preds1 = symbols1.symbolsOf(PRED);
-    final Multimap<Symbol, Symbol> sources0 = linkedHashKeys().arrayListValues().build();
-    final Multimap<Symbol, Symbol> sources1 = linkedHashKeys().arrayListValues().build();
-    analyzeSources(f0, sources0);
-    analyzeSources(f1, sources1);
-
-    mkEqRel(TableEq, tables0, tables1, constraints);
-    mkEqRel(AttrsEq, attrs0, attrs1, constraints);
-    mkEqRel(PredicateEq, preds0, preds1, constraints);
-
-    // constraints below only used in precondition constraints (in source template)
-    mkAttrsSub(sources0, constraints);
-    mkUnique(sources0, constraints);
-    mkNotNull(sources0, constraints);
-    mkReferences(f0, sources0, constraints);
-
-    return new ConstraintsIndex(f0, f1, constraints, sources0, sources1);
+  private void initSymbolOrdinals() {
+    for (Symbol.Kind kind : Symbol.Kind.values()) initSymbolOrdinals(kind);
   }
 
-  private static void mkEqRel(
-      Constraint.Kind kind, List<Symbol> symbols0, List<Symbol> symbols1, List<Constraint> buffer) {
-    List<Symbol> symbols = ListSupport.join(symbols0, symbols1);
-    for (int i = 0, bound = symbols.size(); i < bound - 1; i++)
-      for (int j = i + 1; j < bound; j++) {
-        buffer.add(Constraint.mk(kind, symbols.get(i), symbols.get(j)));
-      }
+  private void initPreconditions() {
+    analyzeSource(source.root());
+    for (Constraint.Kind kind : Constraint.Kind.values()) {
+      segmentBase[kind.ordinal()] = constraints.size();
+      initPreconditions(kind);
+    }
+    segmentBase[NUM_KINDS_OF_CONSTRAINTS] = constraints.size();
   }
 
-  private static void mkAttrsSub(Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    for (var entry : sources.entries()) {
-      buffer.add(Constraint.mk(AttrsSub, entry.getKey(), entry.getValue()));
+  private void initInstantiations() {
+    for (Symbol.Kind symKind : Symbol.Kind.values()) {
+      segmentBase[NUM_KINDS_OF_CONSTRAINTS + symKind.ordinal()] = constraints.size();
+      initInstantiation(symKind);
+    }
+    segmentBase[NUM_KINDS_OF_CONSTRAINTS + NUM_KINDS_OF_SYMBOLS] = constraints.size();
+  }
+
+  private void initSymbolOrdinals(Symbol.Kind kind) {
+    final List<Symbol> symsOfKind = source.symbols().symbolsOf(kind);
+    for (int i = 0, bound = symsOfKind.size(); i < bound; ++i)
+      symOrdinals.put(symsOfKind.get(i), i);
+  }
+
+  private void initPreconditions(Constraint.Kind constraintKind) {
+    switch (constraintKind) {
+      case TableEq:
+        initEqs(TABLE);
+        break;
+      case AttrsEq:
+        initEqs(ATTRS);
+        break;
+      case PredicateEq:
+        initEqs(PRED);
+        break;
+      case AttrsSub:
+        initAttrsSub();
+        break;
+      case Unique:
+        initUnique();
+        break;
+      case NotNull:
+        initNotNull();
+        break;
+      case Reference:
+        initReference();
+        break;
+      default:
     }
   }
 
-  private static void mkUnique(Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    for (var entry : sources.entries())
-      if (entry.getValue().kind() == TABLE) {
-        buffer.add(Constraint.mk(Unique, entry.getValue(), entry.getKey()));
-      }
+  private void initEqs(Symbol.Kind symKind) {
+    final Constraint.Kind kind = Constraint.Kind.eqOfSymbol(symKind);
+    final List<Symbol> syms = source.symbols().symbolsOf(symKind);
+    for (int i = 0, bound = syms.size() - 1; i < bound; i++)
+      for (int j = i + 1; j <= bound; ++j)
+        constraints.add(Constraint.mk(kind, syms.get(i), syms.get(j)));
   }
 
-  private static void mkNotNull(Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    for (var entry : sources.entries())
-      if (entry.getValue().kind() == TABLE) {
-        buffer.add(Constraint.mk(NotNull, entry.getValue(), entry.getKey()));
-      }
+  private void initAttrsSub() {
+    for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
+      for (Symbol source : viableSources.get(attrs))
+        constraints.add(Constraint.mk(AttrsSub, attrs, source));
   }
 
-  private static void mkReferences(
-      Fragment fragment, Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    fragment.acceptVisitor(OpVisitor.traverse(it -> mkReferences0(it, sources, buffer)));
+  private void initUnique() {
+    for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
+      for (Symbol source : viableSources.get(attrs))
+        constraints.add(Constraint.mk(Unique, source, attrs));
   }
 
-  private static void mkReferences0(
-      Op op, Multimap<Symbol, Symbol> sources, List<Constraint> buffer) {
-    // We only consider Reference between the attrs that are used as join keys.
-    if (!op.kind().isJoin()) return;
-
-    final Symbols symbols = op.fragment().symbols();
-    final Join join = (Join) op;
-    final Symbol lhsAttrs = join.lhsAttrs(), rhsAttrs = join.rhsAttrs();
-    final Collection<Symbol> lhsSources = sources.get(lhsAttrs), rhsSources = sources.get(rhsAttrs);
-
-    for (Symbol lhsSource : lhsSources)
-      for (Symbol rhsSource : rhsSources)
-        mkReferences0(lhsSource, lhsAttrs, rhsSource, rhsAttrs, symbols, sources, buffer);
+  private void initNotNull() {
+    for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
+      for (Symbol source : viableSources.get(attrs))
+        constraints.add(Constraint.mk(NotNull, source, attrs));
   }
 
-  private static void mkReferences0(
-      Symbol lhsSource,
-      Symbol lhsAttr,
-      Symbol rhsSource,
-      Symbol rhsAttr,
-      Symbols symbols,
-      Multimap<Symbol, Symbol> sources,
-      List<Constraint> buffer) {
-    if (lhsSource.kind() == ATTRS) {
-      final Symbol referredAttrs = ((Proj) symbols.ownerOf(lhsSource)).attrs();
-      for (Symbol actualSource : sources.get(referredAttrs))
-        mkReferences0(actualSource, referredAttrs, rhsSource, rhsAttr, symbols, sources, buffer);
-      return;
-    }
-
-    if (rhsSource.kind() == ATTRS) {
-      final Symbol referredAttrs = ((Proj) symbols.ownerOf(rhsSource)).attrs();
-      for (Symbol actualSource : sources.get(referredAttrs))
-        mkReferences0(lhsSource, lhsAttr, actualSource, referredAttrs, symbols, sources, buffer);
-      return;
-    }
-
-    buffer.add(Constraint.mk(Reference, lhsSource, lhsAttr, rhsSource, rhsAttr));
+  private void initReference() {
+    initReference(source.root());
   }
 
-  private void buildSymbolsIndex() {
-    symCounts[0] = buildSymbolsIndex0(concat(symbols0.symbolsOf(TABLE), symbols1.symbolsOf(TABLE)));
-    symCounts[1] = buildSymbolsIndex0(concat(symbols0.symbolsOf(ATTRS), symbols1.symbolsOf(ATTRS)));
-    symCounts[2] = buildSymbolsIndex0(concat(symbols0.symbolsOf(PRED), symbols1.symbolsOf(PRED)));
-  }
+  private void initReference(Op op) {
+    for (Op predecessor : op.predecessors()) initReference(predecessor);
 
-  private int buildSymbolsIndex0(Iterable<Symbol> symbols) {
-    int i = 0;
-    for (Symbol symbol : symbols) symbolsIndex.put(symbol, i++);
-    return i;
-  }
-
-  private void calcMandatory() {
-    // The only possible AttrsSub of an attrs must be mandatory.
-    final int begin = segBases[AttrsSub.ordinal()], end = segBases[AttrsSub.ordinal() + 1];
-    for (int i = begin; i < end; i++)
-      if (sources0.get(constraints.get(i).symbols()[0]).size() <= 1) {
-        mandatory[i] = true;
-      }
-  }
-
-  private void calcSegments() {
-    final int numKinds = Constraint.Kind.values().length - 1, bound = constraints.size();
-    int begin = 0;
-
-    for (int i = 0; i < numKinds; i++) {
-      final Constraint.Kind kind = Constraint.Kind.values()[i];
-      final int seg = begin + locate(constraints.subList(begin, bound), it -> it.kind() == kind);
-      if (seg >= begin) begin = segBases[i] = seg;
-      else segBases[i] = -1;
-    }
-    segBases[segBases.length - 1] = bound;
-
-    for (int i = 0; i < numKinds; i++) {
-      if (segBases[i] == -1) segBases[i] = segBases[i + 1];
+    if (op.kind().isJoin()) {
+      final Join join = (Join) op;
+      final Symbol lhs = join.lhsAttrs(), rhs = join.rhsAttrs();
+      for (Symbol lhsSource : viableSources.get(lhs))
+        for (Symbol rhsSource : viableSources.get(rhs))
+          constraints.add(Constraint.mk(Reference, lhsSource, lhs, rhsSource, rhs));
     }
   }
 
-  Fragment fragment0() {
-    return f0;
+  private void initInstantiation(Symbol.Kind symKind) {
+    final Constraint.Kind constraintKind = Constraint.Kind.eqOfSymbol(symKind);
+    for (Symbol targetSym : target.symbols().symbolsOf(symKind))
+      for (Symbol sourceSym : source.symbols().symbolsOf(symKind))
+        constraints.add(Constraint.mk(constraintKind, targetSym, sourceSym));
   }
 
-  Fragment fragment1() {
-    return f1;
+  int beginIndexOfKind(Constraint.Kind kind) {
+    return segmentBase[kind.ordinal()];
   }
 
-  boolean[] mandatoryBitmap() {
-    return mandatory;
+  int endIndexOfKind(Constraint.Kind kind) {
+    return segmentBase[kind.ordinal() + 1];
   }
 
-  Multimap<Symbol, Symbol> attrSources0() {
-    return sources0;
+  int beginIndexOfEq(Symbol.Kind kind) {
+    return beginIndexOfKind(Constraint.Kind.eqOfSymbol(kind));
   }
 
-  Multimap<Symbol, Symbol> attrSources1() {
-    return sources1;
+  int endIndexOfEq(Symbol.Kind kind) {
+    return endIndexOfKind(Constraint.Kind.eqOfSymbol(kind));
   }
 
-  Collection<Symbol> getAttrSources(Symbol symbol) {
-    if (f0.symbols().contains(symbol)) return sources0.get(symbol);
-    return sources1.get(symbol);
+  int beginIndexOfInstantiation(Symbol.Kind kind) {
+    return segmentBase[NUM_KINDS_OF_CONSTRAINTS + kind.ordinal()];
   }
 
-  int beginIndexOf(Constraint.Kind kind) {
-    return segBases[kind.ordinal()];
+  int endIndexOfInstantiation(Symbol.Kind kind) {
+    return segmentBase[NUM_KINDS_OF_CONSTRAINTS + kind.ordinal() + 1];
   }
 
-  int endIndexOf(Constraint.Kind kind) {
-    return segBases[kind.ordinal() + 1];
+  int indexOfInstantiation(Symbol from, Symbol to) {
+    assert from.kind() == to.kind();
+    final int begin = beginIndexOfInstantiation(from.kind());
+    final int end = endIndexOfInstantiation(from.kind());
+    for (int i = begin; i < end; ++i) {
+      final Constraint instantiation = constraints.get(i);
+      if (instantiation.symbols()[0] == to && instantiation.symbols()[1] == from) return i;
+    }
+    assert false;
+    return -1;
   }
 
-  int indexOfEq(Symbol s0, Symbol s1) {
-    assert s0.kind() == s1.kind();
-    final Symbol.Kind kind = s0.kind();
-    final int base = segBases[kind.ordinal()];
-    final int symCount = symCounts[kind.ordinal()];
-    final int i = symbolsIndex.get(s0), j = symbolsIndex.get(s1);
+  int indexOfEq(Symbol sym0, Symbol sym1) {
+    assert sym0.kind() == sym1.kind();
+    final Symbol.Kind kind = sym0.kind();
+    final int base = beginIndexOfEq(kind);
+    final int symCount = source.symbolCount(kind);
+    final int i = symOrdinals.get(sym0), j = symOrdinals.get(sym1);
     final int x = Math.min(i, j), y = Math.max(i, j);
     return base + ((((symCount << 1) - x - 1) * x) >> 1) + y - x - 1;
+  }
+
+  Collection<Symbol> viableSourcesOf(Symbol attrs) {
+    assert attrs.kind() == ATTRS;
+    return viableSources.get(attrs);
+  }
+
+  Substitution mkRule(boolean[] enabled) {
+    assert enabled.length == constraints.size();
+    final List<Constraint> enabledConstraints = new ArrayList<>(enabled.length);
+    for (int i = 0, bound = enabled.length; i < bound; i++) {
+      enabledConstraints.add(constraints.get(i));
+    }
+    return Substitution.mk(source, target, enabledConstraints);
+  }
+
+  Symbols sourceSymbols() {
+    return source.symbols();
+  }
+
+  Symbols targetSymbols() {
+    return target.symbols();
   }
 
   @Override
@@ -250,52 +218,32 @@ class ConstraintsIndex extends AbstractList<Constraint> {
     return constraints.size();
   }
 
-  private static Multimap<Symbol, Symbol> analyzeSources(
-      Fragment fragment, Multimap<Symbol, Symbol> sources) {
-    final AttrSourceAnalyzer analyzer = new AttrSourceAnalyzer(fragment.symbols(), sources);
-    analyzer.analyze0(fragment.root());
-    return analyzer.sources;
-  }
+  private List<Symbol> analyzeSource(Op op) {
+    final OperatorType kind = op.kind();
+    final Op[] predecessor = op.predecessors();
+    final List<Symbol> lhs = kind.numPredecessors() > 0 ? analyzeSource(predecessor[0]) : null;
+    final List<Symbol> rhs = kind.numPredecessors() > 1 ? analyzeSource(predecessor[1]) : null;
 
-  private static class AttrSourceAnalyzer {
-    private final Symbols symbols;
-    private final Multimap<Symbol, Symbol> sources;
-
-    private AttrSourceAnalyzer(Symbols symbols, Multimap<Symbol, Symbol> sources) {
-      this.symbols = symbols;
-      this.sources = sources;
-    }
-
-    List<Symbol> analyze0(Op op) {
-      final OperatorType type = op.kind();
-      final List<Symbol> lhs = type.numPredecessors() >= 1 ? analyze0(op.predecessors()[0]) : null;
-      final List<Symbol> rhs = type.numPredecessors() >= 2 ? analyze0(op.predecessors()[1]) : null;
-
-      switch (type) {
-        case INPUT:
-          return singletonList(symbols.symbolAt(op, TABLE, 0));
-        case LEFT_JOIN:
-        case INNER_JOIN:
-          {
-            sources.putAll(symbols.symbolAt(op, ATTRS, 0), lhs);
-            sources.putAll(symbols.symbolAt(op, ATTRS, 1), rhs);
-            return join(lhs, rhs);
-          }
-        case SIMPLE_FILTER:
-        case IN_SUB_FILTER:
-          {
-            sources.putAll(symbols.symbolAt(op, ATTRS, 0), lhs);
-            return lhs;
-          }
-        case PROJ:
-          {
-            final Symbol attrs = symbols.symbolAt(op, ATTRS, 0);
-            sources.putAll(attrs, lhs);
-            return singletonList(attrs);
-          }
-        default:
-          throw new IllegalArgumentException();
-      }
+    switch (kind) {
+      case INPUT:
+        return Collections.singletonList(((Input) op).table());
+      case INNER_JOIN:
+      case LEFT_JOIN:
+        final Join join = (Join) op;
+        viableSources.putAll(join.lhsAttrs(), lhs);
+        viableSources.putAll(join.rhsAttrs(), rhs);
+        return ListSupport.join(lhs, rhs);
+      case IN_SUB_FILTER:
+      case SIMPLE_FILTER:
+        viableSources.putAll(((AttrsFilter) op).attrs(), lhs);
+      case EXISTS_FILTER:
+        return lhs;
+      case PROJ:
+        final Proj proj = (Proj) op;
+        viableSources.putAll(proj.attrs(), lhs);
+        return Collections.singletonList(proj.attrs());
+      default:
+        throw new IllegalArgumentException("unsupported op kind " + kind);
     }
   }
 }

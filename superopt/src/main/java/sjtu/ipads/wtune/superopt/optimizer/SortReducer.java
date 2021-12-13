@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.AggNode;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -9,11 +10,11 @@ import sjtu.ipads.wtune.sqlparser.plan.Value;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.google.common.collect.Sets.difference;
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.replaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.AGGREGATE_NAME;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
@@ -29,7 +30,7 @@ class SortReducer {
     if (enforcer == null) enforcer = emptySet();
 
     final List<Pair<PlanNode, PlanNode>> toRemove =
-        listMap(difference(sortNodes, enforcer), it -> Pair.of(it, it.predecessors()[0]));
+            ListSupport.map(difference(sortNodes, enforcer), (Function<? super PlanNode, ? extends Pair<PlanNode, PlanNode>>) it -> Pair.of(it, it.predecessors()[0]));
     return toRemove.isEmpty() ? node : replaceGlobal(node, toRemove);
   }
 

@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ASTContext;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
@@ -13,10 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.TABLE_SOURCE;
@@ -159,7 +160,9 @@ public class ASTNodeImpl implements ASTNode {
   private static Object deepCopy0(Object obj) {
     // recursively copy AST (according to obj's class)
     if (obj instanceof ASTNode) return ((ASTNode) obj).deepCopy();
-    else if (obj instanceof Iterable) return listMap((Iterable<?>) obj, ASTNodeImpl::deepCopy0);
+    else if (obj instanceof Iterable)
+      return ListSupport.map(
+          (Iterable<?>) obj, (Function<? super Object, ?>) ASTNodeImpl::deepCopy0);
     else return obj;
   }
 }

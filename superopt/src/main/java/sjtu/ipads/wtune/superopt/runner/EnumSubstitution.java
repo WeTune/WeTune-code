@@ -18,9 +18,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
-import static sjtu.ipads.wtune.prover.ProverSupport.mkLogicCtx;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
-import static sjtu.ipads.wtune.common.utils.Commons.*;
 
 public class EnumSubstitution implements Runner {
   private PrintWriter out;
@@ -156,13 +154,13 @@ public class EnumSubstitution implements Runner {
     try {
       final List<Substitution> substitutions;
       if (f0.symbolCount(Symbol.Kind.TABLE) == f1.symbolCount(Symbol.Kind.TABLE)) {
-        final List<Substitution> substitutions1 = enumConstraints(f0, f1, mkLogicCtx(), timeout);
-        final List<Substitution> substitutions2 = enumConstraints(f1, f0, mkLogicCtx(), timeout);
+        final List<Substitution> substitutions1 = enumConstraints(f0, f1, timeout);
+        final List<Substitution> substitutions2 = enumConstraints(f1, f0, timeout);
         substitutions = ListSupport.concat(substitutions1, substitutions2);
       } else {
         if (f0.symbolCount(Symbol.Kind.TABLE) > f1.symbolCount(Symbol.Kind.TABLE))
-          substitutions = enumConstraints(f0, f1, mkLogicCtx(), timeout);
-        else substitutions = enumConstraints(f1, f0, mkLogicCtx(), timeout);
+          substitutions = enumConstraints(f0, f1, timeout);
+        else substitutions = enumConstraints(f1, f0, timeout);
       }
       //      final List<Substitution> substitutions = enumConstraints(f0, f1, mkLogicCtx(),
       // timeout);

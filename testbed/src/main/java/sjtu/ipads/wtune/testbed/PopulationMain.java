@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.testbed;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
@@ -25,6 +24,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.LogManager;
+
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -157,7 +158,7 @@ public class PopulationMain {
     //    populateOne(config, app.name(), null, false);
 
     final Map<String, Set<Table>> usedTables =
-        getUsedTables(listMap(Statement.findAllRewrittenByBagSem(), Statement::original));
+        getUsedTables(ListSupport.map((Iterable<Statement>) Statement.findAllRewrittenByBagSem(), (Function<? super Statement, ? extends Statement>) Statement::original));
 
     String appName = "shopizer";
     for (String oneTag : Set.of(LARGE, LARGE_ZIPF)) {

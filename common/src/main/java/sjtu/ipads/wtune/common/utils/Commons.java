@@ -155,6 +155,12 @@ public interface Commons {
     return occurrences;
   }
 
+  static int compareStringLengthFirst(String x, String y) {
+    if (x.length() < y.length()) return -1;
+    if (x.length() > y.length()) return 1;
+    return x.compareTo(y);
+  }
+
   static int max(int[] arr) {
     int max = Integer.MIN_VALUE;
     for (int i : arr) if (i > max) max = i;

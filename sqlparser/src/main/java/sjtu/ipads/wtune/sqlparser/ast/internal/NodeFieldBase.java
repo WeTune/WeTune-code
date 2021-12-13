@@ -1,13 +1,15 @@
 package sjtu.ipads.wtune.sqlparser.ast.internal;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.PARENT;
 
+import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.FieldManager;
 import sjtu.ipads.wtune.sqlparser.relational.Relation;
@@ -98,7 +100,7 @@ public class NodeFieldBase<T> implements FieldKey<T> {
         "mis-typed SQLNode attribute: {0} for {1} \nStacktrace:\n  {2}",
         obj,
         name,
-        String.join("\n  ", listMap(Thread.currentThread().getStackTrace(), Object::toString)));
+        String.join("\n  ", ListSupport.map(Arrays.asList(Thread.currentThread().getStackTrace()), (Function<? super StackTraceElement, String>) Object::toString)));
     return null;
   }
 

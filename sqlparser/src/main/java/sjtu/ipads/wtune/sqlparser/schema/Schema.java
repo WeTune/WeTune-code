@@ -1,8 +1,11 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
-import java.util.Collection;
+import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import java.util.Collection;
+import java.util.function.Function;
+
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.splitSql;
 
@@ -18,6 +21,6 @@ public interface Schema {
   StringBuilder toDdl(String dbType, StringBuilder buffer);
 
   static Schema parse(String dbType, String str) {
-    return SchemaImpl.build(dbType, listMap(splitSql(str), s -> parseSql(dbType, s)));
+    return SchemaImpl.build(dbType, ListSupport.map((Iterable<String>) splitSql(str), (Function<? super String, ? extends SqlNode>) s -> parseSql(dbType, s)));
   }
 }

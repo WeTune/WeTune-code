@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
@@ -14,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
@@ -174,7 +175,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
     }
 
     final List<SqlNode> keyParts =
-        listMap(restCtx.index_sort().sort_specifier_list().sort_specifier(), this::toKeyPart);
+            ListSupport.map((Iterable<PGParser.Sort_specifierContext>) restCtx.index_sort().sort_specifier_list().sort_specifier(), (Function<? super PGParser.Sort_specifierContext, ? extends SqlNode>) this::toKeyPart);
 
     node.$(IndexDef_Keys, mkNodes(keyParts));
 
@@ -261,13 +262,13 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
     if (ctx.set_qualifier() != null && ctx.set_qualifier().DISTINCT() != null) {
       node.flag(QuerySpec_Distinct);
       if (ctx.distinct != null)
-        node.$(QuerySpec_DistinctOn, mkNodes(listMap(ctx.distinct, this::visitVex)));
+        node.$(QuerySpec_DistinctOn, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) ctx.distinct, (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
     }
 
     if (ctx.select_list() != null)
       node.$(
           QuerySpec_SelectItems,
-          mkNodes(listMap(ctx.select_list().select_sublist(), this::visitSelect_sublist)));
+          mkNodes(ListSupport.map((Iterable<PGParser.Select_sublistContext>) ctx.select_list().select_sublist(), (Function<? super PGParser.Select_sublistContext, ? extends SqlNode>) this::visitSelect_sublist)));
 
     final var fromItems = ctx.from_item();
     if (fromItems != null) {
@@ -286,9 +287,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
       node.$(
           QuerySpec_GroupBy,
           mkNodes(
-              listMap(
-                  ctx.groupby_clause().grouping_element_list().grouping_element(),
-                  this::visitGrouping_element)));
+                  ListSupport.map((Iterable<PGParser.Grouping_elementContext>) ctx.groupby_clause().grouping_element_list().grouping_element(), (Function<? super PGParser.Grouping_elementContext, ? extends SqlNode>) this::visitGrouping_element)));
 
     // TODO: WINDOW
 
@@ -407,7 +406,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
       else {
         final var vexs = ctx.vex();
         final SqlNode tuple = mkExpr(Tuple);
-        tuple.$(Tuple_Exprs, mkNodes(listMap(vexs.subList(1, vexs.size()), this::visitVex)));
+        tuple.$(Tuple_Exprs, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) vexs.subList(1, vexs.size()), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
         node = mkBinary(left, tuple, IN_LIST);
       }
       return ctx.NOT() == null ? node : mkUnary(node, NOT);
@@ -474,7 +473,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
 
     } else if (ctx.vex().size() >= 1) {
       final SqlNode tuple = mkExpr(Tuple);
-      tuple.$(Tuple_Exprs, mkNodes(listMap(ctx.vex(), this::visitVex)));
+      tuple.$(Tuple_Exprs, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) ctx.vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
       return tuple;
 
     } else return assertFalse();
@@ -561,7 +560,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
 
     } else if (ctx.vex().size() >= 1) {
       final SqlNode tuple = mkExpr(Tuple);
-      tuple.$(Tuple_Exprs, mkNodes(listMap(ctx.vex(), this::visitVex)));
+      tuple.$(Tuple_Exprs, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) ctx.vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
       return tuple;
 
     } else return assertFalse();
@@ -706,7 +705,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
   @Override
   public SqlNode visitArray_elements(PGParser.Array_elementsContext ctx) {
     final SqlNode node = mkExpr(Array);
-    final List<SqlNode> elements = listMap(ctx.array_element(), this::visitArray_element);
+    final List<SqlNode> elements = ListSupport.map((Iterable<PGParser.Array_elementContext>) ctx.array_element(), (Function<? super PGParser.Array_elementContext, ? extends SqlNode>) this::visitArray_element);
     node.$(Array_Elements, mkNodes(elements));
     return node;
   }
@@ -742,7 +741,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
 
     if (ctx.identifier() != null) node.$(WindowSpec_Name, stringifyIdentifier(ctx.identifier()));
     if (ctx.partition_by_columns() != null)
-      node.$(WindowSpec_Part, mkNodes(listMap(ctx.partition_by_columns().vex(), this::visitVex)));
+      node.$(WindowSpec_Part, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) ctx.partition_by_columns().vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
     if (ctx.orderby_clause() != null) node.$(WindowSpec_Order, toOrderItems(ctx.orderby_clause()));
     if (ctx.frame_clause() != null) node.$(WindowSpec_Frame, ctx.frame_clause().accept(this));
 
@@ -859,7 +858,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
   }
 
   private SqlNodes toOrderItems(PGParser.Orderby_clauseContext ctx) {
-    return mkNodes(listMap(ctx.sort_specifier_list().sort_specifier(), this::toOrderItem));
+    return mkNodes(ListSupport.map((Iterable<PGParser.Sort_specifierContext>) ctx.sort_specifier_list().sort_specifier(), (Function<? super PGParser.Sort_specifierContext, ? extends SqlNode>) this::toOrderItem));
   }
 
   private SqlNode parseFuncCall(PGParser.Function_callContext ctx, String[] name) {
@@ -868,19 +867,19 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
       node.$(FuncCall_Name, mkName2(name));
       node.$(
           FuncCall_Args,
-          mkNodes(listMap(ctx.vex_or_named_notation(), this::visitVex_or_named_notation)));
+          mkNodes(ListSupport.map((Iterable<PGParser.Vex_or_named_notationContext>) ctx.vex_or_named_notation(), (Function<? super PGParser.Vex_or_named_notationContext, ? extends SqlNode>) this::visitVex_or_named_notation)));
       return node;
 
     } else if (ctx.function_construct() != null) {
       final var funcConstructCtx = ctx.function_construct();
       if (funcConstructCtx.funcName != null) {
         node.$(FuncCall_Name, mkName2(null, funcConstructCtx.funcName.getText()));
-        node.$(FuncCall_Args, mkNodes(listMap(funcConstructCtx.vex(), this::visitVex)));
+        node.$(FuncCall_Args, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) funcConstructCtx.vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
         return node;
 
       } else if (funcConstructCtx.ROW() != null) {
         final SqlNode tupleNode = mkExpr(Tuple);
-        tupleNode.$(Tuple_Exprs, mkNodes(listMap(funcConstructCtx.vex(), this::visitVex)));
+        tupleNode.$(Tuple_Exprs, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) funcConstructCtx.vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
         tupleNode.flag(Tuple_AsRow);
         return tupleNode;
       } else return assertFalse();
@@ -945,7 +944,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
                 Arrays.asList(
                     strValueFuncCtx.vex_b().accept(this), strValueFuncCtx.vex(0).accept(this))));
 
-      } else node.$(FuncCall_Args, mkNodes(listMap(strValueFuncCtx.vex(), this::visitVex)));
+      } else node.$(FuncCall_Args, mkNodes(ListSupport.map((Iterable<PGParser.VexContext>) strValueFuncCtx.vex(), (Function<? super PGParser.VexContext, ? extends SqlNode>) this::visitVex)));
 
       return node;
 
@@ -1100,7 +1099,7 @@ public class PgAstBuilder1 extends PGParserBaseVisitor<SqlNode> implements AstBu
   }
 
   private SqlNodes parseIndirectionList(PGParser.Indirection_listContext ctx) {
-    final List<SqlNode> indirections = listMap(ctx.indirection(), this::visitIndirection);
+    final List<SqlNode> indirections = ListSupport.map((Iterable<PGParser.IndirectionContext>) ctx.indirection(), (Function<? super PGParser.IndirectionContext, ? extends SqlNode>) this::visitIndirection);
     if (ctx.MULTIPLY() != null) {
       final SqlNode node = mkExpr(IndirectionComp);
       node.$(IndirectionComp_Start, mkWildcard(null));

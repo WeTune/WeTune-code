@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.TreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import java.util.function.Function;
 
 public interface PlanContext extends TreeContext<PlanContext> {
   Set<Ref> refs();
@@ -41,7 +41,7 @@ public interface PlanContext extends TreeContext<PlanContext> {
   boolean validate();
 
   default List<Value> deRef(List<Ref> refs) {
-    return listMap(refs, this::deRef);
+    return ListSupport.map((Iterable<Ref>) refs, (Function<? super Ref, ? extends Value>) this::deRef);
   }
 
   default void replaceValue(Value oldAttr, Value newAttr) {

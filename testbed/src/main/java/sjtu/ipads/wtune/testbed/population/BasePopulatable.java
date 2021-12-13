@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
+import sjtu.ipads.wtune.testbed.common.Element;
 
 class BasePopulatable implements Populatable {
   private final Collection collection;
@@ -19,7 +21,7 @@ class BasePopulatable implements Populatable {
 
   @Override
   public boolean bindGen(Generators generators) {
-    this.generators = listMap(collection.elements(), generators::bind);
+    this.generators = ListSupport.map((Iterable<Element>) collection.elements(), (Function<? super Element, ? extends Generator>) generators::bind);
     return this.generators.stream().allMatch(Objects::nonNull);
   }
 

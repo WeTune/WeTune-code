@@ -1,13 +1,14 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.safeGet;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
@@ -41,8 +42,8 @@ public interface Proj extends Op {
 
     if (trusted) assert outValues != null; // Only reachable when called from PlanTranslator.
     else {
-      if (outValues != null) outValues = listMap(outValues, Value::renewRefs);
-      else outValues = listMap(inValues, Value::wrapAsExprValue);
+      if (outValues != null) outValues = ListSupport.map((Iterable<Value>) outValues, (Function<? super Value, ? extends Value>) Value::renewRefs);
+      else outValues = ListSupport.map((Iterable<Value>) inValues, (Function<? super Value, ? extends Value>) Value::wrapAsExprValue);
     }
 
     final ProjNode proj = ProjNode.mk(ValueBag.mk(outValues));

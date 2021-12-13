@@ -1,20 +1,20 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 
+import java.util.Arrays;
 import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
+import java.util.function.Function;
 
 class SubstitutionImpl implements Substitution {
   private final Fragment _0, _1;
   private final Constraints constraints;
 
   private SymbolNaming naming;
-  private FragmentProbe probe0, probe1;
 
   private int id;
 
@@ -35,17 +35,19 @@ class SubstitutionImpl implements Substitution {
     final Fragment _0 = Fragment.parse(split[0], naming, backwardCompatible);
     final Fragment _1 = Fragment.parse(split[1], naming, backwardCompatible);
     final List<Constraint> constraints =
-        listMap(split[2].split(";"), it -> Constraint.parse(it, naming));
+        ListSupport.map(
+            Arrays.asList(split[2].split(";")),
+            (Function<? super String, Constraint>) it -> Constraint.parse(it, naming));
 
     return new SubstitutionImpl(
-        _0, _1, Constraints.mk(_0.symbols(), constraints), naming);
+        _0, _1, Constraints.mk(_0.symbols(), _1.symbols(), constraints), naming);
   }
 
   static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {
     final Constraints cs =
         constraints instanceof Constraints
             ? (Constraints) constraints
-            : Constraints.mk(f0.symbols(), constraints);
+            : Constraints.mk(f0.symbols(), f1.symbols(), constraints);
 
     return new SubstitutionImpl(f0, f1, cs, null);
   }
@@ -83,17 +85,6 @@ class SubstitutionImpl implements Substitution {
       naming.name(_1.symbols());
     }
     return naming;
-  }
-
-  @Override
-  public FragmentProbe probe(boolean lhs) {
-    if (lhs) {
-      if (probe0 == null) probe0 = new FragmentProbeImpl(this, true);
-      return probe0;
-    } else {
-      if (probe1 == null) probe1 = new FragmentProbeImpl(this, false);
-      return probe1;
-    }
   }
 
   @Override

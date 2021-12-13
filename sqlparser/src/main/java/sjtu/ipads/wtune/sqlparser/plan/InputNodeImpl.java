@@ -1,11 +1,13 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
 
 class InputNodeImpl extends PlanNodeBase implements InputNode {
@@ -24,7 +26,7 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
   InputNodeImpl(Table table, String alias) {
     this(
         table,
-        ValueBag.mk(listMap(table.columns(), ColumnValue::new)),
+        ValueBag.mk(ListSupport.map((Iterable<Column>) table.columns(), (Function<? super Column, ? extends Value>) ColumnValue::new)),
         NEXT_UNIQUE_ID.getAndIncrement());
     values.setQualification(simpleName(alias));
   }

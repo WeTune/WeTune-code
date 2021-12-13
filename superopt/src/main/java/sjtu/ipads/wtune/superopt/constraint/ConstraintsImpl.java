@@ -1,40 +1,44 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import com.google.common.collect.Sets;
-import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.fragment.Symbols;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
 
 class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   private final List<Constraint> constraints;
+  private final Symbols sourceSyms, targetSyms;
   private final NaturalCongruence<Symbol> congruence;
-  private final Map<Symbol, Symbol> instantiationSource;
+  private final Map<Symbol, Symbol> instantiations;
   private final int[] segBases;
 
   ConstraintsImpl(
       List<Constraint> constraints,
+      Symbols sourceSyms,
+      Symbols targetSyms,
       NaturalCongruence<Symbol> congruence,
-      Map<Symbol, Symbol> instantiationSource) {
+      Map<Symbol, Symbol> instantiations) {
     this.constraints = constraints;
+    this.sourceSyms = sourceSyms;
+    this.targetSyms = targetSyms;
     this.congruence = congruence;
-    this.instantiationSource = instantiationSource;
-
-    this.segBases = new int[Constraint.Kind.values().length];
+    this.instantiations = instantiations;
+    this.segBases = new int[Constraint.Kind.values().length + 1];
     calcSegments();
   }
 
-  static Constraints mk(Symbols srcSyms, List<Constraint> constraints) {
+  static Constraints mk(Symbols srcSyms, Symbols tgtSyms, List<Constraint> constraints) {
     // This congruence contains only the symbols at the source side
     final NaturalCongruence<Symbol> eqSymbols = NaturalCongruence.mk();
     for (Constraint c : lazyFilter(constraints, it -> it.kind().isEq())) {
@@ -46,38 +50,52 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
     final Map<Symbol, Symbol> instantiationSource = new IdentityHashMap<>();
     for (Constraint c : lazyFilter(constraints, it -> it.kind().isEq())) {
       Symbol sym0 = c.symbols()[0], sym1 = c.symbols()[1];
-      if (sym1.ctx() == srcSyms && sym0.ctx() != srcSyms) {
+      if (sym0.ctx() == srcSyms && sym1.ctx() == srcSyms) continue;
+
+      if (sym0.ctx() != srcSyms && sym1.ctx() == srcSyms) {
         Symbol tmp = sym0;
         sym0 = sym1;
         sym1 = tmp;
       }
 
       // add this after migration completion:
-      //      assert sym0.ctx() == srcSyms && sym1.ctx() != srcSyms;
+      assert sym0.ctx() == srcSyms && sym1.ctx() != srcSyms;
 
       instantiationSource.put(sym1, sym0);
     }
 
+    constraints.removeIf(it -> it.kind().isEq() && it.symbols()[0].ctx() != it.symbols()[1].ctx());
     constraints.sort(comparing(Constraint::kind));
 
-    return new ConstraintsImpl(constraints, eqSymbols, instantiationSource);
+    return new ConstraintsImpl(constraints, srcSyms, tgtSyms, eqSymbols, instantiationSource);
   }
 
   private void calcSegments() {
-    final int numKinds = Constraint.Kind.values().length - 1, bound = constraints.size();
-    int begin = 0;
-
-    for (int i = 0; i < numKinds; i++) {
-      final Constraint.Kind kind = Constraint.Kind.values()[i];
-      final int seg = begin + locate(constraints.subList(begin, bound), it -> it.kind() == kind);
-      if (seg >= begin) begin = segBases[i] = seg;
-      else segBases[i] = -1;
+    int base = 0;
+    for (Kind kind : Constraint.Kind.values()) {
+      base = findBaseOf(kind, base);
+      segBases[kind.ordinal()] = base;
     }
-    segBases[segBases.length - 1] = bound;
+    segBases[segBases.length - 1] = constraints.size();
+  }
 
-    for (int i = numKinds - 1; i >= 0; i--) {
-      if (segBases[i] == -1) segBases[i] = segBases[i + 1];
+  private int findBaseOf(Kind targetKind, int fromIndex) {
+    for (int i = fromIndex, bound = constraints.size(); i < bound; ++i) {
+      final Kind kind = constraints.get(i).kind();
+      if (kind == targetKind) return i;
+      if (kind.ordinal() > targetKind.ordinal()) return fromIndex;
     }
+    return fromIndex;
+  }
+
+  @Override
+  public Symbols sourceSymbols() {
+    return sourceSyms;
+  }
+
+  @Override
+  public Symbols targetSymbols() {
+    return targetSyms;
   }
 
   @Override
@@ -91,76 +109,17 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
-  public boolean isEq(Symbol s0, Symbol s1) {
-    return congruence.isCongruent(s0, s1);
-  }
-
-  @Override
-  public Set<Symbol> eqClassOf(Symbol symbol) {
-    return congruence.eqClassOf(symbol);
-  }
-
-  private Set<Symbol> indirectEqClassOf(Symbol symbol) {
-    Set<Symbol> res = eqClassOf(symbol);
-    if (symbol.kind() == Symbol.Kind.TABLE) return res;
-
-    return Sets.union(res, indirectEqClassOf(directSourceOf(symbol)));
-  }
-
-  @Override
   public Symbol sourceOf(Symbol attrSym) {
-    Symbol source = directSourceOf(attrSym);
-    if (source != null) return source;
-
-    // No direct constraint, try to search source in eqClasses
-    for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
-      if (isEq(constraint.symbols()[0], attrSym)) {
-        Set<Symbol> sameCtxSources =
-            setFilter(indirectEqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
-        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
+    for (Constraint attrsSub : ofKind(Kind.AttrsSub))
+      if (attrsSub.symbols()[0] == attrSym) {
+        return attrsSub.symbols()[1];
       }
-    }
-    for (Constraint constraint : ofKind(Kind.AttrsSub)) {
-      if (isEq(constraint.symbols()[0], attrSym)) {
-        Set<Symbol> sameCtxSources =
-            setFilter(indirectEqClassOf(constraint.symbols()[1]), it -> it.ctx() == attrSym.ctx());
-        if (!sameCtxSources.isEmpty()) return sameCtxSources.stream().toList().get(0);
-      }
-    }
-
     return null;
-  }
-
-  private Symbol directSourceOf(Symbol attrSym) {
-    // AttrsFrom takes priority.
-    for (Constraint constraint : ofKind(Kind.AttrsFrom)) {
-      if (constraint.symbols()[0] == attrSym) return constraint.symbols()[1];
-    }
-    for (Constraint constraint : ofKind(Kind.AttrsSub)) {
-      if (constraint.symbols()[0] == attrSym) return constraint.symbols()[1];
-    }
-
-    return null;
-  }
-
-  @Override
-  public boolean add(Constraint constraint) {
-    constraints.add(constraint);
-    if (constraint.kind().isEq())
-      congruence.putCongruent(constraint.symbols()[0], constraint.symbols()[1]);
-    return true;
   }
 
   @Override
   public List<Constraint> ofKind(Kind kind) {
     return constraints.subList(beginIndexOf(kind), endIndexOf(kind));
-  }
-
-  @Override
-  public StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder) {
-    final List<String> strings = listMap(constraints, it -> it.canonicalStringify(naming));
-    strings.sort(String::compareTo);
-    return Commons.joining(";", strings, builder);
   }
 
   @Override
@@ -170,12 +129,17 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
 
   @Override
   public Symbol instantiationOf(Symbol tgtSym) {
-    return instantiationSource.get(tgtSym);
+    return instantiations.get(tgtSym);
+  }
+
+  @Override
+  public StringBuilder canonicalStringify(SymbolNaming naming, StringBuilder builder) {
+    return ConstraintSupport.stringify(this, naming, true, builder);
   }
 
   @Override
   public StringBuilder stringify(SymbolNaming naming, StringBuilder builder) {
-    return Commons.joining(";", constraints, builder, (it, b) -> it.stringify(naming, b));
+    return ConstraintSupport.stringify(this, naming, false, builder);
   }
 
   private int beginIndexOf(Constraint.Kind kind) {
@@ -183,7 +147,6 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   private int endIndexOf(Constraint.Kind kind) {
-    if (kind == Kind.AttrsFrom) return constraints.size();
     return segBases[kind.ordinal() + 1];
   }
 }

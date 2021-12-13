@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
@@ -8,10 +9,10 @@ import sjtu.ipads.wtune.sqlparser.ast.constants.NodeType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.COLUMN_NAME_COLUMN;
@@ -50,7 +51,7 @@ class ExprImpl implements Expr {
     if (refs.size() == 1) return new ExprImpl(refs, mkAnonymousColumnRef());
     else {
       final ASTNode tuple = ASTNode.expr(ExprKind.TUPLE);
-      final List<ASTNode> components = listMap(refs, it -> mkAnonymousColumnRef());
+      final List<ASTNode> components = ListSupport.map((Iterable<Ref>) refs, (Function<? super Ref, ? extends ASTNode>) it -> mkAnonymousColumnRef());
       tuple.set(TUPLE_EXPRS, components);
 
       return new ExprImpl(refs, tuple);

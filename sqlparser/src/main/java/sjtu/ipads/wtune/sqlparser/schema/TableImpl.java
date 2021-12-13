@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
@@ -7,10 +8,10 @@ import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch.Type;
 import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.ColName;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableName;
@@ -82,7 +83,7 @@ class TableImpl implements Table {
     }
 
     if (patch.type() == SchemaPatch.Type.UNIQUE) {
-      final List<Column> columns = listMap(patch.columns(), this::column);
+      final List<Column> columns = ListSupport.map((Iterable<String>) patch.columns(), (Function<? super String, ? extends Column>) this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(UNIQUE, columns);
 
       addConstraint(constraint);
@@ -90,7 +91,7 @@ class TableImpl implements Table {
     }
 
     if (patch.type() == Type.FOREIGN_KEY) {
-      final List<Column> columns = listMap(patch.columns(), this::column);
+      final List<Column> columns = ListSupport.map((Iterable<String>) patch.columns(), (Function<? super String, ? extends Column>) this::column);
       final ConstraintImpl constraint = ConstraintImpl.build(FOREIGN, columns);
 
       final String[] split = patch.reference().split("\\.");

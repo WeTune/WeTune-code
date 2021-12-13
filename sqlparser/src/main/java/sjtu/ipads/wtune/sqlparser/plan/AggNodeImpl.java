@@ -1,17 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 
 class AggNodeImpl extends PlanNodeBase implements AggNode {
   private final ValueBag values;
@@ -37,8 +38,8 @@ class AggNodeImpl extends PlanNodeBase implements AggNode {
   }
 
   static AggNode mk(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
-    final List<Value> values = listMap(selectItems, ExprValue::fromSelectItem);
-    final List<Expr> groups = groupNodes == null ? emptyList() : listMap(groupNodes, ExprImpl::mk);
+    final List<Value> values = ListSupport.map((Iterable<ASTNode>) selectItems, (Function<? super ASTNode, ? extends Value>) ExprValue::fromSelectItem);
+    final List<Expr> groups = groupNodes == null ? emptyList() : ListSupport.map((Iterable<ASTNode>) groupNodes, (Function<? super ASTNode, ? extends Expr>) ExprImpl::mk);
     final Expr having = havingNode == null ? null : ExprImpl.mk(havingNode);
 
     final List<Ref> aggRefs = new ArrayList<>(values.size());

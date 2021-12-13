@@ -1,8 +1,10 @@
 package sjtu.ipads.wtune.testbed.common;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
-
 import java.util.List;
+import java.util.function.Function;
+
+import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 class TableCollection implements Collection {
@@ -11,7 +13,7 @@ class TableCollection implements Collection {
 
   TableCollection(Table table) {
     this.table = table;
-    this.elements = listMap(table.columns(), Element::ofColumn);
+    this.elements = ListSupport.map((Iterable<Column>) table.columns(), (Function<? super Column, ? extends Element>) Element::ofColumn);
   }
 
   @Override

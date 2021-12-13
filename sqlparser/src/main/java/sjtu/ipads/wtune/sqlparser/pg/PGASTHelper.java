@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.sqlparser.pg;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast.SQLDataType;
 import sjtu.ipads.wtune.sqlparser.ast.constants.*;
@@ -8,11 +9,11 @@ import sjtu.ipads.wtune.sqlparser.ast.internal.ASTNodeFactory;
 import sjtu.ipads.wtune.sqlparser.pg.internal.PGParser;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.QUERY_EXPR;
@@ -86,7 +87,7 @@ interface PGASTHelper {
   static String stringifyText(PGParser.Character_stringContext ctx) {
     if (ctx == null) return null;
     if (ctx.Text_between_Dollar() != null && !ctx.Text_between_Dollar().isEmpty())
-      return String.join("", listMap(ctx.Text_between_Dollar(), TerminalNode::getText));
+      return String.join("", ListSupport.<TerminalNode, String>map((Iterable<TerminalNode>) ctx.Text_between_Dollar(), (Function<? super TerminalNode, ? extends String>) TerminalNode::getText));
     else if (ctx.Character_String_Literal() != null) return unquoted(ctx.getText(), '\'');
     else return assertFalse();
   }

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
@@ -16,9 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorable;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 
@@ -94,7 +95,7 @@ public class PickMinCost implements Runner {
 
     try {
       baseline = assemblePlan(baseAst, schema);
-      candidates = listMap(transformed, it -> mkPlanSafe(schema, it));
+      candidates = ListSupport.map((Iterable<String>) transformed, (Function<? super String, ? extends PlanNode>) it -> mkPlanSafe(schema, it));
 
       for (int i = 0; i < candidates.size(); i++) {
         final PlanNode candidate = candidates.get(i);

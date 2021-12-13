@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.sqlparser.schema;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 
 import java.util.*;
+import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.AUTO_INCREMENT;
@@ -78,7 +79,7 @@ class SchemaImpl implements Schema {
             if (ref == null) continue;
             constraint.setRefTable(ref);
             constraint.setRefColumns(
-                listMap(constraint.refColNames(), it -> ref.column(it.$(ColName_Col))));
+                    ListSupport.map((Iterable<SqlNode>) constraint.refColNames(), (Function<? super SqlNode, ? extends Column>) it -> ref.column(it.$(ColName_Col))));
           }
         }
   }

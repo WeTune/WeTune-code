@@ -5,24 +5,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public interface ListSupport {
-  static <X, Y> List<Y> map(Collection<X> xs, Function<X, Y> func) {
-    final List<Y> ys = new ArrayList<>(xs.size());
-    for (X x : xs) ys.add(func.apply(x));
-    return ys;
-  }
-
   static <Y> List<Y> map(int[] xs, IntFunction<Y> func) {
     final List<Y> ys = new ArrayList<>(xs.length);
     for (int x : xs) ys.add(func.apply(x));
     return ys;
   }
 
-  static <X, Y> List<Y> map(Iterable<X> xs, Function<X, Y> func) {
+  static <X, Y> List<Y> map(Collection<X> xs, Function<? super X, ? extends Y> func) {
+    final List<Y> ys = new ArrayList<>(xs.size());
+    for (X x : xs) ys.add(func.apply(x));
+    return ys;
+  }
+
+  static <X, Y> List<Y> map(Iterable<X> xs, Function<? super X, ? extends Y> func) {
     if (xs instanceof Collection) return map((Collection<X>) xs, func);
     return StreamSupport.stream(xs.spliterator(), false).map(func).collect(Collectors.toList());
   }

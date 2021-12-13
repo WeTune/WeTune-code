@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
+import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listMap;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
@@ -35,8 +36,8 @@ public interface Join extends Op {
         bindValuesRelaxed(m.interpretInAttrs(lhsAttrs()), m.planContext(), predecessor0);
     final List<Value> rhsValues =
         bindValuesRelaxed(m.interpretInAttrs(rhsAttrs()), m.planContext(), predecessor1);
-    final List<Ref> lhsRefs = listMap(lhsValues, Value::selfish);
-    final List<Ref> rhsRefs = listMap(rhsValues, Value::selfish);
+    final List<Ref> lhsRefs = ListSupport.map((Iterable<Value>) lhsValues, (Function<? super Value, ? extends Ref>) Value::selfish);
+    final List<Ref> rhsRefs = ListSupport.map((Iterable<Value>) rhsValues, (Function<? super Value, ? extends Ref>) Value::selfish);
     final JoinNode join = JoinNode.mk(kind(), RefBag.mk(lhsRefs), RefBag.mk(rhsRefs));
 
     join.setContext(ctx);
