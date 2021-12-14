@@ -2,15 +2,14 @@ dependencies {
     implementation project(":common")
     implementation project(":sqlparser")
     implementation project(":stmt")
-    implementation project(":prover")
-    implementation('com.google.guava:guava:30.1.1-jre')
+    implementation('com.google.guava:guava:31.0.1-jre')
     implementation('org.apache.commons:commons-lang3:3.12.0')
     implementation('net.sf.trove4j:trove4j:3.0.3')
     implementation(name: 'z3-4.8.9')
     implementation('com.zaxxer:HikariCP:5.0.0')
     implementation('mysql:mysql-connector-java:8.0.25')
-    implementation('org.postgresql:postgresql:42.2.19')
-    implementation('com.microsoft.sqlserver:mssql-jdbc:9.2.1.jre8')
+    implementation('org.postgresql:postgresql:42.3.1')
+    implementation('com.microsoft.sqlserver:mssql-jdbc:9.4.0.jre16')
 }
 
 task run(type: JavaExec) {

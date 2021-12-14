@@ -1,16 +1,15 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.PartialOrder;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.ArraySupport.compareBools;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
@@ -112,39 +111,46 @@ class ConstraintEnumerator {
    */
   private static final int FREE = 0, MUST_ENABLE = 1, MUST_DISABLE = 2, CONFLICT = 3;
   private static final int TIMEOUT = Integer.MAX_VALUE;
+
   private final ConstraintsIndex I;
   private final long timeout;
-  private final boolean[] enabled;
-  private final List<boolean[]> knownEqs, knownNeqs;
+  private final BitSet enabled;
+  private final List<Generalization> knownEqs, knownNeqs;
   private final EnumerationStage[] stages;
   private final int tweak;
 
-  ConstraintEnumerator(ConstraintsIndex I, long timeout) {
-    this(I, timeout, 0);
-  }
+  private SymbolNaming naming;
+  private EnumerationMetrics metric;
 
   ConstraintEnumerator(ConstraintsIndex I, long timeout, int tweak) {
     this.I = I;
     this.timeout = timeout < 0 ? Long.MAX_VALUE : timeout;
-    this.enabled = new boolean[I.size()];
+    this.enabled = new BitSet(I.size());
     this.knownEqs = new LinkedList<>();
     this.knownNeqs = new LinkedList<>();
-    this.stages = mkStages();
     this.tweak = tweak;
-    Arrays.fill(enabled, false);
+    this.stages = mkStages();
+    currentSet(0, I.size() - 1, false);
   }
 
   List<Substitution> enumerate() {
-    stages[0].enumerate();
-    return ListSupport.map(knownEqs, I::mkRule);
+    try (EnumerationMetrics metric = EnumerationMetrics.open()) {
+      try (var ignored = metric.elapsedEnum.timeIt()) {
+        this.metric = metric;
+
+        stages[0].enumerate();
+        return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
+      }
+    }
   }
 
   //// initialization ////
 
   private EnumerationStage[] mkStages() {
-    final boolean disable0 = (tweak & ENUM_FLAG_DISABLE_BREAKER_0) != 0;
-    final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) != 0;
-    final boolean dryRun = disable0 || disable1 || (tweak & ENUM_FLAG_DRY_RUN) != 0;
+    final boolean disable0 = (tweak & ENUM_FLAG_DISABLE_BREAKER_0) == ENUM_FLAG_DISABLE_BREAKER_0;
+    final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
+    final boolean dryRun = disable0 || disable1 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
+    final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
 
     final EnumerationStage sourceEnum = new AttrsSourceEnumerator();
     final EnumerationStage tableInstantiation = new InstantiationEnumerator(TABLE);
@@ -159,7 +165,8 @@ class ConstraintEnumerator {
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
     final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable1);
     final EnumerationStage timeout = new TimeoutBreaker(System.currentTimeMillis(), this.timeout);
-    final EnumerationStage verifier = new Verifier(dryRun);
+    final VerificationCache cache = new VerificationCache(dryRun, echo);
+    final EnumerationStage verifier = new Verifier();
 
     final EnumerationStage[] stages =
         new EnumerationStage[] {
@@ -176,6 +183,7 @@ class ConstraintEnumerator {
           notNullEnum,
           refEnum,
           timeout,
+          cache,
           verifier
         };
 
@@ -184,7 +192,28 @@ class ConstraintEnumerator {
     return stages;
   }
 
+  public void setNaming(SymbolNaming naming) {
+    this.naming = naming;
+  }
+
   //// inspection of current state ////
+
+  private void currentSet(int index, boolean enable) {
+    enabled.set(index, enable);
+  }
+
+  private void currentSet(int from, int to, boolean enable) {
+    enabled.set(from, to, enable);
+  }
+
+  private boolean currentIsEnabled(int index) {
+    return enabled.get(index);
+  }
+
+  private boolean currentIsEq(Symbol sym0, Symbol sym1) {
+    return sym0 == sym1
+        || (sym0.kind() == sym1.kind() && currentIsEnabled(I.indexOfEq(sym0, sym1)));
+  }
 
   private Symbol currentSourceOf(Symbol attrsSym) {
     final int begin = I.beginIndexOfKind(AttrsSub);
@@ -204,32 +233,11 @@ class ConstraintEnumerator {
     final int end = I.endIndexOfInstantiation(kind);
     for (int i = begin; i < end; ++i) {
       final Constraint instantiation = I.get(i);
-      if (currentIsEnabled(i) && instantiation.symbols()[1] == sym)
-        return instantiation.symbols()[0];
+      if (currentIsEnabled(i) && instantiation.symbols()[0] == sym)
+        return instantiation.symbols()[1];
     }
 
     return null;
-  }
-
-  private boolean currentIsEq(Symbol sym0, Symbol sym1) {
-    return sym0 == sym1
-        || (sym0.kind() == sym1.kind() && currentIsEnabled(I.indexOfEq(sym0, sym1)));
-  }
-
-  private boolean currentIsEnabled(int index) {
-    return enabled[index];
-  }
-
-  //// verification cache ////
-
-  private void rememberEq(boolean[] enabled) {
-    knownEqs.removeIf(it -> compareBools(it, enabled) == GREATER_THAN);
-    knownEqs.add(enabled);
-  }
-
-  private void rememberNeq(boolean[] enabled) {
-    knownNeqs.removeIf(it -> compareBools(it, enabled) == LESS_THAN);
-    knownNeqs.add(enabled);
   }
 
   //// rules about force-enabled/disable ////
@@ -284,32 +292,67 @@ class ConstraintEnumerator {
   }
 
   private int checkNotNullForced(int index) {
-    return checkSourceConformity(index) | checkImplication(index);
+    return checkSourceConformity(index) | checkImplication0(index);
   }
 
   private int checkUniqueForced(int index) {
-    return checkSourceConformity(index) | checkImplication(index);
+    return checkSourceConformity(index) | checkImplication0(index);
   }
 
   private int checkReferenceForced(int index) {
     final Constraint reference = I.get(index);
     final Symbol attrs0 = reference.symbols()[1], attrs1 = reference.symbols()[3];
     final int conformity = checkSourceConformity(index);
-    final int implication = checkImplication(index);
+    final int implication = checkImplication1(index);
     final int reflexivity = currentIsEq(attrs0, attrs1) ? MUST_ENABLE : FREE;
-    return conformity | implication | reflexivity;
+
+    int asymmetric = FREE;
+    if (reflexivity == FREE)
+      for (int i = I.beginIndexOfKind(Reference); i < index; ++i) {
+        if (currentIsEnabled(i)) {
+          final Constraint c = I.get(i);
+          if (attrs0 == c.symbols()[3] && attrs1 == c.symbols()[1]) {
+            asymmetric = MUST_DISABLE;
+            break;
+          }
+        }
+      }
+
+    return conformity | implication | reflexivity | asymmetric;
   }
 
-  private int checkImplication(int index) {
+  private int checkImplication0(int index) {
     final Constraint c = I.get(index);
     final Symbol[] syms = c.symbols();
-    final Symbol attrs0 = syms[1], attrs1 = syms.length > 2 ? syms[3] : null;
+    final Symbol attrs = syms[1];
     final Constraint.Kind kind = c.kind();
 
     for (int i = I.beginIndexOfKind(kind); i < index; ++i) {
       final Constraint other = I.get(i);
-      if (currentIsEq(attrs0, other.symbols()[1])
-          && (attrs1 == null || currentIsEq(attrs1, other.symbols()[3]))) {
+      final Symbol otherSource = other.symbols()[0];
+      final Symbol otherAttrs = other.symbols()[1];
+      if (currentIsEq(attrs, otherAttrs) && currentSourceOf(otherAttrs) == otherSource) {
+        return currentIsEnabled(i) ? MUST_ENABLE : MUST_DISABLE;
+      }
+    }
+
+    return FREE;
+  }
+
+  private int checkImplication1(int index) {
+    final Constraint c = I.get(index);
+    final Symbol[] syms = c.symbols();
+    final Symbol attrs0 = syms[1], attrs1 = syms[3];
+    final Constraint.Kind kind = c.kind();
+
+    for (int i = I.beginIndexOfKind(kind); i < index; ++i) {
+      final Constraint other = I.get(i);
+      final Symbol otherSource0 = other.symbols()[0], otherSource1 = other.symbols()[2];
+      final Symbol otherAttrs0 = other.symbols()[1], otherAttrs1 = other.symbols()[3];
+      if (currentIsEq(attrs0, otherAttrs0)
+          && currentIsEq(attrs1, otherAttrs1)
+          && currentSourceOf(otherAttrs0) == otherSource0
+          && currentSourceOf(otherAttrs1) == otherSource1) {
         return currentIsEnabled(i) ? MUST_ENABLE : MUST_DISABLE;
       }
     }
@@ -356,7 +399,8 @@ class ConstraintEnumerator {
     final int end = I.endIndexOfInstantiation(TABLE);
     for (int i = begin; i < end; ++i) {
       final Constraint other = I.get(i);
-      if (other.symbols()[0] == from && other.symbols()[1] != to) return false;
+      if (currentIsEnabled(i) && other.symbols()[1] == from && other.symbols()[0] != to)
+        return false;
     }
     return true;
   }
@@ -381,6 +425,100 @@ class ConstraintEnumerator {
 
   private boolean validatePredInstantiation(Symbol from, Symbol to) {
     return true;
+  }
+
+  //// helper methods ////
+
+  private static PartialOrder compareBitset(BitSet bs0, BitSet bs1) {
+    assert bs0.size() == bs1.size();
+
+    PartialOrder cmp = SAME;
+    for (int i = 0, bound = bs0.size(); i < bound; ++i) {
+      final boolean b0 = bs0.get(i), b1 = bs1.get(i);
+      if (b0 && !b1)
+        if (cmp == LESS_THAN) return INCOMPARABLE;
+        else cmp = GREATER_THAN;
+      else if (!b0 && b1)
+        if (cmp == GREATER_THAN) return INCOMPARABLE;
+        else cmp = LESS_THAN;
+    }
+    return cmp;
+  }
+
+  private static PartialOrder compareVerificationResult(Generalization r0, Generalization r1) {
+    for (BitSet bit0 : r0.bits) {
+      for (BitSet bit1 : r1.bits) {
+        final PartialOrder cmp = compareBitset(bit0, bit1);
+        if (cmp != INCOMPARABLE) return cmp;
+      }
+    }
+    return INCOMPARABLE;
+  }
+
+  private void rememberEq(List<Generalization> knownEqs, Generalization eq) {
+    knownEqs.removeIf(it -> compareVerificationResult(it, eq).greaterOrSame());
+    knownEqs.add(eq);
+  }
+
+  private void rememberNeq(List<Generalization> knownNeqs, Generalization neq) {
+    knownNeqs.removeIf(it -> compareVerificationResult(it, neq).lessOrSame());
+    knownNeqs.add(neq);
+  }
+
+  private static boolean isKnownEq(List<Generalization> knownEqs, Generalization toCheck) {
+    for (Generalization knownEq : knownEqs)
+      if (compareVerificationResult(toCheck, knownEq).greaterOrSame()) {
+        return true;
+      }
+    return false;
+  }
+
+  private static boolean isKnownNeq(List<Generalization> knownNeqs, Generalization toCheck) {
+    for (Generalization knownNeq : knownNeqs)
+      if (compareVerificationResult(toCheck, knownNeq).lessOrSame()) {
+        return true;
+      }
+    return false;
+  }
+
+  private Generalization generalize(BitSet bits) {
+    final List<BitSet> buffer = new ArrayList<>();
+    buffer.add((BitSet) bits.clone());
+    generalize0(ATTRS, buffer);
+    generalize0(PRED, buffer);
+    return new Generalization(buffer);
+  }
+
+  private void generalize0(Symbol.Kind kind, List<BitSet> buffer) {
+    for (Symbol tgtSym : I.targetSymbols().symbolsOf(kind))
+      for (int i = 0, bound = buffer.size(); i < bound; ++i) {
+        generalize1(buffer.get(i), tgtSym, buffer);
+      }
+  }
+
+  private void generalize1(BitSet bits, Symbol tgtSym, List<BitSet> buffer) {
+    final Symbol currentInstantiation = currentInstantiationOf(tgtSym);
+    if (currentInstantiation == null) return;
+
+    final int oldIndex = I.indexOfInstantiation(currentInstantiation, tgtSym);
+    for (Symbol anotherSym : I.sourceSymbols().symbolsOf(tgtSym.kind())) {
+      if (canGeneralize(currentInstantiation, anotherSym)) {
+        final int newIndex = I.indexOfInstantiation(anotherSym, tgtSym);
+        final BitSet clone = (BitSet) bits.clone();
+        clone.clear(oldIndex);
+        clone.set(newIndex);
+        buffer.add(clone);
+      }
+    }
+  }
+
+  private boolean canGeneralize(Symbol oldSym, Symbol newSym) {
+    assert oldSym.kind() == newSym.kind();
+    final Symbol.Kind kind = oldSym.kind();
+    return oldSym != newSym
+        && kind != TABLE
+        && currentIsEq(oldSym, newSym)
+        && (kind == PRED || currentSourceOf(oldSym) == currentSourceOf(newSym));
   }
 
   //// Enumeration Stages ////
@@ -434,7 +572,7 @@ class ConstraintEnumerator {
 
     @Override
     public int enumerate() {
-      Arrays.fill(enabled, begin, end, true);
+      currentSet(begin, end, true);
       return enumerate0(0);
     }
 
@@ -442,11 +580,11 @@ class ConstraintEnumerator {
       if (symIndex >= attrs.size()) return nextStage().enumerate();
 
       final int[] sources = sourceChoices.get(symIndex);
-      for (int source : sources) enabled[source] = false;
+      for (int source : sources) currentSet(source, false);
       for (int source : sources) {
-        enabled[source] = true;
+        currentSet(source, true);
         final int answer = enumerate0(symIndex + 1);
-        enabled[source] = false;
+        currentSet(source, false);
 
         if (answer == TIMEOUT) return TIMEOUT;
       }
@@ -490,9 +628,9 @@ class ConstraintEnumerator {
         if (validateInstantiation(sourceSym, targetSym)) {
           final int index = I.indexOfInstantiation(sourceSym, targetSym);
 
-          enabled[index] = true;
+          currentSet(index, true);
           final int answer = enumerate0(symIndex + 1);
-          enabled[index] = false;
+          currentSet(index, false);
 
           if (answer == TIMEOUT) return TIMEOUT;
           if (answer != NEQ) allNeq = false;
@@ -509,8 +647,7 @@ class ConstraintEnumerator {
     private final List<Symbol> syms;
     private final Partitioner partitioner;
     private final int beginIndex, endIndex;
-    private final List<boolean[]> knownNeqs;
-    private final boolean[] buffer;
+    private final List<Generalization> localKnownNeqs, localKnownEqs;
 
     private PartitionEnumerator(Symbol.Kind kind) {
       this.kind = kind;
@@ -518,8 +655,8 @@ class ConstraintEnumerator {
       this.partitioner = new Partitioner((byte) syms.size());
       this.beginIndex = I.beginIndexOfEq(kind);
       this.endIndex = I.endIndexOfEq(kind);
-      this.knownNeqs = new LinkedList<>();
-      this.buffer = new boolean[(syms.size() * (syms.size() - 1)) >> 1];
+      this.localKnownNeqs = new LinkedList<>();
+      this.localKnownEqs = new LinkedList<>();
     }
 
     @Override
@@ -528,7 +665,9 @@ class ConstraintEnumerator {
 
       partitioner.reset();
       resetConstraints();
+
       boolean alwaysNeq = true;
+      boolean mayEq = false;
 
       do {
         final byte[][] partitions = partitioner.partition();
@@ -537,19 +676,26 @@ class ConstraintEnumerator {
         // Only AttrsEq may conflict.
         // Guarantee: if a set of AttrsEq (denoted by Eq_a) are not conflict under a set of TableEq
         // (denoted as Eq_t), then under any stronger Eq_t' than Eq_t, Eq_a won't conflict.
-        if (isAttrsConflict()) continue;
-        if (isWeakerThanNeq()) continue;
+        if (isAttrsEqInfeasible()) continue;
+
+        final Generalization generalization = generalize(enabled);
+        if (isKnownNeq(localKnownNeqs, generalization)) continue;
+        if (isKnownEq(localKnownEqs, generalization)) continue;
 
         final int answer = nextStage().enumerate();
         resetConstraints();
 
         if (answer == TIMEOUT) return TIMEOUT;
         if (answer != NEQ) alwaysNeq = false;
-        else rememberNeq();
+        if (answer == EQ) mayEq = true;
+
+        if (answer == NEQ) rememberNeq(localKnownNeqs, generalization);
+        if (answer == EQ) rememberEq(localKnownEqs, generalization);
 
       } while (partitioner.forward());
 
-      return alwaysNeq ? NEQ : EQ;
+      resetConstraints();
+      return mayEq ? EQ : alwaysNeq ? NEQ : UNKNOWN;
     }
 
     private void setupConstraints(byte[][] partitions) {
@@ -557,37 +703,23 @@ class ConstraintEnumerator {
         for (int i = 0, bound = partition.length; i < bound - 1; ++i) {
           for (int j = i + 1; j < bound; ++j) {
             final int index = I.indexOfEq(syms.get(partition[i]), syms.get(partition[j]));
-            enabled[index] = true;
+            currentSet(index, true);
           }
         }
       }
     }
 
     private void resetConstraints() {
-      Arrays.fill(enabled, beginIndex, endIndex, false);
+      currentSet(beginIndex, endIndex, false);
     }
 
-    private boolean[] fragment() {
-      System.arraycopy(enabled, beginIndex, buffer, 0, buffer.length);
-      return buffer;
-    }
-
-    private void rememberNeq() {
-      final boolean[] neqs = fragment();
-      knownNeqs.removeIf(it -> compareBools(neqs, it) == LESS_THAN);
-      knownNeqs.add(Arrays.copyOf(neqs, neqs.length));
-    }
-
-    private boolean isAttrsConflict() {
+    private boolean isAttrsEqInfeasible() {
       if (kind != ATTRS) return false;
-      for (int i = beginIndex, bound = endIndex; i < bound; ++i)
-        if (checkForced(i) == CONFLICT) return true;
+      for (int i = beginIndex, bound = endIndex; i < bound; ++i) {
+        final int forced = checkForced(i);
+        if ((forced & MUST_DISABLE) != 0) return true;
+      }
       return false;
-    }
-
-    private boolean isWeakerThanNeq() {
-      final boolean[] current = fragment();
-      return any(knownNeqs, it -> compareBools(current, it) == LESS_THAN);
     }
   }
 
@@ -605,44 +737,49 @@ class ConstraintEnumerator {
 
     @Override
     public int enumerate() {
-      Arrays.fill(enabled, beginIndex, endIndex, true);
+      currentSet(beginIndex, endIndex, true);
       final int answer = enumerate0(beginIndex);
-      Arrays.fill(enabled, beginIndex, endIndex, true);
+      currentSet(beginIndex, endIndex, false);
       return answer;
     }
 
     private int enumerate0(int index) {
       if (index >= endIndex) return nextStage().enumerate();
 
+      assert currentIsEnabled(index);
+
       final int forced = checkForced(index);
-      assert forced != CONFLICT; // cannot be CONFLICT if everything is in place.
-
-      assert enabled[index];
-
-      final boolean mustEnable = (forced & MUST_ENABLE) != 0;
       final boolean mustDisable = (forced & MUST_DISABLE) != 0;
+      final boolean mustEnable = !mustDisable && (forced & MUST_ENABLE) != 0;
 
       int answer0 = UNKNOWN, answer1 = UNKNOWN;
 
       if (!mustDisable) {
-        answer0 = nextStage().enumerate();
-        if (answer0 == NEQ) return NEQ;
+        answer0 = enumerate0(index + 1);
+        if (answer0 == NEQ && !isConflictingReference(index)) return NEQ;
         if (answer0 == TIMEOUT) return TIMEOUT;
         assert answer0 != FAST_REJECTED && answer0 != CONFLICT;
       }
 
       if (!mustEnable) {
-        enabled[index] = false;
-        answer1 = nextStage().enumerate();
-        enabled[index] = true;
+        currentSet(index, false);
+        answer1 = enumerate0(index + 1);
+        currentSet(index, true);
         if (answer1 == TIMEOUT) return TIMEOUT;
         assert answer1 != FAST_REJECTED && answer1 != CONFLICT;
       }
 
       if (answer0 == EQ || answer1 == EQ) return EQ;
-      assert answer0 == UNKNOWN;
+      assert answer0 == UNKNOWN || answer0 == NEQ;
       assert answer1 == UNKNOWN || answer1 == NEQ;
       return answer1;
+    }
+
+    private boolean isConflictingReference(int index) {
+      // Returns `true` for Reference(t0,a0,t1,a1), where a0 is LHS join key
+      // and t1 is RHS join key
+      final Constraint c = I.get(index);
+      return kind == Reference && I.ordinalOf(c.symbols()[1]) < I.ordinalOf(c.symbols()[3]);
     }
   }
 
@@ -697,36 +834,71 @@ class ConstraintEnumerator {
     }
   }
 
-  private class Verifier extends AbstractEnumerationStage {
-    private final boolean dryRun;
+  private class VerificationCache extends AbstractEnumerationStage {
+    private final boolean dryRun, echo;
 
-    private Verifier(boolean dryRun) {
+    private VerificationCache(boolean dryRun, boolean echo) {
       this.dryRun = dryRun;
+      this.echo = echo;
     }
+
+    private static final BitSet TARGET = BitSet.valueOf(new long[] {4897712});
 
     @Override
     public int enumerate() {
-      if (dryRun) return EQ;
-
-      for (boolean[] knownEq : knownEqs) {
-        final PartialOrder cmp = compareBools(knownEq, enabled);
-        if (cmp == LESS_THAN || cmp == SAME) return EQ;
+      metric.numEnumeratedConstraintSets.increment();
+      if (dryRun) {
+        if (echo && naming != null) System.out.println(I.toString(naming, enabled));
+        return EQ;
       }
 
-      for (boolean[] knownNeq : knownNeqs) {
-        final PartialOrder cmp = compareBools(knownNeq, enabled);
-        if (cmp == GREATER_THAN || cmp == SAME) return NEQ;
+      if (TARGET.equals(enabled)) {
+        System.out.println();
       }
 
+      final Generalization generalization = generalize(enabled);
+      if (metric.numCacheHitEq.incrementIf(isKnownEq(knownEqs, generalization))) return EQ;
+      if (metric.numCacheHitNeq.incrementIf(isKnownNeq(knownNeqs, generalization))) return NEQ;
+
+      if (echo && naming != null) System.out.println(I.toString(naming, enabled));
+
+      final long begin = System.currentTimeMillis();
+      final int answer = nextStage().enumerate();
+      final long elapsed = System.currentTimeMillis() - begin;
+
+      metric.numProverInvocations.increment();
+
+      if (metric.numEq.incrementIf(answer == EQ)) {
+        rememberEq(knownEqs, generalization);
+        metric.elapsedEq.add(elapsed);
+      } else if (metric.numNeq.incrementIf(answer == NEQ)) {
+        rememberNeq(knownNeqs, generalization);
+        metric.elapsedNeq.add(elapsed);
+      } else {
+        metric.numUnknown.increment();
+        metric.elapsedUnknown.add(elapsed);
+      }
+
+      return answer;
+    }
+  }
+
+  private class Verifier extends AbstractEnumerationStage {
+    @Override
+    public int enumerate() {
       final Substitution rule = I.mkRule(enabled);
       final UExprTranslationResult uExprs = translateToUExpr(rule);
       final int answer = LogicSupport.proveEq(uExprs);
       assert answer != FAST_REJECTED; // fast rejection should be checked early.
-
-      if (answer == EQ) rememberEq(Arrays.copyOf(enabled, enabled.length));
-      else if (answer == NEQ) rememberNeq(Arrays.copyOf(enabled, enabled.length));
-
       return answer;
+    }
+  }
+
+  private static class Generalization {
+    private final List<BitSet> bits;
+
+    private Generalization(List<BitSet> bits) {
+      this.bits = bits;
     }
   }
 }

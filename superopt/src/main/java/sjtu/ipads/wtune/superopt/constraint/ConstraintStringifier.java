@@ -61,6 +61,7 @@ class ConstraintStringifier {
       builder.append(name).append('(');
       builder.append(naming.nameOf(sym)).append(',');
       builder.append(naming.nameOf(C.instantiationOf(sym))).append(')');
+      builder.append(';');
     }
   }
 

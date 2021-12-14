@@ -11,6 +11,8 @@ import java.util.stream.StreamSupport;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 
 public interface ArraySupport {
+  int[] EMPTY_INT_ARRAY = new int[0];
+
   /**
    * Compare two arrays of bools on a partial order.
    *
@@ -92,6 +94,12 @@ public interface ArraySupport {
           .map(func)
           .toArray(x -> mkArray(retType, x));
     }
+  }
+
+  static int sum(int[] arr) {
+    int sum = 0;
+    for (int i : arr) sum += i;
+    return sum;
   }
 
   @SuppressWarnings("unchecked")

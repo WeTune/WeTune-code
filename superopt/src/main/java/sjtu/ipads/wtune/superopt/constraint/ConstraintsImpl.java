@@ -80,12 +80,13 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   private int findBaseOf(Kind targetKind, int fromIndex) {
-    for (int i = fromIndex, bound = constraints.size(); i < bound; ++i) {
+    int i = fromIndex;
+    for (final int bound = constraints.size(); i < bound; ++i) {
       final Kind kind = constraints.get(i).kind();
       if (kind == targetKind) return i;
-      if (kind.ordinal() > targetKind.ordinal()) return fromIndex;
+      if (kind.ordinal() > targetKind.ordinal()) return i;
     }
-    return fromIndex;
+    return i;
   }
 
   @Override

@@ -30,7 +30,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     this.constraints = new ArrayList<>();
     this.symOrdinals = new TObjectIntHashMap<>();
     this.viableSources = MultimapBuilder.hashKeys().linkedListValues().build();
-    this.segmentBase = new int[NUM_KINDS_OF_CONSTRAINTS + NUM_KINDS_OF_SYMBOLS];
+    this.segmentBase = new int[NUM_KINDS_OF_CONSTRAINTS + NUM_KINDS_OF_SYMBOLS + 1];
 
     initSymbolOrdinals();
     initPreconditions();
@@ -43,6 +43,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
 
   private void initPreconditions() {
     analyzeSource(source.root());
+    analyzeSource(target.root());
     for (Constraint.Kind kind : Constraint.Kind.values()) {
       segmentBase[kind.ordinal()] = constraints.size();
       initPreconditions(kind);
@@ -108,13 +109,17 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
   private void initUnique() {
     for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
       for (Symbol source : viableSources.get(attrs))
-        constraints.add(Constraint.mk(Unique, source, attrs));
+        if (source.kind() == TABLE) {
+          constraints.add(Constraint.mk(Unique, source, attrs));
+        }
   }
 
   private void initNotNull() {
     for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
       for (Symbol source : viableSources.get(attrs))
-        constraints.add(Constraint.mk(NotNull, source, attrs));
+        if (source.kind() == TABLE) {
+          constraints.add(Constraint.mk(NotNull, source, attrs));
+        }
   }
 
   private void initReference() {
@@ -128,8 +133,12 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
       final Join join = (Join) op;
       final Symbol lhs = join.lhsAttrs(), rhs = join.rhsAttrs();
       for (Symbol lhsSource : viableSources.get(lhs))
-        for (Symbol rhsSource : viableSources.get(rhs))
-          constraints.add(Constraint.mk(Reference, lhsSource, lhs, rhsSource, rhs));
+        if (lhsSource.kind() == TABLE)
+          for (Symbol rhsSource : viableSources.get(rhs))
+            if (rhsSource.kind() == TABLE) {
+              constraints.add(Constraint.mk(Reference, lhsSource, lhs, rhsSource, rhs));
+              constraints.add(Constraint.mk(Reference, rhsSource, rhs, lhsSource, lhs));
+            }
     }
   }
 
@@ -177,6 +186,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
   }
 
   int indexOfEq(Symbol sym0, Symbol sym1) {
+    assert sym0 != sym1;
     assert sym0.kind() == sym1.kind();
     final Symbol.Kind kind = sym0.kind();
     final int base = beginIndexOfEq(kind);
@@ -191,11 +201,11 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     return viableSources.get(attrs);
   }
 
-  Substitution mkRule(boolean[] enabled) {
-    assert enabled.length == constraints.size();
-    final List<Constraint> enabledConstraints = new ArrayList<>(enabled.length);
-    for (int i = 0, bound = enabled.length; i < bound; i++) {
-      enabledConstraints.add(constraints.get(i));
+  Substitution mkRule(BitSet enabled) {
+    final int bound = size();
+    final List<Constraint> enabledConstraints = new ArrayList<>(bound);
+    for (int i = 0; i < bound; i++) {
+      if (enabled.get(i)) enabledConstraints.add(constraints.get(i));
     }
     return Substitution.mk(source, target, enabledConstraints);
   }
@@ -206,6 +216,22 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
 
   Symbols targetSymbols() {
     return target.symbols();
+  }
+
+  int ordinalOf(Symbol sym) {
+    return symOrdinals.get(sym);
+  }
+
+  String toString(SymbolNaming naming, BitSet enabled) {
+    final int bound = size();
+    final StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < bound; i++) {
+      if (enabled.get(i)) {
+        constraints.get(i).stringify(naming, builder);
+        builder.append(';');
+      }
+    }
+    return builder.toString();
   }
 
   @Override

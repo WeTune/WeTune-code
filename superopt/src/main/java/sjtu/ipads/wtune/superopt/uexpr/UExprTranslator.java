@@ -208,6 +208,7 @@ class UExprTranslator {
       assert attrSym != null;
 
       Symbol source = rule.constraints().sourceOf(attrSym);
+      rule.constraints().sourceOf(attrSym);
       assert source != null;
 
       // apply AttrsSub: pick the component from concat (if there is)

@@ -8,15 +8,17 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.CONCAT;
+
 public abstract class LogicSupport {
   static {
-    //    Global.setParameter("smt.auto_config", "false");
+    final String timeout = System.getProperty("wetune.smt_timeout", "20");
     Global.setParameter("smt.random_seed", "112358");
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
     Global.setParameter("smt.mbqi.max_iterations", "3");
-    Global.setParameter("timeout", System.getProperty("wetune.smt_timeout", "50"));
-    Global.setParameter("combined_solver.solver2_unknown", "2");
+    Global.setParameter("timeout", timeout);
+    Global.setParameter("combined_solver.solver2_unknown", "0");
     Global.setParameter("pp.max_depth", "100");
   }
 
@@ -41,10 +43,24 @@ public abstract class LogicSupport {
 
   public static boolean isMismatchedOutput(UExprTranslationResult uExprs) {
     // case 1: different output schema
-    final int srcOutSchema = uExprs.schemaOf(uExprs.sourceOutVar());
-    final int tgtOutSchema = uExprs.schemaOf(uExprs.targetOutVar());
-    assert srcOutSchema != 0 && tgtOutSchema != 0;
-    return srcOutSchema != tgtOutSchema;
+    final UVar sourceOutVar = uExprs.sourceOutVar();
+    final UVar targetOutVar = uExprs.targetOutVar();
+    final int srcOutSchema = uExprs.schemaOf(sourceOutVar);
+    final int tgtOutSchema = uExprs.schemaOf(targetOutVar);
+
+    if (srcOutSchema != tgtOutSchema) return true;
+    assert sourceOutVar.kind() == targetOutVar.kind();
+
+    if (sourceOutVar.kind() == CONCAT) {
+      final UVar[] sourceComps = sourceOutVar.args();
+      final UVar[] targetComps = targetOutVar.args();
+      for (int i = 0, bound = sourceComps.length; i < bound; i++)
+        if (uExprs.schemaOf(sourceComps[i]) != uExprs.schemaOf(targetComps[i])) {
+          return true;
+        }
+    }
+
+    return false;
   }
 
   public static boolean isMismatchedSummation(UExprTranslationResult uExprs) {

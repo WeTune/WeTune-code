@@ -9,6 +9,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LogicProverTest {
   @Test
+  public void testInnerJoinElimination2() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj<a2>(InnerJoin<a0 a1>(Input<t0>,Input<t1>))|"
+                + "Proj<a3>(Input<t2>)|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);"
+                + "Unique(t0,a0);"
+                + "NotNull(t1,a1);Reference(t1,a1,t0,a0);"
+                + "TableEq(t2,t1);AttrsEq(a3,a2)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result);
+  }
+
+  @Test
   public void testInnerJoinElimination0() {
     final Substitution rule =
         Substitution.parse(

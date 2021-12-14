@@ -1,17 +1,21 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.TABLE;
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 public interface ConstraintSupport {
   int ENUM_FLAG_DRY_RUN = 1;
   int ENUM_FLAG_DISABLE_BREAKER_0 = 3;
   int ENUM_FLAG_DISABLE_BREAKER_1 = 5;
+  int ENUM_FLAG_ECHO = 8;
 
   static StringBuilder stringify(
       Constraint c, SymbolNaming naming, boolean canonical, StringBuilder builder) {
@@ -24,22 +28,28 @@ public interface ConstraintSupport {
   }
 
   static List<Substitution> enumConstraints(Fragment f0, Fragment f1, long timeout) {
-    return enumConstraints(f0, f1, timeout, 0);
+    return enumConstraints(f0, f1, timeout, 0, null);
   }
 
-  static List<Substitution> enumConstraints(Fragment f0, Fragment f1, long timeout, int tweaks) {
+  static List<Substitution> enumConstraints(
+      Fragment f0, Fragment f1, long timeout, int tweaks, SymbolNaming naming) {
     final int bias = pickSource(f0, f1);
+    if (bias == 0) return emptyList();
+
     List<Substitution> rules = null;
 
     if ((bias & 1) != 0) {
       final ConstraintsIndex I = new ConstraintsIndex(f0, f1);
       final ConstraintEnumerator enumerator = new ConstraintEnumerator(I, timeout, tweaks);
+      enumerator.setNaming(naming);
       rules = enumerator.enumerate();
     }
 
     if ((bias & 2) != 0) {
       final ConstraintsIndex I = new ConstraintsIndex(f1, f0);
       final ConstraintEnumerator enumerator = new ConstraintEnumerator(I, timeout, tweaks);
+      enumerator.setNaming(naming);
+
       final List<Substitution> rules2 = enumerator.enumerate();
       if (rules == null) rules = rules2;
       else rules.addAll(rules2);
@@ -50,9 +60,25 @@ public interface ConstraintSupport {
 
   private static int pickSource(Fragment f0, Fragment f1) {
     if (f0.equals(f1)) return 1;
+
     final int numTables0 = f0.symbolCount(TABLE), numTables1 = f1.symbolCount(TABLE);
-    if (numTables0 > numTables1) return 1;
-    else if (numTables0 < numTables1) return 2;
-    else return 3;
+    final int numAttrs0 = f0.symbolCount(ATTRS), numAttrs1 = f1.symbolCount(ATTRS);
+    final int numPreds0 = f0.symbolCount(PRED), numPreds1 = f1.symbolCount(PRED);
+    final Lazy<Complexity> complexity0 = Lazy.mk(() -> Complexity.mk(f0));
+    final Lazy<Complexity> complexity1 = Lazy.mk(() -> Complexity.mk(f1));
+
+    int qualified = 0;
+
+    if (numTables0 >= numTables1
+        && (numAttrs0 != 0 || numAttrs1 == 0)
+        && (numPreds0 != 0 || numPreds1 == 0)
+        && complexity0.get().compareTo(complexity1.get()) >= 0) qualified |= 1;
+
+    if (numTables1 >= numTables0
+        && (numAttrs1 != 0 || numAttrs0 == 0)
+        && (numPreds1 != 0 || numPreds0 == 0)
+        && complexity1.get().compareTo(complexity0.get()) >= 0) qualified |= 2;
+
+    return qualified;
   }
 }
