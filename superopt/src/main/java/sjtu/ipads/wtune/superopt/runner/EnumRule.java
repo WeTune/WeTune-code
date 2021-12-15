@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarBuilder;
+import me.tongfei.progressbar.ProgressBarStyle;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
@@ -104,7 +106,12 @@ public class EnumRule implements Runner {
     }
 
     final int total = (numTemplates * (numTemplates - 1)) >> 1;
-    final ProgressBar pb = new ProgressBar("Candidates", total);
+    final ProgressBar pb =
+        new ProgressBarBuilder()
+            .setTaskName("Candidates")
+            .setStyle(ProgressBarStyle.ASCII)
+            .setInitialMax(total)
+            .build();
 
     openThreadPool();
     for (int i = 0; i < numTemplates; ++i) {
