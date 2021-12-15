@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.logic;
 
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Global;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.*;
 
 import java.util.Collections;
@@ -39,6 +40,10 @@ public abstract class LogicSupport {
     try (final Context z3 = new Context()) {
       return new LogicProver(uExprs, z3).proveEq();
     }
+  }
+
+  public static int proveEqBySpes(Substitution rule) {
+    return UNKNOWN; // TODO
   }
 
   public static boolean isMismatchedOutput(UExprTranslationResult uExprs) {

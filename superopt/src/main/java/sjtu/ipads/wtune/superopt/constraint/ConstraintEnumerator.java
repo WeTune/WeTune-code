@@ -151,6 +151,7 @@ class ConstraintEnumerator {
     final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
     final boolean dryRun = disable0 || disable1 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
     final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
+    final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
 
     final EnumerationStage sourceEnum = new AttrsSourceEnumerator();
     final EnumerationStage tableInstantiation = new InstantiationEnumerator(TABLE);
@@ -166,7 +167,7 @@ class ConstraintEnumerator {
     final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable1);
     final EnumerationStage timeout = new TimeoutBreaker(System.currentTimeMillis(), this.timeout);
     final VerificationCache cache = new VerificationCache(dryRun, echo);
-    final EnumerationStage verifier = new Verifier();
+    final EnumerationStage verifier = new Verifier(useSpes);
 
     final EnumerationStage[] stages =
         new EnumerationStage[] {
@@ -884,13 +885,23 @@ class ConstraintEnumerator {
   }
 
   private class Verifier extends AbstractEnumerationStage {
+    private final boolean useSpes;
+
+    private Verifier(boolean useSpes) {
+      this.useSpes = useSpes;
+    }
+
     @Override
     public int enumerate() {
       final Substitution rule = I.mkRule(enabled);
-      final UExprTranslationResult uExprs = translateToUExpr(rule);
-      final int answer = LogicSupport.proveEq(uExprs);
-      assert answer != FAST_REJECTED; // fast rejection should be checked early.
-      return answer;
+      if (!useSpes) {
+        final UExprTranslationResult uExprs = translateToUExpr(rule);
+        final int answer = LogicSupport.proveEq(uExprs);
+        assert answer != FAST_REJECTED; // fast rejection should be checked early.
+        return answer;
+      } else {
+        return LogicSupport.proveEqBySpes(rule);
+      }
     }
   }
 

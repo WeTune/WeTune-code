@@ -13,9 +13,10 @@ import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 public interface ConstraintSupport {
   int ENUM_FLAG_DRY_RUN = 1;
-  int ENUM_FLAG_DISABLE_BREAKER_0 = 3;
-  int ENUM_FLAG_DISABLE_BREAKER_1 = 5;
+  int ENUM_FLAG_DISABLE_BREAKER_0 = 2 | ENUM_FLAG_DRY_RUN;
+  int ENUM_FLAG_DISABLE_BREAKER_1 = 4 | ENUM_FLAG_DRY_RUN;
   int ENUM_FLAG_ECHO = 8;
+  int ENUM_FLAG_USE_SPES = 16;
 
   static StringBuilder stringify(
       Constraint c, SymbolNaming naming, boolean canonical, StringBuilder builder) {
