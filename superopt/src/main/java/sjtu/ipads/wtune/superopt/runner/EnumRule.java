@@ -15,15 +15,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Integer.parseInt;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 public class EnumRule implements Runner {
-  private Path success, failure, checkpoint;
+  private Path success, failure, err, checkpoint;
   private Path prevFailure, prevCheckpoint;
-  private Path err;
+  private Lock outLock = new ReentrantLock(), errLock = new ReentrantLock();
+
   private boolean echo;
   private long timeout;
   private int parallelism;
@@ -159,15 +162,22 @@ public class EnumRule implements Runner {
   }
 
   private void enumerate(Fragment f0, Fragment f1, int i, int j) {
+    boolean outLocked = false, errLocked = false;
     try {
       final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       final List<String> serializedRules = map(rules, Substitution::toString);
 
-      IOSupport.printWithLock(success, out -> serializedRules.forEach(out::println));
-      if (i >= 0 && j >= 1) IOSupport.printWithLock(checkpoint, out -> out.printf("%d,%d\n", i, j));
+      outLock.lock();
+      outLocked = true;
+
+      IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
+      if (i >= 0 && j >= 1) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));
 
     } catch (Throwable ex) {
-      IOSupport.printWithLock(
+      errLock.lock();
+      errLocked = true;
+
+      IOSupport.appendTo(
           err,
           err -> {
             err.print(f0);
@@ -177,13 +187,17 @@ public class EnumRule implements Runner {
             err.println("====");
           });
 
-      IOSupport.printWithLock(
+      IOSupport.appendTo(
           failure,
           err -> {
             err.print(f0);
             err.print('|');
             err.println(f1);
           });
+
+    } finally {
+      if (outLocked) outLock.unlock();
+      if (errLocked) errLock.unlock();
     }
   }
 }
