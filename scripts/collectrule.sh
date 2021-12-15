@@ -1,3 +1,4 @@
+#!/bin/bash
 cd wtune_data
 
 t=$(date '+%m_%d_%H_%M')

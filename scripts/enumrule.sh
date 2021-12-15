@@ -1,3 +1,4 @@
+#! /bin/bash
 cd wtune_data
 
 files=$(ls -t -1 | ag 'rule.+')
