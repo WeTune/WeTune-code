@@ -6,10 +6,12 @@ import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNode.MySQL;
 
 public class RealWorldStmtsTest {
   @Test
@@ -64,5 +66,14 @@ public class RealWorldStmtsTest {
       final PlanContext plan = PlanSupport.assemblePlan(ast, stmt.app().schema("base"));
       assertNotNull(plan);
     }
+  }
+
+  @Test
+  void test() {
+    final String sql = "Select a.i, max(a.j) from a group by a.i";
+    final SqlNode ast = SqlSupport.parseSql(MySQL, sql);
+    final Schema schema = App.of("test").schema("base");
+    final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
+    System.out.println(plan);
   }
 }

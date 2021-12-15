@@ -144,6 +144,7 @@ class PlanBuilder {
       final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items));
 
       // 3. build Agg node
+      mkAttrs(child, items, attrNames, attrExprs);
       final List<Expression> groupByExprs = new ArrayList<>(groupBys.size());
       for (SqlNode groupBy : groupBys) groupByExprs.add(Expression.mk(groupBy));
       final Expression havingExpr = having == null ? null : Expression.mk(having);

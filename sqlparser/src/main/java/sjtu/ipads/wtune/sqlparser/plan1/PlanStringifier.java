@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 
 import java.util.List;
 
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.SYN_NAME_PREFIX;
+
 class PlanStringifier {
   private final PlanContext plan;
   private final ValuesRegistry values;
@@ -97,10 +99,11 @@ class PlanStringifier {
     if (having != null) {
       builder.append(",having=").append(having);
     }
-    builder.append(",refs=");
+    builder.append(",refs=[");
     for (Expression expr : attrExprs) appendRefs(expr);
     for (Expression expr : groupBys) appendRefs(expr);
     if (having != null) appendRefs(having);
+    builder.append("]}");
   }
 
   private void appendProj(int nodeId) {
@@ -157,8 +160,11 @@ class PlanStringifier {
   }
 
   private void appendSelectItems(List<Expression> exprs, List<String> names) {
-    for (int i = 0, bound = exprs.size(); i < bound; i++)
-      builder.append(exprs.get(i)).append(" AS ").append(names.get(i)).append(',');
+    for (int i = 0, bound = exprs.size(); i < bound; i++) {
+      final StringBuilder builder = this.builder.append(exprs.get(i));
+      if (!names.get(i).startsWith(SYN_NAME_PREFIX))
+        builder.append(" AS ").append(names.get(i)).append(',');
+    }
   }
 
   private void appendRefs(Expression expr) {

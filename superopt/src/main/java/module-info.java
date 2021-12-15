@@ -12,6 +12,7 @@ module sjtu.ipads.wtune.superopt {
   requires mysql.connector.java;
   requires org.postgresql.jdbc;
   requires com.zaxxer.hikari;
+  requires progressbar;
   requires trove4j;
   requires z3;
   requires com.microsoft.sqlserver.jdbc;
