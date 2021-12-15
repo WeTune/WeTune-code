@@ -58,6 +58,7 @@ public enum OperatorType {
       case "SubqueryFilter", "InSubFilter" -> IN_SUB_FILTER;
       case "Input" -> INPUT;
       case "Proj", "Proj*" -> PROJ;
+      case "Union", "Union*" -> SET_OP;
       default -> throw new IllegalArgumentException("unknown operator: " + value);
     };
   }

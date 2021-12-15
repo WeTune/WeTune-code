@@ -2,7 +2,9 @@ package sjtu.ipads.wtune.superopt.logic;
 
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Global;
+import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 import sjtu.ipads.wtune.superopt.uexpr.*;
 
 import java.util.Collections;
@@ -43,7 +45,9 @@ public abstract class LogicSupport {
   }
 
   public static int proveEqBySpes(Substitution rule) {
-    return UNKNOWN; // TODO
+    var planPair = SubstitutionSupport.translateAsPlan(rule);
+    boolean eq = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
+    return eq ? EQ : NEQ;
   }
 
   public static boolean isMismatchedOutput(UExprTranslationResult uExprs) {

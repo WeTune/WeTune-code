@@ -28,6 +28,9 @@ public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
     if (opType == OperatorType.PROJ && typeName.endsWith("*")) {
       ((Proj)op).setDeduplicated(true);
     }
+    if (opType == OperatorType.SET_OP && typeName.endsWith("*")) {
+      ((Union)op).setDeduplicated(true);
+    }
     return op;
   }
 

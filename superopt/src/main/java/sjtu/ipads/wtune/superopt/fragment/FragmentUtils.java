@@ -10,6 +10,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SET_OP;
 import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
 
@@ -75,6 +76,7 @@ class FragmentUtils {
 
     builder.append(tree.kind().text());
     if (tree.kind() == PROJ && ((Proj) tree).isDeduplicated()) builder.append('*');
+    if (tree.kind() == SET_OP && ((Union) tree).isDeduplicated()) builder.append('*');
 
     if (naming != null)
       switch (tree.kind()) {
@@ -95,6 +97,8 @@ class FragmentUtils {
         case INNER_JOIN:
           builder.append('<').append(naming.nameOf(((Join) tree).lhsAttrs()));
           builder.append(' ').append(naming.nameOf(((Join) tree).rhsAttrs())).append('>');
+          break;
+        case SET_OP:
           break;
         default:
           throw new UnsupportedOperationException();
@@ -149,6 +153,8 @@ class FragmentUtils {
           final int ordinal = Integer.parseInt(names[1].substring(1));
           naming.setName(((Proj) op).attrs(), String.valueOf(names[1].charAt(0)) + (ordinal + 1));
         }
+        break;
+      case SET_OP:
         break;
       default:
         throw new UnsupportedOperationException();

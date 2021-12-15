@@ -59,6 +59,7 @@ class SymbolsImpl implements Symbols {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.ATTRS);
       }
+      case SET_OP -> {}
     }
   }
 
@@ -77,6 +78,7 @@ class SymbolsImpl implements Symbols {
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 1));
       }
+      case SET_OP -> {}
     }
   }
 
