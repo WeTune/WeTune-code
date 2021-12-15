@@ -9,7 +9,6 @@ import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -58,10 +57,10 @@ public class EnumRule implements Runner {
     checkpoint = dir.resolve("checkpoint");
 
     final String prevCheckpointFile = args.getOptional("checkpoint", String.class, null);
-    prevCheckpoint = prevCheckpointFile == null ? null : Path.of(prevCheckpointFile);
+    prevCheckpoint = prevCheckpointFile == null ? null : parentDir.resolve(prevCheckpointFile);
 
     final String prevFailureFile = args.getOptional("failure", String.class, null);
-    prevFailure = prevFailureFile == null ? null : Path.of(prevFailureFile);
+    prevFailure = prevFailureFile == null ? null : parentDir.resolve(prevFailureFile);
 
     final String from = args.getOptional("from", String.class, "0,0");
     final String[] split = from.split(",");

@@ -6,7 +6,6 @@ checkpoint=
 while IFS= read -r line; do
   if [ -f "${line}/checkpoint" ]; then
     checkpoint="${line}/checkpoint"
-    mv "${checkpoint}" .
     break
   fi
 done <<<"${files}"
