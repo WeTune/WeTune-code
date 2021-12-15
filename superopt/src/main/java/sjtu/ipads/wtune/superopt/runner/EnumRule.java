@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.Integer.parseInt;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
@@ -44,6 +43,8 @@ public class EnumRule implements Runner {
     final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final Path dir = parentDir.resolve("rule" + subDirName);
+
+    if (!Files.exists(dir)) Files.createDirectories(dir);
 
     success = dir.resolve("success");
     failure = dir.resolve("failure");

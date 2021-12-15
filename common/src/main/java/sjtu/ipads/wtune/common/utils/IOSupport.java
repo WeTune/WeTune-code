@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 
 public interface IOSupport {
   static void printWithLock(Path path, Consumer<PrintWriter> writer) {
-    try (final var os = new FileOutputStream(path.toFile());
-        final var lock = os.getChannel().lock();
-        final var out = new PrintWriter(os)) {
+    try (final var os = new FileOutputStream(path.toFile(), true);
+        final var out = new PrintWriter(os);
+        final var lock = os.getChannel().lock(); ) {
       writer.accept(out);
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
