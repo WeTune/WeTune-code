@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -99,6 +100,7 @@ public class EnumRule implements Runner {
         completed[i++] = ordinal(numTemplates, x, y);
       }
       Arrays.sort(completed);
+      Files.copy(prevCheckpoint, checkpoint);
     }
 
     final int total = (numTemplates * (numTemplates - 1)) >> 1;
