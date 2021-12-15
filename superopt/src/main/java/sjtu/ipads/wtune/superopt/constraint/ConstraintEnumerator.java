@@ -158,9 +158,9 @@ class ConstraintEnumerator {
     final EnumerationStage attrsInstantiation = new InstantiationEnumerator(ATTRS);
     final EnumerationStage predInstantiation = new InstantiationEnumerator(PRED);
     final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0);
-    final EnumerationStage tableEnum = new PartitionEnumerator(TABLE);
-    final EnumerationStage attrsEnum = new PartitionEnumerator(ATTRS);
-    final EnumerationStage predEnum = new PartitionEnumerator(PRED);
+    final EnumerationStage tableEnum = new PartitionEnumerator(TABLE, dryRun);
+    final EnumerationStage attrsEnum = new PartitionEnumerator(ATTRS, dryRun);
+    final EnumerationStage predEnum = new PartitionEnumerator(PRED, dryRun);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
@@ -649,8 +649,9 @@ class ConstraintEnumerator {
     private final Partitioner partitioner;
     private final int beginIndex, endIndex;
     private final List<Generalization> localKnownNeqs, localKnownEqs;
+    private final boolean dryRun;
 
-    private PartitionEnumerator(Symbol.Kind kind) {
+    private PartitionEnumerator(Symbol.Kind kind, boolean dryRun) {
       this.kind = kind;
       this.syms = I.sourceSymbols().symbolsOf(kind);
       this.partitioner = new Partitioner((byte) syms.size());
@@ -658,6 +659,7 @@ class ConstraintEnumerator {
       this.endIndex = I.endIndexOfEq(kind);
       this.localKnownNeqs = new LinkedList<>();
       this.localKnownEqs = new LinkedList<>();
+      this.dryRun = dryRun;
     }
 
     @Override
@@ -680,8 +682,8 @@ class ConstraintEnumerator {
         if (isAttrsEqInfeasible()) continue;
 
         final Generalization generalization = generalize(enabled);
-        if (isKnownNeq(localKnownNeqs, generalization)) continue;
-        if (isKnownEq(localKnownEqs, generalization)) continue;
+        if (!dryRun && isKnownNeq(localKnownNeqs, generalization)) continue;
+        if (!dryRun && isKnownEq(localKnownEqs, generalization)) continue;
 
         final int answer = nextStage().enumerate();
         resetConstraints();
@@ -843,18 +845,12 @@ class ConstraintEnumerator {
       this.echo = echo;
     }
 
-    private static final BitSet TARGET = BitSet.valueOf(new long[] {4897712});
-
     @Override
     public int enumerate() {
       metric.numEnumeratedConstraintSets.increment();
       if (dryRun) {
         if (echo && naming != null) System.out.println(I.toString(naming, enabled));
         return EQ;
-      }
-
-      if (TARGET.equals(enabled)) {
-        System.out.println();
       }
 
       final Generalization generalization = generalize(enabled);

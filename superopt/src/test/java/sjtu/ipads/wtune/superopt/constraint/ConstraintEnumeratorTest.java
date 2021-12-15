@@ -26,14 +26,9 @@ class ConstraintEnumeratorTest {
     System.out.println(f0.stringify(naming));
     System.out.println(f1.stringify(naming));
 
-    enumConstraints(
-        f0,
-        f1,
-        -1,
-        ENUM_FLAG_DRY_RUN | ENUM_FLAG_DISABLE_BREAKER_0 | ENUM_FLAG_DISABLE_BREAKER_1,
-        naming);
-    System.out.println(EnumerationMetrics.current());
-    System.out.println("=============");
+    //    enumConstraints(f0, f1, -1, ENUM_FLAG_DRY_RUN, naming);
+    //    System.out.println(EnumerationMetrics.current());
+    //    System.out.println("=============");
 
     final List<Substitution> results = enumConstraints(f0, f1, -1, 0, naming);
     final List<String> strings = new ArrayList<>(results.size());
