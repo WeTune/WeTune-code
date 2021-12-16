@@ -107,13 +107,13 @@ public class InSubFilterTransformer extends BaseTransformer {
     List<AlgeNode> result = new ArrayList<>();
     for (AlgeNode left : leftInputs) {
       for (AlgeNode right : rightInputs) {
-        result.add(innerJoin(left, right, z3Context, joinCondition));
+        result.add(innerJoinForInSub(left, right, z3Context, joinCondition));
       }
     }
     return result;
   }
 
-  private SPJNode innerJoin(
+  private SPJNode innerJoinForInSub(
       AlgeNode leftNode, AlgeNode rightNode, Context z3Context, RexNode joinCondition) {
 
     // getInput tables
@@ -143,7 +143,8 @@ public class InSubFilterTransformer extends BaseTransformer {
     RexNode newJoinCondition = RexNodeHelper.substitute(joinCondition, newOutputExpr);
     newCondition.add(newJoinCondition);
 
-    return new SPJNode(newOutputExpr, newCondition, inputs, z3Context);
+    // Only return left node's output since it is an InSub Filter not Join
+    return new SPJNode(leftNode.getOutputExpr(), newCondition, inputs, z3Context);
   }
 
   private void addInputs(AlgeNode child, List<AlgeNode> inputs) {

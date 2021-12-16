@@ -6,7 +6,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.type.RelDataType;
-import sjtu.ipads.wtune.spes.AlgeNode.AggNode;
+import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.TableNode;
 import sjtu.ipads.wtune.spes.AlgeRule.JoinToProject;
@@ -33,8 +33,8 @@ public class AggParser extends AlgeNodeParser {
       AggregateCall aggregateCall = aggregateCallList.get(i);
       columnTypes.add(aggregateCall.getType());
     }
-    AggNode newAggNode =
-        new AggNode(groupByList, aggregateCallList, columnTypes, inputNode, z3Context);
+    AggregateNode newAggNode =
+        new AggregateNode(groupByList, aggregateCallList, columnTypes, inputNode, z3Context);
     return JoinParser.wrapBySPJ(newAggNode, z3Context);
   }
 
@@ -77,8 +77,8 @@ public class AggParser extends AlgeNodeParser {
       columnTypes.add(input.getOutputExpr().get(i).getType());
     }
     List<AggregateCall> aggregateCallList = new ArrayList<>();
-    AggNode newAggNode =
-        new AggNode(groupByList, aggregateCallList, columnTypes, input, input.getZ3Context());
+    AggregateNode newAggNode =
+        new AggregateNode(groupByList, aggregateCallList, columnTypes, input, input.getZ3Context());
     return JoinParser.wrapBySPJ(newAggNode, input.getZ3Context());
   }
 }

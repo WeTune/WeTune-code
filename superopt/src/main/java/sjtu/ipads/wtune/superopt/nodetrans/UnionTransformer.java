@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.superopt.nodetrans;
 
-import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.type.RelDataType;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
-import sjtu.ipads.wtune.spes.AlgeNodeParser.JoinParser;
 import sjtu.ipads.wtune.sqlparser.plan1.*;
 
 import java.util.ArrayList;
@@ -26,7 +24,7 @@ public class UnionTransformer extends BaseTransformer{
         }
         UnionNode unionNode = new UnionNode(inputs, z3Context, inputTypes);
 
-        if (union.deduplicated()) return distinctToAgg(unionNode);
+        if (union.deduplicated()) return AggTranformer.distinctToAgg(unionNode);
         else return unionNode;
     }
 
@@ -49,22 +47,5 @@ public class UnionTransformer extends BaseTransformer{
             case SetOp -> colNumOfInput(planNode.child(planCtx, 0), planCtx);
             default -> throw new IllegalStateException("Unsupported planNode type: " + planNode.kind());
         };
-    }
-
-    static public AlgeNode distinctToAgg (AlgeNode input){
-        List<Integer> groupByList = new ArrayList<>();
-        for (int i=0;i<input.getOutputExpr().size();i++){
-            groupByList.add(i);
-        }
-        ArrayList<RelDataType> columnTypes = new ArrayList<>();
-        for(int i=0;i<input.getOutputExpr().size();i++){
-            columnTypes.add(input.getOutputExpr().get(i).getType());
-        }
-        List<AggregateCall> aggregateCallList = new ArrayList<>();
-
-        sjtu.ipads.wtune.spes.AlgeNode.AggNode newAggNode =
-                new sjtu.ipads.wtune.spes.AlgeNode.AggNode(
-                        groupByList,aggregateCallList,columnTypes,input,input.getZ3Context());
-        return JoinParser.wrapBySPJ(newAggNode,input.getZ3Context());
     }
 }

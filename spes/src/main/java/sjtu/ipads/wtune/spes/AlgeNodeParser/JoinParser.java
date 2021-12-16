@@ -13,7 +13,7 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
-import sjtu.ipads.wtune.spes.AlgeNode.AggNode;
+import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
@@ -284,7 +284,7 @@ public class JoinParser extends AlgeNodeParser {
     }
   }
 
-  public static SPJNode wrapBySPJ(AggNode aggNode, Context z3Context) {
+  public static SPJNode wrapBySPJ(AggregateNode aggNode, Context z3Context) {
     Set<RexNode> emptyCondition = new HashSet<>();
     List<AlgeNode> inputs = new ArrayList<AlgeNode>();
     inputs.add(aggNode);

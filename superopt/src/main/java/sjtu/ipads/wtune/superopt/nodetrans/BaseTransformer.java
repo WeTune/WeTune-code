@@ -35,7 +35,7 @@ abstract class BaseTransformer implements Transformer{
             case Join -> new JoinTransformer();
             case SetOp -> new UnionTransformer();
             case InSub -> new InSubFilterTransformer();
-            // case Agg ->
+            case Agg -> new AggTranformer();
             default -> throw new UnsupportedOperationException(
                     "Unsupported operator type for AlgeNode: " + kind);
         };

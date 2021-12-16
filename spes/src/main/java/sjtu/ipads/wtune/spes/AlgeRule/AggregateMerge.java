@@ -4,7 +4,7 @@ import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
-import sjtu.ipads.wtune.spes.AlgeNode.AggNode;
+import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
@@ -22,15 +22,15 @@ public class AggregateMerge extends AlgeRuleBase {
   }
 
   public boolean preCondition() {
-    if (this.input instanceof AggNode) {
-      AggNode aggNode = (AggNode) this.input;
+    if (this.input instanceof AggregateNode) {
+      AggregateNode aggNode = (AggregateNode) this.input;
       AlgeNode subInput = aggNode.getInput();
       if (subInput instanceof SPJNode) {
         SPJNode parent = (SPJNode) subInput;
         if (parent.getInputs().size() == 1) {
           AlgeNode child = parent.getInputs().get(0);
-          if (child instanceof AggNode) {
-            return canMerge(aggNode, (AggNode) child, parent);
+          if (child instanceof AggregateNode) {
+            return canMerge(aggNode, (AggregateNode) child, parent);
           }
         }
       }
@@ -38,7 +38,7 @@ public class AggregateMerge extends AlgeRuleBase {
     return false;
   }
 
-  private boolean canMerge(AggNode input, AggNode subInput, SPJNode parent) {
+  private boolean canMerge(AggregateNode input, AggregateNode subInput, SPJNode parent) {
     if (GroupByEntail(input, subInput, parent.getOutputExpr())) {
       if (conditionsNoAgg(subInput, parent.getConditions())) {
         return isMergeAggCalls(input, subInput, parent.getOutputExpr());
@@ -47,7 +47,7 @@ public class AggregateMerge extends AlgeRuleBase {
     return false;
   }
 
-  private boolean isMergeAggCalls(AggNode input, AggNode subInput, List<RexNode> outputExprs) {
+  private boolean isMergeAggCalls(AggregateNode input, AggregateNode subInput, List<RexNode> outputExprs) {
     this.newCalls = new ArrayList<>();
     for (AggregateCall aggregateCall : input.getAggregateCallList()) {
       if (!isMergeAggCall(aggregateCall, subInput, outputExprs)) {
@@ -69,7 +69,7 @@ public class AggregateMerge extends AlgeRuleBase {
         call.getName());
   }
 
-  private boolean isMergeAggCall(AggregateCall call, AggNode subInput, List<RexNode> outputExprs) {
+  private boolean isMergeAggCall(AggregateCall call, AggregateNode subInput, List<RexNode> outputExprs) {
     if (isAppendableAgg(call)) {
       // TODO: currently only support aggCall take one operands
       Integer operand = call.getArgList().get(0);
@@ -104,7 +104,7 @@ public class AggregateMerge extends AlgeRuleBase {
   }
 
   private boolean isAppendableAgg(AggregateCall call) {
-    for (SqlKind sqlKind : AggNode.appendableAgg) {
+    for (SqlKind sqlKind : AggregateNode.appendableAgg) {
       if (call.getAggregation().getKind().equals(sqlKind)) {
         return true;
       }
@@ -112,7 +112,7 @@ public class AggregateMerge extends AlgeRuleBase {
     return false;
   }
 
-  private boolean GroupByEntail(AggNode input, AggNode subInput, List<RexNode> outputExprs) {
+  private boolean GroupByEntail(AggregateNode input, AggregateNode subInput, List<RexNode> outputExprs) {
     List<RexNode> subInputGroups = subInput.getGroupByVariables();
     for (int index : input.getGroupByList()) {
       RexNode outputExpr = outputExprs.get(index);
@@ -123,7 +123,7 @@ public class AggregateMerge extends AlgeRuleBase {
     return true;
   }
 
-  private boolean conditionsNoAgg(AggNode input, Set<RexNode> conditions) {
+  private boolean conditionsNoAgg(AggregateNode input, Set<RexNode> conditions) {
     List<RexNode> groupByVariables = input.getGroupByVariables();
     for (RexNode condition : conditions) {
       if (!groupByVariables.containsAll(RexNodeHelper.collectVariables(condition))) {
@@ -134,9 +134,9 @@ public class AggregateMerge extends AlgeRuleBase {
   }
 
   public AlgeNode transformation() {
-    AggNode aggNode = (AggNode) input;
+    AggregateNode aggNode = (AggregateNode) input;
     SPJNode parent = (SPJNode) aggNode.getInput();
-    AggNode child = (AggNode) parent.getInputs().get(0);
+    AggregateNode child = (AggregateNode) parent.getInputs().get(0);
     AlgeNode childInput = child.getInput();
     if (childInput instanceof SPJNode) {
       normalizeSPJNode((SPJNode) childInput, child);
@@ -153,7 +153,7 @@ public class AggregateMerge extends AlgeRuleBase {
     return aggNode;
   }
 
-  private void normalizeSPJNode(SPJNode input, AggNode aggNode) {
+  private void normalizeSPJNode(SPJNode input, AggregateNode aggNode) {
     List<RexNode> newOutputExpr = new ArrayList<>();
     for (Integer columnIndex : aggNode.getGroupByList()) {
       newOutputExpr.add(input.getOutputExpr().get(columnIndex));
@@ -167,7 +167,7 @@ public class AggregateMerge extends AlgeRuleBase {
     input.setOutputExpr(newOutputExpr);
   }
 
-  private void normalizeUnionNode(UnionNode input, AggNode aggNode) {
+  private void normalizeUnionNode(UnionNode input, AggregateNode aggNode) {
     for (AlgeNode spj : input.getInputs()) {
       normalizeSPJNode((SPJNode) spj, aggNode);
     }

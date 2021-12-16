@@ -61,7 +61,7 @@ public class SymbolicAggPair {
   }
 
   private static boolean isDistinctSensitive(SqlKind kind) {
-    for (SqlKind sqlKind : AggNode.distinctInsensitive) {
+    for (SqlKind sqlKind : AggregateNode.distinctInsensitive) {
       if (kind.equals(sqlKind)) {
         return false;
       }

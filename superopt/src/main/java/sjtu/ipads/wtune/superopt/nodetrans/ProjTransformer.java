@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ProjTransformer extends BaseTransformer {
   private RexNode Expression2RexNode(Expression expr) {
-    Values valuesOfNode = planCtx.valuesOf(planNode);
+    Values valuesOfInput = planCtx.valuesOf(planNode.child(planCtx, 0));
 
     // Get a value's index just in projected values
     // Since expr's valueRefs may not equal to values on this plan node
@@ -26,7 +26,9 @@ public class ProjTransformer extends BaseTransformer {
 
     List<RexInputRef> rexRefs = new ArrayList<>(values.size());
     for (Value val : values) {
-      int idx = values.indexOf(val);
+      int idx = valuesOfInput.indexOf(val);
+      if (idx < 0) return null;
+
       rexRefs.add(new RexInputRef(idx, defaultIntType()));
     }
 
@@ -38,7 +40,13 @@ public class ProjTransformer extends BaseTransformer {
     ProjNode proj = ((ProjNode) planNode);
     AlgeNode childNode = transformNode(proj.child(planCtx, 0), planCtx, z3Context);
 
-    List<RexNode> columns = ListSupport.map(proj.attrExprs(), this::Expression2RexNode);
+    List<RexNode> columns = new ArrayList<>();
+    for (Expression projExpr : proj.attrExprs()) {
+      RexNode rexRef = Expression2RexNode(projExpr);
+      if (rexRef == null) return null;
+      columns.add(rexRef);
+    }
+
     if (childNode instanceof UnionNode) {
       updateUnion((UnionNode) childNode, columns);
       return childNode;

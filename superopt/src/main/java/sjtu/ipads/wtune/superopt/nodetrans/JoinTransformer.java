@@ -8,6 +8,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
@@ -278,10 +279,10 @@ public class JoinTransformer extends BaseTransformer{
         }
     }
 
-//    static public SPJNode wrapBySPJ (AggNode aggNode, Context z3Context){
-//        Set<RexNode> emptyCondition = new HashSet<>();
-//        List<AlgeNode> inputs = new ArrayList<AlgeNode>();
-//        inputs.add(aggNode);
-//        return (new SPJNode(aggNode.getOutputExpr(),emptyCondition,inputs,z3Context));
-//    }
+    static public SPJNode wrapBySPJ (AggregateNode aggNode, Context z3Context){
+        Set<RexNode> emptyCondition = new HashSet<>();
+        List<AlgeNode> inputs = new ArrayList<AlgeNode>();
+        inputs.add(aggNode);
+        return (new SPJNode(aggNode.getOutputExpr(),emptyCondition,inputs,z3Context));
+    }
 }

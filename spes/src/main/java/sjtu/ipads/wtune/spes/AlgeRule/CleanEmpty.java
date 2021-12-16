@@ -23,8 +23,8 @@ public class CleanEmpty extends AlgeRuleBase {
       }
       return (unionInputs.size() == 1) || (unionInputs.size() != input.getInputs().size());
     }
-    if (input instanceof AggNode) {
-      AggNode aggNode = (AggNode) input;
+    if (input instanceof AggregateNode) {
+      AggregateNode aggNode = (AggregateNode) input;
       if (aggNode.getGroupByList().isEmpty()) {
         if (aggNode.getInput() instanceof EmptyNode) {
           return true;
@@ -54,7 +54,7 @@ public class CleanEmpty extends AlgeRuleBase {
         return (this.input);
       }
     }
-    if (this.input instanceof SPJNode || this.input instanceof AggNode) {
+    if (this.input instanceof SPJNode || this.input instanceof AggregateNode) {
       return (new EmptyNode(this.input.getZ3Context()));
     }
     return this.input;

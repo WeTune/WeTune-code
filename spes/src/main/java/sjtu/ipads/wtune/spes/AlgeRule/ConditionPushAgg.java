@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.spes.AlgeRule;
 
 import org.apache.calcite.rex.RexNode;
-import sjtu.ipads.wtune.spes.AlgeNode.AggNode;
+import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
@@ -49,8 +49,8 @@ public class ConditionPushAgg extends AlgeRuleBase {
       int offSize = 0;
       int tableIndex = 0;
       for (AlgeNode input : spjNode.getInputs()) {
-        if (input instanceof AggNode) {
-          AggNode aggNode = (AggNode) input;
+        if (input instanceof AggregateNode) {
+          AggregateNode aggNode = (AggregateNode) input;
           for (RexNode condition : conditions) {
             if (isPushDown(aggNode, condition, offSize)) {
               result = true;
@@ -72,7 +72,7 @@ public class ConditionPushAgg extends AlgeRuleBase {
     return RexNodeHelper.minusOffSize(condition, offsize);
   }
 
-  private boolean isPushDown(AggNode aggNode, RexNode condition, int offsize) {
+  private boolean isPushDown(AggregateNode aggNode, RexNode condition, int offsize) {
     List<RexNode> groupByVariables = aggNode.getGroupByVariables();
     List<RexNode> newGroupByVariables = new ArrayList<>();
     for (RexNode groupByVariable : groupByVariables) {
@@ -85,14 +85,14 @@ public class ConditionPushAgg extends AlgeRuleBase {
 
   public AlgeNode transformation() {
     for (pushDownCondition c : pushDownConditions) {
-      AggNode aggNode = (AggNode) input.getInputs().get(c.getTableIndex());
+      AggregateNode aggNode = (AggregateNode) input.getInputs().get(c.getTableIndex());
       pushDown(aggNode, c.getCondition());
     }
     this.input.setConditions(this.nonPushedConditions);
     return input;
   }
 
-  private AlgeNode pushDown(AggNode aggNode, RexNode condition) {
+  private AlgeNode pushDown(AggregateNode aggNode, RexNode condition) {
     AlgeNode inputNode = aggNode.getInput();
     if (inputNode instanceof UnionNode) {
       UnionNode unionNode = (UnionNode) inputNode;

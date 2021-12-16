@@ -14,13 +14,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class AggNode extends AlgeNode {
+public class AggregateNode extends AlgeNode {
   public static SqlKind[] distinctInsensitive = {SqlKind.MAX, SqlKind.MIN};
   public static SqlKind[] appendableAgg = {SqlKind.MAX, SqlKind.MIN, SqlKind.SUM, SqlKind.COUNT};
   private List<Integer> groupByList;
   private List<AggregateCall> aggregateCallList;
 
-  public AggNode(
+  public AggregateNode(
       List<Integer> groupByList,
       List<AggregateCall> aggregateCallList,
       List<RelDataType> inputTypes,
@@ -63,8 +63,8 @@ public class AggNode extends AlgeNode {
   }
 
   public boolean constructQPSR(AlgeNode node) {
-    if (node instanceof AggNode) {
-      AggNode aggNode = (AggNode) node;
+    if (node instanceof AggregateNode) {
+      AggregateNode aggNode = (AggregateNode) node;
       if (aggNode.getInput() instanceof EmptyNode) {
         if (this.getInput() instanceof EmptyNode) {
           this.emptyTableSymbolicColumn();
@@ -100,14 +100,14 @@ public class AggNode extends AlgeNode {
     }
   }
 
-  public boolean isCartesianEq(AggNode aggNode) {
+  public boolean isCartesianEq(AggregateNode aggNode) {
     if (groupByEq(aggNode)) {
       return true;
     }
     return false;
   }
 
-  private boolean groupByEq(AggNode node) {
+  private boolean groupByEq(AggregateNode node) {
     AlgeNode input1 = this.getInput();
     AlgeNode input2 = node.getInput();
     if (input1.constructQPSR(input2)) {
@@ -168,7 +168,7 @@ public class AggNode extends AlgeNode {
     return symbolicGroupByColumns;
   }
 
-  private boolean groupByColumnBijective(AggNode node) {
+  private boolean groupByColumnBijective(AggregateNode node) {
     List<SymbolicColumn> groupByColumn1 = this.getSymbolicGroupByColumns();
     List<SymbolicColumn> groupByColumn2 = node.getSymbolicGroupByColumns();
     if (groupByColumn1.isEmpty() && groupByColumn2.isEmpty()) {
@@ -201,7 +201,7 @@ public class AggNode extends AlgeNode {
     return z3Context.mkAnd(columnEqs1);
   }
 
-  private BoolExpr constructFreshEnv(AggNode node) {
+  private BoolExpr constructFreshEnv(AggregateNode node) {
     BoolExpr env1 = this.getVariableConstraints();
     BoolExpr freshEnv1 = (BoolExpr) z3Utility.constructFreshExpr(env1, z3Context);
     BoolExpr env2 = node.getVariableConstraints();
@@ -230,7 +230,7 @@ public class AggNode extends AlgeNode {
       AggregateCall newCall = oldCall.copy(newArgList, oldCall.filterArg, oldCall.collation);
       newAggregateCallList.add(newCall);
     }
-    return (new AggNode(
+    return (new AggregateNode(
         newGroupByList, newAggregateCallList, columnTypes, newInput, this.z3Context));
   }
 }
