@@ -4,6 +4,7 @@ import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 import sjtu.ipads.wtune.common.utils.IOSupport;
+import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,7 +29,8 @@ import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstra
 public class EnumRule implements Runner {
   private Path success, failure, err, checkpoint;
   private Path prevFailure, prevCheckpoint;
-  private Lock outLock = new ReentrantLock(), errLock = new ReentrantLock();
+  private final Lock outLock = new ReentrantLock();
+  private final Lock errLock = new ReentrantLock();
 
   private boolean echo;
   private long timeout;
@@ -76,7 +79,14 @@ public class EnumRule implements Runner {
 
   @Override
   public void stop() {
-    if (threadPool != null) threadPool.shutdown();
+    if (threadPool != null) {
+      threadPool.shutdown();
+      try {
+        threadPool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException ignored) {
+      }
+      System.out.println(ConstraintSupport.getMetrics().toString());
+    }
   }
 
   private void openThreadPool() {

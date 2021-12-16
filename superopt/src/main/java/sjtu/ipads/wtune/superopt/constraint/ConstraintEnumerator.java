@@ -814,7 +814,8 @@ class ConstraintEnumerator {
     public int enumerate() {
       if (!disabled) {
         final Substitution rule = I.mkRule(enabled);
-        if (isMismatchedSummation(translateToUExpr(rule))) return UNKNOWN;
+        final UExprTranslationResult uExprs = translateToUExpr(rule);
+        if (isMismatchedSummation(uExprs) || isLatentSummation(uExprs)) return UNKNOWN;
       }
       return nextStage().enumerate();
     }

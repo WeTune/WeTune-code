@@ -18,6 +18,10 @@ public interface ConstraintSupport {
   int ENUM_FLAG_ECHO = 8;
   int ENUM_FLAG_USE_SPES = 16;
 
+  static EnumerationMetrics getMetrics() {
+    return EnumerationMetricsContext.instance().global();
+  }
+
   static StringBuilder stringify(
       Constraint c, SymbolNaming naming, boolean canonical, StringBuilder builder) {
     return new ConstraintStringifier(naming, canonical, builder).stringify(c);

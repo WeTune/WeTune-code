@@ -52,6 +52,11 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  void test() {
+    doTest("InnerJoin(Input,Proj(Input))", "LeftJoin(Input,Proj*(Input))");
+  }
+
+  @Test
   void testInnerJoinElimination0() {
     doTest(
         "Proj(InnerJoin(Input,Input))",

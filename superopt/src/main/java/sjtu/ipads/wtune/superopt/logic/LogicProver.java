@@ -480,11 +480,6 @@ class LogicProver {
     return solver.check(exprs);
   }
 
-  private static UTerm getBody(UTerm expr) {
-    if (expr.kind() == SUMMATION) return ((USum) expr).body();
-    else return expr;
-  }
-
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {
     final List<UTerm> factors = mul.subTerms();
     final List<UTerm> termsY = new ArrayList<>(factors.size());

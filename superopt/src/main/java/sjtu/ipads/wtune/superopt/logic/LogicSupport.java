@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static sjtu.ipads.wtune.superopt.uexpr.UKind.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.CONCAT;
 
 public abstract class LogicSupport {
@@ -82,8 +83,24 @@ public abstract class LogicSupport {
     return !getBoundedVars(masterTerm).containsAll(getBoundedVars(slaveTerm));
   }
 
+  public static boolean isLatentSummation(UExprTranslationResult uExprs) {
+    return containsLatentSummation(getBody(uExprs.sourceExpr()))
+        || containsLatentSummation(getBody(uExprs.targetExpr()));
+  }
+
+  static boolean containsLatentSummation(UTerm term) {
+    final UKind kind = term.kind();
+    if (kind == SUMMATION) return true;
+    if (kind == SQUASH || kind == NEGATION || kind == ATOM) return false;
+    if (kind == ADD || kind == MULTIPLY)
+      for (UTerm subTerm : term.subTerms()) {
+        if (containsLatentSummation(subTerm)) return true;
+      }
+    return false;
+  }
+
   static boolean isFastRejected(UExprTranslationResult uExprs) {
-    return isMismatchedOutput(uExprs) || isMismatchedSummation(uExprs);
+    return isMismatchedOutput(uExprs) || isMismatchedSummation(uExprs) || isLatentSummation(uExprs);
   }
 
   static Set<UVar> getBoundedVars(UTerm expr) {
@@ -104,5 +121,10 @@ public abstract class LogicSupport {
     final Set<UVar> vars1 = getBoundedVars(e1);
     if (vars0.size() < vars1.size()) return e0;
     else return e1;
+  }
+
+  static UTerm getBody(UTerm expr) {
+    if (expr.kind() == SUMMATION) return ((USum) expr).body();
+    else return expr;
   }
 }
