@@ -31,4 +31,8 @@ public final class Lazy<T> {
   public void set(T val) {
     this.val = val;
   }
+
+  public boolean isInitialized() {
+    return val != null;
+  }
 }

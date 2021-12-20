@@ -5,6 +5,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.IterableSupport;
+import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -16,7 +17,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.function.Predicate.not;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.FOREIGN;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.UNIQUE;
 import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
@@ -175,7 +176,8 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
 
     final boolean trusted = isAssignmentTrusted(attrsSym) && isAssignmentTrusted(srcSym);
     if (trusted) return srcAttrs.containsAll(attrs);
-    else return IterableSupport.all(attrs, attr -> locateValueRelaxed(srcAttrs, attr, plan) != null);
+    else
+      return IterableSupport.all(attrs, attr -> locateValueRelaxed(srcAttrs, attr, plan) != null);
   }
 
   private boolean checkUnique(Constraint unique) {
@@ -291,8 +293,8 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
     if (kind.isJoin()) {
       final JoinNode join = (JoinNode) surface;
       final ValueBag lhsValues = join.predecessors()[0].values();
-      final Set<Value> lhs = setFilter(attrs, lhsValues::contains);
-      final Set<Value> rhs = setFilter(attrs, not(lhs::contains));
+      final Set<Value> lhs = SetSupport.filter(attrs, lhsValues::contains);
+      final Set<Value> rhs = SetSupport.filter(attrs, not(lhs::contains));
 
       if (join.isEquiJoin()) {
         final List<Value> lhsJoinAttrs = plan.deRef(join.lhsRefs());
@@ -325,7 +327,8 @@ class ConstraintAwareModelImpl extends ModelImpl implements ConstraintAwareModel
       final Set<Column> columns = setMap(attrs, Value::column);
       assert IterableSupport.none(columns, Objects::isNull);
 
-      return IterableSupport.any(inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
+      return IterableSupport.any(
+          inputNode.table().constraints(UNIQUE), it -> columns.containsAll(it.columns()));
 
     } else if (kind == OperatorType.AGG) {
       final PlanContext context = surface.context();

@@ -52,4 +52,8 @@ public interface ListSupport {
     if (xs.isEmpty()) return null;
     return xs.remove(xs.size() - 1);
   }
+
+  static <T, R> List<R> flatMap(Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
+    return FuncUtils.stream(os).map(func).flatMap(FuncUtils::stream).toList();
+  }
 }

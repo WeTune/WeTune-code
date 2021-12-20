@@ -304,6 +304,7 @@ class LogicProver {
       for (UTerm term : uExpr.subTerms()) {
         if (term instanceof UTable) nums.add((ArithExpr) trAtom(term, false));
         else if (term instanceof UAdd) nums.add(trAsBag(term));
+        else if (term instanceof UMul) nums.add(trAsBag(term));
         else bools.add(trAsSet(term));
       }
       final ArithExpr[] factors = nums.toArray(ArithExpr[]::new);

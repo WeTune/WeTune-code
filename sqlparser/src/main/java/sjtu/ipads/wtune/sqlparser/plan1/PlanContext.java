@@ -4,6 +4,8 @@ import sjtu.ipads.wtune.common.tree.UniformTreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
 public interface PlanContext extends UniformTreeContext<PlanKind> {
+  Schema schema();
+
   PlanNode nodeAt(int id);
 
   int nodeIdOf(PlanNode node);

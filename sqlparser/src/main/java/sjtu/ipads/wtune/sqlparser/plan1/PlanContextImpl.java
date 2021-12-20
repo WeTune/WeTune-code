@@ -29,6 +29,11 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   }
 
   @Override
+  public Schema schema() {
+    return schema;
+  }
+
+  @Override
   public PlanNode nodeAt(int id) {
     checkNodePresent(this, id);
     return ((PlanNd) nodes[id]).planNode;

@@ -79,6 +79,19 @@ class LogicProverTest {
   }
 
   @Test
+  public void testIN2InnerJoin2() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj*<a2>(InSubFilter<a1>(Input<t0>,Proj<a0>(Input<t1>)))|"
+                + "Proj*<a5>(InnerJoin<a3 a4>(Input<t2>,Input<t3>))|"
+                + "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);"
+                + "TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a3,a0);AttrsEq(a4,a1);AttrsEq(a5,a2)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result);
+  }
+
+  @Test
   public void testPlainFilterCollapsing() {
     final Substitution rule =
         Substitution.parse(

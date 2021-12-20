@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.ConstraintAwareModel;
 import sjtu.ipads.wtune.superopt.fragment.Op;
@@ -124,7 +125,7 @@ class OptimizerImpl implements Optimizer {
     // pass the `candidates` instead.
 
     // 4. do transformation
-    final List<PlanNode> transformed = listFlatMap(candidates, this::transform);
+    final List<PlanNode> transformed = ListSupport.flatMap(candidates, this::transform);
 
     // 5. recursively optimize the transformed plan
     for (PlanNode p : transformed) optimize0(p);
@@ -163,7 +164,7 @@ class OptimizerImpl implements Optimizer {
       }
     }
 
-    transformed.addAll(listFlatMap(transformed, this::transform));
+    transformed.addAll(ListSupport.flatMap(transformed, this::transform));
     return transformed;
   }
 
@@ -187,7 +188,7 @@ class OptimizerImpl implements Optimizer {
         final PlanNode nextNode = nodePredecessors[i];
         final Op nextOp = opPredecessors[i];
 
-        matches = listFlatMap(matches, it -> match(nextNode, nextOp, it.model()));
+        matches = ListSupport.flatMap(matches, it -> match(nextNode, nextOp, it.model()));
         if (matches.isEmpty()) break;
 
         matches.forEach(Match::shiftMatchPoint); // Shift the match point back to `n`.

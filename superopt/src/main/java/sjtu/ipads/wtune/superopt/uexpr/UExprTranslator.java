@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
@@ -228,8 +229,15 @@ class UExprTranslator {
         restriction = mkSchema(source);
       }
 
-      final int partIndex = bitCount(schema & (restriction - 1));
-      final UVar restrictedVar = base.args()[partIndex];
+      assert (schema & restriction) != 0;
+      final UVar restrictedVar;
+      if (base.kind() == VarKind.CONCAT) {
+        final int restriction0 = restriction;
+        restrictedVar = ArraySupport.linearFind(base.args(), it -> schemaOf(it) == restriction0);
+      } else {
+        restrictedVar = base;
+      }
+
       // Note: there can be AttrsSub(a,b), where b is another attrs.
       // Then a(b(x)) becomes a(x).
       if (restrictedVar.kind() != VarKind.PROJ) return UVar.mkProj(desc.name, restrictedVar);

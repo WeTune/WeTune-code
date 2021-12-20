@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
+import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 
@@ -71,7 +71,7 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
 
   @Override
   public Iterable<Substitution> matchByFingerprint(PlanNode plan) {
-    return listFlatMap(Fingerprint.mk(plan), fingerprintIndex::get);
+    return flatMap(Fingerprint.mk(plan), fingerprintIndex::get);
   }
 
   @Override

@@ -61,4 +61,5 @@ class AggNodeImpl implements AggNode {
   public void setQualification(String qualification) {
     this.qualification = qualification;
   }
+
 }

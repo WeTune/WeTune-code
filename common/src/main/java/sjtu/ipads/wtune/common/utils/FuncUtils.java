@@ -57,25 +57,8 @@ public interface FuncUtils {
         .collect(Collectors.toCollection(supplier));
   }
 
-  static <T, R, C extends Collection<R>> C collectionFlatMap(
-      Function<? super T, ? extends Iterable<R>> func, T[] arr, Supplier<C> supplier) {
-    return stream(Arrays.asList(arr))
-        .map(func)
-        .flatMap(FuncUtils::stream)
-        .collect(Collectors.toCollection(supplier));
-  }
-
   static <T, R> Set<R> setMap(Iterable<T> os, Function<? super T, ? extends R> func) {
     return collectionMap(func, os, HashSet::new);
-  }
-
-  static <T, R> List<R> listFlatMap(
-      Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
-    return collectionFlatMap(func, os, ArrayList::new);
-  }
-
-  static <T, R> List<R> listFlatMap(Function<? super T, ? extends Iterable<R>> func, T... os) {
-    return listFlatMap(Arrays.asList(os), func);
   }
 
   static <P0, P1, R> List<R> zipMap(
@@ -109,10 +92,6 @@ public interface FuncUtils {
 
   static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
-  }
-
-  static <T> Set<T> setFilter(Iterable<T> os, Predicate<? super T> func) {
-    return stream(os).filter(func).collect(Collectors.toSet());
   }
 
   static <T, C extends Collection<T>> C collectionFilter(

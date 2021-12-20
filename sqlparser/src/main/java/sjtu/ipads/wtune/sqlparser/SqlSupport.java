@@ -20,6 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.*;
 
 public abstract class SqlSupport {
   private static boolean PARSING_ERROR_MUTED = false;
@@ -240,5 +241,36 @@ public abstract class SqlSupport {
     literal.$(Literal_Kind, kind);
     literal.$(Literal_Value, value);
     return literal;
+  }
+
+  public static boolean isColRefEq(SqlNode ast) {
+    return Binary.isInstance(ast)
+        && EQUAL == ast.$(Binary_Op)
+        && ColRef.isInstance(ast.$(Binary_Left))
+        && ColRef.isInstance(ast.$(Binary_Right));
+  }
+
+  public static boolean isEquiConstCondition(SqlNode ast) {
+    final SqlNode lhs = ast.$(Binary_Left);
+    final SqlNode rhs = ast.$(Binary_Right);
+    final BinaryOpKind op = ast.$(Binary_Op);
+
+    final SqlNode literal;
+    if (ColRef.isInstance(lhs) && Literal.isInstance(rhs)) literal = rhs;
+    else if (ColRef.isInstance(rhs) && Literal.isInstance(lhs)) literal = lhs;
+    else return false;
+
+    return (op == IS || op == EQUAL || op == NULL_SAFE_EQUAL)
+        && literal.$(Literal_Kind) != LiteralKind.NULL;
+  }
+
+  public static boolean isEquiJoinCondition(SqlNode ast) {
+    if (!Binary.isInstance(ast)) return false;
+    final BinaryOpKind op = ast.$(Binary_Op);
+    if (op == BinaryOpKind.AND) {
+      return isEquiJoinCondition(ast.$(Binary_Left)) && isEquiJoinCondition(ast.$(Binary_Right));
+    } else {
+      return isColRefEq(ast);
+    }
   }
 }

@@ -25,4 +25,5 @@ class InputNodeImpl implements InputNode {
   public void setQualification(String qualification) {
     this.qualification = qualification;
   }
+
 }

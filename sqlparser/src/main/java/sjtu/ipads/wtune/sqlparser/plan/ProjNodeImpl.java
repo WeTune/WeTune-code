@@ -8,7 +8,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.listFlatMap;
+import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.WILDCARD_TABLE;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.SELECT_ITEM_EXPR;
 import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.TABLE_NAME_TABLE;
@@ -58,7 +58,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
   // Make a Proj node that output `outValues`.
   static ProjNode mk(ValueBag outValues) {
     return new ProjNodeImpl(
-        false, outValues, RefBag.mk(listFlatMap(outValues, it -> it.expr().refs())));
+        false, outValues, RefBag.mk(flatMap(outValues, it -> it.expr().refs())));
   }
 
   // Make a Proj node that select all of `inValues`.
@@ -116,7 +116,7 @@ class ProjNodeImpl extends PlanNodeBase implements ProjNode {
       throw new IllegalStateException("the values are immutable if there are no wildcard");
     this.values = requireNonNull(values);
     // Values are expected containing only ExprValue. We do this check optimistically.
-    this.refs = RefBag.mk(listFlatMap(values, it -> it.expr().refs()));
+    this.refs = RefBag.mk(flatMap(values, it -> it.expr().refs()));
     this.containsWildcard = containsWildcard(values);
   }
 

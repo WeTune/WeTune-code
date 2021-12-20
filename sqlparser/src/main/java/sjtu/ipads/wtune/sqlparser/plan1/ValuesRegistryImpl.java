@@ -2,11 +2,15 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.procedure.TIntObjectProcedure;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.COW;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
@@ -17,6 +21,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
   private int nextId;
   private final PlanContext ctx;
   private final COW<TIntObjectMap<Values>> nodeValues;
+  private final COW<TIntObjectMap<Column>> valueColumns;
   private final COW<TIntObjectMap<Expression>> valueExprs;
   private final COW<Map<Expression, Values>> exprRefs;
 
@@ -24,6 +29,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     this.nextId = 0;
     this.ctx = ctx;
     this.nodeValues = new COW<>(new TIntObjectHashMap<>(ctx.maxNodeId()), null);
+    this.valueColumns = new COW<>(new TIntObjectHashMap<>(), null);
     this.valueExprs = new COW<>(new TIntObjectHashMap<>(), null);
     this.exprRefs = new COW<>(new HashMap<>(), null);
   }
@@ -34,6 +40,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     this.nodeValues = new COW<>(toCopy.nodeValues.forRead(), TIntObjectHashMap::new);
     this.valueExprs = new COW<>(toCopy.valueExprs.forRead(), TIntObjectHashMap::new);
     this.exprRefs = new COW<>(toCopy.exprRefs.forRead(), HashMap::new);
+    this.valueColumns = new COW<>(toCopy.valueColumns.forRead(), TIntObjectHashMap::new);
   }
 
   @Override
@@ -79,6 +86,18 @@ class ValuesRegistryImpl implements ValuesRegistry {
   }
 
   @Override
+  public int initiatorOf(Value value) {
+    final InitiatorFinder finder = new InitiatorFinder(value);
+    nodeValues.forRead().forEachEntry(finder);
+    return finder.initiator;
+  }
+
+  @Override
+  public Column columnOf(Value value) {
+    return valueColumns.forRead().get(value.id());
+  }
+
+  @Override
   public Expression exprOf(Value value) {
     return valueExprs.forRead().get(value.id());
   }
@@ -106,7 +125,11 @@ class ValuesRegistryImpl implements ValuesRegistry {
     final String qualification = input.qualification();
 
     final Values values = Values.mk();
-    for (Column column : columns) values.add(Value.mk(++nextId, qualification, column.name()));
+    for (Column column : columns) {
+      final Value value = Value.mk(++nextId, qualification, column.name());
+      values.add(value);
+      valueColumns.forWrite().put(value.id(), column);
+    }
 
     return values;
   }
@@ -127,5 +150,23 @@ class ValuesRegistryImpl implements ValuesRegistry {
 
   private void registerExpr(Value value, Expression expr) {
     valueExprs.forWrite().put(value.id(), expr);
+  }
+
+  private static class InitiatorFinder implements TIntObjectProcedure<Values> {
+    private int initiator = NO_SUCH_NODE;
+    private final Value target;
+
+    private InitiatorFinder(Value target) {
+      this.target = target;
+    }
+
+    @Override
+    public boolean execute(int a, Values b) {
+      if (b.contains(target)) {
+        initiator = a;
+        return false;
+      }
+      return true;
+    }
   }
 }

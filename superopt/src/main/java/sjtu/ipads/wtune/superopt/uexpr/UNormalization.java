@@ -20,11 +20,9 @@ class UNormalization {
   }
 
   private UTerm normalizeTerm0(UTerm expr) {
-    // Essential normalization.
+    expr = eliminateSquash(expr);
     expr = promoteSummation(expr);
     expr = mergeSummation(expr);
-    // Not critical, just make `expr` more readable.
-    expr = eliminateSquash(expr);
     return expr;
   }
 
