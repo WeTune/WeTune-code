@@ -51,7 +51,7 @@ public interface TreeSupport {
   static int locate(UniformTreeContext<?> context, int childId) {
     final int parentId = context.parentOf(childId);
     final int[] children = context.childrenOf(parentId);
-    return ArraySupport.sequentialFind(children, childId, 0);
+    return ArraySupport.linearFind(children, childId, 0);
   }
 
   static FieldKey<?> locate(LabeledTreeContext<?> context, int childId) {

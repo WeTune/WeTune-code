@@ -15,6 +15,8 @@ import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 public interface Proj extends Op {
   Symbol attrs();
 
+  Symbol schema();
+
   void setDeduplicated(boolean flag);
 
   boolean isDeduplicated();

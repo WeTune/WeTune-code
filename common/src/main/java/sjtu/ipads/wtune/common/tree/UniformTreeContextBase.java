@@ -5,7 +5,7 @@ import java.util.Arrays;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkIsValidChild;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.safeGet;
-import static sjtu.ipads.wtune.common.utils.ArraySupport.sequentialFind;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
 
 public class UniformTreeContextBase<Kind>
     extends TreeContextBase<Kind, UniformTreeContextBase.Nd<Kind>>
@@ -62,7 +62,7 @@ public class UniformTreeContextBase<Kind>
     nodes[nodeId].parentId = NO_SUCH_NODE;
 
     final int[] childrenIds = nodes[parentId].childrenIds;
-    final int childIndex = sequentialFind(childrenIds, nodeId, 0);
+    final int childIndex = linearFind(childrenIds, nodeId, 0);
     if (childIndex >= 0) childrenIds[childIndex] = NO_SUCH_NODE;
   }
 

@@ -51,6 +51,7 @@ class ConstraintStringifier {
     appendInstantiation(C, TABLE);
     appendInstantiation(C, ATTRS);
     appendInstantiation(C, PRED);
+    appendInstantiation(C, SCHEMA);
     removeTrailing();
     return builder;
   }

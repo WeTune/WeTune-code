@@ -26,14 +26,14 @@ class SubstitutionImpl implements Substitution {
     this.naming = naming;
   }
 
-  static Substitution parse(String str, boolean backwardCompatible) {
+  static Substitution parse(String str) {
     final String[] split = str.split("\\|");
     if (split.length != 3)
       throw new IllegalArgumentException("invalid serialized substitution: " + str);
 
     final SymbolNaming naming = SymbolNaming.mk();
-    final Fragment _0 = Fragment.parse(split[0], naming, backwardCompatible);
-    final Fragment _1 = Fragment.parse(split[1], naming, backwardCompatible);
+    final Fragment _0 = Fragment.parse(split[0], naming);
+    final Fragment _1 = Fragment.parse(split[1], naming);
     final List<Constraint> constraints =
         ListSupport.map(
             Arrays.asList(split[2].split(";")),

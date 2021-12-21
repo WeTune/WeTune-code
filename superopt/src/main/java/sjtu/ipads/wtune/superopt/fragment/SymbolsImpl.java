@@ -8,21 +8,24 @@ import java.util.List;
 import java.util.Map;
 
 class SymbolsImpl implements Symbols {
-  private final Lazy<ListMultimap<Op, Symbol>> tables, attrs, preds;
+  private final Lazy<ListMultimap<Op, Symbol>> tables, attrs, preds, schemas;
 
   SymbolsImpl() {
     tables = Lazy.mk(SymbolsImpl::initMap);
     attrs = Lazy.mk(SymbolsImpl::initMap);
     preds = Lazy.mk(SymbolsImpl::initMap);
+    schemas = Lazy.mk(SymbolsImpl::initMap);
   }
 
   SymbolsImpl(
       ListMultimap<Op, Symbol> tables,
       ListMultimap<Op, Symbol> attrs,
-      ListMultimap<Op, Symbol> preds) {
+      ListMultimap<Op, Symbol> preds,
+      ListMultimap<Op, Symbol> schemas) {
     this.tables = Lazy.mk(tables);
     this.attrs = Lazy.mk(attrs);
     this.preds = Lazy.mk(preds);
+    this.schemas = Lazy.mk(schemas);
   }
 
   static Symbols merge(Symbols symbols0, Symbols symbols1) {
@@ -30,7 +33,8 @@ class SymbolsImpl implements Symbols {
     final ListMultimap<Op, Symbol> tables = merge(s0.tables.get(), s1.tables.get());
     final ListMultimap<Op, Symbol> attrs = merge(s0.attrs.get(), s1.attrs.get());
     final ListMultimap<Op, Symbol> preds = merge(s0.preds.get(), s1.preds.get());
-    return new SymbolsImpl(tables, attrs, preds);
+    final ListMultimap<Op, Symbol> schemas = merge(s0.schemas.get(), s1.schemas.get());
+    return new SymbolsImpl(tables, attrs, preds, schemas);
   }
 
   private static ListMultimap<Op, Symbol> merge(
@@ -50,7 +54,11 @@ class SymbolsImpl implements Symbols {
   public void bindSymbol(Op op) {
     switch (op.kind()) {
       case INPUT -> add(op, Symbol.Kind.TABLE);
-      case IN_SUB_FILTER, PROJ -> add(op, Symbol.Kind.ATTRS);
+      case IN_SUB_FILTER -> add(op, Symbol.Kind.ATTRS);
+      case PROJ -> {
+        add(op, Symbol.Kind.ATTRS);
+        add(op, Symbol.Kind.SCHEMA);
+      }
       case SIMPLE_FILTER -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.PRED);
@@ -69,7 +77,11 @@ class SymbolsImpl implements Symbols {
 
     switch (newOp.kind()) {
       case INPUT -> add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.TABLE, 0));
-      case IN_SUB_FILTER, PROJ -> add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
+      case IN_SUB_FILTER -> add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
+      case PROJ -> {
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.SCHEMA, 0));
+      }
       case SIMPLE_FILTER -> {
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.PRED, 0));
@@ -119,6 +131,7 @@ class SymbolsImpl implements Symbols {
       case TABLE -> tables.get();
       case ATTRS -> attrs.get();
       case PRED -> preds.get();
+      case SCHEMA -> schemas.get();
     };
   }
 

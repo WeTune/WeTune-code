@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 @Tag("enumeration")
 class ConstraintEnumeratorTest {
@@ -52,17 +52,12 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
-  void test() {
-    doTest("InnerJoin(Input,Proj(Input))", "LeftJoin(Input,Proj*(Input))");
-  }
-
-  @Test
   void testInnerJoinElimination0() {
     doTest(
         "Proj(InnerJoin(Input,Input))",
         "Proj(Input)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a3,a2)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);Unique(t0,a0);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a3,a2)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a3,a2);SchemaEq(s1,s0)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);Unique(t0,a0);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a3,a2);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -70,8 +65,8 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(InnerJoin(Input,Input))",
         "Proj*(Input)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a3,a2)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a3,a2)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a3,a2);SchemaEq(s1,s0)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a3,a2);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -80,8 +75,8 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj(Filter(InnerJoin(Input,Input)))",
         "Proj(Filter(Input))",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);AttrsSub(a3,t1);Unique(t0,a0);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);AttrsSub(a3,t1);Unique(t0,a0);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -90,13 +85,16 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(PlainFilter(InnerJoin(Input,Input)))",
         "Proj*(PlainFilter(Input))",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);AttrsSub(a3,t1);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);NotNull(t0,a0);Reference(t0,a0,t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);AttrsSub(a3,t1);NotNull(t1,a1);Reference(t1,a1,t0,a0);TableEq(t2,t1);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)");
   }
 
   @Test
   void testLeftJoinElimination0() {
-    doTest("Proj(LeftJoin(Input,Input))", "Proj(Input)");
+    doTest(
+        "Proj(LeftJoin(Input,Input))",
+        "Proj(Input)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);Unique(t1,a1);TableEq(t2,t0);AttrsEq(a3,a2);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -104,7 +102,7 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(LeftJoin(Input,Input))",
         "Proj*(Input)",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);TableEq(t2,t0);AttrsEq(a3,a2)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);TableEq(t2,t0);AttrsEq(a3,a2);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -113,7 +111,7 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj(Filter(LeftJoin(Input,Input)))",
         "Proj(Filter(Input))",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);Unique(t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);Unique(t1,a1);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -122,7 +120,7 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(Filter(LeftJoin(Input,Input)))",
         "Proj*(Filter(Input))",
-        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0)");
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);TableEq(t2,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);PredicateEq(p1,p0);SchemaEq(s1,s0)");
   }
 
   @Test
@@ -138,7 +136,8 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj(InSubFilter(Input,Proj(Input)))",
         "Proj(InnerJoin(Input,Input))",
-        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);Unique(t1,a0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2)");
+        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);Unique(t1,a0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2);SchemaEq(s2,s1)",
+        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);Unique(t1,a0);TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a3,a0);AttrsEq(a4,a1);AttrsEq(a5,a2);SchemaEq(s2,s1)");
   }
 
   @Test
@@ -146,7 +145,8 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))",
-        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2)");
+        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2);SchemaEq(s2,s1)",
+        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a3,a0);AttrsEq(a4,a1);AttrsEq(a5,a2);SchemaEq(s2,s1)");
   }
 
   @Test
@@ -171,7 +171,7 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj(Proj(Input))",
         "Proj(Input)",
-        "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a1)");
+        "AttrsSub(a0,t0);AttrsSub(a1,s0);TableEq(t1,t0);AttrsEq(a2,a1);SchemaEq(s2,s1)");
   }
 
   @Test
@@ -187,7 +187,7 @@ class ConstraintEnumeratorTest {
     doTest(
         "Proj*(Input)",
         "Proj(Input)",
-        "AttrsSub(a0,t0);Unique(t0,a0);TableEq(t1,t0);AttrsEq(a1,a0)");
+        "AttrsSub(a0,t0);Unique(t0,a0);TableEq(t1,t0);AttrsEq(a1,a0);SchemaEq(s1,s0)");
   }
 
   //  @Test

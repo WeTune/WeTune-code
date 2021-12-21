@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.ArraySupport;
+import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
@@ -9,7 +11,6 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
 
-import static java.lang.Integer.bitCount;
 import static sjtu.ipads.wtune.common.utils.Commons.push;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
@@ -17,6 +18,7 @@ import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ListSupport.pop;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Unique;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.normalizeExpr;
 import static sjtu.ipads.wtune.superopt.uexpr.UTerm.FUNC_IS_NULL_NAME;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.*;
@@ -40,8 +42,9 @@ class UExprTranslator {
   private final Substitution rule;
   private final NameSequence tableSeq, attrsSeq, predSeq, varSeq;
   private final Map<Symbol, UName> initiatedNames;
+  private final Lazy<Set<Pair<Integer, Integer>>> possibleEqSchema;
   private final UExprTranslationResult result;
-  private int nextSchema;
+  private int nextSchema0, nextSchema1;
 
   UExprTranslator(Substitution rule) {
     this.rule = rule;
@@ -50,14 +53,19 @@ class UExprTranslator {
     this.predSeq = NameSequence.mkIndexed("p", 0);
     this.varSeq = NameSequence.mkIndexed("x", 0);
     this.initiatedNames = new HashMap<>(16);
+    this.possibleEqSchema = Lazy.mk(HashSet::new);
     this.result = new UExprTranslationResult(rule);
-    this.nextSchema = 1;
+    this.nextSchema0 = 1;
+    this.nextSchema1 = 1;
   }
 
   UExprTranslationResult translate() {
-    new TemplateTranslator(rule._0(), false).translate();
-    new TemplateTranslator(rule._1(), true).translate();
-    return result;
+    if (new TemplateTranslator(rule._0(), false).translate()
+        && new TemplateTranslator(rule._1(), true).translate()) {
+      return result;
+    } else {
+      return null;
+    }
   }
 
   private static UTerm mkNotNull(UVar var) {
@@ -83,8 +91,11 @@ class UExprTranslator {
       this.auxVar = null;
     }
 
-    private void translate() {
-      final UTerm expr = normalizeExpr(tr(template.root()));
+    private boolean translate() {
+      final UTerm raw = tr(template.root());
+      if (raw == null) return false;
+
+      final UTerm expr = normalizeExpr(raw);
       final UVar outVar = tail(viableVars);
       assert freeVars.size() == 1;
       assert viableVars.size() == 1;
@@ -97,6 +108,7 @@ class UExprTranslator {
         result.tgtExpr = expr;
         result.tgtOutVar = outVar;
       }
+      return true;
     }
 
     private UName mkName(Symbol sym, NameSequence nameSeq) {
@@ -137,33 +149,12 @@ class UExprTranslator {
       return visibleVar;
     }
 
-    private int mkSchema(Symbol /* Table or Attrs */ sym) {
-      /* An integer that distinguishes the schema of a relation/tuple.
-       * For tables at the source side, each T_i is assigned with 2^i.
-       * Tables at the target side are assigned the same as the instantiation source.
-       * Tuple concat(x1,x2) is assigned with schemaOf(x1) | schemaOf(x2) */
-      final int existing = result.symSchemas.get(sym);
-      if (existing != 0) return existing;
-
-      final int ret;
-      if (isTargetSide) {
-        ret = result.symSchemas.get(rule.constraints().instantiationOf(sym));
-      } else {
-        ret = nextSchema;
-        nextSchema <<= 1;
-        if (nextSchema <= 0) throw new IllegalStateException("too much schema"); // At most 31.
-      }
-
-      result.symSchemas.put(sym, ret);
-      return ret;
-    }
-
     private TableDesc mkTableDesc(Symbol tableSym) {
       // Each Table at the source side corresponds to a distinct desc.
       // Each Table at the target side shares the desc of its instantiation.
       if (!isTargetSide) {
         final UName name = mkName(tableSym, tableSeq);
-        final int schema = mkSchema(tableSym);
+        final int schema = schemaOf(tableSym);
         final UVar var = mkFreshVar(schema);
         final UTable tableTerm = UTable.mk(name, var);
         final TableDesc desc = new TableDesc(tableTerm, schema);
@@ -209,14 +200,13 @@ class UExprTranslator {
       assert attrSym != null;
 
       Symbol source = rule.constraints().sourceOf(attrSym);
-      rule.constraints().sourceOf(attrSym);
       assert source != null;
 
       // apply AttrsSub: pick the component from concat (if there is)
       // Suppose we have concat(x,y), where x from T and y from R, and AttrsSub(a,R).
       // then a(concat(x,y)) becomes a(y).
       final int schema = schemaOf(base);
-      int restriction = mkSchema(source);
+      int restriction = schemaOf(source);
 
       // indirection source cases.
       //  e.g. Proj<a0>(Proj<a1>(t0)) vs. Proj<a2>(t0)
@@ -226,7 +216,7 @@ class UExprTranslator {
       while ((schema & restriction) == 0) {
         source = rule.constraints().sourceOf(source);
         assert source != null : "bug in instantiation enum!";
-        restriction = mkSchema(source);
+        restriction = schemaOf(source);
       }
 
       assert (schema & restriction) != 0;
@@ -240,8 +230,49 @@ class UExprTranslator {
 
       // Note: there can be AttrsSub(a,b), where b is another attrs.
       // Then a(b(x)) becomes a(x).
-      if (restrictedVar.kind() != VarKind.PROJ) return UVar.mkProj(desc.name, restrictedVar);
-      else return UVar.mkProj(desc.name, restrictedVar.args()[0]);
+      final UVar ret;
+      if (restrictedVar.kind() != VarKind.PROJ) ret = UVar.mkProj(desc.name, restrictedVar);
+      else ret = UVar.mkProj(desc.name, restrictedVar.args()[0]);
+
+      result.varSchemas.put(ret, schemaOf(attrSym));
+
+      return ret;
+    }
+
+    private int schemaOf(Symbol /* Table or Schema or Attrs */ sym) {
+      /* An integer that distinguishes the schema of a relation/tuple.
+       * For tables at the source side, each T_i is assigned with 2^i.
+       * Tables at the target side are assigned the same as the instantiation source.
+       * Tuple concat(x1,x2) is assigned with schemaOf(x1) | schemaOf(x2) */
+      assert sym.kind() != PRED;
+
+      final int existing = result.symSchemas.get(sym);
+      if (existing != 0) return existing;
+
+      final int ret;
+      if (isTargetSide) {
+        ret = result.symSchemas.get(rule.constraints().instantiationOf(sym));
+
+      } else if (sym.kind() == SCHEMA || sym.kind() == TABLE) {
+        ret = nextSchema0;
+        nextSchema0 <<= 1;
+        if (nextSchema0 <= 0) throw new IllegalStateException("too much schema"); // At most 31.
+
+      } else {
+        int found = 0;
+        for (Symbol eqSym : rule.constraints().eqClassOf(sym)) {
+          final int eqExisting = result.symSchemas.get(eqSym);
+          if (eqExisting != 0) {
+            found = eqExisting;
+            break;
+          }
+        }
+
+        ret = found == 0 ? -(nextSchema1++) : found;
+      }
+
+      result.symSchemas.put(sym, ret);
+      return ret;
     }
 
     private int schemaOf(UVar var) {
@@ -281,6 +312,8 @@ class UExprTranslator {
     private UTerm trSimpleFilter(SimpleFilter filter) {
       /* Filter(p,a) --> E * [p(a(x))] */
       final UTerm predecessor = tr(filter.predecessors()[0]);
+      if (predecessor == null) return null;
+
       final AttrsDesc attrDesc = mkAttrDesc(filter.attrs());
       final PredDesc predDesc = mkPredDesc(filter.predicate());
       final UVar visibleVar = mkVisibleVar();
@@ -292,12 +325,16 @@ class UExprTranslator {
 
     private UTerm trInSubFilter(InSubFilter filter) {
       final UTerm lhs = tr(filter.predecessors()[0]);
+      if (lhs == null) return null;
+
       final UVar lhsViableVar = tail(viableVars);
       assert lhsViableVar != null;
 
       auxVar = lhsViableVar;
       final UTerm rhs = tr(filter.predecessors()[1]);
       auxVar = null;
+
+      if (rhs == null) return null;
 
       final UVar rhsViableVar = pop(viableVars);
       final UVar rhsFreeVar = pop(freeVars);
@@ -308,6 +345,7 @@ class UExprTranslator {
       final UTerm eqVar = UPred.mk(mkEq(lhsProjVar, rhsViableVar));
       final UTerm notNull = mkNotNull(rhsViableVar);
       attrsDesc.addProjectedVar(lhsProjVar, schemaOf(lhsViableVar));
+      if (!isTargetSide) putPossibleEqAttrs(schemaOf(lhsProjVar), schemaOf(rhsViableVar));
 
       UTerm decoratedRhs = UMul.mk(eqVar, notNull, rhs);
 
@@ -328,12 +366,16 @@ class UExprTranslator {
 
     private UTerm trExistsFilter(ExistsFilter filter) {
       final UTerm lhs = tr(filter.predecessors()[0]);
+      if (lhs == null) return null;
+
       final UVar lhsFreeVars = pop(freeVars);
       assert lhsFreeVars != null;
 
       auxVar = tail(viableVars);
       final UTerm rhs = tr(filter.predecessors()[1]);
       auxVar = null;
+
+      if (rhs == null) return null;
 
       final UVar rhsViableVars = pop(viableVars);
       final UVar rhsFreeVars = pop(freeVars);
@@ -346,6 +388,8 @@ class UExprTranslator {
     private UTerm trJoin(Join join) {
       final UTerm lhs = tr(join.predecessors()[0]);
       final UTerm rhs = tr(join.predecessors()[1]);
+      if (lhs == null || rhs == null) return null;
+
       final UVar rhsViableVar = pop(viableVars);
       final UVar lhsViableVar = pop(viableVars);
       final UVar rhsFreeVar = pop(freeVars);
@@ -361,12 +405,14 @@ class UExprTranslator {
       push(freeVars, mkConcat(lhsFreeVar, rhsFreeVar));
       result.varSchemas.put(joinedVar, joinedSchema);
 
-      final AttrsDesc lhsAttrsDesc = mkAttrDesc(join.lhsAttrs());
-      final AttrsDesc rhsAttrsDesc = mkAttrDesc(join.rhsAttrs());
-      final UVar lhsProjVar = mkProj(join.lhsAttrs(), lhsAttrsDesc, lhsViableVar);
-      final UVar rhsProjVar = mkProj(join.rhsAttrs(), rhsAttrsDesc, rhsViableVar);
+      final Symbol lhsKey = join.lhsAttrs(), rhsKey = join.rhsAttrs();
+      final AttrsDesc lhsAttrsDesc = mkAttrDesc(lhsKey);
+      final AttrsDesc rhsAttrsDesc = mkAttrDesc(rhsKey);
+      final UVar lhsProjVar = mkProj(lhsKey, lhsAttrsDesc, lhsViableVar);
+      final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsViableVar);
       lhsAttrsDesc.addProjectedVar(lhsProjVar, lhsSchema);
       rhsAttrsDesc.addProjectedVar(rhsProjVar, rhsSchema);
+      if (!isTargetSide) putPossibleEqAttrs(schemaOf(lhsProjVar), schemaOf(rhsProjVar));
 
       final UTerm eqCond = UPred.mk(mkEq(lhsProjVar, rhsProjVar));
       final UTerm notNullCond = mkNotNull(rhsProjVar);
@@ -390,13 +436,16 @@ class UExprTranslator {
 
     private UTerm trProj(Proj proj) {
       final UTerm predecessor = tr(proj.predecessors()[0]);
+      if (predecessor == null) return null;
+      if (isTargetSide && !checkSchemaFeasible(proj)) return null;
+
       final UVar viableVar = pop(viableVars);
       final UVar freeVar = pop(freeVars);
       assert viableVar != null && freeVar != null;
 
       final AttrsDesc attrDesc = mkAttrDesc(proj.attrs());
       final UVar projVar = mkProj(proj.attrs(), attrDesc, viableVar);
-      final int schema = mkSchema(proj.attrs());
+      final int schema = schemaOf(proj.schema());
       final boolean isClosed = needNewFreeVar(proj);
 
       final UVar newVar = isClosed ? mkFreshVar(schema) : projVar;
@@ -404,7 +453,6 @@ class UExprTranslator {
       push(viableVars, newVar);
 
       attrDesc.addProjectedVar(projVar, schemaOf(viableVar));
-      result.varSchemas.put(projVar, schema);
       result.varSchemas.put(newVar, schema);
 
       if (isClosed) {
@@ -513,6 +561,27 @@ class UExprTranslator {
 
       assert false;
       return false;
+    }
+
+    private void putPossibleEqAttrs(int s0, int s1) {
+      assert !isTargetSide;
+      possibleEqSchema.get().add(Pair.of(s0, s1));
+      possibleEqSchema.get().add(Pair.of(s1, s0));
+    }
+
+    private boolean checkSchemaFeasible(Proj tgtProj) {
+      assert isTargetSide;
+      // Given a Proj<a' s'> in the target side. Suppose a' is instantiated from a0,
+      // s' is instantiated from s. s0 is owned by Proj<a1 s> in the source side.
+      // Then the instantiation <s -> s'> is feasible only if a1 and a0 is "possible-eq",
+      // which requires AttrsEq(a0,a1) or a0 and a1 is a pair of join keys.
+      final Symbol schema0 = rule.constraints().instantiationOf(tgtProj.schema());
+      final Symbol attrs0 = rule.constraints().instantiationOf(tgtProj.attrs());
+      final Op srcProj = rule.constraints().sourceSymbols().ownerOf(schema0);
+      assert srcProj.kind() == PROJ;
+      final Symbol attrs1 = ((Proj) srcProj).attrs();
+      final int s0 = schemaOf(attrs0), s1 = schemaOf(attrs1);
+      return s0 == s1 || possibleEqSchema.get().contains(Pair.of(s0, s1));
     }
   }
 }

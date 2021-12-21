@@ -24,12 +24,8 @@ public interface Substitution {
 
   String canonicalStringify();
 
-    static Substitution parse(String str) {
-    return parse(str, false);
-  }
-
-  static Substitution parse(String str, boolean backwardCompatible) {
-    return SubstitutionImpl.parse(str, backwardCompatible);
+  static Substitution parse(String str) {
+    return SubstitutionImpl.parse(str);
   }
 
   static Substitution mk(Fragment f0, Fragment f1, List<Constraint> constraints) {

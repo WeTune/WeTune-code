@@ -23,6 +23,11 @@ class ProjOp extends BaseOp implements Proj {
   }
 
   @Override
+  public Symbol schema() {
+    return fragment().symbols().symbolAt(this, Kind.SCHEMA, 0);
+  }
+
+  @Override
   protected Op copy0() {
     final ProjOp copy = new ProjOp();
     copy.setDeduplicated(isDeduplicated);

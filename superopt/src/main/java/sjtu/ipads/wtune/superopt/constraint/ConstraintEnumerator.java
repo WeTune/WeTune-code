@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.PartialOrder;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.fragment.Op;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
@@ -149,6 +152,7 @@ class ConstraintEnumerator {
   private EnumerationStage[] mkStages() {
     final boolean disable0 = (tweak & ENUM_FLAG_DISABLE_BREAKER_0) == ENUM_FLAG_DISABLE_BREAKER_0;
     final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
+    final boolean disable2 = (tweak & ENUM_FLAG_DISABLE_BREAKER_2) == ENUM_FLAG_DISABLE_BREAKER_2;
     final boolean dryRun = disable0 || disable1 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
     final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
     final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
@@ -156,15 +160,17 @@ class ConstraintEnumerator {
     final EnumerationStage sourceEnum = new AttrsSourceEnumerator();
     final EnumerationStage tableInstantiation = new InstantiationEnumerator(TABLE);
     final EnumerationStage attrsInstantiation = new InstantiationEnumerator(ATTRS);
+    final EnumerationStage schemaInstantiation = new InstantiationEnumerator(SCHEMA);
     final EnumerationStage predInstantiation = new InstantiationEnumerator(PRED);
     final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0);
-    final EnumerationStage tableEnum = new PartitionEnumerator(TABLE, dryRun);
-    final EnumerationStage attrsEnum = new PartitionEnumerator(ATTRS, dryRun);
-    final EnumerationStage predEnum = new PartitionEnumerator(PRED, dryRun);
+    final EnumerationStage tableEqEnum = new PartitionEnumerator(TABLE, dryRun);
+    final EnumerationStage attrsEqEnum = new PartitionEnumerator(ATTRS, dryRun);
+    final EnumerationStage mismatchedProjSchemaBreaker = new MismatchedProjSchemaBreaker(disable1);
+    final EnumerationStage predEqEnum = new PartitionEnumerator(PRED, dryRun);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
-    final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable1);
+    final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable2);
     final EnumerationStage timeout = new TimeoutBreaker(System.currentTimeMillis(), this.timeout);
     final VerificationCache cache = new VerificationCache(dryRun, echo);
     final EnumerationStage verifier = new Verifier(useSpes);
@@ -174,11 +180,13 @@ class ConstraintEnumerator {
           sourceEnum,
           tableInstantiation,
           attrsInstantiation,
+          schemaInstantiation,
           predInstantiation,
           mismatchedOutputBreaker,
-          tableEnum,
-          attrsEnum,
-          predEnum,
+          tableEqEnum,
+          attrsEqEnum,
+          mismatchedProjSchemaBreaker,
+          predEqEnum,
           uniqueEnum,
           mismatchedSummationBreaker,
           notNullEnum,
@@ -216,12 +224,18 @@ class ConstraintEnumerator {
         || (sym0.kind() == sym1.kind() && currentIsEnabled(I.indexOfEq(sym0, sym1)));
   }
 
-  private Symbol currentSourceOf(Symbol attrsSym) {
+  private Symbol currentSourceOf(/* Attrs or Schema */ Symbol sym) {
+    if (sym.kind() == SCHEMA) {
+      final Op owner = I.sourceSymbols().ownerOf(sym);
+      assert owner.kind() == OperatorType.PROJ;
+      sym = ((Proj) owner).attrs();
+    }
+
     final int begin = I.beginIndexOfKind(AttrsSub);
     final int end = I.endIndexOfKind(AttrsSub);
     for (int i = begin; i < end; ++i) {
       final Constraint c = I.get(i);
-      if (currentIsEnabled(i) && c.symbols()[0] == attrsSym) return c.symbols()[1];
+      if (currentIsEnabled(i) && c.symbols()[0] == sym) return c.symbols()[1];
     }
     return null;
   }
@@ -285,7 +299,7 @@ class ConstraintEnumerator {
     final Constraint attrsEq = I.get(index);
     final Symbol attrs0 = attrsEq.symbols()[0], attrs1 = attrsEq.symbols()[1];
     final Symbol source0 = currentSourceOf(attrs0), source1 = currentSourceOf(attrs1);
-    return currentIsEq(attrs0, attrs1) && !currentIsEq(source0, source1) ? MUST_DISABLE : FREE;
+    return !currentIsEq(source0, source1) ? MUST_DISABLE : FREE;
   }
 
   private int checkPredEqForced(int index) {
@@ -383,6 +397,8 @@ class ConstraintEnumerator {
     switch (kind) {
       case TABLE:
         return validateTableInstantiation(from, to);
+      case SCHEMA:
+        return validateSchemaInstantiation(from, to);
       case ATTRS:
         return validateAttrsInstantiation(from, to);
       case PRED:
@@ -421,10 +437,25 @@ class ConstraintEnumerator {
       assert sourceInstantiation != null;
       if (sourceChain.contains(sourceInstantiation)) return true;
     }
+
     return false;
   }
 
   private boolean validatePredInstantiation(Symbol from, Symbol to) {
+    return true;
+  }
+
+  private boolean validateSchemaInstantiation(Symbol from, Symbol to) {
+    // instantiation of SCHEMA symbol is required exclusive.
+    // i.e., if a different symbol has been instantiated from `from`,
+    // then instantiation from `from` to `to` is illegal.
+    final int begin = I.beginIndexOfInstantiation(SCHEMA);
+    final int end = I.endIndexOfInstantiation(SCHEMA);
+    for (int i = begin; i < end; ++i) {
+      final Constraint other = I.get(i);
+      if (currentIsEnabled(i) && other.symbols()[1] == from && other.symbols()[0] != to)
+        return false;
+    }
     return true;
   }
 
@@ -719,6 +750,8 @@ class ConstraintEnumerator {
     private boolean isAttrsEqInfeasible() {
       if (kind != ATTRS) return false;
       for (int i = beginIndex, bound = endIndex; i < bound; ++i) {
+        if (!currentIsEnabled(i)) continue;
+
         final int forced = checkForced(i);
         if ((forced & MUST_DISABLE) != 0) return true;
       }
@@ -797,7 +830,8 @@ class ConstraintEnumerator {
     public int enumerate() {
       if (!disabled) {
         final Substitution rule = I.mkRule(enabled);
-        if (isMismatchedOutput(translateToUExpr(rule))) return NEQ;
+        final UExprTranslationResult uExprs = translateToUExpr(rule);
+        if (uExprs != null && isMismatchedOutput(uExprs)) return NEQ;
       }
       return nextStage().enumerate();
     }
@@ -816,6 +850,25 @@ class ConstraintEnumerator {
         final Substitution rule = I.mkRule(enabled);
         final UExprTranslationResult uExprs = translateToUExpr(rule);
         if (isMismatchedSummation(uExprs) || isLatentSummation(uExprs)) return UNKNOWN;
+      }
+      return nextStage().enumerate();
+    }
+  }
+
+  private class MismatchedProjSchemaBreaker extends AbstractEnumerationStage {
+    private final boolean disabled;
+
+    public MismatchedProjSchemaBreaker(boolean disabled) {
+      this.disabled = disabled;
+    }
+
+    @Override
+    public int enumerate() {
+      if (!disabled) {
+        final Substitution rule = I.mkRule(enabled);
+        final UExprTranslationResult uExprs = translateToUExpr(rule);
+        if (uExprs == null) return UNKNOWN;
+        if (isMismatchedOutput(uExprs)) return NEQ;
       }
       return nextStage().enumerate();
     }

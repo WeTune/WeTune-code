@@ -332,7 +332,7 @@ class PlanBuilder {
     for (Value value : values) {
       if (qualification == null || (qualification.equals(value.qualification()))) {
         attrNames.add(value.name());
-        attrExprs.add(PlanSupport.mkColRefExpr(value, tmpCtx));
+        attrExprs.add(PlanSupport.mkColRefExpr(value));
       }
     }
   }

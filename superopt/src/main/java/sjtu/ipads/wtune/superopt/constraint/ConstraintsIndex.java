@@ -46,7 +46,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     analyzeSource(target.root());
     for (Constraint.Kind kind : Constraint.Kind.values()) {
       segmentBase[kind.ordinal()] = constraints.size();
-      initPreconditions(kind);
+      initPrecondition(kind);
     }
     segmentBase[NUM_KINDS_OF_CONSTRAINTS] = constraints.size();
   }
@@ -65,30 +65,16 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
       symOrdinals.put(symsOfKind.get(i), i);
   }
 
-  private void initPreconditions(Constraint.Kind constraintKind) {
+  private void initPrecondition(Constraint.Kind constraintKind) {
     switch (constraintKind) {
-      case TableEq:
-        initEqs(TABLE);
-        break;
-      case AttrsEq:
-        initEqs(ATTRS);
-        break;
-      case PredicateEq:
-        initEqs(PRED);
-        break;
-      case AttrsSub:
-        initAttrsSub();
-        break;
-      case Unique:
-        initUnique();
-        break;
-      case NotNull:
-        initNotNull();
-        break;
-      case Reference:
-        initReference();
-        break;
-      default:
+      case TableEq -> initEqs(TABLE);
+      case AttrsEq -> initEqs(ATTRS);
+      case PredicateEq -> initEqs(PRED);
+      case AttrsSub -> initAttrsSub();
+      case Unique -> initUnique();
+      case NotNull -> initNotNull();
+      case Reference -> initReference();
+      default -> {}
     }
   }
 
@@ -267,7 +253,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
       case PROJ:
         final Proj proj = (Proj) op;
         viableSources.putAll(proj.attrs(), lhs);
-        return Collections.singletonList(proj.attrs());
+        return Collections.singletonList(proj.schema());
       default:
         throw new IllegalArgumentException("unsupported op kind " + kind);
     }

@@ -121,6 +121,14 @@ class Model {
         if (!Objects.equals(attr0, attr1)
             && !Objects.equals(attr0, tryResolveRef(plan, attr1))
             && !Objects.equals(tryResolveRef(plan, attr0), attr1)) {
+          // We assign the out values of a ProjNode to the Attrs in Proj.
+          // In this case we should compare the ref of the out value.
+          // e.g. Select R.i As i From R Where R.i = 3
+          //      Proj<b>(Filter<p a>(Input<t>))
+          //      "b" is assigned as "R.i As i"
+          //      "a" is assigned as "R.i"
+          //      If it is required AttrsEq(a,b), then we should compare the ref of "b",
+          //      namely "R.i", to "a"'s assignment "R.i". It turns to be satisfied.
           return false;
         }
       }
@@ -195,7 +203,8 @@ class Model {
     final Integer input = ofTable(srcSym);
     if (input == null) return true; // not assigned yet, pass
 
-    return PlanSupport.isNotNullAt(plan, new HashSet<>(attrs), input);
+    final PlanContext plan = this.plan;
+    return any(attrs, attr -> PlanSupport.isNotNullAt(plan, attr, input));
   }
 
   private boolean checkReference(Constraint reference) {

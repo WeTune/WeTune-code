@@ -116,8 +116,12 @@ class ValuesRegistryImpl implements ValuesRegistry {
   }
 
   @Override
-  public ValuesRegistry copy() {
+  public ValuesRegistryImpl copy() {
     return new ValuesRegistryImpl(this);
+  }
+
+  void reNumberNode(int from, int to) {
+    nodeValues.forWrite().put(to, nodeValues.forRead().get(from));
   }
 
   private Values mkValuesOfInput(InputNode input) {

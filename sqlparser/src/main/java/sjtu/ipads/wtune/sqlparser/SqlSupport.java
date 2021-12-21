@@ -250,7 +250,8 @@ public abstract class SqlSupport {
         && ColRef.isInstance(ast.$(Binary_Right));
   }
 
-  public static boolean isEquiConstCondition(SqlNode ast) {
+  /** Check if the ast is of the form "col0 = const_value", where const_value is not "NULL" */
+  public static boolean isEquiConstPredicate(SqlNode ast) {
     final SqlNode lhs = ast.$(Binary_Left);
     final SqlNode rhs = ast.$(Binary_Right);
     final BinaryOpKind op = ast.$(Binary_Op);
@@ -264,11 +265,12 @@ public abstract class SqlSupport {
         && literal.$(Literal_Kind) != LiteralKind.NULL;
   }
 
-  public static boolean isEquiJoinCondition(SqlNode ast) {
+  /** Check if the ast is of the form "col0 = col1 [AND col2 = col3 [AND ...]]" */
+  public static boolean isEquiJoinPredicate(SqlNode ast) {
     if (!Binary.isInstance(ast)) return false;
     final BinaryOpKind op = ast.$(Binary_Op);
     if (op == BinaryOpKind.AND) {
-      return isEquiJoinCondition(ast.$(Binary_Left)) && isEquiJoinCondition(ast.$(Binary_Right));
+      return isEquiJoinPredicate(ast.$(Binary_Left)) && isEquiJoinPredicate(ast.$(Binary_Right));
     } else {
       return isColRefEq(ast);
     }

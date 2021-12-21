@@ -5,7 +5,8 @@ public interface Symbol {
   enum Kind {
     TABLE,
     ATTRS,
-    PRED
+    PRED,
+    SCHEMA
   }
 
   Kind kind();

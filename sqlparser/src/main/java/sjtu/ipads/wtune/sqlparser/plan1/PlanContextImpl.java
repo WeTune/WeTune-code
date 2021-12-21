@@ -12,7 +12,7 @@ import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
 class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanContext {
   private final Schema schema;
   private final COW<TObjectIntMap<PlanNode>> nodeReg;
-  private final ValuesRegistry valuesReg;
+  private final ValuesRegistryImpl valuesReg;
 
   protected PlanContextImpl(int expectedNumNodes, Schema schema) {
     super(new PlanNd[(expectedNumNodes <= 0 ? 16 : expectedNumNodes) + 1], 2);
@@ -61,6 +61,7 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   @Override
   protected void reNumber(int from, int to) {
     nodeReg.forWrite().put(nodeAt(from), to);
+    valuesReg.reNumberNode(from, to);
     super.reNumber(from, to);
   }
 

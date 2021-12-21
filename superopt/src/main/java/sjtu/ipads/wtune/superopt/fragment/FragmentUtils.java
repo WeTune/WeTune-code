@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
@@ -11,7 +11,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SET_OP;
-import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValue;
 import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
 
 class FragmentUtils {
@@ -84,7 +83,8 @@ class FragmentUtils {
           builder.append('<').append(naming.nameOf(((Input) tree).table())).append('>');
           break;
         case PROJ:
-          builder.append('<').append(naming.nameOf(((Proj) tree).attrs())).append('>');
+          builder.append('<').append(naming.nameOf(((Proj) tree).attrs()));
+          builder.append(' ').append(naming.nameOf(((Proj) tree).schema())).append('>');
           break;
         case SIMPLE_FILTER:
           builder.append('<').append(naming.nameOf(((SimpleFilter) tree).predicate()));
@@ -130,7 +130,7 @@ class FragmentUtils {
     return holes;
   }
 
-  static void bindNames(Op op, String[] names, SymbolNaming naming, boolean backwardCompatible) {
+  static void bindNames(Op op, String[] names, SymbolNaming naming) {
     switch (op.kind()) {
       case INPUT:
         naming.setName(((Input) op).table(), names[1]);
@@ -149,20 +149,13 @@ class FragmentUtils {
         break;
       case PROJ:
         naming.setName(((Proj) op).attrs(), names[1]);
-        if (backwardCompatible) {
-          final int ordinal = Integer.parseInt(names[1].substring(1));
-          naming.setName(((Proj) op).attrs(), String.valueOf(names[1].charAt(0)) + (ordinal + 1));
-        }
+        naming.setName(((Proj) op).schema(), names[2]);
         break;
       case SET_OP:
         break;
       default:
         throw new UnsupportedOperationException();
     }
-  }
-
-  static void bindNames(Op op, String[] names, SymbolNaming naming) {
-    bindNames(op, names, naming, false);
   }
 
   private static void gatherHoles(Op op, List<Hole<Op>> buffer) {

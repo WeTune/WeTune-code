@@ -1,10 +1,9 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
-import sjtu.ipads.wtune.superopt.fragment.Symbol;
-import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
-import sjtu.ipads.wtune.superopt.fragment.Symbols;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
 import java.util.AbstractList;
 import java.util.IdentityHashMap;
@@ -110,9 +109,15 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   }
 
   @Override
-  public Symbol sourceOf(Symbol attrSym) {
+  public Symbol sourceOf(Symbol /* Attrs or Schema */ sym) {
+    if (sym.kind() == Symbol.Kind.SCHEMA) {
+      final Op owner = sourceSyms.ownerOf(sym);
+      assert owner.kind() == OperatorType.PROJ;
+      sym = ((Proj) owner).attrs();
+    }
+
     for (Constraint attrsSub : ofKind(Kind.AttrsSub))
-      if (attrsSub.symbols()[0] == attrSym) {
+      if (attrsSub.symbols()[0] == sym) {
         return attrsSub.symbols()[1];
       }
     return null;
