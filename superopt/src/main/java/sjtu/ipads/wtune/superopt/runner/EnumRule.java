@@ -199,8 +199,8 @@ public class EnumRule implements Runner {
           err,
           err -> {
             err.print(f0);
-            err.println('|');
-            err.print(f1);
+            err.print('|');
+            err.println(f1);
             ex.printStackTrace(err);
             err.println("====");
           });
