@@ -333,7 +333,7 @@ class PlanTranslator {
     }
 
     private PlanNode trUnion(Union union) {
-      return SetOpNode.mk(false, SetOpKind.UNION);
+      return SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
     }
 
     private SqlNode trAttrs(Symbol attrs, Op predecessor) {

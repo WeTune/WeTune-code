@@ -48,15 +48,15 @@ public class ProjTransformer extends BaseTransformer {
 
     if (childNode instanceof UnionNode) {
       updateUnion((UnionNode) childNode, columns);
-      return childNode;
     }
     if (childNode instanceof SPJNode) {
       updateSPJ(childNode, columns);
-      return childNode;
     } else {
       // System.out.println("error in project parser:" + childNode.toString());
-      return childNode;
     }
+
+    if (proj.deduplicated()) return AggTranformer.distinctToAgg(childNode);
+    return childNode;
   }
 
   private void updateSPJ(AlgeNode spjNode, List<RexNode> columns) {

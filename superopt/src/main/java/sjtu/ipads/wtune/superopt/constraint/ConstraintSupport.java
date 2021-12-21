@@ -64,6 +64,33 @@ public interface ConstraintSupport {
     return rules;
   }
 
+  static List<Substitution> enumConstraints2(
+      Fragment f0, Fragment f1, long timeout, int tweaks, SymbolNaming naming) {
+    final int bias = pickSource(f0, f1);
+    if (bias == 0) return emptyList();
+
+    List<Substitution> rules = null;
+
+    if ((bias & 1) != 0) {
+      final ConstraintsIndex2 I = new ConstraintsIndex2(f0, f1);
+      final ConstraintEnumerator2 enumerator = new ConstraintEnumerator2(I, timeout, tweaks);
+      enumerator.setNaming(naming);
+      rules = enumerator.enumerate();
+    }
+
+    if ((bias & 2) != 0) {
+      final ConstraintsIndex2 I = new ConstraintsIndex2(f1, f0);
+      final ConstraintEnumerator2 enumerator = new ConstraintEnumerator2(I, timeout, tweaks);
+      enumerator.setNaming(naming);
+
+      final List<Substitution> rules2 = enumerator.enumerate();
+      if (rules == null) rules = rules2;
+      else rules.addAll(rules2);
+    }
+
+    return rules;
+  }
+
   private static int pickSource(Fragment f0, Fragment f1) {
     if (f0.equals(f1)) return 1;
 
