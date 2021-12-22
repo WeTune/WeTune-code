@@ -60,8 +60,9 @@ class UniquenessInference {
     final Set<Value> lhsToCheck = SetSupport.filter(toCheck, lhsValues::contains);
     final Set<Value> rhsToCheck = SetSupport.filter(toCheck, not(lhsToCheck::contains));
 
-    final Expression joinCond = ((JoinNode) ctx.nodeAt(surfaceId)).joinCond();
-    if (SqlSupport.isEquiJoinPredicate(joinCond.template())) {
+    final JoinNode joinNode = (JoinNode) ctx.nodeAt(surfaceId);
+    final Expression joinCond = joinNode.joinCond();
+    if (joinNode.isEquiJoin()) {
       // For equi-join, the attrs will be expanded symmetrically.
       // e.g. ["t1.k1"] is the unique-core of Join<t1.k1=t2.k2>(t1,t2)
       // as long as ["t1.k1"] and ["t2.k2"] are the unique-core of t1 and t2, respectively.

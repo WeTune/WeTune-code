@@ -1,13 +1,10 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.custom_hash.TObjectIntCustomHashMap;
-import gnu.trove.strategy.IdentityHashingStrategy;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class UExprTranslationResult {
@@ -15,18 +12,37 @@ public class UExprTranslationResult {
   final Map<Symbol, TableDesc> symToTable;
   final Map<Symbol, AttrsDesc> symToAttrs;
   final Map<Symbol, PredDesc> symToPred;
-  final TObjectIntMap<Symbol> symSchemas;
-  final TObjectIntMap<UVar> varSchemas;
+  final Map<UVar, SchemaDesc> varToSchema;
+  final Map<Symbol, SchemaDesc> symToSchema;
   UTerm srcExpr, tgtExpr;
   UVar srcOutVar, tgtOutVar;
 
   UExprTranslationResult(Substitution rule) {
     this.rule = rule;
-    this.symToTable = new HashMap<>(8);
-    this.symToAttrs = new HashMap<>(16);
-    this.symToPred = new HashMap<>(8);
-    this.symSchemas = new TObjectIntCustomHashMap<>(IdentityHashingStrategy.INSTANCE, 8, 0.75f, 0);
-    this.varSchemas = new TObjectIntCustomHashMap<>(IdentityHashingStrategy.INSTANCE, 16, 0.75f, 0);
+    this.symToTable = new IdentityHashMap<>(8);
+    this.symToAttrs = new IdentityHashMap<>(16);
+    this.symToPred = new IdentityHashMap<>(8);
+    this.varToSchema = new IdentityHashMap<>(8);
+    this.symToSchema = new IdentityHashMap<>(8);
+  }
+
+  void setVarSchema(UVar var, int... components) {
+    varToSchema.put(var, new SchemaDesc(components));
+  }
+
+  void setVarSchema(UVar var, SchemaDesc... schema) {
+    assert schema.length != 0;
+    if (schema.length == 1) varToSchema.put(var, schema[0]);
+    else varToSchema.put(var, new SchemaDesc(schema));
+  }
+
+  void setSymSchema(Symbol sym, int... components) {
+    symToSchema.put(sym, new SchemaDesc(components));
+  }
+
+  void setSymSchema(Symbol sym, SchemaDesc... schema) {
+    if (schema.length == 1) symToSchema.put(sym, schema[0]);
+    else symToSchema.put(sym, new SchemaDesc(schema));
   }
 
   public Collection<TableDesc> tableTerms() {
@@ -53,12 +69,12 @@ public class UExprTranslationResult {
     return tgtOutVar;
   }
 
-  public int schemaOf(UVar var) {
-    return varSchemas.get(var);
+  public SchemaDesc schemaOf(UVar var) {
+    return varToSchema.get(var);
   }
 
-  public int schemaOf(Symbol sym) {
-    return symSchemas.get(sym);
+  public SchemaDesc schemaOf(Symbol sym) {
+    return symToSchema.get(sym);
   }
 
   public TableDesc tableDescOf(Symbol sym) {

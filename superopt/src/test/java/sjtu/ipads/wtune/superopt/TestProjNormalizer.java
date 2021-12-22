@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.disambiguate;
@@ -36,7 +36,7 @@ public class TestProjNormalizer {
         mkPlan("Select sub.i From b Join (Select * From a Where a.i = 1) As sub On b.x = sub.i");
     final PlanNode toDelete = planNode.predecessors()[0].predecessors()[1];
     final PlanNode filter = displaceGlobal(toDelete, toDelete.predecessors()[0], true);
-    zipForEach(toDelete.values(), filter.values(), filter.context()::replaceValue);
+    zip(toDelete.values(), filter.values(), filter.context()::replaceValue);
 
     final PlanNode newNode = insertProjIfNeed(filter);
     final PlanNode newPlan = treeRootOf(newNode);

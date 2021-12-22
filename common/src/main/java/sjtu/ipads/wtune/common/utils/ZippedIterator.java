@@ -5,10 +5,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Iterator;
 
 class ZippedIterator<X, Y> implements Iterator<Pair<X, Y>> {
-  private final Iterator<X> iterX;
-  private final Iterator<Y> iterY;
+  private final Iterator<? extends X> iterX;
+  private final Iterator<? extends Y> iterY;
 
-  ZippedIterator(Iterator<X> iterX, Iterator<Y> iterY) {
+  ZippedIterator(Iterator<? extends X> iterX, Iterator<? extends Y> iterY) {
     this.iterX = iterX;
     this.iterY = iterY;
   }

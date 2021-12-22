@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.safeGet;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 public interface Proj extends Op {
@@ -58,7 +58,7 @@ public interface Proj extends Op {
     ctx.registerRefs(proj, proj.refs());
 
     final List<Value> usedValues = trusted ? inValues : bindValuesRelaxed(inValues, m.planContext(), predecessor);
-    zipForEach(proj.refs(), usedValues, ctx::setRef);
+    zip(proj.refs(), usedValues, ctx::setRef);
 
 //    setRedirectionIfNeeded(attrs(), outValues, m, ctx);
 
@@ -75,7 +75,7 @@ public interface Proj extends Op {
       if (constraint.symbols()[1] == sym) {
         final List<Value> refValues = m.interpretInAttrs(constraint.symbols()[0]);
         assert refValues.size() == values.size();
-        zipForEach(refValues, values, ctx::setRedirection);
+        zip(refValues, values, ctx::setRedirection);
       }
     }
   }

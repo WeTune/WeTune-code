@@ -196,6 +196,14 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     return Substitution.mk(source, target, enabledConstraints);
   }
 
+  Fragment sourceTemplate() {
+    return source;
+  }
+
+  Fragment targetTemplate() {
+    return target;
+  }
+
   Symbols sourceSymbols() {
     return source.symbols();
   }

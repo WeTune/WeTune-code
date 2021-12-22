@@ -117,8 +117,8 @@ class LogicProver {
   }
 
   private void trAttrsEq(Constraint c) {
-    final int schema0 = uExprs.schemaOf(rule.constraints().sourceOf(c.symbols()[0]));
-    final int schema1 = uExprs.schemaOf(rule.constraints().sourceOf(c.symbols()[1]));
+    final int schema0 = getSchema(rule.constraints().sourceOf(c.symbols()[0]));
+    final int schema1 = getSchema(rule.constraints().sourceOf(c.symbols()[1]));
     if (schema0 == schema1) return;
 
     final IntNum s0 = z3.mkInt(schema0), s1 = z3.mkInt(schema1);
@@ -136,7 +136,7 @@ class LogicProver {
     final FuncDecl tableFunc = tableFunc(tableName);
     final FuncDecl projFunc = projFunc(attrsName);
     final Expr tuple = z3.mkConst("x", tupleSort());
-    final IntNum schema = z3.mkInt(uExprs.schemaOf(c.symbols()[0]));
+    final IntNum schema = z3.mkInt(getSchema(c.symbols()[0]));
     final BoolExpr p0 = z3.mkGt((ArithExpr) tableFunc.apply(tuple), zero());
     final BoolExpr p1 = z3.mkNot(mkIsNull(projFunc.apply(schema, tuple)));
 
@@ -160,7 +160,7 @@ class LogicProver {
     constraints.add(assertion0);
 
     final Expr yTuple = z3.mkConst("y", tupleSort());
-    final IntNum schema = z3.mkInt(uExprs.schemaOf(c.symbols()[0]));
+    final IntNum schema = z3.mkInt(getSchema(c.symbols()[0]));
     final BoolExpr b0 = z3.mkGt((ArithExpr) tableFunc.apply(xTuple), zero());
     final BoolExpr b1 = z3.mkGt((ArithExpr) tableFunc.apply(yTuple), zero());
     final BoolExpr b2 = z3.mkEq(projFunc.apply(schema, xTuple), projFunc.apply(schema, yTuple));
@@ -176,7 +176,8 @@ class LogicProver {
     final String tableName1 = uExprs.tableDescOf(c.symbols()[2]).term().tableName().toString();
     final String attrsName0 = uExprs.attrsDescOf(c.symbols()[1]).name().toString();
     final String attrsName1 = uExprs.attrsDescOf(c.symbols()[3]).name().toString();
-    final int schema0 = uExprs.schemaOf(c.symbols()[0]), schema1 = uExprs.schemaOf(c.symbols()[2]);
+    final int schema0 = getSchema(c.symbols()[0]);
+    final int schema1 = getSchema(c.symbols()[2]);
 
     final FuncDecl tableFunc0 = tableFunc(tableName0), tableFunc1 = tableFunc(tableName1);
     final FuncDecl projFunc0 = projFunc(attrsName0), projFunc1 = projFunc(attrsName1);
@@ -375,7 +376,7 @@ class LogicProver {
     if (kind == PROJ) {
       assert var.args().length == 1;
       final FuncDecl projFunc = projFunc(name);
-      final int schema = uExprs.schemaOf(var.args()[0]);
+      final int schema = getSchema(var.args()[0]);
       final Expr arg = trVar(var.args()[0]);
       return projFunc.apply(z3.mkInt(schema), arg);
     }
@@ -465,6 +466,18 @@ class LogicProver {
     return z3.mkExists(vars, body, 1, null, null, null, null);
   }
 
+  private int getSchema(sjtu.ipads.wtune.superopt.fragment.Symbol sym) {
+    final SchemaDesc desc = uExprs.schemaOf(sym);
+    assert desc.components.length == 1;
+    return desc.components[0];
+  }
+
+  private int getSchema(UVar var) {
+    final SchemaDesc desc = uExprs.schemaOf(var);
+    assert desc.components.length == 1;
+    return desc.components[0];
+  }
+
   private int trResult(Status res) {
     if (res == Status.UNSATISFIABLE) return LogicSupport.EQ;
     else if (res == Status.SATISFIABLE) return LogicSupport.NEQ;
@@ -473,12 +486,12 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
-    //    solver.push();
-    //    solver.add(exprs);
-    //    final Status res = solver.check();
-    //    solver.pop();
-    //    return res;
-    return solver.check(exprs);
+    solver.push();
+    solver.add(exprs);
+    final Status res = solver.check();
+    solver.pop();
+    return res;
+    //    return solver.check(exprs);
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {

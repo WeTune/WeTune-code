@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.plan.*;
 import java.util.HashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.isWildcardProj;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.wrapWildcardProj;
@@ -22,7 +22,7 @@ class ProjNormalizer {
 
     final Set<Ref> excludedRefs = new HashSet<>(proj.refs());
     collectExcludedRefs(node, excludedRefs);
-    zipForEach(screenedAttrs, exposedAttrs, (a0, a1) -> ctx.replaceValue(a0, a1, excludedRefs));
+    zip(screenedAttrs, exposedAttrs, (a0, a1) -> ctx.replaceValue(a0, a1, excludedRefs));
     // The refs owned by `proj` should still point to the old attributes.
 
     return proj;
@@ -37,7 +37,7 @@ class ProjNormalizer {
     final ValueBag exposedAttrs = newNode.values();
     final ValueBag disposedAttrs = node.values();
     assert exposedAttrs.size() == disposedAttrs.size();
-    zipForEach(disposedAttrs, exposedAttrs, ctx::replaceValue);
+    zip(disposedAttrs, exposedAttrs, ctx::replaceValue);
 
     return newNode;
   }

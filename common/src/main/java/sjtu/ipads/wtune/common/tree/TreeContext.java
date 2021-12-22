@@ -46,4 +46,8 @@ public interface TreeContext<Kind> {
   default int numNodes() {
     return TreeSupport.countNodes(this);
   }
+
+  default void deleteDetached(int rootId) {
+    TreeSupport.deleteDetached(this, rootId);
+  }
 }

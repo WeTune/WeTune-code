@@ -1,8 +1,10 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -108,10 +110,33 @@ class ValueRefBinder {
 
   private void bindJoin(int nodeId) {
     final Values lookup = valuesReg.valuesOf(nodeId);
-    final Expression joinCond = ((JoinNode) plan.nodeAt(nodeId)).joinCond();
+    final JoinNode joinNode = (JoinNode) plan.nodeAt(nodeId);
+    final Expression joinCond = joinNode.joinCond();
     if (joinCond == null) return;
     final List<Value> valueRefs = ListSupport.map(joinCond.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(joinCond, valueRefs);
+
+    if (!SqlSupport.isEquiJoinPredicate(joinCond.template())) return;
+    if ((valueRefs.size() & 1) == 1) return;
+
+    final Values lhsValues = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final List<Value> lhsRefs = new ArrayList<>(valueRefs.size() >> 1);
+    final List<Value> rhsRefs = new ArrayList<>(valueRefs.size() >> 1);
+    for (int i = 0, bound = valueRefs.size(); i < bound; i += 2) {
+      final Value key0 = valueRefs.get(i), key1 = valueRefs.get(i);
+      final boolean lhs0 = lhsValues.contains(key0), lhs1 = lhsValues.contains(key1);
+      if (lhs0 && !lhs1) {
+        lhsRefs.add(key0);
+        rhsRefs.add(key1);
+      } else if (!lhs0 && lhs1) {
+        lhsRefs.add(key1);
+        rhsRefs.add(key0);
+      } else {
+        return;
+      }
+    }
+
+    joinNode.setKeys(lhsRefs, rhsRefs);
   }
 
   private void bindFilter(int nodeId, List<Value> secondaryLookup) {
@@ -135,6 +160,7 @@ class ValueRefBinder {
     final List<Value> valueRefs = ListSupport.map(expr.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(expr, valueRefs);
     bind0(plan.childOf(nodeId, 1), lookup);
+    // TODO: setPlain
   }
 
   private void bindSort(int nodeId) {

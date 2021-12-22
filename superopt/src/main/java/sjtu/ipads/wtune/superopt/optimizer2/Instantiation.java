@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer2;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.sqlparser.plan1.*;
@@ -28,7 +29,20 @@ class Instantiation {
     this.newPlan = model.plan().copy();
   }
 
-  int instantiate(Op op) {
+  PlanContext instantiatedPlan() {
+    return newPlan;
+  }
+
+  int instantiate() {
+    final int rootId = instantiate(rule._1().root());
+    return rootId == NO_SUCH_NODE ? failure : rootId;
+  }
+
+  int lastFailure() {
+    return failure;
+  }
+
+  private int instantiate(Op op) {
     final OperatorType kind = op.kind();
     switch (kind) {
       case INPUT:
@@ -58,20 +72,22 @@ class Instantiation {
     final int rhs = instantiate(join.predecessors()[1]);
     if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> lhsJoinKeys = model.ofAttrs(instantiationOf(join.lhsAttrs()));
-    final List<Value> rhsJoinKeys = model.ofAttrs(instantiationOf(join.rhsAttrs()));
-    if (lhsJoinKeys == null || rhsJoinKeys == null) return fail(FAILURE_INCOMPLETE_MODEL);
-    if (lhsJoinKeys.size() != rhsJoinKeys.size() || lhsJoinKeys.isEmpty())
+    final List<Value> lhsKeys = model.ofAttrs(instantiationOf(join.lhsAttrs()));
+    final List<Value> rhsKeys = model.ofAttrs(instantiationOf(join.rhsAttrs()));
+
+    if (lhsKeys == null || rhsKeys == null) return fail(FAILURE_INCOMPLETE_MODEL);
+    if (lhsKeys.size() != rhsKeys.size() || lhsKeys.isEmpty())
       return fail(FAILURE_MISMATCHED_JOIN_KEYS);
-    if (!adaptValues(lhsJoinKeys, valuesOf(lhs)) || !adaptValues(rhsJoinKeys, valuesOf(rhs)))
+    if (!adaptValues(lhsKeys, outValuesOf(lhs)) || !adaptValues(rhsKeys, outValuesOf(rhs)))
       return fail(FAILURE_FOREIGN_VALUE);
 
     final JoinKind joinKind = join.kind() == INNER_JOIN ? JoinKind.INNER_JOIN : JoinKind.LEFT_JOIN;
-    final Expression joinCond = PlanSupport.mkJoinCond(lhsJoinKeys.size());
+    final Expression joinCond = PlanSupport.mkJoinCond(lhsKeys.size());
     final JoinNode joinNode = JoinNode.mk(joinKind, joinCond);
     final int joinNodeId = newPlan.bindNode(joinNode);
 
-    newPlan.valuesReg().bindValueRefs(joinCond, interleaveJoinKeys(lhsJoinKeys, rhsJoinKeys));
+    joinNode.setKeys(lhsKeys, rhsKeys);
+    newPlan.valuesReg().bindValueRefs(joinCond, interleaveJoinKeys(lhsKeys, rhsKeys));
 
     return joinNodeId;
   }
@@ -84,7 +100,7 @@ class Instantiation {
     final List<Value> values = model.ofAttrs(instantiationOf(filter.attrs()));
     if (predicate == null || values == null || values.isEmpty())
       return fail(FAILURE_INCOMPLETE_MODEL);
-    if (!adaptValues(values, valuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
+    if (!adaptValues(values, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
 
     final SimpleFilterNode filterNode = SimpleFilterNode.mk(predicate);
     final int filterNodeId = newPlan.bindNode(filterNode);
@@ -99,7 +115,7 @@ class Instantiation {
 
     final List<Value> values = model.ofAttrs(instantiationOf(inSub.attrs()));
     if (values == null || values.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
-    if (!adaptValues(values, valuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
+    if (!adaptValues(values, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
 
     final Expression expression = PlanSupport.mkColRefsExpr(values.size());
     final InSubNode inSubNode = InSubNode.mk(expression);
@@ -113,13 +129,28 @@ class Instantiation {
     final int child = instantiate(proj);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> values = model.ofAttrs(instantiationOf(proj.attrs()));
-    if (values == null || values.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+    final List<Value> inAttrs = model.ofAttrs(instantiationOf(proj.attrs()));
+    final List<Value> outAttrs = model.ofSchema(instantiationOf(proj.schema()));
+    if (inAttrs == null || inAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+    if (outAttrs == null || outAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+    if (!adaptValues(inAttrs, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
 
-    final int initiator = newPlan.valuesReg().initiatorOf(values.get(0));
-    if (newPlan.kindOf(initiator) != PlanKind.Proj) return fail(FAILURE_BAD_PROJECTION);
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+    final List<String> names = ListSupport.map(outAttrs, Value::name);
+    final List<Expression> exprs = ListSupport.map(outAttrs, valuesReg::exprOf);
 
-    return initiator;
+    final ProjNode projNode = ProjNode.mk(proj.isDeduplicated(), names, exprs);
+    final int projNodeId = newPlan.bindNode(projNode);
+
+    int i = 0;
+    for (Expression expr : exprs) {
+      final int numRefs = expr.colRefs().size();
+      final ArrayList<Value> refs = new ArrayList<>(inAttrs.subList(i, i + numRefs));
+      valuesReg.bindValueRefs(expr, refs);
+      i += numRefs;
+    }
+
+    return projNodeId;
   }
 
   private int fail(int reason) {
@@ -131,11 +162,17 @@ class Instantiation {
     return rule.constraints().instantiationOf(symbol);
   }
 
-  private List<Value> valuesOf(int nodeId) {
+  private List<Value> outValuesOf(int nodeId) {
     return newPlan.valuesReg().valuesOf(nodeId);
   }
 
   private boolean adaptValues(List<Value> values, List<Value> inValues) {
+    // Handle subquery elimination.
+    // e.g., Select sub.a From (Select t.a, t.b From t) As sub
+    //       -> Select sub.a From t
+    // But "sub.a" is actually not present in the out-values of "(Select t.a, t.b From t) As sub".
+    // We have to trace the ref-chain of "sub.a", and find that "t.a" is present.
+    // Finally, we replace "sub.a" by "t.a".
     for (int i = 0, bound = values.size(); i < bound; i++) {
       final Value adapted = adaptValue(inValues.get(i), inValues);
       if (adapted == null) return false;

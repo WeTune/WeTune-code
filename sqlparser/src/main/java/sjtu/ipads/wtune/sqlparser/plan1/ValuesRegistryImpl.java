@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 
 class ValuesRegistryImpl implements ValuesRegistry {
@@ -80,7 +80,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     }
 
     registerValue(nodeId, values);
-    if (exprs != null) zipForEach(values, exprs, this::registerExpr);
+    if (exprs != null) zip(values, exprs, this::registerExpr);
 
     return values;
   }

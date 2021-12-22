@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static sjtu.ipads.wtune.superopt.uexpr.UKind.*;
-import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.CONCAT;
 
 public abstract class LogicSupport {
   static {
@@ -55,22 +54,10 @@ public abstract class LogicSupport {
     // case 1: different output schema
     final UVar sourceOutVar = uExprs.sourceOutVar();
     final UVar targetOutVar = uExprs.targetOutVar();
-    final int srcOutSchema = uExprs.schemaOf(sourceOutVar);
-    final int tgtOutSchema = uExprs.schemaOf(targetOutVar);
-
-    if (srcOutSchema != tgtOutSchema) return true;
-    assert sourceOutVar.kind() == targetOutVar.kind();
-
-    if (sourceOutVar.kind() == CONCAT) {
-      final UVar[] sourceComps = sourceOutVar.args();
-      final UVar[] targetComps = targetOutVar.args();
-      for (int i = 0, bound = sourceComps.length; i < bound; i++)
-        if (uExprs.schemaOf(sourceComps[i]) != uExprs.schemaOf(targetComps[i])) {
-          return true;
-        }
-    }
-
-    return false;
+    final SchemaDesc srcOutSchema = uExprs.schemaOf(sourceOutVar);
+    final SchemaDesc tgtOutSchema = uExprs.schemaOf(targetOutVar);
+    assert srcOutSchema != null && tgtOutSchema != null;
+    return !srcOutSchema.equals(tgtOutSchema);
   }
 
   public static boolean isMismatchedSummation(UExprTranslationResult uExprs) {

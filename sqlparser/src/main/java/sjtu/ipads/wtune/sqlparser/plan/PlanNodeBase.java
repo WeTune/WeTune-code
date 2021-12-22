@@ -10,7 +10,7 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 abstract class PlanNodeBase implements PlanNode {
@@ -111,7 +111,7 @@ abstract class PlanNodeBase implements PlanNode {
   protected void rebindRefs(PlanContext refCtx, List<Ref> refs, PlanNode predecessor) {
     final List<Value> oldValues = refCtx.deRef(refs);
     final List<Value> newValues = bindValuesRelaxed(oldValues, refCtx, predecessor);
-    if (oldValues != newValues) zipForEach(refs, newValues, context::setRef);
+    if (oldValues != newValues) zip(refs, newValues, context::setRef);
   }
 
   protected boolean rebindRefs(
@@ -140,7 +140,7 @@ abstract class PlanNodeBase implements PlanNode {
       } else return false;
     }
 
-    zipForEach(refs(), newValues, ctx::setRef);
+    zip(refs(), newValues, ctx::setRef);
     return true;
   }
 

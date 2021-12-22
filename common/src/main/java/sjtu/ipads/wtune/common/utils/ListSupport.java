@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -15,13 +16,13 @@ public interface ListSupport {
     return ys;
   }
 
-  static <X, Y> List<Y> map(Collection<X> xs, Function<? super X, ? extends Y> func) {
+  static <X, Y> List<Y> map(Collection<? extends X> xs, Function<? super X, ? extends Y> func) {
     final List<Y> ys = new ArrayList<>(xs.size());
     for (X x : xs) ys.add(func.apply(x));
     return ys;
   }
 
-  static <X, Y> List<Y> map(Iterable<X> xs, Function<? super X, ? extends Y> func) {
+  static <X, Y> List<Y> map(Iterable<? extends X> xs, Function<? super X, ? extends Y> func) {
     if (xs instanceof Collection) return map((Collection<X>) xs, func);
     return StreamSupport.stream(xs.spliterator(), false).map(func).collect(Collectors.toList());
   }
@@ -33,27 +34,32 @@ public interface ListSupport {
   }
 
   @SafeVarargs
-  static <T> List<T> join(List<T> xs, List<T> ys, List<T>... ts) {
-    final List<List<T>> lists = new ArrayList<>(ts.length + 2);
+  static <T> List<T> join(List<? extends T> xs, List<? extends T> ys, List<? extends T>... ts) {
+    final List<List<? extends T>> lists = new ArrayList<>(ts.length + 2);
     if (!xs.isEmpty()) lists.add(xs);
     if (!ys.isEmpty()) lists.add(ys);
-    for (List<T> t : ts) if (!t.isEmpty()) lists.add(t);
+    for (List<? extends T> t : ts) if (!t.isEmpty()) lists.add(t);
     return new JoinedList<>(lists);
   }
 
-  static <T> List<T> concat(List<T> ts0, List<T> ts1) {
+  static <T> List<T> concat(List<? extends T> ts0, List<? extends T> ts1) {
     final List<T> ts = new ArrayList<>(ts0.size() + ts1.size());
     ts.addAll(ts0);
     ts.addAll(ts1);
     return ts;
   }
 
-  static <T> T pop(List<T> xs) {
+  static <T> T pop(List<? extends T> xs) {
     if (xs.isEmpty()) return null;
     return xs.remove(xs.size() - 1);
   }
 
-  static <T, R> List<R> flatMap(Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
+  static <T> List<T> filter(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
+    return FuncUtils.stream(iterable).filter(predicate).collect(Collectors.toList());
+  }
+
+  static <T, R> List<R> flatMap(
+      Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
     return FuncUtils.stream(os).map(func).flatMap(FuncUtils::stream).toList();
   }
 }

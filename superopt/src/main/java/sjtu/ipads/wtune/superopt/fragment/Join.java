@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.plan.*;
 import java.util.List;
 import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
 public interface Join extends Op {
@@ -46,8 +46,8 @@ public interface Join extends Op {
 
     ctx.registerRefs(join, join.lhsRefs());
     ctx.registerRefs(join, join.rhsRefs());
-    zipForEach(lhsRefs, lhsValues, ctx::setRef);
-    zipForEach(rhsRefs, rhsValues, ctx::setRef);
+    zip(lhsRefs, lhsValues, ctx::setRef);
+    zip(rhsRefs, rhsValues, ctx::setRef);
 
     return join;
   }

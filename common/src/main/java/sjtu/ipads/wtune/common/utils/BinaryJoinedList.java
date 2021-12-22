@@ -4,9 +4,9 @@ import java.util.AbstractList;
 import java.util.List;
 
 public class BinaryJoinedList<E> extends AbstractList<E> {
-  private final List<E> left, right;
+  private final List<? extends E> left, right;
 
-  public BinaryJoinedList(List<E> left, List<E> right) {
+  public BinaryJoinedList(List<? extends E> left, List<? extends E> right) {
     this.left = left;
     this.right = right;
   }

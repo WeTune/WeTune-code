@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 
 public interface OptimizerSupport {
@@ -74,6 +74,6 @@ public interface OptimizerSupport {
     assert toAlignedOld.size() == toAlignedNew.size();
 
     final PlanContext ctx = to.context();
-    zipForEach(toAlignedOld, toAlignedNew, ctx::setRedirection);
+    zip(toAlignedOld, toAlignedNew, ctx::setRedirection);
   }
 }

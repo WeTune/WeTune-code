@@ -2,10 +2,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.PartialOrder;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.Op;
-import sjtu.ipads.wtune.superopt.fragment.Proj;
-import sjtu.ipads.wtune.superopt.fragment.Symbol;
-import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
@@ -14,10 +11,13 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
+import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
+import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.translateToUExpr;
 
 class ConstraintEnumerator {
@@ -165,7 +165,7 @@ class ConstraintEnumerator {
     final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0);
     final EnumerationStage tableEqEnum = new PartitionEnumerator(TABLE, dryRun);
     final EnumerationStage attrsEqEnum = new PartitionEnumerator(ATTRS, dryRun);
-    final EnumerationStage mismatchedProjSchemaBreaker = new MismatchedProjSchemaBreaker(disable1);
+    final EnumerationStage mismatchedProjSchemaBreaker = new InfeasibleSchemaBreaker(disable1);
     final EnumerationStage predEqEnum = new PartitionEnumerator(PRED, dryRun);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
@@ -227,7 +227,7 @@ class ConstraintEnumerator {
   private Symbol currentSourceOf(/* Attrs or Schema */ Symbol sym) {
     if (sym.kind() == SCHEMA) {
       final Op owner = I.sourceSymbols().ownerOf(sym);
-      assert owner.kind() == OperatorType.PROJ;
+      assert owner.kind() == PROJ;
       sym = ((Proj) owner).attrs();
     }
 
@@ -553,6 +553,38 @@ class ConstraintEnumerator {
         && (kind == PRED || currentSourceOf(oldSym) == currentSourceOf(newSym));
   }
 
+  private boolean isOutputAligned() {
+    return isOutputAligned(I.sourceTemplate().root(), I.targetTemplate().root());
+  }
+
+  private boolean isOutputAligned(Op srcOp, Op tgtOp) {
+    assert srcOp.fragment().symbols() == I.sourceSymbols();
+    assert tgtOp.fragment().symbols() == I.targetSymbols();
+
+    srcOp = skipFilters(srcOp);
+    tgtOp = skipFilters(tgtOp);
+
+    final OperatorType srcKind = srcOp.kind(), tgtKind = tgtOp.kind();
+    if (srcKind == INPUT && tgtKind == INPUT) {
+      return currentInstantiationOf(((Input) tgtOp).table()) == ((Input) srcOp).table();
+
+    } else if (srcKind == PROJ && tgtKind == PROJ) {
+      return currentInstantiationOf(((Proj) tgtOp).schema()) == ((Proj) srcOp).schema();
+
+    } else if (srcKind.isJoin() && tgtKind.isJoin()) {
+      return isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
+          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]);
+
+    } else {
+      return false;
+    }
+  }
+
+  private static Op skipFilters(Op op) {
+    while (op.kind().isFilter()) op = op.predecessors()[0];
+    return op;
+  }
+
   //// Enumeration Stages ////
 
   private interface EnumerationStage {
@@ -828,10 +860,8 @@ class ConstraintEnumerator {
 
     @Override
     public int enumerate() {
-      if (!disabled) {
-        final Substitution rule = I.mkRule(enabled);
-        final UExprTranslationResult uExprs = translateToUExpr(rule);
-        if (uExprs != null && isMismatchedOutput(uExprs)) return NEQ;
+      if (!disabled && !isOutputAligned()) {
+        return NEQ;
       }
       return nextStage().enumerate();
     }
@@ -855,10 +885,10 @@ class ConstraintEnumerator {
     }
   }
 
-  private class MismatchedProjSchemaBreaker extends AbstractEnumerationStage {
+  private class InfeasibleSchemaBreaker extends AbstractEnumerationStage {
     private final boolean disabled;
 
-    public MismatchedProjSchemaBreaker(boolean disabled) {
+    public InfeasibleSchemaBreaker(boolean disabled) {
       this.disabled = disabled;
     }
 
@@ -866,9 +896,7 @@ class ConstraintEnumerator {
     public int enumerate() {
       if (!disabled) {
         final Substitution rule = I.mkRule(enabled);
-        final UExprTranslationResult uExprs = translateToUExpr(rule);
-        if (uExprs == null) return UNKNOWN;
-        if (isMismatchedOutput(uExprs)) return NEQ;
+        if (translateToUExpr(rule, UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE) == null) return UNKNOWN;
       }
       return nextStage().enumerate();
     }

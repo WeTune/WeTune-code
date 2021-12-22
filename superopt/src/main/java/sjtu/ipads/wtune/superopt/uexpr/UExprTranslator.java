@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
@@ -14,14 +13,15 @@ import java.util.*;
 import static sjtu.ipads.wtune.common.utils.Commons.push;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ListSupport.pop;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Unique;
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
-import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.normalizeExpr;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
+import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UTerm.FUNC_IS_NULL_NAME;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.*;
+import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.CONCAT;
 
 /**
  * Translate a <b>valid</b> candidate rule to U-expr.
@@ -37,26 +37,27 @@ import static sjtu.ipads.wtune.superopt.uexpr.UVar.*;
  */
 class UExprTranslator {
   private static final UName NAME_IS_NULL = UName.mk(FUNC_IS_NULL_NAME);
-  private static final boolean SUPPORT_DEPENDENT_SUBQUERY = false;
 
   private final Substitution rule;
   private final NameSequence tableSeq, attrsSeq, predSeq, varSeq;
   private final Map<Symbol, UName> initiatedNames;
-  private final Lazy<Set<Pair<Integer, Integer>>> possibleEqSchema;
+  private final Lazy<Set<Pair<SchemaDesc, SchemaDesc>>> knownEqSchemas;
   private final UExprTranslationResult result;
-  private int nextSchema0, nextSchema1;
+  private final boolean enableDependentSubquery, enableSchemaFeasibilityCheck;
+  private int nextSchema;
 
-  UExprTranslator(Substitution rule) {
+  UExprTranslator(Substitution rule, int tweak) {
     this.rule = rule;
     this.tableSeq = NameSequence.mkIndexed("r", 0);
     this.attrsSeq = NameSequence.mkIndexed("a", 0);
     this.predSeq = NameSequence.mkIndexed("p", 0);
     this.varSeq = NameSequence.mkIndexed("x", 0);
     this.initiatedNames = new HashMap<>(16);
-    this.possibleEqSchema = Lazy.mk(HashSet::new);
+    this.knownEqSchemas = Lazy.mk(HashSet::new);
     this.result = new UExprTranslationResult(rule);
-    this.nextSchema0 = 1;
-    this.nextSchema1 = 1;
+    this.enableDependentSubquery = (tweak & UEXPR_FLAG_SUPPORT_DEPENDENT_SUBQUERY) != 0;
+    this.enableSchemaFeasibilityCheck = (tweak & UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE) != 0;
+    this.nextSchema = 1;
   }
 
   UExprTranslationResult translate() {
@@ -79,15 +80,16 @@ class UExprTranslator {
   class TemplateTranslator {
     private final Fragment template;
     private final boolean isTargetSide;
-    private final List<UVar> freeVars; // Free variable in current scope.
-    private final List<UVar> viableVars; // Viable variable in current scope.
+    private final List<UVar> freeVars; // Free vars in current scope.
+    private final List<UVar> visibleVars; // visible vars in current scope.
+    // free and viable variables will diverge at InSub operator
     private UVar auxVar; // Auxiliary variable from outer query.
 
     private TemplateTranslator(Fragment template, boolean isTargetSide) {
       this.template = template;
       this.isTargetSide = isTargetSide;
       this.freeVars = new ArrayList<>(3);
-      this.viableVars = new ArrayList<>(3);
+      this.visibleVars = new ArrayList<>(3);
       this.auxVar = null;
     }
 
@@ -96,9 +98,9 @@ class UExprTranslator {
       if (raw == null) return false;
 
       final UTerm expr = normalizeExpr(raw);
-      final UVar outVar = tail(viableVars);
+      final UVar outVar = tail(visibleVars);
       assert freeVars.size() == 1;
-      assert viableVars.size() == 1;
+      assert visibleVars.size() == 1;
       assert auxVar == null;
 
       if (!isTargetSide) {
@@ -113,25 +115,26 @@ class UExprTranslator {
 
     private UName mkName(Symbol sym, NameSequence nameSeq) {
       /* Create a new or retrieve an existing name for a symbol. */
+      final UName existing = initiatedNames.get(sym);
+      if (existing != null) return existing;
+
       final UName name;
-      if (!isTargetSide) {
-        final Set<Symbol> eqClass = rule.constraints().eqSymbols().eqClassOf(sym);
-        final Symbol initiatedSym = linearFind(eqClass, initiatedNames::containsKey);
-        if (initiatedSym == null) name = UName.mk(nameSeq.next());
-        else name = initiatedNames.get(initiatedSym);
-        initiatedNames.put(sym, name);
+      if (isTargetSide) {
+        name = initiatedNames.get(rule.constraints().instantiationOf(sym));
       } else {
-        final Symbol instantiation = rule.constraints().instantiationOf(sym);
-        name = initiatedNames.get(instantiation);
+        name = UName.mk(nameSeq.next());
+        for (Symbol eqSym : rule.constraints().eqSymbols().eqClassOf(sym))
+          initiatedNames.put(eqSym, name);
       }
+
       assert name != null;
       return name;
     }
 
-    private UVar mkFreshVar(int schema) {
+    private UVar mkFreshVar(SchemaDesc schema) {
       /* Create a variable with distinct name and given schema. */
       final UVar var = UVar.mkBase(UName.mk(varSeq.next()));
-      result.varSchemas.put(var, schema);
+      result.setVarSchema(var, schema);
       return var;
     }
 
@@ -139,58 +142,61 @@ class UExprTranslator {
       /*  <!> This feature is for dependent subquery <!>
        * Visible variable is the concat of the free variable in current scope
        * and auxiliary variables from outer scope.*/
-      final UVar var = tail(viableVars);
+      final UVar var = tail(visibleVars);
       assert var != null;
-      if (!SUPPORT_DEPENDENT_SUBQUERY) return var;
+      if (!enableDependentSubquery) return var;
       if (auxVar == null) return var;
 
       final UVar visibleVar = mkConcat(auxVar, var);
-      result.varSchemas.put(visibleVar, schemaOf(auxVar) | schemaOf(var));
+      result.setVarSchema(visibleVar, result.schemaOf(auxVar), result.schemaOf(var));
       return visibleVar;
     }
 
     private TableDesc mkTableDesc(Symbol tableSym) {
       // Each Table at the source side corresponds to a distinct desc.
       // Each Table at the target side shares the desc of its instantiation.
-      if (!isTargetSide) {
+      final TableDesc desc;
+      if (isTargetSide) {
+        desc = result.symToTable.get(rule.constraints().instantiationOf(tableSym));
+
+      } else {
         final UName name = mkName(tableSym, tableSeq);
-        final int schema = schemaOf(tableSym);
+        final SchemaDesc schema = mkSchema(tableSym);
         final UVar var = mkFreshVar(schema);
         final UTable tableTerm = UTable.mk(name, var);
-        final TableDesc desc = new TableDesc(tableTerm, schema);
-        result.symToTable.put(tableSym, desc);
-        return desc;
-      } else {
-        final Symbol instantiationSource = rule.constraints().instantiationOf(tableSym);
-        final TableDesc desc = result.symToTable.get(instantiationSource);
-        assert desc != null;
-        result.symToTable.put(tableSym, desc);
-        return desc;
+        desc = new TableDesc(tableTerm, schema);
       }
+
+      assert desc != null;
+      result.symToTable.put(tableSym, desc);
+      return desc;
     }
 
     private AttrsDesc mkAttrDesc(Symbol attrSym) {
       // The congruent Attrs (i.e., identically named) share a desc instance.
       final UName name = mkName(attrSym, attrsSeq);
-      final AttrsDesc existed = linearFind(result.symToAttrs.values(), it -> it.name.equals(name));
-      if (existed != null) {
-        result.symToAttrs.put(attrSym, existed);
-        return existed;
-      }
+      final AttrsDesc existing = result.symToAttrs.get(attrSym);
+      if (existing != null) return existing;
 
-      final AttrsDesc desc = new AttrsDesc(name);
-      result.symToAttrs.put(attrSym, desc);
+      final AttrsDesc desc;
+      if (isTargetSide) {
+        desc = result.symToAttrs.get(rule.constraints().instantiationOf(attrSym));
+      } else {
+        desc = new AttrsDesc(name);
+        for (Symbol eqSym : rule.constraints().eqClassOf(attrSym))
+          result.symToAttrs.put(eqSym, desc);
+      }
       return desc;
     }
 
     private PredDesc mkPredDesc(Symbol predSym) {
       // The congruent Pred (i.e., identically named) share a desc instance.
       final UName name = mkName(predSym, predSeq);
-      final PredDesc existed = linearFind(result.symToPred.values(), it -> it.name().equals(name));
-      if (existed != null) return existed;
+      final PredDesc existing = result.symToPred.get(predSym);
+      if (existing != null) return existing;
 
       final PredDesc desc = new PredDesc(name);
-      result.symToPred.put(predSym, desc);
+      for (Symbol eqSym : rule.constraints().eqClassOf(predSym)) result.symToPred.put(eqSym, desc);
       return desc;
     }
 
@@ -205,78 +211,51 @@ class UExprTranslator {
       // apply AttrsSub: pick the component from concat (if there is)
       // Suppose we have concat(x,y), where x from T and y from R, and AttrsSub(a,R).
       // then a(concat(x,y)) becomes a(y).
-      final int schema = schemaOf(base);
-      int restriction = schemaOf(source);
+      final SchemaDesc varSchema = result.schemaOf(base);
+      final SchemaDesc restrictionSchema = mkSchema(source);
+      assert restrictionSchema.components.length == 1;
+      int restriction = restrictionSchema.components[0];
+      int index = -1;
 
       // indirection source cases.
-      //  e.g. Proj<a0>(Proj<a1>(t0)) vs. Proj<a2>(t0)
+      //  e.g. Proj<a0 s0>(Proj<a1 s1>(t0)) vs. Proj<a2 s2>(t0)
       //       AttrsSub(a1,t0) /\ AttrsSub(a0,a1) /\ AttrsEq(a2,a0)
-      //  In this case, a2 see a tuple of schema t0, while a1 see a tuple of schema a1.
-      //  We have to further trace the source of a1.
-      while ((schema & restriction) == 0) {
+      //  In this case, a2 see a tuple of schema t0, while a1 see a tuple of schema s1.
+      //  We have to further trace the source of s1.
+      while ((index = varSchema.indexOf(restriction)) < 0) {
         source = rule.constraints().sourceOf(source);
         assert source != null : "bug in instantiation enum!";
-        restriction = schemaOf(source);
+        restriction = mkSchema(source).components[0];
       }
 
-      assert (schema & restriction) != 0;
-      final UVar restrictedVar;
-      if (base.kind() == VarKind.CONCAT) {
-        final int restriction0 = restriction;
-        restrictedVar = ArraySupport.linearFind(base.args(), it -> schemaOf(it) == restriction0);
-      } else {
-        restrictedVar = base;
-      }
+      final UVar comp = base.is(CONCAT) ? base.args()[index] : base;
+      final UVar ret = UVar.mkProj(desc.name(), comp.is(VarKind.PROJ) ? comp.args()[0] : comp);
+      // AttrsSub(a,b) makes a(b(x)) become a(x).
 
-      // Note: there can be AttrsSub(a,b), where b is another attrs.
-      // Then a(b(x)) becomes a(x).
-      final UVar ret;
-      if (restrictedVar.kind() != VarKind.PROJ) ret = UVar.mkProj(desc.name, restrictedVar);
-      else ret = UVar.mkProj(desc.name, restrictedVar.args()[0]);
-
-      result.varSchemas.put(ret, schemaOf(attrSym));
-
+      result.setVarSchema(ret, mkSchema(attrSym));
       return ret;
     }
 
-    private int schemaOf(Symbol /* Table or Schema or Attrs */ sym) {
+    private SchemaDesc mkSchema(Symbol /* Table or Schema or Attrs */ sym) {
       /* An integer that distinguishes the schema of a relation/tuple.
        * For tables at the source side, each T_i is assigned with 2^i.
        * Tables at the target side are assigned the same as the instantiation source.
        * Tuple concat(x1,x2) is assigned with schemaOf(x1) | schemaOf(x2) */
       assert sym.kind() != PRED;
 
-      final int existing = result.symSchemas.get(sym);
-      if (existing != 0) return existing;
+      final SchemaDesc existing = result.symToSchema.get(sym);
+      if (existing != null) return existing;
 
-      final int ret;
-      if (isTargetSide) {
-        ret = result.symSchemas.get(rule.constraints().instantiationOf(sym));
+      final SchemaDesc ret;
+      if (isTargetSide) ret = result.schemaOf(rule.constraints().instantiationOf(sym));
+      else ret = new SchemaDesc(nextSchema++);
 
-      } else if (sym.kind() == SCHEMA || sym.kind() == TABLE) {
-        ret = nextSchema0;
-        nextSchema0 <<= 1;
-        if (nextSchema0 <= 0) throw new IllegalStateException("too much schema"); // At most 31.
-
-      } else {
-        int found = 0;
-        for (Symbol eqSym : rule.constraints().eqClassOf(sym)) {
-          final int eqExisting = result.symSchemas.get(eqSym);
-          if (eqExisting != 0) {
-            found = eqExisting;
-            break;
-          }
-        }
-
-        ret = found == 0 ? -(nextSchema1++) : found;
+      result.setSymSchema(sym, ret);
+      if (sym.kind() == ATTRS) {
+        for (Symbol eqSym : rule.constraints().eqClassOf(sym)) result.setSymSchema(eqSym, ret);
       }
 
-      result.symSchemas.put(sym, ret);
       return ret;
-    }
-
-    private int schemaOf(UVar var) {
-      return result.varSchemas.get(var);
     }
 
     private UTerm tr(Op op) {
@@ -304,8 +283,8 @@ class UExprTranslator {
       final TableDesc desc = mkTableDesc(input.table());
       final UVar var = desc.term().var();
       push(freeVars, var);
-      push(viableVars, var);
-      result.varSchemas.put(var, desc.schema());
+      push(visibleVars, var);
+      result.setVarSchema(var, desc.schema());
       return UMul.mk(desc.term());
     }
 
@@ -319,7 +298,6 @@ class UExprTranslator {
       final UVar visibleVar = mkVisibleVar();
       final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar);
       final UVar booleanVar = mkFunc(predDesc.name(), projVar);
-      attrDesc.addProjectedVar(projVar, schemaOf(visibleVar));
       return UMul.mk(predecessor, UPred.mk(booleanVar));
     }
 
@@ -327,34 +305,34 @@ class UExprTranslator {
       final UTerm lhs = tr(filter.predecessors()[0]);
       if (lhs == null) return null;
 
-      final UVar lhsViableVar = tail(viableVars);
-      assert lhsViableVar != null;
+      final UVar lhsVisibleVar = tail(visibleVars);
+      assert lhsVisibleVar != null;
 
-      auxVar = lhsViableVar;
+      auxVar = lhsVisibleVar;
       final UTerm rhs = tr(filter.predecessors()[1]);
       auxVar = null;
 
       if (rhs == null) return null;
 
-      final UVar rhsViableVar = pop(viableVars);
+      final UVar rhsVisibleVar = pop(visibleVars); // RHS vars are no longer visible.
       final UVar rhsFreeVar = pop(freeVars);
-      assert rhsViableVar != null && rhsFreeVar != null;
+      assert rhsVisibleVar != null && rhsFreeVar != null;
 
       final AttrsDesc attrsDesc = mkAttrDesc(filter.attrs());
-      final UVar lhsProjVar = mkProj(filter.attrs(), attrsDesc, lhsViableVar);
-      final UTerm eqVar = UPred.mk(mkEq(lhsProjVar, rhsViableVar));
-      final UTerm notNull = mkNotNull(rhsViableVar);
-      attrsDesc.addProjectedVar(lhsProjVar, schemaOf(lhsViableVar));
-      if (!isTargetSide) putPossibleEqAttrs(schemaOf(lhsProjVar), schemaOf(rhsViableVar));
+      final UVar lhsProjVar = mkProj(filter.attrs(), attrsDesc, lhsVisibleVar);
+      final UTerm eqVar = UPred.mk(mkEq(lhsProjVar, rhsVisibleVar));
+      final UTerm notNull = mkNotNull(rhsVisibleVar);
+      putKnownEqSchema(result.schemaOf(lhsProjVar), result.schemaOf(rhsVisibleVar));
 
       UTerm decoratedRhs = UMul.mk(eqVar, notNull, rhs);
-
-      final boolean needSum = rhsViableVar.kind() != VarKind.PROJ;
+      // Summation must be added if absent.
+      final boolean needSum = rhsVisibleVar.kind() != VarKind.PROJ;
       if (needSum) decoratedRhs = USum.mk(getBaseVars(rhsFreeVar), decoratedRhs);
-
-      final boolean needSquash = !canCoalesceSquash(filter.predecessors()[1]);
+      // Normally, the RHS has to be squashed. If RHS is known to be deduplicated,
+      // then Squash can be omitted. This trick allows proving more cases.
+      final boolean needSquash = !isEffectiveDeduplicated(filter.predecessors()[1]);
       if (needSquash) decoratedRhs = USquash.mk(decoratedRhs);
-
+      // If not adding Squash and Summation, then RHS free vars are "exposed" to the outer scope.
       if (!needSum && !needSquash) {
         final UVar lhsFreeVar = pop(freeVars);
         assert lhsFreeVar != null;
@@ -371,15 +349,15 @@ class UExprTranslator {
       final UVar lhsFreeVars = pop(freeVars);
       assert lhsFreeVars != null;
 
-      auxVar = tail(viableVars);
+      auxVar = tail(visibleVars);
       final UTerm rhs = tr(filter.predecessors()[1]);
       auxVar = null;
 
       if (rhs == null) return null;
 
-      final UVar rhsViableVars = pop(viableVars);
+      final UVar rhsVisibleVars = pop(visibleVars);
       final UVar rhsFreeVars = pop(freeVars);
-      assert rhsViableVars != null && rhsFreeVars != null;
+      assert rhsVisibleVars != null && rhsFreeVars != null;
       push(freeVars, mkConcat(lhsFreeVars, rhsFreeVars));
 
       return UMul.mk(lhs, USquash.mk(rhs));
@@ -390,29 +368,26 @@ class UExprTranslator {
       final UTerm rhs = tr(join.predecessors()[1]);
       if (lhs == null || rhs == null) return null;
 
-      final UVar rhsViableVar = pop(viableVars);
-      final UVar lhsViableVar = pop(viableVars);
+      final UVar rhsVisibleVar = pop(visibleVars);
+      final UVar lhsVisibleVar = pop(visibleVars);
       final UVar rhsFreeVar = pop(freeVars);
       final UVar lhsFreeVar = pop(freeVars);
-      assert rhsViableVar != null && rhsFreeVar != null;
-      assert lhsViableVar != null && lhsFreeVar != null;
+      assert rhsVisibleVar != null && rhsFreeVar != null;
+      assert lhsVisibleVar != null && lhsFreeVar != null;
 
-      final int lhsSchema = schemaOf(lhsViableVar);
-      final int rhsSchema = schemaOf(rhsViableVar);
-      final UVar joinedVar = mkConcat(lhsViableVar, rhsViableVar);
-      final int joinedSchema = lhsSchema | rhsSchema;
-      push(viableVars, joinedVar);
+      final SchemaDesc lhsSchema = result.schemaOf(lhsVisibleVar);
+      final SchemaDesc rhsSchema = result.schemaOf(rhsVisibleVar);
+      final UVar joinedVar = mkConcat(lhsVisibleVar, rhsVisibleVar);
+      push(visibleVars, joinedVar);
       push(freeVars, mkConcat(lhsFreeVar, rhsFreeVar));
-      result.varSchemas.put(joinedVar, joinedSchema);
+      result.setVarSchema(joinedVar, lhsSchema, rhsSchema);
 
       final Symbol lhsKey = join.lhsAttrs(), rhsKey = join.rhsAttrs();
       final AttrsDesc lhsAttrsDesc = mkAttrDesc(lhsKey);
       final AttrsDesc rhsAttrsDesc = mkAttrDesc(rhsKey);
-      final UVar lhsProjVar = mkProj(lhsKey, lhsAttrsDesc, lhsViableVar);
-      final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsViableVar);
-      lhsAttrsDesc.addProjectedVar(lhsProjVar, lhsSchema);
-      rhsAttrsDesc.addProjectedVar(rhsProjVar, rhsSchema);
-      if (!isTargetSide) putPossibleEqAttrs(schemaOf(lhsProjVar), schemaOf(rhsProjVar));
+      final UVar lhsProjVar = mkProj(lhsKey, lhsAttrsDesc, lhsVisibleVar);
+      final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsVisibleVar);
+      putKnownEqSchema(result.schemaOf(lhsProjVar), result.schemaOf(rhsProjVar));
 
       final UTerm eqCond = UPred.mk(mkEq(lhsProjVar, rhsProjVar));
       final UTerm notNullCond = mkNotNull(rhsProjVar);
@@ -426,39 +401,45 @@ class UExprTranslator {
         final UVar newVar = mkBase(UName.mk(varSeq.next()));
         newExpr = newExpr.replaceBaseVar(oldVar, newVar);
         newVars.add(newVar);
-        result.varSchemas.put(newVar, schemaOf(oldVar));
+        result.setVarSchema(newVar, result.schemaOf(oldVar));
       }
 
       final UMul symm = UMul.mk(rhs, eqCond, notNullCond);
-      final UMul asymm = UMul.mk(mkIsNull(rhsViableVar), UNeg.mk(USum.mk(newVars, newExpr)));
+      final UMul asymm = UMul.mk(mkIsNull(rhsVisibleVar), UNeg.mk(USum.mk(newVars, newExpr)));
       return UMul.mk(lhs, UAdd.mk(symm, asymm));
     }
 
     private UTerm trProj(Proj proj) {
       final UTerm predecessor = tr(proj.predecessors()[0]);
       if (predecessor == null) return null;
-      if (isTargetSide && !checkSchemaFeasible(proj)) return null;
+      if (!checkSchemaFeasible(proj)) return null;
 
-      final UVar viableVar = pop(viableVars);
+      final UVar viableVar = pop(visibleVars);
       final UVar freeVar = pop(freeVars);
       assert viableVar != null && freeVar != null;
 
       final AttrsDesc attrDesc = mkAttrDesc(proj.attrs());
       final UVar projVar = mkProj(proj.attrs(), attrDesc, viableVar);
-      final int schema = schemaOf(proj.schema());
+      final SchemaDesc outSchema = mkSchema(proj.schema());
       final boolean isClosed = needNewFreeVar(proj);
+      // In some cases, we "inline" the new variable introduced by the Proj.
+      // e.g., Proj(IJoin<k0 k1>(t0, Proj<a>(t1))) is translated to
+      //   Sum{x,y}(.. * t0(x) * [k0(x) = k1(a(y))] * t1(y)), instead of
+      //   Sum{x,z}(.. * t0(x) * [k0(x) = k1(z)] * Sum{y}([z = a(y)] * t1(y))).
+      // This will save a lot of bother in the subsequent process.
+      final UVar outVar = isClosed ? mkFreshVar(outSchema) : projVar;
+      push(freeVars, outVar);
+      push(visibleVars, outVar);
 
-      final UVar newVar = isClosed ? mkFreshVar(schema) : projVar;
-      push(freeVars, newVar);
-      push(viableVars, newVar);
-
-      attrDesc.addProjectedVar(projVar, schemaOf(viableVar));
-      result.varSchemas.put(newVar, schema);
+      result.setVarSchema(outVar, outSchema);
 
       if (isClosed) {
-        final UPred eq = UPred.mk(mkEq(newVar, projVar));
+        // If new var is required, we need to add a predicate [outVar = a(inVar)].
+        final UPred eq = UPred.mk(mkEq(outVar, projVar));
         final USum s = USum.mk(getBaseVars(freeVar), UMul.mk(eq, predecessor));
-        if (proj.isDeduplicated() && !isTreatedAsSet(proj) && !canCoalesceSquash(proj)) {
+        if (proj.isDeduplicated()
+            && !isImplicitDeduplicated(proj)
+            && !isEffectiveDeduplicated(proj)) {
           return USquash.mk(s);
         } else {
           return s;
@@ -470,12 +451,14 @@ class UExprTranslator {
     }
 
     private boolean needNewFreeVar(Proj proj) {
-      return isOutputProj(proj) // 1. directly affects the output
+      return isOutermostProj(proj) // 1. directly affects the output
           // 2. The projection need explicit deduplication
-          || (proj.isDeduplicated() && !isTreatedAsSet(proj) && !canCoalesceSquash(proj));
+          || (proj.isDeduplicated()
+              && !isImplicitDeduplicated(proj)
+              && !isEffectiveDeduplicated(proj));
     }
 
-    private boolean isOutputProj(Proj proj) {
+    private boolean isOutermostProj(Proj proj) {
       Op op = proj;
       Op succ = op.successor();
       while (succ != null) {
@@ -488,7 +471,8 @@ class UExprTranslator {
       return true;
     }
 
-    private boolean isTreatedAsSet(Proj proj) {
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean isImplicitDeduplicated(Proj proj) {
       Op op = proj;
       Op succ = op.successor();
       while (succ != null) {
@@ -502,15 +486,16 @@ class UExprTranslator {
     }
 
     // Check if |Tr(op)| == Tr(op)
-    private boolean canCoalesceSquash(Op op) {
+    private boolean isEffectiveDeduplicated(Op op) {
       // Principle: if the output of the op contains unique key, then no need to be squashed.
-      if (op.kind().isFilter()) return canCoalesceSquash(op.predecessors()[0]);
+      if (op.kind().isFilter()) return isEffectiveDeduplicated(op.predecessors()[0]);
 
       if (op.kind().isJoin())
-        return canCoalesceSquash(op.predecessors()[0]) && canCoalesceSquash(op.predecessors()[1]);
+        return isEffectiveDeduplicated(op.predecessors()[0])
+            && isEffectiveDeduplicated(op.predecessors()[1]);
 
       if (op.kind() == PROJ) {
-        return isUniqueCoreIn(op.predecessors()[0], ((Proj) op).attrs());
+        return isUniqueCoreAt(((Proj) op).attrs(), op.predecessors()[0]);
       }
 
       if (op.kind() == INPUT) {
@@ -524,17 +509,13 @@ class UExprTranslator {
       return false;
     }
 
-    private boolean isUniqueKey(Symbol attrs) {
-      return any(rule.constraints().ofKind(Unique), uk -> uk.symbols()[1] == attrs);
-    }
-
-    private boolean isUniqueCoreIn(Op op, Symbol attrs) {
-      final OperatorType kind = op.kind();
-      if (kind.isFilter()) return isUniqueCoreIn(op.predecessors()[0], attrs);
+    private boolean isUniqueCoreAt(Symbol attrs, Op surface) {
+      final OperatorType kind = surface.kind();
+      if (kind.isFilter()) return isUniqueCoreAt(attrs, surface.predecessors()[0]);
 
       if (kind == INPUT) {
         final Constraints C = rule.constraints();
-        Symbol table = ((Input) op).table();
+        Symbol table = ((Input) surface).table();
         if (isTargetSide) {
           attrs = C.instantiationOf(attrs);
           table = C.instantiationOf(table);
@@ -543,34 +524,39 @@ class UExprTranslator {
       }
 
       if (kind.isJoin()) {
-        final Join join = (Join) op;
-        if (isUniqueCoreIn(op.predecessors()[0], attrs)) {
-          return isUniqueCoreIn(op.predecessors()[1], join.rhsAttrs());
-        } else if (isUniqueCoreIn(op.predecessors()[1], attrs)) {
-          return isUniqueCoreIn(op.predecessors()[0], join.lhsAttrs());
+        final Join join = (Join) surface;
+        if (isUniqueCoreAt(attrs, surface.predecessors()[0])) {
+          return isUniqueCoreAt(join.rhsAttrs(), surface.predecessors()[1]);
+        } else if (isUniqueCoreAt(attrs, surface.predecessors()[1])) {
+          return isUniqueCoreAt(join.lhsAttrs(), surface.predecessors()[0]);
         } else {
           return false;
         }
       }
 
       if (kind == PROJ) {
-        final Proj proj = (Proj) op;
+        final Proj proj = (Proj) surface;
         return rule.constraints().isEq(attrs, proj.attrs())
-            && isUniqueCoreIn(proj.predecessors()[0], proj.attrs());
+            && isUniqueCoreAt(proj.attrs(), proj.predecessors()[0]);
       }
 
       assert false;
       return false;
     }
 
-    private void putPossibleEqAttrs(int s0, int s1) {
-      assert !isTargetSide;
-      possibleEqSchema.get().add(Pair.of(s0, s1));
-      possibleEqSchema.get().add(Pair.of(s1, s0));
+    private boolean isUniqueKey(Symbol attrs) {
+      return any(rule.constraints().ofKind(Unique), uk -> uk.symbols()[1] == attrs);
+    }
+
+    private void putKnownEqSchema(SchemaDesc s0, SchemaDesc s1) {
+      if (!isTargetSide && enableSchemaFeasibilityCheck) {
+        knownEqSchemas.get().add(Pair.of(s0, s1));
+        knownEqSchemas.get().add(Pair.of(s1, s0));
+      }
     }
 
     private boolean checkSchemaFeasible(Proj tgtProj) {
-      assert isTargetSide;
+      if (!isTargetSide || !enableSchemaFeasibilityCheck) return true;
       // Given a Proj<a' s'> in the target side. Suppose a' is instantiated from a0,
       // s' is instantiated from s. s0 is owned by Proj<a1 s> in the source side.
       // Then the instantiation <s -> s'> is feasible only if a1 and a0 is "possible-eq",
@@ -580,8 +566,8 @@ class UExprTranslator {
       final Op srcProj = rule.constraints().sourceSymbols().ownerOf(schema0);
       assert srcProj.kind() == PROJ;
       final Symbol attrs1 = ((Proj) srcProj).attrs();
-      final int s0 = schemaOf(attrs0), s1 = schemaOf(attrs1);
-      return s0 == s1 || possibleEqSchema.get().contains(Pair.of(s0, s1));
+      final SchemaDesc s0 = mkSchema(attrs0), s1 = mkSchema(attrs1);
+      return s0 == s1 || knownEqSchemas.get().contains(Pair.of(s0, s1));
     }
   }
 }

@@ -4,12 +4,12 @@ import java.util.Iterator;
 import java.util.function.Predicate;
 
 class FilteredIterator<E> implements Iterator<E> {
-  private final Iterator<E> iter;
+  private final Iterator<? extends E> iter;
   private final Predicate<? super E> predicate;
   private E next;
   private boolean hasNext;
 
-  FilteredIterator(Iterator<E> iter, Predicate<? super E> predicate) {
+  FilteredIterator(Iterator<? extends E> iter, Predicate<? super E> predicate) {
     this.iter = iter;
     this.predicate = predicate;
 

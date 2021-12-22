@@ -8,15 +8,15 @@ import java.util.List;
  * modification accordingly, while iterator becomes undefined.
  */
 class JoinedList<E> extends AbstractList<E> {
-  private final List<List<E>> lists;
+  private final List<List<? extends E>> lists;
 
-  JoinedList(List<List<E>> lists) {
+  JoinedList(List<List<? extends E>> lists) {
     this.lists = lists;
   }
 
   @Override
   public E get(int index) {
-    for (List<E> list : lists) {
+    for (List<? extends E> list : lists) {
       if (index >= list.size()) index -= list.size();
       else return list.get(index);
     }

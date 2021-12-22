@@ -3,10 +3,7 @@ package sjtu.ipads.wtune.superopt.optimizer2;
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
-import sjtu.ipads.wtune.sqlparser.plan1.Expression;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
+import sjtu.ipads.wtune.sqlparser.plan1.*;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
@@ -14,6 +11,7 @@ import sjtu.ipads.wtune.superopt.fragment.Symbol;
 
 import java.util.*;
 
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.*;
@@ -71,6 +69,10 @@ class Model {
     return of(tableSym);
   }
 
+  List<Value> ofSchema(Symbol schemaSym) {
+    return of(schemaSym);
+  }
+
   List<Value> ofAttrs(Symbol attrsSym) {
     return of(attrsSym);
   }
@@ -83,6 +85,7 @@ class Model {
     assert sym.kind() != TABLE || assignment instanceof Integer;
     assert sym.kind() != ATTRS || assignment instanceof List<?>;
     assert sym.kind() != PRED || assignment instanceof Expression;
+    assert sym.kind() != SCHEMA || assignment instanceof List<?>;
 
     assignments.get().put(sym, assignment);
 
@@ -110,34 +113,9 @@ class Model {
   private boolean checkCompatible(Object v0, Object v1) {
     if (v0.getClass() != v1.getClass()) return false;
 
-    if (v0 instanceof Expression) return v0.toString().equals(v1.toString());
-
-    if (v0 instanceof List) {
-      final List<Value> attrs0 = (List<Value>) v0, attrs1 = (List<Value>) v1;
-      if (attrs0.size() != attrs1.size()) return false;
-
-      for (int i = 0, bound = attrs0.size(); i < bound; i++) {
-        final Value attr0 = attrs0.get(i), attr1 = attrs1.get(i);
-        if (!Objects.equals(attr0, attr1)
-            && !Objects.equals(attr0, tryResolveRef(plan, attr1))
-            && !Objects.equals(tryResolveRef(plan, attr0), attr1)) {
-          // We assign the out values of a ProjNode to the Attrs in Proj.
-          // In this case we should compare the ref of the out value.
-          // e.g. Select R.i As i From R Where R.i = 3
-          //      Proj<b>(Filter<p a>(Input<t>))
-          //      "b" is assigned as "R.i As i"
-          //      "a" is assigned as "R.i"
-          //      If it is required AttrsEq(a,b), then we should compare the ref of "b",
-          //      namely "R.i", to "a"'s assignment "R.i". It turns to be satisfied.
-          return false;
-        }
-      }
-    }
-
-    if (v0 instanceof Integer) {
-      final int id0 = ((Integer) v0), id1 = (Integer) v1;
-      return PlanSupport.isEqualTree(plan, id0, plan, id1);
-    }
+    if (v0 instanceof Expression) return Objects.equals(v0.toString(), v1.toString());
+    if (v0 instanceof List) return isAttrsEq((List<Value>) v0, (List<Value>) v1);
+    if (v0 instanceof Integer) return isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
 
     throw new IllegalArgumentException("unexpected assignment: " + v0);
   }
@@ -268,5 +246,32 @@ class Model {
 
   private boolean isParticipateIn(Column column, ConstraintKind integrityConstraint) {
     return !Iterables.isEmpty(findRelatedIC(plan.schema(), column, integrityConstraint));
+  }
+
+  private boolean isAttrsEq(List<Value> attrs0, List<Value> attrs1) {
+    if (attrs0.size() != attrs1.size()) return false;
+
+    for (int i = 0, bound = attrs0.size(); i < bound; i++) {
+      final Value attr0 = attrs0.get(i), attr1 = attrs1.get(i);
+
+      final Value rootRef0 = coalesce(tryResolveRef(plan, attr0, true), attr0);
+      final Value rootRef1 = coalesce(tryResolveRef(plan, attr1, true), attr0);
+      final Column column0 = tryResolveColumn(plan, rootRef0);
+      final Column column1 = tryResolveColumn(plan, rootRef1);
+      if (column0 != null && column0.equals(column1)) return true;
+
+      final ValuesRegistry valuesReg = plan.valuesReg();
+      final Expression expr0 = valuesReg.exprOf(rootRef0);
+      final Expression expr1 = valuesReg.exprOf(rootRef1);
+      if (expr0 == null ^ expr1 == null) return false;
+      assert expr0 != null;
+
+      if (!Objects.equals(expr0.template().toString(), expr1.template().toString())
+          || !isAttrsEq(valuesReg.valueRefsOf(expr0), valuesReg.valueRefsOf(expr1))) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

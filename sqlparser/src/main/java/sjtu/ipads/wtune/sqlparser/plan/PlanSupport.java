@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
 import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
 
@@ -51,7 +51,7 @@ public interface PlanSupport {
     proj.setPredecessor(0, copyTree(plan, ctx));
     ctx.registerRefs(proj, proj.refs());
     ctx.registerValues(proj, proj.values());
-    zipForEach(proj.refs(), plan.values(), ctx::setRef);
+    zip(proj.refs(), plan.values(), ctx::setRef);
 
     return proj;
   }

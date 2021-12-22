@@ -17,8 +17,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(3, result.symToTable.size());
     assertEquals(4, result.symToAttrs.size());
-    assertEquals(8, result.varSchemas.size());
-    assertEquals(4, result.symSchemas.size());
+    assertEquals(8, result.varToSchema.size());
+    assertEquals(4, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -36,8 +36,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(3, result.symToTable.size());
     assertEquals(5, result.symToAttrs.size());
-    assertEquals(10, result.varSchemas.size());
-    assertEquals(5, result.symSchemas.size());
+    assertEquals(10, result.varToSchema.size());
+    assertEquals(5, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -56,8 +56,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(4, result.symToTable.size());
     assertEquals(6, result.symToAttrs.size());
-    assertEquals(8, result.varSchemas.size());
-    assertEquals(5, result.symSchemas.size());
+    assertEquals(8, result.varToSchema.size());
+    assertEquals(5, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -76,8 +76,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(4, result.symToTable.size());
     assertEquals(7, result.symToAttrs.size());
-    assertEquals(9, result.varSchemas.size());
-    assertEquals(6, result.symSchemas.size());
+    assertEquals(9, result.varToSchema.size());
+    assertEquals(6, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -95,8 +95,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(3, result.symToTable.size());
     assertEquals(4, result.symToAttrs.size());
-    assertEquals(7, result.varSchemas.size());
-    assertEquals(4, result.symSchemas.size());
+    assertEquals(7, result.varToSchema.size());
+    assertEquals(4, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -114,8 +114,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(3, result.symToTable.size());
     assertEquals(2, result.symToAttrs.size());
-    assertEquals(3, result.varSchemas.size());
-    assertEquals(3, result.symSchemas.size());
+    assertEquals(3, result.varToSchema.size());
+    assertEquals(3, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -133,8 +133,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(2, result.symToTable.size());
     assertEquals(3, result.symToAttrs.size());
-    assertEquals(6, result.varSchemas.size());
-    assertEquals(4, result.symSchemas.size());
+    assertEquals(6, result.varToSchema.size());
+    assertEquals(4, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());
@@ -152,8 +152,8 @@ class UExprTranslatorTest {
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(2, result.symToTable.size());
     assertEquals(4, result.symToAttrs.size());
-    assertEquals(5, result.varSchemas.size());
-    assertEquals(3, result.symSchemas.size());
+    assertEquals(5, result.varToSchema.size());
+    assertEquals(3, result.symToSchema.size());
     System.out.println(result.srcExpr);
     System.out.println(result.tgtExpr);
     System.out.println(result.sourceOutVar());

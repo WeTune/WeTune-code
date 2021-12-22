@@ -61,35 +61,6 @@ public interface FuncUtils {
     return collectionMap(func, os, HashSet::new);
   }
 
-  static <P0, P1, R> List<R> zipMap(
-      Collection<P0> l0, Collection<P1> l1, BiFunction<? super P0, ? super P1, R> func) {
-    final int bound = Math.min(l0.size(), l1.size());
-    final List<R> list = new ArrayList<>(bound);
-    final Iterator<P0> it0 = l0.iterator();
-    final Iterator<P1> it1 = l1.iterator();
-    for (int i = 0; i < bound; i++) list.add(func.apply(it0.next(), it1.next()));
-    return list;
-  }
-
-  static <P0, P1> void zipForEach(
-      Collection<P0> l0, Collection<P1> l1, BiConsumer<? super P0, ? super P1> func) {
-    final int bound = Math.min(l0.size(), l1.size());
-    final Iterator<P0> it0 = l0.iterator();
-    final Iterator<P1> it1 = l1.iterator();
-    for (int i = 0; i < bound; i++) func.accept(it0.next(), it1.next());
-  }
-
-  static <P0, P1> boolean zipAll(
-      Collection<P0> l0, Collection<P1> l1, BiPredicate<? super P0, ? super P1> predicate) {
-    final int bound = Math.min(l0.size(), l1.size());
-    final Iterator<P0> it0 = l0.iterator();
-    final Iterator<P1> it1 = l1.iterator();
-    for (int i = 0; i < bound; i++) {
-      if (!predicate.test(it0.next(), it1.next())) return false;
-    }
-    return true;
-  }
-
   static <T> List<T> listFilter(Iterable<T> os, Predicate<? super T> func) {
     return stream(os).filter(func).collect(Collectors.toList());
   }

@@ -10,9 +10,12 @@ import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.superopt.uexpr.UNormalization.normalizeTerm;
 
 public abstract class UExprSupport {
+  public static final int UEXPR_FLAG_SUPPORT_DEPENDENT_SUBQUERY = 1;
+  public static final int UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE = 2;
+
   private UExprSupport() {}
 
-  public static UTerm normalizeExpr(UTerm expr) {
+  static UTerm normalizeExpr(UTerm expr) {
     return normalizeTerm(expr);
   }
 
@@ -61,6 +64,10 @@ public abstract class UExprSupport {
   }
 
   public static UExprTranslationResult translateToUExpr(Substitution rule) {
-    return new UExprTranslator(rule).translate();
+    return new UExprTranslator(rule, 0).translate();
+  }
+
+  public static UExprTranslationResult translateToUExpr(Substitution rule, int tweaks) {
+    return new UExprTranslator(rule, tweaks).translate();
   }
 }

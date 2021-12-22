@@ -39,6 +39,10 @@ public interface TreeSupport {
     return nodeId;
   }
 
+  static boolean isDetached(TreeContext<?> context, int rootId, int nodeId) {
+    return rootOf(context, nodeId) != rootId;
+  }
+
   static boolean isDescendant(TreeContext<?> context, int rootId, int toCheckNodeId) {
     int n = toCheckNodeId;
     while (n != 0) {
@@ -46,6 +50,12 @@ public interface TreeSupport {
       n = context.parentOf(n);
     }
     return false;
+  }
+
+  static void deleteDetached(TreeContext<?> context, int rootId) {
+    for (int i = 1, bound = context.maxNodeId(); i < bound; ++i) {
+      if (isDetached(context, rootId, i)) context.deleteNode(i);
+    }
   }
 
   static int locate(UniformTreeContext<?> context, int childId) {

@@ -1,5 +1,7 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -25,6 +27,10 @@ public interface UVar {
   VarKind kind();
 
   boolean isUsing(UVar var);
+
+  default boolean is(UVar.VarKind kind) {
+    return kind() == kind;
+  }
 
   static UVar mkBase(UName name) {
     final UVar var = new UVarImpl(VarKind.BASE, name, new UVar[1]);

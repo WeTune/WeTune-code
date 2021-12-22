@@ -6,7 +6,7 @@ import sjtu.ipads.wtune.sqlparser.plan.*;
 import java.util.List;
 import java.util.function.Function;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.zipForEach;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorableEx;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.bindValuesRelaxed;
 
@@ -43,7 +43,7 @@ public interface InSubFilter extends AttrsFilter {
     f.setPredecessor(1, predecessor1);
 
     ctx.registerRefs(f, f.refs());
-    zipForEach(refs, values, ctx::setRef);
+    zip(refs, values, ctx::setRef);
 
     return f;
   }

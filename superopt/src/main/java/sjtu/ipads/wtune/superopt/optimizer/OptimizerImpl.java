@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.ConstraintAwareModel;
@@ -218,7 +219,7 @@ class OptimizerImpl implements Optimizer {
 
       final PlanNode newNode = replaceGlobal(parent, optChildren);
       if (newNode != parent) {
-        zipForEach(
+        IterableSupport.zip(
             asList(parent.predecessors()),
             asList(newNode.predecessors()),
             OptimizerSupport::alignOutValues);
