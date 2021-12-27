@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.common.tree;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.utils.ArraySupport;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
 
 public interface TreeSupport {
   static void checkNodePresent(TreeContext<?> context, int nodeId) {
@@ -58,10 +58,16 @@ public interface TreeSupport {
     }
   }
 
+  static int indexOfChild(UniformTreeContext<?> context, int nodeId) {
+    final int parent = context.parentOf(nodeId);
+    final int[] children = context.childrenOf(parent);
+    return linearFind(children, nodeId, 0);
+  }
+
   static int locate(UniformTreeContext<?> context, int childId) {
     final int parentId = context.parentOf(childId);
     final int[] children = context.childrenOf(parentId);
-    return ArraySupport.linearFind(children, childId, 0);
+    return linearFind(children, childId, 0);
   }
 
   static FieldKey<?> locate(LabeledTreeContext<?> context, int childId) {

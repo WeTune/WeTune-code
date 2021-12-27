@@ -93,13 +93,16 @@ class Match {
     if (patternPlan.kindOf(nodeId) != PlanKind.Join) return false;
 
     final OperatorType opKind = joinOp.kind();
+    final InfoCache infoCache = patternPlan.infoCache();
     final JoinNode joinNode = (JoinNode) patternPlan.nodeAt(nodeId);
+
     if (opKind == LEFT_JOIN && joinNode.joinKind() != JoinKind.LEFT_JOIN) return false;
     if (opKind == INNER_JOIN && joinNode.joinKind() != JoinKind.INNER_JOIN) return false;
-    if (!joinNode.isEquiJoin()) return false;
+    if (!infoCache.isEquiJoin(nodeId)) return false;
 
-    return model.assign(joinOp.lhsAttrs(), joinNode.lhsKeys())
-        && model.assign(joinOp.rhsAttrs(), joinNode.rhsKeys())
+    final var keys = infoCache.joinKeyOf(nodeId);
+    return model.assign(joinOp.lhsAttrs(), keys.getLeft())
+        && model.assign(joinOp.rhsAttrs(), keys.getRight())
         && model.checkConstraints();
   }
 

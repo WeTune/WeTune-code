@@ -7,10 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.COW;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
@@ -31,7 +28,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     this.nodeValues = new COW<>(new TIntObjectHashMap<>(ctx.maxNodeId()), null);
     this.valueColumns = new COW<>(new TIntObjectHashMap<>(), null);
     this.valueExprs = new COW<>(new TIntObjectHashMap<>(), null);
-    this.exprRefs = new COW<>(new HashMap<>(), null);
+    this.exprRefs = new COW<>(new IdentityHashMap<>(), null);
   }
 
   protected ValuesRegistryImpl(ValuesRegistryImpl toCopy) {
@@ -115,13 +112,25 @@ class ValuesRegistryImpl implements ValuesRegistry {
     return exprRefs.forRead().get(expr);
   }
 
-  @Override
-  public ValuesRegistryImpl copy() {
-    return new ValuesRegistryImpl(this);
+  void renumberNode(int from, int to) {
+    final Values values = nodeValues.forRead().get(from);
+    if (values != null) nodeValues.forWrite().put(to, values);
   }
 
-  void reNumberNode(int from, int to) {
-    nodeValues.forWrite().put(to, nodeValues.forRead().get(from));
+  void deleteNode(int id) {
+    if (nodeValues.forRead().containsKey(id)) {
+      final Values values = nodeValues.forWrite().remove(id);
+      if (values != null) for (Value value : values) removeValue(value);
+    }
+  }
+
+  private void removeValue(Value value) {
+    final int valueId = value.id();
+    if (valueColumns.forRead().containsKey(valueId)) valueColumns.forWrite().remove(valueId);
+    if (valueExprs.forRead().containsKey(valueId)) {
+      final Expression expr = valueExprs.forWrite().remove(valueId);
+      if (expr != null) exprRefs.forWrite().remove(expr);
+    }
   }
 
   private Values mkValuesOfInput(InputNode input) {

@@ -9,14 +9,6 @@ public interface JoinNode extends PlanNode {
 
   Expression joinCond();
 
-  boolean isEquiJoin();
-
-  List<Value> lhsKeys();
-
-  List<Value> rhsKeys();
-
-  void setKeys(List<Value> lhsKeys, List<Value> rhsKeys);
-
   @Override
   default PlanKind kind() {
     return PlanKind.Join;

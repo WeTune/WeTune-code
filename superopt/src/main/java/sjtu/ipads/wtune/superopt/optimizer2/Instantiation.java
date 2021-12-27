@@ -86,8 +86,8 @@ class Instantiation {
     final JoinNode joinNode = JoinNode.mk(joinKind, joinCond);
     final int joinNodeId = newPlan.bindNode(joinNode);
 
-    joinNode.setKeys(lhsKeys, rhsKeys);
     newPlan.valuesReg().bindValueRefs(joinCond, interleaveJoinKeys(lhsKeys, rhsKeys));
+    newPlan.infoCache().setJoinKeyOf(joinNodeId, lhsKeys, rhsKeys);
 
     return joinNodeId;
   }

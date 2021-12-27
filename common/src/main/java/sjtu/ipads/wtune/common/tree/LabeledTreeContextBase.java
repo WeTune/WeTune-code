@@ -112,7 +112,7 @@ public class LabeledTreeContextBase<Kind>
   }
 
   @Override
-  protected final void reNumber(int from, int to) {
+  protected final void relocate(int from, int to) {
     nodes[to] = nodes[from];
     nodes[from] = null;
 

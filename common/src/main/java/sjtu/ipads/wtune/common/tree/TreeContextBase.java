@@ -67,14 +67,14 @@ public abstract class TreeContextBase<Kind, Nd extends TreeContextBase.NdBase<Ki
       while (nodes[forwardIdx] != null && forwardIdx < backwardIdx) ++forwardIdx;
       while (nodes[backwardIdx] == null && backwardIdx > forwardIdx) --backwardIdx;
       if (forwardIdx == backwardIdx) break;
-      reNumber(backwardIdx, forwardIdx);
+      relocate(backwardIdx, forwardIdx);
     }
 
     maxNodeId = nodes[backwardIdx] == null ? backwardIdx - 1 : backwardIdx;
     if (maxNodeId <= (nodes.length >> 1)) nodes = Arrays.copyOf(nodes, maxNodeId);
   }
 
-  protected abstract void reNumber(int from, int to);
+  protected abstract void relocate(int from, int to);
 
   protected abstract Nd mk(Kind kind);
 

@@ -13,19 +13,22 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   private final Schema schema;
   private final COW<TObjectIntMap<PlanNode>> nodeReg;
   private final ValuesRegistryImpl valuesReg;
+  private final InfoCacheImpl infoCache;
 
   protected PlanContextImpl(int expectedNumNodes, Schema schema) {
     super(new PlanNd[(expectedNumNodes <= 0 ? 16 : expectedNumNodes) + 1], 2);
     this.schema = schema;
     this.nodeReg = new COW<>(mkIdentityMap(), null);
     this.valuesReg = new ValuesRegistryImpl(this);
+    this.infoCache = new InfoCacheImpl();
   }
 
   private PlanContextImpl(PlanContextImpl other) {
     super(copyNodesArray((PlanNd[]) other.nodes), 2);
     this.schema = other.schema;
     this.nodeReg = new COW<>(other.nodeReg.forRead(), PlanContextImpl::copyIdentityMap);
-    this.valuesReg = other.valuesReg.copy();
+    this.valuesReg = new ValuesRegistryImpl(other.valuesReg);
+    this.infoCache = new InfoCacheImpl(other.infoCache);
   }
 
   @Override
@@ -53,21 +56,32 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   }
 
   @Override
-  public void detachNode(int nodeId) {
-    nodeReg.forWrite().remove(nodeAt(nodeId));
-    super.detachNode(nodeId);
+  public void deleteNode(int nodeId) {
+    nodeReg.forWrite().remove(nodeId);
+    valuesReg.deleteNode(nodeId);
+    infoCache.deleteNode(nodeId);
+    super.deleteNode(nodeId);
   }
 
   @Override
-  protected void reNumber(int from, int to) {
+  protected void relocate(int from, int to) {
+    nodeReg.forWrite().remove(nodeAt(to));
     nodeReg.forWrite().put(nodeAt(from), to);
-    valuesReg.reNumberNode(from, to);
-    super.reNumber(from, to);
+    valuesReg.deleteNode(to);
+    valuesReg.renumberNode(from, to);
+    infoCache.deleteNode(to);
+    infoCache.renumberNode(from, to);
+    super.relocate(from, to);
   }
 
   @Override
   public ValuesRegistry valuesReg() {
     return valuesReg;
+  }
+
+  @Override
+  public InfoCache infoCache() {
+    return infoCache;
   }
 
   @Override

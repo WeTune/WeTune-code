@@ -14,6 +14,8 @@ public interface PlanContext extends UniformTreeContext<PlanKind> {
 
   ValuesRegistry valuesReg();
 
+  InfoCache infoCache();
+
   PlanContext copy();
 
   default Values valuesOf(PlanNode node) {

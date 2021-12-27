@@ -136,7 +136,7 @@ class ValueRefBinder {
       }
     }
 
-    joinNode.setKeys(lhsRefs, rhsRefs);
+    plan.infoCache().setJoinKeyOf(nodeId, lhsRefs, rhsRefs);
   }
 
   private void bindFilter(int nodeId, List<Value> secondaryLookup) {

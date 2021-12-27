@@ -67,7 +67,7 @@ public class UniformTreeContextBase<Kind>
   }
 
   @Override
-  protected void reNumber(int from, int to) {
+  protected void relocate(int from, int to) {
     nodes[to] = nodes[from];
     nodes[from] = null;
     for (Nd<Kind> node : nodes) {

@@ -16,6 +16,4 @@ public interface ValuesRegistry {
   Values valueRefsOf(Expression expr);
 
   void bindValueRefs(Expression expr, List<Value> valueRefs);
-
-  ValuesRegistry copy();
 }
