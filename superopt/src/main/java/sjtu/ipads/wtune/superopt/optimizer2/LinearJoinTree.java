@@ -9,7 +9,6 @@ import java.util.List;
 import static java.lang.Integer.max;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind.LEFT_JOIN;
 
 /**
  * A data structure representing a left-deep join tree.
@@ -43,7 +42,7 @@ final class LinearJoinTree {
     final InfoCache infoCache = plan.infoCache();
 
     int depth = 0, cursor = treeRoot;
-    while (plan.kindOf(treeRoot) == PlanKind.Join && infoCache.isEquiJoin(cursor)) {
+    while (plan.kindOf(cursor) == PlanKind.Join && infoCache.isEquiJoin(cursor)) {
       ++depth;
       cursor = plan.childOf(cursor, 0);
     }
@@ -52,10 +51,11 @@ final class LinearJoinTree {
 
     final int[] joiners = new int[depth], joinees = new int[depth + 1];
     cursor = treeRoot;
-    while (plan.kindOf(treeRoot) == PlanKind.Join && infoCache.isEquiJoin(cursor)) {
+    while (plan.kindOf(cursor) == PlanKind.Join && infoCache.isEquiJoin(cursor)) {
       --depth;
       joiners[depth] = cursor;
       joinees[depth + 1] = plan.childOf(cursor, 1);
+      cursor = plan.childOf(cursor, 0);
     }
     assert depth == 0;
     joinees[0] = plan.childOf(cursor, 0);
@@ -84,11 +84,12 @@ final class LinearJoinTree {
   }
 
   boolean isEligibleRoot(int joineeIndex) {
-    if (joineeIndex == -1) return ((JoinNode) plan.nodeAt(joiners[0])).joinKind() != LEFT_JOIN;
-    if (joineeIndex == joinees.length - 1) return true;
-
+    if (joineeIndex >= joinees.length - 2) return true;
     final int[] dependencies = this.dependencies.get();
-    return ArraySupport.linearFind(dependencies, joineeIndex, joineeIndex + 2) == -1;
+    if (ArraySupport.linearFind(dependencies, joineeIndex, max(2, joineeIndex + 2)) != -1)
+      return false;
+
+    return joineeIndex >= 0 || ((JoinNode) plan.nodeAt(rootJoiner())).joinKind().isInner();
   }
 
   PlanContext mkRootedBy(int joineeIdx) {
@@ -124,7 +125,7 @@ final class LinearJoinTree {
       newPlan.setChild(newRootJoiner, 1, child0);
       if (newRootJoiner == oldRootJoiner) newPlan.setChild(newRootJoiner, 0, child1);
       else {
-        newPlan.detachNode(oldRootJoiner);
+        //        newPlan.detachNode(oldRootJoiner);
         newPlan.setChild(newRootJoiner, 0, oldRootJoiner);
         newPlan.setChild(parent, 0, child1);
       }
@@ -142,13 +143,13 @@ final class LinearJoinTree {
     final int[] dependencies = new int[joinees.length];
     final ValuesRegistry valuesReg = plan.valuesReg();
 
-    dependencies[0] = -1;
-    dependencies[1] = 0;
+    dependencies[0] = -2;
+    dependencies[1] = -1;
     for (int i = 2, bound = joinees.length; i < bound; ++i) {
       final List<Value> lhsKeys = infoCache.lhsJoinKeyOf(joiners[i - 1]);
       for (int j = i - 1; j >= 0; --j)
         if (any(lhsKeys, valuesReg.valuesOf(joinees[j])::contains)) {
-          dependencies[i] = j;
+          dependencies[i] = j - 1;
           break;
         }
     }

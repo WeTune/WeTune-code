@@ -3,7 +3,9 @@ package sjtu.ipads.wtune.sqlparser.ast1;
 import sjtu.ipads.wtune.common.tree.LabeledTreeNode;
 
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Expr;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableSource;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.Expr_Kind;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.TableSource_Kind;
 
 public interface SqlNode extends LabeledTreeNode<SqlKind, SqlContext, SqlNode> {
   String MySQL = "mysql";
@@ -30,5 +32,11 @@ public interface SqlNode extends LabeledTreeNode<SqlKind, SqlContext, SqlNode> {
     final SqlNode expr = mk(ctx, ctx.mkNode(Expr));
     expr.$(Expr_Kind, kind);
     return expr;
+  }
+
+  static SqlNode mk(SqlContext ctx, TableSourceKind kind) {
+    final SqlNode tableSource = mk(ctx, TableSource);
+    tableSource.$(TableSource_Kind, kind);
+    return tableSource;
   }
 }

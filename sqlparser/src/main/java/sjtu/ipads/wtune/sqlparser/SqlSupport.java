@@ -3,12 +3,11 @@ package sjtu.ipads.wtune.sqlparser;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
+import sjtu.ipads.wtune.sqlparser.ast1.*;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpKind;
 import sjtu.ipads.wtune.sqlparser.parser.AstParser;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
@@ -20,6 +19,8 @@ import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.TableSourceFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.TableSourceKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.*;
 
 public abstract class SqlSupport {
@@ -199,6 +200,12 @@ public abstract class SqlSupport {
     return node;
   }
 
+  public static SqlNode mkTableName(SqlContext ctx, String tableName) {
+    final SqlNode nameNode = SqlNode.mk(ctx, TableName);
+    nameNode.$(TableName_Table, tableName);
+    return nameNode;
+  }
+
   public static SqlNode mkColName(SqlContext ctx, String qualification, String name) {
     final SqlNode colName = SqlNode.mk(ctx, ColName);
     colName.$(ColName_Table, qualification);
@@ -214,6 +221,9 @@ public abstract class SqlSupport {
   }
 
   public static SqlNode mkBinary(SqlContext ctx, BinaryOpKind op, SqlNode lhs, SqlNode rhs) {
+    expect(lhs, Expr);
+    expect(rhs, Expr);
+
     final SqlNode binary = SqlNode.mk(ctx, Binary);
     binary.$(Binary_Op, op);
     binary.$(Binary_Left, lhs);
@@ -230,6 +240,8 @@ public abstract class SqlSupport {
   }
 
   public static SqlNode mkSelectItem(SqlContext ctx, SqlNode expr, String alias) {
+    expect(expr, Expr);
+
     final SqlNode selectItem = SqlNode.mk(ctx, SelectItem);
     selectItem.$(SelectItem_Expr, expr);
     selectItem.$(SelectItem_Alias, alias);
@@ -241,6 +253,72 @@ public abstract class SqlSupport {
     literal.$(Literal_Kind, kind);
     literal.$(Literal_Value, value);
     return literal;
+  }
+
+  public static SqlNode mkQueryExpr(SqlContext ctx, SqlNode query) {
+    expect(query, Query);
+    final SqlNode expr = SqlNode.mk(ctx, QueryExpr);
+    expr.$(QueryExpr_Query, query);
+    return expr;
+  }
+
+  public static SqlNode mkConjunction(SqlContext ctx, Iterable<SqlNode> filters) {
+    SqlNode expr = null;
+    for (SqlNode filter : filters) {
+      expect(filter, Expr);
+      if (expr == null) expr = filter;
+      else expr = mkBinary(ctx, AND, expr, filter);
+    }
+    return expr;
+  }
+
+  public static SqlNode mkSimpleSource(SqlContext ctx, String tableName, String alias) {
+    final SqlNode nameNode = mkTableName(ctx, tableName);
+    final SqlNode tableSourceNode = SqlNode.mk(ctx, SimpleSource);
+    tableSourceNode.$(Simple_Table, nameNode);
+    tableSourceNode.$(Simple_Alias, alias);
+    return tableSourceNode;
+  }
+
+  public static SqlNode mkJoinSource(
+      SqlContext ctx, SqlNode lhs, SqlNode rhs, SqlNode cond, JoinKind kind) {
+    expect(lhs, TableSource);
+    expect(rhs, TableSource);
+
+    final SqlNode joinNode = SqlNode.mk(ctx, JoinedSource);
+    joinNode.$(Joined_Left, lhs);
+    joinNode.$(Joined_Right, rhs);
+    joinNode.$(Joined_On, cond);
+    joinNode.$(Joined_Kind, kind);
+    return joinNode;
+  }
+
+  public static SqlNode mkDerivedSource(SqlContext ctx, SqlNode query, String alias) {
+    expect(query, Query);
+    final SqlNode sourceNode = SqlNode.mk(ctx, DerivedSource);
+    sourceNode.$(Derived_Subquery, query);
+    sourceNode.$(Derived_Alias, alias);
+    return sourceNode;
+  }
+
+  public static SqlNode mkSetOp(SqlContext ctx, SqlNode lhs, SqlNode rhs, SetOpKind kind) {
+    expect(lhs, Query);
+    expect(rhs, Query);
+
+    final SqlNode setOpNode = SqlNode.mk(ctx, SetOp);
+    setOpNode.$(SetOp_Left, lhs);
+    setOpNode.$(SetOp_Right, rhs);
+    setOpNode.$(SetOp_Kind, kind);
+    return setOpNode;
+  }
+
+  public static SqlNode mkQuery(SqlContext ctx, SqlNode body) {
+    if (!QuerySpec.isInstance(body) && !SetOp.isInstance(body))
+      throw new IllegalArgumentException("invalid query body: " + body.kind());
+
+    final SqlNode q = SqlNode.mk(ctx, Query);
+    q.$(Query_Body, body);
+    return q;
   }
 
   public static boolean isColRefEq(SqlNode ast) {
@@ -274,5 +352,21 @@ public abstract class SqlSupport {
     } else {
       return isColRefEq(ast);
     }
+  }
+
+  private static void expect(SqlNode node, TableSourceKind expected) {
+    if (!expected.isInstance(node))
+      throw new IllegalArgumentException(
+          "expect " + expected + ", but get " + node.$(TableSource_Kind));
+  }
+
+  private static void expect(SqlNode node, ExprKind expected) {
+    if (!expected.isInstance(node))
+      throw new IllegalArgumentException("expect " + expected + ", but get " + node.$(Expr_Kind));
+  }
+
+  private static void expect(SqlNode node, SqlKind expected) {
+    if (!expected.isInstance(node))
+      throw new IllegalArgumentException("expect " + expected + ", but get " + node.kind());
   }
 }

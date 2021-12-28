@@ -9,72 +9,60 @@ import java.util.Collections;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.ColName_Table;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.*;
 
 class ValueRefBinder {
   private final PlanContext plan;
   private final ValuesRegistry valuesReg;
+
+  private String error;
 
   ValueRefBinder(PlanContext plan) {
     this.plan = plan;
     this.valuesReg = plan.valuesReg();
   }
 
-  void bind() {
+  boolean bind() {
     try {
-      bind0(plan.root(), Collections.emptyList());
+      return bind0(plan.root(), Collections.emptyList());
     } catch (RuntimeException ex) {
-      if (ex instanceof PlanException) throw ex;
-      else throw new PlanException(ex);
+      error = dumpException(ex);
+      return false;
     }
   }
 
-  private void bind0(int nodeId, List<Value> secondaryLookup) {
-    if (nodeId == NO_SUCH_NODE) return;
-
-    switch (plan.kindOf(nodeId)) {
-      case Limit:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        break;
-      case Sort:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindSort(nodeId);
-        break;
-      case SetOp:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bind0(plan.childOf(nodeId, 1), secondaryLookup);
-        break;
-      case Join:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bind0(plan.childOf(nodeId, 1), secondaryLookup);
-        bindJoin(nodeId);
-        break;
-      case Agg:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindAgg(nodeId);
-        break;
-      case Proj:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindProj(nodeId);
-        break;
-      case Filter:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindFilter(nodeId, secondaryLookup);
-        break;
-      case Exists:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindExists(nodeId, secondaryLookup);
-        break;
-      case InSub:
-        bind0(plan.childOf(nodeId, 0), secondaryLookup);
-        bindInSub(nodeId, secondaryLookup);
-        break;
-    }
+  String lastError() {
+    return error;
   }
 
-  private void bindAgg(int nodeId) {
+  private boolean bind0(int nodeId, List<Value> secondaryLookup) {
+    if (nodeId == NO_SUCH_NODE) return true;
+
+    return switch (plan.kindOf(nodeId)) {
+      case Limit -> bind0(plan.childOf(nodeId, 0), secondaryLookup);
+      case Sort -> bind0(plan.childOf(nodeId, 0), secondaryLookup) && bindSort(nodeId);
+      case SetOp -> bind0(plan.childOf(nodeId, 0), secondaryLookup)
+              && bind0(plan.childOf(nodeId, 1), secondaryLookup);
+      case Join -> bind0(plan.childOf(nodeId, 0), secondaryLookup)
+              && bind0(plan.childOf(nodeId, 1), secondaryLookup)
+              && bindJoin(nodeId);
+      case Agg -> bind0(plan.childOf(nodeId, 0), secondaryLookup) && bindAgg(nodeId);
+      case Proj -> bind0(plan.childOf(nodeId, 0), secondaryLookup) && bindProj(nodeId);
+      case Filter -> bind0(plan.childOf(nodeId, 0), secondaryLookup)
+              && bindFilter(nodeId, secondaryLookup);
+      case Exists -> bind0(plan.childOf(nodeId, 0), secondaryLookup)
+              && bindExists(nodeId, secondaryLookup);
+      case InSub -> bind0(plan.childOf(nodeId, 0), secondaryLookup)
+              && bindInSub(nodeId, secondaryLookup);
+      case Input -> true;
+    };
+  }
+
+  private boolean bindAgg(int nodeId) {
     // Group By & Having can use the attribute exposed by Aggregation.
     final Values primaryLookup = valuesReg.valuesOf(nodeId);
     final Values secondaryLookup = valuesReg.valuesOf(plan.childOf(plan.childOf(nodeId, 0), 0));
@@ -83,47 +71,57 @@ class ValueRefBinder {
 
     for (Expression attr : aggNode.attrExprs()) {
       final List<Value> refs = ListSupport.map(attr.colRefs(), it -> bindRef(it, secondaryLookup));
+      if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(attr, refs);
     }
 
     for (Expression groupBy : aggNode.groupByExprs()) {
       final List<Value> refs = ListSupport.map(groupBy.colRefs(), it -> bindRef(it, lookup));
+      if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(groupBy, refs);
     }
 
     final Expression having = aggNode.havingExpr();
     if (having != null) {
       final List<Value> refs = ListSupport.map(having.colRefs(), it -> bindRef(it, lookup));
+      if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(having, refs);
     }
+
+    return true;
   }
 
-  private void bindProj(int nodeId) {
+  private boolean bindProj(int nodeId) {
     final Values lookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final ProjNode projNode = (ProjNode) plan.nodeAt(nodeId);
 
     for (Expression attr : projNode.attrExprs()) {
       final List<Value> refs = ListSupport.map(attr.colRefs(), it -> bindRef(it, lookup));
+      if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(attr, refs);
     }
+
+    return true;
   }
 
-  private void bindJoin(int nodeId) {
+  private boolean bindJoin(int nodeId) {
     final Values lookup = valuesReg.valuesOf(nodeId);
     final JoinNode joinNode = (JoinNode) plan.nodeAt(nodeId);
     final Expression joinCond = joinNode.joinCond();
-    if (joinCond == null) return;
+    if (joinCond == null) return true;
+
     final List<Value> valueRefs = ListSupport.map(joinCond.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(joinCond, valueRefs);
+    if (valueRefs.contains(null)) return false;
 
-    if (!SqlSupport.isEquiJoinPredicate(joinCond.template())) return;
-    if ((valueRefs.size() & 1) == 1) return;
+    if (!SqlSupport.isEquiJoinPredicate(joinCond.template())) return true;
+    if ((valueRefs.size() & 1) == 1) return true;
 
     final Values lhsValues = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lhsRefs = new ArrayList<>(valueRefs.size() >> 1);
     final List<Value> rhsRefs = new ArrayList<>(valueRefs.size() >> 1);
     for (int i = 0, bound = valueRefs.size(); i < bound; i += 2) {
-      final Value key0 = valueRefs.get(i), key1 = valueRefs.get(i);
+      final Value key0 = valueRefs.get(i), key1 = valueRefs.get(i + 1);
       final boolean lhs0 = lhsValues.contains(key0), lhs1 = lhsValues.contains(key1);
       if (lhs0 && !lhs1) {
         lhsRefs.add(key0);
@@ -132,38 +130,40 @@ class ValueRefBinder {
         lhsRefs.add(key1);
         rhsRefs.add(key0);
       } else {
-        return;
+        return true;
       }
     }
 
     plan.infoCache().setJoinKeyOf(nodeId, lhsRefs, rhsRefs);
+    return true;
   }
 
-  private void bindFilter(int nodeId, List<Value> secondaryLookup) {
+  private boolean bindFilter(int nodeId, List<Value> secondaryLookup) {
     final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     final Expression predicate = ((SimpleFilterNode) plan.nodeAt(nodeId)).predicate();
     final List<Value> valueRefs = ListSupport.map(predicate.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(predicate, valueRefs);
+    return !valueRefs.contains(null);
   }
 
-  private void bindExists(int nodeId, List<Value> secondaryLookup) {
+  private boolean bindExists(int nodeId, List<Value> secondaryLookup) {
     final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
-    bind0(plan.childOf(nodeId, 1), lookup);
+    return bind0(plan.childOf(nodeId, 1), lookup);
   }
 
-  private void bindInSub(int nodeId, List<Value> secondaryLookup) {
+  private boolean bindInSub(int nodeId, List<Value> secondaryLookup) {
     final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     final Expression expr = ((InSubNode) plan.nodeAt(nodeId)).expr();
     final List<Value> valueRefs = ListSupport.map(expr.colRefs(), it -> bindRef(it, lookup));
     valuesReg.bindValueRefs(expr, valueRefs);
-    bind0(plan.childOf(nodeId, 1), lookup);
+    return !valueRefs.contains(null) && bind0(plan.childOf(nodeId, 1), lookup);
     // TODO: setPlain
   }
 
-  private void bindSort(int nodeId) {
+  private boolean bindSort(int nodeId) {
     // Order By can use the attributes exposed in table-source
     // e.g., Select t.x From t Order By t.y
     // So we have to lookup in deeper descendant.
@@ -180,15 +180,18 @@ class ValueRefBinder {
     } else if (childKind == PlanKind.SetOp) {
       primaryLookup = Collections.emptyList();
     } else {
-      throw failed("unexpected plan: " + plan);
+      return onError(FAILURE_INVALID_PLAN + plan);
     }
 
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
 
     for (Expression sortSpec : ((SortNode) plan.nodeAt(nodeId)).sortSpec()) {
       final List<Value> refs = ListSupport.map(sortSpec.colRefs(), it -> bindRef(it, lookup));
+      if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(sortSpec, refs);
     }
+
+    return true;
   }
 
   private Value bindRef(SqlNode colRef, List<Value> lookup) {
@@ -203,10 +206,12 @@ class ValueRefBinder {
       }
     }
 
+    onError(FAILURE_MISSING_REF + colRef);
     return null;
   }
 
-  private PlanException failed(String reason) {
-    return new PlanException("failed to bind ref: [" + reason + "] " + plan);
+  private boolean onError(String error) {
+    this.error = error;
+    return false;
   }
 }

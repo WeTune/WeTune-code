@@ -4,7 +4,11 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Contract;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -14,6 +18,17 @@ import java.util.function.Supplier;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface Commons {
+  static String dumpException(Throwable ex) {
+    try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        final PrintWriter out = new PrintWriter(stream)) {
+      ex.printStackTrace(out);
+      out.flush();
+      return stream.toString(Charset.defaultCharset());
+    } catch (IOException e) {
+      return "cannot dump exception";
+    }
+  }
+
   /** if str[0] == '"' and str[-1] == '"', return str[1:-2] */
   static String unquoted(String str) {
     return unquoted(str, '"');

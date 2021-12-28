@@ -2,12 +2,16 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import static java.lang.Integer.min;
 
 public interface ListSupport {
   static <Y> List<Y> map(int[] xs, IntFunction<Y> func) {
@@ -61,5 +65,28 @@ public interface ListSupport {
   static <T, R> List<R> flatMap(
       Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
     return FuncUtils.stream(os).map(func).flatMap(FuncUtils::stream).toList();
+  }
+
+  static <P0, P1, R> List<R> zipMap(
+      Iterable<? extends P0> l0,
+      Iterable<? extends P1> l1,
+      BiFunction<? super P0, ? super P1, ? extends R> func) {
+    final List<R> ret;
+    if (l0 instanceof Collection && l1 instanceof Collection) {
+      final int size0 = ((Collection) l0).size();
+      final int size1 = ((Collection) l1).size();
+      ret = new ArrayList<>(min(size0, size1));
+    } else {
+      ret = new ArrayList<>();
+    }
+
+    final Iterator<? extends P0> iter0 = l0.iterator();
+    final Iterator<? extends P1> iter1 = l1.iterator();
+    while (iter0.hasNext() && iter1.hasNext()) {
+      final P0 x = iter0.next();
+      final P1 y = iter1.next();
+      ret.add(func.apply(x, y));
+    }
+    return ret;
   }
 }

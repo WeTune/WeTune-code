@@ -21,6 +21,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
@@ -35,12 +36,16 @@ import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.*;
 import static sjtu.ipads.wtune.sqlparser.util.ColRefGatherer.gatherColRefs;
 
 class PlanBuilder {
+  private static final int FAIL = Integer.MIN_VALUE;
+
   private final SqlNode ast;
   private final Schema schema;
   private final PlanContext plan;
   private final ValuesRegistry valuesReg;
   private final SqlContext tmpCtx;
   private final NameSequence synNameSeq;
+
+  private String error;
 
   PlanBuilder(SqlNode ast, Schema schema) {
     this.ast = requireNonNull(ast);
@@ -51,15 +56,21 @@ class PlanBuilder {
     this.synNameSeq = NameSequence.mkIndexed(SYN_NAME_PREFIX, 0);
   }
 
-  PlanContext build() {
+  boolean build() {
     try {
-      build0(ast);
-      return plan;
-
+      return build0(ast) != FAIL;
     } catch (RuntimeException ex) {
-      if (ex instanceof PlanContext) throw ex;
-      else throw new PlanException(ex);
+      error = dumpException(ex);
+      return false;
     }
+  }
+
+  PlanContext plan() {
+    return plan;
+  }
+
+  String lastError() {
+    return error;
   }
 
   private int build0(SqlNode ast) {
@@ -83,13 +94,15 @@ class PlanBuilder {
         return nodeId;
       }
       default:
-        throw failed("illegal query: " + ast);
+        return onError(FAILURE_INVALID_QUERY + ast);
     }
   }
 
   private int buildSetOp(SqlNode setOp) {
     final int lhs = build0(setOp.$(SetOp_Left));
     final int rhs = build0(setOp.$(SetOp_Right));
+
+    if (lhs == FAIL || rhs == FAIL) return FAIL;
 
     final SetOpKind opKind = setOp.$(SetOp_Kind);
     final boolean deduplicated = setOp.$(SetOp_Option) == SetOpOption.DISTINCT;
@@ -103,6 +116,8 @@ class PlanBuilder {
   }
 
   private int buildProjection(SqlNode querySpec, int child) {
+    if (child == FAIL) return FAIL;
+
     final SqlNodes items = querySpec.$(QuerySpec_SelectItems);
     final SqlNodes groupBys = coalesce(querySpec.$(QuerySpec_GroupBy), SqlNodes.mkEmpty());
     final SqlNode having = querySpec.$(QuerySpec_Having);
@@ -132,7 +147,7 @@ class PlanBuilder {
       */
 
       if (any(items, it1 -> it1.$(SelectItem_Expr).$(Aggregate_WindowSpec) != null))
-        throw failed("Window function is not supported");
+        return onError(FAILURE_UNSUPPORTED_FEATURE + "window function");
 
       // 1. Extract column refs used in selectItems, groups and having
       final List<SqlNode> colRefs = new ArrayList<>(items.size() + groupBys.size() + 1);
@@ -162,6 +177,7 @@ class PlanBuilder {
   }
 
   private int buildFilters(SqlNode expr, int child) {
+    if (child == FAIL) return FAIL;
     if (expr == null) return child;
 
     final TIntList filters = buildFilters0(expr, new TIntArrayList(4));
@@ -207,6 +223,7 @@ class PlanBuilder {
   }
 
   private int buildSort(SqlNodes orders, int child) {
+    if (child == FAIL) return FAIL;
     if (orders == null || orders.isEmpty()) return child;
 
     final List<Expression> sortSpec = ListSupport.map(orders, Expression::mk);
@@ -219,6 +236,7 @@ class PlanBuilder {
   }
 
   private int buildLimit(SqlNode limit, SqlNode offset, int child) {
+    if (child == FAIL) return FAIL;
     if (limit == null && offset == null) return child;
 
     final LimitNode limitNode =
@@ -246,7 +264,7 @@ class PlanBuilder {
     final String tableName = tableSource.$(Simple_Table).$(TableName_Table);
     final Table table = schema.table(tableName);
 
-    if (table == null) throw failed("unknown table '" + tableName + "'");
+    if (table == null) return onError(FAILURE_UNKNOWN_TABLE + tableSource);
 
     final String alias = coalesce(tableSource.$(Simple_Alias), tableName);
     return plan.bindNode(InputNode.mk(table, alias));
@@ -271,7 +289,7 @@ class PlanBuilder {
   private int buildDerivedTableSource(SqlNode tableSource) {
     final String alias = tableSource.$(Derived_Alias);
 
-    if (alias == null) throw failed("subquery without alias");
+    if (alias == null) return onError(FAILURE_MISSING_QUALIFICATION + tableSource);
 
     final int subquery = build0(tableSource.$(Derived_Subquery));
 
@@ -283,8 +301,9 @@ class PlanBuilder {
     return subquery;
   }
 
-  private PlanException failed(String reason) {
-    return new PlanException("failed to build plan: [" + reason + "] " + ast);
+  private int onError(String error) {
+    this.error = error;
+    return FAIL;
   }
 
   private static boolean containsDeduplicatedAgg(SqlNodes selectItem) {
@@ -311,7 +330,7 @@ class PlanBuilder {
         expandWildcard(inputNodeId, exprAst, attrNames, attrExprs);
       } else {
         attrNames.add(mkAttrName(item));
-        attrExprs.add(Expression.mk(item));
+        attrExprs.add(Expression.mk(exprAst));
       }
     }
   }

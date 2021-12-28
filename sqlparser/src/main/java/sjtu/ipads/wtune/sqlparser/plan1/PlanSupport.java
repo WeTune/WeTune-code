@@ -20,8 +20,18 @@ import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.*;
 
 public abstract class PlanSupport {
+  public static final String FAILURE_INVALID_QUERY = "invalid query ";
+  public static final String FAILURE_INVALID_PLAN = "invalid plan ";
+  public static final String FAILURE_UNSUPPORTED_FEATURE = "unsupported feature ";
+  public static final String FAILURE_UNKNOWN_TABLE = "unknown table ";
+  public static final String FAILURE_MISSING_PROJECTION = "missing projection ";
+  public static final String FAILURE_MISSING_QUALIFICATION = "missing qualification ";
+  public static final String FAILURE_MISSING_REF = "missing ref ";
+
   static final String SYN_NAME_PREFIX = "%";
   static final String PLACEHOLDER_NAME = "#";
+
+  private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
 
   private PlanSupport() {}
 
@@ -36,13 +46,22 @@ public abstract class PlanSupport {
 
   /** Build a plan tree from AST. If `schema` is null then fallback to ast.context().schema() */
   public static PlanContext buildPlan(SqlNode ast, Schema schema) {
-    return new PlanBuilder(ast, schema).build();
+    final PlanBuilder builder = new PlanBuilder(ast, schema);
+    if (builder.build()) return builder.plan();
+    else {
+      LAST_ERROR.set(builder.lastError());
+      return null;
+    }
   }
 
   /** Set up values and resolve the value refs. */
   public static PlanContext resolvePlan(PlanContext plan) {
-    new ValueRefBinder(plan).bind();
-    return plan;
+    final ValueRefBinder binder = new ValueRefBinder(plan);
+    if (binder.bind()) return plan;
+    else {
+      LAST_ERROR.set(binder.lastError());
+      return null;
+    }
   }
 
   /**
@@ -50,7 +69,24 @@ public abstract class PlanSupport {
    * fallback to ast.context().schema()
    */
   public static PlanContext assemblePlan(SqlNode ast, Schema schema) {
-    return disambiguateQualification(resolvePlan(buildPlan(ast, schema)));
+    PlanContext plan;
+    if ((plan = buildPlan(ast, schema)) == null) return null;
+    if ((plan = resolvePlan(plan)) == null) return null;
+    return disambiguateQualification(plan);
+  }
+
+  public static SqlNode translateAsAst(PlanContext context, int nodeId, boolean allowIncomplete) {
+    final ToAstTranslator translator = new ToAstTranslator(context);
+    final SqlNode sql = translator.translate(nodeId, allowIncomplete);
+    if (sql != null) return sql;
+    else {
+      LAST_ERROR.set(translator.lastError());
+      return null;
+    }
+  }
+
+  public static String getLastError() {
+    return LAST_ERROR.get();
   }
 
   public static boolean isEqualTree(PlanContext ctx0, int tree0, PlanContext ctx1, int tree1) {

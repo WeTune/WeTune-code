@@ -25,6 +25,7 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
 
   private PlanContextImpl(PlanContextImpl other) {
     super(copyNodesArray((PlanNd[]) other.nodes), 2);
+    this.maxNodeId = other.maxNodeId;
     this.schema = other.schema;
     this.nodeReg = new COW<>(other.nodeReg.forRead(), PlanContextImpl::copyIdentityMap);
     this.valuesReg = new ValuesRegistryImpl(other.valuesReg);
