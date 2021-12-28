@@ -12,7 +12,7 @@ import static sjtu.ipads.wtune.sqlparser.SqlSupport.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.Aggregate_Distinct;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.Exists_Subquery;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.Aggregate;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.SetOp;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.Query;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableSource;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.IN_SUBQUERY;
@@ -177,8 +177,7 @@ class ToAstTranslator {
     final SetOpNode setOp = (SetOpNode) plan.nodeAt(nodeId);
     final SqlNode unionNode = mkSetOp(sql, q0, q1, setOp.opKind());
     unionNode.$(SetOp_Option, setOp.deduplicated() ? DISTINCT : ALL);
-
-    return mkBuilder().setPlanNode(nodeId).setSource(unionNode);
+    return mkBuilder().setPlanNode(nodeId).setSource(mkQuery(sql, unionNode));
   }
 
   private QueryBuilder mkBuilder() {
@@ -231,7 +230,6 @@ class ToAstTranslator {
       assert !isInvalid();
 
       if (isPureSource() && TableSource.isInstance(tableSource)) return tableSource;
-
       final String qualification = mkQualification();
       if (qualification == null) return translator.onError(FAILURE_MISSING_QUALIFICATION);
       return mkDerivedSource(translator.sql, asQuery(), qualification);
@@ -242,30 +240,35 @@ class ToAstTranslator {
 
       final SqlContext sql = translator.sql;
 
-      if (isPureSource() && SetOp.isInstance(tableSource)) return mkQuery(sql, tableSource);
-      if (selectItems == null && !translator.allowIncomplete)
-        return translator.onError(FAILURE_MISSING_PROJECTION);
+      final SqlNode q;
+      if (Query.isInstance(tableSource)) {
+        assert filters == null && selectItems == null && groupBys == null && having == null;
+        assert !deduplicated && !isAgg && qualification == null;
+        q = tableSource;
 
-      final SqlNode spec = SqlNode.mk(sql, SqlKind.QuerySpec);
+      } else {
+        if (selectItems == null && !translator.allowIncomplete)
+          return translator.onError(FAILURE_MISSING_PROJECTION);
 
-      if (tableSource != null) spec.$(QuerySpec_From, tableSource);
-      if (filters != null) spec.$(QuerySpec_Where, mkConjunction(sql, filters));
+        final SqlNode spec = SqlNode.mk(sql, SqlKind.QuerySpec);
 
-      if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
+        if (tableSource != null) spec.$(QuerySpec_From, tableSource);
+        if (filters != null) spec.$(QuerySpec_Where, mkConjunction(sql, filters));
+        if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
+        if (groupBys != null) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
+        if (having != null) spec.$(QuerySpec_Having, having);
+        if (deduplicated) {
+          if (!isAgg) spec.$(QuerySpec_Distinct, true);
+          else if (selectItems != null)
+            for (SqlNode selectItem : selectItems) {
+              final SqlNode expr = selectItem.$(SelectItem_Expr);
+              if (Aggregate.isInstance(expr)) expr.flag(Aggregate_Distinct);
+            }
+        }
 
-      if (deduplicated) {
-        if (!isAgg) spec.$(QuerySpec_Distinct, true);
-        else if (selectItems != null)
-          for (SqlNode selectItem : selectItems) {
-            final SqlNode expr = selectItem.$(SelectItem_Expr);
-            if (Aggregate.isInstance(expr)) expr.flag(Aggregate_Distinct);
-          }
+        q = mkQuery(sql, spec);
       }
 
-      if (groupBys != null) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
-      if (having != null) spec.$(QuerySpec_Having, having);
-
-      final SqlNode q = mkQuery(sql, spec);
       if (orderBys != null) q.$(Query_OrderBy, SqlNodes.mk(sql, orderBys));
       if (offset != null) q.$(Query_Offset, offset);
       if (limit != null) q.$(Query_Limit, limit);
@@ -282,7 +285,7 @@ class ToAstTranslator {
       if (isInvalid()) return INVALID;
 
       assert this.tableSource == null;
-      assert TableSource.isInstance(tableSource) || SetOp.isInstance(tableSource);
+      assert TableSource.isInstance(tableSource) || Query.isInstance(tableSource);
 
       this.tableSource = tableSource;
       return this;
@@ -290,7 +293,7 @@ class ToAstTranslator {
 
     QueryBuilder pushFilter(SqlNode filter) {
       if (isInvalid()) return INVALID;
-      if (isFullQuery() && !collapse()) return INVALID;
+      if (isFullQuery() && !collapseAsTableSource()) return INVALID;
 
       if (filters == null) filters = new LinkedList<>();
       filters.add(filter);
@@ -299,12 +302,11 @@ class ToAstTranslator {
 
     QueryBuilder setSelectItems(List<SqlNode> selectItems, boolean isAgg) {
       if (isInvalid()) return INVALID;
-      if (!isAgg && isFullQuery() && !collapse()) return INVALID;
-      if (isAgg && this.isAgg) return INVALID;
+      if (isAgg && (this.isAgg || this.selectItems == null)) return INVALID;
+      if (!isAgg && isFullQuery() && !collapseAsTableSource()) return INVALID;
 
       assert !this.isAgg;
       assert isAgg || this.selectItems == null;
-      assert !isAgg || this.selectItems != null;
 
       this.isAgg = isAgg;
       this.selectItems = selectItems;
@@ -312,13 +314,15 @@ class ToAstTranslator {
     }
 
     QueryBuilder setQualification(String qualification) {
+      if (isInvalid()) return INVALID;
       assert this.qualification == null || this.isAgg;
-
       this.qualification = qualification;
       return this;
     }
 
     QueryBuilder setDeduplicated(boolean deduplicated) {
+      if (isInvalid()) return INVALID;
+
       assert !this.isAgg;
       assert this.selectItems != null;
 
@@ -327,39 +331,49 @@ class ToAstTranslator {
     }
 
     QueryBuilder setGroupBy(List<SqlNode> groupBys, SqlNode having) {
-      assert this.selectItems != null && this.isAgg;
+      if (isInvalid()) return INVALID;
       if (this.groupBys != null) return INVALID;
 
+      assert this.selectItems != null && this.isAgg;
       this.groupBys = groupBys;
       this.having = having;
       return this;
     }
 
     QueryBuilder setOrderBy(List<SqlNode> orderBys) {
-      assert this.selectItems != null || (isPureSource() && SetOp.isInstance(tableSource));
-      if (this.orderBys != null) return INVALID;
+      if (isInvalid()) return INVALID;
+
+      assert this.selectItems != null || Query.isInstance(tableSource);
+
+      if (this.orderBys != null && !collapseAsQuery()) return INVALID;
+      assert this.orderBys == null;
+
       this.orderBys = orderBys;
       return this;
     }
 
     QueryBuilder setLimit(SqlNode limit, SqlNode offset) {
-      assert this.selectItems != null || (isPureSource() && SetOp.isInstance(tableSource));
-      if (this.limit != null || this.offset != null) return INVALID;
+      if (isInvalid()) return INVALID;
+
+      assert this.selectItems != null || Query.isInstance(tableSource);
+
+      if ((this.limit != null || this.offset != null) && !collapseAsQuery()) return INVALID;
+      assert this.limit == null && this.offset == null;
+
       this.limit = limit;
       this.offset = offset;
       return this;
     }
 
     QueryBuilder setPlanNode(int planNode) {
+      if (isInvalid()) return INVALID;
+
       this.planNode = planNode;
       return this;
     }
 
-    private boolean collapse() {
-      final SqlNode tableSource = asTableSource();
-      if (tableSource == null) return false;
-      this.tableSource = tableSource;
-
+    private void init() {
+      tableSource = null;
       filters = null;
       selectItems = null;
       groupBys = null;
@@ -370,7 +384,21 @@ class ToAstTranslator {
       qualification = null;
       deduplicated = false;
       isAgg = false;
+    }
 
+    private boolean collapseAsTableSource() {
+      final SqlNode tableSource = asTableSource();
+      if (tableSource == null) return false;
+      init();
+      this.tableSource = tableSource;
+      return true;
+    }
+
+    private boolean collapseAsQuery() {
+      final SqlNode query = asQuery();
+      if (query == null) return false;
+      init();
+      this.tableSource = query;
       return true;
     }
 
@@ -385,7 +413,7 @@ class ToAstTranslator {
     }
 
     private boolean isFullQuery() {
-      return selectItems != null;
+      return Query.isInstance(tableSource) || selectItems != null;
     }
 
     private String mkQualification() {
