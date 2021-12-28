@@ -309,6 +309,13 @@ public abstract class SqlSupport {
     return q;
   }
 
+  public static SqlNode mkAggregate(SqlContext ctx, SqlNodes args, String aggFuncName) {
+    final SqlNode aggregate = SqlNode.mk(ctx, Aggregate);
+    aggregate.$(Aggregate_Name, aggFuncName);
+    aggregate.$(Aggregate_Args, args);
+    return aggregate;
+  }
+
   public static boolean isColRefEq(SqlNode ast) {
     return Binary.isInstance(ast)
         && EQUAL == ast.$(Binary_Op)

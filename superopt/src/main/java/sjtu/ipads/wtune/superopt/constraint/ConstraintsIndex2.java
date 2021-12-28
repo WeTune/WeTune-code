@@ -5,7 +5,6 @@ import com.google.common.collect.MultimapBuilder;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -246,7 +245,7 @@ public class ConstraintsIndex2 extends AbstractList<Constraint> implements List<
   }
 
   private List<Symbol> analyzeSource(Op op) {
-    final OperatorType kind = op.kind();
+    final OpKind kind = op.kind();
     final Op[] predecessor = op.predecessors();
     final List<Symbol> lhs = kind.numPredecessors() > 0 ? analyzeSource(predecessor[0]) : null;
     final List<Symbol> rhs = kind.numPredecessors() > 1 ? analyzeSource(predecessor[1]) : null;
@@ -271,6 +270,11 @@ public class ConstraintsIndex2 extends AbstractList<Constraint> implements List<
         return Collections.singletonList(proj.attrs());
       case SET_OP:
         return ListSupport.join(lhs, rhs);
+      case AGG:
+        final Agg agg = (Agg) op;
+        viableSources.putAll(agg.groupByAttrs(), lhs);
+        viableSources.putAll(agg.aggregateAttrs(), lhs);
+        return List.of(agg.groupByAttrs(), agg.aggregateAttrs());
       default:
         throw new IllegalArgumentException("unsupported op kind " + kind);
     }

@@ -1,9 +1,8 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import gnu.trove.impl.sync.TSynchronizedShortSet;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.PartialOrder;
-import sjtu.ipads.wtune.superopt.fragment.Symbol;
-import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
@@ -14,6 +13,7 @@ import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.translateToUExpr;
@@ -158,10 +158,11 @@ public class ConstraintEnumerator2 {
     final EnumerationStage tableInstantiation = new InstantiationEnumerator(TABLE);
     final EnumerationStage attrsInstantiation = new InstantiationEnumerator(ATTRS);
     final EnumerationStage predInstantiation = new InstantiationEnumerator(PRED);
-    final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0);
+    final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0, useSpes);
     final EnumerationStage tableEnum = new PartitionEnumerator(TABLE, dryRun);
     final EnumerationStage attrsEnum = new PartitionEnumerator(ATTRS, dryRun);
     final EnumerationStage predEnum = new PartitionEnumerator(PRED, dryRun);
+    final EnumerationStage unionMismatchedOutputBreaker = new UnionMismatchedOutputBreaker(disable0);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
@@ -199,6 +200,7 @@ public class ConstraintEnumerator2 {
           tableEnum,
           attrsEnum,
           predEnum,
+          unionMismatchedOutputBreaker,
           //uniqueEnum,
           //mismatchedSummationBreaker,
           //notNullEnum,
@@ -807,10 +809,10 @@ public class ConstraintEnumerator2 {
     }
   }
 
-  private class MismatchedOutputBreaker extends AbstractEnumerationStage {
+  private class UnionMismatchedOutputBreaker extends AbstractEnumerationStage {
     private final boolean disabled;
 
-    public MismatchedOutputBreaker(boolean disabled) {
+    public UnionMismatchedOutputBreaker(boolean disabled) {
       this.disabled = disabled;
     }
 
@@ -818,9 +820,140 @@ public class ConstraintEnumerator2 {
     public int enumerate() {
       if (!disabled) {
         final Substitution rule = I.mkRule(enabled);
-        if (isMismatchedOutput(translateToUExpr(rule))) return NEQ;
+        boolean mismatch =
+            isMismatchedUnionOutput(rule._0(), false)
+            || isMismatchedUnionOutput(rule._1(), true);
+        if (mismatch) return NEQ;
       }
       return nextStage().enumerate();
+    }
+
+    private boolean isMismatchedUnionOutput(Fragment template, boolean isTargetSide) {
+      return mismatchedNodeOutput(template.root(), isTargetSide);
+    }
+
+    private boolean mismatchedNodeOutput(Op op, boolean isTargetSide) {
+      int numPredecessors = op.predecessors().length;
+      boolean lhsMismatch = numPredecessors >= 1 && mismatchedNodeOutput(op.predecessors()[0], isTargetSide);
+      boolean rhsMismatch = numPredecessors >= 2 && mismatchedNodeOutput(op.predecessors()[1], isTargetSide);
+      if (lhsMismatch || rhsMismatch) return true;
+
+      if (op.kind() != SET_OP) return false;
+      OutputSchema lhsOutput = new OutputSchema(op.predecessors()[0], isTargetSide);
+      OutputSchema rhsOutput = new OutputSchema(op.predecessors()[1], isTargetSide);
+      return lhsOutput.mismatchedOutputWith(rhsOutput, false);
+    }
+  }
+
+  private class MismatchedOutputBreaker extends AbstractEnumerationStage {
+    private final boolean disabled;
+    private final boolean useSpes;
+
+    public MismatchedOutputBreaker(boolean disabled, boolean useSpes) {
+      this.disabled = disabled;
+      this.useSpes = useSpes;
+    }
+
+    @Override
+    public int enumerate() {
+      if (!disabled) {
+        final Substitution rule = I.mkRule(enabled);
+        boolean mismatch = useSpes ?
+            isMismatchedOutputSchema(rule) : isMismatchedOutput(translateToUExpr(rule));
+        if (mismatch) return NEQ;
+      }
+      return nextStage().enumerate();
+    }
+
+    private boolean isMismatchedOutputSchema(Substitution rule) {
+      Fragment src = rule._0(), dest = rule._1();
+      OutputSchema out0 = new OutputSchema(src.root(), false);
+      OutputSchema out1 = new OutputSchema(dest.root(), true);
+      return out0.mismatchedOutputWith(out1, true);
+    }
+  }
+
+  private class OutputSchema extends ArrayList<Symbol> {
+    private final List<Symbol> outputSyms;
+    private final List<Symbol> aggregated;
+    private final boolean isTargetSide;
+
+    public OutputSchema(Op root, boolean isTargetSide) {
+      this.isTargetSide = isTargetSide;
+      this.aggregated = new ArrayList<>();
+      this.outputSyms = fillUpOutput(root);
+    }
+
+    private List<Symbol> fillUpOutput(Op op) {
+      final OpKind kind = op.kind();
+      final Op[] predecessor = op.predecessors();
+
+      switch (kind) {
+        case INPUT -> {
+          final Input input = (Input) op;
+          return Collections.singletonList(input.table());
+        }
+        case INNER_JOIN, LEFT_JOIN -> {
+          final List<Symbol> lhs = fillUpOutput(predecessor[0]);
+          final List<Symbol> rhs = fillUpOutput(predecessor[1]);
+          return ListSupport.join(lhs, rhs);
+        }
+        case IN_SUB_FILTER, SIMPLE_FILTER, EXISTS_FILTER -> {
+          final List<Symbol> lhs = fillUpOutput(predecessor[0]);
+          return lhs;
+        }
+        case PROJ -> {
+          final Proj proj = (Proj) op;
+          return Collections.singletonList(proj.attrs());
+        }
+        case SET_OP -> {
+          final List<Symbol> lhs = fillUpOutput(predecessor[0]);
+          return lhs;
+        }
+        case AGG -> {
+          final Agg agg = (Agg) op;
+          Symbol groupByAttrs = agg.groupByAttrs();
+          Symbol aggAttrs = agg.aggregateAttrs();
+          aggregated.add(aggAttrs);
+          return List.of(groupByAttrs, aggAttrs);
+        }
+        default ->
+            throw new IllegalArgumentException("unsupported op kind " + kind);
+      }
+    }
+
+    public boolean mismatchedOutputWith(OutputSchema other, boolean strictSame) {
+      if (this.size() != other.size()) return true;
+
+      for (int i = 0, bound = this.size(); i < bound; i++) {
+        Symbol out0 = this.get(i), out1 = other.get(i);
+        if (out0.kind() != out1.kind() || isAggregated(out0) != other.isAggregated(out1))
+          return true;
+
+        Symbol outputSym0 = isTargetSide ? currentInstantiationOf(out0) : out0;
+        Symbol outputSym1 = other.isTargetSide() ? currentInstantiationOf(out1) : out1;
+        boolean mismatch = strictSame ? outputSym0 != outputSym1 : !currentIsEq(outputSym0, outputSym1);
+        if (mismatch) return true;
+      }
+      return false;
+    }
+
+    public boolean isAggregated(Symbol sym) {
+      return aggregated.contains(sym);
+    }
+
+    public boolean isTargetSide() {
+      return isTargetSide;
+    }
+
+    @Override
+    public int size() {
+      return outputSyms.size();
+    }
+
+    @Override
+    public Symbol get(int index) {
+      return outputSyms.get(index);
     }
   }
 

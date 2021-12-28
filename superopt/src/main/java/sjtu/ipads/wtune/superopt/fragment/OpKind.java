@@ -59,6 +59,7 @@ public enum OpKind {
       case "Input" -> INPUT;
       case "Proj", "Proj*" -> PROJ;
       case "Union", "Union*" -> SET_OP;
+      case "Agg" -> AGG;
       default -> throw new IllegalArgumentException("unknown operator: " + value);
     };
   }

@@ -7,7 +7,8 @@ import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
 
 public class SPESSupport {
   public static boolean prove(PlanContext plan1, PlanContext plan2) {
-    try (Context ctx = new Context()) {
+    try (final Context ctx = new Context()) {
+      BaseTransformer.resetEnv();
       AlgeNode algeNode0 = AlgeRule.normalize(plan2AlgeNode(plan1, ctx));
       AlgeNode algeNode1 = AlgeRule.normalize(plan2AlgeNode(plan2, ctx));
 

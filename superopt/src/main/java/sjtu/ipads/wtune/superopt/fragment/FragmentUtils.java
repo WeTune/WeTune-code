@@ -99,6 +99,11 @@ class FragmentUtils {
           break;
         case SET_OP:
           break;
+        case AGG:
+          builder.append('<').append(naming.nameOf(((AggOp) tree).groupByAttrs()));
+          builder.append(' ').append(naming.nameOf(((AggOp) tree).aggregateAttrs()));
+          builder.append(' ').append(naming.nameOf(((AggOp) tree).havingPred())).append('>');
+          break;
         default:
           throw new UnsupportedOperationException();
       }
@@ -151,6 +156,11 @@ class FragmentUtils {
         naming.setName(((Proj) op).schema(), names[2]);
         break;
       case SET_OP:
+        break;
+      case AGG:
+        naming.setName(((AggOp) op).groupByAttrs(), names[1]);
+        naming.setName(((AggOp) op).aggregateAttrs(), names[2]);
+        naming.setName(((AggOp) op).havingPred(), names[3]);
         break;
       default:
         throw new UnsupportedOperationException();

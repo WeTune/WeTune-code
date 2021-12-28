@@ -73,4 +73,8 @@ public class SubstitutionSupport {
   public static Pair<PlanContext, PlanContext> translateAsPlan(Substitution rule) {
     return new PlanTranslator(rule).translate();
   }
+
+  public static Pair<PlanContext, PlanContext> translateAsPlan2(Substitution rule) {
+    return new PlanTranslator2(rule).translate();
+  }
 }

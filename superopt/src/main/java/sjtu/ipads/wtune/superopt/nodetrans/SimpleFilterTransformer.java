@@ -2,10 +2,12 @@ package sjtu.ipads.wtune.superopt.nodetrans;
 
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
@@ -26,23 +28,23 @@ public class SimpleFilterTransformer extends BaseTransformer {
 
     // A little dirty code
     Comparable<Integer> predId = Integer.parseInt(filterCond.toString().substring(1, 2));
-    RexLiteral literal = (RexLiteral) rexBuilder.makeLiteral(predId, defaultIntType(), false);
+    //RexLiteral literal = (RexLiteral) rexBuilder.makeLiteral(predId, defaultIntType(), false);
 
-    List<RexNode> predList = new ArrayList<>();
+    List<RexInputRef> inputRefList = new ArrayList<>();
     for (Value predVal : predValues) {
       int idx = valuesOfNode.indexOf(predVal);
       // $i
       RexInputRef inputRef = new RexInputRef(idx, defaultIntType());
       // =($i, n)
-      RexCall rexCall =
-          (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(inputRef, literal));
-      predList.add(rexCall);
+      //RexCall rexCall =
+      //    (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(inputRef, literal));
+      inputRefList.add(inputRef);
     }
-    if (predList.isEmpty()) return null;
-    // p1 AND p2 AND p3 ...
-    return predList.size() < 2
-        ? predList.get(0)
-        : (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, predList);
+    if (inputRefList.isEmpty()) return null;
+
+    // create a new UDF to present Pi
+    SqlFunction udfPred = getOrCreatePred(filterCond.toString().substring(0, 2));
+    return (RexCall) rexBuilder.makeCall(udfPred, inputRefList);
   }
 
   @Override

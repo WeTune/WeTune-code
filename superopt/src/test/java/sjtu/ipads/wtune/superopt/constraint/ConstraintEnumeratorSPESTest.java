@@ -1,13 +1,20 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import com.microsoft.z3.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
+import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupportSPES;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
+import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
@@ -38,11 +45,11 @@ public class ConstraintEnumeratorSPESTest {
     final List<String> strings = new ArrayList<>(results.size());
     for (Substitution rule : results) {
       final String str = rule.toString();
+      System.out.println(str);
       strings.add(str.split("\\|")[2]);
     }
 
     System.out.println(EnumerationMetrics.current());
-    for (String string : strings) System.out.println(string);
 
     for (String expectation : expectations) {
       assertTrue(strings.contains(expectation), expectation);
@@ -63,6 +70,51 @@ public class ConstraintEnumeratorSPESTest {
   }
 
   @Test
+  void testUnion1() {
+    // Some pruning issues
+    doTest(SPES,
+        "Union*(Proj(Input),Proj(InnerJoin(Input,Input)))",
+        "Union*(Proj(InnerJoin(Input,Input)),Proj(Input))");
+  }
+
+  @Test
+  void testAgg0() {
+    final Substitution rule =
+        Substitution.parse(
+            "Agg<a0 a1 p0>(Input<t0>)|" +
+                "Agg<a2 a3 p1>(Input<t1>)|" +
+                "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0)");
+    var planPair = SubstitutionSupport.translateAsPlan2(rule);
+    AlgeNode algeNode = SPESSupport.plan2AlgeNode(planPair.getLeft(), new Context());
+    boolean res = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
+    System.out.println(planPair.getLeft().toString());
+  }
+
+  @Test
+  void testAgg1() {
+    doTest(SPES,
+        "Agg(InnerJoin(Input,Input))",
+        "Agg(InnerJoin(Input,Input))");
+  }
+
+  @Test
+  void testAgg2() {
+    final Substitution rule =
+        Substitution.parse("Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|" +
+            "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|" +
+            "AttrsSub(a0,t0);AttrsSub(a1,a0);AttrsSub(a2,a0);AttrsSub(a3,a0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p1);PredicateEq(p3,p0)");
+    var planPair = SubstitutionSupport.translateAsPlan2(rule);
+    final Context ctx = new Context();
+    AlgeNode algeNode0 = SPESSupport.plan2AlgeNode(planPair.getLeft(), ctx);
+    AlgeNode algeNode1 = SPESSupport.plan2AlgeNode(planPair.getRight(), ctx);
+
+    algeNode0 = AlgeRule.normalize(algeNode0);
+    algeNode1 = AlgeRule.normalize(algeNode1);
+    final int answer = LogicSupport.proveEqBySpes(rule);
+    System.out.println(answer); // SPES: EQ
+  }
+
+  @Test
   void testIN2InnerJoin1() {
     // Pass
     doTest(SPES,
@@ -73,20 +125,6 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testSingleRule() {
-//    final Substitution rule =
-//        Substitution.parse(
-//            "Filter<p0 a0>(LeftJoin<a1 a2>(Input<t0>,Input<t1>))|" +
-//                "InnerJoin<a3 a4>(Input<t2>,Filter<p1 a5>(Input<t3>))|" +
-//                "AttrsEq(a0,a2);AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t1);" +
-//                "TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a2);AttrsEq(a5,a0);PredicateEq(p1,p0)");
-//
-//    final int answer = LogicSupport.proveEqBySpes(rule);
-//    System.out.println(answer); // SPES: EQ
-//
-//    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
-//    final int answer1 = LogicSupport.proveEq(uExprs);
-//    System.out.println(answer1); // WeTune: NEQ
-
     final Substitution rule =
         Substitution.parse(
             "Proj<a1>(Proj<a0>(Input<t0>))|" +
@@ -144,7 +182,7 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testJoinEqualOuterJoin1() {
-    // 1 rules, predicate null problem
+    // no rules, predicate null problem solved
     doTest(SPES,
         "Filter(LeftJoin(Input,Input))",
         "InnerJoin(Input,Filter(Input))"
