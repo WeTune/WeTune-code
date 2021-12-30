@@ -110,38 +110,20 @@ public abstract class SqlSupport {
     return list;
   }
 
+  public static int[] idsOf(List<SqlNode> nodes) {
+    final int[] ids = new int[nodes.size()];
+    for (int i = 0, bound = nodes.size(); i < bound; i++) {
+      ids[i] = nodes.get(i).nodeId();
+    }
+    return ids;
+  }
+
+  public static SqlCopier copyAst(SqlNode node) {
+    return new SqlCopier().root(node);
+  }
+
   public static SqlNode copyAst(SqlNode node, SqlContext toCtx) {
-    if (toCtx == null) toCtx = node.context();
-    final int newNodeId = toCtx.mkNode(node.kind());
-
-    if (TableSource.isInstance(node)) {
-      toCtx.setFieldOf(newNodeId, TableSource_Kind, node.$(TableSource_Kind));
-    }
-    if (Expr.isInstance(node)) {
-      toCtx.setFieldOf(newNodeId, Expr_Kind, node.$(Expr_Kind));
-    }
-
-    for (Map.Entry<FieldKey<?>, Object> pair : node.entrySet()) {
-      final FieldKey key = pair.getKey();
-      final Object value = pair.getValue();
-      final Object copiedValue;
-      if (value instanceof SqlNode) {
-        copiedValue = copyAst((SqlNode) value, toCtx);
-
-      } else if (value instanceof SqlNodes) {
-        final SqlNodes nodes = (SqlNodes) value;
-        final List<SqlNode> newChildren = new ArrayList<>(nodes.size());
-        for (SqlNode sqlNode : nodes) newChildren.add(copyAst(sqlNode, toCtx));
-        copiedValue = SqlNodes.mk(toCtx, newChildren);
-
-      } else {
-        copiedValue = value;
-      }
-
-      toCtx.setFieldOf(newNodeId, key, copiedValue);
-    }
-
-    return SqlNode.mk(toCtx, newNodeId);
+    return new SqlCopier().root(node).to(toCtx).go();
   }
 
   public static String dumpAst(SqlNode root) {
@@ -218,6 +200,12 @@ public abstract class SqlSupport {
     final SqlNode colRef = SqlNode.mk(ctx, ColRef);
     colRef.$(ColRef_ColName, colName);
     return colRef;
+  }
+
+  public static SqlNode mkWildcard(SqlContext ctx, String tableName) {
+    final SqlNode wildcard = SqlNode.mk(ctx, Wildcard);
+    wildcard.$(Wildcard_Table, mkTableName(ctx, tableName));
+    return wildcard;
   }
 
   public static SqlNode mkBinary(SqlContext ctx, BinaryOpKind op, SqlNode lhs, SqlNode rhs) {

@@ -20,8 +20,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
@@ -184,11 +183,11 @@ class PlanBuilder {
     if (filters.isEmpty()) return child;
 
     for (int i = 1, bound = filters.size(); i < bound; ++i)
-      plan.setChild(filters.get(i - 1), 0, filters.get(i));
+      plan.setChild(filters.get(i), 0, filters.get(i - 1));
     if (child != NO_SUCH_NODE)
-      plan.setChild(filters.get(filters.size() - 1), 0, child);
+      plan.setChild(filters.get(0), 0, child);
 
-    return filters.get(0);
+    return filters.get(filters.size() - 1);
   }
 
   private TIntList buildFilters0(SqlNode expr, TIntList filters) {

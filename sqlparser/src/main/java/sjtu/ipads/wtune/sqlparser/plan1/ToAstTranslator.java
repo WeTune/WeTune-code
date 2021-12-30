@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.*;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.ListSupport.zipMap;
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.*;
@@ -254,9 +255,12 @@ class ToAstTranslator {
 
         if (tableSource != null) spec.$(QuerySpec_From, tableSource);
         if (filters != null) spec.$(QuerySpec_Where, mkConjunction(sql, filters));
-        if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
         if (groupBys != null) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
         if (having != null) spec.$(QuerySpec_Having, having);
+
+        if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
+        else spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, singletonList(mkWildcard(sql, null))));
+
         if (deduplicated) {
           if (!isAgg) spec.$(QuerySpec_Distinct, true);
           else if (selectItems != null)
@@ -315,6 +319,7 @@ class ToAstTranslator {
 
     QueryBuilder setQualification(String qualification) {
       if (isInvalid()) return INVALID;
+      if (qualification == null) return this;
       assert this.qualification == null || this.isAgg;
       this.qualification = qualification;
       return this;

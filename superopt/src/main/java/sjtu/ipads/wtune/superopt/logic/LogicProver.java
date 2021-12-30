@@ -223,7 +223,7 @@ class LogicProver {
     }
 
     /*
-     complex cases: Sum{x}(X) = Sum{x,y}(Y * Z), where Y is the term using y.
+     complex cases: Sum{x}(X) = Sum{x,y}(Y * Z), where Z is the term using y.
      Need to apply Theorem 5.2.
 
      The target is to proveP is valid:

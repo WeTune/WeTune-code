@@ -102,11 +102,6 @@ public interface TreeSupport {
     return newNode;
   }
 
-  static void displaceTree(UniformTreeContext<?> context, int from, int to) {
-    context.detachNode(from);
-    context.setChild(context.parentOf(to), locate(context, to), from);
-  }
-
   static boolean matchAstNode(Object obj, int nodeId) {
     return obj instanceof LabeledTreeNode && ((LabeledTreeNode) obj).nodeId() == nodeId;
   }

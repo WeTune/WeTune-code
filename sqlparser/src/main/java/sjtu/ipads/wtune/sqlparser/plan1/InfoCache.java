@@ -5,19 +5,29 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.List;
 
 public interface InfoCache {
-  void setJoinKeyOf(int nodeId, List<Value> lhsKeys, List<Value> rhsKeys);
+  Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId);
 
-  Pair<List<Value>, List<Value>> joinKeyOf(int nodeId);
+  Expression getSubqueryExprOf(int nodeId);
+
+  int getSubqueryNodeOf(Expression expr);
+
+  int[] getVirtualExpr(Expression expr);
+
+  void putJoinKeyOf(int nodeId, List<Value> lhsKeys, List<Value> rhsKeys);
+
+  void putSubqueryExprOf(int nodeId, Expression expr);
+
+  void putVirtualExpr(Expression expr, int... nodes);
 
   default List<Value> lhsJoinKeyOf(int nodeId) {
-    return joinKeyOf(nodeId).getLeft();
+    return getJoinKeyOf(nodeId).getLeft();
   }
 
   default List<Value> rhsJoinKeyOf(int nodeId) {
-    return joinKeyOf(nodeId).getRight();
+    return getJoinKeyOf(nodeId).getRight();
   }
 
   default boolean isEquiJoin(int nodeId) {
-    return joinKeyOf(nodeId) != null;
+    return getJoinKeyOf(nodeId) != null;
   }
 }

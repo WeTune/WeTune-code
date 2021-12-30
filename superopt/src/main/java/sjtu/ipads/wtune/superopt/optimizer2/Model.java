@@ -22,19 +22,27 @@ import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 class Model {
   private final Model base;
-  private final PlanContext plan;
   private final Constraints constraints;
   private final Lazy<Map<Symbol, Object>> assignments;
 
-  private Model(Model base, PlanContext plan, Constraints constraints) {
-    this.base = base;
-    this.plan = plan;
+  private PlanContext plan;
+
+  private Model(Model other) {
+    this.base = other;
+    this.constraints = other.constraints;
+    this.assignments = Lazy.mk(HashMap::new);
+    this.plan = other.plan;
+  }
+
+  Model(Constraints constraints) {
+    this.base = null;
     this.constraints = constraints;
     this.assignments = Lazy.mk(HashMap::new);
   }
 
-  Model(PlanContext plan, Constraints constraints) {
-    this(null, plan, constraints);
+  Model setPlan(PlanContext plan) {
+    this.plan = plan;
+    return this;
   }
 
   Model base() {
@@ -50,11 +58,7 @@ class Model {
   }
 
   Model derive() {
-    return derive(plan);
-  }
-
-  Model derive(PlanContext newPlan) {
-    return new Model(this, newPlan, constraints);
+    return new Model(this);
   }
 
   void reset() {
@@ -90,6 +94,7 @@ class Model {
     assignments.get().put(sym, assignment);
 
     for (Symbol eqSym : constraints.eqClassOf(sym)) {
+      if (eqSym == sym) continue;
       final Object otherAssignment = of(eqSym);
       if (otherAssignment != null && !checkCompatible(assignment, otherAssignment)) {
         return false;
@@ -111,11 +116,12 @@ class Model {
   }
 
   private boolean checkCompatible(Object v0, Object v1) {
-    if (v0.getClass() != v1.getClass()) return false;
-
-    if (v0 instanceof Expression) return Objects.equals(v0.toString(), v1.toString());
-    if (v0 instanceof List) return isAttrsEq((List<Value>) v0, (List<Value>) v1);
-    if (v0 instanceof Integer) return isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
+    if (v0 instanceof Expression)
+      return v1 instanceof Expression && Objects.equals(v0.toString(), v1.toString());
+    if (v0 instanceof List)
+      return v1 instanceof List && isAttrsEq((List<Value>) v0, (List<Value>) v1);
+    if (v0 instanceof Integer)
+      return v1 instanceof Integer && isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
 
     throw new IllegalArgumentException("unexpected assignment: " + v0);
   }
@@ -255,10 +261,11 @@ class Model {
       final Value attr0 = attrs0.get(i), attr1 = attrs1.get(i);
 
       final Value rootRef0 = coalesce(tryResolveRef(plan, attr0, true), attr0);
-      final Value rootRef1 = coalesce(tryResolveRef(plan, attr1, true), attr0);
+      final Value rootRef1 = coalesce(tryResolveRef(plan, attr1, true), attr1);
       final Column column0 = tryResolveColumn(plan, rootRef0);
       final Column column1 = tryResolveColumn(plan, rootRef1);
-      if (column0 != null && column0.equals(column1)) return true;
+      if (column0 == null ^ column1 == null) return false;
+      if (column0 != null) return column0.equals(column1);
 
       final ValuesRegistry valuesReg = plan.valuesReg();
       final Expression expr0 = valuesReg.exprOf(rootRef0);

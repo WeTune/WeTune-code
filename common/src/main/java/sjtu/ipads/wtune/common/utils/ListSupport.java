@@ -1,9 +1,6 @@
 package sjtu.ipads.wtune.common.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -64,7 +61,18 @@ public interface ListSupport {
 
   static <T, R> List<R> flatMap(
       Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
-    return FuncUtils.stream(os).map(func).flatMap(FuncUtils::stream).toList();
+    return FuncUtils.stream(os)
+        .map(func)
+        .flatMap(FuncUtils::stream)
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
+
+  static <T, R> List<R> linkedListFlatMap(
+      Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
+    return FuncUtils.stream(os)
+        .map(func)
+        .flatMap(FuncUtils::stream)
+        .collect(Collectors.toCollection(LinkedList::new));
   }
 
   static <P0, P1, R> List<R> zipMap(

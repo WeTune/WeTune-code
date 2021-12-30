@@ -1,11 +1,15 @@
 package sjtu.ipads.wtune.common.utils;
 
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 import java.util.stream.StreamSupport;
 
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
@@ -73,6 +77,34 @@ public interface ArraySupport {
     final T[] arr = mkArray(retType, n);
     for (int i = 0; i < arr.length; i++) arr[i] = func.apply(i);
     return arr;
+  }
+
+  static int[] range(int fromInclusive, int toExclusive) {
+    if (toExclusive <= fromInclusive) return EMPTY_INT_ARRAY;
+
+    final int[] arr = new int[toExclusive - fromInclusive];
+    for (int i = fromInclusive; i < toExclusive; ++i) arr[i - fromInclusive] = i;
+    return arr;
+  }
+
+  static <T> int[] map(Iterable<T> ts, ToIntFunction<? super T> func) {
+    if (ts instanceof Collection) {
+      final int[] ret = new int[((Collection<T>) ts).size()];
+      int i = 0;
+      for (T t : ts) ret[i++] = func.applyAsInt(t);
+      return ret;
+
+    } else {
+      return FuncUtils.stream(ts).mapToInt(func).toArray();
+    }
+  }
+
+  static <T> TIntSet mapSet(Iterable<T> ts, ToIntFunction<? super T> func) {
+    final TIntSet ret =
+        ts instanceof Collection ? new TIntHashSet(((Collection<T>) ts).size()) : new TIntHashSet();
+
+    for (T t : ts) ret.add(func.applyAsInt(t));
+    return ret;
   }
 
   static <T, R> R[] map(T[] ts, Function<? super T, R> func, Class<R> retType) {

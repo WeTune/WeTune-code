@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.SqlSupport;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 
 import java.util.ArrayList;
@@ -10,9 +11,14 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
-import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.ColName_Table;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.IN_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.plan1.DependentRefInspector.inspectDepRefs;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.*;
 
 class ValueRefBinder {
@@ -134,7 +140,7 @@ class ValueRefBinder {
       }
     }
 
-    plan.infoCache().setJoinKeyOf(nodeId, lhsRefs, rhsRefs);
+    plan.infoCache().putJoinKeyOf(nodeId, lhsRefs, rhsRefs);
     return true;
   }
 
@@ -150,17 +156,51 @@ class ValueRefBinder {
   private boolean bindExists(int nodeId, List<Value> secondaryLookup) {
     final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
-    return bind0(plan.childOf(nodeId, 1), lookup);
+    if (!bind0(plan.childOf(nodeId, 1), lookup)) return false;
+
+    final SqlNode existsExprAst = mkExistsExpr(nodeId);
+    if (existsExprAst == null) return onError(FAILURE_BAD_SUBQUERY_EXPR);
+
+    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
+    final List<Value> depValueRefs = deps.getLeft();
+    final List<SqlNode> depColRefs = deps.getRight();
+    final Expression existsExpr = Expression.mk(existsExprAst, depColRefs);
+    plan.infoCache().putSubqueryExprOf(nodeId, existsExpr);
+    valuesReg.bindValueRefs(existsExpr, depValueRefs);
+
+    return true;
   }
 
   private boolean bindInSub(int nodeId, List<Value> secondaryLookup) {
     final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
-    final Expression expr = ((InSubNode) plan.nodeAt(nodeId)).expr();
-    final List<Value> valueRefs = ListSupport.map(expr.colRefs(), it -> bindRef(it, lookup));
-    valuesReg.bindValueRefs(expr, valueRefs);
-    return !valueRefs.contains(null) && bind0(plan.childOf(nodeId, 1), lookup);
-    // TODO: setPlain
+    final InSubNode inSub = (InSubNode) plan.nodeAt(nodeId);
+    final Expression lhsExpr = inSub.expr();
+    final List<Value> valueRefs = ListSupport.map(lhsExpr.colRefs(), it -> bindRef(it, lookup));
+
+    valuesReg.bindValueRefs(lhsExpr, valueRefs);
+    if (valueRefs.contains(null) || !bind0(plan.childOf(nodeId, 1), lookup)) return false;
+
+    inSub.setPlain(isPlainInSub(inSub));
+
+    /* Make expression for subquery */
+    // e.g., The expr of "InSub<q0.a>(T, Proj<R.c>(Filter<p, T.b>(R)))" is
+    //       "#.# IN (Select R.c From T Where p(#.#))"
+    final SqlNode inSubExprAst = mkInSubExpr(nodeId);
+    if (inSubExprAst == null) return onError(FAILURE_BAD_SUBQUERY_EXPR + inSub);
+
+    // collect the dependent refs from the subquery.
+    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
+    final List<Value> depValueRefs = deps.getLeft();
+    final List<SqlNode> depColRefs = deps.getRight();
+    depValueRefs.addAll(0, valueRefs);
+    depColRefs.addAll(0, lhsExpr.colRefs());
+
+    final Expression inSubExpr = Expression.mk(inSubExprAst, depColRefs);
+    plan.infoCache().putSubqueryExprOf(nodeId, inSubExpr);
+    valuesReg.bindValueRefs(inSubExpr, depValueRefs);
+
+    return true;
   }
 
   private boolean bindSort(int nodeId) {
@@ -213,5 +253,32 @@ class ValueRefBinder {
   private boolean onError(String error) {
     this.error = error;
     return false;
+  }
+
+  private SqlNode mkInSubExpr(int nodeId) {
+    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
+    if (query == null) return null;
+
+    final SqlContext sqlCtx = query.context();
+    final SqlNode rhsExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
+    final SqlNode lhsExpr = copyAst(((InSubNode) plan.nodeAt(nodeId)).expr().template(), sqlCtx);
+    return SqlSupport.mkBinary(sqlCtx, IN_SUBQUERY, lhsExpr, rhsExpr);
+  }
+
+  private SqlNode mkExistsExpr(int nodeId) {
+    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
+    if (query == null) return null;
+
+    final SqlContext sqlCtx = query.context();
+    final SqlNode queryExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
+    final SqlNode exists = SqlNode.mk(sqlCtx, Exists);
+    return exists.$(Exists_Subquery, queryExpr);
+  }
+
+  private static boolean isPlainInSub(InSubNode inSub) {
+    final SqlNode expr = inSub.expr().template();
+    if (ColRef.isInstance(expr)) return true;
+    if (!Tuple.isInstance(expr)) return false;
+    return all(expr.$(Tuple_Exprs), ColRef::isInstance);
   }
 }

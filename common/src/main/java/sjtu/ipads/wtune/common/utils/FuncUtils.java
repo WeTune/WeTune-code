@@ -87,12 +87,12 @@ public interface FuncUtils {
     return -1;
   }
 
+  static <T> Stream<T> stream(T[] array) {
+    return Arrays.stream(array);
+  }
+
   static <T> Stream<T> stream(Iterable<T> iterable) {
     if (iterable instanceof Collection) return ((Collection<T>) iterable).stream();
     else return StreamSupport.stream(iterable.spliterator(), false);
-  }
-
-  static <T> Stream<T> stream(T[] array) {
-    return Arrays.stream(array);
   }
 }

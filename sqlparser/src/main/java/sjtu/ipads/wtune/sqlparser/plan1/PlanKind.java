@@ -22,6 +22,10 @@ public enum PlanKind {
     return this == Filter || this == InSub || this == Exists;
   }
 
+  public boolean isSubqueryFilter() {
+    return this == InSub || this == Exists;
+  }
+
   public int numChildren() {
     return numChildren;
   }

@@ -2,9 +2,6 @@ package sjtu.ipads.wtune.superopt.optimizer2;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
-import sjtu.ipads.wtune.superopt.TestHelper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,31 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("optimizer")
 public class LinearJoinTreeTest {
 
-  private static class LinearJoinTreeHelper {
-    private PlanContext ctx;
-    private LinearJoinTree tree;
-
-    LinearJoinTree mkJoinTree(String joinSnippet) {
-      this.ctx = TestHelper.parsePlan("Select a.i From " + joinSnippet);
-      this.tree = LinearJoinTree.linearize(ctx, ctx.childOf(ctx.root(), 0));
-      return tree;
-    }
-
-    PlanContext plan() {
-      return ctx;
-    }
-
-    int treeRoot() {
-      return ctx.childOf(ctx.root(), 0);
-    }
-
-    String mkSqlRootedBy(int i) {
-      final PlanContext newPlan = tree.mkRootedBy(i);
-      return PlanSupport.translateAsAst(newPlan, newPlan.root(), false).toString();
-    }
-  }
-
-  private final LinearJoinTreeHelper helper = new LinearJoinTreeHelper();
+  private final JoinTreeHelper helper = new JoinTreeHelper();
 
   @Test
   void testReorder0() {

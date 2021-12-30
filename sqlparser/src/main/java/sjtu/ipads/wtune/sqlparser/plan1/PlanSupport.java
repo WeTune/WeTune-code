@@ -27,6 +27,7 @@ public abstract class PlanSupport {
   public static final String FAILURE_MISSING_PROJECTION = "missing projection ";
   public static final String FAILURE_MISSING_QUALIFICATION = "missing qualification ";
   public static final String FAILURE_MISSING_REF = "missing ref ";
+  public static final String FAILURE_BAD_SUBQUERY_EXPR = "bad subquery expr ";
 
   static final String SYN_NAME_PREFIX = "%";
   static final String PLACEHOLDER_NAME = "#";
@@ -83,6 +84,12 @@ public abstract class PlanSupport {
       LAST_ERROR.set(translator.lastError());
       return null;
     }
+  }
+
+  public static int locateNode(PlanContext ctx, int rootId, int... pathExpr) {
+    int node = rootId;
+    for (int direction : pathExpr) node = ctx.childOf(node, direction);
+    return node;
   }
 
   public static String getLastError() {

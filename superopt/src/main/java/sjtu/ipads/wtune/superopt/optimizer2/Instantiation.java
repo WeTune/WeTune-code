@@ -21,7 +21,7 @@ class Instantiation {
   private final Model model;
   private final PlanContext newPlan;
 
-  private int failure;
+  private String error;
 
   Instantiation(Substitution rule, Model model) {
     this.rule = rule;
@@ -34,12 +34,11 @@ class Instantiation {
   }
 
   int instantiate() {
-    final int rootId = instantiate(rule._1().root());
-    return rootId == NO_SUCH_NODE ? failure : rootId;
+    return instantiate(rule._1().root());
   }
 
-  int lastFailure() {
-    return failure;
+  String lastError() {
+    return error;
   }
 
   private int instantiate(Op op) {
@@ -87,7 +86,7 @@ class Instantiation {
     final int joinNodeId = newPlan.bindNode(joinNode);
 
     newPlan.valuesReg().bindValueRefs(joinCond, interleaveJoinKeys(lhsKeys, rhsKeys));
-    newPlan.infoCache().setJoinKeyOf(joinNodeId, lhsKeys, rhsKeys);
+    newPlan.infoCache().putJoinKeyOf(joinNodeId, lhsKeys, rhsKeys);
 
     return joinNodeId;
   }
@@ -153,8 +152,8 @@ class Instantiation {
     return projNodeId;
   }
 
-  private int fail(int reason) {
-    failure = reason;
+  private int fail(String reason) {
+    error = reason;
     return NO_SUCH_NODE;
   }
 

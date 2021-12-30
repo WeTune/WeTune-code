@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
 
 import java.util.List;
 
@@ -14,26 +15,24 @@ import static sjtu.ipads.wtune.sqlparser.util.ColRefGatherer.gatherColRefs;
 
 public class ExpressionImpl implements Expression {
   private final SqlNode template;
+  private final List<SqlNode> internalRefs;
   private final List<SqlNode> colRefs;
 
   ExpressionImpl(SqlNode ast) {
-    this.template = ast;
-
+    final SqlContext tempCtx = SqlContext.mk(8);
+    this.template = copyAst(ast, tempCtx);
+    this.internalRefs = SqlNodes.mk(tempCtx, gatherColRefs(template));
+    this.colRefs = SqlNodes.mk(ast.context(), gatherColRefs(ast));
     // To make a template, we extract all the col-refs, and replace the
     // interpolate "#.#" to the original position.
     // e.g., "t.x > 10" becomes "#.# > 10"
-    final List<SqlNode> colRefs = gatherColRefs(ast);
-    final SqlContext tempCtx = SqlContext.mk(colRefs.size() * 2);
-    for (int i = 0, bound = colRefs.size(); i < bound; i++) {
-      final SqlNode colRef = colRefs.get(i);
-      colRefs.set(i, copyAst(colRef, tempCtx));
+    for (SqlNode colRef : internalRefs) putPlaceholder(colRef);
+  }
 
-      final SqlNode colName = colRef.$(ColRef_ColName);
-      colName.$(ColName_Table, PLACEHOLDER_NAME);
-      colName.$(ColName_Col, PLACEHOLDER_NAME);
-    }
-
+  ExpressionImpl(SqlNode ast, List<SqlNode> colRefs) {
+    this.template = ast;
     this.colRefs = colRefs;
+    this.internalRefs = colRefs;
   }
 
   @Override
@@ -47,25 +46,35 @@ public class ExpressionImpl implements Expression {
   }
 
   @Override
-  public SqlNode interpolate(SqlContext ctx, Values values) {
-    final SqlNode newAst = copyAst(template, ctx);
-    final List<SqlNode> colRefs = gatherColRefs(newAst);
+  public List<SqlNode> internalRefs() {
+    return internalRefs;
+  }
 
-    if (colRefs.size() != values.size())
+  @Override
+  public SqlNode interpolate(SqlContext ctx, Values values) {
+    if (internalRefs.size() != values.size())
       throw new PlanException("mismatched # of values during interpolation");
 
-    for (int i = 0, bound = colRefs.size(); i < bound; i++) {
-      final SqlNode colName = colRefs.get(i).$(ColRef_ColName);
+    for (int i = 0, bound = internalRefs.size(); i < bound; i++) {
+      final SqlNode colName = internalRefs.get(i).$(ColRef_ColName);
       final Value value = values.get(i);
       colName.$(ColName_Table, value.qualification());
       colName.$(ColName_Col, value.name());
     }
 
+    final SqlNode newAst = copyAst(template, ctx);
+    for (SqlNode colRef : internalRefs) putPlaceholder(colRef);
     return newAst;
   }
 
   @Override
   public String toString() {
     return template.toString();
+  }
+
+  private void putPlaceholder(SqlNode colRef) {
+    final SqlNode colName = colRef.$(ColRef_ColName);
+    colName.$(ColName_Table, PLACEHOLDER_NAME);
+    colName.$(ColName_Col, PLACEHOLDER_NAME);
   }
 }

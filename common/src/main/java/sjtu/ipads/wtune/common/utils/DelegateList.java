@@ -130,4 +130,19 @@ public abstract class DelegateList<T> implements List<T> {
   public List<T> subList(int fromIndex, int toIndex) {
     return delegation().subList(fromIndex, toIndex);
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    return delegation().equals(obj);
+  }
+
+  @Override
+  public int hashCode() {
+    return delegation().hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return delegation().toString();
+  }
 }
