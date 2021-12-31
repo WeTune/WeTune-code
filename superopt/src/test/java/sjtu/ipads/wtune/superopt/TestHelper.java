@@ -45,10 +45,6 @@ public abstract class TestHelper {
     return PlanSupport.assemblePlan(parseSql(sql), SCHEMA.get());
   }
 
-  static JoinNode mkJoin(String join) {
-    return ((JoinNode) mkPlan("Select a.i From " + join).predecessors()[0]);
-  }
-
   static PlanNode mkPlan(String sql) {
     final Statement stmt = Statement.mk("test", sql, null);
     final ASTNode ast = stmt.parsed();

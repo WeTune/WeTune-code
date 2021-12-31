@@ -14,6 +14,7 @@ import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.optimizer2.OptimizerSupport.FAILURE_UNKNOWN_OP;
 import static sjtu.ipads.wtune.superopt.optimizer2.OptimizerSupport.predecessorOfFilters;
 
@@ -136,10 +137,9 @@ class Match {
 
     final OperatorType opKind = joinOp.kind();
     final InfoCache infoCache = sourcePlan.infoCache();
-    final JoinNode joinNode = (JoinNode) sourcePlan.nodeAt(nodeId);
-
-    if (opKind == LEFT_JOIN && joinNode.joinKind() != JoinKind.LEFT_JOIN) return false;
-    if (opKind == INNER_JOIN && joinNode.joinKind() != JoinKind.INNER_JOIN) return false;
+    final JoinKind joinKind = joinKindOf(sourcePlan, nodeId);
+    if (opKind == LEFT_JOIN && joinKind != JoinKind.LEFT_JOIN) return false;
+    if (opKind == INNER_JOIN && joinKind != JoinKind.INNER_JOIN) return false;
     if (!infoCache.isEquiJoin(nodeId)) return false;
 
     final var keys = infoCache.getJoinKeyOf(nodeId);

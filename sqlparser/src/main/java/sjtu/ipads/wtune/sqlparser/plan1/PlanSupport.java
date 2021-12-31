@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
@@ -144,6 +145,13 @@ public abstract class PlanSupport {
     final Values refs = valueReg.valueRefsOf(expr);
     assert refs.size() == 1;
     return tryResolveColumn(ctx, refs.get(0));
+  }
+
+  public static JoinKind joinKindOf(PlanContext ctx, int nodeId) {
+    if (ctx.kindOf(nodeId) != Join) return null;
+    final JoinKind joinKind = ctx.infoCache().getJoinKindOf(nodeId);
+    if (joinKind != null) return joinKind;
+    return ((JoinNode) ctx.nodeAt(nodeId)).joinKind();
   }
 
   public static boolean isUniqueCoreAt(PlanContext ctx, Collection<Value> attrs, int surfaceId) {

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 
 import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.*;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -19,8 +20,7 @@ import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.IN_SUBQUERY;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpOption.ALL;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpOption.DISTINCT;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.FAILURE_MISSING_PROJECTION;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.FAILURE_MISSING_QUALIFICATION;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.*;
 
 class ToAstTranslator {
   private final PlanContext plan;
@@ -87,8 +87,9 @@ class ToAstTranslator {
     if (tableSource0 == null || tableSource1 == null) return QueryBuilder.INVALID;
 
     final JoinNode join = (JoinNode) plan.nodeAt(nodeId);
+    final JoinKind joinKind = joinKindOf(plan, nodeId);
     final SqlNode joinNode =
-        mkJoinSource(sql, tableSource0, tableSource1, mkExpr(join.joinCond()), join.joinKind());
+        mkJoinSource(sql, tableSource0, tableSource1, mkExpr(join.joinCond()), joinKind);
 
     return mkBuilder().setPlanNode(nodeId).setSource(joinNode);
   }

@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
 
 class NotNullInference {
   private final PlanContext ctx;
@@ -45,7 +46,7 @@ class NotNullInference {
   private boolean onJoin(Value toCheck, int surfaceId) {
     final ValuesRegistry valuesReg = ctx.valuesReg();
     final JoinNode join = (JoinNode) ctx.nodeAt(surfaceId);
-    final JoinKind joinKind = join.joinKind();
+    final JoinKind joinKind = joinKindOf(ctx, surfaceId);
     final Values lhsValues = valuesReg.valuesOf(ctx.childOf(surfaceId, 0));
 
     if (joinKind.isInner()) {

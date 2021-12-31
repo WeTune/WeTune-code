@@ -6,6 +6,7 @@ import gnu.trove.procedure.TIntObjectProcedure;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.COW;
 import sjtu.ipads.wtune.common.utils.Lazy;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -18,22 +19,30 @@ public class InfoCacheImpl implements InfoCache {
   private final COW<TIntObjectMap<Pair<List<Value>, List<Value>>>> joinKeys;
   private final COW<TIntObjectMap<Expression>> subqueryExprs;
   private final Lazy<Map<Expression, int[]>> virtualExprs;
+  private final COW<TIntObjectMap<JoinKind>> joinKinds;
 
   InfoCacheImpl() {
     this.joinKeys = new COW<>(new TIntObjectHashMap<>(), null);
     this.subqueryExprs = new COW<>(new TIntObjectHashMap<>(), null);
     this.virtualExprs = Lazy.mk(IdentityHashMap::new);
+    this.joinKinds = new COW<>(new TIntObjectHashMap<>(), null);
   }
 
   InfoCacheImpl(InfoCacheImpl toCopy) {
     this.joinKeys = new COW<>(toCopy.joinKeys.forRead(), TIntObjectHashMap::new);
     this.subqueryExprs = new COW<>(toCopy.subqueryExprs.forRead(), TIntObjectHashMap::new);
     this.virtualExprs = Lazy.mk(IdentityHashMap::new);
+    this.joinKinds = new COW<>(toCopy.joinKinds.forRead(), TIntObjectHashMap::new);
   }
 
   @Override
   public void putJoinKeyOf(int nodeId, List<Value> lhsKeys, List<Value> rhsKeys) {
     joinKeys.forWrite().put(nodeId, Pair.of(lhsKeys, rhsKeys));
+  }
+
+  @Override
+  public void putJoinKindOf(int nodeId, JoinKind joinKind) {
+    joinKinds.forWrite().put(nodeId, joinKind);
   }
 
   @Override
@@ -49,6 +58,11 @@ public class InfoCacheImpl implements InfoCache {
   @Override
   public Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId) {
     return joinKeys.forRead().get(nodeId);
+  }
+
+  @Override
+  public JoinKind getJoinKindOf(int nodeId) {
+    return joinKinds.forRead().get(nodeId);
   }
 
   @Override

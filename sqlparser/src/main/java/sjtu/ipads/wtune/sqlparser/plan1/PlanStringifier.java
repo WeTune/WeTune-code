@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.SYN_NAME_PREFIX;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
 
 class PlanStringifier {
   private final PlanContext plan;
@@ -147,7 +148,7 @@ class PlanStringifier {
   private void appendJoin(int nodeId) {
     final JoinNode join = (JoinNode) plan.nodeAt(nodeId);
     final Expression joinCond = join.joinCond();
-    builder.append(stringifyJoinKind(join.joinKind())).append(nodeId).append('{');
+    builder.append(stringifyJoinKind(joinKindOf(plan, nodeId))).append(nodeId).append('{');
     builder.append(joinCond).append(",refs=[");
     appendRefs(joinCond);
     builder.append("]}");

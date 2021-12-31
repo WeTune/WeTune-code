@@ -9,6 +9,7 @@ import java.util.List;
 import static java.lang.Integer.max;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
 
 /**
  * A data structure representing a left-deep join tree.
@@ -94,7 +95,7 @@ final class LinearJoinTree {
     if (ArraySupport.linearFind(dependencies, joineeIndex, max(2, joineeIndex + 2)) != -1)
       return false;
 
-    return joineeIndex >= 0 || ((JoinNode) plan.nodeAt(rootJoiner())).joinKind().isInner();
+    return joineeIndex >= 0 || joinKindOf(plan, rootJoiner()).isInner();
   }
 
   PlanContext mkRootedBy(int joineeIdx) {

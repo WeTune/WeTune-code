@@ -84,7 +84,8 @@ public class TestSubstitution {
 
     assertEquals(1, optimized.size());
     assertEquals(
-        "SELECT DISTINCT * FROM `b` AS `b`", translateAsAst(Iterables.get(optimized, 0)).toString());
+        "SELECT DISTINCT * FROM `b` AS `b`",
+        translateAsAst(Iterables.get(optimized, 0)).toString());
   }
 
   @Test
