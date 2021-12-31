@@ -112,6 +112,17 @@ class ValuesRegistryImpl implements ValuesRegistry {
     return exprRefs.forRead().get(expr);
   }
 
+  @Override
+  public void displaceRef(Value oldRef, Value newRef, Set<Expression> excludedExpression) {
+    for (var pair : exprRefs.forWrite().entrySet()) {
+      if (excludedExpression.contains(pair.getKey())) continue;
+      final Values refs = pair.getValue();
+      for (int i = 0, bound = refs.size(); i < bound; i++) {
+        if (refs.get(i) == oldRef) refs.set(i, newRef);
+      }
+    }
+  }
+
   void renumberNode(int from, int to) {
     final Values values = nodeValues.forRead().get(from);
     if (values != null) nodeValues.forWrite().put(to, values);

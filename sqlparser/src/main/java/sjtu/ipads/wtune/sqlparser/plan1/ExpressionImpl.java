@@ -52,7 +52,10 @@ public class ExpressionImpl implements Expression {
 
   @Override
   public SqlNode interpolate(SqlContext ctx, Values values) {
-    if (internalRefs.size() != values.size())
+    if (internalRefs.isEmpty() && (values == null || values.isEmpty()))
+      return copyAst(template, ctx);
+
+    if (values == null || internalRefs.size() != values.size())
       throw new PlanException("mismatched # of values during interpolation");
 
     for (int i = 0, bound = internalRefs.size(); i < bound; i++) {

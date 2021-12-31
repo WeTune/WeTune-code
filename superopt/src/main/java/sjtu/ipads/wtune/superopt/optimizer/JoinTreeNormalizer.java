@@ -37,6 +37,7 @@ public class JoinTreeNormalizer {
       // 1. join<a.x=b.y>(a,newJoin<b.z=c.w>(b,c)) => newJoin<b.z=c.w>(join<a.x=b.y>(a,b),c)
       final PlanNode newLhs = normalize0(replaceLocal(join, a, b));
       return replaceLocal(newJoin, newLhs, c);
+
     } else {
       // 2. join<a.x=c.y>(a,newJoin<b.z=c.w>(b,c)) => newJoin<b.z=c.w>(join<a.x=c.y>(a,c),b)
       final PlanNode newLhs = replaceLocal(join, a, c);

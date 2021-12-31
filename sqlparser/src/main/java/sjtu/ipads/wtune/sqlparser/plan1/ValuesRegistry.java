@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.sqlparser.plan1;
 import sjtu.ipads.wtune.sqlparser.schema.Column;
 
 import java.util.List;
+import java.util.Set;
 
 public interface ValuesRegistry {
   Values valuesOf(int nodeId);
@@ -16,4 +17,6 @@ public interface ValuesRegistry {
   Values valueRefsOf(Expression expr);
 
   void bindValueRefs(Expression expr, List<Value> valueRefs);
+
+  void displaceRef(Value oldValue, Value newValue, Set<Expression> excludedExpression);
 }

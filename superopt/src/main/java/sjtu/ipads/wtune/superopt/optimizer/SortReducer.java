@@ -30,7 +30,10 @@ class SortReducer {
     if (enforcer == null) enforcer = emptySet();
 
     final List<Pair<PlanNode, PlanNode>> toRemove =
-            ListSupport.map(difference(sortNodes, enforcer), (Function<? super PlanNode, ? extends Pair<PlanNode, PlanNode>>) it -> Pair.of(it, it.predecessors()[0]));
+        ListSupport.map(
+            difference(sortNodes, enforcer),
+            (Function<? super PlanNode, ? extends Pair<PlanNode, PlanNode>>)
+                it -> Pair.of(it, it.predecessors()[0]));
     return toRemove.isEmpty() ? node : replaceGlobal(node, toRemove);
   }
 

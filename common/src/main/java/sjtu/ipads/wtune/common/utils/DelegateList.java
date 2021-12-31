@@ -55,7 +55,7 @@ public abstract class DelegateList<T> implements List<T> {
 
   @Override
   public boolean containsAll(@NotNull Collection<?> c) {
-    return delegation().contains(c);
+    return delegation().containsAll(c);
   }
 
   @Override

@@ -320,7 +320,6 @@ class ToAstTranslator {
     QueryBuilder setQualification(String qualification) {
       if (isInvalid()) return INVALID;
       if (qualification == null) return this;
-      assert this.qualification == null || this.isAgg;
       this.qualification = qualification;
       return this;
     }

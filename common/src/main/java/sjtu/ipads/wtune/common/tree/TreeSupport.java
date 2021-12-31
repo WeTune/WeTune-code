@@ -24,7 +24,7 @@ public interface TreeSupport {
 
   static int countNodes(TreeContext<?> context) {
     int count = 0;
-    for (int nodeId = 1, bound = context.maxNodeId(); nodeId < bound; nodeId++) {
+    for (int nodeId = 1, bound = context.maxNodeId(); nodeId <= bound; nodeId++) {
       if (!context.isPresent(nodeId)) ++count;
     }
     return count;
@@ -53,7 +53,7 @@ public interface TreeSupport {
   }
 
   static void deleteDetached(TreeContext<?> context, int rootId) {
-    for (int i = 1, bound = context.maxNodeId(); i < bound; ++i) {
+    for (int i = 1, bound = context.maxNodeId(); i <= bound; ++i) {
       if (isDetached(context, rootId, i)) context.deleteNode(i);
     }
   }

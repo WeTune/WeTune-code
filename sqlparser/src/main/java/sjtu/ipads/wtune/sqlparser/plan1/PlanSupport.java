@@ -155,7 +155,7 @@ public abstract class PlanSupport {
   }
 
   // Must be invoked after `resolvePlan`
-  static PlanContext disambiguateQualification(PlanContext ctx) {
+  public static PlanContext disambiguateQualification(PlanContext ctx) {
     final List<PlanNode> nodes = gatherNodes(ctx, EnumSet.of(Proj, Agg, Input));
     final Set<String> knownQualifications = new HashSet<>(nodes.size());
     final NameSequence seq = NameSequence.mkIndexed("q", 0);
@@ -165,7 +165,8 @@ public abstract class PlanSupport {
       final Qualified qualified = (Qualified) node;
 
       if (!mustBeQualified(ctx, ctx.nodeIdOf(node))) continue;
-      if (knownQualifications.add(qualified.qualification())) continue;
+      final String oldQualification = qualified.qualification();
+      if (oldQualification != null && knownQualifications.add(qualified.qualification())) continue;
 
       final String newQualification = seq.nextUnused(knownQualifications);
       knownQualifications.add(newQualification);
@@ -180,7 +181,7 @@ public abstract class PlanSupport {
   static List<PlanNode> gatherNodes(PlanContext ctx, PlanKind kind) {
     final List<PlanNode> inputs = new ArrayList<>(8);
 
-    for (int i = 0, bound = ctx.maxNodeId(); i < bound; i++)
+    for (int i = 0, bound = ctx.maxNodeId(); i <= bound; i++)
       if (ctx.isPresent(i) && ctx.kindOf(i) == kind) {
         inputs.add(ctx.nodeAt(i));
       }
@@ -191,7 +192,7 @@ public abstract class PlanSupport {
   static List<PlanNode> gatherNodes(PlanContext ctx, EnumSet<PlanKind> kinds) {
     final List<PlanNode> inputs = new ArrayList<>(8);
 
-    for (int i = 0, bound = ctx.maxNodeId(); i < bound; i++)
+    for (int i = 0, bound = ctx.maxNodeId(); i <= bound; i++)
       if (ctx.isPresent(i) && kinds.contains(ctx.kindOf(i))) {
         inputs.add(ctx.nodeAt(i));
       }

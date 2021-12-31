@@ -61,20 +61,20 @@ class PlanStringifier {
 
   private void appendSetOp(int nodeId) {
     final SetOpNode setOp = (SetOpNode) plan.nodeAt(nodeId);
-    builder.append(setOp.opKind());
+    builder.append(setOp.opKind()).append(nodeId);
     if (setOp.deduplicated()) builder.append('*');
   }
 
   private void appendLimit(int nodeId) {
     final LimitNode limit = (LimitNode) plan.nodeAt(nodeId);
-    builder.append("Limit{");
+    builder.append("Limit").append(nodeId).append('{');
     if (limit.limit() != null) builder.append("limit=").append(limit.limit());
     if (limit.offset() != null) builder.append("offset=").append(limit.offset());
   }
 
   private void appendSort(int nodeId) {
     final SortNode sort = (SortNode) plan.nodeAt(nodeId);
-    builder.append("Sort{[");
+    builder.append("Sort").append(nodeId).append("{[");
     for (Expression expr : sort.sortSpec()) builder.append(expr);
     builder.append("],refs=[");
     for (Expression expr : sort.sortSpec()) appendRefs(expr);
@@ -88,7 +88,7 @@ class PlanStringifier {
     final List<Expression> groupBys = agg.groupByExprs();
     final Expression having = agg.havingExpr();
 
-    builder.append("Agg{[");
+    builder.append("Agg").append(nodeId).append("{[");
     appendSelectItems(attrExprs, attrNames);
     builder.append(']');
     if (!groupBys.isEmpty()) {
@@ -113,7 +113,7 @@ class PlanStringifier {
 
     builder.append("Proj");
     if (proj.deduplicated()) builder.append('*');
-    builder.append("{[");
+    builder.append(nodeId).append("{[");
     appendSelectItems(exprs, names);
     builder.append("],refs=[");
     for (Expression expr : exprs) appendRefs(expr);
@@ -127,7 +127,7 @@ class PlanStringifier {
   private void appendFilter(int nodeId) {
     final SimpleFilterNode filter = (SimpleFilterNode) plan.nodeAt(nodeId);
     final Expression predicate = filter.predicate();
-    builder.append("Filter{").append(predicate).append(",refs=[");
+    builder.append("Filter").append(nodeId).append('{').append(predicate).append(",refs=[");
     appendRefs(predicate);
     builder.append("]}");
   }
@@ -135,19 +135,19 @@ class PlanStringifier {
   private void appendInSub(int nodeId) {
     final InSubNode filter = (InSubNode) plan.nodeAt(nodeId);
     final Expression expr = filter.expr();
-    builder.append("InSub{").append(expr).append(",refs=[");
+    builder.append("InSub").append(nodeId).append('{').append(expr).append(",refs=[");
     appendRefs(expr);
     builder.append("]}");
   }
 
   private void appendExists(int nodeId) {
-    builder.append("Exists");
+    builder.append("Exists").append(nodeId);
   }
 
   private void appendJoin(int nodeId) {
     final JoinNode join = (JoinNode) plan.nodeAt(nodeId);
     final Expression joinCond = join.joinCond();
-    builder.append(stringifyJoinKind(join.joinKind())).append('{');
+    builder.append(stringifyJoinKind(join.joinKind())).append(nodeId).append('{');
     builder.append(joinCond).append(",refs=[");
     appendRefs(joinCond);
     builder.append("]}");
@@ -155,7 +155,7 @@ class PlanStringifier {
 
   private void appendInput(int nodeId) {
     final InputNode input = (InputNode) plan.nodeAt(nodeId);
-    builder.append("Input{").append(input.table().name());
+    builder.append("Input").append(nodeId).append('{').append(input.table().name());
     builder.append(" AS ").append(input.qualification()).append("}");
   }
 
