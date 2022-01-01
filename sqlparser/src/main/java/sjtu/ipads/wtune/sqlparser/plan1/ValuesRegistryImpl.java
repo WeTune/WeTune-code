@@ -31,9 +31,9 @@ class ValuesRegistryImpl implements ValuesRegistry {
     this.exprRefs = new COW<>(new IdentityHashMap<>(), null);
   }
 
-  protected ValuesRegistryImpl(ValuesRegistryImpl toCopy) {
+  protected ValuesRegistryImpl(ValuesRegistryImpl toCopy, PlanContext newPlan) {
+    this.ctx = newPlan;
     this.nextId = toCopy.nextId;
-    this.ctx = toCopy.ctx;
     this.nodeValues = new COW<>(toCopy.nodeValues.forRead(), TIntObjectHashMap::new);
     this.valueExprs = new COW<>(toCopy.valueExprs.forRead(), TIntObjectHashMap::new);
     this.exprRefs = new COW<>(toCopy.exprRefs.forRead(), HashMap::new);
@@ -76,7 +76,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
         throw new PlanException("unknown plan node kind: " + ctx.kindOf(nodeId));
     }
 
-    registerValue(nodeId, values);
+    bindValues(nodeId, values);
     if (exprs != null) zip(values, exprs, this::registerExpr);
 
     return values;
@@ -123,7 +123,15 @@ class ValuesRegistryImpl implements ValuesRegistry {
     }
   }
 
-  void renumberNode(int from, int to) {
+  @Override
+  public void bindValues(int nodeId, List<Value> rawValues) {
+    final Values values;
+    if (rawValues instanceof Values) values = (Values) rawValues;
+    else values = Values.mk(rawValues);
+    nodeValues.forWrite().put(nodeId, values);
+  }
+
+  void relocateNode(int from, int to) {
     final Values values = nodeValues.forRead().get(from);
     if (values != null) nodeValues.forWrite().put(to, values);
   }
@@ -131,7 +139,8 @@ class ValuesRegistryImpl implements ValuesRegistry {
   void deleteNode(int id) {
     if (nodeValues.forRead().containsKey(id)) {
       final Values values = nodeValues.forWrite().remove(id);
-      if (values != null) for (Value value : values) removeValue(value);
+      if (values != null && initiatorOf(values.get(0)) == NO_SUCH_NODE)
+        for (Value value : values) removeValue(value);
     }
   }
 
@@ -166,10 +175,6 @@ class ValuesRegistryImpl implements ValuesRegistry {
     for (String attrName : attrNames) values.add(Value.mk(++nextId, qualification, attrName));
 
     return Pair.of(values, exporter.attrExprs());
-  }
-
-  private void registerValue(int nodeId, Values values) {
-    nodeValues.forWrite().put(nodeId, values);
   }
 
   private void registerExpr(Value value, Expression expr) {

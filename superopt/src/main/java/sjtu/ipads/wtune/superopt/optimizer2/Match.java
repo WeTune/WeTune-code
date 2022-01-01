@@ -6,17 +6,18 @@ import sjtu.ipads.wtune.sqlparser.plan1.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.optimizer2.OptimizerSupport.FAILURE_UNKNOWN_OP;
-import static sjtu.ipads.wtune.superopt.optimizer2.OptimizerSupport.predecessorOfFilters;
 
 class Match {
   private final Substitution rule;
@@ -26,7 +27,7 @@ class Match {
   private int matchRootNode;
 
   private int lastMatchedNode;
-  private Op lastMatchOp;
+  private Op lastMatchedOp;
 
   private PlanContext modifiedPlan;
   private int result;
@@ -42,7 +43,7 @@ class Match {
     this.sourcePlan = other.sourcePlan;
     this.matchRootNode = other.matchRootNode;
     this.lastMatchedNode = other.lastMatchedNode;
-    this.lastMatchOp = other.lastMatchOp;
+    this.lastMatchedOp = other.lastMatchedOp;
     this.modifiedPlan = other.modifiedPlan;
     this.result = other.result;
   }
@@ -60,7 +61,7 @@ class Match {
 
   Match setLastMatchPoint(int lastMatchedNode, Op lastMatchOp) {
     this.lastMatchedNode = lastMatchedNode;
-    this.lastMatchOp = lastMatchOp;
+    this.lastMatchedOp = lastMatchOp;
     return this;
   }
 
@@ -79,7 +80,10 @@ class Match {
   boolean mkModifiedPlan() {
     final Instantiation instantiation = new Instantiation(rule, model);
     result = instantiation.instantiate();
-    if (result <= 0) return false;
+    if (result <= 0) {
+      OptimizerSupport.setLastError(instantiation.lastError());
+      return false;
+    }
 
     modifiedPlan = instantiation.instantiatedPlan();
 
@@ -87,8 +91,7 @@ class Match {
     final int newRootId;
     if (parentId == NO_SUCH_NODE) newRootId = result;
     else {
-      final int[] children = sourcePlan.childrenOf(sourcePlan.parentOf(matchRootNode));
-      final int childIdx = children[0] == matchRootNode ? 0 : 1;
+      final int childIdx = indexOfChild(sourcePlan, matchRootNode);
       modifiedPlan.setChild(sourcePlan.parentOf(matchRootNode), childIdx, result);
       newRootId = sourcePlan.root();
     }
@@ -111,21 +114,30 @@ class Match {
   }
 
   boolean matchOne(Op op, int nodeId) {
+    boolean result;
     switch (op.kind()) {
       case INPUT:
-        return matchInput((Input) op, nodeId);
+        result = matchInput((Input) op, nodeId);
+        break;
       case INNER_JOIN:
       case LEFT_JOIN:
-        return matchJoin((Join) op, nodeId);
+        result = matchJoin((Join) op, nodeId);
+        break;
       case SIMPLE_FILTER:
-        return matchFilter((SimpleFilter) op, nodeId);
+        result = matchFilter((SimpleFilter) op, nodeId);
+        break;
       case IN_SUB_FILTER:
-        return matchInSub((InSubFilter) op, nodeId);
+        result = matchInSub((InSubFilter) op, nodeId);
+        break;
       case PROJ:
-        return matchProj((Proj) op, nodeId);
+        result = matchProj((Proj) op, nodeId);
+        break;
       default:
         throw new IllegalArgumentException("unknown operator: " + op.kind());
     }
+
+    if (result) setLastMatchPoint(nodeId, op);
+    return result;
   }
 
   private boolean matchInput(Input input, int nodeId) {
@@ -190,23 +202,40 @@ class Match {
         && model.checkConstraints();
   }
 
+  private Op nextOp(int childIdx) {
+    return lastMatchedOp.predecessors()[childIdx];
+  }
+
+  private int nextNode(int childIdx) {
+    return sourcePlan.childOf(lastMatchedNode, childIdx);
+  }
+
   static List<Match> match(Match match, Op op, int nodeId) {
-    if (op.kind() == INPUT || op.kind() == PROJ) {
+    if (op.kind() == INPUT) {
       if (match.matchOne(op, nodeId)) return singletonList(match);
       else return emptyList();
     }
 
     final PlanContext plan = match.sourcePlan();
+    if (op.kind() == PROJ) {
+      if (match.matchOne(op, nodeId))
+        return match(match, op.predecessors()[0], plan.childOf(nodeId, 0));
+      else return emptyList();
+    }
+
     if (op.kind().isJoin()) {
       if (plan.kindOf(nodeId) != PlanKind.Join) return emptyList();
 
-      final Op nextOp0 = op.predecessors()[0], nextOp1 = op.predecessors()[1];
-      final int nextNode0 = plan.childOf(nodeId, 0), nextNode1 = plan.childOf(nodeId, 1);
-
       final JoinMatcher matcher = new JoinMatcher((Join) op, plan, nodeId);
-      List<Match> matches = matcher.matchBasedOn(match);
-      matches = linkedListFlatMap(matches, m -> match(m, nextOp0, nextNode0));
-      matches = linkedListFlatMap(matches, m -> match(m, nextOp1, nextNode1));
+      final List<Match> localMatches = matcher.matchBasedOn(match);
+      List<Match> matches = new LinkedList<>();
+      for (Match localMatch : localMatches) {
+        final Op nextOp0 = localMatch.nextOp(0), nextOp1 = localMatch.nextOp(1);
+        final int nextNode0 = localMatch.nextNode(0), nextNode1 = localMatch.nextNode(1);
+        final List<Match> partialMatches = match(localMatch, nextOp0, nextNode0);
+        matches.addAll(linkedListFlatMap(partialMatches, m -> match(m, nextOp1, nextNode1)));
+      }
+
       return matches;
     }
 
@@ -218,8 +247,7 @@ class Match {
 
       final FilterMatcher matcher = new FilterMatcher((Filter) op, plan, nodeId);
       final List<Match> matches = matcher.matchBasedOn(match);
-      final Op nextOp = predecessorOfFilters(op);
-      return linkedListFlatMap(matches, m -> match(m, nextOp, plan.childOf(m.lastMatchedNode, 0)));
+      return linkedListFlatMap(matches, m -> match(m, m.nextOp(0), m.nextNode(0)));
     }
 
     OptimizerSupport.setLastError(FAILURE_UNKNOWN_OP + op.kind());

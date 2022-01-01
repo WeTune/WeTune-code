@@ -19,7 +19,6 @@ import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.apache.calcite.util.Util.last;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
@@ -302,6 +301,7 @@ class FilterMatcher {
       final int chainLength = newChain.size();
       final int firstMatchPointOffset = (isLeading && !isTrailing) ? numUnused : 0;
       final int lastMatchPointOffset = isTrailing ? chainLength - numUnused - 1 : chainLength - 1;
+      final int lastMatchedNode = nodeChain.at(lastMatchPointOffset);
 
       final Match derivedMatch = baseMatch.derive().setSourcePlan(matchedPlan);
       List<Match> matches = singletonList(derivedMatch);
@@ -313,8 +313,8 @@ class FilterMatcher {
         if (matches.isEmpty()) return false;
       }
 
-      derivedMatch.setLastMatchPoint(newChain.at(lastMatchPointOffset), last(opChain));
-      if (isLeading) derivedMatch.setMatchRootNode(newChain.at(0));
+      if (isLeading) for (Match m : matches) m.setMatchRootNode(newChain.at(0));
+      for (Match m : matches) m.setLastMatchPoint(lastMatchedNode, opChain.get(opChain.size() - 1));
 
       results.addAll(matches);
       return true;

@@ -12,7 +12,7 @@ public interface InfoCache {
 
   int getSubqueryNodeOf(Expression expr);
 
-  int[] getVirtualExpr(Expression expr);
+  int[] getVirtualExprComponents(Expression expr);
 
   JoinKind getJoinKindOf(int nodeId);
 

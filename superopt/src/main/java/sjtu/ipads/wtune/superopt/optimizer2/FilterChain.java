@@ -32,7 +32,7 @@ class FilterChain extends AbstractList<PlanNode> implements List<PlanNode> {
     // Note the order:
     // p AND q AND r
     // <=> Filter<r>(Filter<q>(Filter<p>(..))
-    // <=> [r,p,q]
+    // <=> [p,q,r]
     final int chainChild = cursor;
     final int[] filterIds = new int[length];
     while ((--length) >= 0) {

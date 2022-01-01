@@ -28,7 +28,7 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
     this.maxNodeId = other.maxNodeId;
     this.schema = other.schema;
     this.nodeReg = new COW<>(other.nodeReg.forRead(), PlanContextImpl::copyIdentityMap);
-    this.valuesReg = new ValuesRegistryImpl(other.valuesReg);
+    this.valuesReg = new ValuesRegistryImpl(other.valuesReg, this);
     this.infoCache = new InfoCacheImpl(other.infoCache);
   }
 
@@ -65,11 +65,16 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   }
 
   @Override
+  public void compact() {
+    super.compact();
+    infoCache.clearVirtualExprs();
+  }
+
+  @Override
   protected void relocate(int from, int to) {
-    nodeReg.forWrite().remove(nodeAt(to));
     nodeReg.forWrite().put(nodeAt(from), to);
     valuesReg.deleteNode(to);
-    valuesReg.renumberNode(from, to);
+    valuesReg.relocateNode(from, to);
     infoCache.deleteNode(to);
     infoCache.renumberNode(from, to);
     super.relocate(from, to);

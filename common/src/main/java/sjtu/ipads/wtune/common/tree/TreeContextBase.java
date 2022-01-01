@@ -56,6 +56,8 @@ public abstract class TreeContextBase<Kind, Nd extends TreeContextBase.NdBase<Ki
     detachNode(nodeId);
     nodes[nodeId] = null;
     if (nodeId == maxNodeId) --maxNodeId;
+    for (Nd node : nodes)
+      if (node != null && node.parentId() == nodeId) node.setParent(NO_SUCH_NODE);
   }
 
   @Override
@@ -71,7 +73,7 @@ public abstract class TreeContextBase<Kind, Nd extends TreeContextBase.NdBase<Ki
     }
 
     maxNodeId = nodes[backwardIdx] == null ? backwardIdx - 1 : backwardIdx;
-    if (maxNodeId <= (nodes.length >> 1)) nodes = Arrays.copyOf(nodes, maxNodeId);
+    if ((maxNodeId + 1) <= (nodes.length >> 1)) nodes = Arrays.copyOf(nodes, maxNodeId + 1);
   }
 
   protected abstract void relocate(int from, int to);
@@ -91,6 +93,8 @@ public abstract class TreeContextBase<Kind, Nd extends TreeContextBase.NdBase<Ki
   }
 
   public interface NdBase<Kind> {
+    void setParent(int parentId);
+
     int parentId();
 
     Kind kind();

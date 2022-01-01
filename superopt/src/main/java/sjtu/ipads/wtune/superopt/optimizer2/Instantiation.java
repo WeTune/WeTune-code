@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
 import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.tryResolveRef;
@@ -34,7 +35,12 @@ class Instantiation {
   }
 
   int instantiate() {
-    return instantiate(rule._1().root());
+    try {
+      return instantiate(rule._1().root());
+    } catch (Throwable ex) {
+      error = dumpException(ex);
+      return NO_SUCH_NODE;
+    }
   }
 
   String lastError() {
@@ -63,7 +69,9 @@ class Instantiation {
   private int instantiateInput(Input input) {
     final Integer nodeId = model.ofTable(instantiationOf(input.table()));
     if (nodeId == null) return fail(FAILURE_INCOMPLETE_MODEL);
-    else return nodeId;
+
+    newPlan.detachNode(nodeId);
+    return nodeId;
   }
 
   private int instantiateJoin(Join join) {
@@ -71,20 +79,24 @@ class Instantiation {
     final int rhs = instantiate(join.predecessors()[1]);
     if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> lhsKeys = model.ofAttrs(instantiationOf(join.lhsAttrs()));
-    final List<Value> rhsKeys = model.ofAttrs(instantiationOf(join.rhsAttrs()));
+    List<Value> lhsKeys = model.ofAttrs(instantiationOf(join.lhsAttrs()));
+    List<Value> rhsKeys = model.ofAttrs(instantiationOf(join.rhsAttrs()));
 
     if (lhsKeys == null || rhsKeys == null) return fail(FAILURE_INCOMPLETE_MODEL);
     if (lhsKeys.size() != rhsKeys.size() || lhsKeys.isEmpty())
       return fail(FAILURE_MISMATCHED_JOIN_KEYS);
-    if (!adaptValues(lhsKeys, outValuesOf(lhs)) || !adaptValues(rhsKeys, outValuesOf(rhs)))
-      return fail(FAILURE_FOREIGN_VALUE);
+
+    lhsKeys = adaptValues(lhsKeys, outValuesOf(lhs));
+    rhsKeys = adaptValues(rhsKeys, outValuesOf(rhs));
+    if (lhsKeys == null || rhsKeys == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final JoinKind joinKind = join.kind() == INNER_JOIN ? JoinKind.INNER_JOIN : JoinKind.LEFT_JOIN;
     final Expression joinCond = PlanSupport.mkJoinCond(lhsKeys.size());
     final JoinNode joinNode = JoinNode.mk(joinKind, joinCond);
     final int joinNodeId = newPlan.bindNode(joinNode);
 
+    newPlan.setChild(joinNodeId, 0, lhs);
+    newPlan.setChild(joinNodeId, 1, rhs);
     newPlan.valuesReg().bindValueRefs(joinCond, interleaveJoinKeys(lhsKeys, rhsKeys));
     newPlan.infoCache().putJoinKeyOf(joinNodeId, lhsKeys, rhsKeys);
 
@@ -92,47 +104,53 @@ class Instantiation {
   }
 
   private int instantiateFilter(SimpleFilter filter) {
-    final int child = instantiate(filter);
+    final int child = instantiate(filter.predecessors()[0]);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
     final Expression predicate = model.ofPred(instantiationOf(filter.predicate()));
-    final List<Value> values = model.ofAttrs(instantiationOf(filter.attrs()));
+    List<Value> values = model.ofAttrs(instantiationOf(filter.attrs()));
     if (predicate == null || values == null || values.isEmpty())
       return fail(FAILURE_INCOMPLETE_MODEL);
-    if (!adaptValues(values, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
 
-    final SimpleFilterNode filterNode = SimpleFilterNode.mk(predicate);
-    final int filterNodeId = newPlan.bindNode(filterNode);
+    values = adaptValues(values, outValuesOf(child));
+    if (values == null) return fail(FAILURE_FOREIGN_VALUE);
 
-    newPlan.valuesReg().bindValueRefs(predicate, values);
-    return filterNodeId;
+    return mkFilterNode(predicate, values, child);
   }
 
   private int instantiateInSub(InSubFilter inSub) {
-    final int child = instantiate(inSub);
-    if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
+    final int lhs = instantiate(inSub.predecessors()[0]);
+    final int rhs = instantiate(inSub.predecessors()[1]);
+    if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> values = model.ofAttrs(instantiationOf(inSub.attrs()));
+    List<Value> values = model.ofAttrs(instantiationOf(inSub.attrs()));
     if (values == null || values.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
-    if (!adaptValues(values, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
+
+    values = adaptValues(values, outValuesOf(lhs));
+    if (values == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final Expression expression = PlanSupport.mkColRefsExpr(values.size());
     final InSubNode inSubNode = InSubNode.mk(expression);
     final int inSubNodeId = newPlan.bindNode(inSubNode);
 
+    newPlan.setChild(inSubNodeId, 0, lhs);
+    newPlan.setChild(inSubNodeId, 1, rhs);
     newPlan.valuesReg().bindValueRefs(expression, values);
     return inSubNodeId;
   }
 
   private int instantiateProj(Proj proj) {
-    final int child = instantiate(proj);
+    final int child = instantiate(proj.predecessors()[0]);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> inAttrs = model.ofAttrs(instantiationOf(proj.attrs()));
     final List<Value> outAttrs = model.ofSchema(instantiationOf(proj.schema()));
-    if (inAttrs == null || inAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
     if (outAttrs == null || outAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
-    if (!adaptValues(inAttrs, outValuesOf(child))) return fail(FAILURE_FOREIGN_VALUE);
+
+    List<Value> inAttrs = model.ofAttrs(instantiationOf(proj.attrs()));
+    if (inAttrs == null || inAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+
+    inAttrs = adaptValues(inAttrs, outValuesOf(child));
+    if (inAttrs == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final ValuesRegistry valuesReg = newPlan.valuesReg();
     final List<String> names = ListSupport.map(outAttrs, Value::name);
@@ -140,14 +158,15 @@ class Instantiation {
 
     final ProjNode projNode = ProjNode.mk(proj.isDeduplicated(), names, exprs);
     final int projNodeId = newPlan.bindNode(projNode);
+    newPlan.setChild(projNodeId, 0, child);
 
-    int i = 0;
+    int offset = 0;
     for (Expression expr : exprs) {
       final int numRefs = expr.colRefs().size();
-      final ArrayList<Value> refs = new ArrayList<>(inAttrs.subList(i, i + numRefs));
-      valuesReg.bindValueRefs(expr, refs);
-      i += numRefs;
+      valuesReg.bindValueRefs(expr, new ArrayList<>(inAttrs.subList(offset, offset + numRefs)));
+      offset += numRefs;
     }
+    valuesReg.bindValues(projNodeId, outAttrs);
 
     return projNodeId;
   }
@@ -165,25 +184,76 @@ class Instantiation {
     return newPlan.valuesReg().valuesOf(nodeId);
   }
 
-  private boolean adaptValues(List<Value> values, List<Value> inValues) {
+  private List<Value> adaptValues(List<Value> values, List<Value> inValues) {
     // Handle subquery elimination.
     // e.g., Select sub.a From (Select t.a, t.b From t) As sub
     //       -> Select sub.a From t
     // But "sub.a" is actually not present in the out-values of "(Select t.a, t.b From t) As sub".
     // We have to trace the ref-chain of "sub.a", and find that "t.a" is present.
     // Finally, we replace "sub.a" by "t.a".
+    List<Value> adaptedValues = null;
     for (int i = 0, bound = values.size(); i < bound; i++) {
       final Value adapted = adaptValue(inValues.get(i), inValues);
-      if (adapted == null) return false;
-      inValues.set(i, adapted);
+      if (adapted == null) return null;
+      if (adapted != inValues.get(i)) {
+        if (adaptedValues == null) adaptedValues = new ArrayList<>(values.size());
+        adaptedValues.add(adapted);
+      }
     }
-    return true;
+    return adaptedValues == null ? values : adaptedValues;
   }
 
   private Value adaptValue(Value value, List<Value> lookup) {
     final List<Value> refChain = new ArrayList<>(5);
     for (; value != null; value = tryResolveRef(newPlan, value)) refChain.add(value);
     return linearFind(lookup, refChain::contains);
+  }
+
+  private int mkFilterNode(Expression expr, List<Value> refs, int child) {
+    final InfoCache infoCache = model.plan().infoCache();
+    final ValuesRegistry valuesReg = model.plan().valuesReg();
+
+    final int subqueryNode = infoCache.getSubqueryNodeOf(expr);
+    if (subqueryNode != NO_SUCH_NODE) {
+      final Expression inSubExpr = getFilterExpr(subqueryNode);
+      newPlan.detachNode(subqueryNode);
+      newPlan.setChild(subqueryNode, 0, child);
+      valuesReg.bindValueRefs(inSubExpr, refs);
+      return subqueryNode;
+    }
+
+    final int[] components = infoCache.getVirtualExprComponents(expr);
+    if (components != null) {
+      int offset = 0;
+
+      newPlan.setChild(components[0], 0, child);
+      for (int i = 0, bound = components.length; i < bound; ++i) {
+        final Expression filterExpr = getFilterExpr(components[i]);
+        final int numRefs = filterExpr.colRefs().size();
+        valuesReg.bindValueRefs(expr, new ArrayList<>(refs.subList(offset, offset + numRefs)));
+        offset += numRefs;
+
+        if (i > 0) newPlan.setChild(components[i], 0, components[i - 1]);
+        newPlan.detachNode(components[i]);
+      }
+
+      return components[components.length - 1];
+    }
+
+    final SimpleFilterNode filterNode = SimpleFilterNode.mk(expr);
+    final int filterNodeId = newPlan.bindNode(filterNode);
+
+    newPlan.setChild(filterNodeId, 0, child);
+    newPlan.valuesReg().bindValueRefs(expr, refs);
+    return filterNodeId;
+  }
+
+  private Expression getFilterExpr(int nodeId) {
+    final PlanNode node = newPlan.nodeAt(nodeId);
+    final PlanKind nodeKind = node.kind();
+    if (nodeKind == PlanKind.Filter) return ((SimpleFilterNode) node).predicate();
+    else if (nodeKind == PlanKind.InSub) return ((InSubNode) node).expr();
+    else return null;
   }
 
   private static List<Value> interleaveJoinKeys(List<Value> lhsJoinKeys, List<Value> rhsJoinKeys) {

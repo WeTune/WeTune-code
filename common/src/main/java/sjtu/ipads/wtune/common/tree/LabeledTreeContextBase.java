@@ -158,6 +158,11 @@ public class LabeledTreeContextBase<Kind>
     }
 
     @Override
+    public void setParent(int parentId) {
+      this.parentId = parentId;
+    }
+
+    @Override
     public Kind kind() {
       return kind;
     }

@@ -54,7 +54,9 @@ public interface TreeSupport {
 
   static void deleteDetached(TreeContext<?> context, int rootId) {
     for (int i = 1, bound = context.maxNodeId(); i <= bound; ++i) {
-      if (isDetached(context, rootId, i)) context.deleteNode(i);
+      if (context.isPresent(i) && isDetached(context, rootId, i)) {
+        context.deleteNode(i);
+      }
     }
   }
 

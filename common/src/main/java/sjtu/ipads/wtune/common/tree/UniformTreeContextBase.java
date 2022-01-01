@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkIsValidChild;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
-import static sjtu.ipads.wtune.common.utils.ArraySupport.safeGet;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.safeGet;
 
 public class UniformTreeContextBase<Kind>
     extends TreeContextBase<Kind, UniformTreeContextBase.Nd<Kind>>
@@ -57,6 +57,8 @@ public class UniformTreeContextBase<Kind>
   @Override
   public void detachNode(int nodeId) {
     final int parentId = parentOf(nodeId);
+    if (parentId == NO_SUCH_NODE) return;
+
     checkNodePresent(this, parentId);
 
     nodes[nodeId].parentId = NO_SUCH_NODE;
@@ -100,6 +102,11 @@ public class UniformTreeContextBase<Kind>
       } else {
         this.childrenIds = Arrays.copyOf(other.childrenIds, other.childrenIds.length);
       }
+    }
+
+    @Override
+    public void setParent(int parentId) {
+      this.parentId = parentId;
     }
 
     @Override

@@ -155,8 +155,8 @@ class Model {
   }
 
   private boolean checkUnique(Constraint unique) {
-    final Symbol attrsSym = unique.symbols()[0];
-    final Symbol srcSym = unique.symbols()[1];
+    final Symbol attrsSym = unique.symbols()[1];
+    final Symbol tableSym = unique.symbols()[0];
 
     final List<Value> attrs = ofAttrs(attrsSym);
     if (attrs == null) return true; // not assigned yet, pass
@@ -166,15 +166,15 @@ class Model {
 
     if (none(columns, column -> isParticipateIn(column, UNIQUE))) return false;
 
-    final Integer input = ofTable(srcSym);
+    final Integer input = ofTable(tableSym);
     if (input == null) return true; // not assigned yet, pass
 
     return PlanSupport.isUniqueCoreAt(plan, new HashSet<>(attrs), input);
   }
 
   private boolean checkNotNull(Constraint notNull) {
-    final Symbol attrsSym = notNull.symbols()[0];
-    final Symbol srcSym = notNull.symbols()[1];
+    final Symbol attrsSym = notNull.symbols()[1];
+    final Symbol tableSym = notNull.symbols()[0];
 
     final List<Value> attrs = ofAttrs(attrsSym);
     if (attrs == null) return true; // not assigned yet, pass
@@ -184,7 +184,7 @@ class Model {
 
     if (none(columns, column -> isParticipateIn(column, NOT_NULL))) return false;
 
-    final Integer input = ofTable(srcSym);
+    final Integer input = ofTable(tableSym);
     if (input == null) return true; // not assigned yet, pass
 
     final PlanContext plan = this.plan;
@@ -195,7 +195,7 @@ class Model {
     assert reference.kind() == Reference;
 
     final Symbol referringAttrsSym = reference.symbols()[1];
-    final Symbol referredSrcSym = reference.symbols()[2];
+    final Symbol referredTableSym = reference.symbols()[2];
     final Symbol referredAttrsSym = reference.symbols()[3];
 
     final List<Value> referringAttrs = ofAttrs(referringAttrsSym);
@@ -211,7 +211,7 @@ class Model {
     if (referredCols == null) return false;
     if (linearFind(fks, it -> it.refColumns().equals(referredCols)) == null) return false;
 
-    final Integer surface = ofTable(referredSrcSym);
+    final Integer surface = ofTable(referredTableSym);
     if (surface == null) return true;
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
@@ -235,7 +235,7 @@ class Model {
       final Integer nodeId = ofTable(sym);
       return nodeId == null ? null : plan.valuesReg().valuesOf(nodeId);
     } else {
-      assert sym.kind() == ATTRS;
+      assert sym.kind() == SCHEMA;
       return ofAttrs(sym);
     }
   }
