@@ -10,10 +10,10 @@ import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
 import sjtu.ipads.wtune.spes.RexNodeHelper.RexNodeHelper;
-import sjtu.ipads.wtune.sqlparser.plan1.Expression;
-import sjtu.ipads.wtune.sqlparser.plan1.SimpleFilterNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Value;
-import sjtu.ipads.wtune.sqlparser.plan1.Values;
+import sjtu.ipads.wtune.sqlparser.plan.Expression;
+import sjtu.ipads.wtune.sqlparser.plan.SimpleFilterNode;
+import sjtu.ipads.wtune.sqlparser.plan.Value;
+import sjtu.ipads.wtune.sqlparser.plan.Values;
 
 import java.util.ArrayList;
 import java.util.List;

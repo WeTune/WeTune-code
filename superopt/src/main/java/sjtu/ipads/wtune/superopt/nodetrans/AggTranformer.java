@@ -11,9 +11,9 @@ import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.TableNode;
 import sjtu.ipads.wtune.spes.AlgeRule.JoinToProject;
-import sjtu.ipads.wtune.sqlparser.plan1.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan1.Expression;
-import sjtu.ipads.wtune.sqlparser.plan1.Values;
+import sjtu.ipads.wtune.sqlparser.plan.AggNode;
+import sjtu.ipads.wtune.sqlparser.plan.Expression;
+import sjtu.ipads.wtune.sqlparser.plan.Values;
 
 import java.util.ArrayList;
 import java.util.List;

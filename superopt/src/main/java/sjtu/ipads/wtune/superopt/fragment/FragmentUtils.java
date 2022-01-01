@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.ArrayList;
@@ -9,9 +8,9 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.SET_OP;
 import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.PROJ;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 
 class FragmentUtils {
   static boolean isDedup(Op op) {
@@ -56,7 +55,7 @@ class FragmentUtils {
     if (sz0 < sz1) return -1;
     if (sz0 > sz1) return 1;
 
-    final OperatorType type0 = tree0.kind(), type1 = tree1.kind();
+    final OpKind type0 = tree0.kind(), type1 = tree1.kind();
     if (type0.ordinal() < type1.ordinal()) return -1;
     if (type0.ordinal() > type1.ordinal()) return 1;
     if (!isDedup(tree0) && isDedup(tree1)) return -1;
@@ -116,7 +115,7 @@ class FragmentUtils {
 
   /** Fill holes with Input operator and call setFragment on each operator. */
   static Fragment setupFragment(FragmentImpl fragment) {
-    for (Hole<Op> hole : gatherHoles(fragment)) hole.fill(mk(OperatorType.INPUT));
+    for (Hole<Op> hole : gatherHoles(fragment)) hole.fill(mk(OpKind.INPUT));
     fragment.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(fragment)));
     return fragment;
   }

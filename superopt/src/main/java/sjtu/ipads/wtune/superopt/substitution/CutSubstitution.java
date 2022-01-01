@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.fragment.*;
 
@@ -26,7 +25,7 @@ class CutSubstitution {
   }
 
   private static Triple<Fragment, Input, Fragment> cutFragment(Op cutPoint) {
-    final Op newInput = Op.mk(OperatorType.INPUT);
+    final Op newInput = Op.mk(OpKind.INPUT);
     final Symbols topSyms = Symbols.mk(), bottomSyms = Symbols.mk();
 
     final Op topTree = treeRootOf(displaceGlobal(topSyms, cutPoint, newInput, false));

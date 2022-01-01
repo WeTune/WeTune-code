@@ -6,7 +6,7 @@ import org.apache.calcite.rex.RexNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.TableNode;
-import sjtu.ipads.wtune.sqlparser.plan1.InputNode;
+import sjtu.ipads.wtune.sqlparser.plan.InputNode;
 
 import java.util.ArrayList;
 import java.util.HashSet;

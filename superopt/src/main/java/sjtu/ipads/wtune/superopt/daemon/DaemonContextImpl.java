@@ -4,8 +4,8 @@ import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;

@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.PartialOrder;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -11,10 +10,10 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INPUT;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.INPUT;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.PROJ;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE;
@@ -564,7 +563,7 @@ class ConstraintEnumerator {
     srcOp = skipFilters(srcOp);
     tgtOp = skipFilters(tgtOp);
 
-    final OperatorType srcKind = srcOp.kind(), tgtKind = tgtOp.kind();
+    final OpKind srcKind = srcOp.kind(), tgtKind = tgtOp.kind();
     if (srcKind == INPUT && tgtKind == INPUT) {
       return currentInstantiationOf(((Input) tgtOp).table()) == ((Input) srcOp).table();
 

@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 
 import java.util.Properties;
 
 public interface Profiler {
-  void setBaseline(PlanNode baseline);
+  void setBaseline(PlanContext baseline);
 
-  void profile(PlanNode plan);
+  void profile(PlanContext plan);
 
-  PlanNode getPlan(int index);
+  PlanContext getPlan(int index);
 
   double getCost(int index);
 

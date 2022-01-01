@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanKind;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
+import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.stringifyTree;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.stringifyTree;
 
 final class SubPlan {
   private final PlanContext plan;

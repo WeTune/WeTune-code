@@ -2,13 +2,17 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 import java.util.List;
 
-public interface SortNode extends PlanNode {
-  List<Expr> orders();
+import static java.util.Objects.requireNonNull;
 
-  void setRefHints(int[] hints);
+public interface SortNode extends PlanNode {
+  List<Expression> sortSpec();
 
   @Override
-  default OperatorType kind() {
-    return OperatorType.SORT;
+  default PlanKind kind() {
+    return PlanKind.Sort;
+  }
+
+  static SortNode mk(List<Expression> sortSpec) {
+    return new SortNodeImpl(requireNonNull(sortSpec));
   }
 }

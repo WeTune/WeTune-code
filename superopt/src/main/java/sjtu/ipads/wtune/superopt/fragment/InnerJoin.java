@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-
 public interface InnerJoin extends Join {
   @Override
-  default OperatorType kind() {
-    return OperatorType.INNER_JOIN;
+  default OpKind kind() {
+    return OpKind.INNER_JOIN;
   }
 }

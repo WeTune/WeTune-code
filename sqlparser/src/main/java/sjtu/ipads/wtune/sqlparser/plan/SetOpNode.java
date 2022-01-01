@@ -1,14 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpKind;
 
 public interface SetOpNode extends PlanNode {
-  boolean distinct();
+  boolean deduplicated();
 
-  SetOperation operation();
+  SetOpKind opKind();
 
   @Override
-  default OperatorType kind() {
-    return OperatorType.SET_OP;
+  default PlanKind kind() {
+    return PlanKind.SetOp;
+  }
+
+  static SetOpNode mk(boolean deduplicated, SetOpKind opKind) {
+    return new SetOpNodeImpl(deduplicated, opKind);
   }
 }

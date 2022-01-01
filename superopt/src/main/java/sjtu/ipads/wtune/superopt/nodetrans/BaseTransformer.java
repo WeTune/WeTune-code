@@ -8,9 +8,9 @@ import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.type.SqlTypeName;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanKind;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
+import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 abstract class BaseTransformer implements Transformer{
     static RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT);

@@ -2,14 +2,8 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
-import sjtu.ipads.wtune.stmt.resolver.Params;
-import sjtu.ipads.wtune.stmt.resolver.Resolution;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import javax.sql.DataSource;
@@ -17,22 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.SQLSERVER;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
 
 class ProfilerImpl implements Profiler {
   private final Properties dbProps;
-  private PlanNode baseline;
+  private PlanContext baseline;
   private double baseCost;
-  private final List<PlanNode> plans;
+  private final List<PlanContext> plans;
   private final TDoubleList costs;
 
   ProfilerImpl(Properties dbProps) {
@@ -42,22 +29,22 @@ class ProfilerImpl implements Profiler {
   }
 
   @Override
-  public void setBaseline(PlanNode baseline) {
+  public void setBaseline(PlanContext baseline) {
     plans.clear();
     costs.clear();
     this.baseline = baseline;
-    this.baseCost = queryCost(translateAsAst(baseline));
+    this.baseCost = queryCost(translateAsAst(baseline, baseline.root(), false));
   }
 
   @Override
-  public void profile(PlanNode plan) {
+  public void profile(PlanContext plan) {
     if (plan == null) {
       plans.add(null);
       costs.add(Double.MAX_VALUE);
       return;
     }
 
-    final ASTNode ast = translateAsAst(plan);
+    final SqlNode ast = translateAsAst(plan, plan.root(), false);
     final double cost = queryCost(ast);
 
     plans.add(plan);
@@ -65,7 +52,7 @@ class ProfilerImpl implements Profiler {
   }
 
   @Override
-  public PlanNode getPlan(int index) {
+  public PlanContext getPlan(int index) {
     return plans.get(index);
   }
 
@@ -88,11 +75,11 @@ class ProfilerImpl implements Profiler {
     // MySQL doesn't correctly estimate some simplification (e.g. remove JOIN),
     // so let's do it ourself.
     if (minCostIndex == -1 && MYSQL.equals(dbProps.getProperty("dbType"))) {
-      Complexity minComplexity = Complexity.mk(baseline);
+      Complexity minComplexity = Complexity.mk(baseline, baseline.root());
       for (int i = 0, bound = plans.size(); i < bound; i++) {
-        final PlanNode plan = plans.get(i);
+        final PlanContext plan = plans.get(i);
         if (plan == null) continue;
-        final Complexity complexity = Complexity.mk(plan);
+        final Complexity complexity = Complexity.mk(plan, plan.root());
         if (minComplexity.compareTo(complexity, false) > 0) {
           minComplexity = complexity;
           minCostIndex = i;
@@ -103,10 +90,10 @@ class ProfilerImpl implements Profiler {
     return minCostIndex;
   }
 
-  private double queryCost(ASTNode ast) {
+  private double queryCost(SqlNode ast) {
     String query = ast.toString();
     if (query.contains("?") || query.contains("$")) {
-      final List<ASTNode> filled = fillParamMarker(ast);
+      final List<SqlNode> filled = fillParamMarker(ast);
       query = ast.toString();
       unFillParamMarker(filled);
     }
@@ -118,82 +105,83 @@ class ProfilerImpl implements Profiler {
     return CostQuery.mk(dbType, dataSource::getConnection, query).getCost();
   }
 
-  private static List<ASTNode> fillParamMarker(ASTNode ast) {
-    final Params mgr = Resolution.resolveParamFull(ast);
-    final List<ASTNode> filled = new ArrayList<>();
-    for (ParamDesc param : mgr.params()) {
-      final ASTNode node = param.node();
-      if (!PARAM_MARKER.isInstance(node)) continue;
-
-      ParamModifier modifier = tail(param.modifiers());
-      if (modifier == null) continue;
-
-      ASTNode value;
-
-      if (modifier.type() == OFFSET_VAL) value = fillOffset();
-      else if (modifier.type() == LIMIT_VAL) value = fillLimit();
-      else {
-        if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
-          modifier = elemAt(param.modifiers(), -2);
-        if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
-
-        final Column column = (Column) modifier.args()[1];
-        assert column != null;
-        value = fillColumnValue(column);
-      }
-
-      node.update(value);
-      filled.add(node);
-    }
-    return filled;
+  private static List<SqlNode> fillParamMarker(SqlNode ast) {
+    //    final Params mgr = Resolution.resolveParamFull(ast);
+    //    final List<ASTNode> filled = new ArrayList<>();
+    //    for (ParamDesc param : mgr.params()) {
+    //      final ASTNode node = param.node();
+    //      if (!Param.isInstance(node)) continue;
+    //
+    //      ParamModifier modifier = tail(param.modifiers());
+    //      if (modifier == null) continue;
+    //
+    //      ASTNode value;
+    //
+    //      if (modifier.type() == OFFSET_VAL) value = fillOffset();
+    //      else if (modifier.type() == LIMIT_VAL) value = fillLimit();
+    //      else {
+    //        if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
+    //          modifier = elemAt(param.modifiers(), -2);
+    //        if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
+    //
+    //        final Column column = (Column) modifier.args()[1];
+    //        assert column != null;
+    //        value = fillColumnValue(column);
+    //      }
+    //
+    //      node.update(value);
+    //      filled.add(node);
+    //    }
+    //    return filled;
+    return null; // TODO
   }
 
-  private static ASTNode fillLimit() {
-    final ASTNode value = ASTNode.expr(LITERAL);
-    value.set(LITERAL_TYPE, LiteralType.INTEGER);
-    value.set(LITERAL_VALUE, 100);
-    return value;
-  }
-
-  private static ASTNode fillOffset() {
-    final ASTNode value = ASTNode.expr(LITERAL);
-    value.set(LITERAL_TYPE, LiteralType.INTEGER);
-    value.set(LITERAL_VALUE, 0);
-    return value;
-  }
-
-  private static ASTNode fillColumnValue(Column column) {
-    final ASTNode value = ASTNode.expr(LITERAL);
-    switch (column.dataType().category()) {
-      case INTEGRAL -> {
-        value.set(LITERAL_TYPE, LiteralType.INTEGER);
-        value.set(LITERAL_VALUE, 1);
-      }
-      case FRACTION -> {
-        value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
-        value.set(LITERAL_VALUE, 1.0);
-      }
-      case BOOLEAN -> {
-        value.set(LITERAL_TYPE, LiteralType.BOOL);
-        value.set(LITERAL_VALUE, false);
-      }
-      case STRING -> {
-        value.set(LITERAL_TYPE, LiteralType.TEXT);
-        value.set(LITERAL_VALUE, "00001");
-      }
-      case TIME -> {
-        value.set(LITERAL_TYPE, LiteralType.TEXT);
-        value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
-      }
-      default -> value.set(LITERAL_TYPE, LiteralType.NULL);
-    }
-    return value;
-  }
-
-  private static void unFillParamMarker(List<ASTNode> filled) {
-    for (ASTNode n : filled) {
-      final ASTNode marker = ASTNode.expr(PARAM_MARKER);
-      n.update(marker);
+  //  private static SqlNode fillLimit() {
+  //    final ASTNode value = ASTNode.expr(LITERAL);
+  //    value.set(LITERAL_TYPE, LiteralType.INTEGER);
+  //    value.set(LITERAL_VALUE, 100);
+  //    return value;
+  //  }
+  //
+  //  private static ASTNode fillOffset() {
+  //    final ASTNode value = ASTNode.expr(LITERAL);
+  //    value.set(LITERAL_TYPE, LiteralType.INTEGER);
+  //    value.set(LITERAL_VALUE, 0);
+  //    return value;
+  //  }
+  //
+  //  private static ASTNode fillColumnValue(Column column) {
+  //    final ASTNode value = ASTNode.expr(LITERAL);
+  //    switch (column.dataType().category()) {
+  //      case INTEGRAL -> {
+  //        value.set(LITERAL_TYPE, LiteralType.INTEGER);
+  //        value.set(LITERAL_VALUE, 1);
+  //      }
+  //      case FRACTION -> {
+  //        value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
+  //        value.set(LITERAL_VALUE, 1.0);
+  //      }
+  //      case BOOLEAN -> {
+  //        value.set(LITERAL_TYPE, LiteralType.BOOL);
+  //        value.set(LITERAL_VALUE, false);
+  //      }
+  //      case STRING -> {
+  //        value.set(LITERAL_TYPE, LiteralType.TEXT);
+  //        value.set(LITERAL_VALUE, "00001");
+  //      }
+  //      case TIME -> {
+  //        value.set(LITERAL_TYPE, LiteralType.TEXT);
+  //        value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
+  //      }
+  //      default -> value.set(LITERAL_TYPE, LiteralType.NULL);
+  //    }
+  //    return value;
+  //  }
+  //
+  private static void unFillParamMarker(List<SqlNode> filled) {
+    for (SqlNode n : filled) {
+      //        final ASTNode marker = ASTNode.expr(PARAM_MARKER);
+      //        n.update(marker);
     }
   }
 

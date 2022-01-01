@@ -7,7 +7,7 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 public class FragmentSupport {
   private static final int DEFAULT_MAX_OPS = 4;

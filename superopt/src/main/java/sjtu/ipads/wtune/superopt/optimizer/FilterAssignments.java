@@ -5,14 +5,14 @@ import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sqlparser.SqlSupport.*;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.AND;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.Filter;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.Filter;
 
 class FilterAssignments {
   private final FilterChain filterChain;

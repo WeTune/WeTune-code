@@ -1,99 +1,139 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperation;
-import sjtu.ipads.wtune.sqlparser.ast.constants.SetOperationOption;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.common.utils.NameSequence;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlKind;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpOption;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.Commons.head;
+import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.common.utils.LeveledException.unsupportedEx;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.AGGREGATE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.LEFT_JOIN;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.copyAst;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.SelectItem;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.TableSourceFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.AND;
+import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.IN_SUBQUERY;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.*;
+import static sjtu.ipads.wtune.sqlparser.util.ColRefGatherer.gatherColRefs;
 
 class PlanBuilder {
-  private final ASTNode ast;
-  private final Schema schema;
+  private static final int FAIL = Integer.MIN_VALUE;
 
-  private PlanBuilder(Schema schema, ASTNode ast) {
-    this.ast = ast;
-    this.schema = schema;
+  private final SqlNode ast;
+  private final Schema schema;
+  private final PlanContext plan;
+  private final ValuesRegistry valuesReg;
+  private final SqlContext tmpCtx;
+  private final NameSequence synNameSeq;
+
+  private String error;
+
+  PlanBuilder(SqlNode ast, Schema schema) {
+    this.ast = requireNonNull(ast);
+    this.schema = requireNonNull(coalesce(ast.context().schema(), schema));
+    this.plan = PlanContext.mk(schema);
+    this.valuesReg = plan.valuesReg();
+    this.tmpCtx = SqlContext.mk(8);
+    this.synNameSeq = NameSequence.mkIndexed(SYN_NAME_PREFIX, 0);
   }
 
-  public static PlanNode buildPlan(ASTNode ast, Schema schema) {
-    final PlanNode plan = new PlanBuilder(requireNonNull(schema), requireNonNull(ast)).build0(ast);
-    final PlanContext ctx = PlanContext.mk(schema);
-    PlanContext.install(ctx, plan);
+  boolean build() {
+    try {
+      return build0(ast) != FAIL;
+    } catch (RuntimeException ex) {
+      error = dumpException(ex);
+      return false;
+    }
+  }
+
+  PlanContext plan() {
     return plan;
   }
 
-  private PlanNode build0(ASTNode ast) {
-    if (TABLE_SOURCE.isInstance(ast)) return buildTableSource(ast);
-    if (!QUERY.isInstance(ast)) throw failed("invalid query");
-
-    final ASTNode queryBody = ast.get(QUERY_BODY);
-    PlanNode node;
-
-    if (QUERY_SPEC.isInstance(queryBody)) {
-      final ASTNode tableSource = queryBody.get(QUERY_SPEC_FROM);
-      if (tableSource == null) throw unsupportedEx("Query w/o table source is not supported");
-      final ASTNode where = queryBody.get(QUERY_SPEC_WHERE);
-      final List<ASTNode> selectItems = queryBody.get(QUERY_SPEC_SELECT_ITEMS);
-      final List<ASTNode> groups = queryBody.get(QUERY_SPEC_GROUP_BY);
-      final ASTNode having = queryBody.get(QUERY_SPEC_HAVING);
-      final boolean distinct =
-          queryBody.isFlag(QUERY_SPEC_DISTINCT) || queryBody.isPresent(QUERY_SPEC_DISTINCT_ON);
-
-      node = buildTableSource(tableSource);
-      node = buildFilters(where, node);
-      node = buildProjection(distinct, selectItems, groups, having, node);
-
-    } else if (SET_OP.isInstance(queryBody)) {
-      final PlanNode lhs = build0(queryBody.get(SET_OP_LEFT));
-      final PlanNode rhs = build0(queryBody.get(SET_OP_RIGHT));
-      if (lhs == null || rhs == null) throw failed("invalid set operation " + queryBody);
-
-      final SetOperation operation = queryBody.get(SET_OP_TYPE);
-      final boolean distinct = queryBody.get(SET_OP_OPTION) == SetOperationOption.DISTINCT;
-      node = new SetOpNodeImpl(operation, distinct);
-      node.setPredecessor(0, lhs);
-      node.setPredecessor(1, rhs);
-
-    } else throw failed("invalid query body: " + queryBody);
-
-    final List<ASTNode> orders = ast.get(QUERY_ORDER_BY);
-    final ASTNode limit = ast.get(QUERY_LIMIT);
-    final ASTNode offset = ast.get(QUERY_OFFSET);
-
-    node = buildSort(orders, node);
-    node = buildLimit(limit, offset, node);
-
-    return node;
+  String lastError() {
+    return error;
   }
 
-  private PlanNode buildProjection(
-      boolean explicitDistinct,
-      List<ASTNode> selectItems,
-      List<ASTNode> groups,
-      ASTNode having,
-      PlanNode prev) {
-    if (containsAgg(selectItems)) {
+  private int build0(SqlNode ast) {
+    final SqlKind kind = ast.kind();
+
+    switch (kind) {
+      case TableSource:
+        return buildTableSource(ast);
+      case SetOp:
+        return buildSetOp(ast);
+      case Query: {
+        int nodeId = build0(ast.$(Query_Body));
+        nodeId = buildSort(ast.$(Query_OrderBy), nodeId);
+        nodeId = buildLimit(ast.$(Query_Limit), ast.$(Query_Offset), nodeId);
+        return nodeId;
+      }
+      case QuerySpec: {
+        int nodeId = buildTableSource(ast.$(QuerySpec_From));
+        nodeId = buildFilters(ast.$(QuerySpec_Where), nodeId);
+        nodeId = buildProjection(ast, nodeId);
+        return nodeId;
+      }
+      default:
+        return onError(FAILURE_INVALID_QUERY + ast);
+    }
+  }
+
+  private int buildSetOp(SqlNode setOp) {
+    final int lhs = build0(setOp.$(SetOp_Left));
+    final int rhs = build0(setOp.$(SetOp_Right));
+
+    if (lhs == FAIL || rhs == FAIL) return FAIL;
+
+    final SetOpKind opKind = setOp.$(SetOp_Kind);
+    final boolean deduplicated = setOp.$(SetOp_Option) == SetOpOption.DISTINCT;
+    final SetOpNode setOpNode = SetOpNode.mk(deduplicated, opKind);
+
+    final int nodeId = plan.bindNode(setOpNode);
+    plan.setChild(nodeId, 0, lhs);
+    plan.setChild(nodeId, 1, rhs);
+
+    return nodeId;
+  }
+
+  private int buildProjection(SqlNode querySpec, int child) {
+    if (child == FAIL) return FAIL;
+
+    final SqlNodes items = querySpec.$(QuerySpec_SelectItems);
+    final SqlNodes groupBys = coalesce(querySpec.$(QuerySpec_GroupBy), SqlNodes.mkEmpty());
+    final SqlNode having = querySpec.$(QuerySpec_Having);
+    final boolean deduplicated = querySpec.isFlag(QuerySpec_Distinct);
+
+    final List<String> attrNames = new ArrayList<>(items.size());
+    final List<Expression> attrExprs = new ArrayList<>(items.size());
+
+    if (!containsAgg(items) && groupBys.isEmpty()) {
+      mkAttrs(child, items, attrNames, attrExprs);
+      final ProjNode proj = ProjNode.mk(deduplicated, attrNames, attrExprs);
+      final int projNodeId = plan.bindNode(proj);
+      if (child != NO_SUCH_NODE) plan.setChild(projNodeId, 0, child);
+
+      return projNodeId;
+
+    } else {
       /*
        We translate aggregation as Agg(Proj(..)).
        The inner Proj projects all the attributes used in aggregations.
@@ -105,177 +145,244 @@ class PlanBuilder {
         This is a vendor-extension.)
       */
 
-      if (any(selectItems, it1 -> it1.get(SELECT_ITEM_EXPR).isPresent(AGGREGATE_WINDOW_SPEC)))
-        throw unsupportedEx("Window function is not supported");
+      if (any(items, it1 -> it1.$(SelectItem_Expr).$(Aggregate_WindowSpec) != null))
+        return onError(FAILURE_UNSUPPORTED_FEATURE + "window function");
 
       // 1. Extract column refs used in selectItems, groups and having
-      final List<ASTNode> columnRefs =
-          new ArrayList<>(selectItems.size() + (groups == null ? 0 : groups.size()) + 1);
-      columnRefs.addAll(gatherColumnRefs(selectItems));
-      if (groups != null) columnRefs.addAll(gatherColumnRefs(groups));
-      if (having != null) columnRefs.addAll(gatherColumnRefs(having));
+      final List<SqlNode> colRefs = new ArrayList<>(items.size() + groupBys.size() + 1);
+      colRefs.addAll(gatherColRefs(items));
+      colRefs.addAll(gatherColRefs(groupBys));
+      if (having != null) colRefs.addAll(gatherColRefs(having));
 
-      // 2. find there are DISTINCT inside aggregation
-      final boolean containsDistinctAggregation =
-          any(selectItems, it -> it.get(SELECT_ITEM_EXPR).isFlag(AGGREGATE_DISTINCT));
-      // 3. assign an temporary name for column refs and make select items
-      final List<ASTNode> selections = new ArrayList<>(columnRefs.size());
-      for (int i = 0, bound = columnRefs.size(); i < bound; i++) {
-        final ASTNode selection = ASTNode.node(SELECT_ITEM);
-        selection.set(SELECT_ITEM_EXPR, columnRefs.get(i));
-        selection.set(SELECT_ITEM_ALIAS, "agg_key_" + i);
-        selections.add(selection);
-      }
-      // 4. build Proj node
-      final ProjNode proj = ProjNodeImpl.mk(containsDistinctAggregation, selections);
-      // 5. build Agg node
-      final AggNode agg = AggNodeImpl.mk(selectItems, groups, having);
-      // 6. assemble
-      proj.setPredecessor(0, prev);
-      agg.setPredecessor(0, proj);
+      // 2. build Proj node
+      final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items));
 
-      return agg;
+      // 3. build Agg node
+      mkAttrs(child, items, attrNames, attrExprs);
+      final List<Expression> groupByExprs = new ArrayList<>(groupBys.size());
+      for (SqlNode groupBy : groupBys) groupByExprs.add(Expression.mk(groupBy));
+      final Expression havingExpr = having == null ? null : Expression.mk(having);
 
-    } else {
-      final ProjNode proj = ProjNodeImpl.mk(explicitDistinct, selectItems);
-      proj.setPredecessor(0, prev);
+      final AggNode agg = AggNode.mk(deduplicated, attrNames, attrExprs, groupByExprs, havingExpr);
 
-      return proj;
+      // 4. assemble
+      final int projNodeId = plan.bindNode(proj);
+      final int aggNodeId = plan.bindNode(agg);
+      if (child != NO_SUCH_NODE) plan.setChild(projNodeId, 0, child);
+      plan.setChild(aggNodeId, 0, projNodeId);
+
+      return aggNodeId;
     }
   }
 
-  private PlanNode buildTableSource(ASTNode tableSource) {
-    if (tableSource == null) return null;
-    assert TABLE_SOURCE.isInstance(tableSource);
-    switch (tableSource.get(TABLE_SOURCE_KIND)) {
-      case SIMPLE_SOURCE:
-        return buildSimpleTableSource(tableSource);
-      case JOINED_SOURCE:
-        return buildJoinedTableSource(tableSource);
-      case DERIVED_SOURCE:
-        return buildDerivedTableSource(tableSource);
-      default:
-        throw new IllegalArgumentException();
-    }
+  private int buildFilters(SqlNode expr, int child) {
+    if (child == FAIL) return FAIL;
+    if (expr == null) return child;
+
+    final TIntList filters = buildFilters0(expr, new TIntArrayList(4));
+    if (filters.isEmpty()) return child;
+
+    for (int i = 1, bound = filters.size(); i < bound; ++i)
+      plan.setChild(filters.get(i), 0, filters.get(i - 1));
+    if (child != NO_SUCH_NODE)
+      plan.setChild(filters.get(0), 0, child);
+
+    return filters.get(filters.size() - 1);
   }
 
-  private PlanNode buildFilters(ASTNode expr, PlanNode predecessor) {
-    if (expr == null) return predecessor;
+  private TIntList buildFilters0(SqlNode expr, TIntList filters) {
+    final BinaryOpKind opKind = expr.$(Binary_Op);
+    if (opKind == AND) {
+      buildFilters0(expr.$(Binary_Left), filters);
+      buildFilters0(expr.$(Binary_Right), filters);
 
-    final List<FilterNode> filters = buildFilters0(expr, new ArrayList<>(4));
-    if (filters.isEmpty()) throw failed("not a filter: " + expr);
+    } else if (opKind == IN_SUBQUERY) {
+      final InSubNode filter = InSubNode.mk(Expression.mk(expr.$(Binary_Left)));
+      final int subqueryId = build0(expr.$(Binary_Right).$(QueryExpr_Query));
+      final int nodeId = plan.bindNode(filter);
+      plan.setChild(nodeId, 1, subqueryId);
 
-    filters.sort(new FilterComparator());
+      filters.add(nodeId);
 
-    final FilterNode first = head(filters);
+    } else if (Exists.isInstance(expr)) {
+      final ExistsNode filter = ExistsNode.mk();
+      final int subqueryId = build0(expr.$(Exists_Subquery).$(QueryExpr_Query));
+      final int nodeId = plan.bindNode(filter);
+      plan.setChild(nodeId, 1, subqueryId);
 
-    FilterNode cursor = first;
-    for (FilterNode filter : filters.subList(1, filters.size())) {
-      cursor.setPredecessor(0, filter);
-      cursor = filter;
-    }
-
-    cursor.setPredecessor(0, predecessor);
-
-    return first;
-  }
-
-  private PlanNode buildSort(List<ASTNode> orders, PlanNode predecessor) {
-    if (orders == null || orders.isEmpty()) return predecessor;
-
-    final SortNode sort = SortNodeImpl.mk(orders);
-    sort.setPredecessor(0, predecessor);
-
-    return sort;
-  }
-
-  private PlanNode buildLimit(ASTNode limit, ASTNode offset, PlanNode predecessor) {
-    if (limit == null && offset == null) return predecessor;
-
-    final LimitNode node = LimitNodeImpl.mk(limit, offset);
-    node.setPredecessor(0, predecessor);
-    return node;
-  }
-
-  private PlanNode buildSimpleTableSource(ASTNode tableSource) {
-    final String tableName = tableSource.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE);
-    final Table table = schema.table(tableName);
-    if (table == null) throw failed("unknown table '" + tableName + "'");
-    final String alias = coalesce(tableSource.get(SIMPLE_ALIAS), tableName);
-
-    return new InputNodeImpl(table, alias);
-  }
-
-  private PlanNode buildJoinedTableSource(ASTNode tableSource) {
-    final PlanNode lhs = build0(tableSource.get(JOINED_LEFT));
-    final PlanNode rhs = build0(tableSource.get(JOINED_RIGHT));
-
-    if (lhs == null || rhs == null) return null;
-
-    final JoinType joinType = tableSource.get(JOINED_TYPE);
-    final ASTNode condition = tableSource.get(JOINED_ON);
-
-    final JoinNode joinNode =
-        JoinNodeImpl.mk(joinType.isInner() ? INNER_JOIN : LEFT_JOIN, condition);
-
-    joinNode.setPredecessor(0, lhs);
-    joinNode.setPredecessor(1, rhs);
-
-    return joinNode;
-  }
-
-  private PlanNode buildDerivedTableSource(ASTNode tableSource) {
-    final String alias = tableSource.get(DERIVED_ALIAS);
-    if (alias == null) throw failed("subquery without alias");
-
-    final PlanNode subquery = build0(tableSource.get(DERIVED_SUBQUERY));
-    if (subquery == null) return null;
-
-    subquery.values().setQualification(alias);
-    return subquery;
-  }
-
-  private List<FilterNode> buildFilters0(ASTNode expr, List<FilterNode> filters) {
-    final BinaryOp op = expr.get(BINARY_OP);
-    if (op == BinaryOp.AND) {
-      buildFilters0(expr.get(BINARY_LEFT), filters);
-      buildFilters0(expr.get(BINARY_RIGHT), filters);
-
-    } else if (op == BinaryOp.IN_SUBQUERY) {
-      final InSubFilterNode filter = InSubFilterNodeImpl.mk(expr.get(BINARY_LEFT));
-      final PlanNode subquery = build0(expr.get(BINARY_RIGHT).get(QUERY_EXPR_QUERY));
-      filter.setPredecessor(1, subquery);
-
-      filters.add(filter);
-
-    } else if (EXISTS.isInstance(expr)) {
-      final ExistsFilterNode filter = new ExistsFilterNodeImpl();
-      final PlanNode subquery = build0(expr.get(EXISTS_SUBQUERY_EXPR).get(QUERY_EXPR_QUERY));
-      filter.setPredecessor(1, subquery);
-
-      filters.add(filter);
-
-    } else {
-      filters.add(SimpleFilterNodeImpl.mk(expr));
+    } else if (!isBoolConstant(expr)){
+      // Preclude ones like "1=1".
+      final SqlNode normalized = normalizePredicate(expr, tmpCtx);
+      final SimpleFilterNode filter = SimpleFilterNode.mk(Expression.mk(normalized));
+      final int nodeId = plan.bindNode(filter);
+      filters.add(nodeId);
     }
 
     return filters;
   }
 
-  private RuntimeException failed(String reason) {
-    return new IllegalArgumentException("failed to build plan: [" + reason + "] " + ast);
+  private int buildSort(SqlNodes orders, int child) {
+    if (child == FAIL) return FAIL;
+    if (orders == null || orders.isEmpty()) return child;
+
+    final List<Expression> sortSpec = ListSupport.map(orders, Expression::mk);
+    final SortNode sortNode = SortNode.mk(sortSpec);
+
+    final int nodeId = plan.bindNode(sortNode);
+    plan.setChild(nodeId, 0, child);
+
+    return nodeId;
   }
 
-  private static boolean containsAgg(List<ASTNode> selectItems) {
-    return selectItems.stream().map(SELECT_ITEM_EXPR::get).anyMatch(AGGREGATE::isInstance);
+  private int buildLimit(SqlNode limit, SqlNode offset, int child) {
+    if (child == FAIL) return FAIL;
+    if (limit == null && offset == null) return child;
+
+    final LimitNode limitNode =
+        LimitNode.mk(
+            limit == null ? null : Expression.mk(limit),
+            offset == null ? null : Expression.mk(limit));
+
+    final int nodeId = plan.bindNode(limitNode);
+    plan.setChild(nodeId, 0, child);
+
+    return nodeId;
   }
 
-  private static class FilterComparator implements Comparator<FilterNode> {
-    @Override
-    public int compare(FilterNode o1, FilterNode o2) {
-      final int typeCmp = o1.kind().compareTo(o2.kind());
-      if (typeCmp != 0) return typeCmp;
-      else return o1.refs().toString().compareTo(o2.refs().toString());
+  private int buildTableSource(SqlNode tableSource) {
+    if (tableSource == null) return NO_SUCH_NODE;
+    assert TableSource.isInstance(tableSource);
+    return switch (tableSource.$(TableSource_Kind)) {
+      case SimpleSource -> buildSimpleTableSource(tableSource);
+      case JoinedSource -> buildJoinedTableSource(tableSource);
+      case DerivedSource -> buildDerivedTableSource(tableSource);
+    };
+  }
+
+  private int buildSimpleTableSource(SqlNode tableSource) {
+    final String tableName = tableSource.$(Simple_Table).$(TableName_Table);
+    final Table table = schema.table(tableName);
+
+    if (table == null) return onError(FAILURE_UNKNOWN_TABLE + tableSource);
+
+    final String alias = coalesce(tableSource.$(Simple_Alias), tableName);
+    return plan.bindNode(InputNode.mk(table, alias));
+  }
+
+  private int buildJoinedTableSource(SqlNode tableSource) {
+    final int lhs = build0(tableSource.$(Joined_Left));
+    final int rhs = build0(tableSource.$(Joined_Right));
+
+    final JoinKind joinKind = tableSource.$(Joined_Kind);
+    final SqlNode condition = tableSource.$(Joined_On);
+
+    final JoinNode joinNode = JoinNode.mk(joinKind, condition == null ? null : Expression.mk(condition));
+
+    final int nodeId = plan.bindNode(joinNode);
+    plan.setChild(nodeId, 0, lhs);
+    plan.setChild(nodeId, 1, rhs);
+
+    return nodeId;
+  }
+
+  private int buildDerivedTableSource(SqlNode tableSource) {
+    final String alias = tableSource.$(Derived_Alias);
+
+    if (alias == null) return onError(FAILURE_MISSING_QUALIFICATION + tableSource);
+
+    final int subquery = build0(tableSource.$(Derived_Subquery));
+
+    int qualifiedNodeId = subquery;
+    while (!(plan.nodeAt(qualifiedNodeId) instanceof Qualified))
+      qualifiedNodeId = plan.childOf(qualifiedNodeId, 0);
+    ((Qualified) plan.nodeAt(qualifiedNodeId)).setQualification(alias);
+
+    return subquery;
+  }
+
+  private int onError(String error) {
+    this.error = error;
+    return FAIL;
+  }
+
+  private static boolean containsDeduplicatedAgg(SqlNodes selectItem) {
+    for (SqlNode item : selectItem)
+      if (item.$(SelectItem_Expr).isFlag(Aggregate_Distinct)) {
+        return true;
+      }
+    return false;
+  }
+
+  private static boolean containsAgg(SqlNodes selectItems) {
+    for (SqlNode item : selectItems)
+      if (Aggregate.isInstance(item.$(SelectItem_Expr))) {
+        return true;
+      }
+    return false;
+  }
+
+  private void mkAttrs(
+      int inputNodeId, SqlNodes selectItems, List<String> attrNames, List<Expression> attrExprs) {
+    for (SqlNode item : selectItems) {
+      final SqlNode exprAst = item.$(SelectItem_Expr);
+      if (Wildcard.isInstance(exprAst)) {
+        expandWildcard(inputNodeId, exprAst, attrNames, attrExprs);
+      } else {
+        attrNames.add(mkAttrName(item));
+        attrExprs.add(Expression.mk(exprAst));
+      }
     }
+  }
+
+  private void expandWildcard(
+      int inputNodeId, SqlNode wildcard, List<String> attrNames, List<Expression> attrExprs) {
+    final String qualification;
+    if (wildcard.$(Wildcard_Table) == null) qualification = null;
+    else qualification= wildcard.$(Wildcard_Table).$(TableName_Table);
+
+    final Values values = valuesReg.valuesOf(inputNodeId);
+    // A corner case is wildcard can refer to an anonymous attribute,
+    // e.g., "Select * From (Select x.a + x.b From x) sub"
+    // We synthesized a name for it (see mkAttrName). This leads to SQL:
+    // "Select sub._anony0 From (Select x.a + x.b As _anony0 From x) sub".
+    // This is okay when playing with plan, but actually the final output schema is changed.
+    // We work around this issue in ToSqlTranslator.
+    for (Value value : values) {
+      if (qualification == null || (qualification.equals(value.qualification()))) {
+        attrNames.add(value.name());
+        attrExprs.add(PlanSupport.mkColRefExpr(value));
+      }
+    }
+  }
+
+  private String mkAttrName(SqlNode selectItem) {
+    final String alias = selectItem.$(SelectItem_Alias);
+    if (alias != null) return alias;
+
+    final SqlNode exprAst = selectItem.$(SelectItem_Expr);
+    if (ColRef.isInstance(exprAst)) return exprAst.$(ColRef_ColName).$(ColName_Col);
+
+    // For some derived select-item, like 'salary / age'.
+    return synNameSeq.next();
+  }
+
+  private ProjNode mkForwardProj(List<SqlNode> colRefs, boolean deduplicated) {
+    final List<String> attrNames = new ArrayList<>(colRefs.size());
+    final List<Expression> attrExprs = new ArrayList<>(colRefs.size());
+    final NameSequence seq = NameSequence.mkIndexed("agg", 0);
+
+    for (SqlNode colRef : colRefs) {
+      final String name = seq.next();
+      final SqlNode expr = copyAst(colRef, tmpCtx);
+      final SqlNode selectItem = SqlNode.mk(tmpCtx, tmpCtx.mkNode(SelectItem));
+
+      selectItem.$(SelectItem_Expr, expr);
+      selectItem.$(SelectItem_Alias, seq.next());
+
+      attrNames.add(name);
+      attrExprs.add(Expression.mk(selectItem));
+    }
+
+    return ProjNode.mk(deduplicated, attrNames, attrExprs);
   }
 }

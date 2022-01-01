@@ -2,21 +2,22 @@ package sjtu.ipads.wtune.sqlparser.plan;
 
 import java.util.List;
 
-public interface AggNode extends PlanNode {
-  List<Expr> groups();
+public interface AggNode extends Exporter, PlanNode {
+  List<Expression> groupByExprs();
 
-  Expr having();
-
-  RefBag aggRefs();
-
-  RefBag groupRefs();
-
-  RefBag havingRefs();
+  Expression havingExpr();
 
   @Override
-  default OperatorType kind() {
-    return OperatorType.AGG;
+  default PlanKind kind() {
+    return PlanKind.Agg;
   }
 
-    void setRefHints(int[] refHints);
+  static AggNode mk(
+      boolean deduplicated,
+      List<String> attrNames,
+      List<Expression> attrExprs,
+      List<Expression> groupByExprs,
+      Expression havingExpr) {
+    return new AggNodeImpl(deduplicated, attrNames, attrExprs, groupByExprs, havingExpr);
+  }
 }

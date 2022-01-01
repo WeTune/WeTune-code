@@ -1,24 +1,39 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
+import sjtu.ipads.wtune.superopt.fragment.OpKind;
 
-class PlanComplexity implements Complexity {
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.isDedup;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.LEFT_JOIN;
+
+public class PlanComplexity implements Complexity {
   private final int[] opCounts;
 
-  PlanComplexity(PlanNode tree) {
-    this.opCounts = new int[OperatorType.values().length + 1];
-    countOps(tree);
+  PlanComplexity(PlanContext plan, int rootId) {
+    this.opCounts = new int[OpKind.values().length + 1];
+    countOps(plan, rootId);
   }
 
-  private void countOps(PlanNode op) {
-    ++opCounts[op.kind().ordinal()];
-    // Treat deduplication as an operator.
-    if (op.kind() == OperatorType.PROJ && ((ProjNode) op).isDeduplicated())
-      ++opCounts[opCounts.length - 1];
+  private void countOps(PlanContext plan, int nodeId) {
+    final PlanKind nodeKind = plan.kindOf(nodeId);
+    if (nodeKind == PlanKind.Join) {
+      final JoinKind joinKind = joinKindOf(plan, nodeId);
+      if (joinKind.isInner()) ++opCounts[INNER_JOIN.ordinal()];
+      else ++opCounts[LEFT_JOIN.ordinal()];
 
-    for (PlanNode predecessor : op.predecessors()) countOps(predecessor);
+    } else {
+      if (nodeKind.ordinal() > PlanKind.Join.ordinal()) ++opCounts[nodeKind.ordinal() + 1];
+      else ++opCounts[nodeKind.ordinal()];
+      // Treat deduplication as an operator.
+      if (nodeKind == PlanKind.Proj && isDedup(plan, nodeId)) ++opCounts[opCounts.length - 1];
+    }
+
+    for (int i = 0, bound = nodeKind.numChildren(); i < bound; i++)
+      countOps(plan, plan.childOf(nodeId, i));
   }
 
   @Override

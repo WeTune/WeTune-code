@@ -5,7 +5,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.AttrsFilter;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
@@ -22,7 +22,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.head;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 class FilterMatcher {
   private final List<Filter> opChain;

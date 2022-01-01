@@ -1,13 +1,11 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
@@ -19,9 +17,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNode.MySQL;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =
@@ -41,18 +37,6 @@ public abstract class TestHelper {
 
   public static PlanContext parsePlan(String sql) {
     return PlanSupport.assemblePlan(parseSql(sql), SCHEMA.get());
-  }
-
-  static PlanNode mkPlan(String sql) {
-    final Statement stmt = Statement.mk("test", sql, null);
-    final ASTNode ast = stmt.parsed();
-    return assemblePlan(ast, stmt.app().schema("base"));
-  }
-
-  static PlanNode mkPlan(String sql, String schemaSQL) {
-    final Schema schema = SqlSupport.parseSchema(MYSQL, schemaSQL);
-    final ASTNode ast = ASTParser.mysql().parse(sql);
-    return assemblePlan(ast, schema);
   }
 
   static SubstitutionBank getBank() {

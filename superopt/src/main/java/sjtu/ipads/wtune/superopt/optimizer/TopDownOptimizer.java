@@ -3,10 +3,11 @@ package sjtu.ipads.wtune.superopt.optimizer;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.SetSupport;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanKind;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
@@ -251,7 +252,7 @@ class TopDownOptimizer implements Optimizer {
   }
 
   private Iterable<Substitution> fastMatchRules(SubPlan subPlan) {
-    final Set<FingerprintImpl> fingerprints = FingerprintImpl.mk(subPlan.plan(), subPlan.nodeId());
+    final Set<Fingerprint> fingerprints = Fingerprint.mk(subPlan.plan(), subPlan.nodeId());
     return ListSupport.flatMap(fingerprints, rules::ruleOfFingerprint);
   }
 

@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.support.Workflow;
 import sjtu.ipads.wtune.superopt.profiler.Profiler;
 
 import java.io.PrintWriter;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorable;
@@ -71,9 +69,9 @@ public class PickMinCost implements Runner {
     } else return stmt.app().dbProps();
   }
 
-  private PlanNode mkPlanSafe(Schema schema, String sql) {
+  private PlanContext mkPlanSafe(Schema schema, String sql) {
     try {
-      final ASTNode ast = ASTParser.ofDb(schema.dbType()).parse(sql);
+      final SqlNode ast = SqlSupport.parseSql(schema.dbType(), sql);
       return assemblePlan(ast, schema);
     } catch (Throwable ex) {
       return null;
@@ -86,19 +84,19 @@ public class PickMinCost implements Runner {
     final int stmtId = Integer.parseInt(stmtName.substring(pos + 1));
     final Statement stmt = Statement.findOne(appName, stmtId);
     final Schema schema = stmt.app().schema("base");
-    final ASTNode baseAst = stmt.parsed();
+    final SqlNode baseAst = SqlSupport.parseSql(stmt.app().dbType(), stmt.rawSql());
     baseAst.context().setSchema(schema);
-    Workflow.normalize(baseAst);
+    //    Workflow.normalize(baseAst); // TODO
 
-    final PlanNode baseline;
-    final List<PlanNode> candidates;
+    final PlanContext baseline;
+    final List<PlanContext> candidates;
 
     try {
       baseline = assemblePlan(baseAst, schema);
-      candidates = ListSupport.map((Iterable<String>) transformed, (Function<? super String, ? extends PlanNode>) it -> mkPlanSafe(schema, it));
+      candidates = ListSupport.map((Iterable<String>) transformed, it -> mkPlanSafe(schema, it));
 
       for (int i = 0; i < candidates.size(); i++) {
-        final PlanNode candidate = candidates.get(i);
+        final PlanContext candidate = candidates.get(i);
         if (candidate == null) {
           if (echo) System.err.printf("%s\t%d\t%s\n", stmt, i, transformed.get(i));
           err.printf("%s\t%d\t%s\n", stmt, i, transformed.get(i));

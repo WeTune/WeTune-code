@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -13,8 +12,8 @@ import java.util.List;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.INNER_JOIN;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.tryResolveRef;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.tryResolveRef;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
 class Instantiation {
@@ -48,7 +47,7 @@ class Instantiation {
   }
 
   private int instantiate(Op op) {
-    final OperatorType kind = op.kind();
+    final OpKind kind = op.kind();
     switch (kind) {
       case INPUT:
         return instantiateInput((Input) op);

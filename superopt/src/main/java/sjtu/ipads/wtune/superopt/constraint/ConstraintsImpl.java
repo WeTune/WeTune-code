@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.NaturalCongruence;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraint.Kind;
 import sjtu.ipads.wtune.superopt.fragment.*;
 
@@ -112,7 +111,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
   public Symbol sourceOf(Symbol /* Attrs or Schema */ sym) {
     if (sym.kind() == Symbol.Kind.SCHEMA) {
       final Op owner = sourceSyms.ownerOf(sym);
-      assert owner.kind() == OperatorType.PROJ;
+      assert owner.kind() == OpKind.PROJ;
       sym = ((Proj) owner).attrs();
     }
 

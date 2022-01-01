@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment.pruning;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Op;
+import sjtu.ipads.wtune.superopt.fragment.OpKind;
 import sjtu.ipads.wtune.superopt.fragment.OpVisitor;
 
 public abstract class BaseMatchingRule implements OpVisitor, Rule {
@@ -16,6 +16,6 @@ public abstract class BaseMatchingRule implements OpVisitor, Rule {
   }
 
   protected static boolean isInput(Op op) {
-    return op == null || op.kind() == OperatorType.INPUT;
+    return op == null || op.kind() == OpKind.INPUT;
   }
 }

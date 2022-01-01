@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,9 +12,9 @@ import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.*;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.mkColRefExpr;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.tryResolveRef;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.mkColRefExpr;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.tryResolveRef;
 
 class NormalizeProj {
   private final PlanContext plan;

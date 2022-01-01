@@ -1,159 +1,65 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import gnu.trove.list.array.TIntArrayList;
-import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.ListSupport.join;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 
-class AggNodeImpl extends PlanNodeBase implements AggNode {
-  private final ValueBag values;
-  private final List<Expr> groups;
-  private final Expr having;
-  private int[] refHints;
-
-  private final RefBag aggRefs, groupRefs, havingRefs;
+class AggNodeImpl implements AggNode {
+  private final boolean deduplicated;
+  private final List<String> attrNames;
+  private final List<Expression> attrExprs;
+  private final List<Expression> groupByExprs;
+  private final Expression havingExpr;
+  private String qualification;
 
   AggNodeImpl(
-      ValueBag values,
-      List<Expr> groups,
-      Expr having,
-      RefBag aggRefs,
-      RefBag groupRefs,
-      RefBag havingRefs) {
-    this.values = values;
-    this.groups = requireNonNull(groups);
-    this.having = having;
-    this.aggRefs = aggRefs;
-    this.groupRefs = groupRefs;
-    this.havingRefs = havingRefs;
-  }
-
-  static AggNode mk(List<ASTNode> selectItems, List<ASTNode> groupNodes, ASTNode havingNode) {
-    final List<Value> values = ListSupport.map((Iterable<ASTNode>) selectItems, (Function<? super ASTNode, ? extends Value>) ExprValue::fromSelectItem);
-    final List<Expr> groups = groupNodes == null ? emptyList() : ListSupport.map((Iterable<ASTNode>) groupNodes, (Function<? super ASTNode, ? extends Expr>) ExprImpl::mk);
-    final Expr having = havingNode == null ? null : ExprImpl.mk(havingNode);
-
-    final List<Ref> aggRefs = new ArrayList<>(values.size());
-    final List<Ref> groupRefs = new ArrayList<>(groups.size());
-    final List<Ref> havingRefs = new ArrayList<>(having == null ? 0 : 1);
-
-    // replace the refs in exprs
-    int acc = 0;
-    for (Value value : values) acc += replaceRefs(value.expr(), acc, aggRefs);
-    for (Expr expr : groups) acc += replaceRefs(expr, 0, groupRefs);
-    if (having != null) acc += replaceRefs(having, 0, havingRefs);
-
-    assert acc == aggRefs.size() + groupRefs.size() + havingRefs.size();
-
-    return new AggNodeImpl(
-        ValueBag.mk(values),
-        groups,
-        having,
-        RefBag.mk(aggRefs),
-        RefBag.mk(groupRefs),
-        RefBag.mk(havingRefs));
+      boolean deduplicated,
+      List<String> attrNames,
+      List<Expression> attrExprs,
+      List<Expression> groupByExprs,
+      Expression havingExpr) {
+    this.deduplicated = deduplicated;
+    this.attrNames = Collections.unmodifiableList(attrNames);
+    this.attrExprs = Collections.unmodifiableList(attrExprs);
+    this.groupByExprs = Collections.unmodifiableList(coalesce(groupByExprs, emptyList()));
+    this.havingExpr = havingExpr;
   }
 
   @Override
-  public List<Expr> groups() {
-    return groups;
+  public boolean deduplicated() {
+    return deduplicated;
   }
 
   @Override
-  public Expr having() {
-    return having;
+  public List<String> attrNames() {
+    return attrNames;
   }
 
   @Override
-  public ValueBag values() {
-    return values;
+  public List<Expression> attrExprs() {
+    return attrExprs;
   }
 
   @Override
-  public RefBag aggRefs() {
-    return aggRefs;
+  public List<Expression> groupByExprs() {
+    return groupByExprs;
   }
 
   @Override
-  public RefBag groupRefs() {
-    return groupRefs;
+  public Expression havingExpr() {
+    return havingExpr;
   }
 
   @Override
-  public RefBag havingRefs() {
-    return havingRefs;
+  public String qualification() {
+    return qualification;
   }
 
   @Override
-  public RefBag refs() {
-    return RefBag.mk(join(aggRefs, groupRefs, havingRefs));
+  public void setQualification(String qualification) {
+    this.qualification = qualification;
   }
 
-  @Override
-  public void setRefHints(int[] refHints) {
-    this.refHints = refHints;
-  }
-
-  @Override
-  public boolean rebindRefs(PlanContext refCtx) {
-    // Sort can reference to the attributes exposed by deeper node.
-    // For example: Select a.i From a Group By a.j
-    // Although this is not a standard, let's support this.
-    final PlanNode input0 = predecessors()[0];
-    final PlanNode input1 = predecessors()[0].predecessors()[0];
-    return rebindRefs(refCtx, refs(), new TIntArrayList(refHints), input0, input1);
-  }
-
-  @Override
-  public PlanNode copy(PlanContext ctx) {
-    checkContextSet();
-
-    final AggNode copy = new AggNodeImpl(values, groups, having, aggRefs, groupRefs, havingRefs);
-    copy.setContext(ctx);
-    copy.setRefHints(refHints);
-
-    final RefBag refs = refs();
-    ctx.registerRefs(copy, refs);
-    ctx.registerValues(copy, values);
-    for (Ref ref : refs) ctx.setRef(ref, this.context.deRef(ref));
-
-    return copy;
-  }
-
-  @Override
-  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
-    builder.append("Agg{");
-
-    builder.append('[');
-    joining(",", values, builder, (v, b) -> stringifyAsSelectItem(v, b, compact));
-    builder.append(']');
-
-    if (!groups.isEmpty()) builder.append(",groups=").append(groups);
-    if (having != null) builder.append(",having=").append(having);
-    stringifyRefs(builder, compact);
-
-    builder.append('}');
-
-    stringifyChildren(builder, compact);
-
-    return builder;
-  }
-
-  private static int replaceRefs(Expr expr, int startIdx, List<Ref> buffer) {
-    final int numRefs = expr.refs().size();
-    IntStream.range(startIdx, startIdx + numRefs)
-        .mapToObj(it -> new RefImpl(null, "agg_key_" + it))
-        .forEach(buffer::add);
-    expr.setRefs(new ArrayList<>(buffer.subList(startIdx, startIdx + numRefs)));
-    return numRefs;
-  }
 }

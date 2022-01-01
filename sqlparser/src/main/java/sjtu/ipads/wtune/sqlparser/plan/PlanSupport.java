@@ -1,120 +1,296 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.NameSequence;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNodes;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind;
+import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sqlparser.schema.Table;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
-import static sjtu.ipads.wtune.common.utils.TreeNode.copyTree;
-import static sjtu.ipads.wtune.sqlparser.plan.ValueBag.locateValueRelaxed;
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.*;
+import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.*;
 
-public interface PlanSupport {
-  static ASTNode translateAsAst(PlanNode plan) {
-    return AstTranslator.translate(plan);
-  }
+public abstract class PlanSupport {
+  public static final String FAILURE_INVALID_QUERY = "invalid query ";
+  public static final String FAILURE_INVALID_PLAN = "invalid plan ";
+  public static final String FAILURE_UNSUPPORTED_FEATURE = "unsupported feature ";
+  public static final String FAILURE_UNKNOWN_TABLE = "unknown table ";
+  public static final String FAILURE_MISSING_PROJECTION = "missing projection ";
+  public static final String FAILURE_MISSING_QUALIFICATION = "missing qualification ";
+  public static final String FAILURE_MISSING_REF = "missing ref ";
+  public static final String FAILURE_BAD_SUBQUERY_EXPR = "bad subquery expr ";
 
-  static PlanNode buildPlan(ASTNode ast, Schema schema) {
-    return PlanBuilder.buildPlan(ast, schema == null ? ast.context().schema() : schema);
-  }
+  static final String SYN_NAME_PREFIX = "%";
+  static final String PLACEHOLDER_NAME = "#";
 
-  static PlanNode assemblePlan(ASTNode ast, Schema schema) {
-    if (schema == null) schema = ast.context().schema();
+  private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
 
-    final PlanNode plan = PlanBuilder.buildPlan(ast, schema);
-    RefResolver.resolve(plan);
-    return plan;
-  }
+  private PlanSupport() {}
 
-  static PlanNode resolvePlan(PlanNode plan) {
-    RefResolver.resolve(plan);
-    return plan;
-  }
-
-  static PlanNode resolveSubqueryExpr(PlanNode plan) {
-    RefResolver.resolveSubqueryExpr(plan);
-    return plan;
-  }
-
-  static PlanNode disambiguate(PlanNode plan) {
-    return new Disambiguation(plan).disambiguate();
-  }
-
-  static PlanNode wrapWildcardProj(PlanNode plan) {
-    // wrap a fragment plan with a outer Proj
-    final ProjNode proj = ProjNode.mkWildcard(plan.values());
-    final PlanContext ctx = PlanContext.mk(plan.context().schema());
-
-    proj.setContext(ctx);
-    proj.setPredecessor(0, copyTree(plan, ctx));
-    ctx.registerRefs(proj, proj.refs());
-    ctx.registerValues(proj, proj.values());
-    zip(proj.refs(), plan.values(), ctx::setRef);
-
-    return proj;
-  }
-
-  static boolean isDependentRef(Ref ref, PlanContext ctx) {
-    final Value v = ctx.deRef(ref);
-    if (v == null) throw new IllegalArgumentException("cannot resolve ref " + ref);
-
-    final PlanNode vOwner = ctx.ownerOf(v);
-    final PlanNode rOwner = ctx.ownerOf(ref);
-
-    PlanNode path = vOwner;
-    while (path != null) {
-      if (path == rOwner) return false;
-      path = path.successor();
-    }
-
+  public static boolean isSupported(SqlNode ast) {
+    final SqlContext ctx = ast.context();
+    for (int i = 1; i <= ctx.maxNodeId(); i++)
+      if (ctx.isPresent(i) && ctx.fieldOf(i, Aggregate_WindowSpec) != null) {
+        return false;
+      }
     return true;
   }
 
-  static boolean isWildcardProj(ProjNode proj) {
-    final PlanContext ctx = proj.context();
-    final ValueBag inputs = proj.predecessors()[0].values();
-    final ValueBag outputs = proj.values();
-    if (inputs.size() != outputs.size()) return false;
-
-    for (int i = 0, bound = inputs.size(); i < bound; i++) {
-      final Value input = inputs.get(i);
-      final Expr output = outputs.get(i).expr();
-      if (output.isIdentity() && ctx.deRef(output.refs().get(0)) != input) return false;
+  /** Build a plan tree from AST. If `schema` is null then fallback to ast.context().schema() */
+  public static PlanContext buildPlan(SqlNode ast, Schema schema) {
+    final PlanBuilder builder = new PlanBuilder(ast, schema);
+    if (builder.build()) return builder.plan();
+    else {
+      LAST_ERROR.set(builder.lastError());
+      return null;
     }
-
-    return true;
   }
 
-  static List<Value> bindValuesRelaxed(
-      List<Value> values, PlanContext refCtx, PlanNode predecessor, boolean ignoreNotFound) {
-    if (values.isEmpty() || refCtx == null) return values;
-
-    final List<Value> boundValues = new ArrayList<>(values.size());
-    final PlanContext lookupCtx = predecessor.context();
-    final ValueBag lookup = predecessor.values();
-
-    boolean changed = false;
-    for (Value value : values) {
-      Value src = lookupCtx.redirect(value);
-      if (src == value) src = refCtx.sourceOf(value);
-      if (src == null) src = value; // Anyway, don't play with null.
-
-      final Value found;
-      if ((found = locateValueRelaxed(lookup, src, lookupCtx)) == null)
-        if (ignoreNotFound) boundValues.add(null);
-        else throw new NoSuchElementException("cannot bind value: " + value);
-
-      boundValues.add(found);
-      changed |= found != value;
+  /** Set up values and resolve the value refs. */
+  public static PlanContext resolvePlan(PlanContext plan) {
+    final ValueRefBinder binder = new ValueRefBinder(plan);
+    if (binder.bind()) return plan;
+    else {
+      LAST_ERROR.set(binder.lastError());
+      return null;
     }
-
-    return changed ? boundValues : values;
   }
 
-  static List<Value> bindValuesRelaxed(
-      List<Value> values, PlanContext refCtx, PlanNode predecessor) {
-    return bindValuesRelaxed(values, refCtx, predecessor, false);
+  /**
+   * Build a plan tree from AST, set up values and resolve the value refs. If `schema` is null then
+   * fallback to ast.context().schema()
+   */
+  public static PlanContext assemblePlan(SqlNode ast, Schema schema) {
+    PlanContext plan;
+    if ((plan = buildPlan(ast, schema)) == null) return null;
+    if ((plan = resolvePlan(plan)) == null) return null;
+    return disambiguateQualification(plan);
+  }
+
+  public static SqlNode translateAsAst(PlanContext context, int nodeId, boolean allowIncomplete) {
+    final ToAstTranslator translator = new ToAstTranslator(context);
+    final SqlNode sql = translator.translate(nodeId, allowIncomplete);
+    if (sql != null) return sql;
+    else {
+      LAST_ERROR.set(translator.lastError());
+      return null;
+    }
+  }
+
+  public static int locateNode(PlanContext ctx, int startPoint, int... pathExpr) {
+    int node = startPoint;
+    for (int direction : pathExpr) {
+      if (direction < 0) node = ctx.parentOf(node);
+      else node = ctx.childOf(node, direction);
+    }
+    return node;
+  }
+
+  public static String getLastError() {
+    return LAST_ERROR.get();
+  }
+
+  public static boolean isEqualTree(PlanContext ctx0, int tree0, PlanContext ctx1, int tree1) {
+    // Now we only support compare two Input nodes.
+    final PlanNode node0 = ctx0.nodeAt(tree0), node1 = ctx1.nodeAt(tree1);
+    if (node0.kind() != Input || node1.kind() != Input) return false;
+    final Table t0 = ((InputNode) node0).table(), t1 = ((InputNode) node1).table();
+    return t0.equals(t1);
+  }
+
+  public static String stringifyNode(PlanContext ctx, int id) {
+    return PlanStringifier.stringifyNode(ctx, id, false);
+  }
+
+  public static String stringifyTree(PlanContext ctx, int id) {
+    return PlanStringifier.stringifyTree(ctx, id, false);
+  }
+
+  public static String stringifyTree(PlanContext ctx, int id, boolean compact) {
+    return PlanStringifier.stringifyTree(ctx, id, compact);
+  }
+
+  public static boolean isRootRef(PlanContext ctx, Value value) {
+    return ctx.valuesReg().exprOf(value) == null;
+  }
+
+  /**
+   * Returns the direct ref of the value. Returns null if the value is a base value (i.e., directly
+   * derives from a table source) or is not a ColRef (i.e., a complex expression)
+   */
+  public static Value tryResolveRef(PlanContext ctx, Value value) {
+    return tryResolveRef(ctx, value, false);
+  }
+
+  public static Value tryResolveRef(PlanContext ctx, Value value, boolean recursive) {
+    final ValuesRegistry valueReg = ctx.valuesReg();
+    final Expression expr = valueReg.exprOf(value);
+    if (expr == null) return null;
+    if (!isColRef(expr)) return null;
+
+    final Values refs = valueReg.valueRefsOf(expr);
+    assert refs.size() == 1;
+    return recursive ? tryResolveRef(ctx, refs.get(0), true) : refs.get(0);
+  }
+
+  public static Column tryResolveColumn(PlanContext ctx, Value value) {
+    final ValuesRegistry valueReg = ctx.valuesReg();
+    final Expression expr = valueReg.exprOf(value);
+    if (expr == null) return valueReg.columnOf(value);
+    if (!isColRef(expr)) return null;
+
+    final Values refs = valueReg.valueRefsOf(expr);
+    assert refs.size() == 1;
+    return tryResolveColumn(ctx, refs.get(0));
+  }
+
+  public static JoinKind joinKindOf(PlanContext ctx, int nodeId) {
+    if (ctx.kindOf(nodeId) != Join) return null;
+    final JoinKind joinKind = ctx.infoCache().getJoinKindOf(nodeId);
+    if (joinKind != null) return joinKind;
+    return ((JoinNode) ctx.nodeAt(nodeId)).joinKind();
+  }
+
+  public static boolean isDedup(PlanContext ctx, int nodeId) {
+    final PlanKind nodeKind = ctx.kindOf(nodeId);
+    if (nodeKind == Proj) return ((ProjNode) ctx.nodeAt(nodeId)).deduplicated();
+    if (nodeKind == SetOp) return ((SetOpNode) ctx.nodeAt(nodeId)).deduplicated();
+    return false;
+  }
+
+  public static boolean isUniqueCoreAt(PlanContext ctx, Collection<Value> attrs, int surfaceId) {
+    return new UniquenessInference(ctx).isUniqueCoreAt(attrs, surfaceId);
+  }
+
+  public static boolean isNotNullAt(PlanContext ctx, Value attrs, int surfaceId) {
+    return new NotNullInference(ctx).isNotNullAt(attrs, surfaceId);
+  }
+
+  // Must be invoked after `resolvePlan`
+  public static PlanContext disambiguateQualification(PlanContext ctx) {
+    final List<PlanNode> nodes = gatherNodes(ctx, EnumSet.of(Proj, Agg, Input));
+    final Set<String> knownQualifications = new HashSet<>(nodes.size());
+    final NameSequence seq = NameSequence.mkIndexed("q", 0);
+
+    for (PlanNode node : nodes) {
+      assert node instanceof Qualified;
+      final Qualified qualified = (Qualified) node;
+
+      if (!mustBeQualified(ctx, ctx.nodeIdOf(node))) continue;
+      final String oldQualification = qualified.qualification();
+      if (oldQualification != null && knownQualifications.add(qualified.qualification())) continue;
+
+      final String newQualification = seq.nextUnused(knownQualifications);
+      knownQualifications.add(newQualification);
+
+      qualified.setQualification(newQualification);
+      for (Value value : ctx.valuesOf(node)) value.setQualification(newQualification);
+    }
+
+    return ctx;
+  }
+
+  static List<PlanNode> gatherNodes(PlanContext ctx, PlanKind kind) {
+    final List<PlanNode> inputs = new ArrayList<>(8);
+
+    for (int i = 0, bound = ctx.maxNodeId(); i <= bound; i++)
+      if (ctx.isPresent(i) && ctx.kindOf(i) == kind) {
+        inputs.add(ctx.nodeAt(i));
+      }
+
+    return inputs;
+  }
+
+  static List<PlanNode> gatherNodes(PlanContext ctx, EnumSet<PlanKind> kinds) {
+    final List<PlanNode> inputs = new ArrayList<>(8);
+
+    for (int i = 0, bound = ctx.maxNodeId(); i <= bound; i++)
+      if (ctx.isPresent(i) && kinds.contains(ctx.kindOf(i))) {
+        inputs.add(ctx.nodeAt(i));
+      }
+
+    return inputs;
+  }
+
+  //// Expression-related
+  public static boolean isColRef(Expression expr) {
+    return ColRef.isInstance(expr.template());
+  }
+
+  public static Expression mkColRefExpr(Value value) {
+    return Expression.mk(mkColRef(SqlContext.mk(2), value.qualification(), value.name()));
+  }
+
+  public static Expression mkColRefExpr() {
+    return Expression.mk(mkColRef(SqlContext.mk(2), PLACEHOLDER_NAME, PLACEHOLDER_NAME));
+  }
+
+  public static Expression mkColRefsExpr(int i) {
+    if (i == 1) return mkColRefExpr();
+
+    final SqlContext sqlCtx = SqlContext.mk(i * 2 + 1);
+    final TIntList refs = new TIntArrayList(i);
+    for (int n = 0; n < i; ++n) {
+      final SqlNode ref = mkColRef(sqlCtx, PLACEHOLDER_NAME, PLACEHOLDER_NAME);
+      refs.add(ref.nodeId());
+    }
+    final SqlNodes refNodes = SqlNodes.mk(sqlCtx, refs);
+
+    final SqlNode tuple = SqlNode.mk(sqlCtx, Tuple);
+    tuple.$(Tuple_Exprs, refNodes);
+    return Expression.mk(tuple);
+  }
+
+  public static Expression mkJoinCond(int numKeys) {
+    if (numKeys <= 0) throw new IllegalArgumentException();
+
+    final SqlContext sqlCtx = SqlContext.mk(6 * numKeys - 1);
+
+    SqlNode expr = null;
+    for (int i = 0; i < numKeys; i++) {
+      final SqlNode lhsRef = mkColRef(sqlCtx, PLACEHOLDER_NAME, PLACEHOLDER_NAME);
+      final SqlNode rhsRef = mkColRef(sqlCtx, PLACEHOLDER_NAME, PLACEHOLDER_NAME);
+      final SqlNode eq = mkBinary(sqlCtx, BinaryOpKind.EQUAL, lhsRef, rhsRef);
+      if (expr == null) expr = eq;
+      else expr = mkBinary(sqlCtx, BinaryOpKind.AND, expr, eq);
+    }
+    return Expression.mk(expr);
+  }
+
+  static SqlNode normalizePredicate(SqlNode exprAst, SqlContext sqlCtx) {
+    if (ColRef.isInstance(exprAst)) {
+      final SqlNode literal = mkLiteral(sqlCtx, LiteralKind.BOOL, Boolean.TRUE);
+      return mkBinary(sqlCtx, BinaryOpKind.IS, copyAst(exprAst, sqlCtx), literal);
+    } else {
+      return exprAst;
+    }
+  }
+
+  static boolean isBoolConstant(SqlNode exprAst) {
+    return Binary.isInstance(exprAst)
+        && Literal.isInstance(exprAst.$(Binary_Left))
+        && Literal.isInstance(exprAst.$(Binary_Right));
+  }
+
+  private static boolean mustBeQualified(PlanContext ctx, int nodeId) {
+    int parentId = ctx.parentOf(nodeId);
+    while (ctx.isPresent(parentId)) {
+      final PlanKind parentKind = ctx.kindOf(parentId);
+      if (parentKind == SetOp) return false;
+      if (parentKind == Proj || parentKind == Join) return true;
+      if (parentKind.isFilter()) return ctx.childOf(parentId, 0) == nodeId;
+      parentId = ctx.parentOf(parentId);
+    }
+    return false;
   }
 }

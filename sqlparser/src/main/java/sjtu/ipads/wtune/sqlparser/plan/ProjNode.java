@@ -1,26 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-public interface ProjNode extends PlanNode {
-  boolean containsWildcard();
+import java.util.List;
 
-  boolean isDeduplicated();
-  // For wildcard resolution.
-  // If there are no wildcard, the values are immutable.
-  // Note: the bag is expected containing only ExprValue.
-  void setValues(ValueBag bag);
-
-  void setDeduplicated(boolean explicitDistinct);
-
+public interface ProjNode extends Exporter, PlanNode {
   @Override
-  default OperatorType kind() {
-    return OperatorType.PROJ;
+  default PlanKind kind() {
+    return PlanKind.Proj;
   }
 
-  static ProjNode mk(ValueBag outValues) {
-    return ProjNodeImpl.mk(outValues);
-  }
-
-  static ProjNode mkWildcard(ValueBag inValues) {
-    return ProjNodeImpl.mkWildcard(inValues);
+  static ProjNode mk(boolean deduplicated, List<String> attrNames, List<Expression> attrExprs) {
+    return new ProjNodeImpl(deduplicated, attrNames, attrExprs);
   }
 }

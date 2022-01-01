@@ -5,7 +5,6 @@ import com.google.common.collect.MultimapBuilder;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -239,7 +238,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
   }
 
   private List<Symbol> analyzeSource(Op op) {
-    final OperatorType kind = op.kind();
+    final OpKind kind = op.kind();
     final Op[] predecessor = op.predecessors();
     final List<Symbol> lhs = kind.numPredecessors() > 0 ? analyzeSource(predecessor[0]) : null;
     final List<Symbol> rhs = kind.numPredecessors() > 1 ? analyzeSource(predecessor[1]) : null;

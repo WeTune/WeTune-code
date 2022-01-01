@@ -2,14 +2,14 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.List;
 
 import static java.lang.Integer.max;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
 
 /**
  * A data structure representing a left-deep join tree.

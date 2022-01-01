@@ -1,64 +1,32 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.common.utils.TreeContext;
+import sjtu.ipads.wtune.common.tree.UniformTreeContext;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-
-public interface PlanContext extends TreeContext<PlanContext> {
-  Set<Ref> refs();
-
-  Set<Value> values();
-
+public interface PlanContext extends UniformTreeContext<PlanKind> {
   Schema schema();
 
-  Value deRef(Ref ref);
+  PlanNode nodeAt(int id);
 
-  void registerValues(PlanNode node, ValueBag values);
+  int nodeIdOf(PlanNode node);
 
-  void registerRefs(PlanNode node, RefBag refs);
+  int bindNode(PlanNode node);
 
-  PlanNode ownerOf(Value value);
+  ValuesRegistry valuesReg();
 
-  PlanNode ownerOf(Ref ref);
+  InfoCache infoCache();
 
-  Value sourceOf(Value v);
+  PlanContext copy();
 
-  void setRedirection(Value redirected, Value destination);
-
-  Value redirect(Value redirected);
-
-  void clearRedirections();
-
-  void setRef(Ref ref, Value value);
-
-  void replaceValue(Value oldAttr, Value newAttr, Set<Ref> excludedRefs);
-
-  boolean validate();
-
-  default List<Value> deRef(List<Ref> refs) {
-    return ListSupport.map((Iterable<Ref>) refs, (Function<? super Ref, ? extends Value>) this::deRef);
+  default Values valuesOf(PlanNode node) {
+    return valuesReg().valuesOf(nodeIdOf(node));
   }
 
-  default void replaceValue(Value oldAttr, Value newAttr) {
-    replaceValue(oldAttr, newAttr, Collections.emptySet());
-  }
-
-  @Override
-  default PlanContext dup() {
-    return mk(schema());
+  default PlanNode planRoot() {
+    return nodeAt(root());
   }
 
   static PlanContext mk(Schema schema) {
-    return new PlanContextImpl(schema);
-  }
-
-  static void install(PlanContext ctx, PlanNode root) {
-    root.setContext(ctx);
-    for (PlanNode predecessor : root.predecessors()) install(ctx, predecessor);
+    return new PlanContextImpl(16, schema);
   }
 }

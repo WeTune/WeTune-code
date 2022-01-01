@@ -1,12 +1,16 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
 public interface LimitNode extends PlanNode {
-  Expr limit();
+  Expression limit();
 
-  Expr offset();
+  Expression offset();
 
   @Override
-  default OperatorType kind() {
-    return OperatorType.LIMIT;
+  default PlanKind kind() {
+    return PlanKind.Limit;
+  }
+
+  static LimitNode mk(Expression limit, Expression offset) {
+    return new LimitNodeImpl(limit, offset);
   }
 }

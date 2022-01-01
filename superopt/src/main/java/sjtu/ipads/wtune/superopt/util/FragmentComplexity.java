@@ -1,15 +1,11 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.Op;
-import sjtu.ipads.wtune.superopt.fragment.OpVisitor;
-import sjtu.ipads.wtune.superopt.fragment.Proj;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.PROJ;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.PROJ;
 
 class FragmentComplexity implements Complexity {
-  private final int[] opCounts = new int[OperatorType.values().length + 2];
+  private final int[] opCounts = new int[OpKind.values().length + 2];
 
   FragmentComplexity(Op tree) {
     tree.acceptVisitor(OpVisitor.traverse(this::incrementOpCount));

@@ -7,8 +7,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.SqlContext;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.SetOpKind;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
@@ -24,8 +23,8 @@ import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind.EQUAL;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 class PlanTranslator {
@@ -373,7 +372,7 @@ class PlanTranslator {
     }
 
     private static JoinKind joinKindOf(Join join) {
-      final OperatorType kind = join.kind();
+      final OpKind kind = join.kind();
       if (kind == LEFT_JOIN) return JoinKind.LEFT_JOIN;
       else if (kind == INNER_JOIN) return JoinKind.INNER_JOIN;
       else throw new IllegalArgumentException("unsupported join kind: " + kind);

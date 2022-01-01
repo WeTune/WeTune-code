@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment.pruning;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Op;
+import sjtu.ipads.wtune.superopt.fragment.OpKind;
 import sjtu.ipads.wtune.superopt.fragment.Proj;
 
 public class MeaninglessDedup extends BaseMatchingRule {
@@ -14,7 +14,7 @@ public class MeaninglessDedup extends BaseMatchingRule {
       return true;
 
     if (successor.successor() != null
-        || (op.predecessors()[0] != null && op.predecessors()[0].kind() != OperatorType.INPUT)) {
+        || (op.predecessors()[0] != null && op.predecessors()[0].kind() != OpKind.INPUT)) {
       matched = true;
       return false;
     }

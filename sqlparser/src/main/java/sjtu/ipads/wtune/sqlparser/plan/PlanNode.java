@@ -1,22 +1,29 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.Showable;
-import sjtu.ipads.wtune.common.utils.TreeNode;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 
-public interface PlanNode extends TreeNode<PlanContext, PlanNode>, Showable {
-  OperatorType kind();
+import java.util.List;
 
-  ValueBag values();
+public interface PlanNode {
+  PlanKind kind();
 
-  RefBag refs();
+  default int nodeId(PlanContext context) {
+    return context.nodeIdOf(this);
+  }
 
-  void setContext(PlanContext context);
+  default PlanNode parent(PlanContext context) {
+    return context.nodeAt(context.parentOf(nodeId(context)));
+  }
 
-  boolean rebindRefs(PlanContext refCtx);
+  default int numChildren(PlanContext context) {
+    return context.childrenOf(nodeId(context)).length;
+  }
 
-  void freeze();
+  default List<PlanNode> children(PlanContext context) {
+    return ListSupport.map(context.childrenOf(nodeId(context)), context::nodeAt);
+  }
 
-  StringBuilder stringifyCompact(StringBuilder builder);
-
-  String toString(boolean compact);
+  default PlanNode child(PlanContext context, int index) {
+    return context.nodeAt(context.childOf(nodeId(context), index));
+  }
 }

@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.BinaryOpKind;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind;
 import sjtu.ipads.wtune.sqlparser.ast1.constants.TernaryOp;
-import sjtu.ipads.wtune.sqlparser.plan1.*;
+import sjtu.ipads.wtune.sqlparser.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +17,8 @@ import static sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind.INNER_JOIN;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind.LEFT_JOIN;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind.NULL;
 import static sjtu.ipads.wtune.sqlparser.ast1.constants.LiteralKind.UNKNOWN;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanKind.*;
-import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.*;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
 
 class InnerJoinInference {
   private final PlanContext plan;

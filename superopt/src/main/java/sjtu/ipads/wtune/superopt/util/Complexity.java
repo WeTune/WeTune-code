@@ -1,19 +1,19 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 public interface Complexity extends Comparable<Complexity> {
   int[] opCounts();
 
-  static Complexity mk(PlanNode plan) {
-    return new PlanComplexity(plan);
-  }
-
   static Complexity mk(Fragment fragment) {
     return new FragmentComplexity(fragment);
+  }
+
+  static Complexity mk(PlanContext plan, int nodeId) {
+    return new PlanComplexity(plan, nodeId);
   }
 
   @Override

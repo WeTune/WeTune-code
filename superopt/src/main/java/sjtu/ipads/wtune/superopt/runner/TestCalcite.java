@@ -1,10 +1,8 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -14,6 +12,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static sjtu.ipads.wtune.sqlparser.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
 
 public class TestCalcite implements Runner {
   private Path inputFile;
@@ -28,10 +29,10 @@ public class TestCalcite implements Runner {
 
   private static class QueryPair {
     private int lineNum;
-    private final ASTNode q0, q1;
-    private PlanNode p0, p1;
+    private final SqlNode q0, q1;
+    private PlanContext p0, p1;
 
-    private QueryPair(ASTNode q0, ASTNode q1) {
+    private QueryPair(SqlNode q0, SqlNode q1) {
       this.q0 = q0;
       this.q1 = q1;
     }
@@ -59,11 +60,14 @@ public class TestCalcite implements Runner {
         continue;
       }
 
-      final QueryPair pair = new QueryPair(s0.parsed(), s1.parsed());
+      final QueryPair pair =
+          new QueryPair(
+              parseSql(s0.app().dbType(), s0.rawSql()), parseSql(s1.app().dbType(), s1.rawSql()));
+
       try {
         pair.lineNum = lineNum;
-        pair.p0 = PlanSupport.assemblePlan(pair.q0, s0.app().schema("base"));
-        pair.p1 = PlanSupport.assemblePlan(pair.q1, s1.app().schema("base"));
+        pair.p0 = assemblePlan(pair.q0, s0.app().schema("base"));
+        pair.p1 = assemblePlan(pair.q1, s1.app().schema("base"));
         ++supported;
         pairs.add(pair);
 

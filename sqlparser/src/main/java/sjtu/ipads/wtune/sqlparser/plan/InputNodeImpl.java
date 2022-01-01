@@ -1,44 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
 import sjtu.ipads.wtune.sqlparser.schema.Table;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-
-import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.sqlparser.util.ASTHelper.simpleName;
-
-class InputNodeImpl extends PlanNodeBase implements InputNode {
+class InputNodeImpl implements InputNode {
   private final Table table;
-  private final ValueBag values;
-  private final int uniqueId;
+  private String qualification;
 
-  private static final AtomicInteger NEXT_UNIQUE_ID = new AtomicInteger(0);
-
-  private InputNodeImpl(Table table, ValueBag values, int uniqueId) {
-    this.table = requireNonNull(table);
-    this.values = requireNonNull(values);
-    this.uniqueId = uniqueId;
-  }
-
-  InputNodeImpl(Table table, String alias) {
-    this(
-        table,
-        ValueBag.mk(ListSupport.map((Iterable<Column>) table.columns(), (Function<? super Column, ? extends Value>) ColumnValue::new)),
-        NEXT_UNIQUE_ID.getAndIncrement());
-    values.setQualification(simpleName(alias));
-  }
-
-  @Override
-  public ValueBag values() {
-    return values;
-  }
-
-  @Override
-  public RefBag refs() {
-    return RefBag.empty();
+  InputNodeImpl(Table table, String qualification) {
+    this.table = table;
+    this.qualification = qualification;
   }
 
   @Override
@@ -47,23 +17,13 @@ class InputNodeImpl extends PlanNodeBase implements InputNode {
   }
 
   @Override
-  public PlanNode copy(PlanContext ctx) {
-    final InputNode copy = new InputNodeImpl(table, values, uniqueId);
-    copy.setContext(ctx);
-    ctx.registerValues(copy, values());
-    return copy;
+  public String qualification() {
+    return qualification;
   }
 
   @Override
-  public StringBuilder stringify0(StringBuilder builder, boolean compact) {
-    builder.append("Input{").append(table.name());
-    if (!compact) {
-      final String qualification = values.get(0).qualification();
-      if (qualification != null) builder.append(" AS ").append(qualification);
-    } else {
-      builder.append("@").append(uniqueId);
-    }
-    builder.append('}');
-    return builder;
+  public void setQualification(String qualification) {
+    this.qualification = qualification;
   }
+
 }

@@ -14,7 +14,7 @@ class MinCostSet implements Set<SubPlan> {
 
   @Override
   public boolean add(SubPlan subPlan) {
-    final Complexity cost = new PlanComplexity(subPlan.plan(), subPlan.nodeId());
+    final Complexity cost = Complexity.mk(subPlan.plan(), subPlan.nodeId());
     final int cmp = minCost == null ? -1 : cost.compareTo(minCost);
     // the new plan is more costly, abandon it
     if (cmp > 0) return false;

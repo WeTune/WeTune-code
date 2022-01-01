@@ -1,12 +1,9 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.common.utils.TreeNode;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
-  static Op mk(OperatorType type) {
+  static Op mk(OpKind type) {
     return switch (type) {
       case INPUT -> new InputOp();
       case INNER_JOIN -> new InnerJoinOp();
@@ -23,18 +20,18 @@ public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
   }
 
   static Op parse(String typeName){
-    final OperatorType opType = OperatorType.parse(typeName);
-    final Op op = Op.mk(opType);
-    if (opType == OperatorType.PROJ && typeName.endsWith("*")) {
+    final OpKind opKind = OpKind.parse(typeName);
+    final Op op = Op.mk(opKind);
+    if (opKind == OpKind.PROJ && typeName.endsWith("*")) {
       ((Proj)op).setDeduplicated(true);
     }
-    if (opType == OperatorType.SET_OP && typeName.endsWith("*")) {
+    if (opKind == OpKind.SET_OP && typeName.endsWith("*")) {
       ((Union)op).setDeduplicated(true);
     }
     return op;
   }
 
-  OperatorType kind();
+  OpKind kind();
 
   Fragment fragment();
 
@@ -48,14 +45,6 @@ public interface Op extends TreeNode<Symbols, Op>, Comparable<Op> {
 
   @Override
   default Op copy(Symbols context) {
-    throw new UnsupportedOperationException();
-  }
-
-  default boolean match(PlanNode node, Model m) {
-    throw new UnsupportedOperationException();
-  }
-
-  default PlanNode instantiate(Model m, PlanContext ctx) {
     throw new UnsupportedOperationException();
   }
 

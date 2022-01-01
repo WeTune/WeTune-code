@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 
 public class PlanTranslatorTest {
   @Test

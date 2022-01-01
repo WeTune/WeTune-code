@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.List;
@@ -10,8 +9,6 @@ public interface SubstitutionBank extends Set<Substitution> {
   boolean contains(String substitution);
 
   Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint);
-
-  Iterable<Substitution> matchByFingerprint(PlanNode plan);
 
   static SubstitutionBank parse(List<String> lines) {
     return parse(lines, false);

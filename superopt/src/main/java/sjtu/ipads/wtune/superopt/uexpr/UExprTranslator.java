@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.uexpr;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.NameSequence;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -14,8 +13,8 @@ import static sjtu.ipads.wtune.common.utils.Commons.push;
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.ListSupport.pop;
-import static sjtu.ipads.wtune.sqlparser.plan.OperatorType.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Unique;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.*;
@@ -462,7 +461,7 @@ class UExprTranslator {
       Op op = proj;
       Op succ = op.successor();
       while (succ != null) {
-        final OperatorType succKind = succ.kind();
+        final OpKind succKind = succ.kind();
         if (succKind == PROJ) return false;
         if (succKind.isSubquery() && succ.predecessors()[1] == op) return false;
         op = succ;
@@ -476,7 +475,7 @@ class UExprTranslator {
       Op op = proj;
       Op succ = op.successor();
       while (succ != null) {
-        final OperatorType succKind = succ.kind();
+        final OpKind succKind = succ.kind();
         if (succKind == PROJ && ((Proj) succ).isDeduplicated()) return true;
         if (succKind.isSubquery() && succ.predecessors()[1] == op) return true;
         op = succ;
@@ -510,7 +509,7 @@ class UExprTranslator {
     }
 
     private boolean isUniqueCoreAt(Symbol attrs, Op surface) {
-      final OperatorType kind = surface.kind();
+      final OpKind kind = surface.kind();
       if (kind.isFilter()) return isUniqueCoreAt(attrs, surface.predecessors()[0]);
 
       if (kind == INPUT) {

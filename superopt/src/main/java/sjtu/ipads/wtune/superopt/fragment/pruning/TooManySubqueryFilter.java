@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment.pruning;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.InSubFilter;
+import sjtu.ipads.wtune.superopt.fragment.OpKind;
 
 public class TooManySubqueryFilter extends BaseMatchingRule {
   @Override
@@ -11,7 +11,7 @@ public class TooManySubqueryFilter extends BaseMatchingRule {
   }
 
   private static boolean checkOverwhelming(InSubFilter op) {
-    if (op.predecessors()[0] == null || op.predecessors()[0].kind() != OperatorType.IN_SUB_FILTER)
+    if (op.predecessors()[0] == null || op.predecessors()[0].kind() != OpKind.IN_SUB_FILTER)
       return false;
 
     return op.successor() != null

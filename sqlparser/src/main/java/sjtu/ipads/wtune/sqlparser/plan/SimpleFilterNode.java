@@ -1,12 +1,14 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
-public interface SimpleFilterNode extends FilterNode {
+public interface SimpleFilterNode extends PlanNode {
+  Expression predicate();
+
   @Override
-  default OperatorType kind() {
-    return OperatorType.SIMPLE_FILTER;
+  default PlanKind kind() {
+    return PlanKind.Filter;
   }
 
-  static SimpleFilterNode mk(Expr predicate, RefBag refs) {
-    return SimpleFilterNodeImpl.mk(predicate, refs);
+  static SimpleFilterNode mk(Expression predicate) {
+    return new SimpleFilterNodeImpl(predicate);
   }
 }

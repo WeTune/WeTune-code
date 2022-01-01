@@ -2,11 +2,10 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 
@@ -70,14 +69,8 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   }
 
   @Override
-  public Iterable<Substitution> ruleOfFingerprint(
-      sjtu.ipads.wtune.superopt.util.Fingerprint fingerprint) {
+  public Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint) {
     return fingerprintIndex.get(fingerprint.fingerprint());
-  }
-
-  @Override
-  public Iterable<Substitution> matchByFingerprint(PlanNode plan) {
-    return flatMap(Fingerprint.mk(plan), it -> fingerprintIndex.get(it.toString()));
   }
 
   @Override

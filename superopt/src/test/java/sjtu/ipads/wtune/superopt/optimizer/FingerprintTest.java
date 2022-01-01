@@ -2,8 +2,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.Set;
 
@@ -18,7 +19,7 @@ public class FingerprintTest {
   void testOp() {
     final Fragment fragment =
         Fragment.parse("Proj(Filter(InSubFilter(InnerJoin(Input,Input),Input)))", null);
-    assertEquals("pfsj", FingerprintImpl.mk(fragment).toString());
+    assertEquals("pfsj", Fingerprint.mk(fragment).toString());
   }
 
   @Test
@@ -32,11 +33,11 @@ public class FingerprintTest {
                 + "And a.i In (Select a.* From a Where a.j > 20) "
                 + "And a.i  < 2");
 
-    final Set<FingerprintImpl> fingerprints = FingerprintImpl.mk(plan, plan.root());
+    final Set<Fingerprint> fingerprints = Fingerprint.mk(plan, plan.root());
     assertEquals(9, fingerprints.size());
     assertEquals(
         Set.of("p", "pf", "ps", "pff", "pfs", "pss", "pfff", "pffs", "pfss"),
-        setMap(fingerprints, FingerprintImpl::toString));
+        setMap(fingerprints, Fingerprint::toString));
   }
 
   @Test
@@ -50,12 +51,12 @@ public class FingerprintTest {
                 + "Left Join a As a1 On a.i = a1.i "
                 + "Left Join b As b1 On a.i = b1.x");
 
-    final Set<FingerprintImpl> fingerprints = FingerprintImpl.mk(plan, plan.root());
+    final Set<Fingerprint> fingerprints = Fingerprint.mk(plan, plan.root());
     assertEquals(14, fingerprints.size());
     assertEquals(
         Set.of(
             "p", "pl", "pj", "pjj", "pjl", "plj", "pll", "pjjj", "pjjl", "pjlj", "pljj", "pjll",
             "pljl", "pllj"),
-        setMap(fingerprints, FingerprintImpl::toString));
+        setMap(fingerprints, Fingerprint::toString));
   }
 }

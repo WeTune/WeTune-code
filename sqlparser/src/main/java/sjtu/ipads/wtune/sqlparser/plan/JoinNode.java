@@ -1,23 +1,18 @@
 package sjtu.ipads.wtune.sqlparser.plan;
 
+import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
+
 public interface JoinNode extends PlanNode {
-  boolean isEquiJoin();
+  JoinKind joinKind();
 
-  Expr condition();
+  Expression joinCond();
 
-  RefBag lhsRefs();
+  @Override
+  default PlanKind kind() {
+    return PlanKind.Join;
+  }
 
-  RefBag rhsRefs();
-
-  JoinNode flip(PlanContext context); // If `context` is null, do in-place. Otherwise, make a copy.
-
-  void setJoinType(OperatorType type);
-
-  void setLhsRefs(RefBag lhsRefs);
-
-  void setRhsRefs(RefBag rhsRefs);
-
-  static JoinNode mk(OperatorType joinType, RefBag lhsRefs, RefBag rhsRefs) {
-    return JoinNodeImpl.mk(joinType, lhsRefs, rhsRefs);
+  static JoinNode mk(JoinKind kind, Expression joinCond) {
+    return new JoinNodeImpl(kind, joinCond);
   }
 }
