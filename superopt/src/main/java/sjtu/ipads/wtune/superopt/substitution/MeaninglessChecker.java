@@ -24,6 +24,5 @@ class MeaninglessChecker {
     return true;
   }
 
-
   // TODO
 }

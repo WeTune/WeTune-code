@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
-import sjtu.ipads.wtune.superopt.fragment.Symbol;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
 

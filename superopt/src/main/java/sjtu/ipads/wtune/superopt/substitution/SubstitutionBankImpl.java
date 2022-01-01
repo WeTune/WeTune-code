@@ -13,7 +13,7 @@ import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligi
 class SubstitutionBankImpl extends AbstractSet<Substitution> implements SubstitutionBank {
   private final Set<Substitution> substitutions;
   private final Set<String> known;
-  private final Multimap<Fingerprint, Substitution> fingerprintIndex;
+  private final Multimap<String, Substitution> fingerprintIndex;
 
   SubstitutionBankImpl() {
     this.substitutions = new LinkedHashSet<>(2048);
@@ -54,7 +54,7 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
     if (!known.add(substitution.canonicalStringify())) return false;
     substitutions.add(substitution);
     substitution.setId(substitutions.size());
-    fingerprintIndex.put(Fingerprint.mk(substitution._0()), substitution);
+    fingerprintIndex.put(Fingerprint.mk(substitution._0()).toString(), substitution);
     return true;
   }
 
@@ -70,8 +70,14 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   }
 
   @Override
+  public Iterable<Substitution> ruleOfFingerprint(
+      sjtu.ipads.wtune.superopt.util.Fingerprint fingerprint) {
+    return fingerprintIndex.get(fingerprint.fingerprint());
+  }
+
+  @Override
   public Iterable<Substitution> matchByFingerprint(PlanNode plan) {
-    return flatMap(Fingerprint.mk(plan), fingerprintIndex::get);
+    return flatMap(Fingerprint.mk(plan), it -> fingerprintIndex.get(it.toString()));
   }
 
   @Override

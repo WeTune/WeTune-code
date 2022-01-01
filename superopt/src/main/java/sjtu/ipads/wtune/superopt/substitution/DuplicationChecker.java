@@ -1,28 +1,36 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
+import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 
-import java.util.Collections;
 import java.util.Set;
 
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 public class DuplicationChecker {
-  static void removeIfDuplicated(SubstitutionBank bank, Substitution sub) {
-    final PlanContext plan = translateAsPlan(sub).getLeft();
+  static void removeIfDuplicated(SubstitutionBank bank, Substitution rule) {
+    final PlanContext plan = translateAsPlan(rule).getLeft();
 
     try {
-      final Set<String> optimized0 = Collections.emptySet(); // TODO
-      bank.remove(sub);
-      final Set<String> optimized1 = Collections.emptySet(); // TODO
-      optimized0.remove(plan.toString());
-      optimized1.remove(plan.toString());
+      final String str = stringifyTree(plan, plan.root());
+      final Set<String> optimized0 = optimizeAsString(plan, bank);
+      bank.remove(rule);
+      final Set<String> optimized1 = optimizeAsString(plan, bank);
+      optimized0.remove(str);
+      optimized1.remove(str);
 
-      if (optimized1.isEmpty() || !optimized1.containsAll(optimized0)) bank.add(sub);
+      if (optimized1.isEmpty() || !optimized1.containsAll(optimized0)) bank.add(rule);
 
     } catch (Throwable ex) {
-      bank.remove(sub);
-      System.out.println(sub);
+      bank.remove(rule);
+      System.out.println(rule);
     }
+  }
+
+  private static Set<String> optimizeAsString(PlanContext plan, SubstitutionBank rules) {
+    final Optimizer optimizer = Optimizer.mk(rules);
+    return SetSupport.map(optimizer.optimize(plan), it -> stringifyTree(it, it.root()));
   }
 }

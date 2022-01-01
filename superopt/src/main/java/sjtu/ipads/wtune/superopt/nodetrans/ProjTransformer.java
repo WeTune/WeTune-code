@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.nodetrans;
 
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;

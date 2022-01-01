@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
@@ -84,7 +84,9 @@ public class TestCalcite implements Runner {
     int index = -1;
     for (QueryPair pair : pairs) {
       ++index;
-      final Set<PlanNode> optimized = OptimizerSupport.optimize(bank, pair.p0);
+      // TODO
+      //      final Set<PlanNode> optimized = OptimizerSupport.optimize(bank, pair.p0);
+      final Set<PlanContext> optimized = null;
       System.out.printf("%d. %s\n", pair.lineNum, optimized);
       //      System.out.printf("%d: %d\n", index, optimized.size());
     }

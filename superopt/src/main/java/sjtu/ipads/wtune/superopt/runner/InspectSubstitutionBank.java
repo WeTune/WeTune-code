@@ -12,7 +12,7 @@ public class InspectSubstitutionBank implements Runner {
   @Override
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
-    inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/substitutions.filtered"));
+    inputFile = Path.of(args.getOptional("-i", String.class, "wtune_data/rules"));
     echo = args.getOptional("-echo", boolean.class, true);
   }
 

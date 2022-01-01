@@ -1,46 +1,96 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
-import java.util.AbstractSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.function.Function;
+import java.util.*;
 
-class MinCostSet<K> extends AbstractSet<PlanNode> {
-  private final Function<PlanNode, K> keyExtractor;
-  private final Map<K, PlanNode> plans;
+class MinCostSet implements Set<SubPlan> {
+  private final Map<String, SubPlan> subPlans;
   private Complexity minCost;
 
-  MinCostSet(Function<PlanNode, K> keyExtractor) {
-    this.keyExtractor = keyExtractor;
-    this.plans = new HashMap<>();
+  MinCostSet() {
+    this.subPlans = new HashMap<>();
   }
 
   @Override
-  public boolean add(PlanNode n) {
-    final Complexity cost = Complexity.mk(n);
+  public boolean add(SubPlan subPlan) {
+    final Complexity cost = new PlanComplexity(subPlan.plan(), subPlan.nodeId());
     final int cmp = minCost == null ? -1 : cost.compareTo(minCost);
     // the new plan is more costly, abandon it
     if (cmp > 0) return false;
     // the new plan is cheaper, abandon existing ones
     if (cmp < 0) {
-      plans.clear();
+      subPlans.clear();
       minCost = cost;
     }
 
-    return plans.putIfAbsent(keyExtractor.apply(n), n) == null;
+    return subPlans.putIfAbsent(subPlan.toString(), subPlan) == null;
   }
 
   @Override
-  public Iterator<PlanNode> iterator() {
-    return plans.values().iterator();
+  public boolean remove(Object o) {
+    if (!(o instanceof SubPlan)) return false;
+    return subPlans.remove(o.toString()) != null;
+  }
+
+  @Override
+  public boolean containsAll(Collection<?> c) {
+    for (Object o : c) if (!contains(o)) return false;
+    return true;
+  }
+
+  @Override
+  public boolean addAll(Collection<? extends SubPlan> c) {
+    boolean mutated = false;
+    for (SubPlan subPlan : c) mutated |= add(subPlan);
+    return mutated;
+  }
+
+  @Override
+  public boolean retainAll(Collection<?> c) {
+    return subPlans.entrySet().removeIf(entry -> c.contains(entry.getValue()));
+  }
+
+  @Override
+  public boolean removeAll(Collection<?> c) {
+    boolean mutated = false;
+    for (Object o : c) mutated |= remove(o);
+    return mutated;
+  }
+
+  @Override
+  public void clear() {
+    subPlans.clear();
+  }
+
+  @Override
+  public boolean contains(Object o) {
+    if (!(o instanceof SubPlan)) return false;
+    return subPlans.containsKey(o.toString());
+  }
+
+  @Override
+  public Iterator<SubPlan> iterator() {
+    return subPlans.values().iterator();
+  }
+
+  @Override
+  public Object[] toArray() {
+    return subPlans.values().toArray();
+  }
+
+  @Override
+  public <T> T[] toArray(T[] a) {
+    return subPlans.values().toArray(a);
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return subPlans.isEmpty();
   }
 
   @Override
   public int size() {
-    return plans.size();
+    return subPlans.size();
   }
 }

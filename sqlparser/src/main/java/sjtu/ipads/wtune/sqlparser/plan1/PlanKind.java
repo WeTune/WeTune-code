@@ -1,16 +1,17 @@
 package sjtu.ipads.wtune.sqlparser.plan1;
 
 public enum PlanKind {
+  // Don't change the order, should be consistent with OperatorType
   Input(0),
-  Proj(1),
+  Join(2),
   Filter(1),
   InSub(2),
   Exists(2),
-  Join(2),
+  Proj(1),
   Agg(1),
-  SetOp(2),
+  Sort(1),
   Limit(1),
-  Sort(1);
+  SetOp(2);
 
   private final int numChildren;
 

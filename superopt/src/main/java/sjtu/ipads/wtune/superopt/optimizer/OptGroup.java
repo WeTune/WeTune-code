@@ -1,17 +1,16 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.BaseCongruentClass;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 
 import java.util.Collection;
 
-class OptGroup extends BaseCongruentClass<PlanNode> {
+class OptGroup extends BaseCongruentClass<SubPlan> {
   protected OptGroup(Memo congruence) {
     super(congruence);
   }
 
   @Override
-  protected Collection<PlanNode> mkCollection() {
-    return new MinCostSet<>(((Memo) congruence)::extractKey);
+  protected Collection<SubPlan> mkCollection() {
+    return new MinCostSet();
   }
 }

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 
@@ -13,7 +13,7 @@ public interface DaemonContext {
 
   Registration registrationOf(String contextName);
 
-  ASTNode optimize(Statement stmt);
+  SqlNode optimize(Statement stmt);
 
   void run();
 

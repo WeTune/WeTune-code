@@ -9,8 +9,8 @@ import sjtu.ipads.wtune.superopt.fragment.*;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.common.utils.TreeNode.treeRootOf;
 import static sjtu.ipads.wtune.common.utils.TreeScaffold.displaceGlobal;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.TableEq;

@@ -1,9 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
-public record OptimizationStep(String original, Substitution substitution) {
-    public int substitutionId() {
-        return substitution == null ? -1 : substitution.id();
-    }
+public record OptimizationStep(PlanContext source,
+                               PlanContext target,
+                               Substitution rule) {
+  public int ruleId() {
+    return rule == null ? -1 : rule.id();
+  }
 }

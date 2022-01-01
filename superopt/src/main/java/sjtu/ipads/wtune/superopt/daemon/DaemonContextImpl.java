@@ -1,11 +1,15 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.common.utils.SetSupport;
+import sjtu.ipads.wtune.sqlparser.SqlSupport;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 import sjtu.ipads.wtune.superopt.profiler.DataSourceFactory;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
@@ -23,6 +27,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static sjtu.ipads.wtune.sqlparser.plan1.PlanSupport.translateAsAst;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;
@@ -76,10 +82,14 @@ public class DaemonContextImpl implements DaemonContext {
   }
 
   @Override
-  public ASTNode optimize(Statement stmt) {
+  public SqlNode optimize(Statement stmt) {
     final Schema schema = stmt.app().schema("base");
-    final Set<ASTNode> candidates = OptimizerSupport.optimize(bank, schema, stmt.parsed());
-    return Iterables.get(candidates, 0); // TODO
+    final SqlNode ast = SqlSupport.parseSql(schema.dbType(), stmt.rawSql());
+    final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
+    final Optimizer optimizer = Optimizer.mk(bank);
+    final Set<PlanContext> optimized = optimizer.optimize(plan);
+    final Set<SqlNode> sqls = SetSupport.map(optimized, it -> translateAsAst(it, it.root(), false));
+    return Iterables.get(sqls, 0); // TODO
   }
 
   private static Registration makeRegistration(App app) {

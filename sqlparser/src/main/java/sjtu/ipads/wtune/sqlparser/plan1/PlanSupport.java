@@ -87,9 +87,12 @@ public abstract class PlanSupport {
     }
   }
 
-  public static int locateNode(PlanContext ctx, int rootId, int... pathExpr) {
-    int node = rootId;
-    for (int direction : pathExpr) node = ctx.childOf(node, direction);
+  public static int locateNode(PlanContext ctx, int startPoint, int... pathExpr) {
+    int node = startPoint;
+    for (int direction : pathExpr) {
+      if (direction < 0) node = ctx.parentOf(node);
+      else node = ctx.childOf(node, direction);
+    }
     return node;
   }
 
@@ -106,11 +109,15 @@ public abstract class PlanSupport {
   }
 
   public static String stringifyNode(PlanContext ctx, int id) {
-    return PlanStringifier.stringifyNode(ctx, id);
+    return PlanStringifier.stringifyNode(ctx, id, false);
   }
 
   public static String stringifyTree(PlanContext ctx, int id) {
-    return PlanStringifier.stringifyTree(ctx, id);
+    return PlanStringifier.stringifyTree(ctx, id, false);
+  }
+
+  public static String stringifyTree(PlanContext ctx, int id, boolean compact) {
+    return PlanStringifier.stringifyTree(ctx, id, compact);
   }
 
   public static boolean isRootRef(PlanContext ctx, Value value) {
@@ -152,6 +159,13 @@ public abstract class PlanSupport {
     final JoinKind joinKind = ctx.infoCache().getJoinKindOf(nodeId);
     if (joinKind != null) return joinKind;
     return ((JoinNode) ctx.nodeAt(nodeId)).joinKind();
+  }
+
+  public static boolean isDedup(PlanContext ctx, int nodeId) {
+    final PlanKind nodeKind = ctx.kindOf(nodeId);
+    if (nodeKind == Proj) return ((ProjNode) ctx.nodeAt(nodeId)).deduplicated();
+    if (nodeKind == SetOp) return ((SetOpNode) ctx.nodeAt(nodeId)).deduplicated();
+    return false;
   }
 
   public static boolean isUniqueCoreAt(PlanContext ctx, Collection<Value> attrs, int surfaceId) {

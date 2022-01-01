@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 
@@ -9,7 +9,7 @@ import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
 
 public interface Registration {
-  void register(Statement stmt, ASTNode optimized);
+  void register(Statement stmt, SqlNode optimized);
 
   boolean contains(Statement stmt);
 

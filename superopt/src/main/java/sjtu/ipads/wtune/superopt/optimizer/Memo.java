@@ -2,20 +2,24 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.BaseCongruence;
 import sjtu.ipads.wtune.common.utils.BaseCongruentClass;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 
-class Memo extends BaseCongruence<String, PlanNode> {
-  boolean isRegistered(PlanNode node) {
+class Memo extends BaseCongruence<String, SubPlan> {
+  boolean isRegistered(SubPlan node) {
     return classes.containsKey(extractKey(node));
   }
 
-  @Override
-  protected String extractKey(PlanNode planNode) {
-    return planNode.toString(true);
+  boolean isRegistered(PlanContext plan, int nodeId) {
+    return classes.containsKey(extractKey(new SubPlan(plan, nodeId)));
   }
 
   @Override
-  protected BaseCongruentClass<PlanNode> mkCongruentClass() {
+  protected String extractKey(SubPlan subPlan) {
+    return subPlan.toString();
+  }
+
+  @Override
+  protected BaseCongruentClass<SubPlan> mkCongruentClass() {
     return new OptGroup(this);
   }
 }

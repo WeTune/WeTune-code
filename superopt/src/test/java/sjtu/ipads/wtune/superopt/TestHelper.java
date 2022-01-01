@@ -5,25 +5,23 @@ import sjtu.ipads.wtune.sqlparser.ASTParser;
 import sjtu.ipads.wtune.sqlparser.SqlSupport;
 import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
 import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
 import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanContext;
 import sjtu.ipads.wtune.sqlparser.plan1.PlanSupport;
 import sjtu.ipads.wtune.sqlparser.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.sqlparser.ast1.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
-import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =
@@ -72,11 +70,7 @@ public abstract class TestHelper {
   }
 
   static Set<ASTNode> optimizeStmt(Statement stmt) {
-    final ASTNode ast = stmt.parsed();
-    final Schema schema = stmt.app().schema("base", true);
-    ast.context().setSchema(schema);
-    normalize(stmt.parsed());
-
-    return OptimizerSupport.optimize(getBank(), schema, ast);
+    // TODO
+    return Collections.emptySet();
   }
 }

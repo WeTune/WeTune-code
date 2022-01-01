@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Map;
@@ -14,7 +14,7 @@ public class RegistrationBase implements Registration {
   private final Map<String, Status> registration = new ConcurrentHashMap<>();
 
   @Override
-  public void register(Statement stmt, ASTNode optimized) {
+  public void register(Statement stmt, SqlNode optimized) {
     final String query = stmt.parsed().toString();
 
     if (optimized == null) {
