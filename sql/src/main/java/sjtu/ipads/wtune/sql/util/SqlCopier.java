@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql;
+package sjtu.ipads.wtune.sql.util;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;

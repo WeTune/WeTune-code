@@ -8,7 +8,7 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import org.junit.jupiter.api.Test;
 
-public class RandomHelperTest {
+public class RandomNormalizationSupportTest {
   @Test
   void testUniqueRandomInt() {
     final TIntSet known = new TIntHashSet(1024);

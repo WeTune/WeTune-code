@@ -4,8 +4,8 @@ import sjtu.ipads.wtune.common.field.FieldKey;
 
 import java.util.Map;
 
-import static sjtu.ipads.wtune.common.tree.TreeSupport.checkIsValidChild;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.checkParentNotSet;
 import static sjtu.ipads.wtune.common.utils.MapSupport.mkLate;
 
 public class LabeledTreeContextBase<Kind>
@@ -50,7 +50,7 @@ public class LabeledTreeContextBase<Kind>
     checkNodePresent(this, nodeId);
     final int childId = v.nodeId();
     checkNodePresent(this, childId);
-    checkIsValidChild(this, nodeId, childId);
+    checkParentNotSet(this, childId);
 
     setParentOf(childId, nodeId);
     final N n = key.setTo(new MutableLabeledTreeFields<>(this, nodeId, nodes[nodeId].fields), v);
@@ -66,7 +66,7 @@ public class LabeledTreeContextBase<Kind>
     for (LabeledTreeNode<Kind, ?, ?> child : (LabeledTreeNodes<Kind, ?, ?>) v) {
       final int childId = child.nodeId();
       checkNodePresent(this, childId);
-      checkIsValidChild(this, nodeId, childId);
+      checkParentNotSet(this, childId);
     }
 
     for (LabeledTreeNode<Kind, ?, ?> child : (LabeledTreeNodes<Kind, ?, ?>) v) {
@@ -89,7 +89,7 @@ public class LabeledTreeContextBase<Kind>
   @Override
   public void detachNode(int nodeId) {
     final int parentId = parentOf(nodeId);
-    checkNodePresent(this, parentId);
+    if (parentId == NO_SUCH_NODE) return;
 
     // This line must reside here. See LabeledTreeNodes::erase for details.
     nodes[nodeId].parentId = NO_SUCH_NODE;
@@ -112,7 +112,7 @@ public class LabeledTreeContextBase<Kind>
   }
 
   @Override
-  protected final void relocate(int from, int to) {
+  protected void relocate(int from, int to) {
     nodes[to] = nodes[from];
     nodes[from] = null;
 
@@ -125,8 +125,9 @@ public class LabeledTreeContextBase<Kind>
         final Object value = pair.getValue();
 
         if (value instanceof LabeledTreeNode) {
-          if (((LabeledTreeNode<?, ?, ?>) value).nodeId() == from) {
-            pair.setValue(NO_SUCH_NODE);
+          final LabeledTreeNodeBase treeNode = (LabeledTreeNodeBase) value;
+          if (treeNode.nodeId() == from) {
+            pair.setValue(treeNode.mk(this, to));
             break;
           }
         }
@@ -134,8 +135,10 @@ public class LabeledTreeContextBase<Kind>
         if (value instanceof LabeledTreeNodes) {
           final LabeledTreeNodes<?, ?, ?> nodes = (LabeledTreeNodes<?, ?, ?>) value;
           final int index = nodes.indexOf(from);
-          if (index >= 0) nodes.set(index, to);
-          break;
+          if (index >= 0) {
+            nodes.set(index, to);
+            break;
+          }
         }
       }
     }
@@ -146,7 +149,7 @@ public class LabeledTreeContextBase<Kind>
     nodes[childId].parentId = parentId;
   }
 
-  static final class Nd<Kind> implements NdBase<Kind> {
+  protected static final class Nd<Kind> implements NdBase<Kind> {
     private final Kind kind;
     private int parentId;
     private final Map<FieldKey<?>, Object> fields;
@@ -155,6 +158,10 @@ public class LabeledTreeContextBase<Kind>
       this.kind = kind;
       this.parentId = NO_SUCH_NODE;
       this.fields = mkLate();
+    }
+
+    public Map<FieldKey<?>, Object> fields() {
+      return fields;
     }
 
     @Override

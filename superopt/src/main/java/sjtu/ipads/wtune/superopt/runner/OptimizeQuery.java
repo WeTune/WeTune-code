@@ -25,6 +25,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport.normalizeAst;
 
 public class OptimizeQuery implements Runner {
   private Path out, trace, err;
@@ -64,7 +65,7 @@ public class OptimizeQuery implements Runner {
     final Schema schema = stmt.app().schema("base", true);
     try {
       final SqlNode ast = parseSql(stmt.app().dbType(), stmt.rawSql());
-      // TODO: normalize sql
+      normalizeAst(ast);
       return PlanSupport.assemblePlan(ast, schema);
     } catch (Throwable ex) {
       System.out.printf("[Plan] %s: %s\n", stmt, ex.getMessage());

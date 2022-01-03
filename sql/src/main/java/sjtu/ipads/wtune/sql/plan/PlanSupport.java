@@ -128,19 +128,25 @@ public abstract class PlanSupport {
    * Returns the direct ref of the value. Returns null if the value is a base value (i.e., directly
    * derives from a table source) or is not a ColRef (i.e., a complex expression)
    */
-  public static Value tryResolveRef(PlanContext ctx, Value value) {
-    return tryResolveRef(ctx, value, false);
-  }
-
-  public static Value tryResolveRef(PlanContext ctx, Value value, boolean recursive) {
+  public static Value deRef(PlanContext ctx, Value value) {
     final ValuesRegistry valueReg = ctx.valuesReg();
     final Expression expr = valueReg.exprOf(value);
     if (expr == null) return null;
     if (!isColRef(expr)) return null;
-
     final Values refs = valueReg.valueRefsOf(expr);
     assert refs.size() == 1;
-    return recursive ? tryResolveRef(ctx, refs.get(0), true) : refs.get(0);
+    return refs.get(0);
+  }
+
+  /**
+   * Returns the root of ref chain.
+   *
+   * @return if (deRef(ctx, value) == null), then `value`, otherwise traceRef(ctx, deRef(ctx,
+   *     value()))
+   */
+  public static Value traceRef(PlanContext ctx, Value value) {
+    final Value ref = deRef(ctx, value);
+    return ref == null ? value : traceRef(ctx, ref);
   }
 
   public static Column tryResolveColumn(PlanContext ctx, Value value) {

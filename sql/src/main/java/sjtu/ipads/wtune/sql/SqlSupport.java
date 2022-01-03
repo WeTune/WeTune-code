@@ -4,12 +4,10 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
 import sjtu.ipads.wtune.sql.ast1.*;
-import sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sql.ast1.constants.LiteralKind;
-import sjtu.ipads.wtune.sql.ast1.constants.SetOpKind;
+import sjtu.ipads.wtune.sql.ast1.constants.*;
 import sjtu.ipads.wtune.sql.parser.AstParser;
 import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.util.SqlCopier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -208,6 +206,14 @@ public abstract class SqlSupport {
     return wildcard;
   }
 
+  public static SqlNode mkUnary(SqlContext ctx, UnaryOpKind op, SqlNode operand) {
+    expect(operand, Expr);
+    final SqlNode unary = SqlNode.mk(ctx, Unary);
+    unary.$(Unary_Op, op);
+    unary.$(Unary_Expr, operand);
+    return unary;
+  }
+
   public static SqlNode mkBinary(SqlContext ctx, BinaryOpKind op, SqlNode lhs, SqlNode rhs) {
     expect(lhs, Expr);
     expect(rhs, Expr);
@@ -347,6 +353,31 @@ public abstract class SqlSupport {
     } else {
       return isColRefEq(ast);
     }
+  }
+
+  public static String selectItemNameOf(SqlNode selectItem) {
+    expect(selectItem, SelectItem);
+    final String alias = selectItem.$(SelectItem_Alias);
+    if (alias != null) return alias;
+
+    final SqlNode exprAst = selectItem.$(SelectItem_Expr);
+    if (ColRef.isInstance(exprAst)) return exprAst.$(ColRef_ColName).$(ColName_Col);
+    return null;
+  }
+
+  public static List<SqlNode> linearizeConjunction(SqlNode expr) {
+    expect(expr, Expr);
+    return linearizeConjunction(expr, new ArrayList<>(5));
+  }
+
+  public static List<SqlNode> linearizeConjunction(SqlNode expr, List<SqlNode> terms) {
+    final BinaryOpKind op = expr.$(Binary_Op);
+    if (op != AND) terms.add(expr);
+    else {
+      linearizeConjunction(expr.$(Binary_Left), terms);
+      linearizeConjunction(expr.$(Binary_Right), terms);
+    }
+    return terms;
   }
 
   private static void expect(SqlNode node, TableSourceKind expected) {

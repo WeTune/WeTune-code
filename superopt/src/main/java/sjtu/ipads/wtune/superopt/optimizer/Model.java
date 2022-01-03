@@ -11,7 +11,6 @@ import sjtu.ipads.wtune.superopt.fragment.Symbol;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.*;
 import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
@@ -216,7 +215,7 @@ class Model {
 
     // Check if the referred attributes are filtered, which invalidates the FK on schema.
     Value rootRef = referredAttrs.get(0);
-    if (!isRootRef(plan, rootRef)) rootRef = tryResolveRef(plan, rootRef);
+    if (!isRootRef(plan, rootRef)) rootRef = deRef(plan, rootRef);
     assert rootRef != null;
 
     int path = plan.valuesReg().initiatorOf(rootRef);
@@ -260,8 +259,8 @@ class Model {
     for (int i = 0, bound = attrs0.size(); i < bound; i++) {
       final Value attr0 = attrs0.get(i), attr1 = attrs1.get(i);
 
-      final Value rootRef0 = coalesce(tryResolveRef(plan, attr0, true), attr0);
-      final Value rootRef1 = coalesce(tryResolveRef(plan, attr1, true), attr1);
+      final Value rootRef0 = traceRef(plan, attr0);
+      final Value rootRef1 = traceRef(plan, attr1);
       final Column column0 = tryResolveColumn(plan, rootRef0);
       final Column column1 = tryResolveColumn(plan, rootRef1);
       if (column0 == null ^ column1 == null) return false;

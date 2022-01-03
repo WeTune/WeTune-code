@@ -45,7 +45,8 @@ public abstract class LabeledTreeNodeBase<
 
   @Override
   public N parent() {
-    return mk(context, context.parentOf(nodeId));
+    final int parentId = context.parentOf(nodeId);
+    return parentId == NO_SUCH_NODE ? null : mk(context, parentId);
   }
 
   @Override

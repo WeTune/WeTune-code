@@ -20,9 +20,11 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.Commons.*;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
+import static sjtu.ipads.wtune.sql.SqlSupport.selectItemNameOf;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast1.SqlKind.SelectItem;
@@ -356,14 +358,9 @@ class PlanBuilder {
   }
 
   private String mkAttrName(SqlNode selectItem) {
-    final String alias = selectItem.$(SelectItem_Alias);
-    if (alias != null) return alias;
-
-    final SqlNode exprAst = selectItem.$(SelectItem_Expr);
-    if (ColRef.isInstance(exprAst)) return exprAst.$(ColRef_ColName).$(ColName_Col);
-
+    final String alias = selectItemNameOf(selectItem);
     // For some derived select-item, like 'salary / age'.
-    return synNameSeq.next();
+    return alias != null ? alias : synNameSeq.next();
   }
 
   private ProjNode mkForwardProj(List<SqlNode> colRefs, boolean deduplicated) {

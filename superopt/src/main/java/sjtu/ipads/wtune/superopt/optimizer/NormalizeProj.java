@@ -14,7 +14,6 @@ import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.mkColRefExpr;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.tryResolveRef;
 
 class NormalizeProj {
   private final PlanContext plan;
@@ -107,7 +106,7 @@ class NormalizeProj {
     if (inputs.size() != outputs.size()) return false;
 
     for (int i = 0, bound = inputs.size(); i < bound; i++) {
-      if (tryResolveRef(plan, outputs.get(i)) != inputs.get(i)) return false;
+      if (PlanSupport.deRef(plan, outputs.get(i)) != inputs.get(i)) return false;
     }
 
     return true;

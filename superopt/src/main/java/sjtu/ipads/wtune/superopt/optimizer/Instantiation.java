@@ -12,7 +12,6 @@ import java.util.List;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.tryResolveRef;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
@@ -204,7 +203,7 @@ class Instantiation {
 
   private Value adaptValue(Value value, List<Value> lookup) {
     final List<Value> refChain = new ArrayList<>(5);
-    for (; value != null; value = tryResolveRef(newPlan, value)) refChain.add(value);
+    for (; value != null; value = PlanSupport.deRef(newPlan, value)) refChain.add(value);
     return linearFind(lookup, refChain::contains);
   }
 

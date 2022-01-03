@@ -34,12 +34,12 @@ class NotNullInference {
   }
 
   private boolean onAgg(Value toCheck, int surfaceId) {
-    final Value ref = PlanSupport.tryResolveRef(ctx, toCheck);
+    final Value ref = PlanSupport.deRef(ctx, toCheck);
     return ref != null && isNotNullAt(ref, ctx.childOf(ctx.childOf(surfaceId, 0), 0));
   }
 
   private boolean onProj(Value toCheck, int surfaceId) {
-    final Value ref = PlanSupport.tryResolveRef(ctx, toCheck);
+    final Value ref = PlanSupport.deRef(ctx, toCheck);
     return ref != null && isNotNullAt(ref, ctx.childOf(surfaceId, 0));
   }
 

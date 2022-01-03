@@ -29,7 +29,6 @@ class NormalizeBool {
     BoolCollector.collect(node).forEach(NormalizeBool::normalizeExpr);
     return node;
   }
-
   private static void normalizeExpr(ASTNode expr) {
     assert EXPR.isInstance(expr);
     // `expr` must be evaluated as boolean

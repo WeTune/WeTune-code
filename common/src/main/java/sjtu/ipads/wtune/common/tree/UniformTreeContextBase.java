@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.common.tree;
 
 import java.util.Arrays;
 
-import static sjtu.ipads.wtune.common.tree.TreeSupport.checkIsValidChild;
-import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.*;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.safeGet;
 
@@ -41,7 +40,7 @@ public class UniformTreeContextBase<Kind>
   public void setChild(int parentNodeId, int childIndex, int childNodeId) {
     checkNodePresent(this, parentNodeId);
     checkNodePresent(this, childNodeId);
-    checkIsValidChild(this, parentNodeId, childNodeId);
+    checkParentNotSet(this, childNodeId);
 
     nodes[childNodeId].parentId = parentNodeId;
 

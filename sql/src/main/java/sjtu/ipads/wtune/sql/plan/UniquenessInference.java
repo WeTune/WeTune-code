@@ -13,7 +13,6 @@ import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sql.SqlSupport.isEquiConstPredicate;
 import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.UNIQUE;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.tryResolveRef;
 
 class UniquenessInference {
   private final PlanContext ctx;
@@ -87,7 +86,7 @@ class UniquenessInference {
 
     final Set<Value> refAttrs = new HashSet<>(toCheck.size());
     for (Value value : toCheck) {
-      final Value ref = PlanSupport.tryResolveRef(ctx, value);
+      final Value ref = PlanSupport.deRef(ctx, value);
       if (ref != null) refAttrs.add(ref);
     }
     return isUniqueCoreAt(refAttrs, ctx.childOf(surfaceId, 0));
@@ -116,7 +115,7 @@ class UniquenessInference {
     final Set<Value> groupAttrs = SetSupport.flatMap(groupExprs, valuesReg::valueRefsOf);
 
     for (Value value : toCheck) {
-      final Value ref = tryResolveRef(ctx, value);
+      final Value ref = PlanSupport.deRef(ctx, value);
       if (ref == null) return false;
       groupAttrs.remove(ref);
     }

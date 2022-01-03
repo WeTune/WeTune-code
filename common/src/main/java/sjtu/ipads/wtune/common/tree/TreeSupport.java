@@ -14,12 +14,28 @@ public interface TreeSupport {
       throw new NoSuchElementException("no such node in this tree: " + nodeId);
   }
 
-  static void checkIsValidChild(TreeContext<?> context, int parentId, int childId) {
+  static void checkParentNotSet(TreeContext<?> context, int childId) {
     final int existingParent = context.parentOf(childId);
     if (existingParent != NO_SUCH_NODE)
       throw new IllegalStateException("cannot set parent: already has parent");
-    if (isDescendant(context, parentId, childId))
+  }
+
+  static void checkIsValidChild(TreeContext<?> context, int parentId, int childId) {
+    final int existingParent = context.parentOf(childId);
+    if (existingParent != NO_SUCH_NODE && isDescendant(context, childId, parentId))
       throw new IllegalStateException("cannot set parent: loop incurred");
+  }
+
+  static boolean nodeEquals(UniformTreeNode<?, ?, ?> n0, UniformTreeNode<?, ?, ?> n1) {
+    if (n0 == n1) return true;
+    if (n0 == null ^ n1 == null) return false;
+    return n0.context() == n1.context() && n0.nodeId() == n1.nodeId();
+  }
+
+  static boolean nodeEquals(LabeledTreeNode<?, ?, ?> n0, LabeledTreeNode<?, ?, ?> n1) {
+    if (n0 == n1) return true;
+    if (n0 == null ^ n1 == null) return false;
+    return n0.context() == n1.context() && n0.nodeId() == n1.nodeId();
   }
 
   static int countNodes(TreeContext<?> context) {
@@ -45,7 +61,7 @@ public interface TreeSupport {
 
   static boolean isDescendant(TreeContext<?> context, int rootId, int toCheckNodeId) {
     int n = toCheckNodeId;
-    while (n != 0) {
+    while (n != NO_SUCH_NODE) {
       if (n == rootId) return true;
       n = context.parentOf(n);
     }
