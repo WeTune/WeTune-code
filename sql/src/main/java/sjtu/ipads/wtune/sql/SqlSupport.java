@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
@@ -353,6 +354,21 @@ public abstract class SqlSupport {
     } else {
       return isColRefEq(ast);
     }
+  }
+
+  public static boolean isPrimitivePredicate(SqlNode ast) {
+    return Expr.isInstance(ast)
+        && (!Binary.isInstance(ast) || !ast.$(Binary_Op).isLogic())
+        && (!Unary.isInstance(ast) || !ast.$(Unary_Op).isLogic());
+  }
+
+  public static SqlNode getAnotherSide(SqlNode binaryExpr, SqlNode thisSide) {
+    if (!Binary.isInstance(binaryExpr)) return null;
+    final SqlNode lhs = binaryExpr.$(Binary_Left);
+    final SqlNode rhs = binaryExpr.$(Binary_Right);
+    if (nodeEquals(lhs, thisSide)) return rhs;
+    if (nodeEquals(rhs, thisSide)) return lhs;
+    return null;
   }
 
   public static String selectItemNameOf(SqlNode selectItem) {

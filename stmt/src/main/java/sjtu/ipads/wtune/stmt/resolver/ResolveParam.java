@@ -50,7 +50,9 @@ class ResolveParam {
     final List<ASTNode> params = collectParams(expr);
     if (params.isEmpty()) return emptyList();
 
-    return ListSupport.map((Iterable<ASTNode>) params, (Function<? super ASTNode, ? extends ParamDesc>) it -> resolve0(expr, it));
+    return ListSupport.map(
+        (Iterable<ASTNode>) params,
+        (Function<? super ASTNode, ? extends ParamDesc>) it -> resolve0(expr, it));
   }
 
   private ParamDesc resolve0(ASTNode expr, ASTNode paramNode) {

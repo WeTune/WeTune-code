@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.sql.ast1.SqlNodes;
 import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
 
 import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 public abstract class NodeCollector implements SqlVisitor {
   public static final int STOP = 1, ACCEPT = 2, NOT_ACCEPT = 0;
@@ -56,5 +57,17 @@ public abstract class NodeCollector implements SqlVisitor {
         };
     root.accept(collector);
     return collector.nodes.isEmpty() ? null : SqlNode.mk(root.context(), collector.nodes.get(0));
+  }
+
+  public static SqlNodes collect2(SqlNode root, ToIntFunction<SqlNode> filter) {
+    final NodeCollector collector =
+        new NodeCollector() {
+          @Override
+          protected int check(SqlNode node) {
+            return filter.applyAsInt(node);
+          }
+        };
+    root.accept(collector);
+    return SqlNodes.mk(root.context(), collector.nodes);
   }
 }

@@ -142,12 +142,6 @@ public interface Workflow {
     normalizeJoinCondition(root);
   }
 
-  static void retrofit(Statement stmt) {
-    normalize(stmt.parsed());
-    resolveBoolExpr(stmt.parsed());
-    resolveParamFull(stmt.parsed());
-  }
-
   private static int maxId(List<Statement> stmts) {
     return stmts.stream().mapToInt(Statement::stmtId).max().orElse(0);
   }
