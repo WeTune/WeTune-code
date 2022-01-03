@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -14,7 +14,7 @@ import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.FAILURE_UNKNOWN_OP;
 

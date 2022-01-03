@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
 import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 
 import java.lang.System.Logger.Level;

@@ -1,16 +1,16 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.ARRAY_CONTAINS;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp.IN_LIST;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOp.ARRAY_CONTAINS;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOp.IN_LIST;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.*;
 
 class NormalizeTuple {
   public static ASTNode normalize(ASTNode node) {

@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import java.lang.System.Logger.Level;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.schema.Table;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;

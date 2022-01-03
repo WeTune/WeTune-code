@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.*;
 
 public interface CostQuery {
   double getCost();

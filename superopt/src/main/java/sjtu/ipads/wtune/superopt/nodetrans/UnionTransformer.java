@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt.nodetrans;
 import org.apache.calcite.rel.type.RelDataType;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;

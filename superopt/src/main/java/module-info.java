@@ -5,7 +5,7 @@ module sjtu.ipads.wtune.superopt {
   requires org.apache.commons.lang3;
   requires java.logging;
   requires sjtu.ipads.wtune.common;
-  requires sjtu.ipads.wtune.sqlparser;
+  requires sjtu.ipads.wtune.sql;
   requires sjtu.ipads.wtune.stmt;
   requires sjtu.ipads.wtune.spes;
   requires java.sql;

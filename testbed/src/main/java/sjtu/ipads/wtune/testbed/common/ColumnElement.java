@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.common;
 
 import com.google.common.base.Objects;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.schema.Column;
 
 public class ColumnElement implements Element {
   private final Column column;

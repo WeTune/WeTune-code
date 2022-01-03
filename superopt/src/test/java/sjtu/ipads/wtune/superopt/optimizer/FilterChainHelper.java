@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.superopt.TestHelper;
 
 class FilterChainHelper {

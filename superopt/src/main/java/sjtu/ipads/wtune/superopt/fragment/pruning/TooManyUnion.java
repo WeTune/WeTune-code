@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.fragment.pruning;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.fragment.OpKind;
 import sjtu.ipads.wtune.superopt.fragment.Union;
 
 public class TooManyUnion extends BaseMatchingRule {
@@ -12,6 +12,6 @@ public class TooManyUnion extends BaseMatchingRule {
   }
 
   private static boolean checkOverwhelming(Union op) {
-    return op.successor() != null && op.successor().kind() == OperatorType.SET_OP;
+    return op.successor() != null && op.successor().kind() == OpKind.SET_OP;
   }
 }

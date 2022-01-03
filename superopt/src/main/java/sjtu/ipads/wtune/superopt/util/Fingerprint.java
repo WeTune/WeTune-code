@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
-import sjtu.ipads.wtune.sqlparser.plan.ProjNode;
+import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.ProjNode;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.fragment.OpKind;
@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.lang.Integer.min;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 public class Fingerprint {

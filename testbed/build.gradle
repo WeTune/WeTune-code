@@ -1,6 +1,6 @@
 dependencies {
     implementation project(":common")
-    implementation project(":sqlparser")
+    implementation project(":sql")
     implementation project(":stmt")
     implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')

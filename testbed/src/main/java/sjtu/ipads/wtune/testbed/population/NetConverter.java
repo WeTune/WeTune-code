@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.testbed.population;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.postgresql.util.PGobject;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.DataTypeName;
+import sjtu.ipads.wtune.sql.ast1.SqlDataType;
+import sjtu.ipads.wtune.sql.ast1.constants.Category;
+import sjtu.ipads.wtune.sql.ast1.constants.DataTypeName;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 import java.sql.SQLException;

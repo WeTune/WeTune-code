@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
+import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.superopt.fragment.OpKind;
 
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.isDedup;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.isDedup;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.LEFT_JOIN;
 

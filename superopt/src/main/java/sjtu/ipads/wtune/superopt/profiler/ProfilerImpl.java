@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import javax.sql.DataSource;
@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.SQLSERVER;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.SQLSERVER;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 
 class ProfilerImpl implements Profiler {
   private final Properties dbProps;

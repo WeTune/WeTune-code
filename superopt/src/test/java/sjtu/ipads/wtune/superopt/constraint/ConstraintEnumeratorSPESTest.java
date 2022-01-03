@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
@@ -22,6 +21,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_USE_SPES;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints2;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 
 @Tag("enumeration")
 public class ConstraintEnumeratorSPESTest {
@@ -204,7 +204,7 @@ public class ConstraintEnumeratorSPESTest {
     final int numTemplates = templates.size();
     int unionCount = 0;
     for (Fragment fragment : templates) {
-        if (fragment.root().kind() == OperatorType.SET_OP) unionCount++;
+        if (fragment.root().kind() == SET_OP) unionCount++;
     }
     System.out.println("union count: " + unionCount);
     final int totalPairCount = (numTemplates * (numTemplates - 1)) >> 1;

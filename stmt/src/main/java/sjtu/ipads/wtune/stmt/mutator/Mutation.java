@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 
 public interface Mutation {
   static ASTNode clean(ASTNode node) {

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.common;
 
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sql.schema.Table;
 
 public interface Collection {
   String collectionName();

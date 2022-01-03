@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
+import sjtu.ipads.wtune.sql.ast1.SqlDataType;
+import sjtu.ipads.wtune.sql.ast1.constants.Category;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.util.MathHelper;
 
 import java.math.BigDecimal;
 import java.util.stream.IntStream;
 
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
+import static sjtu.ipads.wtune.sql.ast.constants.DataTypeName.*;
 
 class FractionConverter implements Converter {
   private final int max;

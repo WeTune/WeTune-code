@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.IOSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
@@ -23,8 +23,8 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.sqlparser.SqlSupport.parseSql;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 
 public class OptimizeQuery implements Runner {
   private Path out, trace, err;

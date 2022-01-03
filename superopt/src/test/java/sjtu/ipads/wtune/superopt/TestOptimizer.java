@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Set;

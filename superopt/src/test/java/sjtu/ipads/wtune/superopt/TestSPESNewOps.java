@@ -4,18 +4,18 @@ import com.microsoft.z3.Context;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.sqlparser.SqlSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
 
 @Tag("slow")
 @Tag("enumeration")

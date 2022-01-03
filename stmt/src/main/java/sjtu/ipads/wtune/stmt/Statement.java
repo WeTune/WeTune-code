@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt;
 
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.dao.OptBagStatementDao;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;

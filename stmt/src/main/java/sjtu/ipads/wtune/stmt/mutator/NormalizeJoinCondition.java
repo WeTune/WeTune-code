@@ -1,27 +1,27 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.JoinType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.constants.JoinType;
+import sjtu.ipads.wtune.sql.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sql.relational.Attribute;
+import sjtu.ipads.wtune.sql.relational.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.*;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.consumer2;
-import static sjtu.ipads.wtune.sqlparser.ASTContext.LOG;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY_SPEC;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sql.ASTContext.LOG;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.QUERY_SPEC;
+import static sjtu.ipads.wtune.sql.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sql.relational.Relation.RELATION;
 
 class NormalizeJoinCondition {
   public static ASTNode normalize(ASTNode root) {

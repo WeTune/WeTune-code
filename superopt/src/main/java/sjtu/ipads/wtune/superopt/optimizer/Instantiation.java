@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -12,7 +12,7 @@ import java.util.List;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.tryResolveRef;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.tryResolveRef;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 

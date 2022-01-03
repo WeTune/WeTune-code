@@ -15,10 +15,10 @@ import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
 import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
 import sjtu.ipads.wtune.spes.RexNodeHelper.NotIn;
 import sjtu.ipads.wtune.spes.RexNodeHelper.RexNodeHelper;
-import sjtu.ipads.wtune.sqlparser.plan.Expression;
-import sjtu.ipads.wtune.sqlparser.plan.JoinNode;
-import sjtu.ipads.wtune.sqlparser.plan.Value;
-import sjtu.ipads.wtune.sqlparser.plan.Values;
+import sjtu.ipads.wtune.sql.plan.Expression;
+import sjtu.ipads.wtune.sql.plan.JoinNode;
+import sjtu.ipads.wtune.sql.plan.Value;
+import sjtu.ipads.wtune.sql.plan.Values;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import sjtu.ipads.wtune.common.utils.SetSupport;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.stringifyTree;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 public class DuplicationChecker {

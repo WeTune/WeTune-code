@@ -1,15 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.relational.Relation;
+import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.stmt.resolver.JoinGraph;
 import sjtu.ipads.wtune.stmt.resolver.JoinGraph.JoinKey;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.stmt.resolver.Params;
 import sjtu.ipads.wtune.testbed.common.Element;
 import sjtu.ipads.wtune.testbed.population.Generator;
@@ -19,11 +15,6 @@ import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 import java.lang.System.Logger.Level;
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.LIMIT_VAL;
-import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.OFFSET_VAL;
 import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
 
 public class ParamsGenImpl implements ParamsGen {

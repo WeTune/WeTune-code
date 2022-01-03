@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.AttributeManagerBase;
 
 class BoolExprManagerImpl extends AttributeManagerBase<BoolExpr> implements BoolExprManager {
   BoolExprManagerImpl() {

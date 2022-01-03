@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
 import java.util.Collection;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.AttributeManager;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.AttributeManager;
 
 public interface Params extends AttributeManager<ParamDesc> {
   ParamDesc paramDesc(ASTNode node);

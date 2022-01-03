@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlDataType;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Column.Flag;
-import sjtu.ipads.wtune.sqlparser.schema.Constraint;
+import sjtu.ipads.wtune.sql.ast1.SqlDataType;
+import sjtu.ipads.wtune.sql.ast1.constants.Category;
+import sjtu.ipads.wtune.sql.schema.Column;
+import sjtu.ipads.wtune.sql.schema.Column.Flag;
+import sjtu.ipads.wtune.sql.schema.Constraint;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Element;
 
@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.DataTypeName.*;
-import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.DataTypeName.*;
+import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
 import static sjtu.ipads.wtune.testbed.util.MathHelper.base10;
 import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.GLOBAL_SEED;

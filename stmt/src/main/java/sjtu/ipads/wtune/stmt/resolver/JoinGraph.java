@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.stmt.resolver;
 
 import java.util.List;
 import java.util.Set;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.relational.Relation;
+import sjtu.ipads.wtune.sql.schema.Column;
 
 public interface JoinGraph {
   Set<Relation> tables();

@@ -1,6 +1,6 @@
 module sjtu.ipads.wtune.testbed {
   requires sjtu.ipads.wtune.common;
-  requires sjtu.ipads.wtune.sqlparser;
+  requires sjtu.ipads.wtune.sql;
   requires sjtu.ipads.wtune.stmt;
   requires org.apache.commons.lang3;
   requires com.google.common;

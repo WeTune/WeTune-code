@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.superopt.fragment.Join;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 

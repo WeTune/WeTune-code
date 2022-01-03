@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 
 import java.util.Properties;
 

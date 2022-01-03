@@ -1,20 +1,20 @@
 package sjtu.ipads.wtune.stmt.support;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.Category;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast1.constants.Category;
+import sjtu.ipads.wtune.sql.relational.Attribute;
+import sjtu.ipads.wtune.sql.schema.Column;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.FOREIGN_KEY;
-import static sjtu.ipads.wtune.sqlparser.schema.Column.Flag.PRIMARY;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sql.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sql.schema.Column.Flag.FOREIGN_KEY;
+import static sjtu.ipads.wtune.sql.schema.Column.Flag.PRIMARY;
 
 public class InferForeignKey {
   public static Map<Column, Column> analyze(ASTNode node) {

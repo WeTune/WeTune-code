@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sql.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 
 public class DbSchemaPatchDao extends DbDao implements SchemaPatchDao {

@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind;
-import sjtu.ipads.wtune.sqlparser.plan.*;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.plan.*;
+import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
@@ -13,10 +13,10 @@ import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.*;
-import static sjtu.ipads.wtune.sqlparser.ast1.constants.ConstraintKind.*;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.*;
-import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findIC;
-import static sjtu.ipads.wtune.sqlparser.schema.SchemaSupport.findRelatedIC;
+import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
+import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findIC;
+import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findRelatedIC;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Reference;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 

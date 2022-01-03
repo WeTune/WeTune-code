@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 
 public abstract class OptimizerSupport {
   public static final String FAILURE_INCOMPLETE_MODEL = "incomplete model ";

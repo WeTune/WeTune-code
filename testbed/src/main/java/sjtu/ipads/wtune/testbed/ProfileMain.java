@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.LogManager;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
 import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.*;
 

@@ -13,9 +13,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import sjtu.ipads.wtune.common.utils.ArraySupport;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.util.ASTHelper;
+import sjtu.ipads.wtune.sql.relational.Relation;
+import sjtu.ipads.wtune.sql.schema.Column;
+import sjtu.ipads.wtune.sql.util.ASTHelper;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
 import sjtu.ipads.wtune.testbed.common.Element;

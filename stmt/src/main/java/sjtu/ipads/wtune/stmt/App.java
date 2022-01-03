@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt;
 
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.internal.AppImpl;
 
 import java.util.Collection;

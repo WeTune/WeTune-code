@@ -2,11 +2,11 @@ package sjtu.ipads.wtune.superopt.daemon;
 
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.SetSupport;
-import sjtu.ipads.wtune.sqlparser.SqlSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 
 public class DaemonContextImpl implements DaemonContext {
   private final SubstitutionBank bank;

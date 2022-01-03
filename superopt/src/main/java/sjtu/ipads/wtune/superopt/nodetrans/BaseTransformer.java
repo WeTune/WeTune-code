@@ -13,9 +13,9 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanNode;
 
 import java.util.ArrayList;
 import java.util.List;

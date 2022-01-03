@@ -5,7 +5,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TIntSet;
 import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.AttrsFilter;
 import sjtu.ipads.wtune.superopt.fragment.Filter;

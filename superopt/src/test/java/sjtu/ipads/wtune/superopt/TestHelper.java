@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.SqlSupport;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =

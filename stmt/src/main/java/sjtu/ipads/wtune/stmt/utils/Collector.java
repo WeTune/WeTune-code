@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.utils;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
 
 import java.util.ArrayList;
 import java.util.List;

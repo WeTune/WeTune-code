@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 
 import java.util.List;
 

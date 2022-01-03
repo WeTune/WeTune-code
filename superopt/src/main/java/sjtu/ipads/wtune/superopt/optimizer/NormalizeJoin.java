@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.plan.*;
+import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.Join;
+import static sjtu.ipads.wtune.sql.plan.PlanKind.Join;
 
 class NormalizeJoin {
   private final PlanContext plan;

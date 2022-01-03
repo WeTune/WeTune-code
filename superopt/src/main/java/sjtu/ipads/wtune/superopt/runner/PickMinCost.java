@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.SqlSupport;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.profiler.Profiler;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.LeveledException.ignorable;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 
 public class PickMinCost implements Runner {
   private Path inFile, inTraceFile, outFile, outTraceFile, errFile;

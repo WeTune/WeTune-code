@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.function.Function;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sql.schema.Column;
+import sjtu.ipads.wtune.sql.schema.Table;
 
 class TableCollection implements Collection {
   private final Table table;

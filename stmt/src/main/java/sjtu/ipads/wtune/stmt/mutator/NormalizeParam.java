@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.Params;
 import sjtu.ipads.wtune.stmt.resolver.Resolution;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.PARAM_MARKER_NUMBER;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.PARAM_MARKER;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.PARAM_MARKER_NUMBER;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.PARAM_MARKER;
 
 class NormalizeParam {
   public static ASTNode normalize(ASTNode root) {

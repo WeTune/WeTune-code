@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.internal;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ASTParser;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;

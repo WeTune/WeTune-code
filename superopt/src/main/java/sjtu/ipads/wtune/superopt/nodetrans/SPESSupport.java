@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.superopt.nodetrans;
 
 import com.microsoft.z3.Context;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
 import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 
 public class SPESSupport {
   public static boolean prove(PlanContext plan1, PlanContext plan2) {

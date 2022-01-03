@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import java.util.stream.IntStream;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.util.RandGen;
 

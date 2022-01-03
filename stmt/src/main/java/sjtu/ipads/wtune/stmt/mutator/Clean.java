@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralType;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.*;
 
 class Clean {
   public static ASTNode clean(ASTNode node) {

@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.superopt.fragment.pruning;
 
-import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
 import sjtu.ipads.wtune.superopt.fragment.Agg;
+
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.AGG;
 
 public class TooManyAgg extends BaseMatchingRule {
   @Override
@@ -11,11 +12,11 @@ public class TooManyAgg extends BaseMatchingRule {
   }
 
   private static boolean checkOverwhelming(Agg op) {
-    if (op.successor() != null && op.successor().kind() == OperatorType.AGG)
+    if (op.successor() != null && op.successor().kind() == AGG)
       return true;
     if (op.successor() != null
         && op.successor().successor() != null
-        && op.successor().successor().kind() == OperatorType.AGG)
+        && op.successor().successor().kind() == AGG)
       return true;
 
     return false;

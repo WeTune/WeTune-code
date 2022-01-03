@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.tree.TreeContext;
 import sjtu.ipads.wtune.common.tree.TreeSupport;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanNode;
 
 import java.util.AbstractList;
 import java.util.List;

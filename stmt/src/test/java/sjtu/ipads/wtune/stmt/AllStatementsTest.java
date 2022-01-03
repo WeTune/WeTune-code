@@ -15,7 +15,7 @@ import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamSimple;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
 
 public class AllStatementsTest {
   @Test

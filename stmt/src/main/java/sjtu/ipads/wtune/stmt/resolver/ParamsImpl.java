@@ -2,21 +2,21 @@ package sjtu.ipads.wtune.stmt.resolver;
 
 import sjtu.ipads.wtune.common.attrs.FieldKey;
 import sjtu.ipads.wtune.common.attrs.Fields;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.AttributeManagerBase;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.ast.AttributeManagerBase;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.constants.ExprKind;
 
 import java.util.*;
 
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sql.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.LIMIT_VAL;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.OFFSET_VAL;

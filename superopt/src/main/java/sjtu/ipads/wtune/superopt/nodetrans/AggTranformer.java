@@ -14,17 +14,17 @@ import sjtu.ipads.wtune.spes.AlgeNode.AggregateNode;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeNode.TableNode;
 import sjtu.ipads.wtune.spes.AlgeRule.JoinToProject;
-import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.Expression;
-import sjtu.ipads.wtune.sqlparser.plan.Values;
+import sjtu.ipads.wtune.sql.plan.AggNode;
+import sjtu.ipads.wtune.sql.plan.Expression;
+import sjtu.ipads.wtune.sql.plan.Values;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.Aggregate_Name;
-import static sjtu.ipads.wtune.sqlparser.ast1.ExprKind.Aggregate;
-import static sjtu.ipads.wtune.sqlparser.ast1.SqlNodeFields.SelectItem_Expr;
+import static sjtu.ipads.wtune.sql.ast1.ExprFields.Aggregate_Name;
+import static sjtu.ipads.wtune.sql.ast1.ExprKind.Aggregate;
+import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.SelectItem_Expr;
 
 public class AggTranformer extends BaseTransformer {
   private TIntObjectMap<Expression> calAggAttrsList(List<Expression> attrExprs) {

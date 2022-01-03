@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao;
 
-import sjtu.ipads.wtune.sqlparser.schema.SchemaPatch;
+import sjtu.ipads.wtune.sql.schema.SchemaPatch;
 import sjtu.ipads.wtune.stmt.dao.internal.DbSchemaPatchDao;
 
 import java.util.List;

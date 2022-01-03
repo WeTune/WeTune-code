@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralType;
 
 import java.util.Arrays;
 
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.LITERAL;
 import static sjtu.ipads.wtune.stmt.resolver.ParamModifier.Type.*;
 
 public class ParamModifier {

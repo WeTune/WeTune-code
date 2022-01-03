@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralType;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
@@ -16,12 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTVistor.topDownVisit;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_LIMIT;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.QUERY_OFFSET;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.QUERY;
+import static sjtu.ipads.wtune.sql.ast.ASTVistor.topDownVisit;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.QUERY_LIMIT;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.QUERY_OFFSET;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.QUERY;
 import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
 import static sjtu.ipads.wtune.stmt.support.Workflow.normalize;
 

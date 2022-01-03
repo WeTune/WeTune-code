@@ -1,22 +1,22 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.relational.Attribute;
+import sjtu.ipads.wtune.sql.relational.Relation;
 import sjtu.ipads.wtune.stmt.utils.Collector;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.COLUMN_REF_COLUMN;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.TableSourceFields.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.*;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.DERIVED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.JOINED_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.COLUMN_REF_COLUMN;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.*;
+import static sjtu.ipads.wtune.sql.ast.constants.TableSourceKind.DERIVED_SOURCE;
+import static sjtu.ipads.wtune.sql.ast.constants.TableSourceKind.JOINED_SOURCE;
+import static sjtu.ipads.wtune.sql.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sql.relational.Relation.RELATION;
 
 class NormalizeConstantTable {
   public static ASTNode normalize(ASTNode node) {

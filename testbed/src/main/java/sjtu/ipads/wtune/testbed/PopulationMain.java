@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.testbed;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.TableSourceKind.SIMPLE_SOURCE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sql.ast.constants.TableSourceKind.SIMPLE_SOURCE;
+import static sjtu.ipads.wtune.sql.relational.Relation.RELATION;
 import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 
 import java.io.ByteArrayInputStream;
@@ -26,10 +26,10 @@ import java.util.function.Function;
 import java.util.logging.LogManager;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
-import sjtu.ipads.wtune.sqlparser.schema.Table;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.schema.Table;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.testbed.common.Collection;

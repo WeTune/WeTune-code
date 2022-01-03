@@ -4,17 +4,17 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import sjtu.ipads.wtune.common.tree.TreeSupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sqlparser.plan.AggNode;
-import sjtu.ipads.wtune.sqlparser.plan.Expression;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.AggNode;
+import sjtu.ipads.wtune.sql.plan.Expression;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.sqlparser.ast1.ExprFields.Aggregate_Name;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanKind.*;
+import static sjtu.ipads.wtune.sql.ast1.ExprFields.Aggregate_Name;
+import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 
 class ReduceSort {
   private final PlanContext plan;

@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.sqlparser.ASTParser;
-import sjtu.ipads.wtune.sqlparser.ast1.SqlNode;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.ASTParser;
+import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sqlparser.SqlSupport.parseSql;
-import static sjtu.ipads.wtune.sqlparser.plan.PlanSupport.assemblePlan;
+import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 
 public class TestCalcite implements Runner {
   private Path inputFile;

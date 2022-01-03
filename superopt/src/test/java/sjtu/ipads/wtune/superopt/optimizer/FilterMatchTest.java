@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sqlparser.plan.Expression;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
-import sjtu.ipads.wtune.sqlparser.plan.Value;
+import sjtu.ipads.wtune.sql.plan.Expression;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.Value;
 import sjtu.ipads.wtune.superopt.fragment.Filter;
 import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;

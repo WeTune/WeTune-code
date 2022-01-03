@@ -1,22 +1,22 @@
 package sjtu.ipads.wtune.stmt.resolver;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.QUERY_EXPR_QUERY;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
-import static sjtu.ipads.wtune.sqlparser.relational.Attribute.ATTRIBUTE;
-import static sjtu.ipads.wtune.sqlparser.relational.Relation.RELATION;
-import static sjtu.ipads.wtune.sqlparser.util.ColumnRefCollector.gatherColumnRefs;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.QUERY_EXPR_QUERY;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sql.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sql.relational.Relation.RELATION;
+import static sjtu.ipads.wtune.sql.util.ColumnRefCollector.gatherColumnRefs;
 import static sjtu.ipads.wtune.stmt.resolver.BoolExprManager.BOOL_EXPR;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.ASTVistor;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
-import sjtu.ipads.wtune.sqlparser.relational.Attribute;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.ASTVistor;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sql.relational.Attribute;
+import sjtu.ipads.wtune.sql.relational.Relation;
+import sjtu.ipads.wtune.sql.schema.Column;
 
 class JoinGraphBuilder implements ASTVistor {
   private final ASTNode node;

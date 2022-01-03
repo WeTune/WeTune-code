@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import sjtu.ipads.wtune.sqlparser.relational.Relation;
-import sjtu.ipads.wtune.sqlparser.schema.Column;
+import sjtu.ipads.wtune.sql.relational.Relation;
+import sjtu.ipads.wtune.sql.schema.Column;
 
 class JoinGraphImpl implements JoinGraph {
   private final MutableValueGraph<Relation, JoinKeyImpl> graph;

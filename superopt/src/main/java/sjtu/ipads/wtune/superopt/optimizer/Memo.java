@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.BaseCongruence;
 import sjtu.ipads.wtune.common.utils.BaseCongruentClass;
-import sjtu.ipads.wtune.sqlparser.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 
 class Memo extends BaseCongruence<String, SubPlan> {
   boolean isRegistered(SubPlan node) {

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.internal;
 
 import static java.util.function.Function.identity;
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
+import static sjtu.ipads.wtune.sql.ast.ASTNode.*;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,8 +11,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import sjtu.ipads.wtune.sqlparser.SqlSupport;
-import sjtu.ipads.wtune.sqlparser.schema.Schema;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;

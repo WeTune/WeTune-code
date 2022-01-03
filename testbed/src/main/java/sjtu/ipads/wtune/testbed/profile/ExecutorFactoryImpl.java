@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ASTNode.*;
 import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.makeDataSource;
 
 import com.zaxxer.hikari.HikariDataSource;

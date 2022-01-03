@@ -1,27 +1,27 @@
 package sjtu.ipads.wtune.stmt.mutator;
 
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_LEFT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.BINARY_RIGHT;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_TYPE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.LITERAL_VALUE;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_EXPR;
-import static sjtu.ipads.wtune.sqlparser.ast.ExprFields.UNARY_OP;
-import static sjtu.ipads.wtune.sqlparser.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.EXISTS;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.MATCH;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.TERNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind.UNARY;
-import static sjtu.ipads.wtune.sqlparser.ast.constants.NodeType.EXPR;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_LEFT;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_OP;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.BINARY_RIGHT;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.LITERAL_TYPE;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.LITERAL_VALUE;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.UNARY_EXPR;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.UNARY_OP;
+import static sjtu.ipads.wtune.sql.ast.NodeFields.EXPR_KIND;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.BINARY;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.COLUMN_REF;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.EXISTS;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.LITERAL;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.MATCH;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.TERNARY;
+import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.UNARY;
+import static sjtu.ipads.wtune.sql.ast.constants.NodeType.EXPR;
 
-import sjtu.ipads.wtune.sqlparser.ast.ASTNode;
-import sjtu.ipads.wtune.sqlparser.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sqlparser.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sqlparser.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sqlparser.ast.constants.UnaryOp;
+import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
+import sjtu.ipads.wtune.sql.ast.constants.ExprKind;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralType;
+import sjtu.ipads.wtune.sql.ast.constants.UnaryOp;
 import sjtu.ipads.wtune.stmt.utils.BoolCollector;
 
 class NormalizeBool {
