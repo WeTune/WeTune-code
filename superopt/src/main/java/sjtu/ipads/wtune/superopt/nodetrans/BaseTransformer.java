@@ -37,6 +37,13 @@ abstract class BaseTransformer implements Transformer{
     this.z3Context = z3Context;
   }
 
+  @Override
+  public void dropFields() {
+    this.planNode = null;
+    this.planCtx = null;
+    this.z3Context = null;
+  }
+
   static Transformer getTransformer(PlanKind kind) {
     return switch (kind) {
       case Input -> new InputTransformer();
@@ -54,7 +61,9 @@ abstract class BaseTransformer implements Transformer{
   static AlgeNode transformNode(PlanNode planNode, PlanContext planCtx, Context z3Context) {
     Transformer transformer = getTransformer(planNode.kind());
     transformer.setFields(planNode, planCtx, z3Context);
-    return transformer.transform();
+    AlgeNode node = transformer.transform();
+    transformer.dropFields();
+    return node;
   }
 
   static RelDataType defaultIntType() {

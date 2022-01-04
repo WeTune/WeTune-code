@@ -71,9 +71,10 @@ public interface ConstraintSupport {
 
   static List<Substitution> enumConstraints2(
       Fragment f0, Fragment f1, long timeout, int tweaks, SymbolNaming naming) {
+    if ((tweaks & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES
+        && f0.symbolCount(TABLE) != f1.symbolCount(TABLE)) return emptyList(); // heuristic for SPES
     final int bias = pickSource(f0, f1);
     if (bias == 0) return emptyList();
-    if (f0.symbolCount(TABLE) != f1.symbolCount(TABLE)) return emptyList(); // heuristic for SPES
 
     List<Substitution> rules = null;
 

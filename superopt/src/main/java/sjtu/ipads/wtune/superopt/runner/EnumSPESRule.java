@@ -40,18 +40,19 @@ public class EnumSPESRule implements Runner {
   private int iBegin, jBegin;
   private int numWorker, workerIndex;
   private ExecutorService threadPool;
+  private int numTemplates;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     echo = args.getOptional("echo", boolean.class, false);
-    timeout = args.getOptional("timeout", long.class, 120000L);
+    timeout = args.getOptional("timeout", long.class, 20000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
     numWorker = args.getPositional(0, int.class);
     workerIndex = args.getPositional(1, int.class);
 
     final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
-    final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
+    final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMdd-HHmmss"));
     final Path dir = parentDir.resolve("rule" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
@@ -99,7 +100,7 @@ public class EnumSPESRule implements Runner {
 
   private void fromEnumeration() throws IOException {
     final List<Fragment> templates = FragmentSupportSPES.enumFragmentsSPES();
-    final int numTemplates = templates.size();
+    numTemplates = templates.size();
 
     int[] completed = null;
     if (prevCheckpoint != null) {
@@ -138,8 +139,8 @@ public class EnumSPESRule implements Runner {
 
         if (echo) {
           System.out.printf("%d,%d\n", i, j);
-          System.out.println(f0);
-          System.out.println(f1);
+          // System.out.println(f0);
+          // System.out.println(f1);
         }
 
         final int x = i, y = j;
@@ -218,6 +219,7 @@ public class EnumSPESRule implements Runner {
     } finally {
       if (outLocked) outLock.unlock();
       if (errLocked) errLock.unlock();
+      if (ordinal(numTemplates, i, j) % 1000 == 0) System.gc();
     }
   }
 }

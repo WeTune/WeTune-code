@@ -13,9 +13,12 @@ public class SPESSupport {
       AlgeNode algeNode1 = AlgeRule.normalize(plan2AlgeNode(plan2, ctx));
 
       if (algeNode0 == null || algeNode1 == null) return false;
-      return algeNode0.isEq(algeNode1);
+
+      boolean res = algeNode0.isEq(algeNode1);
+      ctx.close();
+      return res;
     } catch (Exception e) {
-      e.printStackTrace();
+      // e.printStackTrace();
       return false;
     }
   }

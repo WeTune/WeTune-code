@@ -7,10 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
-import sjtu.ipads.wtune.superopt.fragment.FragmentSupportSPES;
-import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
+import sjtu.ipads.wtune.sqlparser.plan.OperatorType;
+import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -99,6 +97,11 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testAgg2() {
+    // Agg{[`#`.`#` AS c0,COUNT(`#`.`#`)],group=[`#`.`#`],having=P1(COUNT(`#`.`#`)),refs=[q0.c0,q0.c0,q0.c0,q0.c0,]}
+    // (Proj{[`#`.`#` AS c0,`#`.`#` AS c0,],refs=[q0.c0,q0.c0,],qual=q2}
+    // (Filter{P0(`#`.`#`),refs=[q0.c0,]}
+    // (Proj{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}
+    // (Input{r0 AS t0}))))
     final Substitution rule =
         Substitution.parse("Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|" +
             "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|" +
@@ -192,5 +195,40 @@ public class ConstraintEnumeratorSPESTest {
         "Filter(LeftJoin(Input,Input))",
         "InnerJoin(Input,Filter(Input))"
     );
+  }
+
+  // ------------------------Test throwing exceptions-------------------------
+  @Test
+  void fragmentStatistic() {
+    final List<Fragment> templates = FragmentSupportSPES.enumFragmentsSPES();
+    final int numTemplates = templates.size();
+    int unionCount = 0;
+    for (Fragment fragment : templates) {
+        if (fragment.root().kind() == OperatorType.SET_OP) unionCount++;
+    }
+    System.out.println("union count: " + unionCount);
+    final int totalPairCount = (numTemplates * (numTemplates - 1)) >> 1;
+    int enumPairCount = 0;
+    for (int i = 0; i < numTemplates; ++i) {
+      for (int j = i + 1; j < numTemplates; ++j) {
+        final Fragment f0 = templates.get(i), f1 = templates.get(j);
+        if (f0.symbolCount(Symbol.Kind.TABLE) != f1.symbolCount(Symbol.Kind.TABLE)) {
+          enumPairCount++;
+        }
+      }
+    }
+    System.out.println("numTemplates: " + numTemplates);
+    System.out.println("totalPairCount: " + totalPairCount);
+    System.out.println("enumPairCount: " + enumPairCount);
+  }
+
+  @Test
+  void exception0() {
+    doTest(SPES, "Agg(Input)", "Agg(Filter(Proj*(Filter(Input))))");
+  }
+
+  @Test
+  void exception1() {
+    doTest(SPES, "Agg(Input)", "Agg(Proj*(Filter(Agg(Input))))");
   }
 }

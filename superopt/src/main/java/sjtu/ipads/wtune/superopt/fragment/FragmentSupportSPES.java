@@ -17,13 +17,21 @@ public class FragmentSupportSPES {
       Set.of(
           new MalformedJoin(),
           new MalformedSubquery(),
+          new MalformedUnion(),
+          new MalformedAgg(),
           new NonLeftDeepJoin(),
           new TooManyJoin(),
           new TooManySubqueryFilter(),
           new TooManySimpleFilter(),
           new TooManyProj(),
+          new TooManyUnion(),
+          new TooManyAgg(),
+          new TooDeepUnion(),
+          new TooDeepAgg(),
           new ReorderedFilter(),
-          new MeaninglessDedup());
+          new MeaninglessDedup(),
+          new MeaninglessUnionDedup(),
+          new DiffUnionInputs());
 
   static {
     ((Proj) linearFind(DEFAULT_OP_SET, it -> it.kind() == PROJ)).setDeduplicated(true);

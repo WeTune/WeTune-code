@@ -8,5 +8,7 @@ import sjtu.ipads.wtune.sqlparser.plan.PlanNode;
 public interface Transformer {
   void setFields(PlanNode planNode, PlanContext planCtx, Context z3Context);
 
+  void dropFields();
+
   AlgeNode transform();
 }
