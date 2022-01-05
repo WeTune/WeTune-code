@@ -4,88 +4,73 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
-
-import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.sql.SqlSupport.isPrimitivePredicate;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Binary_Op;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Exists;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Query_Limit;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Query_Offset;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_SUBQUERY;
-import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.clauseLocator;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.predicateLocator;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.LIMIT_VAL;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.OFFSET_VAL;
 import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.modifier;
 
 class ParamsImpl implements Params {
-  private final TIntObjectMap<ParamDesc> params;
+  private final SqlContext ctx;
+  private TIntObjectMap<ParamDesc> params;
 
   ParamsImpl(SqlContext ctx) {
-    params = new TIntObjectHashMap<>();
-    SqlNode.mk(ctx, ctx.root()).accept(new ExtractParams());
+    this.ctx = ctx;
+  }
+
+  private TIntObjectMap<ParamDesc> params() {
+    if (params == null) {
+      final TIntObjectMap<ParamDesc> params = new TIntObjectHashMap<>();
+      final SqlNode rootNode = SqlNode.mk(ctx, ctx.root());
+
+      for (SqlNode limitNode : clauseLocator().accept(Query_Limit).gather(rootNode))
+        params.put(limitNode.nodeId(), mkLimitParam(limitNode));
+
+      for (SqlNode offsetNode : clauseLocator().accept(Query_Offset).gather(rootNode))
+        params.put(offsetNode.nodeId(), mkOffsetParam(offsetNode));
+
+      for (SqlNode predicate : predicateLocator().primitive().gather(rootNode))
+        for (ParamDesc paramDesc : new ResolveParam().resolve(predicate))
+          if (paramDesc != null) params.put(paramDesc.node().nodeId(), paramDesc);
+
+      this.params = params;
+    }
+
+    return params;
+  }
+
+  @Override
+  public int numParams() {
+    return params().size();
   }
 
   @Override
   public ParamDesc paramOf(SqlNode node) {
-    return params.get(node.nodeId());
+    return params().get(node.nodeId());
   }
 
   @Override
   public void relocateNode(int oldId, int newId) {
+    if (params == null) return;
     final ParamDesc param = params.get(oldId);
-    if (param != null) params.put(newId, param);
+    if (param != null) params().put(newId, param);
   }
 
   @Override
   public void deleteNode(int nodeId) {
+    if (params == null) return;
     params.remove(nodeId);
   }
 
-  private class ExtractParams implements SqlVisitor {
-    private int nextIndex = 0;
+  private static ParamDesc mkOffsetParam(SqlNode offsetNode) {
+    return new ParamDescImpl(null, offsetNode, singletonList(modifier(OFFSET_VAL)));
+  }
 
-    @Override
-    public boolean enter(SqlNode node) {
-      if (Query.isInstance(node)) {
-        final SqlNode offset = node.$(Query_Offset);
-        final SqlNode limit = node.$(Query_Limit);
-        if (offset != null) {
-          final ParamDesc desc =
-              new ParamDescImpl(null, offset, singletonList(modifier(OFFSET_VAL)));
-          params.put(desc.node().nodeId(), desc);
-        }
-
-        if (limit != null) {
-          final ParamDesc desc = new ParamDescImpl(null, limit, singletonList(modifier(LIMIT_VAL)));
-          params.put(desc.node().nodeId(), desc);
-        }
-      }
-
-      if (!isPrimitivePredicate(node)) return true;
-
-      final List<ParamDesc> paramDescs = ResolveParam.resolve(node);
-      if (paramDescs.contains(null)) return false;
-
-      for (ParamDesc desc : paramDescs) {
-        if (!isCheckNull(desc)) desc.setIndex(nextIndex++);
-        if (isElement(desc)) nextIndex++;
-        params.put(desc.node().nodeId(), desc);
-      }
-
-      return node.get(Binary_Op) == IN_SUBQUERY || Exists.isInstance(node);
-    }
-
-    private static boolean isCheckNull(ParamDesc desc) {
-      final ParamModifier.Type lastModifierType = tail(desc.modifiers()).type();
-      return lastModifierType == CHECK_NULL || lastModifierType == CHECK_NULL_NOT;
-    }
-
-    private static boolean isElement(ParamDesc desc) {
-      return any(desc.modifiers(), it -> it.type() == ARRAY_ELEMENT || it.type() == TUPLE_ELEMENT);
-    }
+  private static ParamDesc mkLimitParam(SqlNode paramNode) {
+    return new ParamDescImpl(null, paramNode, singletonList(modifier(LIMIT_VAL)));
   }
 }

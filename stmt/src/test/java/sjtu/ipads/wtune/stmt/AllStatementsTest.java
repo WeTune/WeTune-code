@@ -91,4 +91,11 @@ public class AllStatementsTest {
       }
     }
   }
+
+  @Test
+  void test() {
+    final Statement stmt = Statement.findOne("pybbs", 66);
+    stmt.parsed().context().setSchema(stmt.app().schema("base", false));
+    resolveParamFull(stmt.parsed());
+  }
 }

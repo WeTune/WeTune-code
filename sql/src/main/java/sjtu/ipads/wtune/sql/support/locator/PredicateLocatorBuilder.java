@@ -1,24 +1,25 @@
 package sjtu.ipads.wtune.sql.support.locator;
 
-import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-
-import java.util.function.Predicate;
-
-import static java.util.Objects.requireNonNull;
 
 public class PredicateLocatorBuilder {
   private boolean scoped;
   private boolean bottomUp;
+  private boolean primitive;
 
   public PredicateLocatorBuilder scoped() {
     this.scoped = true;
     return this;
   }
 
-  public PredicateLocatorBuilder bottomUp(boolean bottomUp) {
-    this.bottomUp = bottomUp;
+  public PredicateLocatorBuilder bottomUp() {
+    this.bottomUp = true;
+    return this;
+  }
+
+  public PredicateLocatorBuilder primitive() {
+    this.primitive = true;
     return this;
   }
 
@@ -39,6 +40,6 @@ public class PredicateLocatorBuilder {
   }
 
   private PredicateLocator mkLocator(int expectedNodes) {
-    return new PredicateLocator(scoped, bottomUp, expectedNodes);
+    return new PredicateLocator(scoped, bottomUp, primitive, expectedNodes);
   }
 }

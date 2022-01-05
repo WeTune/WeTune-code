@@ -7,8 +7,10 @@ import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Case_Cond;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.When_Cond;
+import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast1.ExprKind.Binary;
+import static sjtu.ipads.wtune.sql.ast1.ExprKind.Unary;
+import static sjtu.ipads.wtune.sql.ast1.SqlKind.Expr;
 import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.QuerySpec_Having;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.QuerySpec_Where;
@@ -18,12 +20,15 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
   private final TIntList nodes;
   private final boolean scoped;
   private final boolean bottomUp;
+  private final boolean primitive;
   private int exemptQueryNode;
 
-  protected PredicateLocator(boolean scoped, boolean bottomUp, int expectedNumNodes) {
+  protected PredicateLocator(
+      boolean scoped, boolean bottomUp, boolean primitive, int expectedNumNodes) {
     this.nodes = expectedNumNodes >= 0 ? new TIntArrayList(expectedNumNodes) : new TIntArrayList();
     this.bottomUp = bottomUp;
     this.scoped = scoped;
+    this.primitive = primitive;
   }
 
   @Override
@@ -59,7 +64,7 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
 
   @Override
   public boolean enterWhen(SqlNode when) {
-    if (!bottomUp && when != null) nodes.add(when.$(When_Cond).nodeId());
+    if (!bottomUp && when != null) traversePredicate(when.$(When_Cond));
     return false;
   }
 
@@ -68,7 +73,7 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
     if (!bottomUp
         && child != null
         && (key == Joined_On || key == QuerySpec_Where || key == QuerySpec_Having)) {
-      nodes.add(child.nodeId());
+      traversePredicate(child);
     }
     return true;
   }
@@ -78,12 +83,32 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
     if (bottomUp
         && child != null
         && (key == Joined_On || key == QuerySpec_Where || key == QuerySpec_Having)) {
-      nodes.add(child.nodeId());
+      traversePredicate(child);
     }
   }
 
   @Override
   public void leaveWhen(SqlNode when) {
     if (bottomUp && when != null) nodes.add(when.$(When_Cond).nodeId());
+  }
+
+  private void traversePredicate(SqlNode expr) {
+    assert Expr.isInstance(expr);
+    // `expr` must be evaluated as boolean
+
+    if (Binary.isInstance(expr) && expr.$(Binary_Op).isLogic()) {
+      if (!primitive && !bottomUp) nodes.add(expr.nodeId());
+      traversePredicate(expr.$(Binary_Left));
+      traversePredicate(expr.$(Binary_Right));
+      if (!primitive && bottomUp) nodes.add(expr.nodeId());
+
+    } else if (Unary.isInstance(expr) && expr.$(Unary_Op).isLogic()) {
+      if (!primitive && !bottomUp) nodes.add(expr.nodeId());
+      traversePredicate(expr.$(Unary_Expr));
+      if (!primitive && bottomUp) nodes.add(expr.nodeId());
+
+    } else {
+      nodes.add(expr.nodeId());
+    }
   }
 }

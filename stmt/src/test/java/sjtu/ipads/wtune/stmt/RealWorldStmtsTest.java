@@ -6,16 +6,14 @@ import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
-import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.support.resolution.Params.PARAMS;
 
 public class RealWorldStmtsTest {
   private static SqlNode parseSql(Statement stmt) {
@@ -125,7 +123,7 @@ public class RealWorldStmtsTest {
   @Test
   @DisplayName("[Stmt] normalize all statements after normalization")
   void testAssemblePlanAfterNormalization() {
-    final String latch = "discourse-3744";
+    final String latch = "";
     for (Statement stmt : stmts(latch)) {
       final SqlNode ast = parseSql(stmt);
       if (ast == null || !PlanSupport.isSupported(ast)) {
@@ -138,6 +136,30 @@ public class RealWorldStmtsTest {
       final PlanContext plan = PlanSupport.assemblePlan(ast, stmt.app().schema("base"));
 
       assertNotNull(plan, stmt + " " + PlanSupport.getLastError());
+    }
+  }
+
+  @Test
+  @DisplayName("[Stmt] resolve params")
+  void testResolveParam() {
+    final String latch = "";
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast = parseSql(stmt);
+      if (ast == null || !PlanSupport.isSupported(ast)) {
+        System.out.println("skipped: " + stmt);
+        continue;
+      }
+
+      ast.context().setSchema(stmt.app().schema("base"));
+      try {
+        ast.context().getAdditionalInfo(PARAMS).numParams();
+
+      } catch (Throwable ex) {
+        System.err.println(stmt);
+        System.out.println(stmt.rawSql());
+        ex.printStackTrace();
+        break;
+      }
     }
   }
 }

@@ -26,28 +26,25 @@ import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.UNARY_MINUS;
 import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
 import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.modifier;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.resolveAttribute;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.traceRef;
 
 class ResolveParam {
   private boolean negated;
   private LinkedList<ParamModifier> stack;
 
-  private ResolveParam() {}
-
-  static List<ParamDesc> resolve(SqlNode expr) {
-    return new ResolveParam().resolve0(expr);
-  }
-
-  private List<ParamDesc> resolve0(SqlNode expr) {
+  List<ParamDesc> resolve(SqlNode expr) {
     if (!isPrimitivePredicate(expr))
       throw new IllegalArgumentException("only accept primitive predicate");
 
-    final List<SqlNode> params = collectParams(expr);
+    final List<SqlNode> params =
+        nodeLocator().accept(ResolveParam::isParam).stopIfNot(Expr).gather(expr);
     if (params.isEmpty()) return emptyList();
 
-    return ListSupport.map(params, it -> resolve0(expr, it));
+    return ListSupport.map(params, it -> resolve(expr, it));
   }
 
-  private ParamDesc resolve0(SqlNode expr, SqlNode paramNode) {
+  private ParamDesc resolve(SqlNode expr, SqlNode paramNode) {
     // determine if the expr is negated
     boolean negated = false;
     SqlNode parent = expr.parent();
@@ -61,9 +58,11 @@ class ResolveParam {
 
     SqlNode cursor = paramNode;
     do {
-      if (!deduce(cursor)) return null;
+      if (!deduce(cursor)) {
+        return null;
+      }
       cursor = cursor.parent();
-    } while (cursor != expr);
+    } while (!nodeEquals(cursor, expr));
 
     if (stack.getFirst().type() == GUESS) {
       stack.removeFirst();
@@ -116,9 +115,9 @@ class ResolveParam {
         return true;
 
       case Ternary:
-        if (nodeEquals(parent.$(Ternary_Left), target))
+        if (nodeEquals(parent.$(Ternary_Middle), target))
           stack.offerFirst(modifier(negated ? INCREASE : DECREASE));
-        else if (parent.get(Ternary_Middle) == target)
+        else if (nodeEquals(parent.$(Ternary_Right), target))
           stack.offerFirst(modifier(negated ? DECREASE : INCREASE));
         else return false;
         return induce(parent.$(Ternary_Left));
@@ -151,7 +150,7 @@ class ResolveParam {
     switch (exprKind) {
       case ColRef:
         {
-          final Attribute reference = ResolutionSupport.traceRef(ResolutionSupport.resolveAttribute(target));
+          final Attribute reference = traceRef(resolveAttribute(target));
           final Column column = reference == null ? null : reference.column();
           if (reference == null || column == null) {
             stack.offerFirst(modifier(GUESS));
@@ -223,10 +222,6 @@ class ResolveParam {
       default:
         return false;
     }
-  }
-
-  private static List<SqlNode> collectParams(SqlNode expr) {
-    return nodeLocator().accept(ResolveParam::isParam).stopIfNot(Expr).gather(expr);
   }
 
   private static boolean isParam(SqlNode expr) {
