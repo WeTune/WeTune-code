@@ -143,7 +143,7 @@ public class RealWorldStmtsTest {
   @Test
   @DisplayName("[Stmt] resolve params")
   void testResolveParam() {
-    final String latch = "";
+    final String latch = "shopizer-1";
     for (Statement stmt : stmts(latch)) {
       final SqlNode ast = parseSql(stmt);
       if (ast == null || !PlanSupport.isSupported(ast)) {
@@ -158,7 +158,7 @@ public class RealWorldStmtsTest {
   }
 
   @Test
-  @DisplayName("[Stmt] resolve params")
+  @DisplayName("[Stmt] resolve join graph")
   void testResolveJoinGraph() {
     final String latch = "";
     for (Statement stmt : stmts(latch)) {

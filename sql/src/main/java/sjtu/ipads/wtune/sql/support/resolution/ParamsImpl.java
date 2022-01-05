@@ -44,14 +44,14 @@ class ParamsImpl implements Params {
         for (ParamDesc paramDesc : new ResolveParam().resolve(predicate))
           if (paramDesc != null) params.put(paramDesc.node().nodeId(), paramDesc);
 
+      this.params = params;
+
       int index = 0;
       for (SqlNode paramNode : nodeLocator().accept(it -> paramOf(it) != null).gather(rootNode)) {
         final ParamDesc param = paramOf(paramNode);
         if (!isCheckNull(param)) param.setIndex(index++);
         if (isElementParam(param)) ++index;
       }
-
-      this.params = params;
     }
 
     return params;

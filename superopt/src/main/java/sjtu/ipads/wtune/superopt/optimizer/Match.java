@@ -12,9 +12,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.rootOf;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.FAILURE_UNKNOWN_OP;
 
@@ -79,20 +81,21 @@ class Match {
   boolean mkModifiedPlan() {
     final Instantiation instantiation = new Instantiation(rule, model);
     final int modifiedPointId = instantiation.instantiate();
-    if (result <= 0) {
+    if (modifiedPointId <= 0) {
       OptimizerSupport.setLastError(instantiation.lastError());
       return false;
     }
 
     modifiedPlan = instantiation.instantiatedPlan();
-    final PlanNode modifiedNode = modifiedPlan.nodeAt(result);
+    final PlanNode modifiedNode = modifiedPlan.nodeAt(modifiedPointId);
+    System.out.println(stringifyTree(modifiedPlan, rootOf(modifiedPlan, modifiedPointId)));
 
     final int parentId = sourcePlan.parentOf(matchRootNode);
     final int newRootId;
-    if (parentId == NO_SUCH_NODE) newRootId = result;
+    if (parentId == NO_SUCH_NODE) newRootId = modifiedPointId;
     else {
       final int childIdx = indexOfChild(sourcePlan, matchRootNode);
-      modifiedPlan.setChild(sourcePlan.parentOf(matchRootNode), childIdx, result);
+      modifiedPlan.setChild(sourcePlan.parentOf(matchRootNode), childIdx, modifiedPointId);
       newRootId = sourcePlan.root();
     }
 

@@ -23,7 +23,7 @@ public class FilterMatchTest {
     final PlanContext plan = parsePlan("Select a.i From a Where a.i = 1 And a.j < 10");
     final Substitution rule = // a fake rule
         Substitution.parse(
-            "Proj<a0 s0>(Filter<p0 a1>(Proj<a2 s1>(Input<t0>)))|Input<t1>|AttrsSub(a1,a2)");
+            "Proj<a0 s0>(Filter<p0 a1>(Proj<a2 s1>(Input<t0>)))|Input<t1>|AttrsSub(a1,s1)");
     final int chainHead = plan.childOf(plan.root(), 0);
     final Filter opHead = (Filter) rule._0().root().predecessors()[0];
     final FilterMatcher matcher = new FilterMatcher(opHead, plan, chainHead);
