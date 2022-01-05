@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
+import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import sjtu.ipads.wtune.stmt.App;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 
 public class DbOptStatementDao extends DbDao implements OptStatementDao {
   private static final OptStatementDao INSTANCE = new DbOptStatementDao();

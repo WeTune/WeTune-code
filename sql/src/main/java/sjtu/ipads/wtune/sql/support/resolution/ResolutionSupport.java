@@ -1,25 +1,31 @@
 package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.common.utils.IterableSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-
-import java.util.List;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.schema.Table;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
+import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.ColRef_ColName;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.ColRef;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Joined_On;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.JoinedSource;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.SimpleSource;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.ColRef;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Joined_On;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Simple_Table;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.JoinedSource;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.SimpleSource;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.sql.support.resolution.Params.PARAMS;
 import static sjtu.ipads.wtune.sql.support.resolution.Relations.RELATION;
 
 public abstract class ResolutionSupport {
   private ResolutionSupport() {}
+
+  static boolean limitClauseAsParam = false;
 
   static int scopeRootOf(SqlNode node) {
     if (Relation.isRelationRoot(node)) return node.nodeId();
@@ -28,6 +34,10 @@ public abstract class ResolutionSupport {
     int cursor = node.nodeId();
     while (ctx.kindOf(cursor) != Query) cursor = ctx.parentOf(cursor);
     return cursor;
+  }
+
+  public static void setLimitClauseAsParam(boolean limitClauseAsParam) {
+    ResolutionSupport.limitClauseAsParam = limitClauseAsParam;
   }
 
   public static Relation getEnclosingRelation(SqlNode node) {
@@ -46,6 +56,13 @@ public abstract class ResolutionSupport {
         || SetOp.isInstance(parent) && nodeEquals(parent.$(SetOp_Left), node);
   }
 
+  public static Table tableOf(Relation relation) {
+    if (!isDirectTable(relation)) return null;
+    final Schema schema = relation.rootNode().context().schema();
+    final String tableName = relation.rootNode().$(Simple_Table).$(TableName_Table);
+    return schema.table(tableName);
+  }
+
   public static SqlNode tableSourceOf(Relation relation) {
     final SqlNode node = relation.rootNode();
     if (TableSource.isInstance(node)) return node;
@@ -58,6 +75,10 @@ public abstract class ResolutionSupport {
     final SqlNode node = relation.rootNode();
     if (Query.isInstance(node)) return node;
     else return null;
+  }
+
+  public static ParamDesc paramOf(SqlNode node) {
+    return node.context().getAdditionalInfo(PARAMS).paramOf(node);
   }
 
   public static Relation getOuterRelation(Relation relation) {
@@ -110,6 +131,15 @@ public abstract class ResolutionSupport {
   public static Attribute traceRef(Attribute attribute) {
     final Attribute ref = deRef(attribute);
     return ref == null ? attribute : traceRef(ref);
+  }
+
+  public static boolean isElementParam(ParamDesc param) {
+    return any(param.modifiers(), it -> it.type() == ARRAY_ELEMENT || it.type() == TUPLE_ELEMENT);
+  }
+
+  public static boolean isCheckNull(ParamDesc param) {
+    final ParamModifier.Type lastModifierType = tail(param.modifiers()).type();
+    return lastModifierType == CHECK_NULL || lastModifierType == CHECK_NULL_NOT;
   }
 
   private static FieldKey<?> getClauseOfExpr(SqlNode expr) {

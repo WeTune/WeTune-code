@@ -1,12 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 import com.google.common.collect.Iterables;
-import sjtu.ipads.wtune.sql.relational.Relation;
 import sjtu.ipads.wtune.sql.schema.Column;
-import sjtu.ipads.wtune.stmt.resolver.JoinGraph;
-import sjtu.ipads.wtune.stmt.resolver.JoinGraph.JoinKey;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.Params;
+import sjtu.ipads.wtune.sql.support.resolution.JoinGraph;
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
+import sjtu.ipads.wtune.sql.support.resolution.Params;
+import sjtu.ipads.wtune.sql.support.resolution.Relation;
 import sjtu.ipads.wtune.testbed.common.Element;
 import sjtu.ipads.wtune.testbed.population.Generator;
 import sjtu.ipads.wtune.testbed.population.Generators;
@@ -85,16 +84,13 @@ public class ParamsGenImpl implements ParamsGen {
   public boolean generateAll() {
     if (values == null) values = new IdentityHashMap<>();
     else values.clear();
+    return params.forEach(this::generateOne);
+  }
 
-    for (ParamDesc param : params.params()) {
-      final ParamGen gen = new ParamGen(this, param);
-      if (!gen.generate()) {
-        return false;
-      }
-
-      values.put(param, gen.value());
-    }
-
+  private boolean generateOne(ParamDesc param) {
+    final ParamGen gen = new ParamGen(this, param);
+    if (!gen.generate()) return false;
+    values.put(param, gen.value());
     return true;
   }
 
@@ -104,13 +100,13 @@ public class ParamsGenImpl implements ParamsGen {
     seeds.put(relation, seed);
 
     for (Relation joined : joinGraph.getJoined(relation)) {
-      final JoinKey joinKey = joinGraph.getJoinKey(relation, joined);
+      final JoinGraph.JoinKey joinKey = joinGraph.getJoinKey(relation, joined);
 
-      final Column leftCol = joinKey.leftCol(), rightCol = joinKey.rightCol();
+      final Column leftCol = joinKey.lhsKey(), rightCol = joinKey.rhsKey();
       final Generator leftGen = generators.bind(Element.ofColumn(leftCol));
       final Generator rightGen = generators.bind(Element.ofColumn(rightCol));
 
-      final int rightUnits = populationConfig.unitCountOf(joinKey.rightTable().table().name());
+      final int rightUnits = populationConfig.unitCountOf(joinKey.rhsKey().tableName());
       final Object target = leftGen.generate(seed);
       final int rightSeed =
           rightGen.locate(target).filter(it -> it >= 0 && it < rightUnits).findFirst().orElse(-1);
@@ -126,7 +122,7 @@ public class ParamsGenImpl implements ParamsGen {
         return false;
       }
 
-      if (!setPivotSeed0(joinKey.rightTable(), rightSeed)) return false;
+      if (!setPivotSeed0(joinKey.rhsTable(), rightSeed)) return false;
     }
 
     return true;

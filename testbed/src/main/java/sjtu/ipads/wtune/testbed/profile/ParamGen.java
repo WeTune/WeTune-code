@@ -1,6 +1,13 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
+import sjtu.ipads.wtune.common.utils.ArraySupport;
+import sjtu.ipads.wtune.sql.schema.Column;
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
+import sjtu.ipads.wtune.sql.support.resolution.ParamModifier;
+import sjtu.ipads.wtune.sql.support.resolution.Relation;
+import sjtu.ipads.wtune.testbed.common.Element;
+import sjtu.ipads.wtune.testbed.population.Generator;
+import sjtu.ipads.wtune.testbed.util.MathHelper;
 
 import java.lang.System.Logger.Level;
 import java.time.temporal.ChronoUnit;
@@ -12,15 +19,8 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import sjtu.ipads.wtune.common.utils.ArraySupport;
-import sjtu.ipads.wtune.sql.relational.Relation;
-import sjtu.ipads.wtune.sql.schema.Column;
-import sjtu.ipads.wtune.sql.util.ASTHelper;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.ParamModifier;
-import sjtu.ipads.wtune.testbed.common.Element;
-import sjtu.ipads.wtune.testbed.population.Generator;
-import sjtu.ipads.wtune.testbed.util.MathHelper;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
+import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
 
 class ParamGen {
   private final ParamsGen ctx;
@@ -213,7 +213,7 @@ class ParamGen {
   }
 
   private boolean applyFunc(Object[] modifierArgs) {
-    final String funcName = ASTHelper.simpleName((String) modifierArgs[0]);
+    final String funcName = simpleName((String) modifierArgs[0]);
     final int argCount = (Integer) modifierArgs[1];
 
     final Object[] args = new Object[argCount];

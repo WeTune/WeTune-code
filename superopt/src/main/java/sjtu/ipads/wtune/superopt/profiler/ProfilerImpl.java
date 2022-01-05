@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.profiler;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.SQLSERVER;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.SQLServer;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 
 class ProfilerImpl implements Profiler {
@@ -74,7 +74,7 @@ class ProfilerImpl implements Profiler {
 
     // MySQL doesn't correctly estimate some simplification (e.g. remove JOIN),
     // so let's do it ourself.
-    if (minCostIndex == -1 && MYSQL.equals(dbProps.getProperty("dbType"))) {
+    if (minCostIndex == -1 && MySQL.equals(dbProps.getProperty("dbType"))) {
       Complexity minComplexity = Complexity.mk(baseline, baseline.root());
       for (int i = 0, bound = plans.size(); i < bound; i++) {
         final PlanContext plan = plans.get(i);
@@ -99,7 +99,7 @@ class ProfilerImpl implements Profiler {
     }
 
     final String dbType = dbProps.getProperty("dbType");
-    if (SQLSERVER.equals(dbType)) query = adaptToSqlserver(query);
+    if (SQLServer.equals(dbType)) query = adaptToSqlserver(query);
 
     final DataSource dataSource = DataSourceFactory.instance().mk(dbProps);
     return CostQuery.mk(dbType, dataSource::getConnection, query).getCost();

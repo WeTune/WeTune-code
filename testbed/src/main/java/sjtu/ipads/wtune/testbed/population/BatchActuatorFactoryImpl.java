@@ -1,14 +1,15 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.makeDataSource;
-
-import java.sql.SQLException;
-import java.util.Properties;
-import javax.sql.DataSource;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
+
+import javax.sql.DataSource;
+import java.sql.SQLException;
+import java.util.Properties;
+
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
+import static sjtu.ipads.wtune.testbed.util.DataSourceSupport.makeDataSource;
 
 class BatchActuatorFactoryImpl implements BatchActuatorFactory {
   private final Properties dbProperties;
@@ -28,8 +29,8 @@ class BatchActuatorFactoryImpl implements BatchActuatorFactory {
   }
 
   private static String determineDbType(String url) {
-    if (url.startsWith("jdbc:mysql")) return MYSQL;
-    else if (url.startsWith("jdbc:postgresql")) return POSTGRESQL;
+    if (url.startsWith("jdbc:mysql")) return MySQL;
+    else if (url.startsWith("jdbc:postgresql")) return PostgreSQL;
     else throw new IllegalArgumentException();
   }
 

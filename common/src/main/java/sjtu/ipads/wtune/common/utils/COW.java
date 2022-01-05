@@ -2,8 +2,6 @@ package sjtu.ipads.wtune.common.utils;
 
 import java.util.function.Function;
 
-import static java.util.Objects.requireNonNull;
-
 public final class COW<T> {
   private T obj;
   private Function<T, T> copier;

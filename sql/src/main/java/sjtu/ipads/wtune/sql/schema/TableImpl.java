@@ -1,24 +1,24 @@
 package sjtu.ipads.wtune.sql.schema;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 import sjtu.ipads.wtune.sql.schema.SchemaPatch.Type;
-import sjtu.ipads.wtune.sql.util.ASTHelper;
 
 import java.util.*;
 import java.util.function.Function;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.ColName;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.TableName;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.FOREIGN;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.UNIQUE;
-import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.ColName;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.TableName;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.UNIQUE;
 
 class TableImpl implements Table {
   private final String schema;
@@ -39,8 +39,8 @@ class TableImpl implements Table {
     final String schema = simpleName(tableName.$(TableName_Schema));
     final String name = simpleName(tableName.$(TableName_Table));
     final String engine =
-        POSTGRESQL.equals(tableDef.dbType())
-            ? POSTGRESQL
+        PostgreSQL.equals(tableDef.dbType())
+            ? PostgreSQL
             : coalesce(tableDef.$(CreateTable_Engine), "innodb");
 
     return new TableImpl(schema, name, engine);
@@ -140,7 +140,7 @@ class TableImpl implements Table {
 
   @Override
   public StringBuilder toDdl(String dbType, StringBuilder buffer) {
-    buffer.append("CREATE TABLE ").append(ASTHelper.quoted(dbType, name)).append(" (");
+    buffer.append("CREATE TABLE ").append(SqlSupport.quoted(dbType, name)).append(" (");
     return joining(", ", columns.values(), buffer, (it, builder) -> it.toDdl(dbType, builder))
         .append(");");
   }

@@ -2,7 +2,8 @@ package sjtu.ipads.wtune.common.tree;
 
 import java.util.Arrays;
 
-import static sjtu.ipads.wtune.common.tree.TreeSupport.*;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.checkParentNotSet;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.safeGet;
 

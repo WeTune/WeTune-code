@@ -1,7 +1,8 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.util.stream.IntStream;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
+import java.util.stream.IntStream;
 
 class AutoIncrementModifier implements Modifier {
   AutoIncrementModifier() {}

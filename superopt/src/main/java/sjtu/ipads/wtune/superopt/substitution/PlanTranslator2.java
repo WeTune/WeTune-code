@@ -3,11 +3,11 @@ package sjtu.ipads.wtune.superopt.substitution;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sql.ast1.constants.SetOpKind;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -19,10 +19,10 @@ import java.util.*;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.ColRef_ColName;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Col;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.EQUAL;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.EQUAL;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
@@ -203,7 +203,7 @@ class PlanTranslator2 {
           .append(");\n");
     }
 
-    return SqlSupport.parseSchema(MYSQL, builder.toString());
+    return SqlSupport.parseSchema(MySQL, builder.toString());
   }
 
   private static class TableDesc {
@@ -379,13 +379,11 @@ class PlanTranslator2 {
       final SqlNode aggregateColRef = trAttrs(agg.aggregateAttrs(), agg.predecessors()[0]);
       final String defaultAggFunction = "count";
       final SqlNode aggregateRef =
-          mkAggregate(
-              sql,
-              SqlNodes.mk(sql, singletonList(aggregateColRef)),
-              defaultAggFunction);
+          mkAggregate(sql, SqlNodes.mk(sql, singletonList(aggregateColRef)), defaultAggFunction);
 
       final String havingPredName = predDescOf(agg.havingPred()).predName;
-      final SqlNode pred = mkFuncCall(sql, havingPredName, singletonList(copyAst(aggregateRef, sql)));
+      final SqlNode pred =
+          mkFuncCall(sql, havingPredName, singletonList(copyAst(aggregateRef, sql)));
       final Expression havingPredExpr = Expression.mk(pred);
 
       // Create agg node
@@ -393,7 +391,9 @@ class PlanTranslator2 {
           AggNode.mk(
               false,
               List.of(groupByColName, synNameSeq.next()),
-              List.of(Expression.mk(copyAst(groupByColRef, sql)), Expression.mk(copyAst(aggregateRef, sql))),
+              List.of(
+                  Expression.mk(copyAst(groupByColRef, sql)),
+                  Expression.mk(copyAst(aggregateRef, sql))),
               singletonList(Expression.mk(copyAst(groupByColRef, sql))),
               havingPredExpr);
       aggNode.setQualification(aliasSeq.next());
@@ -404,7 +404,8 @@ class PlanTranslator2 {
       final String projGroupByName = projGroupByRef.$(ColRef_ColName).$(ColName_Col);
       final String projAggregateName = projAggregateRef.$(ColRef_ColName).$(ColName_Col);
       final List<String> projNameList = List.of(projGroupByName, projAggregateName);
-      final List<Expression> projExprList = List.of(Expression.mk(projGroupByRef), Expression.mk(projAggregateRef));
+      final List<Expression> projExprList =
+          List.of(Expression.mk(projGroupByRef), Expression.mk(projAggregateRef));
 
       final ProjNode placeholderProjNode = ProjNode.mk(false, projNameList, projExprList);
       placeholderProjNode.setQualification(aliasSeq.next());

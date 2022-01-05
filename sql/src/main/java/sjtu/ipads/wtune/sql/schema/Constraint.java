@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
-import sjtu.ipads.wtune.sql.ast1.constants.KeyDirection;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.KeyDirection;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.*;
 
 public interface Constraint {
   List<Column> columns();

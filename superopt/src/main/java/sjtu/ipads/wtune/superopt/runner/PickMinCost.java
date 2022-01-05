@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;

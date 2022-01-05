@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.util;
 
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.sql.plan.ProjNode;

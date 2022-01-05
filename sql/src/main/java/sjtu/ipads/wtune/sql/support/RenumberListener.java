@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sql.support;
 
 import gnu.trove.list.TIntList;
-import sjtu.ipads.wtune.sql.ast1.AdditionalInfo;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.AdditionalInfo;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
 import java.util.AbstractList;
 import java.util.List;

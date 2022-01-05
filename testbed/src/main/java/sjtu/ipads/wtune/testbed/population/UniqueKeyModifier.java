@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
+import java.util.stream.IntStream;
+
 import static java.util.stream.IntStream.range;
 import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.deRandUniqueIntDec;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.randUniqueIntDec;
-
-import java.util.stream.IntStream;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 class UniqueKeyModifier implements Modifier {
   private final int localSeed;

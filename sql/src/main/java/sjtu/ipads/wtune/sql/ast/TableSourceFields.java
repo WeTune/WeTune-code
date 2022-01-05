@@ -1,45 +1,45 @@
 package sjtu.ipads.wtune.sql.ast;
 
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sql.ast.constants.JoinType;
+import sjtu.ipads.wtune.common.field.FieldKey;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.sql.ast.NodeFields.TABLE_NAME_TABLE;
-import static sjtu.ipads.wtune.sql.ast.constants.NodeType.TABLE_SOURCE;
-import static sjtu.ipads.wtune.sql.ast.constants.TableSourceKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.TableName_Table;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.*;
 
 public interface TableSourceFields {
   //// Simple
-  FieldKey<ASTNode> SIMPLE_TABLE = SIMPLE_SOURCE.nodeAttr("Table");
-  FieldKey<List<String>> SIMPLE_PARTITIONS = SIMPLE_SOURCE.attr("Partitions", List.class);
-  FieldKey<String> SIMPLE_ALIAS = SIMPLE_SOURCE.strAttr("Alias");
+  FieldKey<SqlNode> Simple_Table = SimpleSource.nodeField("Table");
+  FieldKey<List<String>> Simple_Partition = SimpleSource.field("Partitions", List.class);
+  FieldKey<String> Simple_Alias = SimpleSource.textField("Alias");
   // mysql only
-  FieldKey<List<ASTNode>> SIMPLE_HINTS = SIMPLE_SOURCE.nodesAttr("Hints");
+  FieldKey<SqlNodes> Simple_Hints = SimpleSource.nodesField("Hints");
   //// Joined
-  FieldKey<ASTNode> JOINED_LEFT = JOINED_SOURCE.nodeAttr("Left");
-  FieldKey<ASTNode> JOINED_RIGHT = JOINED_SOURCE.nodeAttr("Right");
-  FieldKey<JoinType> JOINED_TYPE = JOINED_SOURCE.attr("Type", JoinType.class);
-  FieldKey<ASTNode> JOINED_ON = JOINED_SOURCE.nodeAttr("On");
-  FieldKey<List<String>> JOINED_USING = JOINED_SOURCE.attr("Using", List.class);
+  FieldKey<SqlNode> Joined_Left = JoinedSource.nodeField("Left");
+  FieldKey<SqlNode> Joined_Right = JoinedSource.nodeField("Right");
+  FieldKey<JoinKind> Joined_Kind = JoinedSource.field("Kind", JoinKind.class);
+  FieldKey<SqlNode> Joined_On = JoinedSource.nodeField("On");
+  FieldKey<List<String>> Joined_Using = JoinedSource.field("Using", List.class);
   //// Derived
-  FieldKey<ASTNode> DERIVED_SUBQUERY = DERIVED_SOURCE.nodeAttr("Subquery");
-  FieldKey<String> DERIVED_ALIAS = DERIVED_SOURCE.strAttr("Alias");
-  FieldKey<Boolean> DERIVED_LATERAL = DERIVED_SOURCE.boolAttr("Lateral");
-  FieldKey<List<String>> DERIVED_INTERNAL_REFS = DERIVED_SOURCE.attr("InternalRefs", List.class);
+  FieldKey<SqlNode> Derived_Subquery = DerivedSource.nodeField("Subquery");
+  FieldKey<String> Derived_Alias = DerivedSource.textField("Alias");
+  FieldKey<Boolean> Derived_Lateral = DerivedSource.boolField("Lateral");
+  FieldKey<List<String>> Derived_InternalRefs = DerivedSource.field("InternalRefs", List.class);
 
-  static String tableSourceName(ASTNode node) {
-    if (!TABLE_SOURCE.isInstance(node)) return null;
+  static String tableSourceNameOf(SqlNode node) {
+    if (!TableSource.isInstance(node)) return null;
 
-    if (SIMPLE_SOURCE.isInstance(node))
-      return coalesce(node.get(SIMPLE_ALIAS), node.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE));
-    else if (DERIVED_SOURCE.isInstance(node)) return node.get(DERIVED_ALIAS);
+    if (SimpleSource.isInstance(node))
+      return coalesce(node.$(Simple_Alias), node.$(Simple_Table).$(TableName_Table));
+    else if (DerivedSource.isInstance(node)) return node.$(Derived_Alias);
 
     return null;
   }
 
-  static String tableNameOf(ASTNode node) {
-    return !SIMPLE_SOURCE.isInstance(node) ? null : node.get(SIMPLE_TABLE).get(TABLE_NAME_TABLE);
+  static String tableNameOf(SqlNode node) {
+    return !SimpleSource.isInstance(node) ? null : node.$(Simple_Table).$(TableName_Table);
   }
 }

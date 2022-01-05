@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
-
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.common.Element;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 class BasePopulatable implements Populatable {
   private final Collection collection;

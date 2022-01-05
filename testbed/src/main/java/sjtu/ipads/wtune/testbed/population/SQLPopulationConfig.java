@@ -1,18 +1,19 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.testbed.util.MathHelper.isPow10;
-
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
+import sjtu.ipads.wtune.testbed.util.RandGen;
+import sjtu.ipads.wtune.testbed.util.RandomHelper;
+
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
-import sjtu.ipads.wtune.testbed.util.RandGen;
-import sjtu.ipads.wtune.testbed.util.RandomHelper;
+
+import static sjtu.ipads.wtune.testbed.util.MathHelper.isPow10;
 
 public class SQLPopulationConfig implements PopulationConfig {
   private static final int DEFAULT_ROW_COUNT = 10000;

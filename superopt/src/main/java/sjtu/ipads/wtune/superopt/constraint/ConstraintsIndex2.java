@@ -11,7 +11,6 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import java.util.*;
 
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
-import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Reference;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 
 public class ConstraintsIndex2 extends AbstractList<Constraint> implements List<Constraint> {

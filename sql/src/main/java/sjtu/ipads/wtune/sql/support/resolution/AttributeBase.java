@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sql.support.resolution;
 
-import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
 
 abstract class AttributeBase implements Attribute {
   private final Relation owner;

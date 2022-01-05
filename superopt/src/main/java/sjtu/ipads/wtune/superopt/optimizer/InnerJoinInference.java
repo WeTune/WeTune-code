@@ -1,22 +1,22 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.tree.TreeSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind;
-import sjtu.ipads.wtune.sql.ast1.constants.LiteralKind;
-import sjtu.ipads.wtune.sql.ast1.constants.TernaryOp;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralKind;
+import sjtu.ipads.wtune.sql.ast.constants.TernaryOp;
 import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IS;
-import static sjtu.ipads.wtune.sql.ast1.constants.JoinKind.INNER_JOIN;
-import static sjtu.ipads.wtune.sql.ast1.constants.JoinKind.LEFT_JOIN;
-import static sjtu.ipads.wtune.sql.ast1.constants.LiteralKind.NULL;
-import static sjtu.ipads.wtune.sql.ast1.constants.LiteralKind.UNKNOWN;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IS;
+import static sjtu.ipads.wtune.sql.ast.constants.JoinKind.INNER_JOIN;
+import static sjtu.ipads.wtune.sql.ast.constants.JoinKind.LEFT_JOIN;
+import static sjtu.ipads.wtune.sql.ast.constants.LiteralKind.NULL;
+import static sjtu.ipads.wtune.sql.ast.constants.LiteralKind.UNKNOWN;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 

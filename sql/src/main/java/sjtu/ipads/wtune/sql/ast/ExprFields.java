@@ -1,164 +1,127 @@
 package sjtu.ipads.wtune.sql.ast;
 
-import static sjtu.ipads.wtune.sql.ast.NodeFields.EXPR_KIND;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.AGGREGATE;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.ARRAY;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.CASE;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.CAST;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.COLLATE;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.COLUMN_REF;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.COMPARISON_MOD;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.CONVERT_USING;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.DATETIME_OVERLAP;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.DEFAULT;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.EXISTS;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.FUNC_CALL;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.GROUPING_OP;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.INDIRECTION;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.INDIRECTION_COMP;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.INTERVAL;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.LITERAL;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.MATCH;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.PARAM_MARKER;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.QUERY_EXPR;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.SYMBOL;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.TERNARY;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.TUPLE;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.TYPE_COERCION;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.UNARY;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.VALUES;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.VARIABLE;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.WHEN;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.WILDCARD;
-import static sjtu.ipads.wtune.sql.ast.constants.NodeType.EXPR;
+import sjtu.ipads.wtune.common.field.FieldKey;
+import sjtu.ipads.wtune.sql.ast.constants.*;
 
-import java.util.List;
-import sjtu.ipads.wtune.common.attrs.FieldKey;
-import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sql.ast.constants.ExprKind;
-import sjtu.ipads.wtune.sql.ast.constants.IntervalUnit;
-import sjtu.ipads.wtune.sql.ast.constants.LiteralType;
-import sjtu.ipads.wtune.sql.ast.constants.MatchOption;
-import sjtu.ipads.wtune.sql.ast.constants.SubqueryOption;
-import sjtu.ipads.wtune.sql.ast.constants.TernaryOp;
-import sjtu.ipads.wtune.sql.ast.constants.UnaryOp;
-import sjtu.ipads.wtune.sql.ast.constants.VariableScope;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Expr;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.Expr_Kind;
+
 
 public interface ExprFields {
   // Variable
-  FieldKey<VariableScope> VARIABLE_SCOPE = VARIABLE.attr("scope", VariableScope.class);
-  FieldKey<String> VARIABLE_NAME = VARIABLE.strAttr("name");
-  FieldKey<ASTNode> VARIABLE_ASSIGNMENT = VARIABLE.nodeAttr("assignment");
+  FieldKey<VariableScope> Variable_Scope = Variable.field("Scope", VariableScope.class);
+  FieldKey<String> Variable_Name = Variable.textField("Name");
+  FieldKey<SqlNode> Variable_Assignment = Variable.nodeField("Assignment"); // Expr
   // Col Ref
-  FieldKey<ASTNode> COLUMN_REF_COLUMN = COLUMN_REF.nodeAttr("column");
+  FieldKey<SqlNode> ColRef_ColName = ColRef.nodeField("Column"); // ColName
   // Func Call
-  FieldKey<ASTNode> FUNC_CALL_NAME = FUNC_CALL.nodeAttr("name"); // NAME2
-  FieldKey<List<ASTNode>> FUNC_CALL_ARGS = FUNC_CALL.nodesAttr("args");
+  FieldKey<SqlNode> FuncCall_Name = FuncCall.nodeField("Name"); // Name2
+  FieldKey<SqlNodes> FuncCall_Args = FuncCall.nodesField("Args"); // Expr
   // Collate
-  FieldKey<ASTNode> COLLATE_EXPR = COLLATE.nodeAttr("expr");
-  FieldKey<ASTNode> COLLATE_COLLATION = COLLATE.nodeAttr("collation");
+  FieldKey<SqlNode> Collate_Expr = Collate.nodeField("Expr"); // Expr
+  FieldKey<SqlNode> Collate_Collation = Collate.nodeField("Collation"); // Symbol
   // Interval
-  FieldKey<ASTNode> INTERVAL_EXPR = INTERVAL.nodeAttr("expr");
-  FieldKey<IntervalUnit> INTERVAL_UNIT = INTERVAL.attr("unit", IntervalUnit.class);
+  FieldKey<SqlNode> Interval_Expr = Interval.nodeField("Expr");// Expr
+  FieldKey<IntervalUnit> Interval_Unit = Interval.field("Unit", IntervalUnit.class);
   // Symbol
-  FieldKey<String> SYMBOL_TEXT = SYMBOL.strAttr("text");
+  FieldKey<String> Symbol_Text = Symbol.textField("Text");
   // Literal
-  FieldKey<LiteralType> LITERAL_TYPE = LITERAL.attr("type", LiteralType.class);
-  FieldKey<Object> LITERAL_VALUE = LITERAL.attr("value", Object.class);
-  FieldKey<String> LITERAL_UNIT = LITERAL.strAttr("unit");
+  FieldKey<LiteralKind> Literal_Kind = Literal.field("Kind", LiteralKind.class);
+  FieldKey<Object> Literal_Value = Literal.field("Value", Object.class);
+  FieldKey<String> Literal_Unit = Literal.textField("Unit");
   // Aggregate
-  FieldKey<String> AGGREGATE_NAME = AGGREGATE.strAttr("name");
-  FieldKey<Boolean> AGGREGATE_DISTINCT = AGGREGATE.boolAttr("distinct");
-  FieldKey<List<ASTNode>> AGGREGATE_ARGS = AGGREGATE.nodesAttr("args");
-  FieldKey<String> AGGREGATE_WINDOW_NAME = AGGREGATE.strAttr("windowName");
-  FieldKey<ASTNode> AGGREGATE_WINDOW_SPEC = AGGREGATE.nodeAttr("windowSpec");
-  FieldKey<ASTNode> AGGREGATE_FILTER = AGGREGATE.nodeAttr("filter");
-  FieldKey<List<ASTNode>> AGGREGATE_WITHIN_GROUP_ORDER = AGGREGATE.nodesAttr("withinGroupOrder");
-  FieldKey<List<ASTNode>> AGGREGATE_ORDER = AGGREGATE.nodesAttr("order");
-  FieldKey<String> AGGREGATE_SEP = AGGREGATE.strAttr("sep");
+  FieldKey<String> Aggregate_Name = Aggregate.textField("Name");
+  FieldKey<Boolean> Aggregate_Distinct = Aggregate.boolField("Distinct");
+  FieldKey<SqlNodes> Aggregate_Args = Aggregate.nodesField("Args"); // Expr
+  FieldKey<String> Aggregate_WindowName = Aggregate.textField("WindowName");
+  FieldKey<SqlNode> Aggregate_WindowSpec = Aggregate.nodeField("WindowSpec"); // WindowSpec
+  FieldKey<SqlNode> Aggregate_Filter = Aggregate.nodeField("Filter"); // Expr
+  FieldKey<SqlNodes> Aggregate_WithinGroupOrder = Aggregate.nodesField("WithinGroupOrder"); // Grouping
+  FieldKey<SqlNodes> Aggregate_Order = Aggregate.nodesField("Order");
+  FieldKey<String> Aggregate_Sep = Aggregate.textField("Sep");
   // Wildcard
-  FieldKey<ASTNode> WILDCARD_TABLE = WILDCARD.nodeAttr("table");
+  FieldKey<SqlNode> Wildcard_Table = Wildcard.nodeField("Table"); // TableName
   // Grouping
-  FieldKey<List<ASTNode>> GROUPING_OP_EXPRS = GROUPING_OP.nodesAttr("exprs");
+  FieldKey<SqlNodes> GroupingOp_Exprs = GroupingOp.nodesField("Exprs"); // Expr
   // Unary
-  FieldKey<UnaryOp> UNARY_OP = UNARY.attr("op", UnaryOp.class);
-  FieldKey<ASTNode> UNARY_EXPR = UNARY.nodeAttr("expr");
+  FieldKey<UnaryOpKind> Unary_Op = Unary.field("Op", UnaryOpKind.class);
+  FieldKey<SqlNode> Unary_Expr = Unary.nodeField("Expr"); // Expr
   // Binary
-  FieldKey<BinaryOp> BINARY_OP = BINARY.attr("op", BinaryOp.class);
-  FieldKey<ASTNode> BINARY_LEFT = BINARY.nodeAttr("left");
-  FieldKey<ASTNode> BINARY_RIGHT = BINARY.nodeAttr("right");
-  FieldKey<SubqueryOption> BINARY_SUBQUERY_OPTION =
-      BINARY.attr("subqueryOption", SubqueryOption.class);
-  // TERNARY
-  FieldKey<TernaryOp> TERNARY_OP = TERNARY.attr("op", TernaryOp.class);
-  FieldKey<ASTNode> TERNARY_LEFT = TERNARY.nodeAttr("left");
-  FieldKey<ASTNode> TERNARY_MIDDLE = TERNARY.nodeAttr("middle");
-  FieldKey<ASTNode> TERNARY_RIGHT = TERNARY.nodeAttr("right");
+  FieldKey<BinaryOpKind> Binary_Op = Binary.field("Op", BinaryOpKind.class);
+  FieldKey<SqlNode> Binary_Left = Binary.nodeField("Left");
+  FieldKey<SqlNode> Binary_Right = Binary.nodeField("Right");
+  FieldKey<SubqueryOption> Binary_SubqueryOption =
+      Binary.field("SubqueryOption", SubqueryOption.class);
+  // Ternary
+  FieldKey<TernaryOp> Ternary_Op = Ternary.field("Op", TernaryOp.class);
+  FieldKey<SqlNode> Ternary_Left = Ternary.nodeField("Left"); // Expr
+  FieldKey<SqlNode> Ternary_Middle = Ternary.nodeField("Middle"); // Expr
+  FieldKey<SqlNode> Ternary_Right = Ternary.nodeField("Right"); // Expr
   // Tuple
-  FieldKey<List<ASTNode>> TUPLE_EXPRS = TUPLE.nodesAttr("exprs");
-  FieldKey<Boolean> TUPLE_AS_ROW = TUPLE.boolAttr("asRow");
+  FieldKey<SqlNodes> Tuple_Exprs = Tuple.nodesField("Exprs"); // Expr
+  FieldKey<Boolean> Tuple_AsRow = Tuple.boolField("AsRow");
   // Exists
-  FieldKey<ASTNode> EXISTS_SUBQUERY_EXPR = EXISTS.nodeAttr("subquery");
+  FieldKey<SqlNode> Exists_Subquery = Exists.nodeField("Subquery"); // QueryExpr
   // MatchAgainst
-  FieldKey<List<ASTNode>> MATCH_COLS = MATCH.nodesAttr("columns");
-  FieldKey<ASTNode> MATCH_EXPR = MATCH.nodeAttr("expr");
-  FieldKey<MatchOption> MATCH_OPTION = MATCH.attr("option", MatchOption.class);
+  FieldKey<SqlNodes> Match_Cols = Match.nodesField("Columns"); // ColRef
+  FieldKey<SqlNode> Match_Expr = Match.nodeField("Expr"); // Expr
+  FieldKey<MatchOption> Match_Option = Match.field("Option", MatchOption.class);
   // Cast
-  FieldKey<ASTNode> CAST_EXPR = CAST.nodeAttr("expr");
-  FieldKey<SQLDataType> CAST_TYPE = CAST.attr("type", SQLDataType.class);
-  FieldKey<Boolean> CAST_IS_ARRAY = CAST.boolAttr("isArray");
+  FieldKey<SqlNode> Cast_Expr = Cast.nodeField("Expr"); // Expr
+  FieldKey<SqlDataType> Cast_Type = Cast.field("Type", SqlDataType.class);
+  FieldKey<Boolean> Cast_IsArray = Cast.boolField("IsArray");
   // Case
-  FieldKey<ASTNode> CASE_COND = CASE.nodeAttr("condition");
-  FieldKey<List<ASTNode>> CASE_WHENS = CASE.nodesAttr("when");
-  FieldKey<ASTNode> CASE_ELSE = CASE.nodeAttr("else");
+  FieldKey<SqlNode> Case_Cond = Case.nodeField("Condition"); // Expr
+  FieldKey<SqlNodes> Case_Whens = Case.nodesField("When"); // When
+  FieldKey<SqlNode> Case_Else = Case.nodeField("Else"); // Expr
   // When
-  FieldKey<ASTNode> WHEN_COND = WHEN.nodeAttr("condition");
-  FieldKey<ASTNode> WHEN_EXPR = WHEN.nodeAttr("expr");
+  FieldKey<SqlNode> When_Cond = When.nodeField("Condition"); // Expr
+  FieldKey<SqlNode> When_Expr = When.nodeField("Expr"); // Expr
   // ConvertUsing
-  FieldKey<ASTNode> CONVERT_USING_EXPR = CONVERT_USING.nodeAttr("expr");
-  FieldKey<ASTNode> CONVERT_USING_CHARSET = CONVERT_USING.nodeAttr("charset");
+  FieldKey<SqlNode> ConvertUsing_Expr = ConvertUsing.nodeField("Expr"); // Expr
+  FieldKey<SqlNode> ConvertUsing_Charset = ConvertUsing.nodeField("Charset"); // Symbol
   // Default
-  FieldKey<ASTNode> DEFAULT_COL = DEFAULT.nodeAttr("col");
+  FieldKey<SqlNode> Default_Col = Default.nodeField("Col"); // Expr
   // Values
-  FieldKey<ASTNode> VALUES_EXPR = VALUES.nodeAttr("expr");
+  FieldKey<SqlNode> Values_Expr = Values.nodeField("Expr"); // Expr
   // QueryExpr
-  FieldKey<ASTNode> QUERY_EXPR_QUERY = QUERY_EXPR.nodeAttr("query");
+  FieldKey<SqlNode> QueryExpr_Query = QueryExpr.nodeField("Query"); // Query
   // Indirection
-  FieldKey<ASTNode> INDIRECTION_EXPR = INDIRECTION.nodeAttr("expr");
-  FieldKey<List<ASTNode>> INDIRECTION_COMPS = INDIRECTION.nodesAttr("comps");
+  FieldKey<SqlNode> Indirection_Expr = Indirection.nodeField("Expr"); // Expr
+  FieldKey<SqlNodes> Indirection_Comps = Indirection.nodesField("Comps"); // IndirectionComp
   // IndirectionComp
-  FieldKey<Boolean> INDIRECTION_COMP_SUBSCRIPT = INDIRECTION_COMP.boolAttr("subscript");
-  FieldKey<ASTNode> INDIRECTION_COMP_START = INDIRECTION_COMP.nodeAttr("start");
-  FieldKey<ASTNode> INDIRECTION_COMP_END = INDIRECTION_COMP.nodeAttr("end");
-  // ParamMarker
-  FieldKey<Integer> PARAM_MARKER_NUMBER = PARAM_MARKER.attr("number", Integer.class);
-  FieldKey<Boolean> PARAM_MARKER_FORCE_QUESTION = PARAM_MARKER.boolAttr("forceQuestion");
+  FieldKey<Boolean> IndirectionComp_Subscript = IndirectionComp.boolField("Subscript");
+  FieldKey<SqlNode> IndirectionComp_Start = IndirectionComp.nodeField("Start"); // Expr
+  FieldKey<SqlNode> IndirectionComp_End = IndirectionComp.nodeField("End"); // Expr
+  // Param
+  FieldKey<Integer> Param_Number = Param.field("Number", Integer.class);
+  FieldKey<Boolean> Param_ForceQuestion = Param.boolField("ForceQuestion");
   // ComparisonMod
-  FieldKey<SubqueryOption> COMPARISON_MOD_OPTION =
-      COMPARISON_MOD.attr("option", SubqueryOption.class);
-  FieldKey<ASTNode> COMPARISON_MOD_EXPR = COMPARISON_MOD.nodeAttr("expr");
+  FieldKey<SubqueryOption> ComparisonMod_Option =
+      ComparisonMod.field("Option", SubqueryOption.class);
+  FieldKey<SqlNode> ComparisonMod_Expr = ComparisonMod.nodeField("Expr"); // Expr
   // Array
-  FieldKey<List<ASTNode>> ARRAY_ELEMENTS = ARRAY.nodesAttr("elements");
+  FieldKey<SqlNodes> Array_Elements = Array.nodesField("Elements"); // Expr
   // TypeCoercion
-  FieldKey<SQLDataType> TYPE_COERCION_TYPE = TYPE_COERCION.attr("type", SQLDataType.class);
-  FieldKey<String> TYPE_COERCION_STRING = TYPE_COERCION.strAttr("type");
+  FieldKey<SqlDataType> TypeCoercion_Type = TypeCoercion.field("Type", SqlDataType.class);
+  FieldKey<String> TypeCoercion_String = TypeCoercion.textField("RawType");
   // DataTimeOverlap
-  FieldKey<ASTNode> DATETIME_OVERLAP_LEFT_START = DATETIME_OVERLAP.nodeAttr("leftStart");
-  FieldKey<ASTNode> DATETIME_OVERLAP_LEFT_END = DATETIME_OVERLAP.nodeAttr("leftEnd");
-  FieldKey<ASTNode> DATETIME_OVERLAP_RIGHT_START = DATETIME_OVERLAP.nodeAttr("rightStart");
-  FieldKey<ASTNode> DATETIME_OVERLAP_RIGHT_END = DATETIME_OVERLAP.nodeAttr("rightEnd");
+  FieldKey<SqlNode> DateTimeOverlap_LeftStart = DateTimeOverlap.nodeField("LeftStart"); // Expr
+  FieldKey<SqlNode> DateTimeOverlap_LeftEnd = DateTimeOverlap.nodeField("LeftEnd"); // Expr
+  FieldKey<SqlNode> DateTimeOverlap_RightStart = DateTimeOverlap.nodeField("RightStart"); // Expr
+  FieldKey<SqlNode> DateTimeOverlap_RightEnd = DateTimeOverlap.nodeField("RightEnd"); // Expr
 
-  static int getOperatorPrecedence(ASTNode node) {
-    if (!EXPR.isInstance(node)) return -1;
-    final ExprKind exprKind = node.get(EXPR_KIND);
+  static int getOperatorPrecedence(SqlNode node) {
+    if (!Expr.isInstance(node)) return -1;
+    final ExprKind exprKind = node.$(Expr_Kind);
     return switch (exprKind) {
-      case UNARY -> node.get(UNARY_OP).precedence();
-      case BINARY -> node.get(BINARY_OP).precedence();
-      case TERNARY -> node.get(TERNARY_OP).precedence();
-      case CASE, WHEN -> 5;
-      case COLLATE -> 13;
-      case INTERVAL -> 14;
+      case Unary -> node.$(Unary_Op).precedence();
+      case Binary -> node.$(Binary_Op).precedence();
+      case Ternary -> node.$(Ternary_Op).precedence();
+      case Case, When -> 5;
+      case Collate -> 13;
+      case Interval -> 14;
       default -> -1;
     };
   }

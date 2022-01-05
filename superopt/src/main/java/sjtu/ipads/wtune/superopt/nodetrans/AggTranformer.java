@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Aggregate_Name;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Aggregate;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.SelectItem_Expr;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Aggregate_Name;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.SelectItem_Expr;
 
 public class AggTranformer extends BaseTransformer {
   private TIntObjectMap<Expression> calAggAttrsList(List<Expression> attrExprs) {

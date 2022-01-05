@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
+import sjtu.ipads.wtune.testbed.util.RandGen;
+
 import java.io.PrintWriter;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import sjtu.ipads.wtune.testbed.common.BatchActuatorFactory;
-import sjtu.ipads.wtune.testbed.util.RandGen;
 
 public interface PopulationConfig {
   int randomSeed();
@@ -40,7 +41,7 @@ public interface PopulationConfig {
 
   void setNeedPrePopulation(boolean flag);
 
-  static PopulationConfig make() {
+  static PopulationConfig mk() {
     return new SQLPopulationConfig();
   }
 }

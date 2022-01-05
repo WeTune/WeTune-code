@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.testbed.profile;
 
+import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.testbed.population.Generators;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -8,8 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.function.Function;
-import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.testbed.population.Generators;
 
 class ProfileConfigImpl implements ProfileConfig {
   private int warmupCycles, profileCycles;

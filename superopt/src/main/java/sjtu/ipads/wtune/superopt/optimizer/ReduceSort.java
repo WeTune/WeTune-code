@@ -13,7 +13,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Aggregate_Name;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Aggregate_Name;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 
 class ReduceSort {

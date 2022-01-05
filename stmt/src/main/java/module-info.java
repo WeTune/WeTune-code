@@ -8,5 +8,4 @@ module sjtu.ipads.wtune.stmt {
 
   exports sjtu.ipads.wtune.stmt;
   exports sjtu.ipads.wtune.stmt.support;
-  exports sjtu.ipads.wtune.stmt.resolver;
 }

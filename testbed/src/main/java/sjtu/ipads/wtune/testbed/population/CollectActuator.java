@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+import sjtu.ipads.wtune.testbed.common.Collection;
+
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
-import sjtu.ipads.wtune.testbed.common.Collection;
 
 class CollectActuator implements BatchActuator {
   private Object obj;

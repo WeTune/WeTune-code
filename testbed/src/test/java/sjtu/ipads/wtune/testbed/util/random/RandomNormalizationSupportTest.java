@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.testbed.util.random;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static sjtu.ipads.wtune.testbed.util.RandomHelper.randUniqueIntBin;
-
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static sjtu.ipads.wtune.testbed.util.RandomHelper.randUniqueIntBin;
 
 public class RandomNormalizationSupportTest {
   @Test

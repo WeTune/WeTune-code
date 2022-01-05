@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
 
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.IterableSupport.lazyFilter;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.*;
 
 public interface Table {
   String schema();

@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.stmt.support.internal;
 
-import static sjtu.ipads.wtune.stmt.utils.FileUtils.CSV_SEP;
+import sjtu.ipads.wtune.stmt.support.Timing;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import sjtu.ipads.wtune.stmt.support.Timing;
+
+import static sjtu.ipads.wtune.stmt.utils.FileUtils.CSV_SEP;
 
 public record TimingImpl(String app, int stmtId, String tag, long p50, long p90, long p99)
     implements Timing {

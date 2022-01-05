@@ -12,7 +12,7 @@ import java.util.Set;
 import static java.util.function.Predicate.not;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sql.SqlSupport.isEquiConstPredicate;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.UNIQUE;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.UNIQUE;
 
 class UniquenessInference {
   private final PlanContext ctx;

@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.sql.plan;
 
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.ColRef_ColName;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Col;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Table;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Table;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.PLACEHOLDER_NAME;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.gatherColRefs;
 

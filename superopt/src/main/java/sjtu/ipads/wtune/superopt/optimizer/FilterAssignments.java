@@ -2,16 +2,16 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.AND;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.AND;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.Filter;
 
 class FilterAssignments {

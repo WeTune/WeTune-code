@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import sjtu.ipads.wtune.sql.ast1.SqlDataType;
-import sjtu.ipads.wtune.sql.ast1.constants.Category;
+import sjtu.ipads.wtune.sql.ast.SqlDataType;
+import sjtu.ipads.wtune.sql.ast.constants.Category;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.util.MathHelper;
 

@@ -61,6 +61,12 @@ public interface ArraySupport {
     else return arr[index];
   }
 
+  static <T> int linearFind(T[] arr, T target, int fromIndex) {
+    if (arr == null) return -1;
+    for (int i = fromIndex, bound = arr.length; i < bound; i++) if (arr[i] == target) return i;
+    return -1;
+  }
+
   static <T> T linearFind(T[] ts, Predicate<T> pred) {
     for (T t : ts) if (pred.test(t)) return t;
     return null;

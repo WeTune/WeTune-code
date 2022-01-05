@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.testbed.profile;
 
-import static sjtu.ipads.wtune.testbed.util.SQLServerStmtRewriteHelper.*;
-
 import java.sql.Connection;
+
+import static sjtu.ipads.wtune.testbed.util.SQLServerStmtRewriteHelper.regexRewriteForSQLServer;
 
 public class ExecutorSQLServerImpl extends ExecutorImpl{
 

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Set;
@@ -12,8 +12,8 @@ import static sjtu.ipads.wtune.superopt.TestHelper.optimizeStmt;
 public class TestOptimizerSlow {
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);
-    System.out.println(stmt.parsed().toString(false));
-    final Set<ASTNode> optimized = optimizeStmt(stmt);
+    System.out.println(stmt.ast().toString(false));
+    final Set<SqlNode> optimized = optimizeStmt(stmt);
 
     optimized.forEach(System.out::println);
     boolean passed = false;

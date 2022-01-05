@@ -6,7 +6,6 @@ import me.tongfei.progressbar.ProgressBarStyle;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupportSPES;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
@@ -25,7 +24,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Integer.parseInt;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraintsSPES;
 
 public class EnumSPESRule implements Runner {

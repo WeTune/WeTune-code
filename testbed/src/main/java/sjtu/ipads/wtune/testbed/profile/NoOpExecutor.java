@@ -1,8 +1,9 @@
 package sjtu.ipads.wtune.testbed.profile;
 
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
+
 import java.sql.ResultSet;
 import java.util.Map;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
 
 public class NoOpExecutor implements Executor {
   @Override

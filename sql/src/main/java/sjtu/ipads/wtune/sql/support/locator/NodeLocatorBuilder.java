@@ -1,13 +1,11 @@
 package sjtu.ipads.wtune.sql.support.locator;
 
-import sjtu.ipads.wtune.sql.ast1.FieldDomain;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.FieldDomain;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
 import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
 
-import static java.util.Objects.checkFromToIndex;
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
 

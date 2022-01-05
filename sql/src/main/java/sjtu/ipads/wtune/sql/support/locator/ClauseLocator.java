@@ -3,12 +3,12 @@ package sjtu.ipads.wtune.sql.support.locator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlVisitor;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
 
 public abstract class ClauseLocator implements SqlVisitor, SqlFinder, SqlGatherer {
   private final TIntList nodes;

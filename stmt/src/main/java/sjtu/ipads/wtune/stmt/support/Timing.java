@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.stmt.support;
 
-import java.util.stream.Stream;
 import sjtu.ipads.wtune.stmt.support.internal.TimingImpl;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public interface Timing {
   String app();

@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sql.schema;
 
 import sjtu.ipads.wtune.common.utils.IterableSupport;
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
 
 public class SchemaSupport {
   public static List<Constraint> findIC(Schema schema, List<Column> columns, ConstraintKind type) {

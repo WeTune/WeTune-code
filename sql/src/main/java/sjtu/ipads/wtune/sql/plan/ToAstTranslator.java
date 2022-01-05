@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.sql.plan;
 
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.*;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.*;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -11,15 +11,15 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.ListSupport.zipMap;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Aggregate_Distinct;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Exists_Subquery;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Aggregate;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.TableSource;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_SUBQUERY;
-import static sjtu.ipads.wtune.sql.ast1.constants.SetOpOption.ALL;
-import static sjtu.ipads.wtune.sql.ast1.constants.SetOpOption.DISTINCT;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Aggregate_Distinct;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Exists_Subquery;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IN_SUBQUERY;
+import static sjtu.ipads.wtune.sql.ast.constants.SetOpOption.ALL;
+import static sjtu.ipads.wtune.sql.ast.constants.SetOpOption.DISTINCT;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 
 class ToAstTranslator {

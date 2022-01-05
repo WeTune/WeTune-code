@@ -5,7 +5,7 @@ public interface Metric {
 
   long atPercentile(double percentile);
 
-  static Metric make(int nExpectedRecords) {
+  static Metric mk(int nExpectedRecords) {
     return new MetricImpl(nExpectedRecords);
   }
 }

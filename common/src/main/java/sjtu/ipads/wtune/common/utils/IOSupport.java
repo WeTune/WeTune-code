@@ -11,6 +11,10 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.*;
 
 public interface IOSupport {
+  interface IO<T> {
+    T doIO() throws IOException;
+  }
+
   static void appendTo(Path path, Consumer<PrintWriter> writer) {
     try (final var out = new PrintWriter(Files.newOutputStream(path, APPEND, WRITE, CREATE))) {
       writer.accept(out);
@@ -27,5 +31,17 @@ public interface IOSupport {
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }
+  }
+
+  static <T> T io(IO<T> io) {
+    try {
+      return io.doIO();
+    } catch (IOException ioe) {
+      throw new UncheckedIOException(ioe);
+    }
+  }
+
+  static PrintWriter newPrintWriter(Path path) throws IOException {
+    return new PrintWriter(Files.newOutputStream(path));
   }
 }

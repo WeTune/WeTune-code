@@ -3,16 +3,17 @@ package sjtu.ipads.wtune.stmt;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
-import sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport;
+import sjtu.ipads.wtune.sql.support.action.NormalizationSupport;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static sjtu.ipads.wtune.sql.support.resolution.JoinGraph.JOIN_GRAPH;
 import static sjtu.ipads.wtune.sql.support.resolution.Params.PARAMS;
 
 public class RealWorldStmtsTest {
@@ -151,15 +152,25 @@ public class RealWorldStmtsTest {
       }
 
       ast.context().setSchema(stmt.app().schema("base"));
-      try {
-        ast.context().getAdditionalInfo(PARAMS).numParams();
+      assertDoesNotThrow(
+          () -> ast.context().getAdditionalInfo(PARAMS).numParams(), stmt + " " + stmt.rawSql());
+    }
+  }
 
-      } catch (Throwable ex) {
-        System.err.println(stmt);
-        System.out.println(stmt.rawSql());
-        ex.printStackTrace();
-        break;
+  @Test
+  @DisplayName("[Stmt] resolve params")
+  void testResolveJoinGraph() {
+    final String latch = "";
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast = parseSql(stmt);
+      if (ast == null || !PlanSupport.isSupported(ast)) {
+        System.out.println("skipped: " + stmt);
+        continue;
       }
+
+      ast.context().setSchema(stmt.app().schema("base"));
+      assertDoesNotThrow(
+          () -> ast.context().getAdditionalInfo(JOIN_GRAPH), stmt + " " + stmt.rawSql());
     }
   }
 }

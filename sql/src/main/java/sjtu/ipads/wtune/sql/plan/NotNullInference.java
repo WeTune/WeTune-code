@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sql.plan;
 
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.schema.Column;
 
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;

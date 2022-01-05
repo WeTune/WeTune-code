@@ -2,9 +2,9 @@ package sjtu.ipads.wtune.testbed.profile;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
+import sjtu.ipads.wtune.sql.support.resolution.Params;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.Params;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.Math.abs;
+import static sjtu.ipads.wtune.sql.support.resolution.Params.PARAMS;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
 
 class ProfilerImpl implements Profiler {
@@ -37,11 +38,10 @@ class ProfilerImpl implements Profiler {
     this.statement = stmt;
     this.config = config;
 
-    this.paramsGen = ParamsGen.make(stmt.parsed().manager(Params.class), config.generators());
-    this.executor =
-        config.dryRun() ? null : config.executorFactory().make(stmt.parsed().toString());
-    this.metric = Metric.make(config.profileCycles());
-
+    final Params params = stmt.ast().context().getAdditionalInfo(PARAMS);
+    this.paramsGen = ParamsGen.mk(params, config.generators());
+    this.executor = config.dryRun() ? null : config.executorFactory().mk(stmt.ast().toString());
+    this.metric = Metric.mk(config.profileCycles());
     this.warmupCycles = config.warmupCycles();
     this.profileCycles = config.profileCycles();
   }
@@ -130,7 +130,7 @@ class ProfilerImpl implements Profiler {
     recording = false;
     System.out.print(" warmup: ");
     for (int i = 0, bound = warmupCycles; i < bound; ++i) {
-      if(i % 5 == 0) System.out.print(" " + i);
+      if (i % 5 == 0) System.out.print(" " + i);
       if (!run0(i)) {
         return false;
       }

@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.sql.plan;
 
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.sql.support.locator;
 
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.ColRef;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.ColRef;
 
 public interface LocatorSupport {
   static NodeLocatorBuilder nodeLocator() {

@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sql.plan;
 
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 
 public interface JoinNode extends PlanNode {
   JoinKind joinKind();

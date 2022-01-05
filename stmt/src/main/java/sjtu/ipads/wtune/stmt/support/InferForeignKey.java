@@ -1,34 +1,37 @@
 package sjtu.ipads.wtune.stmt.support;
 
-import sjtu.ipads.wtune.sql.ast.ASTNode;
-import sjtu.ipads.wtune.sql.ast.ASTVistor;
-import sjtu.ipads.wtune.sql.ast.constants.BinaryOp;
-import sjtu.ipads.wtune.sql.ast1.constants.Category;
-import sjtu.ipads.wtune.sql.relational.Attribute;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.constants.Category;
 import sjtu.ipads.wtune.sql.schema.Column;
+import sjtu.ipads.wtune.sql.support.resolution.Attribute;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast.constants.ExprKind.BINARY;
-import static sjtu.ipads.wtune.sql.relational.Attribute.ATTRIBUTE;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Binary;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.EQUAL;
 import static sjtu.ipads.wtune.sql.schema.Column.Flag.FOREIGN_KEY;
 import static sjtu.ipads.wtune.sql.schema.Column.Flag.PRIMARY;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.resolveAttribute;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.traceRef;
 
 public class InferForeignKey {
-  public static Map<Column, Column> analyze(ASTNode node) {
+  public static Map<Column, Column> analyze(SqlNode node) {
     final Map<Column, Column> inferred = new HashMap<>();
-    node.accept(ASTVistor.topDownVisit(it -> infer(it, inferred), BINARY));
+    for (SqlNode binary : nodeLocator().accept(Binary).gather(node)) {
+      infer(binary, inferred);
+    }
     return inferred;
   }
 
-  private static void infer(ASTNode binary, Map<Column, Column> inferred) {
-    if (binary.get(BINARY_OP) != BinaryOp.EQUAL) return;
-    final Attribute leftAttr = binary.get(BINARY_LEFT).get(ATTRIBUTE);
-    final Attribute rightAttr = binary.get(BINARY_RIGHT).get(ATTRIBUTE);
+  private static void infer(SqlNode binary, Map<Column, Column> inferred) {
+    if (binary.$(Binary_Op) != EQUAL) return;
+    final Attribute leftAttr = resolveAttribute(binary.$(Binary_Left));
+    final Attribute rightAttr = resolveAttribute(binary.$(Binary_Right));
     if (leftAttr != null && rightAttr != null) {
-      final Column leftCol = leftAttr.column(true), rightCol = rightAttr.column(true);
+      final Column leftCol = traceRef(leftAttr).column(), rightCol = traceRef(rightAttr).column();
       if (leftCol != null && rightCol != null) {
         final boolean isLeftSuspected = isSuspected(leftCol);
         final boolean isRightSuspected = isSuspected(rightCol);

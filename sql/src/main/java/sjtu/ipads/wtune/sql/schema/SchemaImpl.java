@@ -1,16 +1,16 @@
 package sjtu.ipads.wtune.sql.schema;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlKind;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlKind;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import java.util.*;
 import java.util.function.Function;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.schema.Column.Flag.AUTO_INCREMENT;
-import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
 
 class SchemaImpl implements Schema {
   private final String dbType;

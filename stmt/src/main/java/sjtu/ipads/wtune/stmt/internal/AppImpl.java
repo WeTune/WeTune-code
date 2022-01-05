@@ -1,21 +1,16 @@
 package sjtu.ipads.wtune.stmt.internal;
 
-import static java.util.function.Function.identity;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.*;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.dao.SchemaPatchDao;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.function.Function.identity;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.*;
 
 public class AppImpl implements App {
   private final String name;
@@ -30,7 +25,7 @@ public class AppImpl implements App {
   }
 
   public static App of(String name) {
-    return KNOWN_APPS.computeIfAbsent(name, it -> new AppImpl(it, MYSQL));
+    return KNOWN_APPS.computeIfAbsent(name, it -> new AppImpl(it, MySQL));
   }
 
   public static Collection<App> all() {
@@ -59,22 +54,22 @@ public class AppImpl implements App {
   public Properties dbProps() {
     if (connProps == null) {
       connProps = new Properties();
-      if (MYSQL.equals(dbType)) {
+      if (MySQL.equals(dbType)) {
         connProps.setProperty(
             "jdbcUrl", "jdbc:mysql://10.0.0.103:3306/" + name + "_base?useSSL=false");
         connProps.setProperty("username", "root");
         connProps.setProperty("password", "admin");
-        connProps.setProperty("dbType", MYSQL);
+        connProps.setProperty("dbType", MySQL);
 
-      } else if (POSTGRESQL.equals(dbType)) {
+      } else if (PostgreSQL.equals(dbType)) {
         connProps.setProperty("jdbcUrl", "jdbc:postgresql://10.0.0.103:5432/" + name + "_base");
         connProps.setProperty("username", "root");
-        connProps.setProperty("dbType", POSTGRESQL);
+        connProps.setProperty("dbType", PostgreSQL);
 
-      } else if (SQLSERVER.equals(dbType)){
+      } else if (SQLServer.equals(dbType)){
         connProps.setProperty("jdbcUrl", "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=" + name + "_base");
         connProps.setProperty("username", "SA");
-        connProps.setProperty("dbType", SQLSERVER);
+        connProps.setProperty("dbType", SQLServer);
       } else throw new IllegalArgumentException("unknown db type");
     }
 
@@ -133,7 +128,7 @@ public class AppImpl implements App {
 
   private static final Map<String, App> KNOWN_APPS =
       Arrays.stream(APP_NAMES)
-          .map(it -> new AppImpl(it, SQLSERVER_APPS.contains(it)? SQLSERVER :
-                                          (PG_APPS.contains(it) ? POSTGRESQL : MYSQL)))
+          .map(it -> new AppImpl(it, SQLSERVER_APPS.contains(it)? SQLServer :
+                                          (PG_APPS.contains(it) ? PostgreSQL : MySQL)))
           .collect(Collectors.toMap(App::name, identity()));
 }

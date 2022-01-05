@@ -1,19 +1,19 @@
 package sjtu.ipads.wtune.sql.util;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static sjtu.ipads.wtune.common.utils.ArraySupport.linearFind;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Expr;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.TableSource;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Expr_Kind;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.TableSource_Kind;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Expr;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.Expr_Kind;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.TableSource_Kind;
 
 public class SqlCopier {
   private int[] tracks;

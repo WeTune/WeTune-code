@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.stmt;
 
-import java.util.List;
-import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.dao.OptBagStatementDao;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
+
+import java.util.List;
 
 public interface Statement {
   String appName();
@@ -18,7 +19,7 @@ public interface Statement {
 
   boolean isRewritten();
 
-  ASTNode parsed();
+  SqlNode ast();
 
   void setStmtId(int stmtId);
 
@@ -60,7 +61,7 @@ public interface Statement {
     return OptStatementDao.instance().findAll();
   }
 
-  static List<Statement> findAllRewrittenByBagSem(){
+  static List<Statement> findAllRewrittenByBagSem() {
     return OptBagStatementDao.instance().findAll();
   }
 }

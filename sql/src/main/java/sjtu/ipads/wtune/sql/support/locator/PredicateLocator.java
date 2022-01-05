@@ -3,18 +3,18 @@ package sjtu.ipads.wtune.sql.support.locator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.field.FieldKey;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlVisitor;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Binary;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Unary;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Expr;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.QuerySpec_Having;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.QuerySpec_Where;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Joined_On;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Binary;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Unary;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Expr;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.QuerySpec_Having;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.QuerySpec_Where;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Joined_On;
 
 class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
   private final TIntList nodes;

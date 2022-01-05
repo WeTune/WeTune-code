@@ -2,11 +2,11 @@ package sjtu.ipads.wtune.sql.support.locator;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlVisitor;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
 
 abstract class NodeLocator implements SqlVisitor, SqlGatherer, SqlFinder {
   private final TIntList nodes;

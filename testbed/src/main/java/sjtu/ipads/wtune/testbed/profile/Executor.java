@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.testbed.profile;
 
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
+import sjtu.ipads.wtune.testbed.common.Actuator;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Map;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.testbed.common.Actuator;
 
 public interface Executor extends Actuator {
   boolean installParams(Map<ParamDesc, Object> params);

@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.testbed.common;
 
-import java.util.List;
-import java.util.function.Function;
-
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.sql.schema.Table;
+
+import java.util.List;
+import java.util.function.Function;
 
 class TableCollection implements Collection {
   private final Table table;

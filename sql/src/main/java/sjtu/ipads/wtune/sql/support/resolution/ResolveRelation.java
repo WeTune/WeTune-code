@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sql.support.resolution;
 
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.SqlVisitor;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.SqlVisitor;
 import sjtu.ipads.wtune.sql.schema.Table;
 
 import java.util.ArrayList;
@@ -14,13 +14,13 @@ import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.sql.SqlSupport.mkColRef;
 import static sjtu.ipads.wtune.sql.SqlSupport.selectItemNameOf;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.Wildcard_Table;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.Wildcard;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.QuerySpec;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.SetOp;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Derived_Subquery;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Simple_Table;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Wildcard_Table;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Wildcard;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.QuerySpec;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.SetOp;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Derived_Subquery;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Simple_Table;
 import static sjtu.ipads.wtune.sql.support.resolution.Relation.isRelationRoot;
 
 class ResolveRelation implements SqlVisitor {

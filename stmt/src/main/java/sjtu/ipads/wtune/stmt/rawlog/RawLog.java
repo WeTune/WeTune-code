@@ -1,10 +1,10 @@
 package sjtu.ipads.wtune.stmt.rawlog;
 
-import static sjtu.ipads.wtune.stmt.utils.FileUtils.dataFile;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
+
+import static sjtu.ipads.wtune.stmt.utils.FileUtils.dataFile;
 
 public class RawLog implements Iterable<RawStmt>, AutoCloseable {
   private final RawStmtLog stmts;

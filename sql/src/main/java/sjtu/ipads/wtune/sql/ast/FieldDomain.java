@@ -1,30 +1,31 @@
 package sjtu.ipads.wtune.sql.ast;
 
+import sjtu.ipads.wtune.common.field.FieldKey;
+
 import java.util.List;
-import sjtu.ipads.wtune.common.attrs.FieldKey;
 
 public interface FieldDomain {
   String name();
 
-  boolean isInstance(ASTNode node);
+  boolean isInstance(SqlNode node);
 
-  List<FieldKey> fields();
+  List<FieldKey<?>> fields();
 
-  <T, R extends T> FieldKey<R> attr(String name, Class<T> clazz);
+  <T, R extends T> FieldKey<R> field(String name, Class<T> clazz);
 
-  default FieldKey<String> strAttr(String name) {
-    return attr(name, String.class);
+  default FieldKey<String> textField(String name) {
+    return field(name, String.class);
   }
 
-  default FieldKey<Boolean> boolAttr(String name) {
-    return attr(name, Boolean.class);
+  default FieldKey<Boolean> boolField(String name) {
+    return field(name, Boolean.class);
   }
 
-  default FieldKey<ASTNode> nodeAttr(String name) {
-    return attr(name, ASTNode.class);
+  default FieldKey<SqlNode> nodeField(String name) {
+    return field(name, SqlNode.class);
   }
 
-  default FieldKey<List<ASTNode>> nodesAttr(String name) {
-    return attr(name, List.class);
+  default FieldKey<SqlNodes> nodesField(String name) {
+    return field(name, SqlNodes.class);
   }
 }

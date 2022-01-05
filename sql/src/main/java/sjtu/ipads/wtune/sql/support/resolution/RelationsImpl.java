@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.sql.support.resolution;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.TableSource;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.tableSourceNameOf;
-import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.TableSource;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.tableSourceNameOf;
 
 class RelationsImpl implements Relations {
   private final SqlContext ctx;

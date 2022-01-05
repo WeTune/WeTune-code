@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
-import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+import sjtu.ipads.wtune.testbed.common.Collection;
+import sjtu.ipads.wtune.testbed.common.Element;
 
 import java.lang.System.Logger.Level;
 import java.sql.Connection;
@@ -12,9 +12,10 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
-import sjtu.ipads.wtune.testbed.common.Collection;
-import sjtu.ipads.wtune.testbed.common.Element;
+
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
+import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 
 class PopulationActuator extends PreparedStatementActuator implements BatchActuator {
   private final int batchSize;
@@ -29,7 +30,7 @@ class PopulationActuator extends PreparedStatementActuator implements BatchActua
     this.dbType = dbType;
     this.conn = conn;
     this.batchSize = batchSize;
-    this.quotation = MYSQL.equals(dbType) ? '`' : '"';
+    this.quotation = MySQL.equals(dbType) ? '`' : '"';
   }
 
   @Override
@@ -39,12 +40,12 @@ class PopulationActuator extends PreparedStatementActuator implements BatchActua
 
   private void begin0(Collection collection) throws SQLException {
     final Statement stmt = conn.createStatement();
-    if (MYSQL.equals(dbType)) {
+    if (MySQL.equals(dbType)) {
       stmt.execute("set foreign_key_checks=0");
       stmt.execute("set unique_checks=0");
       stmt.execute("truncate table " + quotation + collection.collectionName() + quotation);
 
-    } else if (POSTGRESQL.equals(dbType)) {
+    } else if (PostgreSQL.equals(dbType)) {
       stmt.execute("set session_replication_role='replica'");
       stmt.execute(
           "truncate table " + quotation + collection.collectionName() + quotation + " CASCADE");

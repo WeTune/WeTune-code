@@ -1,15 +1,16 @@
 package sjtu.ipads.wtune.testbed.util;
 
-import static java.lang.Math.abs;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.hash;
-import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10Factor;
-
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+
 import java.util.Arrays;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+
+import static java.lang.Math.abs;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.hash;
+import static sjtu.ipads.wtune.testbed.util.MathHelper.pow10Factor;
 
 public abstract class RandomHelper {
   public static int GLOBAL_SEED = 0x98761234;

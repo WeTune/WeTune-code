@@ -1,8 +1,7 @@
 package sjtu.ipads.wtune.stmt.internal;
 
-import sjtu.ipads.wtune.sql.ASTParser;
-import sjtu.ipads.wtune.sql.ast.ASTNode;
-import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
@@ -13,7 +12,7 @@ public class StatementImpl implements Statement {
   private final String stackTrace;
 
   private int stmtId;
-  private ASTNode parsed;
+  private SqlNode ast;
 
   private boolean isRewritten;
   private Statement otherVersion;
@@ -60,15 +59,12 @@ public class StatementImpl implements Statement {
   }
 
   @Override
-  public ASTNode parsed() {
-    if (parsed == null) {
-      parsed = ASTParser.ofDb(App.of(appName).dbType()).parse(rawSql());
-    }
-
-    return parsed;
+  public SqlNode ast() {
+    if (ast == null) ast = SqlSupport.parseSql(app().dbType(), rawSql);
+    return ast;
   }
 
-  @Override
+    @Override
   public Statement rewritten() {
     if (isRewritten) return this;
     if (otherVersion == null) otherVersion = OptStatementDao.instance().findOne(appName, stmtId);

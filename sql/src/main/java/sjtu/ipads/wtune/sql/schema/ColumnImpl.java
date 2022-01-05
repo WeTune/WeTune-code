@@ -1,15 +1,15 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import sjtu.ipads.wtune.sql.ast1.SqlDataType;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.constants.Category;
-import sjtu.ipads.wtune.sql.util.ASTHelper;
+import sjtu.ipads.wtune.sql.SqlSupport;
+import sjtu.ipads.wtune.sql.ast.SqlDataType;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.constants.Category;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.SqlSupport.simpleName;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.schema.Column.Flag.*;
-import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
 
 class ColumnImpl implements Column {
   private final String table;
@@ -142,7 +142,7 @@ class ColumnImpl implements Column {
 
   @Override
   public StringBuilder toDdl(String dbType, StringBuilder buffer) {
-     buffer.append(ASTHelper.quoted(dbType, name)).append(' ').append(dataType.toString());
+     buffer.append(SqlSupport.quoted(dbType, name)).append(' ').append(dataType.toString());
      if (isFlag(PRIMARY)) buffer.append(' ').append("PRIMARY KEY");
      else if (isFlag(UNIQUE)) buffer.append(' ').append("UNIQUE");
      if (isFlag(NOT_NULL) && !isFlag(PRIMARY)) buffer.append(' ').append("NOT NULL");

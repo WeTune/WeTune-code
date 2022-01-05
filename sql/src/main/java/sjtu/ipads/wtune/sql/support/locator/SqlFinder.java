@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sql.support.locator;
 
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 

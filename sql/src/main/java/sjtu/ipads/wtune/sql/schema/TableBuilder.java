@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
-import sjtu.ipads.wtune.sql.ast1.constants.KeyDirection;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.KeyDirection;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -11,9 +11,9 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.FOREIGN;
-import static sjtu.ipads.wtune.sql.ast1.constants.KeyDirection.ASC;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sql.ast.constants.KeyDirection.ASC;
 
 class TableBuilder {
   private final TableImpl table;

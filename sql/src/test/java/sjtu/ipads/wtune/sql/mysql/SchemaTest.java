@@ -13,8 +13,8 @@ import java.util.List;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.FOREIGN;
 
 public class SchemaTest {
   @Test
@@ -31,7 +31,7 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final Schema schema = SqlSupport.parseSchema(MYSQL, createTable);
+    final Schema schema = SqlSupport.parseSchema(MySQL, createTable);
 
     assertEquals(2, schema.tables().size());
 

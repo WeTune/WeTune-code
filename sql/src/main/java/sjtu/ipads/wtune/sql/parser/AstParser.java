@@ -1,13 +1,13 @@
 package sjtu.ipads.wtune.sql.parser;
 
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.mysql.MySQLAstParser1;
-import sjtu.ipads.wtune.sql.pg.PgAstParser1;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.mysql.MySQLAstParser;
+import sjtu.ipads.wtune.sql.pg.PgAstParser;
 
 import java.util.Properties;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
 
 public interface AstParser {
   SqlNode parse(String string);
@@ -15,16 +15,16 @@ public interface AstParser {
   default void setProperties(Properties props) {}
 
   static AstParser ofDb(String dbType) {
-    if (MYSQL.equals(dbType)) return new MySQLAstParser1();
-    else if (POSTGRESQL.equals(dbType)) return new PgAstParser1();
+    if (MySQL.equals(dbType)) return new MySQLAstParser();
+    else if (PostgreSQL.equals(dbType)) return new PgAstParser();
     else throw new IllegalArgumentException();
   }
 
   static AstParser mysql() {
-    return ofDb(MYSQL);
+    return ofDb(MySQL);
   }
 
   static AstParser postgresql() {
-    return ofDb(POSTGRESQL);
+    return ofDb(PostgreSQL);
   }
 }

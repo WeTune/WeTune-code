@@ -13,12 +13,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.makeDataSource;
-import static sjtu.ipads.wtune.testbed.util.DataSourceHelper.sqlserverProps;
-import static sjtu.ipads.wtune.testbed.util.SQLServerStmtRewriteHelper.*;
+import static sjtu.ipads.wtune.testbed.util.DataSourceSupport.makeDataSource;
+import static sjtu.ipads.wtune.testbed.util.DataSourceSupport.sqlserverProps;
+import static sjtu.ipads.wtune.testbed.util.SQLServerStmtRewriteHelper.regexRewriteForSQLServer;
 
 public class PlanMain2 {
     private static final String ROOT_PATH = "wtune_data/plan/";

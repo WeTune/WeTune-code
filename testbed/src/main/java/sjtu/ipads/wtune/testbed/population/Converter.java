@@ -1,9 +1,9 @@
 package sjtu.ipads.wtune.testbed.population;
 
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sql.ast1.constants.Category;
-import sjtu.ipads.wtune.sql.ast1.constants.DataTypeName;
-import sjtu.ipads.wtune.sql.ast1.SqlDataType;
+import sjtu.ipads.wtune.sql.ast.SqlDataType;
+import sjtu.ipads.wtune.sql.ast.constants.Category;
+import sjtu.ipads.wtune.sql.ast.constants.DataTypeName;
 import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.sql.schema.Column.Flag;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;

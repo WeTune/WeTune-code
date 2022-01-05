@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sql.plan;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 
 import java.util.List;
 

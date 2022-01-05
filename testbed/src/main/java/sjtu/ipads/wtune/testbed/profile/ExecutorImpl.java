@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 import sjtu.ipads.wtune.common.utils.ITriConsumer;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
+import sjtu.ipads.wtune.sql.support.resolution.ParamDesc;
 import sjtu.ipads.wtune.testbed.common.Actuator;
 import sjtu.ipads.wtune.testbed.population.PreparedStatementActuator;
 import sjtu.ipads.wtune.testbed.profile.ParamsGen.IsNull;
@@ -19,7 +19,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-import static sjtu.ipads.wtune.testbed.profile.Profiler.LOG;
+import static sjtu.ipads.wtune.testbed.runner.Profile.LOG;
 
 class ExecutorImpl extends PreparedStatementActuator implements Executor {
   protected final String sql;

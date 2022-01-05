@@ -1,16 +1,16 @@
 package sjtu.ipads.wtune.sql.parser;
 
-import sjtu.ipads.wtune.sql.ast1.*;
-import sjtu.ipads.wtune.sql.ast1.constants.*;
+import sjtu.ipads.wtune.sql.ast.*;
+import sjtu.ipads.wtune.sql.ast.constants.*;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Void;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Void;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.*;
 
 public interface AstBuilderMixin {
   SqlContext ast();

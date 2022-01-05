@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
+import sjtu.ipads.wtune.testbed.common.Collection;
+
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
@@ -10,8 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
-import sjtu.ipads.wtune.testbed.common.Collection;
 
 public class EchoActuator implements BatchActuator {
   private final PrintWriter writer;

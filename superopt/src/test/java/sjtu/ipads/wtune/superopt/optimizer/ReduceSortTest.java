@@ -6,7 +6,6 @@ import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.superopt.TestHelper.parsePlan;
 
 @Tag("optimizer")

@@ -2,8 +2,7 @@ package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast.ASTNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
@@ -17,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =
@@ -53,7 +52,7 @@ public abstract class TestHelper {
     return bank;
   }
 
-  static Set<ASTNode> optimizeStmt(Statement stmt) {
+  static Set<SqlNode> optimizeStmt(Statement stmt) {
     // TODO
     return Collections.emptySet();
   }

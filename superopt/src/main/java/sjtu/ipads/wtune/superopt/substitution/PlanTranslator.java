@@ -3,10 +3,10 @@ package sjtu.ipads.wtune.superopt.substitution;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.NameSequence;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sql.ast1.constants.SetOpKind;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -19,10 +19,10 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.SqlSupport.mkBinary;
 import static sjtu.ipads.wtune.sql.SqlSupport.mkFuncCall;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.ColRef_ColName;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Col;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.EQUAL;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.EQUAL;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
@@ -201,7 +201,7 @@ class PlanTranslator {
           .append(");\n");
     }
 
-    return SqlSupport.parseSchema(MYSQL, builder.toString());
+    return SqlSupport.parseSchema(MySQL, builder.toString());
   }
 
   private static class TableDesc {

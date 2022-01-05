@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.sql.ASTParser;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
@@ -39,8 +38,6 @@ public class TestCalcite implements Runner {
   }
 
   private List<QueryPair> mkPairs(List<String> lines) {
-    ASTParser.setErrorMuted(true);
-
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     int lineNum = -1, supported = 0, unsupported = 0, wrong = 0;
     String tmp = null;
@@ -55,7 +52,7 @@ public class TestCalcite implements Runner {
       assert tmp != null;
       final Statement s0 = Statement.mk("calcite_test", tmp, null);
       final Statement s1 = Statement.mk("calcite_test", line, null);
-      if (s0.parsed() == null || s1.parsed() == null) {
+      if (s0.ast() == null || s1.ast() == null) {
         ++unsupported;
         continue;
       }

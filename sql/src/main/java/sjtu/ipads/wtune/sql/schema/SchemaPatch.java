@@ -1,10 +1,11 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.List;
-import org.apache.commons.lang3.NotImplementedException;
+
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
 
 public interface SchemaPatch {
   enum Type {
@@ -29,7 +30,7 @@ public interface SchemaPatch {
   default String toDDL(String dbType) {
     switch (type()) {
       case FOREIGN_KEY:
-        if (POSTGRESQL.equals(dbType)) {
+        if (PostgreSQL.equals(dbType)) {
           return "ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s_%s_refs_%s\" FOREIGN KEY (%s) REFERENCES \"%s\"(\"%s\")"
               .formatted(
                   table(),
@@ -52,7 +53,7 @@ public interface SchemaPatch {
         }
       case INDEX:
       case UNIQUE:
-        if (POSTGRESQL.equals(dbType)) {
+        if (PostgreSQL.equals(dbType)) {
           return "CREATE %sINDEX \"index_%s\" ON \"%s\"(%s)"
               .formatted(
                   type() == Type.UNIQUE ? "UNIQUE " : "",

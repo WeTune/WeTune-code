@@ -3,12 +3,12 @@ package sjtu.ipads.wtune.sql.plan;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.utils.NameSequence;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind;
-import sjtu.ipads.wtune.sql.ast1.constants.JoinKind;
-import sjtu.ipads.wtune.sql.ast1.constants.LiteralKind;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind;
+import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.LiteralKind;
 import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.schema.Table;
@@ -16,8 +16,8 @@ import sjtu.ipads.wtune.sql.schema.Table;
 import java.util.*;
 
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 
 public abstract class PlanSupport {

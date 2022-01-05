@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.profiler;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.*;
+
+import static sjtu.ipads.wtune.sql.ast.SqlNode.*;
 
 public interface CostQuery {
   double getCost();
@@ -19,9 +20,9 @@ public interface CostQuery {
 
   static CostQuery mk(String dbType, ConnectionProvider provider, String query) {
     return switch (dbType) {
-      case MYSQL -> mysql(provider, query);
-      case POSTGRESQL -> pg(provider, query);
-      case SQLSERVER -> sqlserver(provider, query);
+      case MySQL -> mysql(provider, query);
+      case PostgreSQL -> pg(provider, query);
+      case SQLServer -> sqlserver(provider, query);
       default -> throw new IllegalArgumentException("unknown db type");
     };
   }

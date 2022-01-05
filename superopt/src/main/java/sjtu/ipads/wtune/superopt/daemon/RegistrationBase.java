@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static sjtu.ipads.wtune.stmt.support.Workflow.parameterize;
+import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.installParamMarkers;
 
 public class RegistrationBase implements Registration {
   private static final long TTL = 50 * 60 * 1000; // 50 min
@@ -15,7 +15,7 @@ public class RegistrationBase implements Registration {
 
   @Override
   public void register(Statement stmt, SqlNode optimized) {
-    final String query = stmt.parsed().toString();
+    final String query = stmt.ast().toString();
 
     if (optimized == null) {
       // remember a query that is unable to optimize
@@ -34,8 +34,8 @@ public class RegistrationBase implements Registration {
 
   @Override
   public boolean contains(Statement stmt) {
-    parameterize(stmt.parsed());
-    final Status status = registration.get(stmt.parsed().toString());
+    installParamMarkers(stmt.ast());
+    final Status status = registration.get(stmt.ast().toString());
     return status != null && status.expiration <= System.currentTimeMillis();
   }
 

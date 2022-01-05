@@ -2,7 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.Lazy;
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
@@ -12,7 +12,7 @@ import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import java.util.*;
 
 import static sjtu.ipads.wtune.common.utils.IterableSupport.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findIC;
 import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findRelatedIC;

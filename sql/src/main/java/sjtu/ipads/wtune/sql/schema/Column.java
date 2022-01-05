@@ -1,14 +1,14 @@
 package sjtu.ipads.wtune.sql.schema;
 
-import sjtu.ipads.wtune.sql.ast1.SqlDataType;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.SqlDataType;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
 
 import java.util.Collection;
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.FuncUtils.listFilter;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.FOREIGN;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.FOREIGN;
 
 public interface Column {
   enum Flag {

@@ -1,12 +1,10 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import java.lang.System.Logger.Level;
-import sjtu.ipads.wtune.sql.schema.Schema;
-import sjtu.ipads.wtune.sql.schema.Table;
-import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.common.Element;
+
+import java.lang.System.Logger.Level;
 
 public class SQLPopulator implements Populator {
   private PopulationConfig config;
@@ -55,20 +53,21 @@ public class SQLPopulator implements Populator {
     return generators.bind(element);
   }
 
-  public static void main(String[] args) {
-    final App discourse = App.of("discourse");
-    final Schema schema = discourse.schema("base", true);
-    final Table table = schema.table("api_keys");
-
-    final SQLPopulationConfig config = new SQLPopulationConfig();
-    config.setDefaultUnitCount(100);
-
-    final SQLPopulator populator = new SQLPopulator();
-    populator.setConfig(config);
-
-    populator.populate(Collection.ofTable(table));
-
-    final Generator generator = populator.getGenerator(Element.ofColumn(table.column("user_id")));
-    generator.locate(53).filter(it -> it < 100).limit(1).forEach(System.out::println);
-  }
+  //  public static void main(String[] args) {
+  //    final App discourse = App.of("discourse");
+  //    final Schema schema = discourse.schema("base", true);
+  //    final Table table = schema.table("api_keys");
+  //
+  //    final SQLPopulationConfig config = new SQLPopulationConfig();
+  //    config.setDefaultUnitCount(100);
+  //
+  //    final SQLPopulator populator = new SQLPopulator();
+  //    populator.setConfig(config);
+  //
+  //    populator.populate(Collection.ofTable(table));
+  //
+  //    final Generator generator =
+  // populator.getGenerator(Element.ofColumn(table.column("user_id")));
+  //    generator.locate(53).filter(it -> it < 100).limit(1).forEach(System.out::println);
+  //  }
 }

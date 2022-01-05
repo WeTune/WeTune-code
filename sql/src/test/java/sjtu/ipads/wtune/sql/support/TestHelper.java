@@ -2,10 +2,10 @@ package sjtu.ipads.wtune.sql.support;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.schema.Schema;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 
 public class TestHelper {
   private static final String TEST_SCHEMA =

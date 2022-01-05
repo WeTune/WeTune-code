@@ -2,8 +2,8 @@ package sjtu.ipads.wtune.sql.plan;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,11 +13,11 @@ import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Col;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Table;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_SUBQUERY;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Table;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IN_SUBQUERY;
 import static sjtu.ipads.wtune.sql.plan.DependentRefInspector.inspectDepRefs;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 

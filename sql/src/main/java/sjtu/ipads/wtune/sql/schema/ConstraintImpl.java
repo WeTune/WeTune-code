@@ -1,17 +1,17 @@
 package sjtu.ipads.wtune.sql.schema;
 
 import sjtu.ipads.wtune.common.utils.Commons;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind;
-import sjtu.ipads.wtune.sql.ast1.constants.IndexKind;
-import sjtu.ipads.wtune.sql.ast1.constants.KeyDirection;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.IndexKind;
+import sjtu.ipads.wtune.sql.ast.constants.KeyDirection;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.FOREIGN;
-import static sjtu.ipads.wtune.sql.util.ASTHelper.quoted;
+import static sjtu.ipads.wtune.sql.SqlSupport.quoted;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.FOREIGN;
 
 class ConstraintImpl implements Constraint {
   private final ConstraintKind type;

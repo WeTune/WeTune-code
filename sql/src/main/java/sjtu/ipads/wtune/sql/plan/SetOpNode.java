@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.sql.plan;
 
-import sjtu.ipads.wtune.sql.ast1.constants.SetOpKind;
+import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 
 public interface SetOpNode extends PlanNode {
   boolean deduplicated();

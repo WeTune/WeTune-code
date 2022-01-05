@@ -3,8 +3,8 @@ package sjtu.ipads.wtune.sql;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
-import sjtu.ipads.wtune.sql.ast1.*;
-import sjtu.ipads.wtune.sql.ast1.constants.*;
+import sjtu.ipads.wtune.sql.ast.*;
+import sjtu.ipads.wtune.sql.ast.constants.*;
 import sjtu.ipads.wtune.sql.parser.AstParser;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.util.SqlCopier;
@@ -14,13 +14,14 @@ import java.util.List;
 import java.util.Map;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.*;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.*;
+import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.*;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.*;
 
 public abstract class SqlSupport {
   private static boolean PARSING_ERROR_MUTED = false;
@@ -42,6 +43,13 @@ public abstract class SqlSupport {
 
   public static Schema parseSchema(String dbType, String schemaDef) {
     return Schema.parse(dbType, schemaDef);
+  }
+
+  public static String quoted(String dbType, String name) {
+    if ("mysql".equals(dbType)) return '`' + name + '`';
+    else if ("postgresql".equals(dbType)) return '"' + name + '"';
+    else if ("mssql".equals(dbType)) return '[' + name + ']';
+    else throw new IllegalArgumentException("unknown db type: " + dbType);
   }
 
   public static List<String> splitSql(String str) {
@@ -107,6 +115,10 @@ public abstract class SqlSupport {
     if (inSql) list.add(str.substring(start));
 
     return list;
+  }
+
+  public static String simpleName(String name) {
+    return name == null ? null : unquoted(unquoted(name, '"'), '`').toLowerCase();
   }
 
   public static int[] idsOf(List<SqlNode> nodes) {

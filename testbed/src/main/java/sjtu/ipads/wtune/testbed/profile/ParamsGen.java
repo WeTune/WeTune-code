@@ -2,19 +2,18 @@ package sjtu.ipads.wtune.testbed.profile;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.utils.IterableSupport;
-import sjtu.ipads.wtune.sql.relational.Relation;
 import sjtu.ipads.wtune.sql.schema.Table;
-import sjtu.ipads.wtune.stmt.resolver.JoinGraph;
-import sjtu.ipads.wtune.stmt.resolver.ParamDesc;
-import sjtu.ipads.wtune.stmt.resolver.Params;
+import sjtu.ipads.wtune.sql.support.resolution.*;
 import sjtu.ipads.wtune.testbed.population.Generators;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 
 import java.io.Serializable;
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.*;
+import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.tableOf;
 
 public interface ParamsGen {
   Object NOT_NULL = new NotNull();
@@ -63,7 +62,7 @@ public interface ParamsGen {
    */
   int seedOf(Relation relation);
 
-  static ParamsGen make(Params params, Generators generators) {
+  static ParamsGen mk(Params params, Generators generators) {
     return new ParamsGenImpl(params, generators);
   }
 
@@ -132,7 +131,7 @@ public interface ParamsGen {
     if (scc1.size() == 1) return scc1.get(0);
 
     for (Set<Relation> component1 : scc1)
-      if (IterableSupport.all(component1, t0 -> IterableSupport.any(component0, t1 -> t0.table().equals(t1.table())))) {
+      if (all(component1, t0 -> any(component0, t1 -> Objects.equals(tableOf(t0), tableOf(t1))))) {
         return component1;
       }
 
@@ -141,7 +140,7 @@ public interface ParamsGen {
 
   private static Relation findMatchRelation(Relation rel0, Set<Relation> component1) {
     // actually relation is not rigorously comparable. this is sloppy
-    for (Relation rel1 : component1) if (rel1.table().equals(rel0.table())) return rel1;
+    for (Relation rel1 : component1) if (Objects.equals(tableOf(rel0), tableOf(rel1))) return rel1;
     return null;
   }
 
@@ -157,10 +156,10 @@ public interface ParamsGen {
   private static int seedLimitOf(ParamsGen gen) {
     final PopulationConfig config = gen.generators().config();
     final List<Relation> pivots = gen.pivotRelations();
-    if (pivots.size() == 1) return config.unitCountOf(pivots.get(0).table().name());
+    if (pivots.size() == 1) return config.unitCountOf(tableOf(pivots.get(0)).name());
     else
       return pivots.stream()
-          .map(func(Relation::table).andThen(Table::name))
+          .map(func(ResolutionSupport::tableOf).andThen(Table::name))
           .mapToInt(config::unitCountOf)
           .min()
           .orElseThrow();

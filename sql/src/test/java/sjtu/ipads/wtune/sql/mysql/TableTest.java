@@ -8,7 +8,7 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.schema.Table;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.schema.Column.Flag.*;
 
 public class TableTest {
@@ -25,7 +25,7 @@ public class TableTest {
             + "unique (j DESC) using rtree,"
             + "constraint fk_cons foreign key fk (k) references b(y)"
             + ") ENGINE = 'myisam';";
-    final Schema schema = SqlSupport.parseSchema(MYSQL, createTable);
+    final Schema schema = SqlSupport.parseSchema(MySQL, createTable);
     final Table table = schema.table("t");
 
     {

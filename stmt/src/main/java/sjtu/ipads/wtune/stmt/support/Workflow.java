@@ -1,25 +1,7 @@
 package sjtu.ipads.wtune.stmt.support;
 
-import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.sql.schema.SchemaPatch.Type.FOREIGN_KEY;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.clean;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeBool;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeConstantTable;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeJoinCondition;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeParam;
-import static sjtu.ipads.wtune.stmt.mutator.Mutation.normalizeTuple;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveBoolExpr;
-import static sjtu.ipads.wtune.stmt.resolver.Resolution.resolveParamFull;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
-import sjtu.ipads.wtune.sql.ast.ASTNode;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.schema.Column;
 import sjtu.ipads.wtune.sql.schema.Column.Flag;
 import sjtu.ipads.wtune.sql.schema.Constraint;
@@ -35,14 +17,23 @@ import sjtu.ipads.wtune.stmt.rawlog.RawLog;
 import sjtu.ipads.wtune.stmt.rawlog.RawStmt;
 import sjtu.ipads.wtune.stmt.utils.FileUtils;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.sql.schema.SchemaPatch.Type.FOREIGN_KEY;
+import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.installParamMarkers;
+
 public interface Workflow {
   static void inferForeignKeys(String appName) {
     final Map<Column, Column> inferred = new HashMap<>();
     for (Statement statement : Statement.findByApp(appName)) {
-      final ASTNode ast = statement.parsed();
+      final SqlNode ast = statement.ast();
       ast.context().setSchema(statement.app().schema("base", true));
       //      normalize(ast);
-      inferred.putAll(InferForeignKey.analyze(statement.parsed()));
+      inferred.putAll(InferForeignKey.analyze(statement.ast()));
     }
     final SchemaPatchDao dao = SchemaPatchDao.instance();
     dao.beginBatch();
@@ -94,7 +85,11 @@ public interface Workflow {
     final List<Statement> existing = dao.findByApp(appName);
 
     final Set<String> keys = new HashSet<>();
-    for (Statement stmt : existing) keys.add(normalizeParam(stmt.parsed()).toString());
+    for (Statement stmt : existing) {
+      final SqlNode ast = stmt.ast();
+      installParamMarkers(ast);
+      keys.add(ast.toString());
+    }
 
     int nextId = maxId(existing);
     int count = 0, added = 0;
@@ -111,7 +106,10 @@ public interface Workflow {
 
       final String stackTrace = log.stackTrace() == null ? "" : log.stackTrace().toString();
       final Statement stmt = Statement.mk(appName, sql, stackTrace);
-      final String key = normalizeParam(stmt.parsed()).toString();
+      final SqlContext ctx = stmt.ast().context();
+      ctx.setSchema(stmt.app().schema("base"));
+      installParamMarkers(stmt.ast());
+      final String key = stmt.ast().toString();
 
       if (keys.add(key)) {
         stmt.setStmtId(++nextId);
@@ -128,18 +126,6 @@ public interface Workflow {
     logs.close();
 
     System.out.println(added + " statements added to " + appName);
-  }
-
-  static void parameterize(ASTNode root) {
-    normalizeParam(root);
-  }
-
-  static void normalize(ASTNode root) {
-    clean(root);
-    normalizeBool(root);
-    normalizeTuple(root);
-    normalizeConstantTable(root);
-    normalizeJoinCondition(root);
   }
 
   private static int maxId(List<Statement> stmts) {

@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.IOSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
@@ -25,7 +25,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
-import static sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport.normalizeAst;
+import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 
 public class OptimizeQuery implements Runner {
   private Path out, trace, err;

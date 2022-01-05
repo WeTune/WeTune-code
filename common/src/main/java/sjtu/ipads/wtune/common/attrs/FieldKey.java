@@ -8,10 +8,6 @@ import static sjtu.ipads.wtune.common.utils.FuncUtils.deaf;
 public interface FieldKey<T> {
   String name();
 
-  default boolean isPresent(Fields owner) {
-    return isPresent(owner, this);
-  }
-
   default T get(Fields owner) {
     return get0(owner, this);
   }
@@ -43,10 +39,6 @@ public interface FieldKey<T> {
 
   default T rescue(Fields owner, Object obj) {
     return null;
-  }
-
-  static boolean isPresent(Fields owner, FieldKey<?> key) {
-    return owner.directAttrs().containsKey(key);
   }
 
   @SuppressWarnings("unchecked")

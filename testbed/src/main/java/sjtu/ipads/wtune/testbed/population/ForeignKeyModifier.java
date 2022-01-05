@@ -1,9 +1,10 @@
 package sjtu.ipads.wtune.testbed.population;
 
-import static java.util.stream.IntStream.iterate;
+import sjtu.ipads.wtune.testbed.common.BatchActuator;
 
 import java.util.stream.IntStream;
-import sjtu.ipads.wtune.testbed.common.BatchActuator;
+
+import static java.util.stream.IntStream.iterate;
 
 class ForeignKeyModifier implements Modifier {
   private final Generator delegation;

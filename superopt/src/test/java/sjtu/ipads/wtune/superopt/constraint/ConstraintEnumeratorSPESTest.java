@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
-import sjtu.ipads.wtune.superopt.fragment.*;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupportSPES;
+import sjtu.ipads.wtune.superopt.fragment.Symbol;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -27,7 +30,9 @@ import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 public class ConstraintEnumeratorSPESTest {
   private static final String WeTune = "WeTune";
   private static final String SPES = "SPES";
-  private static void doTest(String mode, String fragment0, String fragment1, String... expectations) {
+
+  private static void doTest(
+      String mode, String fragment0, String fragment1, String... expectations) {
     final Fragment f0 = Fragment.parse(fragment0, null);
     final Fragment f1 = Fragment.parse(fragment1, null);
     final SymbolNaming naming = SymbolNaming.mk();
@@ -62,15 +67,14 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testUnion() {
-    doTest(SPES,
-        "Union*(Proj(Input),Proj(Input))",
-        "Union*(Proj(Input),Proj(Input))");
+    doTest(SPES, "Union*(Proj(Input),Proj(Input))", "Union*(Proj(Input),Proj(Input))");
   }
 
   @Test
   void testUnion1() {
     // Some pruning issues
-    doTest(SPES,
+    doTest(
+        SPES,
         "Union*(Proj(Input),Proj(InnerJoin(Input,Input)))",
         "Union*(Proj(InnerJoin(Input,Input)),Proj(Input))");
   }
@@ -79,9 +83,9 @@ public class ConstraintEnumeratorSPESTest {
   void testAgg0() {
     final Substitution rule =
         Substitution.parse(
-            "Agg<a0 a1 p0>(Input<t0>)|" +
-                "Agg<a2 a3 p1>(Input<t1>)|" +
-                "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0)");
+            "Agg<a0 a1 p0>(Input<t0>)|"
+                + "Agg<a2 a3 p1>(Input<t1>)|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0)");
     var planPair = SubstitutionSupport.translateAsPlan2(rule);
     AlgeNode algeNode = SPESSupport.plan2AlgeNode(planPair.getLeft(), new Context());
     boolean res = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
@@ -90,22 +94,22 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testAgg1() {
-    doTest(SPES,
-        "Agg(InnerJoin(Input,Input))",
-        "Agg(InnerJoin(Input,Input))");
+    doTest(SPES, "Agg(InnerJoin(Input,Input))", "Agg(InnerJoin(Input,Input))");
   }
 
   @Test
   void testAgg2() {
-    // Agg{[`#`.`#` AS c0,COUNT(`#`.`#`)],group=[`#`.`#`],having=P1(COUNT(`#`.`#`)),refs=[q0.c0,q0.c0,q0.c0,q0.c0,]}
+    // Agg{[`#`.`#` AS
+    // c0,COUNT(`#`.`#`)],group=[`#`.`#`],having=P1(COUNT(`#`.`#`)),refs=[q0.c0,q0.c0,q0.c0,q0.c0,]}
     // (Proj{[`#`.`#` AS c0,`#`.`#` AS c0,],refs=[q0.c0,q0.c0,],qual=q2}
     // (Filter{P0(`#`.`#`),refs=[q0.c0,]}
     // (Proj{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}
     // (Input{r0 AS t0}))))
     final Substitution rule =
-        Substitution.parse("Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|" +
-            "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|" +
-            "AttrsSub(a0,t0);AttrsSub(a1,a0);AttrsSub(a2,a0);AttrsSub(a3,a0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p1);PredicateEq(p3,p0)");
+        Substitution.parse(
+            "Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|"
+                + "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,a0);AttrsSub(a2,a0);AttrsSub(a3,a0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p1);PredicateEq(p3,p0)");
     var planPair = SubstitutionSupport.translateAsPlan2(rule);
     final Context ctx = new Context();
     AlgeNode algeNode0 = SPESSupport.plan2AlgeNode(planPair.getLeft(), ctx);
@@ -120,7 +124,8 @@ public class ConstraintEnumeratorSPESTest {
   @Test
   void testIN2InnerJoin1() {
     // Pass
-    doTest(SPES,
+    doTest(
+        SPES,
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))",
         "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2)");
@@ -130,9 +135,9 @@ public class ConstraintEnumeratorSPESTest {
   void testSingleRule() {
     final Substitution rule =
         Substitution.parse(
-            "Proj<a1>(Proj<a0>(Input<t0>))|" +
-            "Proj<a2>(Input<t1>)|" +
-                "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a0)");
+            "Proj<a1>(Proj<a0>(Input<t0>))|"
+                + "Proj<a2>(Input<t1>)|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a0)");
 
     final int answer = LogicSupport.proveEqBySpes(rule);
     System.out.println(answer); // SPES: EQ
@@ -145,7 +150,8 @@ public class ConstraintEnumeratorSPESTest {
   @Test
   void testPlainFilterCollapsing() {
     // Pass
-    doTest(SPES,
+    doTest(
+        SPES,
         "PlainFilter(PlainFilter(Input))",
         "PlainFilter(Input)",
         "AttrsEq(a0,a1);PredicateEq(p0,p1);AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);PredicateEq(p2,p0)");
@@ -154,7 +160,8 @@ public class ConstraintEnumeratorSPESTest {
   @Test
   void testProjCollapsing0() {
     // Pass
-    doTest(SPES,
+    doTest(
+        SPES,
         "Proj(Proj(Input))",
         "Proj(Input)",
         "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a1)");
@@ -163,38 +170,24 @@ public class ConstraintEnumeratorSPESTest {
   @Test
   void testRemoveDeduplication() {
     // Pass, return NEQ
-    doTest(SPES,
-        "Proj*(Input)",
-        "Proj(Input)");
-//        "AttrsSub(a0,t0);Unique(t0,a0);TableEq(t1,t0);AttrsEq(a1,a0)");
+    doTest(SPES, "Proj*(Input)", "Proj(Input)");
+    //        "AttrsSub(a0,t0);Unique(t0,a0);TableEq(t1,t0);AttrsEq(a1,a0)");
   }
 
   // -----------------------Test case of SPES---------------------------------
   @Test
   void testJoinEqualOuterJoin0() {
     // Same result, both 4 rules, Pass
-    doTest(SPES,
-        "Filter(InnerJoin(Input,Input))",
-        "InnerJoin(Input,Filter(Input))"
-    );
-    doTest(WeTune,
-        "Filter(InnerJoin(Input,Input))",
-        "InnerJoin(Input,Filter(Input))"
-    );
+    doTest(SPES, "Filter(InnerJoin(Input,Input))", "InnerJoin(Input,Filter(Input))");
+    doTest(WeTune, "Filter(InnerJoin(Input,Input))", "InnerJoin(Input,Filter(Input))");
   }
 
   @Test
   void testJoinEqualOuterJoin1() {
     // no rules, predicate null problem solved
-    doTest(SPES,
-        "Filter(LeftJoin(Input,Input))",
-        "InnerJoin(Input,Filter(Input))"
-    );
+    doTest(SPES, "Filter(LeftJoin(Input,Input))", "InnerJoin(Input,Filter(Input))");
     // 2 rules with IC
-    doTest(WeTune,
-        "Filter(LeftJoin(Input,Input))",
-        "InnerJoin(Input,Filter(Input))"
-    );
+    doTest(WeTune, "Filter(LeftJoin(Input,Input))", "InnerJoin(Input,Filter(Input))");
   }
 
   // ------------------------Test throwing exceptions-------------------------
@@ -204,7 +197,7 @@ public class ConstraintEnumeratorSPESTest {
     final int numTemplates = templates.size();
     int unionCount = 0;
     for (Fragment fragment : templates) {
-        if (fragment.root().kind() == SET_OP) unionCount++;
+      if (fragment.root().kind() == SET_OP) unionCount++;
     }
     System.out.println("union count: " + unionCount);
     final int totalPairCount = (numTemplates * (numTemplates - 1)) >> 1;

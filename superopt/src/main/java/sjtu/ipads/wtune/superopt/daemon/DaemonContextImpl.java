@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt.daemon;
 import com.google.common.collect.Iterables;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;

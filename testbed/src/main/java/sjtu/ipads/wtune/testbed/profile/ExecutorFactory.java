@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.testbed.profile;
 
 public interface ExecutorFactory {
-  Executor make(String sql);
+  Executor mk(String sql);
 
   default void close() {}
 }

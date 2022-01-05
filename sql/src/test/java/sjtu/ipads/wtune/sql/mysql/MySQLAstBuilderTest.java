@@ -5,27 +5,28 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.ast1.constants.VariableScope;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNodes;
+import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
+import sjtu.ipads.wtune.sql.ast.constants.VariableScope;
 import sjtu.ipads.wtune.sql.mysql.internal.MySQLParser;
 
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.CreateTable;
-import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.ConstraintKind.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.IndexKind.RTREE;
-import static sjtu.ipads.wtune.sql.ast1.constants.KeyDirection.DESC;
-import static sjtu.ipads.wtune.sql.ast1.constants.LiteralKind.*;
-import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.CreateTable;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
+import static sjtu.ipads.wtune.sql.ast.constants.ConstraintKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.IndexKind.RTREE;
+import static sjtu.ipads.wtune.sql.ast.constants.KeyDirection.DESC;
+import static sjtu.ipads.wtune.sql.ast.constants.LiteralKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.UnaryOpKind.*;
 import static sjtu.ipads.wtune.sql.mysql.MySQLRecognizerCommon.PipesAsConcat;
 
 public class MySQLAstBuilderTest {
-  private static final MySQLAstParser1 PARSER = new MySQLAstParser1();
+  private static final MySQLAstParser PARSER = new MySQLAstParser();
 
   private static class TestHelper {
     private String sql;
@@ -103,7 +104,7 @@ public class MySQLAstBuilderTest {
           assertTrue(col0Cons.contains(PRIMARY));
           assertFalse(col0Cons.contains(UNIQUE));
           assertFalse(col0Cons.contains(CHECK));
-          assertFalse(col0Cons.contains(NOT_NULL));
+          assertFalse(col0Cons.contains(ConstraintKind.NOT_NULL));
           assertFalse(col0Cons.contains(FOREIGN));
 
           final var col0Refs = col0.$(ColDef_Ref);

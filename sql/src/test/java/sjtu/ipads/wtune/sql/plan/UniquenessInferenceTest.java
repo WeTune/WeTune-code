@@ -2,14 +2,14 @@ package sjtu.ipads.wtune.sql.plan;
 
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.schema.Schema;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 
 class UniquenessInferenceTest {
   @Test

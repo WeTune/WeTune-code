@@ -1,12 +1,12 @@
 package sjtu.ipads.wtune.superopt.daemon;
 
 import org.apache.commons.lang3.NotImplementedException;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.profiler.ConnectionProvider;
 
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.POSTGRESQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
 
 public interface Registration {
   void register(Statement stmt, SqlNode optimized);
@@ -15,9 +15,9 @@ public interface Registration {
 
   static Registration make(String dbType, ConnectionProvider connPool) {
     switch (dbType) {
-      case MYSQL:
+      case MySQL:
         return new MySQLRegistration(connPool);
-      case POSTGRESQL:
+      case PostgreSQL:
         throw new NotImplementedException();
       default:
         throw new IllegalArgumentException();

@@ -1,17 +1,13 @@
 package sjtu.ipads.wtune.testbed.population;
 
+import sjtu.ipads.wtune.testbed.common.Actuator;
+
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import sjtu.ipads.wtune.testbed.common.Actuator;
 
 public abstract class PreparedStatementActuator implements Actuator {
   protected int index;

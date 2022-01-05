@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.sql.plan;
 
-import sjtu.ipads.wtune.sql.ast1.SqlContext;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import java.util.List;
 

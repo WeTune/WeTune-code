@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
@@ -15,7 +15,7 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sql.ast.ASTNode.MYSQL;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 
 @Tag("slow")
 @Tag("enumeration")
@@ -148,8 +148,8 @@ public class TestSPESNewOps {
   }
 
   static PlanContext mkPlan(String sql, String schemaSQL) {
-    final Schema schema = SqlSupport.parseSchema(MYSQL, schemaSQL);
-    final SqlNode ast = SqlSupport.parseSql(MYSQL, sql);
+    final Schema schema = SqlSupport.parseSchema(MySQL, schemaSQL);
+    final SqlNode ast = SqlSupport.parseSql(MySQL, sql);
     return PlanSupport.assemblePlan(ast, schema);
   }
 }

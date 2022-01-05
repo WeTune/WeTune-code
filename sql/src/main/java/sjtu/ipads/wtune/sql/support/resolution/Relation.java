@@ -1,11 +1,11 @@
 package sjtu.ipads.wtune.sql.support.resolution;
 
-import sjtu.ipads.wtune.sql.ast1.SqlNode;
+import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import java.util.List;
 
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
-import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.SimpleSource;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.SimpleSource;
 
 public interface Relation {
   SqlNode rootNode(); // invariant: isRelationBoundary(rootNode())
