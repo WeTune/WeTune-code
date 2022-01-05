@@ -4,8 +4,8 @@ import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.resolution.Attribute;
-import sjtu.ipads.wtune.sql.resolution.Relation;
+import sjtu.ipads.wtune.sql.support.resolution.Attribute;
+import sjtu.ipads.wtune.sql.support.resolution.Relation;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.rootOf;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
@@ -16,7 +16,7 @@ import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.DerivedSource;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.JoinedSource;
-import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.*;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.*;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class InlineLiteralTable {

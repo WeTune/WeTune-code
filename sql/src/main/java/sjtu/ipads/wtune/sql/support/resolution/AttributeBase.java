@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import static sjtu.ipads.wtune.sql.util.ASTHelper.simpleName;
 

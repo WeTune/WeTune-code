@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import com.google.common.collect.Lists;
 import sjtu.ipads.wtune.common.utils.ListSupport;
@@ -23,10 +23,8 @@ import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Expr_Kind;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Name2_1;
 import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.NOT;
 import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.UNARY_MINUS;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.Type.*;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.modifier;
-import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.resolveAttribute;
-import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.traceRef;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.modifier;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class ResolveParam {
@@ -153,7 +151,7 @@ class ResolveParam {
     switch (exprKind) {
       case ColRef:
         {
-          final Attribute reference = traceRef(resolveAttribute(target));
+          final Attribute reference = ResolutionSupport.traceRef(ResolutionSupport.resolveAttribute(target));
           final Column column = reference == null ? null : reference.column();
           if (reference == null || column == null) {
             stack.offerFirst(modifier(GUESS));

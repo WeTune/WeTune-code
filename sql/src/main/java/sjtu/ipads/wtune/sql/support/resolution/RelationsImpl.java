@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;

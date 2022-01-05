@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind;
@@ -10,7 +10,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.Literal_Kind;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.Literal_Value;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.Literal;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
 
 public class ParamModifier {
   public enum Type {

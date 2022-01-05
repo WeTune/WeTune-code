@@ -1,12 +1,8 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 
 import java.util.List;
-
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.Type.*;
 
 class ParamDescImpl implements ParamDesc {
   private int index;

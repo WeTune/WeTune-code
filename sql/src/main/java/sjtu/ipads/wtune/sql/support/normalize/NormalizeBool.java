@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.sql.support.normalize;
 import sjtu.ipads.wtune.sql.ast1.ExprKind;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
-import sjtu.ipads.wtune.sql.support.BoolContextCollector;
 
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
@@ -14,10 +13,11 @@ import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.EQUAL;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IS;
 import static sjtu.ipads.wtune.sql.ast1.constants.LiteralKind.BOOL;
 import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.NOT;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.predicateLocator;
 
 class NormalizeBool {
   static void normalize(SqlNode node) {
-    BoolContextCollector.collect(node).forEach(NormalizeBool::normalizeExpr);
+    for (SqlNode target : predicateLocator().gather(node)) normalizeExpr(target);
   }
 
   private static void normalizeExpr(SqlNode expr) {

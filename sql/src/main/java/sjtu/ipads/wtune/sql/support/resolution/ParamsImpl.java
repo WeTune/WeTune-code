@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -18,8 +18,8 @@ import static sjtu.ipads.wtune.sql.ast1.SqlKind.Query;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Query_Limit;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.Query_Offset;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_SUBQUERY;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.Type.*;
-import static sjtu.ipads.wtune.sql.resolution.ParamModifier.modifier;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.Type.*;
+import static sjtu.ipads.wtune.sql.support.resolution.ParamModifier.modifier;
 
 class ParamsImpl implements Params {
   private final TIntObjectMap<ParamDesc> params;

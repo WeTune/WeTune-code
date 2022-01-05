@@ -17,8 +17,8 @@ public abstract class ClauseLocator implements SqlVisitor, SqlFinder, SqlGathere
   private int exemptQueryNode;
 
   protected ClauseLocator(boolean scoped, boolean bottomUp, int expectedNumNodes) {
-    this.bottomUp = bottomUp;
     this.nodes = expectedNumNodes >= 0 ? new TIntArrayList(expectedNumNodes) : new TIntArrayList();
+    this.bottomUp = bottomUp;
     this.scoped = scoped;
   }
 

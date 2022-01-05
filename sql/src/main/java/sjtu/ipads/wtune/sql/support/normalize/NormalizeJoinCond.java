@@ -5,9 +5,8 @@ import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.resolution.Attribute;
-import sjtu.ipads.wtune.sql.resolution.Relation;
-import sjtu.ipads.wtune.sql.support.locator.ClauseLocator;
+import sjtu.ipads.wtune.sql.support.resolution.Attribute;
+import sjtu.ipads.wtune.sql.support.resolution.Relation;
 
 import java.util.List;
 
@@ -22,7 +21,7 @@ import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Joined_Kind;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Joined_On;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.AND;
 import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.NOT;
-import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.*;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.*;
 import static sjtu.ipads.wtune.sql.support.RenumberListener.watch;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.clauseLocator;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;

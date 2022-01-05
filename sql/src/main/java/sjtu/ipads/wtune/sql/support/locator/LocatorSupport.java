@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.sql.support.locator;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.util.ColRefGatherer;
 
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.ColRef;
 
@@ -14,6 +13,10 @@ public interface LocatorSupport {
 
   static ClauseLocatorBuilder clauseLocator() {
     return new ClauseLocatorBuilder();
+  }
+
+  static PredicateLocatorBuilder predicateLocator() {
+    return new PredicateLocatorBuilder();
   }
 
   static SqlNodes gatherColRefs(SqlNode root) {

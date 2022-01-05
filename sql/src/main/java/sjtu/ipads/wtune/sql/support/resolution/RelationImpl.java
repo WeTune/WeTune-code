@@ -1,11 +1,10 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;

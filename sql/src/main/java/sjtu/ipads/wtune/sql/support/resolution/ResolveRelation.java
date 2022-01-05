@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
@@ -17,8 +17,7 @@ import static sjtu.ipads.wtune.sql.ast1.SqlKind.SetOp;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Derived_Subquery;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.Simple_Table;
-import static sjtu.ipads.wtune.sql.resolution.Relation.isRelationRoot;
-import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.getOuterRelation;
+import static sjtu.ipads.wtune.sql.support.resolution.Relation.isRelationRoot;
 
 class ResolveRelation implements SqlVisitor {
   private final SqlContext ctx;
@@ -49,7 +48,7 @@ class ResolveRelation implements SqlVisitor {
     @Override
     public boolean enterSimpleTableSource(SqlNode tableSource) {
       final RelationImpl relation = relations.enclosingRelationOf(tableSource);
-      final RelationImpl outerRelation = ((RelationImpl) getOuterRelation(relation));
+      final RelationImpl outerRelation = ((RelationImpl) ResolutionSupport.getOuterRelation(relation));
       outerRelation.addInput(relation);
       return false;
     }

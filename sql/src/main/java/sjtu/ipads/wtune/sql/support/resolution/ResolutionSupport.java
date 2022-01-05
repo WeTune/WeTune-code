@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.resolution;
+package sjtu.ipads.wtune.sql.support.resolution;
 
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
@@ -9,7 +9,7 @@ import static sjtu.ipads.wtune.sql.ast1.ExprKind.ColRef;
 import static sjtu.ipads.wtune.sql.ast1.SqlKind.*;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.SimpleSource;
-import static sjtu.ipads.wtune.sql.resolution.Relations.RELATION;
+import static sjtu.ipads.wtune.sql.support.resolution.Relations.RELATION;
 
 public abstract class ResolutionSupport {
   private ResolutionSupport() {}
