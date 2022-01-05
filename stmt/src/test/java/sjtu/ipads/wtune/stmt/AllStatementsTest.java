@@ -32,7 +32,7 @@ public class AllStatementsTest {
     for (Statement stmt : stmts) {
       final ASTNode parsed = stmt.parsed();
       if (parsed == null) {
-        System.out.println(stmt.toString());
+        System.out.println(stmt);
         continue;
       }
       assertFalse(parsed.toString().contains("<??>"));

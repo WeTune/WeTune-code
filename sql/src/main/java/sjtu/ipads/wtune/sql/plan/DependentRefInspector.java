@@ -78,6 +78,7 @@ class DependentRefInspector {
   }
 
   private void inspectExpr(Expression expr) {
+    if (expr == null) return;
     final Values refs = plan.valuesReg().valueRefsOf(expr);
     final List<SqlNode> colRefs = expr.colRefs();
     for (int i = 0, bound = refs.size(); i < bound; i++) {

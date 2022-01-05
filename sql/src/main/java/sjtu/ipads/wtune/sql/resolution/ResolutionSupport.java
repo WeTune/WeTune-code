@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sql.resolution;
 
+import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
@@ -12,6 +13,15 @@ import static sjtu.ipads.wtune.sql.resolution.Relations.RELATION;
 
 public abstract class ResolutionSupport {
   private ResolutionSupport() {}
+
+  static int scopeRootOf(SqlNode node) {
+    if (Relation.isRelationRoot(node)) return node.nodeId();
+
+    final SqlContext ctx = node.context();
+    int cursor = node.nodeId();
+    while (ctx.kindOf(cursor) != Query) cursor = ctx.parentOf(cursor);
+    return cursor;
+  }
 
   public static Relation getEnclosingRelation(SqlNode node) {
     return node.context().getAdditionalInfo(RELATION).enclosingRelationOf(node);

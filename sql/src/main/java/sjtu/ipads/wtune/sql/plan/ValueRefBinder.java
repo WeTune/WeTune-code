@@ -240,8 +240,8 @@ class ValueRefBinder {
     final String name = colName.$(ColName_Col);
 
     for (Value value : lookup) {
-      if ((qualification == null || qualification.equals(value.qualification()))
-          && name.equals(value.name())) {
+      if ((qualification == null || qualification.equalsIgnoreCase(value.qualification()))
+          && name.equalsIgnoreCase(value.name())) {
         return value;
       }
     }

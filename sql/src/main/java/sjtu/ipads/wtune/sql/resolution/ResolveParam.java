@@ -27,7 +27,7 @@ import static sjtu.ipads.wtune.sql.resolution.ParamModifier.Type.*;
 import static sjtu.ipads.wtune.sql.resolution.ParamModifier.modifier;
 import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.resolveAttribute;
 import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.traceRef;
-import static sjtu.ipads.wtune.sql.support.NodeCollector.*;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class ResolveParam {
   private boolean negated;
@@ -228,7 +228,7 @@ class ResolveParam {
   }
 
   private static List<SqlNode> collectParams(SqlNode expr) {
-    return collect2(expr, (n -> !Expr.isInstance(n) ? STOP : isParam(n) ? ACCEPT : NOT_ACCEPT));
+    return nodeLocator().accept(ResolveParam::isParam).stopIfNot(Expr).gather(expr);
   }
 
   private static boolean isParam(SqlNode expr) {

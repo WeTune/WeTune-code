@@ -5,7 +5,7 @@ public interface AdditionalInfo<T extends AdditionalInfo<T>> {
     T init(SqlContext sql);
   }
 
-  void renumberNode(int oldId, int newId);
+  void relocateNode(int oldId, int newId);
 
   void deleteNode(int nodeId);
 }

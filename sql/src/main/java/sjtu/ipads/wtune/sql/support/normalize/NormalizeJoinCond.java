@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.sql.support.normalize;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
 import sjtu.ipads.wtune.sql.resolution.Attribute;
 import sjtu.ipads.wtune.sql.resolution.Relation;
-import sjtu.ipads.wtune.sql.support.ClauseCollector;
-import sjtu.ipads.wtune.sql.support.NodeCollector;
+import sjtu.ipads.wtune.sql.support.locator.ClauseLocator;
 
 import java.util.List;
 
@@ -24,12 +24,16 @@ import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.AND;
 import static sjtu.ipads.wtune.sql.ast1.constants.UnaryOpKind.NOT;
 import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.*;
 import static sjtu.ipads.wtune.sql.support.RenumberListener.watch;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.clauseLocator;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 import static sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport.conjunctExprTo;
 import static sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport.detachExpr;
 
 class NormalizeJoinCond {
   static void normalize(SqlNode root) {
-    NodeCollector.collect(root, QuerySpec::isInstance).forEach(NormalizeJoinCond::process);
+    for (SqlNode querySpec : nodeLocator().accept(QuerySpec).bottomUp().gather(root)) {
+      process(querySpec);
+    }
   }
 
   private static void process(SqlNode querySpec) {
@@ -54,7 +58,7 @@ class NormalizeJoinCond {
   }
 
   private static TIntList collectPlainCondition(SqlNode querySpec) {
-    final SqlNodes onConditions = ClauseCollector.collect(querySpec, Joined_On);
+    final SqlNodes onConditions = clauseLocator().accept(Joined_On).scoped().gather(querySpec);
     if (onConditions.isEmpty()) return new TIntArrayList(0);
 
     final TIntList plainConditions = new TIntArrayList(onConditions.size());
@@ -72,21 +76,12 @@ class NormalizeJoinCond {
     final SqlNode whereClause = querySpec.$(QuerySpec_Where);
     if (whereClause == null) return new TIntArrayList(0);
 
-    final NodeCollector collector =
-        new NodeCollector() {
-          @Override
-          protected int check(SqlNode node) {
-            if (!Expr.isInstance(node)) return STOP;
-            if (Binary.isInstance(node)) {
-              if (AND == node.$(Binary_Op)) return NOT_ACCEPT;
-              else if (isColRefEq(node)) return ACCEPT | STOP;
-            }
-            return STOP;
-          }
-        };
-
-    whereClause.accept(collector);
-    return collector.nodeIds();
+    return nodeLocator()
+        .accept(SqlSupport::isColRefEq)
+        .stopIfNot(Expr)
+        .stopIf(n -> AND != n.$(Binary_Op))
+        .gatherer()
+        .gather(whereClause);
   }
 
   private static boolean isPlainCondition(SqlNode expr) {

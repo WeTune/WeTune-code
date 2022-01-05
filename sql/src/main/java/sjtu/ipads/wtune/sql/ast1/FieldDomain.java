@@ -4,7 +4,7 @@ import sjtu.ipads.wtune.common.field.FieldKey;
 
 import java.util.List;
 
-interface FieldDomain {
+public interface FieldDomain {
   String name();
 
   boolean isInstance(SqlNode node);

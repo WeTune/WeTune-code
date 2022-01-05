@@ -17,24 +17,23 @@ import sjtu.ipads.wtune.sql.schema.Table;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
+import static sjtu.ipads.wtune.common.utils.Commons.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
-import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
+import static sjtu.ipads.wtune.common.utils.SetSupport.map;
 import static sjtu.ipads.wtune.sql.SqlSupport.selectItemNameOf;
 import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
-import static sjtu.ipads.wtune.sql.ast1.SqlKind.SelectItem;
 import static sjtu.ipads.wtune.sql.ast1.SqlKind.TableSource;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.*;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.AND;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_SUBQUERY;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
-import static sjtu.ipads.wtune.sql.util.ColRefGatherer.gatherColRefs;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.gatherColRefs;
 
 class PlanBuilder {
   private static final int FAIL = Integer.MIN_VALUE;
@@ -153,11 +152,13 @@ class PlanBuilder {
       // 1. Extract column refs used in selectItems, groups and having
       final List<SqlNode> colRefs = new ArrayList<>(items.size() + groupBys.size() + 1);
       colRefs.addAll(gatherColRefs(items));
+      final int numRefInProj = colRefs.size();
       colRefs.addAll(gatherColRefs(groupBys));
       if (having != null) colRefs.addAll(gatherColRefs(having));
 
       // 2. build Proj node
-      final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items));
+      final Set<String> aggItemNames = map(items, it -> it.$(SelectItem_Alias));
+      final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items), aggItemNames, numRefInProj);
 
       // 3. build Agg node
       mkAttrs(child, items, attrNames, attrExprs);
@@ -182,6 +183,7 @@ class PlanBuilder {
     if (expr == null) return child;
 
     final TIntList filters = buildFilters0(expr, new TIntArrayList(4));
+    if (filters == null) return FAIL;
     if (filters.isEmpty()) return child;
 
     for (int i = 1, bound = filters.size(); i < bound; ++i)
@@ -201,6 +203,7 @@ class PlanBuilder {
     } else if (opKind == IN_SUBQUERY) {
       final InSubNode filter = InSubNode.mk(Expression.mk(expr.$(Binary_Left)));
       final int subqueryId = build0(expr.$(Binary_Right).$(QueryExpr_Query));
+      if (subqueryId == FAIL) return null;
       final int nodeId = plan.bindNode(filter);
       plan.setChild(nodeId, 1, subqueryId);
 
@@ -209,6 +212,7 @@ class PlanBuilder {
     } else if (Exists.isInstance(expr)) {
       final ExistsNode filter = ExistsNode.mk();
       final int subqueryId = build0(expr.$(Exists_Subquery).$(QueryExpr_Query));
+      if (subqueryId == FAIL) return null;
       final int nodeId = plan.bindNode(filter);
       plan.setChild(nodeId, 1, subqueryId);
 
@@ -274,6 +278,7 @@ class PlanBuilder {
   private int buildJoinedTableSource(SqlNode tableSource) {
     final int lhs = build0(tableSource.$(Joined_Left));
     final int rhs = build0(tableSource.$(Joined_Right));
+    if (lhs == FAIL || rhs == FAIL) return FAIL;
 
     final JoinKind joinKind = tableSource.$(Joined_Kind);
     final SqlNode condition = tableSource.$(Joined_On);
@@ -293,6 +298,7 @@ class PlanBuilder {
     if (alias == null) return onError(FAILURE_MISSING_QUALIFICATION + tableSource);
 
     final int subquery = build0(tableSource.$(Derived_Subquery));
+    if (subquery == FAIL) return FAIL;
 
     int qualifiedNodeId = subquery;
     while (!(plan.nodeAt(qualifiedNodeId) instanceof Qualified))
@@ -363,21 +369,23 @@ class PlanBuilder {
     return alias != null ? alias : synNameSeq.next();
   }
 
-  private ProjNode mkForwardProj(List<SqlNode> colRefs, boolean deduplicated) {
+  private ProjNode mkForwardProj(List<SqlNode> colRefs, boolean deduplicated,
+                                 Set<String> aggItemNames, int numRefsInProj) {
     final List<String> attrNames = new ArrayList<>(colRefs.size());
     final List<Expression> attrExprs = new ArrayList<>(colRefs.size());
     final NameSequence seq = NameSequence.mkIndexed("agg", 0);
 
-    for (SqlNode colRef : colRefs) {
-      final String name = seq.next();
-      final SqlNode expr = copyAst(colRef, tmpCtx);
-      final SqlNode selectItem = SqlNode.mk(tmpCtx, tmpCtx.mkNode(SelectItem));
+    for (int i = 0, bound = colRefs.size(); i < bound; i++) {
+      final SqlNode colRef = colRefs.get(i);
+      if (i >= numRefsInProj) {
+        final SqlNode colName = colRef.$(ColRef_ColName);
+        final String qualification = colName.$(ColName_Table);
+        final String refName = colName.$(ColName_Col);
+        if (qualification == null && aggItemNames.contains(refName)) continue;
+      }
 
-      selectItem.$(SelectItem_Expr, expr);
-      selectItem.$(SelectItem_Alias, seq.next());
-
-      attrNames.add(name);
-      attrExprs.add(Expression.mk(selectItem));
+      attrNames.add(seq.next());
+      attrExprs.add(Expression.mk(colRef));
     }
 
     return ProjNode.mk(deduplicated, attrNames, attrExprs);

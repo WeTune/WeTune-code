@@ -4,7 +4,6 @@ import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast1.ExprKind;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
-import sjtu.ipads.wtune.sql.support.NodeCollector;
 
 import java.util.List;
 
@@ -16,14 +15,16 @@ import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast1.constants.LiteralKind.TEXT;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class Clean {
   static void clean(SqlNode root) {
     SqlNode target;
-    while ((target = NodeCollector.locate(root, Clean::isBoolConstant)) != null)
+    while ((target = nodeLocator().accept(Clean::isBoolConstant).find(root)) != null)
       deleteBoolConstant(target);
 
-    for (SqlNode node : NodeCollector.collect(root, Clean::isTextFunc)) inlineTextConstant(node);
+    for (SqlNode node : nodeLocator().accept(Clean::isTextFunc).gather(root))
+      inlineTextConstant(node);
   }
 
   private static boolean isConstant(SqlNode node) {

@@ -4,7 +4,6 @@ import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.ast1.SqlNodes;
 import sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind;
-import sjtu.ipads.wtune.sql.support.NodeCollector;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
@@ -12,10 +11,11 @@ import static sjtu.ipads.wtune.sql.ast1.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast1.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.ARRAY_CONTAINS;
 import static sjtu.ipads.wtune.sql.ast1.constants.BinaryOpKind.IN_LIST;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class NormalizeTuple {
   static void normalize(SqlNode node) {
-    for (SqlNode target : NodeCollector.collect(node, NormalizeTuple::isTuple))
+    for (SqlNode target : nodeLocator().accept(NormalizeTuple::isTuple).gather(node))
       normalizeTuple(target);
   }
 

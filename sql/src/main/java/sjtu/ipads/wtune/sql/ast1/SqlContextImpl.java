@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.sql.ast1;
 
 import gnu.trove.list.TIntList;
 import sjtu.ipads.wtune.common.tree.LabeledTreeContextBase;
-import sjtu.ipads.wtune.common.tree.LabeledTreeFields;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.schema.Schema;
 
@@ -59,6 +58,8 @@ public class SqlContextImpl extends LabeledTreeContextBase<SqlKind> implements S
       final Nd<SqlKind> n = nodes[i];
       if (n != null && n.parentId() == newNodeId) n.setParent(oldNodeId);
     }
+
+    notifyRelocate(newNodeId, oldNodeId);
   }
 
   @Override
@@ -74,11 +75,7 @@ public class SqlContextImpl extends LabeledTreeContextBase<SqlKind> implements S
   @Override
   protected void relocate(int from, int to) {
     super.relocate(from, to);
-
-    if (additionalInfo.isInitialized())
-      for (AdditionalInfo<?> info : additionalInfo.get().values()) {
-        info.renumberNode(from, to);
-      }
+    notifyRelocate(from, to);
   }
 
   @Override
@@ -97,5 +94,12 @@ public class SqlContextImpl extends LabeledTreeContextBase<SqlKind> implements S
       final TIntList ids = ((SqlNodes) obj).nodeIds();
       for (int i = 0, bound = ids.size(); i < bound; ++i) nodes[ids.get(i)].setParent(NO_SUCH_NODE);
     }
+  }
+
+  private void notifyRelocate(int from, int to) {
+    if (additionalInfo.isInitialized())
+      for (AdditionalInfo<?> info : additionalInfo.get().values()) {
+        info.relocateNode(from, to);
+      }
   }
 }

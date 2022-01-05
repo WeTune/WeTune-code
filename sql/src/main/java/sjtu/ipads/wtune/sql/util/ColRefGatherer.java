@@ -36,8 +36,4 @@ public final class ColRefGatherer implements SqlVisitor {
     for (SqlNode root : roots) collector.gather(root);
     return collector.nodes;
   }
-
-  public static List<SqlNode> gatherColRefs(SqlNode root) {
-    return new ColRefGatherer(false).gather(root);
-  }
 }

@@ -1,9 +1,11 @@
 package sjtu.ipads.wtune.sql.support.normalize;
 
 import sjtu.ipads.wtune.common.field.FieldKey;
+import sjtu.ipads.wtune.common.tree.TreeContext;
 import sjtu.ipads.wtune.sql.ast1.SqlContext;
 import sjtu.ipads.wtune.sql.ast1.SqlNode;
 
+import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
 import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sql.SqlSupport.mkBinary;
@@ -26,13 +28,17 @@ public abstract class NormalizationSupport {
   }
 
   static void detachExpr(SqlNode node) {
+    final SqlContext ctx = node.context();
     final SqlNode parent = node.parent();
-    if (QuerySpec.isInstance(parent)) parent.remove(QuerySpec_Where);
+    if (QuerySpec.isInstance(parent)) {
+      parent.remove(QuerySpec_Where);
+      ctx.setParentOf(node.nodeId(), NO_SUCH_NODE);
+    }
     if (!Binary.isInstance(parent)) return;
 
     final SqlNode lhs = parent.$(Binary_Left), rhs = parent.$(Binary_Right);
     final SqlNode otherSide = nodeEquals(lhs, node) ? rhs : lhs;
-    node.context().displaceNode(parent.nodeId(), otherSide.nodeId());
+    ctx.displaceNode(parent.nodeId(), otherSide.nodeId());
   }
 
   static void conjunctExprTo(SqlNode parent, FieldKey<SqlNode> clause, SqlNode expr) {

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 
 class RelationImpl implements Relation {
   private final SqlNode rootNode;
@@ -44,9 +45,11 @@ class RelationImpl implements Relation {
 
   @Override
   public Attribute resolveAttribute(String qualification, String name) {
-    if (qualification != null && !Objects.equals(qualification, this.qualification)) return null;
+    requireNonNull(name);
+    if (qualification != null && !qualification.equalsIgnoreCase(this.qualification)) return null;
+
     for (Attribute attribute : attributes)
-      if (Objects.equals(attribute.name(), name)) {
+      if (name.equalsIgnoreCase(attribute.name())) {
         return attribute;
       }
     return null;

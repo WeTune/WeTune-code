@@ -11,7 +11,7 @@ import static sjtu.ipads.wtune.sql.ast1.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sql.ast1.SqlNodeFields.ColName_Table;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.PLACEHOLDER_NAME;
-import static sjtu.ipads.wtune.sql.util.ColRefGatherer.gatherColRefs;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.gatherColRefs;
 
 public class ExpressionImpl implements Expression {
   private final SqlNode template;

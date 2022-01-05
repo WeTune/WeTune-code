@@ -41,12 +41,11 @@ class RelationsImpl implements Relations {
 
   @Override
   public RelationImpl enclosingRelationOf(SqlNode node) {
-    if (!Relation.isRelationRoot(node)) return enclosingRelationOf(node.parent());
-    else return relations().get(node.nodeId());
+    return relations().get(ResolutionSupport.scopeRootOf(node));
   }
 
   @Override
-  public void renumberNode(int oldId, int newId) {
+  public void relocateNode(int oldId, int newId) {
     final RelationImpl relation = relations().remove(oldId);
     if (relation != null) relations().put(newId, relation);
   }

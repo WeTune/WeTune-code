@@ -17,7 +17,7 @@ public class RenumberListener extends AbstractList<SqlNode>
   private final SqlContext ctx;
   private TIntList list;
 
-  public RenumberListener(SqlContext ctx) {
+  RenumberListener(SqlContext ctx) {
     this.ctx = ctx;
   }
 
@@ -37,7 +37,7 @@ public class RenumberListener extends AbstractList<SqlNode>
   }
 
   @Override
-  public void renumberNode(int oldId, int newId) {
+  public void relocateNode(int oldId, int newId) {
     for (int i = 0, bound = list.size(); i < bound; ++i) {
       if (list.get(i) == oldId) list.set(i, newId);
     }
@@ -50,7 +50,7 @@ public class RenumberListener extends AbstractList<SqlNode>
 
   @Override
   public RenumberListener init(SqlContext sql) {
-    return new RenumberListener(sql);
+    return this;
   }
 
   @Override

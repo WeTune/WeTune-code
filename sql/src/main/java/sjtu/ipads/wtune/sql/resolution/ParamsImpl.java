@@ -35,7 +35,7 @@ class ParamsImpl implements Params {
   }
 
   @Override
-  public void renumberNode(int oldId, int newId) {
+  public void relocateNode(int oldId, int newId) {
     final ParamDesc param = params.get(oldId);
     if (param != null) params.put(newId, param);
   }

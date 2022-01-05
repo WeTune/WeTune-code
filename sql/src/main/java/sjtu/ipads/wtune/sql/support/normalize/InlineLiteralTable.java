@@ -17,21 +17,21 @@ import static sjtu.ipads.wtune.sql.ast1.TableSourceFields.*;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.DerivedSource;
 import static sjtu.ipads.wtune.sql.ast1.TableSourceKind.JoinedSource;
 import static sjtu.ipads.wtune.sql.resolution.ResolutionSupport.*;
-import static sjtu.ipads.wtune.sql.support.NodeCollector.collect;
+import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.nodeLocator;
 
 class InlineLiteralTable {
   static void normalize(SqlNode node) {
-    final SqlNodes constantTables = collect(node, InlineLiteralTable::canNormalize);
-    for (SqlNode constantTable : constantTables) normalizeConstantTable(constantTable);
+    final SqlNodes literalTables = nodeLocator().accept(InlineLiteralTable::canInline).gather(node);
+    for (SqlNode literalTable : literalTables) inlineLiteralTable(literalTable);
   }
 
-  private static boolean canNormalize(SqlNode node) {
+  private static boolean canInline(SqlNode node) {
     return DerivedSource.isInstance(node)
         && JoinedSource.isInstance(node.parent())
-        && isConstantTable(node);
+        && isLiteralTable(node);
   }
 
-  private static boolean isConstantTable(SqlNode derived) {
+  private static boolean isLiteralTable(SqlNode derived) {
     final SqlNode subquery = derived.$(Derived_Subquery);
     final SqlNode body = subquery.$(Query_Body);
     return !SetOp.isInstance(body)
@@ -39,16 +39,16 @@ class InlineLiteralTable {
         && all(body.$(QuerySpec_SelectItems), it -> Literal.isInstance(it.$(SelectItem_Expr)));
   }
 
-  private static void normalizeConstantTable(SqlNode table) {
+  private static void inlineLiteralTable(SqlNode table) {
     final SqlContext ctx = table.context();
-    constantizeExprs(SqlNode.mk(ctx, rootOf(ctx, table.nodeId())), table);
+    inlineExprs(SqlNode.mk(ctx, rootOf(ctx, table.nodeId())), table);
     reduceTable(table);
   }
 
-  private static void constantizeExprs(SqlNode rootQuery, SqlNode tableSource) {
+  private static void inlineExprs(SqlNode rootQuery, SqlNode tableSource) {
     assert DerivedSource.isInstance(tableSource);
     final Relation targetRelation = getEnclosingRelation(tableSource.$(Derived_Subquery));
-    final SqlNodes colRefs = collect(rootQuery, ColRef::isInstance);
+    final SqlNodes colRefs = nodeLocator().accept(ColRef).gather(rootQuery);
     final SqlContext ctx = rootQuery.context();
 
     for (SqlNode colRef : colRefs) {

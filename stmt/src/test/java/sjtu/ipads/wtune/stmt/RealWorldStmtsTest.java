@@ -7,29 +7,76 @@ import sjtu.ipads.wtune.sql.ast1.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.support.normalize.NormalizationSupport;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sql.ast1.SqlNode.MySQL;
 
 public class RealWorldStmtsTest {
-  @Test
-  @DisplayName("[Stmt] parsing all schema")
+  private static SqlNode parseSql(Statement stmt) {
+    final String dbType = stmt.app().dbType();
+    final String sql0 = stmt.rawSql();
+    return SqlSupport.parseSql(dbType, sql0);
+  }
+
+  private static class TestHelper implements Iterator<Statement> {
+    private final Iterator<Statement> iter;
+    private String startPoint;
+    private Statement next;
+
+    private TestHelper(Iterator<Statement> iter, String startPoint) {
+      this.iter = iter;
+      this.startPoint = startPoint;
+      if (iter.hasNext()) next();
+    }
+
+    @Override
+    public boolean hasNext() {
+      return next != null;
+    }
+
+    @Override
+    public Statement next() {
+      final Statement ret = next;
+      if (ret == null && !iter.hasNext()) throw new NoSuchElementException();
+      if (startPoint == null || startPoint.isEmpty()) {
+        this.next = iter.hasNext() ? iter.next() : null;
+
+      } else {
+        while (iter.hasNext()) {
+          Statement next = iter.next();
+          if (startPoint.equals(next.toString())) {
+            this.next = next;
+            this.startPoint = null;
+            break;
+          }
+        }
+        if (startPoint != null) throw new NoSuchElementException();
+      }
+      return ret;
+    }
+  }
+
+  private static Iterable<Statement> stmts(String startPoint) {
+    final List<Statement> allStmts = Statement.findAll();
+    return () -> new TestHelper(allStmts.iterator(), startPoint);
+  }
+
   void testParseSchema() {
     for (App app : App.all()) app.schema("base");
   }
 
-  @Test
-  @DisplayName("[Stmt] parsing sql for all statements")
   void testParseSql() {
     SqlSupport.muteParsingError();
-    final List<Statement> stmts = Statement.findAll();
 
-    for (Statement stmt : stmts) {
-      final String dbType = stmt.app().dbType();
-      final String sql0 = stmt.rawSql();
-      final SqlNode ast0 = SqlSupport.parseSql(dbType, sql0);
+    final String latch = "";
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast0 = parseSql(stmt);
       if (ast0 == null) {
         System.out.println("skipped: " + stmt);
         continue;
@@ -37,27 +84,18 @@ public class RealWorldStmtsTest {
 
       final String sql1 = ast0.toString();
       assertFalse(sql1.contains("<??>"));
-      final SqlNode ast1 = SqlSupport.parseSql(dbType, sql1);
+      final SqlNode ast1 = SqlSupport.parseSql(stmt.app().dbType(), sql1);
       assertNotNull(ast1);
       assertEquals(sql1, ast1.toString());
     }
   }
 
-  @Test
-  @DisplayName("[Stmt] build plan for all statements")
   void testAssemblePlan() {
     SqlSupport.muteParsingError();
-    final List<Statement> stmts = Statement.findAll();
     final String latch = "";
-    boolean started = latch.isEmpty();
 
-    for (Statement stmt : stmts) {
-      if (latch.equals(stmt.toString())) started = true;
-      if (!started) continue;
-
-      final String dbType = stmt.app().dbType();
-      final String sql0 = stmt.rawSql();
-      final SqlNode ast = SqlSupport.parseSql(dbType, sql0);
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast = parseSql(stmt);
       if (ast == null || !PlanSupport.isSupported(ast)) {
         System.out.println("skipped: " + stmt);
         continue;
@@ -68,12 +106,38 @@ public class RealWorldStmtsTest {
     }
   }
 
+  void testNormalization() {
+    final String latch = "";
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast = parseSql(stmt);
+      final String original = ast.toString();
+      ast.context().setSchema(stmt.app().schema("base"));
+
+      NormalizationSupport.normalizeAst(ast);
+
+      final String modified = ast.toString();
+      assertFalse(modified.contains("<??>"), stmt.toString());
+      assertTrue(!original.contains("1 = 1") || !modified.contains("1 = 1"), stmt.toString());
+      assertTrue(!original.contains("1 = 0") || !modified.contains("1 = 0"), stmt.toString());
+    }
+  }
+
   @Test
-  void test() {
-    final String sql = "Select a.i, max(a.j) from a group by a.i";
-    final SqlNode ast = SqlSupport.parseSql(MySQL, sql);
-    final Schema schema = App.of("test").schema("base");
-    final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
-    System.out.println(plan);
+  @DisplayName("[Stmt] normalize all statements after normalization")
+  void testAssemblePlanAfterNormalization() {
+    final String latch = "discourse-3744";
+    for (Statement stmt : stmts(latch)) {
+      final SqlNode ast = parseSql(stmt);
+      if (ast == null || !PlanSupport.isSupported(ast)) {
+        System.out.println("skipped: " + stmt);
+        continue;
+      }
+
+      ast.context().setSchema(stmt.app().schema("base"));
+      NormalizationSupport.normalizeAst(ast);
+      final PlanContext plan = PlanSupport.assemblePlan(ast, stmt.app().schema("base"));
+
+      assertNotNull(plan, stmt + " " + PlanSupport.getLastError());
+    }
   }
 }
