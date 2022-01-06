@@ -12,8 +12,7 @@ import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
-import static sjtu.ipads.wtune.superopt.fragment.OpKind.INPUT;
-import static sjtu.ipads.wtune.superopt.fragment.OpKind.PROJ;
+import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE;
@@ -161,11 +160,14 @@ class ConstraintEnumerator {
     final EnumerationStage attrsInstantiation = new InstantiationEnumerator(ATTRS);
     final EnumerationStage schemaInstantiation = new InstantiationEnumerator(SCHEMA);
     final EnumerationStage predInstantiation = new InstantiationEnumerator(PRED);
+    final EnumerationStage funcInstantiation = new InstantiationEnumerator(FUNC);
     final EnumerationStage mismatchedOutputBreaker = new MismatchedOutputBreaker(disable0);
     final EnumerationStage tableEqEnum = new PartitionEnumerator(TABLE, dryRun);
     final EnumerationStage attrsEqEnum = new PartitionEnumerator(ATTRS, dryRun);
     final EnumerationStage mismatchedProjSchemaBreaker = new InfeasibleSchemaBreaker(disable1);
     final EnumerationStage predEqEnum = new PartitionEnumerator(PRED, dryRun);
+    final EnumerationStage funcEqEnum = new ForceSymbolEqEnumerator(FUNC);
+    final EnumerationStage unionMismatchedOutputBreaker = new UnionMismatchedOutputBreaker(disable0);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
@@ -174,8 +176,9 @@ class ConstraintEnumerator {
     final VerificationCache cache = new VerificationCache(dryRun, echo);
     final EnumerationStage verifier = new Verifier(useSpes);
 
-    final EnumerationStage[] stages =
-        new EnumerationStage[] {
+    final EnumerationStage[] stages;
+    if (!useSpes){
+      stages = new EnumerationStage[] {
           sourceEnum,
           tableInstantiation,
           attrsInstantiation,
@@ -194,6 +197,30 @@ class ConstraintEnumerator {
           cache,
           verifier
         };
+    } else {
+      stages = new EnumerationStage[] {
+          sourceEnum,
+          tableInstantiation,
+          attrsInstantiation,
+          schemaInstantiation,
+          predInstantiation,
+          funcInstantiation,
+          mismatchedOutputBreaker,
+          tableEqEnum,
+          attrsEqEnum,
+          // mismatchedProjSchemaBreaker,
+          predEqEnum,
+          funcEqEnum,
+          unionMismatchedOutputBreaker,
+          // uniqueEnum,
+          // mismatchedSummationBreaker,
+          // notNullEnum,
+          // refEnum,
+          timeout,
+          cache,
+          verifier
+      };
+    }
 
     for (int i = 0, bound = stages.length - 1; i < bound; ++i)
       stages[i].setNextStage(stages[i + 1]);
@@ -267,6 +294,8 @@ class ConstraintEnumerator {
         return checkAttrsEqForced(index);
       case PredicateEq:
         return checkPredEqForced(index);
+      case FuncEq:
+        return checkFuncEqForced(index);
       case NotNull:
         return checkNotNullForced(index);
       case Unique:
@@ -303,6 +332,10 @@ class ConstraintEnumerator {
 
   private int checkPredEqForced(int index) {
     return FREE;
+  }
+
+  private int checkFuncEqForced(int index) {
+    return MUST_ENABLE;
   }
 
   private int checkNotNullForced(int index) {
@@ -402,6 +435,8 @@ class ConstraintEnumerator {
         return validateAttrsInstantiation(from, to);
       case PRED:
         return validatePredInstantiation(from, to);
+      case FUNC:
+        return validateFuncInstantiation(from, to);
       default:
         throw new IllegalArgumentException("unknown symbol kind " + kind);
     }
@@ -441,7 +476,13 @@ class ConstraintEnumerator {
   }
 
   private boolean validatePredInstantiation(Symbol from, Symbol to) {
-    return true;
+    // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
+    return isHavingPred(from) == isHavingPred(to);
+  }
+
+  private boolean isHavingPred(Symbol pred) {
+    assert pred.kind() == PRED;
+    return pred.ctx().ownerOf(pred).kind() == AGG;
   }
 
   private boolean validateSchemaInstantiation(Symbol from, Symbol to) {
@@ -455,6 +496,10 @@ class ConstraintEnumerator {
       if (currentIsEnabled(i) && other.symbols()[1] == from && other.symbols()[0] != to)
         return false;
     }
+    return true;
+  }
+
+  private boolean validateFuncInstantiation(Symbol from, Symbol to) {
     return true;
   }
 
@@ -574,6 +619,14 @@ class ConstraintEnumerator {
       return isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
           && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]);
 
+    } else if (srcKind == SET_OP && tgtKind == SET_OP) {
+      return (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
+          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]))
+          || (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[1])
+          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[0]));
+    } else if (srcKind == AGG && tgtKind == AGG) {
+      return currentInstantiationOf(((Agg) tgtOp).groupByAttrs()) == ((Agg) srcOp).groupByAttrs()
+          && currentInstantiationOf(((Agg) tgtOp).aggregateAttrs()) == ((Agg) srcOp).aggregateAttrs();
     } else {
       return false;
     }
@@ -582,6 +635,51 @@ class ConstraintEnumerator {
   private static Op skipFilters(Op op) {
     while (op.kind().isFilter()) op = op.predecessors()[0];
     return op;
+  }
+
+  private boolean isUnionInputsAligned() {
+    // Src and tgt output has been aligned, so only check src's union inputs
+    return isUnionInputsAligned(I.sourceTemplate().root());
+  }
+
+  private boolean isUnionInputsAligned(Op op) {
+    int numPredecessors = op.predecessors().length;
+    boolean lhsAligned = numPredecessors < 1 || isUnionInputsAligned(op.predecessors()[0]);
+    boolean rhsAligned = numPredecessors < 2 || isUnionInputsAligned(op.predecessors()[1]);
+    if (!lhsAligned || !rhsAligned) return false;
+
+    if (op.kind() != SET_OP) return true;
+
+    // If op is Union op:
+    return checkAlignedSubFragment(op.predecessors()[0], op.predecessors()[1]);
+  }
+
+  private boolean checkAlignedSubFragment(Op lhsRoot, Op rhsRoot) {
+    lhsRoot = skipFilters(lhsRoot);
+    rhsRoot = skipFilters(rhsRoot);
+
+    final OpKind lhsKind = lhsRoot.kind(), rhsKind = rhsRoot.kind();
+    if (lhsKind == INPUT && rhsKind == INPUT) {
+      return currentIsEq(((Input) rhsRoot).table(), ((Input) lhsRoot).table());
+
+    } else if (lhsKind == PROJ && rhsKind == PROJ) {
+      return currentIsEq(((Proj) rhsRoot).schema(), ((Proj) lhsRoot).schema());
+
+    } else if (lhsKind.isJoin() && rhsKind.isJoin()) {
+      return checkAlignedSubFragment(lhsRoot.predecessors()[0], rhsRoot.predecessors()[0])
+          && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[1]);
+
+    } else if (lhsKind == SET_OP && rhsKind == SET_OP) {
+      return (checkAlignedSubFragment(lhsRoot.predecessors()[0], rhsRoot.predecessors()[0])
+          && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[1]))
+          || (checkAlignedSubFragment(lhsRoot.predecessors()[0], rhsRoot.predecessors()[1])
+          && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[0]));
+    } else if (lhsKind == AGG && rhsKind == AGG) {
+      return currentIsEq(((Agg) rhsRoot).groupByAttrs(), ((Agg) lhsRoot).groupByAttrs())
+          && currentIsEq(((Agg) rhsRoot).aggregateAttrs(), ((Agg) lhsRoot).aggregateAttrs());
+    } else {
+      return false;
+    }
   }
 
   //// Enumeration Stages ////
@@ -790,6 +888,26 @@ class ConstraintEnumerator {
     }
   }
 
+  // FuncEq, temporarily used to enable all constraints
+  private class ForceSymbolEqEnumerator extends AbstractEnumerationStage {
+    private final Symbol.Kind kind;
+    private final int beginIndex, endIndex;
+
+    private ForceSymbolEqEnumerator(Symbol.Kind kind) {
+      this.kind = kind;
+      this.beginIndex = I.beginIndexOfEq(kind);
+      this.endIndex = I.endIndexOfEq(kind);
+    }
+
+    @Override
+    public int enumerate() {
+      currentSet(beginIndex, endIndex, true);
+      final int answer = nextStage().enumerate();
+      currentSet(beginIndex, endIndex, false);
+      return answer;
+    }
+  }
+
   // NotNull, Unique, Reference
   private class BinaryEnumerator extends AbstractEnumerationStage {
     private final Constraint.Kind kind;
@@ -860,6 +978,22 @@ class ConstraintEnumerator {
     @Override
     public int enumerate() {
       if (!disabled && !isOutputAligned()) {
+        return NEQ;
+      }
+      return nextStage().enumerate();
+    }
+  }
+
+  private class UnionMismatchedOutputBreaker extends AbstractEnumerationStage {
+    private final boolean disabled;
+
+    public UnionMismatchedOutputBreaker(boolean disabled) {
+      this.disabled = disabled;
+    }
+
+    @Override
+    public int enumerate() {
+      if (!disabled && !isUnionInputsAligned()) {
         return NEQ;
       }
       return nextStage().enumerate();

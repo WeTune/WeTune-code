@@ -79,15 +79,15 @@ public interface ConstraintSupport {
     List<Substitution> rules = null;
 
     if ((bias & 1) != 0) {
-      final ConstraintsIndex2 I = new ConstraintsIndex2(f0, f1);
-      final ConstraintEnumerator2 enumerator = new ConstraintEnumerator2(I, timeout, tweaks);
+      final ConstraintsIndex I = new ConstraintsIndex(f0, f1);
+      final ConstraintEnumerator enumerator = new ConstraintEnumerator(I, timeout, tweaks);
       enumerator.setNaming(naming);
       rules = enumerator.enumerate();
     }
 
     if ((bias & 2) != 0) {
-      final ConstraintsIndex2 I = new ConstraintsIndex2(f1, f0);
-      final ConstraintEnumerator2 enumerator = new ConstraintEnumerator2(I, timeout, tweaks);
+      final ConstraintsIndex I = new ConstraintsIndex(f1, f0);
+      final ConstraintEnumerator enumerator = new ConstraintEnumerator(I, timeout, tweaks);
       enumerator.setNaming(naming);
 
       final List<Substitution> rules2 = enumerator.enumerate();

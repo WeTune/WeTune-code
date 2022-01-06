@@ -22,8 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_USE_SPES;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints2;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 
 @Tag("enumeration")
@@ -44,7 +43,7 @@ public class ConstraintEnumeratorSPESTest {
     System.out.println(f1.stringify(naming));
 
     int flag = mode.equals(WeTune) ? 0 : ENUM_FLAG_USE_SPES;
-    final List<Substitution> results = enumConstraints2(f0, f1, -1, flag, naming);
+    final List<Substitution> results = enumConstraints(f0, f1, -1, flag, naming);
     final List<String> strings = new ArrayList<>(results.size());
     for (Substitution rule : results) {
       final String str = rule.toString();
@@ -66,6 +65,13 @@ public class ConstraintEnumeratorSPESTest {
   }
 
   @Test
+  void naiveTest() {
+    doTest(SPES,
+        "Input",
+        "Input");
+  }
+
+  @Test
   void testUnion() {
     doTest(SPES, "Union*(Proj(Input),Proj(Input))", "Union*(Proj(Input),Proj(Input))");
   }
@@ -83,10 +89,10 @@ public class ConstraintEnumeratorSPESTest {
   void testAgg0() {
     final Substitution rule =
         Substitution.parse(
-            "Agg<a0 a1 p0>(Input<t0>)|"
-                + "Agg<a2 a3 p1>(Input<t1>)|"
-                + "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0)");
-    var planPair = SubstitutionSupport.translateAsPlan2(rule);
+            "Agg<a0 a1 f0 p0>(Input<t0>)|" +
+                "Agg<a2 a3 f1 p1>(Input<t1>)|" +
+                "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0);FuncEq(f1,f0)");
+    var planPair = SubstitutionSupport.translateAsPlan(rule);
     AlgeNode algeNode = SPESSupport.plan2AlgeNode(planPair.getLeft(), new Context());
     boolean res = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
     System.out.println(planPair.getLeft().toString());
@@ -110,7 +116,7 @@ public class ConstraintEnumeratorSPESTest {
             "Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|"
                 + "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|"
                 + "AttrsSub(a0,t0);AttrsSub(a1,a0);AttrsSub(a2,a0);AttrsSub(a3,a0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p1);PredicateEq(p3,p0)");
-    var planPair = SubstitutionSupport.translateAsPlan2(rule);
+    var planPair = SubstitutionSupport.translateAsPlan(rule);
     final Context ctx = new Context();
     AlgeNode algeNode0 = SPESSupport.plan2AlgeNode(planPair.getLeft(), ctx);
     AlgeNode algeNode1 = SPESSupport.plan2AlgeNode(planPair.getRight(), ctx);
@@ -217,7 +223,7 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void exception0() {
-    doTest(SPES, "Agg(Input)", "Agg(Filter(Proj*(Filter(Input))))");
+    doTest(SPES, "Proj(Input)", "Proj(Agg(Input))");
   }
 
   @Test

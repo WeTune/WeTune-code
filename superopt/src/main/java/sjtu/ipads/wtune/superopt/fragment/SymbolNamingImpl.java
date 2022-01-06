@@ -12,7 +12,7 @@ import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 class SymbolNamingImpl implements SymbolNaming {
   private final BiMap<Symbol, String> names;
   private final List<Pair<String, Symbol>> extraNaming;
-  private final NamingStrategy tableNaming, attrsNaming, predNaming, schemaNaming;
+  private final NamingStrategy tableNaming, attrsNaming, predNaming, schemaNaming, funcNaming;
 
   SymbolNamingImpl() {
     names = HashBiMap.create();
@@ -20,6 +20,7 @@ class SymbolNamingImpl implements SymbolNaming {
     attrsNaming = new NamingStrategyImpl();
     predNaming = new NamingStrategyImpl();
     schemaNaming = new NamingStrategyImpl();
+    funcNaming = new NamingStrategyImpl();
     extraNaming = new ArrayList<>(2);
   }
 
@@ -36,6 +37,9 @@ class SymbolNamingImpl implements SymbolNaming {
 
     for (Symbol symbol : symbols.symbolsOf(Symbol.Kind.SCHEMA))
       names.computeIfAbsent(symbol, schemaNaming::mkName);
+
+    for (Symbol symbol : symbols.symbolsOf(Symbol.Kind.FUNC))
+      names.computeIfAbsent(symbol, funcNaming::mkName);
 
     return this;
   }

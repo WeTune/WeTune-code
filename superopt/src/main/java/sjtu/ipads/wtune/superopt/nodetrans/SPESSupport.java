@@ -14,9 +14,7 @@ public class SPESSupport {
 
       if (algeNode0 == null || algeNode1 == null) return false;
 
-      boolean res = algeNode0.isEq(algeNode1);
-      ctx.close();
-      return res;
+      return algeNode0.isEq(algeNode1);
     } catch (Exception e) {
       // e.printStackTrace();
       return false;

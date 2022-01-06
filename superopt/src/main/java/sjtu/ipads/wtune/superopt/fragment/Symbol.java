@@ -6,7 +6,8 @@ public interface Symbol {
     TABLE,
     ATTRS,
     PRED,
-    SCHEMA
+    SCHEMA,
+    FUNC
   }
 
   Kind kind();

@@ -69,6 +69,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
       case TableEq -> initEqs(TABLE);
       case AttrsEq -> initEqs(ATTRS);
       case PredicateEq -> initEqs(PRED);
+      case FuncEq -> initEqs(FUNC);
       case AttrsSub -> initAttrsSub();
       case Unique -> initUnique();
       case NotNull -> initNotNull();
@@ -261,6 +262,13 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
         final Proj proj = (Proj) op;
         viableSources.putAll(proj.attrs(), lhs);
         return Collections.singletonList(proj.schema());
+      case SET_OP:
+        return ListSupport.join(lhs, rhs);
+      case AGG:
+        final Agg agg = (Agg) op;
+        viableSources.putAll(agg.groupByAttrs(), lhs);
+        viableSources.putAll(agg.aggregateAttrs(), lhs);
+        return List.of(agg.groupByAttrs(), agg.aggregateAttrs());
       default:
         throw new IllegalArgumentException("unsupported op kind " + kind);
     }

@@ -7,11 +7,11 @@ import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan2;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
 
 public class DuplicationChecker {
   static void removeIfDuplicated(SubstitutionBank bank, Substitution rule) {
-    final PlanContext plan = translateAsPlan2(rule).getLeft();
+    final PlanContext plan = translateAsPlan(rule).getLeft();
 
     try {
       final String str = stringifyTree(plan, plan.root());

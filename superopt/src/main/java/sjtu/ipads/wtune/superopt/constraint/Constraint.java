@@ -11,6 +11,7 @@ public interface Constraint {
     AttrsEq(2),
     PredicateEq(2),
     SchemaEq(2),
+    FuncEq(2),
     AttrsSub(2),
     Unique(2),
     NotNull(2),
@@ -25,6 +26,7 @@ public interface Constraint {
       EQ_CONSTRAINT_KIND_OF_SYM_KIND[ATTRS.ordinal()] = AttrsEq;
       EQ_CONSTRAINT_KIND_OF_SYM_KIND[PRED.ordinal()] = PredicateEq;
       EQ_CONSTRAINT_KIND_OF_SYM_KIND[SCHEMA.ordinal()] = SchemaEq;
+      EQ_CONSTRAINT_KIND_OF_SYM_KIND[FUNC.ordinal()] = FuncEq;
     }
 
     private final int numSyms;
@@ -38,7 +40,7 @@ public interface Constraint {
     }
 
     public boolean isEq() {
-      return this == TableEq || this == AttrsEq || this == PredicateEq || this == SchemaEq;
+      return this == TableEq || this == AttrsEq || this == PredicateEq || this == SchemaEq || this == FuncEq;
     }
 
     public boolean isIntegrityConstraint() {

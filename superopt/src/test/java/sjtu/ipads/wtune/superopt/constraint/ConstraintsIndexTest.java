@@ -97,6 +97,7 @@ class ConstraintsIndexTest {
         case AttrsEq -> numEqs(ATTRS);
         case PredicateEq -> numEqs(PRED);
         case SchemaEq -> 0;
+        case FuncEq -> numEqs(FUNC);
         case AttrsSub -> numAttrsSub();
         case Unique -> numUniques();
         case NotNull -> numNotNulls();

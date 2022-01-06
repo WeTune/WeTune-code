@@ -45,7 +45,7 @@ public abstract class LogicSupport {
   }
 
   public static int proveEqBySpes(Substitution rule) {
-    var planPair = SubstitutionSupport.translateAsPlan2(rule);
+    var planPair = SubstitutionSupport.translateAsPlan(rule);
     boolean eq = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
     return eq ? EQ : NEQ;
   }

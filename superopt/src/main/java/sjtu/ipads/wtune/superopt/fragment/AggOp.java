@@ -19,6 +19,11 @@ class AggOp extends BaseOp implements Agg {
   }
 
   @Override
+  public Symbol aggFunc() {
+    return fragment().symbols().symbolAt(this, Symbol.Kind.FUNC, 0);
+  }
+
+  @Override
   public boolean accept0(OpVisitor visitor) {
     return visitor.enterAgg(this);
   }

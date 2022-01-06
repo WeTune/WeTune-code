@@ -8,24 +8,27 @@ import java.util.List;
 import java.util.Map;
 
 class SymbolsImpl implements Symbols {
-  private final Lazy<ListMultimap<Op, Symbol>> tables, attrs, preds, schemas;
+  private final Lazy<ListMultimap<Op, Symbol>> tables, attrs, preds, schemas, funcs;
 
   SymbolsImpl() {
     tables = Lazy.mk(SymbolsImpl::initMap);
     attrs = Lazy.mk(SymbolsImpl::initMap);
     preds = Lazy.mk(SymbolsImpl::initMap);
     schemas = Lazy.mk(SymbolsImpl::initMap);
+    funcs = Lazy.mk(SymbolsImpl::initMap);
   }
 
   SymbolsImpl(
       ListMultimap<Op, Symbol> tables,
       ListMultimap<Op, Symbol> attrs,
       ListMultimap<Op, Symbol> preds,
-      ListMultimap<Op, Symbol> schemas) {
+      ListMultimap<Op, Symbol> schemas,
+      ListMultimap<Op, Symbol> funcs) {
     this.tables = Lazy.mk(tables);
     this.attrs = Lazy.mk(attrs);
     this.preds = Lazy.mk(preds);
     this.schemas = Lazy.mk(schemas);
+    this.funcs = Lazy.mk(funcs);
   }
 
   static Symbols merge(Symbols symbols0, Symbols symbols1) {
@@ -34,7 +37,8 @@ class SymbolsImpl implements Symbols {
     final ListMultimap<Op, Symbol> attrs = merge(s0.attrs.get(), s1.attrs.get());
     final ListMultimap<Op, Symbol> preds = merge(s0.preds.get(), s1.preds.get());
     final ListMultimap<Op, Symbol> schemas = merge(s0.schemas.get(), s1.schemas.get());
-    return new SymbolsImpl(tables, attrs, preds, schemas);
+    final ListMultimap<Op, Symbol> funcs = merge(s0.funcs.get(), s1.funcs.get());
+    return new SymbolsImpl(tables, attrs, preds, schemas, funcs);
   }
 
   private static ListMultimap<Op, Symbol> merge(
@@ -71,6 +75,7 @@ class SymbolsImpl implements Symbols {
       case AGG -> {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.ATTRS);
+        add(op, Symbol.Kind.FUNC);
         add(op, Symbol.Kind.PRED);
       }
     }
@@ -142,6 +147,7 @@ class SymbolsImpl implements Symbols {
       case ATTRS -> attrs.get();
       case PRED -> preds.get();
       case SCHEMA -> schemas.get();
+      case FUNC -> funcs.get();
     };
   }
 
