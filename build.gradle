@@ -24,7 +24,7 @@ subprojects {
         doFirst {
             options.compilerArgs += [
                     '--module-path', classpath.asPath,
-//                    '--enable-preview'
+                    '-encoding', 'UTF-8'
             ]
         }
     }
@@ -34,8 +34,8 @@ subprojects {
         doFirst {
             environment 'LD_LIBRARY_PATH', "$rootDir/lib/"
             jvmArgs += ["-Djava.library.path=$rootDir/lib",
-                        '--module-path', classpath.asPath
-//                        '--enable-preview'
+                        '--module-path', classpath.asPath,
+                        '-Dfile.encoding=UTF-8'
             ]
             workingDir(rootDir)
         }
@@ -45,7 +45,7 @@ subprojects {
         systemProperty('java.library.path', "$rootDir/lib/")
         environment('LD_LIBRARY_PATH', "$rootDir/lib/")
         useJUnitPlatform()
-//        jvmArgs(['--enable-preview'])
+        jvmArgs += ['-Dfile.encoding=UTF-8']
         workingDir(rootDir)
     }
 

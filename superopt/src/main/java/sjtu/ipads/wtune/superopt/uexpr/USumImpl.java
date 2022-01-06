@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import sjtu.ipads.wtune.common.utils.ListSupport;
+
+import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
@@ -21,7 +24,9 @@ record USumImpl(Set<UVar> boundedVars, UTerm body) implements USum {
   @Override
   public String toString() {
     final StringBuilder builder = new StringBuilder("\u2211");
-    joining("{", ",", "}", false, boundedVars, builder);
+    final List<String> vars = ListSupport.map(boundedVars, UVar::toString);
+    vars.sort(String::compareTo);
+    joining("{", ",", "}", false, vars, builder);
     builder.append('(').append(body).append(')');
     return builder.toString();
   }

@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.util.logging.LogManager;
 
 public class Entry {
-  public static final System.Logger LOG = System.getLogger("superopt");
-
   private static final String LOGGER_CONFIG =
       ".level = INFO\n"
           + "java.util.logging.ConsoleHandler.level = INFO\n"
