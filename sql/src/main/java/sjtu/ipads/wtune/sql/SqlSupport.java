@@ -328,10 +328,11 @@ public abstract class SqlSupport {
     return q;
   }
 
-  public static SqlNode mkAggregate(SqlContext ctx, SqlNodes args, String aggFuncName) {
+  public static SqlNode mkAggregate(SqlContext ctx, List<SqlNode> args, String aggFuncName) {
+    final SqlNodes argPack = SqlNodes.mk(ctx, args);
     final SqlNode aggregate = SqlNode.mk(ctx, Aggregate);
     aggregate.$(Aggregate_Name, aggFuncName);
-    aggregate.$(Aggregate_Args, args);
+    aggregate.$(Aggregate_Args, argPack);
     return aggregate;
   }
 
