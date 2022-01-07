@@ -1,11 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
-import sjtu.ipads.wtune.superopt.constraint.Constraints;
-import sjtu.ipads.wtune.superopt.fragment.Symbol;
-import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import java.io.IOException;
@@ -15,20 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SubstitutionSupport {
-  public static Substitution flip(Substitution sub) {
+  public static Substitution flipRule(Substitution sub) {
     return Substitution.mk(sub._1(), sub._0(), sub.constraints());
   }
 
   public static boolean isEligible(Substitution sub) {
-    final Symbols symbols = sub._1().symbols();
-    final Constraints constraints = sub.constraints();
-
-    for (Symbol.Kind kind : Symbol.Kind.values())
-      for (Symbol symbol : symbols.symbolsOf(kind))
-        if (IterableSupport.none(constraints.eqClassOf(symbol), it -> it.ctx() != symbol.ctx())) {
-          return false;
-        }
-
     final Complexity complexity0 = Complexity.mk(sub._0());
     final Complexity complexity1 = Complexity.mk(sub._1());
 

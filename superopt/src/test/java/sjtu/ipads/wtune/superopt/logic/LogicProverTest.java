@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.logic;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.superopt.TestHelper;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
@@ -9,17 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LogicProverTest {
   @Test
-  public void testInnerJoinElimination4() {
-    final Substitution rule =
-        Substitution.parse(
-            "Proj<a2 s0>(InnerJoin<a0 a1>(Input<t0>,Input<t1>))|"
-                + "Proj<a3 s1>(Input<t2>)|"
-                + "AttrsEq(a2,a1);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);"
-                + "Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);"
-                + "TableEq(t2,t0);AttrsEq(a3,a0);SchemaEq(s1,s0)");
-    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
-    final int result = LogicSupport.proveEq(uExprs);
-    assertEquals(LogicSupport.EQ, result);
+  public void testBank() {
+    for (Substitution rule : TestHelper.bankForTest()) {
+      final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+      final int result = LogicSupport.proveEq(uExprs);
+      assertEquals(LogicSupport.EQ, result, rule.toString());
+    }
   }
 
   @Test
@@ -78,6 +74,20 @@ class LogicProverTest {
                 + "Unique(t1,a1);"
                 + "NotNull(t0,a0);Reference(t0,a0,t1,a1);"
                 + "TableEq(t2,t0);AttrsEq(a3,a0);SchemaEq(s3,s2)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result);
+  }
+
+  @Test
+  public void testInnerJoinElimination4() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj<a2 s0>(InnerJoin<a0 a1>(Input<t0>,Input<t1>))|"
+                + "Proj<a3 s1>(Input<t2>)|"
+                + "AttrsEq(a2,a1);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t1);"
+                + "Unique(t1,a1);NotNull(t0,a0);Reference(t0,a0,t1,a1);"
+                + "TableEq(t2,t0);AttrsEq(a3,a0);SchemaEq(s1,s0)");
     final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
     final int result = LogicSupport.proveEq(uExprs);
     assertEquals(LogicSupport.EQ, result);

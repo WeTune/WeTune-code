@@ -6,7 +6,6 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.flip;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
 
 class SubstitutionBankImpl extends AbstractSet<Substitution> implements SubstitutionBank {
@@ -27,12 +26,7 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
       if (line.isEmpty() || !Character.isLetter(line.charAt(0))) continue;
 
       final Substitution substitution = Substitution.parse(line);
-      if (skipCheck) bank.add(substitution);
-      else {
-        if (isEligible(substitution)) bank.add(substitution);
-        final Substitution flipped = flip(substitution);
-        if (isEligible(flipped)) bank.add(flipped);
-      }
+      if (skipCheck || isEligible(substitution)) bank.add(substitution);
     }
 
     return bank;

@@ -3,6 +3,5 @@
 !data.version
 !schemas/
 !schemas/*
-!substitutions
-!test_substitutitions
+!rules.test.txt
 !calcite_tests

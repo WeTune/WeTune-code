@@ -43,7 +43,7 @@ public class EnumRule implements Runner {
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     echo = args.getOptional("echo", boolean.class, false);
-    timeout = args.getOptional("timeout", long.class, 120000L);
+    timeout = args.getOptional("timeout", long.class, 240000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
     numWorker = args.getPositional(0, int.class);
     workerIndex = args.getPositional(1, int.class);

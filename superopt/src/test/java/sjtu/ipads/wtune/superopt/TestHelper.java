@@ -38,12 +38,12 @@ public abstract class TestHelper {
     return PlanSupport.assemblePlan(parseSql(sql), SCHEMA.get());
   }
 
-  static SubstitutionBank getBank() {
+  public static SubstitutionBank bankForTest() {
     if (bank != null) return bank;
 
     try {
       //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "substitutions"));
-      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "test_substitutions"));
+      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "rules.test.txt"));
       //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "test.txt"));
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
