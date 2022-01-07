@@ -76,6 +76,7 @@ class SymbolsImpl implements Symbols {
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.ATTRS);
         add(op, Symbol.Kind.FUNC);
+        add(op, Symbol.Kind.SCHEMA);
         add(op, Symbol.Kind.PRED);
       }
     }
@@ -104,6 +105,8 @@ class SymbolsImpl implements Symbols {
       case AGG -> {
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 0));
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.ATTRS, 1));
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.FUNC, 0));
+        add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.SCHEMA, 0));
         add(newOp, oldSyms.symbolAt(oldOp, Symbol.Kind.PRED, 0));
       }
     }

@@ -268,7 +268,7 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
         final Agg agg = (Agg) op;
         viableSources.putAll(agg.groupByAttrs(), lhs);
         viableSources.putAll(agg.aggregateAttrs(), lhs);
-        return List.of(agg.groupByAttrs(), agg.aggregateAttrs());
+        return Collections.singletonList(agg.schema());
       default:
         throw new IllegalArgumentException("unsupported op kind " + kind);
     }

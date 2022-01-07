@@ -24,6 +24,11 @@ class AggOp extends BaseOp implements Agg {
   }
 
   @Override
+  public Symbol schema() {
+    return fragment().symbols().symbolAt(this, Symbol.Kind.SCHEMA, 0);
+  }
+
+  @Override
   public boolean accept0(OpVisitor visitor) {
     return visitor.enterAgg(this);
   }

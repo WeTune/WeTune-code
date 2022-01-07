@@ -115,7 +115,11 @@ class PlanStringifier {
     for (Expression expr : attrExprs) appendRefs(expr);
     for (Expression expr : groupBys) appendRefs(expr);
     if (having != null) appendRefs(having);
-    builder.append("]}");
+    builder.append("]");
+    if (agg.qualification() != null) {
+      builder.append(",qual=").append(agg.qualification());
+    }
+    builder.append("}");
   }
 
   private void appendProj(int nodeId) {

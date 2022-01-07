@@ -144,4 +144,41 @@ public class PlanTranslatorTest {
         "Proj3{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(Filter2{P0(`#`.`#`),refs=[t0.c0,]}(Input1{r0 AS t0}))",
         pair.getRight().toString());
   }
+
+  @Test
+  public void testAgg() {
+    final Substitution rule =
+        Substitution.parse(
+            "Agg<a0 a1 f0 s0 p0>(Input<t0>)|" +
+                "Agg<a2 a3 f1 s1 p1>(Input<t1>)|" +
+                "AttrsSub(a0,t0);AttrsSub(a1,t0);" +
+                "TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);" +
+                "PredicateEq(p1,p0);FuncEq(f1,f0);SchemaEq(s1,s0)");
+
+    final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
+    System.out.println(pair.getLeft());
+    System.out.println(pair.getRight());
+    assertEquals(
+        "Agg3{[`#`.`#` AS c0,COUNT(`#`.`#`)],group=[`#`.`#`],having=P0(COUNT(`#`.`#`)),refs=[t0.c0,t0.c1,t0.c0,t0.c1,],qual=q0}" +
+            "(Proj2{[`#`.`#` AS c0,`#`.`#` AS c1,],refs=[t0.c0,t0.c1,],qual=q1}(Input1{r0 AS t0}))",
+        pair.getLeft().toString());
+    assertEquals(
+        "Agg3{[`#`.`#` AS c0,COUNT(`#`.`#`)],group=[`#`.`#`],having=P0(COUNT(`#`.`#`)),refs=[t0.c0,t0.c1,t0.c0,t0.c1,],qual=q0}" +
+            "(Proj2{[`#`.`#` AS c0,`#`.`#` AS c1,],refs=[t0.c0,t0.c1,],qual=q2}(Input1{r0 AS t0}))",
+        pair.getRight().toString());
+  }
+
+  @Test
+  public void testAggProjFilter() {
+    final Substitution rule =
+        Substitution.parse(
+            "Agg<a2 a3 f0 s1 p1>(Filter<p0 a1>(Proj<a0 s0>(Input<t0>)))|"
+                + "Agg<a5 a6 f1 s2 p3>(Filter<p2 a4>(Input<t1>))|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,s0);AttrsSub(a3,s0);" +
+                "TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);" +
+                "PredicateEq(p2,p0);PredicateEq(p3,p1);FuncEq(f1,f0);SchemaEq(s2,s1)");
+    final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
+    System.out.println(pair.getLeft());
+    System.out.println(pair.getRight());
+  }
 }

@@ -409,7 +409,7 @@ class PlanTranslator {
       final var attrExprs = List.of(Expression.mk(groupRefAst), Expression.mk(aggAst));
       final var groupExprs = singletonList(Expression.mk(groupRefAst));
       final AggNode aggNode = AggNode.mk(false, attrNames, attrExprs, groupExprs, havingExpr);
-      aggNode.setQualification(aliasSeq.next());
+      aggNode.setQualification(schemaDescOf(agg.schema()).schemaName);
 
       // Insert a proj node: translate aggregation as Agg(Proj(..))
       final var projAttrNames = List.of(groupColName, aggColName);

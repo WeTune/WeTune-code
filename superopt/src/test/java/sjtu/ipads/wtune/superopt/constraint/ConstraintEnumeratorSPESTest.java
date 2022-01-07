@@ -65,13 +65,6 @@ public class ConstraintEnumeratorSPESTest {
   }
 
   @Test
-  void naiveTest() {
-    doTest(SPES,
-        "Input",
-        "Input");
-  }
-
-  @Test
   void testUnion() {
     doTest(SPES, "Union*(Proj(Input),Proj(Input))", "Union*(Proj(Input),Proj(Input))");
   }
@@ -87,15 +80,7 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testAgg0() {
-    final Substitution rule =
-        Substitution.parse(
-            "Agg<a0 a1 f0 p0>(Input<t0>)|" +
-                "Agg<a2 a3 f1 p1>(Input<t1>)|" +
-                "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0);FuncEq(f1,f0)");
-    var planPair = SubstitutionSupport.translateAsPlan(rule);
-    AlgeNode algeNode = SPESSupport.plan2AlgeNode(planPair.getLeft(), new Context());
-    boolean res = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
-    System.out.println(planPair.getLeft().toString());
+    doTest(SPES, "Agg(Input)", "Agg(Input)");
   }
 
   @Test
@@ -113,9 +98,9 @@ public class ConstraintEnumeratorSPESTest {
     // (Input{r0 AS t0}))))
     final Substitution rule =
         Substitution.parse(
-            "Agg<a2 a3 p1>(Filter<p0 a1>(Proj<a0>(Input<t0>)))|"
-                + "Agg<a5 a6 p3>(Filter<p2 a4>(Input<t1>))|"
-                + "AttrsSub(a0,t0);AttrsSub(a1,a0);AttrsSub(a2,a0);AttrsSub(a3,a0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p1);PredicateEq(p3,p0)");
+            "Agg<a2 a3 f0 s1 p1>(Filter<p0 a1>(Proj<a0 s0>(Input<t0>)))|"
+                + "Agg<a5 a6 f1 s2 p3>(Filter<p2 a4>(Input<t1>))|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,s0);AttrsSub(a3,s0);TableEq(t1,t0);AttrsEq(a4,a3);AttrsEq(a5,a2);AttrsEq(a6,a3);PredicateEq(p2,p0);PredicateEq(p3,p1);FuncEq(f1,f0);SchemaEq(s2,s1)");
     var planPair = SubstitutionSupport.translateAsPlan(rule);
     final Context ctx = new Context();
     AlgeNode algeNode0 = SPESSupport.plan2AlgeNode(planPair.getLeft(), ctx);
@@ -135,22 +120,6 @@ public class ConstraintEnumeratorSPESTest {
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))",
         "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2)");
-  }
-
-  @Test
-  void testSingleRule() {
-    final Substitution rule =
-        Substitution.parse(
-            "Proj<a1>(Proj<a0>(Input<t0>))|"
-                + "Proj<a2>(Input<t1>)|"
-                + "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a0)");
-
-    final int answer = LogicSupport.proveEqBySpes(rule);
-    System.out.println(answer); // SPES: EQ
-
-    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
-    final int answer1 = LogicSupport.proveEq(uExprs);
-    System.out.println(answer1); // WeTune: NEQ
   }
 
   @Test

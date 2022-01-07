@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 public interface Agg extends Op {
-  // Agg <grpAttrs aggAttrs aggFunc havingPred>
+  // Agg <grpAttrs aggAttrs aggFunc schema havingPred>
   Symbol groupByAttrs();
 
   Symbol aggregateAttrs();
@@ -9,6 +9,8 @@ public interface Agg extends Op {
   Symbol havingPred();
 
   Symbol aggFunc();
+
+  Symbol schema();
 
   @Override
   default OpKind kind() {

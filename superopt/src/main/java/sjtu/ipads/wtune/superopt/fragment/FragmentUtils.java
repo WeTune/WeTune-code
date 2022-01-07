@@ -103,6 +103,7 @@ class FragmentUtils {
           builder.append('<').append(naming.nameOf(((AggOp) tree).groupByAttrs()));
           builder.append(' ').append(naming.nameOf(((AggOp) tree).aggregateAttrs()));
           builder.append(' ').append(naming.nameOf(((AggOp) tree).aggFunc()));
+          builder.append(' ').append(naming.nameOf(((AggOp) tree).schema()));
           builder.append(' ').append(naming.nameOf(((AggOp) tree).havingPred())).append('>');
           break;
         default:
@@ -162,7 +163,8 @@ class FragmentUtils {
         naming.setName(((AggOp) op).groupByAttrs(), names[1]);
         naming.setName(((AggOp) op).aggregateAttrs(), names[2]);
         naming.setName(((AggOp) op).aggFunc(), names[3]);
-        naming.setName(((AggOp) op).havingPred(), names[4]);
+        naming.setName(((AggOp) op).schema(), names[4]);
+        naming.setName(((AggOp) op).havingPred(), names[5]);
         break;
       default:
         throw new UnsupportedOperationException();
