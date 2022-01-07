@@ -1,5 +1,6 @@
 #!/bin/bash
-cd wtune_data
+
+set -eu -o pipefail
 
 keep="10000000"
 
@@ -16,7 +17,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 t=$(date '+%m_%d_%H_%M')
-name="rule.${t}.txt"
+
+cd wtune_data
+dirname="enumerations"
+mkdir "${dirname}" 2>/dev/null || true
+name="rules.${t}.txt"
 
 files=$(ls -t -1 | ag 'rule.+')
 
@@ -25,9 +30,9 @@ while IFS= read -r line; do
       break
   fi
   if [ -f "${line}/success" ]; then
-    cat "${line}/success" >>"${name}"
+    cat "${line}/success" >>"${dirname}/${name}"
     keep=$((keep - 1))
   fi
 done <<<"${files}"
 
-ln -sfr "${name}" "rules.partial.txt"
+ln -sfr "${dirname}/${name}" "rules.partial.txt"
