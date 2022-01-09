@@ -20,6 +20,7 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
   public final LongMetric elapsedEq = new LongMetric("Eq(ms)");
   public final LongMetric elapsedNeq = new LongMetric("Neq(ms)");
   public final LongMetric elapsedUnknown = new LongMetric("Unknown(ms)");
+  public final IntMetric uncertain = new IntMetric("#Uncertain");
 
   private final List<Metric> metrics =
       List.of(
@@ -34,7 +35,8 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
           elapsedEnum,
           elapsedEq,
           elapsedNeq,
-          elapsedUnknown);
+          elapsedUnknown,
+          uncertain);
 
   static EnumerationMetrics open() {
     return EnumerationMetricsContext.instance().local(true);

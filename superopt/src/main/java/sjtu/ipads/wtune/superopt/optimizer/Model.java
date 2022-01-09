@@ -84,11 +84,16 @@ class Model {
     return of(predSym);
   }
 
+  Expression ofFunc(Symbol funcSym) {
+    return of(funcSym);
+  }
+
   boolean assign(Symbol sym, Object assignment) {
     assert sym.kind() != TABLE || assignment instanceof Integer;
     assert sym.kind() != ATTRS || assignment instanceof List<?>;
     assert sym.kind() != PRED || assignment instanceof Expression;
     assert sym.kind() != SCHEMA || assignment instanceof List<?>;
+    assert sym.kind() != FUNC || assignment instanceof Expression;
 
     assignments.get().put(sym, assignment);
 

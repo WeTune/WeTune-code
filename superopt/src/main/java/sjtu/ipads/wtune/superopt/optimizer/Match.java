@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -15,6 +16,7 @@ import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.locateNode;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.FAILURE_UNKNOWN_OP;
 
@@ -146,6 +148,12 @@ class Match {
       case PROJ:
         result = matchProj((Proj) op, nodeId);
         break;
+      case SET_OP:
+        result = matchSetOp((Union) op, nodeId);
+        break;
+      case AGG:
+        result = matchAgg((Agg) op, nodeId);
+        break;
       default:
         throw new IllegalArgumentException("unknown operator: " + op.kind());
     }
@@ -216,6 +224,33 @@ class Match {
         && model.checkConstraints();
   }
 
+  private boolean matchSetOp(Union union, int nodeId) {
+    if (sourcePlan.kindOf(nodeId) != PlanKind.SetOp) return false;
+
+    final SetOpNode setOpNode = (SetOpNode) sourcePlan.nodeAt(nodeId);
+    return setOpNode.opKind() == SetOpKind.UNION
+        && union.isDeduplicated() == setOpNode.deduplicated();
+  }
+
+  private boolean matchAgg(Agg agg, int nodeId) {
+    if (sourcePlan.kindOf(nodeId) != PlanKind.Agg) return false;
+
+    final AggNode aggNode = (AggNode) sourcePlan.nodeAt(nodeId);
+    if (aggNode.attrExprs().size() != 1) return false;
+
+    final ValuesRegistry valuesReg = sourcePlan.valuesReg();
+    final Expression aggFunc = aggNode.attrExprs().get(0);
+    final List<Value> aggRefs = flatMap(aggNode.attrExprs(), valuesReg::valueRefsOf);
+    final List<Value> groupRefs = flatMap(aggNode.groupByExprs(), valuesReg::valueRefsOf);
+    final Expression havingPredExpr = aggNode.havingExpr();
+
+    // TODO
+    return model.assign(agg.aggFunc(), aggFunc)
+        && model.assign(agg.aggregateAttrs(), aggRefs)
+        && model.assign(agg.groupByAttrs(), groupRefs)
+        && (havingPredExpr == null || model.assign(agg.havingPred(), havingPredExpr));
+  }
+
   private Op nextOp(int childIdx) {
     return lastMatchedOp.predecessors()[childIdx];
   }
@@ -262,6 +297,19 @@ class Match {
       final FilterMatcher matcher = new FilterMatcher((Filter) op, plan, nodeId);
       final List<Match> matches = matcher.matchBasedOn(match);
       return linkedListFlatMap(matches, m -> match(m, m.nextOp(0), m.nextNode(0)));
+    }
+
+    if (op.kind() == AGG) {
+      if (!match.matchOne(op, nodeId)) return emptyList();
+      return match(match, op.predecessors()[0], locateNode(plan, nodeId, 0, 0));
+    }
+
+    if (op.kind() == SET_OP) {
+      if (!match.matchOne(op, nodeId)) return emptyList();
+      final Op nextOp0 = match.nextOp(0), nextOp1 = match.nextOp(1);
+      final int nextNode0 = match.nextNode(0), nextNode1 = match.nextNode(1);
+
+      return linkedListFlatMap(match(match, nextOp0, nextNode0), m -> match(m, nextOp1, nextNode1));
     }
 
     OptimizerSupport.setLastError(FAILURE_UNKNOWN_OP + op.kind());

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
+import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -58,6 +59,8 @@ class Instantiation {
         return instantiateFilter((SimpleFilter) op);
       case IN_SUB_FILTER:
         return instantiateInSub((InSubFilter) op);
+      case SET_OP:
+        return instantiateSetOp((Union) op);
       case PROJ:
         return instantiateProj((Proj) op);
       default:
@@ -168,6 +171,64 @@ class Instantiation {
     valuesReg.bindValues(projNodeId, outAttrs);
 
     return projNodeId;
+  }
+
+  private int instantiateSetOp(Union union) {
+    final int lhs = instantiate(union.predecessors()[0]);
+    final int rhs = instantiate(union.predecessors()[1]);
+    if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
+
+    final SetOpNode unionNode = SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
+    final int unionNodeId = newPlan.bindNode(unionNode);
+    newPlan.setChild(unionNodeId, 0, lhs);
+    newPlan.setChild(unionNodeId, 1, rhs);
+
+    return unionNodeId;
+  }
+
+  private int instantiateAgg(Agg agg) {
+    final int child = instantiate(agg.predecessors()[0]);
+    if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
+
+    final List<Value> outValues = null; // TODO
+    if (outValues == null) return fail(FAILURE_INCOMPLETE_MODEL);
+
+    List<Value> aggRefs = model.ofAttrs(instantiationOf(agg.aggregateAttrs()));
+    List<Value> groupRefs = model.ofAttrs(instantiationOf(agg.groupByAttrs()));
+    final Expression aggFunc = model.ofFunc(instantiationOf(agg.aggFunc()));
+    final Expression havingPred = model.ofPred(instantiationOf(agg.havingPred()));
+    if (aggRefs == null || groupRefs == null || aggFunc == null)
+      return fail(FAILURE_INCOMPLETE_MODEL);
+
+    final List<Value> inValues = outValuesOf(child);
+
+    aggRefs = reBinder.rebindRefs(aggRefs, inValues);
+    if (aggRefs == null) return fail(FAILURE_FOREIGN_VALUE);
+
+    groupRefs = reBinder.rebindRefs(groupRefs, ListSupport.join(outValues, inValues));
+    if (groupRefs == null) return fail(FAILURE_FOREIGN_VALUE);
+
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+    final List<String> names = ListSupport.map(outValues, Value::name);
+    final List<Expression> aggExprs = ListSupport.map(outValues, valuesReg::exprOf);
+    final List<Expression> groupExprs = ListSupport.map(groupRefs, PlanSupport::mkColRefExpr);
+
+    final AggNode aggNode = AggNode.mk(false, names, aggExprs, groupExprs, havingPred);
+    final int aggNodeId = newPlan.bindNode(aggNode);
+
+    return aggNodeId; // TODO
+    //
+    //    final Expression havingPred = model.ofPred(instantiationOf(agg.havingPred()));
+    //
+    //    final List<String> names = ListSupport.map(outAttrs, Value::name);
+    //    final List<Expression> exprs = ListSupport.map(outAttrs, valuesReg::exprOf);
+    //
+    //    final SetOpNode unionNode = SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
+    //    final int unionNodeId = newPlan.bindNode(unionNode);
+    //    newPlan.setChild(unionNodeId, 0, child);
+    //    newPlan.setChild(unionNodeId, 1, rhs);
+    //
+    //    return unionNodeId;
   }
 
   private int fail(String reason) {

@@ -119,6 +119,7 @@ class ConstraintEnumerator {
   private final List<Generalization> knownEqs, knownNeqs;
   private final EnumerationStage[] stages;
   private final int tweak;
+  private boolean uncertain;
 
   private SymbolNaming naming;
   private EnumerationMetrics metric;
@@ -129,6 +130,7 @@ class ConstraintEnumerator {
     this.enabled = new BitSet(I.size());
     this.knownEqs = new LinkedList<>();
     this.knownNeqs = new LinkedList<>();
+    this.uncertain = false;
     this.tweak = tweak;
     this.stages = mkStages();
     currentSet(0, I.size() - 1, false);
@@ -140,6 +142,7 @@ class ConstraintEnumerator {
         this.metric = metric;
 
         stages[0].enumerate();
+
         return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
       }
     }
@@ -167,7 +170,8 @@ class ConstraintEnumerator {
     final EnumerationStage mismatchedProjSchemaBreaker = new InfeasibleSchemaBreaker(disable1);
     final EnumerationStage predEqEnum = new PartitionEnumerator(PRED, dryRun);
     final EnumerationStage funcEqEnum = new ForceSymbolEqEnumerator(FUNC);
-    final EnumerationStage unionMismatchedOutputBreaker = new UnionMismatchedOutputBreaker(disable0);
+    final EnumerationStage unionMismatchedOutputBreaker =
+        new UnionMismatchedOutputBreaker(disable0);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
@@ -177,49 +181,51 @@ class ConstraintEnumerator {
     final EnumerationStage verifier = new Verifier(useSpes);
 
     final EnumerationStage[] stages;
-    if (!useSpes){
-      stages = new EnumerationStage[] {
-          sourceEnum,
-          tableInstantiation,
-          attrsInstantiation,
-          schemaInstantiation,
-          predInstantiation,
-          mismatchedOutputBreaker,
-          tableEqEnum,
-          attrsEqEnum,
-          mismatchedProjSchemaBreaker,
-          predEqEnum,
-          uniqueEnum,
-          mismatchedSummationBreaker,
-          notNullEnum,
-          refEnum,
-          timeout,
-          cache,
-          verifier
-        };
+    if (!useSpes) {
+      stages =
+          new EnumerationStage[] {
+            sourceEnum,
+            tableInstantiation,
+            attrsInstantiation,
+            schemaInstantiation,
+            predInstantiation,
+            mismatchedOutputBreaker,
+            tableEqEnum,
+            attrsEqEnum,
+            mismatchedProjSchemaBreaker,
+            predEqEnum,
+            uniqueEnum,
+            mismatchedSummationBreaker,
+            notNullEnum,
+            refEnum,
+            timeout,
+            cache,
+            verifier
+          };
     } else {
-      stages = new EnumerationStage[] {
-          sourceEnum,
-          tableInstantiation,
-          attrsInstantiation,
-          schemaInstantiation,
-          predInstantiation,
-          funcInstantiation,
-          mismatchedOutputBreaker,
-          tableEqEnum,
-          attrsEqEnum,
-          // mismatchedProjSchemaBreaker,
-          predEqEnum,
-          funcEqEnum,
-          unionMismatchedOutputBreaker,
-          // uniqueEnum,
-          // mismatchedSummationBreaker,
-          // notNullEnum,
-          // refEnum,
-          timeout,
-          cache,
-          verifier
-      };
+      stages =
+          new EnumerationStage[] {
+            sourceEnum,
+            tableInstantiation,
+            attrsInstantiation,
+            schemaInstantiation,
+            predInstantiation,
+            funcInstantiation,
+            mismatchedOutputBreaker,
+            tableEqEnum,
+            attrsEqEnum,
+            // mismatchedProjSchemaBreaker,
+            predEqEnum,
+            funcEqEnum,
+            unionMismatchedOutputBreaker,
+            // uniqueEnum,
+            // mismatchedSummationBreaker,
+            // notNullEnum,
+            // refEnum,
+            timeout,
+            cache,
+            verifier
+          };
     }
 
     for (int i = 0, bound = stages.length - 1; i < bound; ++i)
@@ -621,12 +627,13 @@ class ConstraintEnumerator {
 
     } else if (srcKind == SET_OP && tgtKind == SET_OP) {
       return (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
-          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]))
+              && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]))
           || (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[1])
-          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[0]));
+              && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[0]));
     } else if (srcKind == AGG && tgtKind == AGG) {
       return currentInstantiationOf(((Agg) tgtOp).groupByAttrs()) == ((Agg) srcOp).groupByAttrs()
-          && currentInstantiationOf(((Agg) tgtOp).aggregateAttrs()) == ((Agg) srcOp).aggregateAttrs();
+          && currentInstantiationOf(((Agg) tgtOp).aggregateAttrs())
+              == ((Agg) srcOp).aggregateAttrs();
     } else {
       return false;
     }
@@ -671,9 +678,9 @@ class ConstraintEnumerator {
 
     } else if (lhsKind == SET_OP && rhsKind == SET_OP) {
       return (checkAlignedSubFragment(lhsRoot.predecessors()[0], rhsRoot.predecessors()[0])
-          && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[1]))
+              && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[1]))
           || (checkAlignedSubFragment(lhsRoot.predecessors()[0], rhsRoot.predecessors()[1])
-          && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[0]));
+              && checkAlignedSubFragment(lhsRoot.predecessors()[1], rhsRoot.predecessors()[0]));
     } else if (lhsKind == AGG && rhsKind == AGG) {
       return currentIsEq(((Agg) rhsRoot).groupByAttrs(), ((Agg) lhsRoot).groupByAttrs())
           && currentIsEq(((Agg) rhsRoot).aggregateAttrs(), ((Agg) lhsRoot).aggregateAttrs());
@@ -1106,9 +1113,11 @@ class ConstraintEnumerator {
     public int enumerate() {
       final Substitution rule = I.mkRule(enabled);
       if (!useSpes) {
+        uncertain = true;
         final UExprTranslationResult uExprs = translateToUExpr(rule);
         final int answer = LogicSupport.proveEq(uExprs);
         assert answer != FAST_REJECTED; // fast rejection should be checked early.
+        if (answer == EQ || answer == NEQ) uncertain = false;
         return answer;
       } else {
         return LogicSupport.proveEqBySpes(rule);
