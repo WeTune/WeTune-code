@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.schema.Table;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.ListSupport.tail;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;

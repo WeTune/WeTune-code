@@ -7,7 +7,7 @@ import sjtu.ipads.wtune.sql.ast.SqlNodes;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
+import static sjtu.ipads.wtune.common.utils.FuncSupport.pred;
 
 public class NodeLocatorBuilder {
   private boolean scoped;

@@ -2,9 +2,12 @@ package sjtu.ipads.wtune.common.utils;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public interface IterableSupport {
   static <T> T linearFind(Iterable<? extends T> os, Predicate<? super T> pred) {
@@ -17,15 +20,21 @@ public interface IterableSupport {
   }
 
   static <T> boolean any(Iterable<? extends T> xs, Predicate<? super T> check) {
-    return xs != null && FuncUtils.stream(xs).anyMatch(check);
+    if (xs == null) return false;
+    for (T x : xs) if (check.test(x)) return true;
+    return false;
   }
 
   static <T> boolean all(Iterable<? extends T> xs, Predicate<? super T> check) {
-    return xs == null || FuncUtils.stream(xs).allMatch(check);
+    if (xs == null) return true;
+    for (T x : xs) if (!check.test(x)) return false;
+    return true;
   }
 
   static <T> boolean none(Iterable<? extends T> xs, Predicate<? super T> check) {
-    return xs == null || FuncUtils.stream(xs).noneMatch(check);
+    if (xs == null) return true;
+    for (T x : xs) if (check.test(x)) return false;
+    return true;
   }
 
   static <X, Y> Iterable<Pair<X, Y>> zip(Iterable<? extends X> xs, Iterable<? extends Y> ys) {
@@ -39,5 +48,10 @@ public interface IterableSupport {
     final Iterator<? extends P0> it0 = l0.iterator();
     final Iterator<? extends P1> it1 = l1.iterator();
     while (it0.hasNext() && it1.hasNext()) func.accept(it0.next(), it1.next());
+  }
+
+  static <T> Stream<T> stream(Iterable<T> iterable) {
+    if (iterable instanceof Collection) return ((Collection<T>) iterable).stream();
+    else return StreamSupport.stream(iterable.spliterator(), false);
   }
 }

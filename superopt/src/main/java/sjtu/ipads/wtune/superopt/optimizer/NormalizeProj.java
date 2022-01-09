@@ -3,12 +3,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
@@ -24,8 +21,9 @@ class NormalizeProj {
 
   int normalizeTree(int rootId) {
     final PlanKind kind = plan.kindOf(rootId);
-    for (int i = 0, bound = kind.numChildren(); i < bound; ++i)
-      normalizeTree(plan.childOf(rootId, i));
+    for (int i = 0, bound = kind.numChildren(); i < bound; ++i) {
+      if (normalizeTree(plan.childOf(rootId, i)) == NO_SUCH_NODE) return NO_SUCH_NODE;
+    }
 
     if (kind == Proj && shouldReduceProj(rootId)) return reduceProj(rootId);
     if (shouldInsertProjBefore(rootId)) return insertProjBefore(rootId);
@@ -51,12 +49,11 @@ class NormalizeProj {
     final int childIdx = indexOfChild(plan, position);
     plan.setChild(parent, childIdx, projNode);
     plan.setChild(projNode, 0, position);
+    zip(outputExprs, inputs, (e, ref) -> valuesReg.bindValueRefs(e, newArrayList(ref)));
 
-    final Values outputs = valuesReg.valuesOf(projNode);
-    final Set<Expression> excludedExprs = gatherExcludedExprs(projNode, new HashSet<>());
+    final ValueRefReBinder reBinder = new ValueRefReBinder(plan);
+    if (!reBinder.rebindToRoot(projNode)) return NO_SUCH_NODE;
 
-    zip(outputExprs, inputs, (expr, ref) -> valuesReg.bindValueRefs(expr, newArrayList(ref)));
-    zip(inputs, outputs, (oldRef, newRef) -> valuesReg.displaceRef(oldRef, newRef, excludedExprs));
     PlanSupport.disambiguateQualification(plan);
 
     return projNode;
@@ -75,10 +72,11 @@ class NormalizeProj {
     final Values newRefs = valuesReg.valuesOf(replacement);
     assert oldRefs.size() == newRefs.size();
 
-    zip(oldRefs, newRefs, (oldRef, newRef) -> valuesReg.displaceRef(oldRef, newRef, emptySet()));
-
     plan.detachNode(replacement);
     plan.setChild(parent, childIdx, replacement);
+
+    final ValueRefReBinder reBinder = new ValueRefReBinder(plan);
+    if (!reBinder.rebindToRoot(replacement)) return NO_SUCH_NODE;
 
     return replacement;
   }
@@ -110,43 +108,5 @@ class NormalizeProj {
     }
 
     return true;
-  }
-
-  private Set<Expression> gatherExcludedExprs(int nodeId, Set<Expression> exprs) {
-    final PlanKind kind = plan.kindOf(nodeId);
-    switch (kind) {
-      case Input:
-      case Exists:
-      case SetOp:
-      case Limit:
-        break;
-      case Filter:
-        exprs.add(((SimpleFilterNode) plan.nodeAt(nodeId)).predicate());
-        break;
-      case InSub:
-        exprs.add(((InSubNode) plan.nodeAt(nodeId)).expr());
-        break;
-      case Proj:
-        exprs.addAll(((ProjNode) plan.nodeAt(nodeId)).attrExprs());
-        break;
-      case Agg:
-        {
-          final AggNode agg = (AggNode) plan.nodeAt(nodeId);
-          exprs.addAll(agg.attrExprs());
-          exprs.addAll(agg.groupByExprs());
-          if (agg.havingExpr() != null) exprs.add(agg.havingExpr());
-          break;
-        }
-      case Sort:
-        exprs.addAll(((SortNode) plan.nodeAt(nodeId)).sortSpec());
-        break;
-      case Join:
-        exprs.add(((JoinNode) plan.nodeAt(nodeId)).joinCond());
-        break;
-    }
-
-    for (int i = 0, bound = kind.numChildren(); i < bound; ++i)
-      gatherExcludedExprs(plan.childOf(nodeId, i), exprs);
-    return exprs;
   }
 }

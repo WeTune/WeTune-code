@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.util.Fingerprint;
@@ -9,7 +10,6 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.setMap;
 import static sjtu.ipads.wtune.superopt.TestHelper.parsePlan;
 
 @Tag("optimizer")
@@ -37,7 +37,7 @@ public class FingerprintTest {
     assertEquals(9, fingerprints.size());
     assertEquals(
         Set.of("p", "pf", "ps", "pff", "pfs", "pss", "pfff", "pffs", "pfss"),
-        setMap(fingerprints, Fingerprint::toString));
+        SetSupport.map(fingerprints, Fingerprint::toString));
   }
 
   @Test
@@ -57,6 +57,23 @@ public class FingerprintTest {
         Set.of(
             "p", "pl", "pj", "pjj", "pjl", "plj", "pll", "pjjj", "pjjl", "pjlj", "pljj", "pjll",
             "pljl", "pllj"),
-        setMap(fingerprints, Fingerprint::toString));
+        SetSupport.map(fingerprints, Fingerprint::toString));
+  }
+
+  @Test
+  void test0() {
+    final PlanContext plan =
+        parsePlan(
+            "Select * From a "
+                + "Join b On a.i = b.x "
+                + "Join c On a.i = c.u "
+                + "Left Join a As a1 On a.i = a1.i "
+                + "Where a.i = 1");
+
+    final Set<Fingerprint> fingerprints = Fingerprint.mk(plan, plan.root());
+    assertEquals(7, fingerprints.size());
+    assertEquals(
+        Set.of("p", "pflj", "pfjj", "pfj", "pf", "pfl", "pfjl"),
+        SetSupport.map(fingerprints, Fingerprint::toString));
   }
 }

@@ -2,7 +2,9 @@ package sjtu.ipads.wtune.sql.plan;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.NameSequence;
+import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlContext;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.ast.SqlNodes;
@@ -15,6 +17,9 @@ import sjtu.ipads.wtune.sql.schema.Table;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
+import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
@@ -228,6 +233,137 @@ public abstract class PlanSupport {
     return inputs;
   }
 
+  public static <T extends Collection<Expression>> T gatherExpressions(
+      PlanContext plan, int treeRoot, T collection) {
+    final PlanKind kind = plan.kindOf(treeRoot);
+    switch (kind) {
+      case Input:
+      case Exists:
+      case SetOp:
+      case Limit:
+        break;
+      case Filter:
+        collection.add(((SimpleFilterNode) plan.nodeAt(treeRoot)).predicate());
+        break;
+      case InSub:
+        collection.add(((InSubNode) plan.nodeAt(treeRoot)).expr());
+        break;
+      case Proj:
+        collection.addAll(((ProjNode) plan.nodeAt(treeRoot)).attrExprs());
+        break;
+      case Agg:
+        {
+          final AggNode agg = (AggNode) plan.nodeAt(treeRoot);
+          collection.addAll(agg.attrExprs());
+          collection.addAll(agg.groupByExprs());
+          if (agg.havingExpr() != null) collection.add(agg.havingExpr());
+          break;
+        }
+      case Sort:
+        collection.addAll(((SortNode) plan.nodeAt(treeRoot)).sortSpec());
+        break;
+      case Join:
+        collection.add(((JoinNode) plan.nodeAt(treeRoot)).joinCond());
+        break;
+    }
+
+    for (int i = 0, bound = kind.numChildren(); i < bound; ++i)
+      gatherExpressions(plan, plan.childOf(treeRoot, i), collection);
+    return collection;
+  }
+
+  public static List<Value> getRefBindingLookup(PlanContext plan, int nodeId) {
+    final PlanKind kind = plan.kindOf(nodeId);
+    final ValuesRegistry valuesReg = plan.valuesReg();
+    if (kind == Sort) {
+      // Order By can use the attributes exposed in table-source
+      // e.g., Select t.x From t Order By t.y
+      // So we have to lookup in deeper descendant.
+
+      final int child = plan.childOf(nodeId, 0);
+      final int grandChild = plan.childOf(child, 0);
+      final PlanKind childKind = plan.kindOf(child);
+
+      final Values secondaryLookup = valuesReg.valuesOf(child);
+      final List<Value> primaryLookup;
+      if (childKind == PlanKind.Proj) {
+        primaryLookup = valuesReg.valuesOf(grandChild);
+      } else if (childKind == PlanKind.Agg) {
+        primaryLookup = valuesReg.valuesOf(plan.childOf(grandChild, 0));
+      } else if (childKind == PlanKind.SetOp) {
+        primaryLookup = emptyList();
+      } else {
+        assert false;
+        return emptyList();
+      }
+
+      return ListSupport.join(primaryLookup, secondaryLookup);
+
+    } else if (kind == Agg) {
+      final Values primaryLookup = valuesReg.valuesOf(nodeId);
+      final Values secondaryLookup = valuesReg.valuesOf(plan.childOf(plan.childOf(nodeId, 0), 0));
+      return ListSupport.join(primaryLookup, secondaryLookup);
+
+    } else if (kind.numChildren() == 1 || kind.isSubqueryFilter()) {
+      return valuesReg.valuesOf(plan.childOf(nodeId, 0));
+
+    } else if (kind.numChildren() == 2) {
+      return valuesReg.valuesOf(nodeId);
+    }
+    {
+      assert false;
+      return emptyList();
+    }
+  }
+
+  public static List<Value> getRefBindingForeignLookup(PlanContext plan, int nodeId) {
+    final ValuesRegistry valuesReg = plan.valuesReg();
+    List<Value> foreignLookup = null;
+    int parent = plan.parentOf(nodeId), child = nodeId;
+
+    while (plan.isPresent(parent)) {
+      if (plan.kindOf(parent).isSubqueryFilter() && indexOfChild(plan, child) == 1) {
+        final List<Value> foreignLookup0 = valuesReg.valuesOf(plan.childOf(parent, 0));
+        if (foreignLookup == null) foreignLookup = foreignLookup0;
+        else foreignLookup = ListSupport.join(foreignLookup, foreignLookup0);
+      }
+      child = parent;
+      parent = plan.parentOf(parent);
+    }
+
+    return coalesce(foreignLookup, emptyList());
+  }
+
+  public static void setupJoinKeyOf(PlanContext plan, int joinNodeId) {
+    final ValuesRegistry valuesReg = plan.valuesReg();
+    final JoinNode joinNode = (JoinNode) plan.nodeAt(joinNodeId);
+    final Expression joinCond = joinNode.joinCond();
+
+    if (!SqlSupport.isEquiJoinPredicate(joinCond.template())) return;
+
+    final List<Value> valueRefs = valuesReg.valueRefsOf(joinCond);
+    if ((valueRefs.size() & 1) == 1) return;
+
+    final Values lhsValues = valuesReg.valuesOf(plan.childOf(joinNodeId, 0));
+    final List<Value> lhsRefs = new ArrayList<>(valueRefs.size() >> 1);
+    final List<Value> rhsRefs = new ArrayList<>(valueRefs.size() >> 1);
+    for (int i = 0, bound = valueRefs.size(); i < bound; i += 2) {
+      final Value key0 = valueRefs.get(i), key1 = valueRefs.get(i + 1);
+      final boolean lhs0 = lhsValues.contains(key0), lhs1 = lhsValues.contains(key1);
+      if (lhs0 && !lhs1) {
+        lhsRefs.add(key0);
+        rhsRefs.add(key1);
+      } else if (!lhs0 && lhs1) {
+        lhsRefs.add(key1);
+        rhsRefs.add(key0);
+      } else {
+        return;
+      }
+    }
+
+    plan.infoCache().putJoinKeyOf(joinNodeId, lhsRefs, rhsRefs);
+  }
+
   //// Expression-related
   public static boolean isColRef(Expression expr) {
     return ColRef.isInstance(expr.template());
@@ -289,13 +425,14 @@ public abstract class PlanSupport {
   }
 
   private static boolean mustBeQualified(PlanContext ctx, int nodeId) {
-    int parentId = ctx.parentOf(nodeId);
-    while (ctx.isPresent(parentId)) {
-      final PlanKind parentKind = ctx.kindOf(parentId);
+    int parent = ctx.parentOf(nodeId), child = parent;
+    while (ctx.isPresent(parent)) {
+      final PlanKind parentKind = ctx.kindOf(parent);
       if (parentKind == SetOp) return false;
       if (parentKind == Proj || parentKind == Join) return true;
-      if (parentKind.isFilter()) return ctx.childOf(parentId, 0) == nodeId;
-      parentId = ctx.parentOf(parentId);
+      if (parentKind.isFilter()) return ctx.childOf(parent, 0) == child;
+      child = parent;
+      parent = ctx.parentOf(parent);
     }
     return false;
   }

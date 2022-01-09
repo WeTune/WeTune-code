@@ -9,7 +9,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeSupport.nodeEquals;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.pred;
+import static sjtu.ipads.wtune.common.utils.FuncSupport.pred;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt.uexpr;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static sjtu.ipads.wtune.common.utils.Commons.arrayConcat;
+import static sjtu.ipads.wtune.common.utils.ArraySupport.concat;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.BASE;
 import static sjtu.ipads.wtune.superopt.uexpr.UVar.VarKind.PROJ;
 
@@ -44,7 +44,7 @@ public interface UVar {
     assert v1.kind() != VarKind.FUNC && v1.kind() != VarKind.EQ;
     final UVar[] lhs = v0.kind() == PROJ ? new UVar[] {v0} : v0.args();
     final UVar[] rhs = v1.kind() == PROJ ? new UVar[] {v1} : v1.args();
-    return new UVarImpl(VarKind.CONCAT, NAME_CONCAT, arrayConcat(lhs, rhs));
+    return new UVarImpl(VarKind.CONCAT, NAME_CONCAT, concat(lhs, rhs));
   }
 
   static UVar mkProj(UName attrName, UVar v) {

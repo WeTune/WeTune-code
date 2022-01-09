@@ -10,7 +10,7 @@ import java.util.stream.StreamSupport;
 
 public interface SetSupport {
   static <T> Set<T> filter(Iterable<T> os, Predicate<? super T> func) {
-    return FuncUtils.stream(os).filter(func).collect(Collectors.toSet());
+    return IterableSupport.stream(os).filter(func).collect(Collectors.toSet());
   }
 
   static <X, Y> Set<Y> map(Collection<X> xs, Function<? super X, ? extends Y> func) {
@@ -25,6 +25,6 @@ public interface SetSupport {
   }
 
   static <T, R> Set<R> flatMap(Iterable<T> os, Function<? super T, ? extends Iterable<R>> func) {
-    return FuncUtils.stream(os).map(func).flatMap(FuncUtils::stream).collect(Collectors.toSet());
+    return IterableSupport.stream(os).map(func).flatMap(IterableSupport::stream).collect(Collectors.toSet());
   }
 }

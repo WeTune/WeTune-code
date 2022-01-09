@@ -35,23 +35,23 @@ public class InfoCacheImpl implements InfoCache {
   }
 
   @Override
-  public void putJoinKeyOf(int nodeId, List<Value> lhsKeys, List<Value> rhsKeys) {
-    joinKeys.forWrite().put(nodeId, Pair.of(lhsKeys, rhsKeys));
+  public void putJoinKeyOf(int joinNodeId, List<Value> lhsKeys, List<Value> rhsKeys) {
+    joinKeys.forWrite().put(joinNodeId, Pair.of(lhsKeys, rhsKeys));
   }
 
   @Override
-  public void putJoinKindOf(int nodeId, JoinKind joinKind) {
-    joinKinds.forWrite().put(nodeId, joinKind);
+  public void putJoinKindOf(int joinNodeId, JoinKind joinKind) {
+    joinKinds.forWrite().put(joinNodeId, joinKind);
   }
 
   @Override
-  public void putSubqueryExprOf(int nodeId, Expression expr) {
-    subqueryExprs.forWrite().put(nodeId, expr);
+  public void putSubqueryExprOf(int inSubNodeId, Expression expr) {
+    subqueryExprs.forWrite().put(inSubNodeId, expr);
   }
 
   @Override
-  public void putVirtualExpr(Expression expr, int... nodes) {
-    virtualExprs.forWrite().put(expr, nodes);
+  public void putVirtualExpr(Expression compoundExpr, int... nodes) {
+    virtualExprs.forWrite().put(compoundExpr, nodes);
   }
 
   @Override
@@ -83,15 +83,32 @@ public class InfoCacheImpl implements InfoCache {
 
   void deleteNode(int nodeId) {
     if (joinKeys.forRead().containsKey(nodeId)) joinKeys.forWrite().remove(nodeId);
-  }
-
-  void clearVirtualExprs() {
-    virtualExprs.forWrite().clear();
+    if (joinKinds.forRead().containsKey(nodeId)) joinKinds.forWrite().remove(nodeId);
+    if (subqueryExprs.forRead().containsKey(nodeId)) subqueryExprs.forWrite().remove(nodeId);
   }
 
   void renumberNode(int from, int to) {
     final var keys = joinKeys.forRead().get(from);
-    if (keys != null) joinKeys.forWrite().put(to, keys);
+    if (keys != null) {
+      joinKeys.forWrite().put(to, keys);
+      joinKeys.forWrite().remove(from);
+    }
+
+    final JoinKind kind = joinKinds.forRead().get(from);
+    if (kind != null) {
+      joinKinds.forWrite().put(to, kind);
+      joinKeys.forWrite().remove(from);
+    }
+
+    final Expression subqueryExpr = subqueryExprs.forRead().get(from);
+    if (subqueryExpr != null) {
+      subqueryExprs.forWrite().put(to, subqueryExpr);
+      subqueryExprs.forWrite().remove(from);
+    }
+  }
+
+  void clearVirtualExprs() {
+    virtualExprs.forWrite().clear();
   }
 
   private static class SubqueryNodeFinder implements TIntObjectProcedure<Expression> {

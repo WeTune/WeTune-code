@@ -12,9 +12,14 @@ class LogicProverTest {
   @Test
   public void testBank() {
     for (Substitution rule : TestHelper.bankForTest()) {
-      final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
-      final int result = LogicSupport.proveEq(uExprs);
-      assertEquals(LogicSupport.EQ, result, rule.toString());
+      try {
+        final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+        final int result = LogicSupport.proveEq(uExprs);
+        assertEquals(LogicSupport.EQ, result, rule.toString());
+      } catch (Throwable ex) {
+        System.out.println(rule);
+        break;
+      }
     }
   }
 

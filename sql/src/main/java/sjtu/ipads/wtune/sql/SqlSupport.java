@@ -251,7 +251,7 @@ public abstract class SqlSupport {
 
     final SqlNode selectItem = SqlNode.mk(ctx, SelectItem);
     selectItem.$(SelectItem_Expr, expr);
-    selectItem.$(SelectItem_Alias, alias);
+    if (alias != null) selectItem.$(SelectItem_Alias, alias);
     return selectItem;
   }
 

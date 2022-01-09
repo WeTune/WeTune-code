@@ -7,15 +7,11 @@ import org.jetbrains.annotations.Contract;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import static sjtu.ipads.wtune.common.utils.FuncUtils.stream;
 
 public interface Commons {
   static String dumpException(Throwable ex) {
@@ -55,10 +51,6 @@ public interface Commons {
     return sb.delete(sb.length() - i, sb.length());
   }
 
-  static String surround(String str, char quota) {
-    return quota + str + quota;
-  }
-
   @Contract("!null, _ -> param1; null, !null -> param2; null, null -> null")
   static <T> T coalesce(T val0, T val1) {
     return val0 != null ? val0 : val1;
@@ -79,89 +71,6 @@ public interface Commons {
     return arr;
   }
 
-  @SuppressWarnings("unchecked")
-  static <T> T[] arrayConcat(T[] arr, T... vs) {
-    final T[] ret =
-        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length + vs.length);
-    System.arraycopy(arr, 0, ret, 0, arr.length);
-    System.arraycopy(vs, 0, ret, arr.length, vs.length);
-    return ret;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T> T[] arrayConcat(T[] arr1, T[] arr2, T... vs) {
-    final T[] ret =
-        (T[])
-            Array.newInstance(
-                arr1.getClass().getComponentType(), arr1.length + arr2.length + vs.length);
-    System.arraycopy(arr1, 0, ret, 0, arr1.length);
-    System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);
-    System.arraycopy(vs, 0, ret, arr1.length + arr2.length, vs.length);
-    return ret;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <T> T[] arrayConcat(T[]... arrs) {
-    final int length = stream(arrs).mapToInt(it -> it.length).sum();
-    final T[] ret =
-        (T[]) Array.newInstance(arrs.getClass().getComponentType().getComponentType(), length);
-
-    int base = 0;
-    for (final T[] arr : arrs) {
-      System.arraycopy(arr, 0, ret, base, arr.length);
-      base += arr.length;
-    }
-    return ret;
-  }
-
-  static <T> T head(List<T> xs) {
-    if (xs.isEmpty()) return null;
-    else return xs.get(0);
-  }
-
-  static <T> T tail(List<T> xs) {
-    if (xs.isEmpty()) return null;
-    else return xs.get(xs.size() - 1);
-  }
-
-  static <T> T elemAt(List<T> xs, int idx) {
-    if (idx >= xs.size() || idx <= -xs.size() - 1) return null;
-    if (idx >= 0) return xs.get(idx);
-    else return xs.get(xs.size() + idx);
-  }
-
-  static <T> T safeGet(List<T> xs, int index) {
-    if (index < 0 || index >= xs.size()) return null;
-    else return xs.get(index);
-  }
-
-  static <T> void push(List<T> xs, T x) {
-    xs.add(x);
-  }
-
-  static boolean isEmpty(Collection<?> xs) {
-    return xs == null || xs.isEmpty();
-  }
-
-  static <T> List<T> listSort(List<T> arr, Comparator<? super T> comparator) {
-    arr.sort(comparator);
-    return arr;
-  }
-
-  static <T> List<T> listSwap(List<T> list, int idx0, int idx1) {
-    final T e0 = list.get(idx0);
-    list.set(idx0, list.get(idx1));
-    list.set(idx1, e0);
-    return list;
-  }
-
-  static <T> List<T> removeIf(List<T> xs, Predicate<T> pred) {
-    final List<T> ret = new ArrayList<>();
-    // so dirty, but efficient
-    xs.removeIf(it -> pred.test(it) && ret.add(it));
-    return ret;
-  }
-
   static int countOccurrences(String str, String target) {
     int index = -1, occurrences = 0;
     while ((index = str.indexOf(target, index + 1)) != -1) {
@@ -176,27 +85,6 @@ public interface Commons {
     return x.compareTo(y);
   }
 
-  static int max(int[] arr) {
-    int max = Integer.MIN_VALUE;
-    for (int i : arr) if (i > max) max = i;
-    return max;
-  }
-
-  static int sum(int[] arr, int start, int end) {
-    int sum = 0;
-    for (int i = start; i < end; ++i) sum += arr[i];
-    return sum;
-  }
-
-  static Iterable<int[]> permutation(int n, int k) {
-    return PermutationIter.permute(n, k);
-  }
-
-  static <T> T echo(T t) {
-    System.out.println(t);
-    return t;
-  }
-
   static <T> Set<T> newIdentitySet() {
     return Collections.newSetFromMap(new IdentityHashMap<>());
   }
@@ -209,6 +97,14 @@ public interface Commons {
     final Set<T> set = Collections.newSetFromMap(new IdentityHashMap<>(xs.size()));
     set.addAll(xs);
     return set;
+  }
+
+  static TIntList newIntList(int expectedSize) {
+    return new TIntArrayList(expectedSize);
+  }
+
+  static boolean isNullOrEmpty(Collection<?> collection) {
+    return collection == null || collection.isEmpty();
   }
 
   static String joining(String sep, Iterable<?> objs) {
@@ -343,9 +239,5 @@ public interface Commons {
     }
     builder.append(tail);
     return builder;
-  }
-
-  static TIntList newIntList(int expectedSize) {
-    return new TIntArrayList(expectedSize);
   }
 }

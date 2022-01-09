@@ -34,8 +34,11 @@ class JoinMatcher {
 
     final PlanContext newPlan = joinTree.mkRootedBy(rootJoineeIdx);
     final Match derived = baseMatch.derive().setSourcePlan(newPlan);
+    final int joiner = joinTree.joinerOf(rootJoineeIdx);
 
-    if (derived.matchOne(op, joinTree.joinerOf(rootJoineeIdx))) return derived;
+    if (baseMatch.matchRootNode() == joinTree.rootJoiner()) derived.setMatchRootNode(joiner);
+
+    if (derived.matchOne(op, joiner)) return derived;
     else return null;
   }
 }

@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.ArraySupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.plan.*;
 
 import java.util.List;
@@ -45,7 +46,7 @@ final class LinearJoinTree {
     final InfoCache infoCache = plan.infoCache();
 
     int depth = 0, cursor = treeRoot;
-    while (plan.kindOf(cursor) == PlanKind.Join && infoCache.isEquiJoin(cursor)) {
+    while (plan.kindOf(cursor) == PlanKind.Join) { // && infoCache.isEquiJoin(cursor)) {
       ++depth;
       cursor = plan.childOf(cursor, 0);
     }
@@ -161,7 +162,7 @@ final class LinearJoinTree {
     dependencies[0] = -2;
     dependencies[1] = -1;
     for (int i = 2, bound = joinees.length; i < bound; ++i) {
-      final List<Value> lhsKeys = infoCache.lhsJoinKeyOf(joiners[i - 1]);
+      final List<Value> lhsKeys = getLhsRefs(joiners[i - 1]);
       for (int j = i - 1; j >= 0; --j)
         if (any(lhsKeys, valuesReg.valuesOf(joinees[j])::contains)) {
           dependencies[i] = j - 1;
@@ -170,5 +171,12 @@ final class LinearJoinTree {
     }
 
     return dependencies;
+  }
+
+  private List<Value> getLhsRefs(int joinerNode) {
+    final Expression joinCond = ((JoinNode) plan.nodeAt(joinerNode)).joinCond();
+    final Values rhsValues = plan.valuesReg().valuesOf(plan.childOf(joinerNode, 1));
+    final Values refs = plan.valuesReg().valueRefsOf(joinCond);
+    return ListSupport.filter(refs, ref -> !rhsValues.contains(ref));
   }
 }

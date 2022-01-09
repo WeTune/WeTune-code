@@ -1,28 +1,41 @@
-package sjtu.ipads.wtune.superopt;
+package sjtu.ipads.wtune.superopt.optimizer;
 
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sjtu.ipads.wtune.superopt.TestHelper.optimizeQuery;
 import static sjtu.ipads.wtune.superopt.TestHelper.optimizeStmt;
 
-public class TestOptimizerSlow {
+public class OptimizerTestSlow {
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);
     System.out.println(stmt.ast().toString(false));
-    final Set<SqlNode> optimized = optimizeStmt(stmt);
 
+    System.out.println("=== optimized ===");
+    final Set<SqlNode> optimized = optimizeStmt(stmt);
     optimized.forEach(System.out::println);
+
     boolean passed = false;
     for (String s : expected)
-      if (optimized.stream().anyMatch(it -> s.equals(it.toString()))) {
+      if (optimized.stream().anyMatch(it -> s.equalsIgnoreCase(it.toString()))) {
         passed = true;
         break;
       }
     assertTrue(passed);
+  }
+
+  private static void doTest(String appName, String sql) {
+    final SqlNode ast = SqlSupport.parseSql(App.of(appName).dbType(), sql);
+    System.out.println(ast.toString(false));
+    final Set<SqlNode> optimized = optimizeQuery(appName, ast);
+    System.out.println("=== optimized ===");
+    optimized.forEach(System.out::println);
   }
 
   //  @Test // 6
@@ -38,7 +51,7 @@ public class TestOptimizerSlow {
     doTest(appName, stmtId, expected);
   }
 
-  @Test // 34
+  //  @Test // 34
   void testDiscourse1000() {
     final String appName = "discourse";
     final int stmtId = 1000;

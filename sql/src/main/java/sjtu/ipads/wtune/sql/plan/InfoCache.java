@@ -6,23 +6,23 @@ import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import java.util.List;
 
 public interface InfoCache {
-  Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId);
-
-  Expression getSubqueryExprOf(int nodeId);
-
   int getSubqueryNodeOf(Expression expr);
 
   int[] getVirtualExprComponents(Expression expr);
 
   JoinKind getJoinKindOf(int nodeId);
 
-  void putJoinKeyOf(int nodeId, List<Value> lhsKeys, List<Value> rhsKeys);
+  Expression getSubqueryExprOf(int nodeId);
 
-  void putSubqueryExprOf(int nodeId, Expression expr);
+  Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId);
 
-  void putVirtualExpr(Expression expr, int... nodes);
+  void putJoinKeyOf(int joinNodeId, List<Value> lhsKeys, List<Value> rhsKeys);
 
-  void putJoinKindOf(int nodeId, JoinKind joinKind);
+  void putJoinKindOf(int joinNodeId, JoinKind joinKind);
+
+  void putSubqueryExprOf(int inSubNodeId, Expression expr);
+
+  void putVirtualExpr(Expression compoundExpr, int... nodes);
 
   default List<Value> lhsJoinKeyOf(int nodeId) {
     return getJoinKeyOf(nodeId).getLeft();

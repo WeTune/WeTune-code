@@ -1,6 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.common.utils.Commons;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -9,7 +9,7 @@ import java.util.*;
 import static org.apache.commons.lang3.ClassUtils.isPrimitiveWrapper;
 import static org.apache.commons.lang3.ClassUtils.primitiveToWrapper;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
-import static sjtu.ipads.wtune.common.utils.Commons.elemAt;
+import static sjtu.ipads.wtune.common.utils.ListSupport.elemAt;
 
 record Arg(String key, String value) {}
 
@@ -38,7 +38,7 @@ class Args extends AbstractList<Arg> {
 
   @Override
   public Arg get(int index) {
-    return Commons.elemAt(args, index);
+    return elemAt(args, index);
   }
 
   String get(String key) {

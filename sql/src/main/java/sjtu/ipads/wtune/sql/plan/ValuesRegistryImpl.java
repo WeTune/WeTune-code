@@ -77,7 +77,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     }
 
     bindValues(nodeId, values);
-    if (exprs != null) zip(values, exprs, this::registerExpr);
+    if (exprs != null) zip(values, exprs, this::bindExpr);
 
     return values;
   }
@@ -113,17 +113,6 @@ class ValuesRegistryImpl implements ValuesRegistry {
   }
 
   @Override
-  public void displaceRef(Value oldRef, Value newRef, Set<Expression> excludedExpression) {
-    for (var pair : exprRefs.forWrite().entrySet()) {
-      if (excludedExpression.contains(pair.getKey())) continue;
-      final Values refs = pair.getValue();
-      for (int i = 0, bound = refs.size(); i < bound; i++) {
-        if (refs.get(i) == oldRef) refs.set(i, newRef);
-      }
-    }
-  }
-
-  @Override
   public void bindValues(int nodeId, List<Value> rawValues) {
     final Values values;
     if (rawValues instanceof Values) values = (Values) rawValues;
@@ -131,15 +120,23 @@ class ValuesRegistryImpl implements ValuesRegistry {
     nodeValues.forWrite().put(nodeId, values);
   }
 
+  @Override
+  public void bindExpr(Value value, Expression expr) {
+    valueExprs.forWrite().put(value.id(), expr);
+  }
+
   void relocateNode(int from, int to) {
     final Values values = nodeValues.forRead().get(from);
-    if (values != null) nodeValues.forWrite().put(to, values);
+    if (values != null) {
+      nodeValues.forWrite().put(to, values);
+      nodeValues.forWrite().remove(from);
+    }
   }
 
   void deleteNode(int id) {
     if (nodeValues.forRead().containsKey(id)) {
       final Values values = nodeValues.forWrite().remove(id);
-      if (values != null && initiatorOf(values.get(0)) == NO_SUCH_NODE)
+      if (values != null && !values.isEmpty() && initiatorOf(values.get(0)) == NO_SUCH_NODE)
         for (Value value : values) removeValue(value);
     }
   }
@@ -175,10 +172,6 @@ class ValuesRegistryImpl implements ValuesRegistry {
     for (String attrName : attrNames) values.add(Value.mk(++nextId, qualification, attrName));
 
     return Pair.of(values, exporter.attrExprs());
-  }
-
-  private void registerExpr(Value value, Expression expr) {
-    valueExprs.forWrite().put(value.id(), expr);
   }
 
   private static class InitiatorFinder implements TIntObjectProcedure<Values> {

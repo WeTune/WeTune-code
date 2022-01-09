@@ -11,9 +11,13 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
+import static com.google.common.collect.Sets.cartesianProduct;
 import static java.lang.System.Logger.Level.WARNING;
-import static java.util.Collections.*;
-import static sjtu.ipads.wtune.common.utils.SetSupport.flatMap;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.SetSupport.map;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.LOG;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
 
@@ -26,7 +30,7 @@ class TopDownOptimizer implements Optimizer {
   private long timeout;
 
   private boolean tracing, verbose;
-  private final Lazy<Map<PlanContext, OptimizationStep>> traces;
+  private final Lazy<Map<String, OptimizationStep>> traces;
 
   TopDownOptimizer(SubstitutionBank rules) {
     this.rules = rules;
@@ -57,16 +61,13 @@ class TopDownOptimizer implements Optimizer {
 
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
-    PlanContext originalPlan = plan;
     plan = plan.copy();
-
-    final ReduceSort reduceSort = new ReduceSort(plan);
-    final int planRoot = reduceSort.reduce(plan.root());
-    final boolean isSortReduced = reduceSort.isReduced();
+    int planRoot = plan.root();
+    planRoot = enforceInnerJoin(plan, planRoot);
+    planRoot = reduceSort(plan, planRoot);
 
     memo = new Memo();
     startAt = System.currentTimeMillis();
-    if (tracing && isSortReduced) traceStep(originalPlan, plan, null);
 
     final Set<SubPlan> subPlans = optimize0(new SubPlan(plan, planRoot));
     return SetSupport.map(subPlans, SubPlan::plan);
@@ -103,12 +104,20 @@ class TopDownOptimizer implements Optimizer {
   private Set<SubPlan> optimizeChild0(SubPlan n) {
     final PlanKind kind = n.rootKind();
     assert kind != PlanKind.Input;
+    final int numChildren = kind.numChildren();
 
     // 1. Recursively optimize the children (or retrieve from memo)
+    Set<SubPlan> lhsOpts = emptySet(), rhsOpts = emptySet();
+    if (numChildren >= 1) lhsOpts = optimize0(n.child(0));
+    if (numChildren >= 2) rhsOpts = optimize0(n.child(1));
+
     Set<SubPlan> opts = emptySet();
-    if (kind.numChildren() >= 1) opts = optimize0(n.child(0));
-    if (kind.numChildren() >= 2) opts = flatMap(opts, p -> optimize0(p.shift(-1, 1)));
-    if (opts.isEmpty()) opts.add(n);
+    if (numChildren >= 1) {
+      opts = map(lhsOpts, lhs -> replaceChild(n, 0, lhs));
+    }
+    if (numChildren >= 2) {
+      opts = map(cartesianProduct(opts, rhsOpts), p -> replaceChild(p.get(0), 1, p.get(1)));
+    }
 
     return opts;
   }
@@ -150,16 +159,19 @@ class TopDownOptimizer implements Optimizer {
       final List<Match> fullMatches = Match.match(baseMatch, rule._0().root(), root);
 
       for (Match match : fullMatches) {
-        if (match.mkModifiedPlan()) {
+        if (match.assembleModifiedPlan()) {
           // 3. generate new plan according to match
           final PlanContext newPlan = match.modifiedPlan();
-          int newSubPlanRoot = match.modifiedPoint();
+          int newSubPlanRoot = match.modifiedRootNode();
 
-          final SubPlan newSubPlan = new SubPlan(newPlan, normalizePlan(newPlan, newSubPlanRoot));
+          final int normalizedRoot = normalizePlan(newPlan, newSubPlanRoot);
+          if (normalizedRoot == NO_SUCH_NODE) continue;
+
+          final SubPlan newSubPlan = new SubPlan(newPlan, normalizedRoot);
           // If the `newNode` has been bound with a group, then no need to further optimize it.
           // (because it must either have been or is being optimized.)
           if (!memo.isRegistered(newSubPlan) && group.add(newSubPlan)) {
-            transformed.add(subPlan);
+            transformed.add(newSubPlan);
             traceStep(subPlan.plan(), newSubPlan.plan(), rule);
           }
 
@@ -179,7 +191,7 @@ class TopDownOptimizer implements Optimizer {
   }
 
   protected Set<SubPlan> onInput(SubPlan input) {
-    return singleton(input);
+    return memo.mkEqClass(input);
   }
 
   protected Set<SubPlan> onFilter(SubPlan filter) {
@@ -246,7 +258,7 @@ class TopDownOptimizer implements Optimizer {
     final int node = subPlan.nodeId();
     final PlanKind kind = subPlan.rootKind();
     for (int i = 0, bound = kind.numChildren(); i < bound; ++i) {
-      if (!memo.isRegistered(plan, node)) return false;
+      if (!memo.isRegistered(plan, plan.childOf(node, i))) return false;
     }
     return true;
   }
@@ -263,15 +275,48 @@ class TopDownOptimizer implements Optimizer {
   private List<OptimizationStep> collectTrace0(PlanContext key, int depth) {
     if (!traces.isInitialized()) return emptyList();
 
-    final OptimizationStep step = traces.get().get(key);
+    final OptimizationStep step = traces.get().get(stringifyTree(key, key.root(), true));
     if (step == null) return new ArrayList<>(depth);
     final List<OptimizationStep> trace = collectTrace0(step.source(), depth + 1);
     trace.add(step);
     return trace;
   }
 
+  private SubPlan replaceChild(SubPlan replaced, int childIdx, SubPlan replacement) {
+    final PlanContext replacedPlan = replaced.plan().copy(), replacementPlan = replacement.plan();
+    final int replacedSubPlan = replacedPlan.childOf(replaced.nodeId(), childIdx);
+    final int replacementSubPlan = replacement.nodeId();
+    final ReplaceSubPlan replace = new ReplaceSubPlan(replacedPlan, replacementPlan);
+    final int result = replace.replace(replacedSubPlan, replacementSubPlan);
+    if (!replacedPlan.isPresent(result)) return null;
+    return new SubPlan(replacedPlan, replacedPlan.parentOf(result));
+  }
+
+  private int enforceInnerJoin(PlanContext plan, int planRoot) {
+    final PlanContext original = tracing ? plan.copy() : null;
+    final InnerJoinInference inference = new InnerJoinInference(plan);
+    inference.inferenceAndEnforce(planRoot);
+    if (inference.isModified() && tracing) traceStep(original, plan, 1);
+    return planRoot;
+  }
+
+  private int reduceSort(PlanContext plan, int planRoot) {
+    final PlanContext original = tracing ? plan.copy() : null;
+    final ReduceSort reduceSort = new ReduceSort(plan);
+    planRoot = reduceSort.reduce(planRoot);
+    if (reduceSort.isReduced() && tracing) traceStep(original, plan, 2);
+    return planRoot;
+  }
+
   private void traceStep(PlanContext source, PlanContext target, Substitution rule) {
     if (!tracing) return;
-    traces.get().computeIfAbsent(target, ignored -> new OptimizationStep(source, target, rule));
+    final String key = stringifyTree(target, target.root(), true);
+    traces.get().computeIfAbsent(key, ignored -> new OptimizationStep(source, target, rule, 0));
+  }
+
+  private void traceStep(PlanContext source, PlanContext target, int extra) {
+    if (!tracing) return;
+    final String key = stringifyTree(target, target.root(), true);
+    traces.get().computeIfAbsent(key, ignored -> new OptimizationStep(source, target, null, extra));
   }
 }

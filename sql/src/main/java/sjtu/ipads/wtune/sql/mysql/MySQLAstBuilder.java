@@ -24,7 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncSupport.func;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.*;

@@ -18,6 +18,11 @@ public interface PlanContext extends UniformTreeContext<PlanKind> {
 
   PlanContext copy();
 
+  @Override
+  int root();
+
+  PlanContext setRoot(int rootId);
+
   default Values valuesOf(PlanNode node) {
     return valuesReg().valuesOf(nodeIdOf(node));
   }
@@ -26,7 +31,7 @@ public interface PlanContext extends UniformTreeContext<PlanKind> {
     return nodeAt(root());
   }
 
-  static PlanContext mk(Schema schema) {
-    return new PlanContextImpl(16, schema);
+  static PlanContext mk(Schema schema, int root) {
+    return new PlanContextImpl(root, 16, schema);
   }
 }

@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
@@ -101,7 +102,7 @@ public interface ArraySupport {
       return ret;
 
     } else {
-      return FuncUtils.stream(ts).mapToInt(func).toArray();
+      return IterableSupport.stream(ts).mapToInt(func).toArray();
     }
   }
 
@@ -143,5 +144,44 @@ public interface ArraySupport {
   @SuppressWarnings("unchecked")
   static <T> T[] mkArray(Class<T> cls, int n) {
     return (T[]) Array.newInstance(cls, n);
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] concat(T[] arr, T... vs) {
+    final T[] ret =
+        (T[]) Array.newInstance(arr.getClass().getComponentType(), arr.length + vs.length);
+    System.arraycopy(arr, 0, ret, 0, arr.length);
+    System.arraycopy(vs, 0, ret, arr.length, vs.length);
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] concat(T[] arr1, T[] arr2, T... vs) {
+    final T[] ret =
+        (T[])
+            Array.newInstance(
+                arr1.getClass().getComponentType(), arr1.length + arr2.length + vs.length);
+    System.arraycopy(arr1, 0, ret, 0, arr1.length);
+    System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);
+    System.arraycopy(vs, 0, ret, arr1.length + arr2.length, vs.length);
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> T[] concat(T[]... arrs) {
+    final int length = stream(arrs).mapToInt(it -> it.length).sum();
+    final T[] ret =
+        (T[]) Array.newInstance(arrs.getClass().getComponentType().getComponentType(), length);
+
+    int base = 0;
+    for (final T[] arr : arrs) {
+      System.arraycopy(arr, 0, ret, base, arr.length);
+      base += arr.length;
+    }
+    return ret;
+  }
+
+  static <T> Stream<T> stream(T[] array) {
+    return Arrays.stream(array);
   }
 }

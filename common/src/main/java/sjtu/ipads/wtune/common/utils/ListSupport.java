@@ -56,22 +56,22 @@ public interface ListSupport {
   }
 
   static <T> List<T> filter(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
-    return FuncUtils.stream(iterable).filter(predicate).collect(Collectors.toList());
+    return IterableSupport.stream(iterable).filter(predicate).collect(Collectors.toList());
   }
 
   static <T, R> List<R> flatMap(
       Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
-    return FuncUtils.stream(os)
+    return IterableSupport.stream(os)
         .map(func)
-        .flatMap(FuncUtils::stream)
+        .flatMap(IterableSupport::stream)
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
   static <T, R> List<R> linkedListFlatMap(
       Iterable<? extends T> os, Function<? super T, ? extends Iterable<R>> func) {
-    return FuncUtils.stream(os)
+    return IterableSupport.stream(os)
         .map(func)
-        .flatMap(FuncUtils::stream)
+        .flatMap(IterableSupport::stream)
         .collect(Collectors.toCollection(LinkedList::new));
   }
 
@@ -96,5 +96,25 @@ public interface ListSupport {
       ret.add(func.apply(x, y));
     }
     return ret;
+  }
+
+  static <T> T elemAt(List<T> xs, int idx) {
+    if (idx >= xs.size() || idx <= -xs.size() - 1) return null;
+    if (idx >= 0) return xs.get(idx);
+    else return xs.get(xs.size() + idx);
+  }
+
+  static <T> T head(List<T> xs) {
+    if (xs.isEmpty()) return null;
+    else return xs.get(0);
+  }
+
+  static <T> T tail(List<T> xs) {
+    if (xs.isEmpty()) return null;
+    else return xs.get(xs.size() - 1);
+  }
+
+  static <T> void push(List<T> xs, T x) {
+    xs.add(x);
   }
 }

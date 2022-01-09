@@ -1,11 +1,12 @@
 package sjtu.ipads.wtune.sql.plan;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlContext;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,10 +71,9 @@ class ValueRefBinder {
 
   private boolean bindAgg(int nodeId) {
     // Group By & Having can use the attribute exposed by Aggregation.
-    final Values primaryLookup = valuesReg.valuesOf(nodeId);
-    final Values secondaryLookup = valuesReg.valuesOf(plan.childOf(plan.childOf(nodeId, 0), 0));
-    final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     final AggNode aggNode = (AggNode) plan.nodeAt(nodeId);
+    final Values secondaryLookup = valuesReg.valuesOf(plan.childOf(plan.childOf(nodeId, 0), 0));
+    final List<Value> lookup = getRefBindingLookup(plan, nodeId);
 
     for (Expression attr : aggNode.attrExprs()) {
       final List<Value> refs = ListSupport.map(attr.colRefs(), it -> bindRef(it, secondaryLookup));
@@ -98,7 +98,7 @@ class ValueRefBinder {
   }
 
   private boolean bindProj(int nodeId) {
-    final Values lookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final List<Value> lookup = getRefBindingLookup(plan, nodeId);
     final ProjNode projNode = (ProjNode) plan.nodeAt(nodeId);
 
     for (Expression attr : projNode.attrExprs()) {
@@ -111,7 +111,7 @@ class ValueRefBinder {
   }
 
   private boolean bindJoin(int nodeId) {
-    final Values lookup = valuesReg.valuesOf(nodeId);
+    final List<Value> lookup = getRefBindingLookup(plan, nodeId);
     final JoinNode joinNode = (JoinNode) plan.nodeAt(nodeId);
     final Expression joinCond = joinNode.joinCond();
     if (joinCond == null) return true;
@@ -120,32 +120,12 @@ class ValueRefBinder {
     valuesReg.bindValueRefs(joinCond, valueRefs);
     if (valueRefs.contains(null)) return false;
 
-    if (!SqlSupport.isEquiJoinPredicate(joinCond.template())) return true;
-    if ((valueRefs.size() & 1) == 1) return true;
-
-    final Values lhsValues = valuesReg.valuesOf(plan.childOf(nodeId, 0));
-    final List<Value> lhsRefs = new ArrayList<>(valueRefs.size() >> 1);
-    final List<Value> rhsRefs = new ArrayList<>(valueRefs.size() >> 1);
-    for (int i = 0, bound = valueRefs.size(); i < bound; i += 2) {
-      final Value key0 = valueRefs.get(i), key1 = valueRefs.get(i + 1);
-      final boolean lhs0 = lhsValues.contains(key0), lhs1 = lhsValues.contains(key1);
-      if (lhs0 && !lhs1) {
-        lhsRefs.add(key0);
-        rhsRefs.add(key1);
-      } else if (!lhs0 && lhs1) {
-        lhsRefs.add(key1);
-        rhsRefs.add(key0);
-      } else {
-        return true;
-      }
-    }
-
-    plan.infoCache().putJoinKeyOf(nodeId, lhsRefs, rhsRefs);
+    setupJoinKeyOf(plan, nodeId);
     return true;
   }
 
   private boolean bindFilter(int nodeId, List<Value> secondaryLookup) {
-    final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final List<Value> primaryLookup = getRefBindingLookup(plan, nodeId);
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     final Expression predicate = ((SimpleFilterNode) plan.nodeAt(nodeId)).predicate();
     final List<Value> valueRefs = ListSupport.map(predicate.colRefs(), it -> bindRef(it, lookup));
@@ -154,7 +134,7 @@ class ValueRefBinder {
   }
 
   private boolean bindExists(int nodeId, List<Value> secondaryLookup) {
-    final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final List<Value> primaryLookup = getRefBindingLookup(plan, nodeId);
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     if (!bind0(plan.childOf(nodeId, 1), lookup)) return false;
 
@@ -172,7 +152,7 @@ class ValueRefBinder {
   }
 
   private boolean bindInSub(int nodeId, List<Value> secondaryLookup) {
-    final Values primaryLookup = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final List<Value> primaryLookup = getRefBindingLookup(plan, nodeId);
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     final InSubNode inSub = (InSubNode) plan.nodeAt(nodeId);
     final Expression lhsExpr = inSub.expr();
@@ -204,32 +184,29 @@ class ValueRefBinder {
   }
 
   private boolean bindSort(int nodeId) {
-    // Order By can use the attributes exposed in table-source
-    // e.g., Select t.x From t Order By t.y
-    // So we have to lookup in deeper descendant.
-    final int child = plan.childOf(nodeId, 0);
-    final int grandChild = plan.childOf(child, 0);
-    final PlanKind childKind = plan.kindOf(child);
+    final List<Value> lookup = PlanSupport.getRefBindingLookup(plan, nodeId);
+    final SortNode sortNode = (SortNode) plan.nodeAt(nodeId);
+    final List<Expression> sortSpecs = sortNode.sortSpec();
 
-    final Values secondaryLookup = valuesReg.valuesOf(child);
-    final List<Value> primaryLookup;
-    if (childKind == PlanKind.Proj) {
-      primaryLookup = valuesReg.valuesOf(grandChild);
-    } else if (childKind == PlanKind.Agg) {
-      primaryLookup = valuesReg.valuesOf(plan.childOf(grandChild, 0));
-    } else if (childKind == PlanKind.SetOp) {
-      primaryLookup = Collections.emptyList();
-    } else {
-      return onError(FAILURE_INVALID_PLAN + plan);
-    }
-
-    final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
-
-    for (Expression sortSpec : ((SortNode) plan.nodeAt(nodeId)).sortSpec()) {
+    for (Expression sortSpec : sortSpecs) {
       final List<Value> refs = ListSupport.map(sortSpec.colRefs(), it -> bindRef(it, lookup));
       if (refs.contains(null)) return false;
       valuesReg.bindValueRefs(sortSpec, refs);
     }
+
+    final List<Value> inValues = valuesReg.valuesOf(plan.childOf(nodeId, 0));
+    final TIntList indexedRefs = new TIntArrayList(4);
+    for (Expression sortSpec : sortSpecs) {
+      for (Value ref : valuesReg.valueRefsOf(sortSpec)) {
+        for (int i = 0, bound = inValues.size(); i < bound; i++) {
+          final Value value = inValues.get(i);
+          if (ref == value) indexedRefs.add(i);
+          else if (deRef(plan, value) == ref) indexedRefs.add(i);
+          else indexedRefs.add(-1);
+        }
+      }
+    }
+    sortNode.setIndexedRefs(indexedRefs.toArray());
 
     return true;
   }

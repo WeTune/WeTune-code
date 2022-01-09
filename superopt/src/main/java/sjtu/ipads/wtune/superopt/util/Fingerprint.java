@@ -132,7 +132,7 @@ public class Fingerprint {
 
             if (cnt == subCnt && subCnt < subTot)
               fingerprints.add(new Fingerprint(builder.toString()));
-            else build(chainChild, limit - cnt);
+            else build(chainChild, budget - cnt);
 
             popChars(builder, cnt);
           }
@@ -144,7 +144,7 @@ public class Fingerprint {
         final int total = counts[0], leftJoins = counts[1];
         mkFingerprintForJoin(total, leftJoins, budget, treeChild);
 
-      } else {
+      } else if (nodeKind == PlanKind.Proj) {
         builder.append(identifierOf(node));
         build(plan.childOf(node, 0), budget - 1);
         popChars(builder, 1);
@@ -163,7 +163,7 @@ public class Fingerprint {
         return joinKindOf(plan, node) == JoinKind.INNER_JOIN
             ? getOpIdentifier(INNER_JOIN, false)
             : getOpIdentifier(LEFT_JOIN, false);
-      else assert false;
+      else assert false : kind;
       return '?';
     }
 

@@ -19,9 +19,7 @@ import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.common.utils.Commons.head;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
-import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
+import static sjtu.ipads.wtune.common.utils.ListSupport.*;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 class FilterMatcher {
@@ -127,7 +125,7 @@ class FilterMatcher {
     // disallow multiple greedy sub-matchers
     boolean isGreedyPresent = false;
     for (SubMatcher matcher : matchers) {
-      if (matcher instanceof FreeFilterSubMatcher && ((FreeFilterSubMatcher) matcher).greedy)
+      if (matcher instanceof FreeFilterSubMatcher && ((FreeFilterSubMatcher) matcher).forceGreedy)
         if (isGreedyPresent) return false;
         else isGreedyPresent = true;
     }
@@ -196,11 +194,11 @@ class FilterMatcher {
 
   private class FreeFilterSubMatcher extends SubMatcher {
     private final int opIdx;
-    private final boolean greedy;
+    private final boolean forceGreedy;
 
-    private FreeFilterSubMatcher(int opIdx, boolean greedy) {
+    private FreeFilterSubMatcher(int opIdx, boolean forceGreedy) {
       this.opIdx = opIdx;
-      this.greedy = greedy;
+      this.forceGreedy = forceGreedy;
     }
 
     @Override
@@ -210,8 +208,7 @@ class FilterMatcher {
 
     @Override
     boolean match(Match match) {
-      if (greedy) return greedyMatch(match);
-      else return nonGreedyMatch(match);
+      return greedyMatch(match) && (forceGreedy || nonGreedyMatch(match));
     }
 
     private boolean greedyMatch(Match match) {
@@ -301,7 +298,7 @@ class FilterMatcher {
       final int chainLength = newChain.size();
       final int firstMatchPointOffset = (isLeading && !isTrailing) ? numUnused : 0;
       final int lastMatchPointOffset = isTrailing ? chainLength - numUnused - 1 : chainLength - 1;
-      final int lastMatchedNode = nodeChain.at(lastMatchPointOffset);
+      final int lastMatchedNode = newChain.at(lastMatchPointOffset);
 
       final Match derivedMatch = baseMatch.derive().setSourcePlan(matchedPlan);
       List<Match> matches = singletonList(derivedMatch);

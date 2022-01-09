@@ -1,22 +1,26 @@
 package sjtu.ipads.wtune.superopt;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
+import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =
@@ -42,9 +46,7 @@ public abstract class TestHelper {
     if (bank != null) return bank;
 
     try {
-      //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "substitutions"));
       bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "rules.test.txt"));
-      //      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "test.txt"));
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }
@@ -52,8 +54,24 @@ public abstract class TestHelper {
     return bank;
   }
 
-  static Set<SqlNode> optimizeStmt(Statement stmt) {
-    // TODO
-    return Collections.emptySet();
+  public static Set<SqlNode> optimizeStmt(Statement stmt) {
+    final SqlNode ast = stmt.ast();
+    final Schema schema = stmt.app().schema("base", true);
+    ast.context().setSchema(schema);
+    normalizeAst(ast);
+    final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
+    final Optimizer optimizer = Optimizer.mk(bankForTest());
+    optimizer.setTracing(true);
+    final Set<PlanContext> optimized = optimizer.optimize(plan);
+    return SetSupport.map(optimized, it -> translateAsAst(it, it.root(), false));
+  }
+
+  public static Set<SqlNode> optimizeQuery(String appName, SqlNode ast) {
+    final App app = App.of(appName);
+    normalizeAst(ast);
+    final PlanContext plan = PlanSupport.assemblePlan(ast, app.schema("base", true));
+    final Optimizer optimizer = Optimizer.mk(bankForTest());
+    final Set<PlanContext> optimized = optimizer.optimize(plan);
+    return SetSupport.map(optimized, it -> translateAsAst(it, it.root(), false));
   }
 }

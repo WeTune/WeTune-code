@@ -26,6 +26,11 @@ public interface Fields extends Map<FieldKey<?>, Object> {
     $(key, true);
   }
 
+  default void flag(FieldKey<Boolean> key, boolean flag) {
+    if (flag) $(key, true);
+    else remove(key);
+  }
+
   default boolean isFlag(FieldKey<Boolean> key) {
     return $(key) == Boolean.TRUE;
   }

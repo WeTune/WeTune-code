@@ -22,9 +22,11 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 
 class InnerJoinInference {
   private final PlanContext plan;
+  private boolean modified;
 
   InnerJoinInference(PlanContext plan) {
     this.plan = plan;
+    this.modified = false;
   }
 
   void inferenceAndEnforce(int rootId) {
@@ -32,6 +34,10 @@ class InnerJoinInference {
 
     for (int i = 0, bound = plan.kindOf(rootId).numChildren(); i < bound; ++i)
       inferenceAndEnforce(plan.childOf(rootId, i));
+  }
+
+  boolean isModified() {
+    return modified;
   }
 
   private void inferenceAndEnforce0(int evidenceNode) {
@@ -60,8 +66,10 @@ class InnerJoinInference {
     int cursor = initiator;
     while (cursor != surface) {
       final int parent = plan.parentOf(cursor);
-      if (isLeftJoin(parent) && indexOfChild(plan, cursor) == 1)
+      if (isLeftJoin(parent) && indexOfChild(plan, cursor) == 1) {
         plan.infoCache().putJoinKindOf(parent, INNER_JOIN);
+        modified = true;
+      }
       cursor = parent;
     }
   }

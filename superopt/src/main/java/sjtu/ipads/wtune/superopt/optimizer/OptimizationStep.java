@@ -5,8 +5,9 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 public record OptimizationStep(PlanContext source,
                                PlanContext target,
-                               Substitution rule) {
+                               Substitution rule,
+                               int extra) {
   public int ruleId() {
-    return rule == null ? -1 : rule.id();
+    return rule == null ? -extra : rule.id();
   }
 }

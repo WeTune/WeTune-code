@@ -9,7 +9,6 @@ import sjtu.ipads.wtune.sql.schema.Constraint;
 import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Element;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,18 +77,16 @@ class SQLGenerators implements Generators {
   }
 
   private static Column getReferencedColumn(Column column) {
-    final Collection<Constraint> fks = column.constraints(FOREIGN);
-    if (fks.isEmpty()) return null;
-
-    final Constraint fk = Iterables.get(fks, 0);
-    return fk.refColumns().get(fk.columns().indexOf(column));
+    final Iterable<Constraint> fks = column.constraints(FOREIGN);
+    final Constraint fk = Iterables.getFirst(fks, null);
+    return fk == null ? null : fk.refColumns().get(fk.columns().indexOf(column));
   }
 
   private static Constraint getUniqueKey(Column column) {
-    final Collection<Constraint> pks = column.constraints(PRIMARY);
-    Constraint shortestUk = pks.isEmpty() ? null : Iterables.get(pks, 0);
+    final Iterable<Constraint> pks = column.constraints(PRIMARY);
+    Constraint shortestUk = Iterables.getFirst(pks, null);
 
-    final Collection<Constraint> uks = column.constraints(UNIQUE);
+    final Iterable<Constraint> uks = column.constraints(UNIQUE);
     for (Constraint uk : uks)
       if (shortestUk == null || uk.columns().size() < shortestUk.columns().size()) shortestUk = uk;
 

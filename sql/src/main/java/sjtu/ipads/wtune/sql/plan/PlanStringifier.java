@@ -75,7 +75,9 @@ class PlanStringifier {
     appendNodeId(nodeId);
     builder.append('{');
     if (limit.limit() != null) builder.append("limit=").append(limit.limit());
+    if (limit.limit() != null && limit.offset() != null) builder.append(',');
     if (limit.offset() != null) builder.append("offset=").append(limit.offset());
+    builder.append('}');
   }
 
   private void appendSort(int nodeId) {
@@ -86,7 +88,7 @@ class PlanStringifier {
     for (Expression expr : sort.sortSpec()) builder.append(expr);
     builder.append("],refs=[");
     for (Expression expr : sort.sortSpec()) appendRefs(expr);
-    builder.append(']');
+    builder.append("]}");
   }
 
   private void appendAgg(int nodeId) {

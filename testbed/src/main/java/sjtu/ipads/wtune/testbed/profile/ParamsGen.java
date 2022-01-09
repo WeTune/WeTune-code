@@ -10,7 +10,7 @@ import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 import java.io.Serializable;
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.FuncUtils.func;
+import static sjtu.ipads.wtune.common.utils.FuncSupport.func;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.tableOf;

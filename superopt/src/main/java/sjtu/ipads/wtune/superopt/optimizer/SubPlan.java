@@ -35,10 +35,6 @@ final class SubPlan {
     return new SubPlan(plan, plan.childOf(nodeId, childIdx));
   }
 
-  SubPlan shift(int... path) {
-    return new SubPlan(plan, PlanSupport.locateNode(plan, nodeId, path));
-  }
-
   @Override
   public boolean equals(Object obj) {
     if (obj == this) return true;

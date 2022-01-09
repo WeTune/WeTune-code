@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.Commons.isNullOrEmpty;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.ListSupport.zipMap;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
@@ -31,6 +32,8 @@ class ToAstTranslator {
   ToAstTranslator(PlanContext plan) {
     this.plan = plan;
     this.sql = SqlContext.mk(32);
+    sql.setSchema(plan.schema());
+    sql.setDbType(plan.schema().dbType());
   }
 
   SqlNode translate(int nodeId, boolean allowIncomplete) {
@@ -75,10 +78,7 @@ class ToAstTranslator {
   private QueryBuilder onInput(int nodeId) {
     final InputNode input = (InputNode) plan.nodeAt(nodeId);
     final SqlNode tableSource = mkSimpleSource(sql, input.table().name(), input.qualification());
-    return mkBuilder()
-        .setPlanNode(nodeId)
-        .setSource(tableSource)
-        .setQualification(input.qualification());
+    return mkBuilder().setSource(tableSource).setQualification(input.qualification());
   }
 
   private QueryBuilder onJoin(int nodeId) {
@@ -91,7 +91,7 @@ class ToAstTranslator {
     final SqlNode joinNode =
         mkJoinSource(sql, tableSource0, tableSource1, mkExpr(join.joinCond()), joinKind);
 
-    return mkBuilder().setPlanNode(nodeId).setSource(joinNode);
+    return mkBuilder().setSource(joinNode);
   }
 
   private QueryBuilder onFilter(int nodeId) {
@@ -99,7 +99,7 @@ class ToAstTranslator {
     if (query.isInvalid()) return QueryBuilder.INVALID;
 
     final SimpleFilterNode filter = (SimpleFilterNode) plan.nodeAt(nodeId);
-    return query.setPlanNode(nodeId).pushFilter(mkExpr(filter.predicate()));
+    return query.pushFilter(mkExpr(filter.predicate()));
   }
 
   private QueryBuilder onInSub(int nodeId) {
@@ -111,7 +111,7 @@ class ToAstTranslator {
 
     final InSubNode inSub = (InSubNode) plan.nodeAt(nodeId);
     final SqlNode filterNode = mkBinary(sql, IN_SUBQUERY, mkExpr(inSub.expr()), subqueryNode);
-    return query.setPlanNode(nodeId).pushFilter(filterNode);
+    return query.pushFilter(filterNode);
   }
 
   private QueryBuilder onExists(int nodeId) {
@@ -123,7 +123,7 @@ class ToAstTranslator {
 
     final SqlNode existsNode = SqlNode.mk(sql, ExprKind.Exists);
     existsNode.$(Exists_Subquery, subqueryNode);
-    return query.setPlanNode(nodeId).pushFilter(existsNode);
+    return query.pushFilter(existsNode);
   }
 
   private QueryBuilder onProj(int nodeId) {
@@ -131,9 +131,8 @@ class ToAstTranslator {
     final ProjNode proj = (ProjNode) plan.nodeAt(nodeId);
     final List<SqlNode> selectItems = zipMap(proj.attrExprs(), proj.attrNames(), this::mkSelection);
     return query
-        .setPlanNode(nodeId)
         .setSelectItems(selectItems, false)
-        .setQualification(proj.qualification())
+        .setQualification(mkQualification(nodeId))
         .setDeduplicated(proj.deduplicated());
   }
 
@@ -147,10 +146,9 @@ class ToAstTranslator {
     final SqlNode having = mkExpr(agg.havingExpr());
 
     return query
-        .setPlanNode(nodeId)
         .setSelectItems(selectItems, true)
         .setGroupBy(groupBys, having)
-        .setQualification(agg.qualification());
+        .setQualification(mkQualification(nodeId));
     // Agg's deduplication should be specified by the placeholder Proj.
   }
 
@@ -160,7 +158,7 @@ class ToAstTranslator {
 
     final SortNode sort = (SortNode) plan.nodeAt(nodeId);
     final List<SqlNode> exprs = map(sort.sortSpec(), this::mkExpr);
-    return query.setPlanNode(nodeId).setOrderBy(exprs);
+    return query.setOrderBy(exprs);
   }
 
   private QueryBuilder onLimit(int nodeId) {
@@ -168,7 +166,7 @@ class ToAstTranslator {
     if (query.isInvalid()) return QueryBuilder.INVALID;
 
     final LimitNode limit = (LimitNode) plan.nodeAt(nodeId);
-    return query.setPlanNode(nodeId).setLimit(mkExpr(limit.limit()), mkExpr(limit.offset()));
+    return query.setLimit(mkExpr(limit.limit()), mkExpr(limit.offset()));
   }
 
   private QueryBuilder onSetOp(int nodeId) {
@@ -179,14 +177,15 @@ class ToAstTranslator {
     final SetOpNode setOp = (SetOpNode) plan.nodeAt(nodeId);
     final SqlNode unionNode = mkSetOp(sql, q0, q1, setOp.opKind());
     unionNode.$(SetOp_Option, setOp.deduplicated() ? DISTINCT : ALL);
-    return mkBuilder().setPlanNode(nodeId).setSource(mkQuery(sql, unionNode));
+    return mkBuilder().setSource(mkQuery(sql, unionNode));
   }
 
   private QueryBuilder mkBuilder() {
     return new QueryBuilder(this);
   }
 
-  private SqlNode mkSelection(Expression expr, String alias) {
+  private SqlNode mkSelection(Expression expr, String name) {
+    final String alias = name.startsWith(SYN_NAME_PREFIX) ? null : name;
     return SqlSupport.mkSelectItem(sql, mkExpr(expr), alias);
   }
 
@@ -199,6 +198,22 @@ class ToAstTranslator {
   private SqlNode onError(String err) {
     this.lastError = err;
     return null;
+  }
+
+  private String mkQualification(int exporterNode) {
+    final String designated = ((Exporter) plan.nodeAt(exporterNode)).qualification();
+    if (designated != null) return designated;
+
+    final Values values = plan.valuesReg().valuesOf(exporterNode);
+    String guess = null;
+    for (Value value : values) {
+      final String qualification = value.qualification();
+      if (qualification != null)
+        if (guess == null) guess = qualification;
+        else if (!guess.equals(qualification)) return null;
+    }
+
+    return guess;
   }
 
   private static class QueryBuilder {
@@ -218,8 +233,6 @@ class ToAstTranslator {
     private boolean deduplicated = false;
     private boolean isAgg = false;
 
-    private int planNode;
-
     private QueryBuilder(ToAstTranslator translator) {
       this.translator = translator;
     }
@@ -232,7 +245,6 @@ class ToAstTranslator {
       assert !isInvalid();
 
       if (isPureSource() && TableSource.isInstance(tableSource)) return tableSource;
-      final String qualification = mkQualification();
       if (qualification == null) return translator.onError(FAILURE_MISSING_QUALIFICATION);
       return mkDerivedSource(translator.sql, asQuery(), qualification);
     }
@@ -255,20 +267,19 @@ class ToAstTranslator {
         final SqlNode spec = SqlNode.mk(sql, SqlKind.QuerySpec);
 
         if (tableSource != null) spec.$(QuerySpec_From, tableSource);
-        if (filters != null) spec.$(QuerySpec_Where, mkConjunction(sql, filters));
-        if (groupBys != null) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
+        if (!isNullOrEmpty(filters)) spec.$(QuerySpec_Where, mkConjunction(sql, filters));
+        if (!isNullOrEmpty(groupBys)) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
         if (having != null) spec.$(QuerySpec_Having, having);
 
         if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
         else spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, singletonList(mkWildcard(sql, null))));
 
-        if (deduplicated) {
-          if (!isAgg) spec.$(QuerySpec_Distinct, true);
-          else if (selectItems != null)
-            for (SqlNode selectItem : selectItems) {
-              final SqlNode expr = selectItem.$(SelectItem_Expr);
-              if (Aggregate.isInstance(expr)) expr.flag(Aggregate_Distinct);
-            }
+        if (!isAgg && deduplicated) spec.$(QuerySpec_Distinct, true);
+        if (isAgg && selectItems != null) {
+          for (SqlNode selectItem : selectItems) {
+            final SqlNode expr = selectItem.$(SelectItem_Expr);
+            if (Aggregate.isInstance(expr)) expr.flag(Aggregate_Distinct, deduplicated);
+          }
         }
 
         q = mkQuery(sql, spec);
@@ -370,13 +381,6 @@ class ToAstTranslator {
       return this;
     }
 
-    QueryBuilder setPlanNode(int planNode) {
-      if (isInvalid()) return INVALID;
-
-      this.planNode = planNode;
-      return this;
-    }
-
     private void init() {
       tableSource = null;
       filters = null;
@@ -419,21 +423,6 @@ class ToAstTranslator {
 
     private boolean isFullQuery() {
       return Query.isInstance(tableSource) || selectItems != null;
-    }
-
-    private String mkQualification() {
-      if (qualification != null) return qualification;
-
-      final Values values = translator.plan.valuesReg().valuesOf(planNode);
-      String guess = null;
-      for (Value value : values) {
-        final String qualification = value.qualification();
-        if (qualification != null)
-          if (guess == null) guess = qualification;
-          else if (!guess.equals(qualification)) return null;
-      }
-
-      return guess;
     }
   }
 }

@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import sjtu.ipads.wtune.common.tree.TreeSupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.plan.AggNode;
 import sjtu.ipads.wtune.sql.plan.Expression;
@@ -13,6 +12,7 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.rootOf;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.Aggregate_Name;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 
@@ -43,7 +43,12 @@ class ReduceSort {
 
     isReduced = true;
     toRemove.forEach(this::removeSort);
-    return toRemove.contains(planRoot) ? TreeSupport.rootOf(plan, anchor) : planRoot;
+
+    if (!toRemove.contains(planRoot)) return planRoot;
+
+    final int newRoot = rootOf(plan, anchor);
+    plan.setRoot(newRoot);
+    return newRoot;
   }
 
   public boolean isReduced() {

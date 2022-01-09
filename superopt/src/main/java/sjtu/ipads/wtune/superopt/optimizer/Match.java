@@ -12,11 +12,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.common.tree.TreeSupport.rootOf;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.FAILURE_UNKNOWN_OP;
 
@@ -26,16 +24,21 @@ class Match {
 
   private PlanContext sourcePlan;
   private int matchRootNode;
+  private int matchStartNode;
 
   private int lastMatchedNode;
   private Op lastMatchedOp;
 
   private PlanContext modifiedPlan;
-  private int result;
+  private int modifiedRootNode;
 
   Match(Substitution rule) {
     this.rule = rule;
     this.model = new Model(rule.constraints());
+    this.matchRootNode = NO_SUCH_NODE;
+    this.matchStartNode = NO_SUCH_NODE;
+    this.lastMatchedNode = NO_SUCH_NODE;
+    this.modifiedRootNode = NO_SUCH_NODE;
   }
 
   Match(Match other) {
@@ -43,10 +46,11 @@ class Match {
     this.model = other.model.derive();
     this.sourcePlan = other.sourcePlan;
     this.matchRootNode = other.matchRootNode;
+    this.matchStartNode = other.matchStartNode;
     this.lastMatchedNode = other.lastMatchedNode;
     this.lastMatchedOp = other.lastMatchedOp;
     this.modifiedPlan = other.modifiedPlan;
-    this.result = other.result;
+    this.modifiedRootNode = other.modifiedRootNode;
   }
 
   Match setSourcePlan(PlanContext sourcePlan) {
@@ -63,50 +67,24 @@ class Match {
   Match setLastMatchPoint(int lastMatchedNode, Op lastMatchOp) {
     this.lastMatchedNode = lastMatchedNode;
     this.lastMatchedOp = lastMatchOp;
+    if (matchStartNode == NO_SUCH_NODE) matchStartNode = lastMatchedNode;
     return this;
-  }
-
-  PlanContext sourcePlan() {
-    return sourcePlan;
   }
 
   Model model() {
     return model;
   }
 
-  int lastFailure() {
-    return result;
+  PlanContext sourcePlan() {
+    return sourcePlan;
   }
 
-  boolean mkModifiedPlan() {
-    final Instantiation instantiation = new Instantiation(rule, model);
-    final int modifiedPointId = instantiation.instantiate();
-    if (modifiedPointId <= 0) {
-      OptimizerSupport.setLastError(instantiation.lastError());
-      return false;
-    }
-
-    modifiedPlan = instantiation.instantiatedPlan();
-    final PlanNode modifiedNode = modifiedPlan.nodeAt(modifiedPointId);
-    System.out.println(stringifyTree(modifiedPlan, rootOf(modifiedPlan, modifiedPointId)));
-
-    final int parentId = sourcePlan.parentOf(matchRootNode);
-    final int newRootId;
-    if (parentId == NO_SUCH_NODE) newRootId = modifiedPointId;
-    else {
-      final int childIdx = indexOfChild(sourcePlan, matchRootNode);
-      modifiedPlan.setChild(sourcePlan.parentOf(matchRootNode), childIdx, modifiedPointId);
-      newRootId = sourcePlan.root();
-    }
-
-    modifiedPlan.deleteDetached(newRootId);
-    modifiedPlan.compact();
-    result = modifiedPlan.nodeIdOf(modifiedNode);
-    return true;
+  int matchRootNode() {
+    return matchRootNode;
   }
 
-  int modifiedPoint() {
-    return result;
+  int modifiedRootNode() {
+    return modifiedRootNode;
   }
 
   PlanContext modifiedPlan() {
@@ -115,6 +93,38 @@ class Match {
 
   Match derive() {
     return new Match(this);
+  }
+
+  boolean assembleModifiedPlan() {
+    final Instantiation instantiation = new Instantiation(rule, model);
+    final int modifiedPoint = instantiation.instantiate();
+    if (modifiedPoint <= 0) {
+      OptimizerSupport.setLastError(instantiation.lastError());
+      return false;
+    }
+
+    modifiedPlan = instantiation.instantiatedPlan();
+    final int parent0 = sourcePlan.parentOf(matchStartNode);
+    if (parent0 != NO_SUCH_NODE)
+      modifiedPlan.setChild(parent0, indexOfChild(sourcePlan, matchStartNode), modifiedPoint);
+
+    final ValueRefReBinder reBinder = new ValueRefReBinder(modifiedPlan);
+    if (!reBinder.rebindToRoot(modifiedPoint)) return false;
+
+    final int parent1 = sourcePlan.parentOf(matchRootNode);
+    final int newRootId;
+    if (parent1 == NO_SUCH_NODE)
+      if (matchRootNode == matchStartNode) newRootId = modifiedPoint;
+      else newRootId = matchRootNode;
+    else newRootId = sourcePlan.root();
+
+    modifiedRootNode = matchRootNode == matchStartNode ? modifiedPoint : matchRootNode;
+    final PlanNode modifiedRoot = modifiedPlan.nodeAt(modifiedRootNode);
+    modifiedPlan.setRoot(newRootId);
+    modifiedPlan.deleteDetached(newRootId);
+    modifiedPlan.compact();
+    modifiedRootNode = modifiedPlan.nodeIdOf(modifiedRoot);
+    return true;
   }
 
   boolean matchOne(Op op, int nodeId) {

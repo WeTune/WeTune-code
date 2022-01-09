@@ -9,8 +9,8 @@ import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.*;
 
-import static sjtu.ipads.wtune.common.utils.Commons.push;
-import static sjtu.ipads.wtune.common.utils.Commons.tail;
+import static sjtu.ipads.wtune.common.utils.ListSupport.push;
+import static sjtu.ipads.wtune.common.utils.ListSupport.tail;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.ListSupport.pop;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Unique;

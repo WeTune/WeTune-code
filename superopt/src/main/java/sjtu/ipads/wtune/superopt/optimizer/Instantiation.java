@@ -11,7 +11,6 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
@@ -19,6 +18,7 @@ class Instantiation {
   private final Substitution rule;
   private final Model model;
   private final PlanContext newPlan;
+  private final ValueRefReBinder reBinder;
 
   private String error;
 
@@ -26,6 +26,7 @@ class Instantiation {
     this.rule = rule;
     this.model = model;
     this.newPlan = model.plan().copy();
+    this.reBinder = new ValueRefReBinder(newPlan);
   }
 
   PlanContext instantiatedPlan() {
@@ -84,8 +85,8 @@ class Instantiation {
     if (lhsKeys.size() != rhsKeys.size() || lhsKeys.isEmpty())
       return fail(FAILURE_MISMATCHED_JOIN_KEYS);
 
-    lhsKeys = adaptValues(lhsKeys, outValuesOf(lhs));
-    rhsKeys = adaptValues(rhsKeys, outValuesOf(rhs));
+    lhsKeys = reBinder.rebindRefs(lhsKeys, outValuesOf(lhs));
+    rhsKeys = reBinder.rebindRefs(rhsKeys, outValuesOf(rhs));
     if (lhsKeys == null || rhsKeys == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final JoinKind joinKind = join.kind() == INNER_JOIN ? JoinKind.INNER_JOIN : JoinKind.LEFT_JOIN;
@@ -110,7 +111,7 @@ class Instantiation {
     if (predicate == null || values == null || values.isEmpty())
       return fail(FAILURE_INCOMPLETE_MODEL);
 
-    values = adaptValues(values, outValuesOf(child));
+    values = reBinder.rebindRefs(values, outValuesOf(child));
     if (values == null) return fail(FAILURE_FOREIGN_VALUE);
 
     return mkFilterNode(predicate, values, child);
@@ -124,7 +125,7 @@ class Instantiation {
     List<Value> values = model.ofAttrs(instantiationOf(inSub.attrs()));
     if (values == null || values.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
 
-    values = adaptValues(values, outValuesOf(lhs));
+    values = reBinder.rebindRefs(values, outValuesOf(lhs));
     if (values == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final Expression expression = PlanSupport.mkColRefsExpr(values.size());
@@ -142,12 +143,12 @@ class Instantiation {
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
     final List<Value> outAttrs = model.ofSchema(instantiationOf(proj.schema()));
-    if (outAttrs == null || outAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+    if (outAttrs == null) return fail(FAILURE_INCOMPLETE_MODEL);
 
     List<Value> inAttrs = model.ofAttrs(instantiationOf(proj.attrs()));
-    if (inAttrs == null || inAttrs.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
+    if (inAttrs == null) return fail(FAILURE_INCOMPLETE_MODEL);
 
-    inAttrs = adaptValues(inAttrs, outValuesOf(child));
+    inAttrs = reBinder.rebindRefs(inAttrs, outValuesOf(child));
     if (inAttrs == null) return fail(FAILURE_FOREIGN_VALUE);
 
     final ValuesRegistry valuesReg = newPlan.valuesReg();
@@ -180,31 +181,6 @@ class Instantiation {
 
   private List<Value> outValuesOf(int nodeId) {
     return newPlan.valuesReg().valuesOf(nodeId);
-  }
-
-  private List<Value> adaptValues(List<Value> values, List<Value> inValues) {
-    // Handle subquery elimination.
-    // e.g., Select sub.a From (Select t.a, t.b From t) As sub
-    //       -> Select sub.a From t
-    // But "sub.a" is actually not present in the out-values of "(Select t.a, t.b From t) As sub".
-    // We have to trace the ref-chain of "sub.a", and find that "t.a" is present.
-    // Finally, we replace "sub.a" by "t.a".
-    List<Value> adaptedValues = null;
-    for (int i = 0, bound = values.size(); i < bound; i++) {
-      final Value adapted = adaptValue(inValues.get(i), inValues);
-      if (adapted == null) return null;
-      if (adapted != inValues.get(i)) {
-        if (adaptedValues == null) adaptedValues = new ArrayList<>(values.size());
-        adaptedValues.add(adapted);
-      }
-    }
-    return adaptedValues == null ? values : adaptedValues;
-  }
-
-  private Value adaptValue(Value value, List<Value> lookup) {
-    final List<Value> refChain = new ArrayList<>(5);
-    for (; value != null; value = PlanSupport.deRef(newPlan, value)) refChain.add(value);
-    return linearFind(lookup, refChain::contains);
   }
 
   private int mkFilterNode(Expression expr, List<Value> refs, int child) {

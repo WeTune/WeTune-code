@@ -10,12 +10,13 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.checkNodePresent;
 
 class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanContext {
+  private int root;
   private final Schema schema;
   private final COW<TObjectIntMap<PlanNode>> nodeReg;
   private final ValuesRegistryImpl valuesReg;
   private final InfoCacheImpl infoCache;
 
-  protected PlanContextImpl(int expectedNumNodes, Schema schema) {
+  protected PlanContextImpl(int root, int expectedNumNodes, Schema schema) {
     super(new PlanNd[(expectedNumNodes <= 0 ? 16 : expectedNumNodes) + 1], 2);
     this.schema = schema;
     this.nodeReg = new COW<>(mkIdentityMap(), null);
@@ -25,11 +26,23 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
 
   private PlanContextImpl(PlanContextImpl other) {
     super(copyNodesArray((PlanNd[]) other.nodes), 2);
+    this.root = other.root;
     this.maxNodeId = other.maxNodeId;
     this.schema = other.schema;
     this.nodeReg = new COW<>(other.nodeReg.forRead(), PlanContextImpl::copyIdentityMap);
     this.valuesReg = new ValuesRegistryImpl(other.valuesReg, this);
     this.infoCache = new InfoCacheImpl(other.infoCache);
+  }
+
+  @Override
+  public int root() {
+    return root;
+  }
+
+  @Override
+  public PlanContext setRoot(int root) {
+    this.root = root;
+    return this;
   }
 
   @Override
@@ -77,6 +90,7 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
     valuesReg.relocateNode(from, to);
     infoCache.deleteNode(to);
     infoCache.renumberNode(from, to);
+    if (root == from) root = to;
     super.relocate(from, to);
   }
 

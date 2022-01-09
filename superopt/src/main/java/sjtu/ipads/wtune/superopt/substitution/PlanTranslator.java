@@ -275,7 +275,7 @@ class PlanTranslator {
     private PlanConstructor(Fragment template, boolean isTargetSide) {
       this.template = template;
       this.sql = SqlContext.mk(16);
-      this.plan = PlanContext.mk(schema);
+      this.plan = PlanContext.mk(schema, 0);
       this.isTargetSide = isTargetSide;
       this.instantiatedOps = new HashMap<>(8);
     }
@@ -283,7 +283,7 @@ class PlanTranslator {
     private PlanContext translate() {
       final int rootId = trTree(template.root());
       assert rootId != NO_SUCH_NODE;
-      return plan;
+      return plan.setRoot(rootId);
     }
 
     private int trTree(Op op) {

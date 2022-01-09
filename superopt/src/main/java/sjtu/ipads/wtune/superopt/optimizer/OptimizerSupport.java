@@ -2,6 +2,8 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 
+import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+
 public abstract class OptimizerSupport {
   public static final String FAILURE_INCOMPLETE_MODEL = "incomplete model ";
   public static final String FAILURE_MISMATCHED_JOIN_KEYS = "mismatched join key ";
@@ -16,9 +18,17 @@ public abstract class OptimizerSupport {
     LAST_ERROR.set(error);
   }
 
+  static int normalizeJoin(PlanContext plan, int rootId) {
+    return new NormalizeJoin(plan).normalizeTree(rootId);
+  }
+
+  static int normalizeProj(PlanContext plan, int rootId) {
+    return new NormalizeProj(plan).normalizeTree(rootId);
+  }
+
   static int normalizePlan(PlanContext plan, int rootId) {
-    rootId = new NormalizeJoin(plan).normalizeTree(rootId);
-    rootId = new NormalizeProj(plan).normalizeTree(rootId);
+    if ((rootId = normalizeJoin(plan, rootId)) == NO_SUCH_NODE) return NO_SUCH_NODE;
+    if ((rootId = normalizeProj(plan, rootId)) == NO_SUCH_NODE) return NO_SUCH_NODE;
     return rootId;
   }
 

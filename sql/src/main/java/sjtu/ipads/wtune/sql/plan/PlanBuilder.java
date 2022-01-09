@@ -51,7 +51,7 @@ class PlanBuilder {
   PlanBuilder(SqlNode ast, Schema schema) {
     this.ast = requireNonNull(ast);
     this.schema = requireNonNull(coalesce(ast.context().schema(), schema));
-    this.plan = PlanContext.mk(schema);
+    this.plan = PlanContext.mk(schema, 0);
     this.valuesReg = plan.valuesReg();
     this.tmpCtx = SqlContext.mk(8);
     this.synNameSeq = NameSequence.mkIndexed(SYN_NAME_PREFIX, 0);
@@ -59,7 +59,10 @@ class PlanBuilder {
 
   boolean build() {
     try {
-      return build0(ast) != FAIL;
+      final int root = build0(ast);
+      if (root == FAIL) return false;
+      plan.setRoot(root);
+      return true;
     } catch (RuntimeException ex) {
       error = dumpException(ex);
       return false;
@@ -248,7 +251,7 @@ class PlanBuilder {
     final LimitNode limitNode =
         LimitNode.mk(
             limit == null ? null : Expression.mk(limit),
-            offset == null ? null : Expression.mk(limit));
+            offset == null ? null : Expression.mk(offset));
 
     final int nodeId = plan.bindNode(limitNode);
     plan.setChild(nodeId, 0, child);

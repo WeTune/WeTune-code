@@ -20,5 +20,5 @@ public interface ValuesRegistry {
 
   void bindValueRefs(Expression expr, List<Value> valueRefs);
 
-  void displaceRef(Value oldValue, Value newValue, Set<Expression> excludedExpression);
+  void bindExpr(Value value, Expression expr);
 }
