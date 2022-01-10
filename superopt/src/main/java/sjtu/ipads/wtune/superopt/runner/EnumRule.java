@@ -50,7 +50,7 @@ public class EnumRule implements Runner {
 
     final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final Path dir = parentDir.resolve("rule" + subDirName);
+    final Path dir = parentDir.resolve("enumerations").resolve("run" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
@@ -60,10 +60,10 @@ public class EnumRule implements Runner {
     checkpoint = dir.resolve("checkpoint");
 
     final String prevCheckpointFile = args.getOptional("checkpoint", String.class, null);
-    prevCheckpoint = prevCheckpointFile == null ? null : parentDir.resolve(prevCheckpointFile);
+    prevCheckpoint = prevCheckpointFile == null ? null : dir.resolve(prevCheckpointFile);
 
     final String prevFailureFile = args.getOptional("failure", String.class, null);
-    prevFailure = prevFailureFile == null ? null : parentDir.resolve(prevFailureFile);
+    prevFailure = prevFailureFile == null ? null : dir.resolve(prevFailureFile);
 
     final String from = args.getOptional("from", String.class, "0,0");
     final String[] split = from.split(",");
@@ -186,6 +186,10 @@ public class EnumRule implements Runner {
 
       outLock.lock();
       outLocked = true;
+
+      System.out.println("Current Metrics ==>");
+      System.out.println(ConstraintSupport.getMetrics());
+      System.out.println("<==");
 
       IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
       if (i >= 0 && j >= 1) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));
