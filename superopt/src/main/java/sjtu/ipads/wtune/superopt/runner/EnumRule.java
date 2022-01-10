@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,7 +38,7 @@ public class EnumRule implements Runner {
   private int numWorker, workerIndex;
   private ExecutorService threadPool;
 
-  private int numSkipped;
+  private final AtomicInteger numSkipped = new AtomicInteger(0);
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -178,7 +179,7 @@ public class EnumRule implements Runner {
     try {
       final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       if (rules == null) {
-        ++numSkipped;
+        numSkipped.incrementAndGet();
         return;
       }
 
