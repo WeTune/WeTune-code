@@ -37,6 +37,8 @@ public class EnumRule implements Runner {
   private int numWorker, workerIndex;
   private ExecutorService threadPool;
 
+  private int numSkipped;
+
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
@@ -84,6 +86,7 @@ public class EnumRule implements Runner {
       } catch (InterruptedException ignored) {
       }
       System.out.println(ConstraintSupport.getMetrics().toString());
+      System.out.println("#Skipped=" + numSkipped);
     }
   }
 
@@ -173,19 +176,19 @@ public class EnumRule implements Runner {
   private void enumerate(Fragment f0, Fragment f1, int i, int j) {
     boolean outLocked = false, errLocked = false;
     try {
-      final long point0 = System.currentTimeMillis();
       final List<Substitution> rules = enumConstraints(f0, f1, timeout);
+      if (rules == null) {
+        ++numSkipped;
+        return;
+      }
+
       final List<String> serializedRules = map(rules, Substitution::toString);
 
-      final long point1 = System.currentTimeMillis();
       outLock.lock();
       outLocked = true;
 
       IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
       if (i >= 0 && j >= 1) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));
-
-      final long point2 = System.currentTimeMillis();
-      System.out.printf("%d %d\n", point2 - point0, point1 - point0);
 
     } catch (Throwable ex) {
       errLock.lock();

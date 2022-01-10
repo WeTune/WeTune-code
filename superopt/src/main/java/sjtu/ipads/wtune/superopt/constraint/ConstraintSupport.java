@@ -40,7 +40,7 @@ public interface ConstraintSupport {
   static List<Substitution> enumConstraints(
       Fragment f0, Fragment f1, long timeout, int tweaks, SymbolNaming naming) {
     final int bias = pickSource(f0, f1);
-    if (bias == 0) return emptyList();
+    if (bias == 0) return null;
 
     List<Substitution> rules = null;
 
@@ -63,7 +63,6 @@ public interface ConstraintSupport {
 
     return rules;
   }
-
 
   static List<Substitution> enumConstraintsSPES(Fragment f0, Fragment f1, long timeout) {
     return enumConstraints2(f0, f1, timeout, ENUM_FLAG_USE_SPES, null);
