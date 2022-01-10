@@ -16,23 +16,22 @@ done
 
 set -- "${postional_args[@]}"
 
-if [ -d "wtune_data/enumerations" ]; then
-  cwd="${PWD}"
-  cd 'wtune_data/enumerations' || true
-  files=$(ls -t -1 | ag 'run.+')
+if [[ -z "$rerun" ]]; then
+  if [ -d "wtune_data/enumerations" ]; then
+    cwd="${PWD}"
+    cd 'wtune_data/enumerations' || true
+    files=$(ls -t -1 | ag 'run.+')
 
-  if [[ -z "$rerun" ]]; then
     while IFS= read -r line; do
       if [ -f "${line}/checkpoint" ]; then
         checkpoint="${line}/checkpoint"
         break
       fi
     done <<<"${files}"
-  fi
-  cd "${cwd}" || exit
-fi
 
-cd ..
+    cd "${cwd}" || exit
+  fi
+fi
 
 if [ -z "${checkpoint}" ]; then
   gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 ${1} ${2}"
