@@ -1,8 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarStyle;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
@@ -115,18 +113,11 @@ public class EnumRule implements Runner {
     }
 
     final int total = (numTemplates * (numTemplates - 1)) >> 1;
-    final ProgressBar pb =
-        new ProgressBarBuilder()
-            .setTaskName("Candidates")
-            .setStyle(ProgressBarStyle.ASCII)
-            .setInitialMax(total)
-            .build();
+    System.out.printf("Rule Enumeration Begin! Total=%d, Partition=%d\n", total, total / numWorker);
 
     openThreadPool();
     for (int i = 0; i < numTemplates; ++i) {
       for (int j = i + 1; j < numTemplates; ++j) {
-        pb.step();
-
         final int ordinal = ordinal(numTemplates, i, j);
         if (isCompleted(completed, ordinal)) continue;
         if (!isOwned(ordinal)) continue;
@@ -182,14 +173,19 @@ public class EnumRule implements Runner {
   private void enumerate(Fragment f0, Fragment f1, int i, int j) {
     boolean outLocked = false, errLocked = false;
     try {
+      final long point0 = System.currentTimeMillis();
       final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       final List<String> serializedRules = map(rules, Substitution::toString);
 
+      final long point1 = System.currentTimeMillis();
       outLock.lock();
       outLocked = true;
 
       IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
       if (i >= 0 && j >= 1) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));
+
+      final long point2 = System.currentTimeMillis();
+      System.out.printf("%d %d\n", point2 - point0, point1 - point0);
 
     } catch (Throwable ex) {
       errLock.lock();

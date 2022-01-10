@@ -143,6 +143,8 @@ class ConstraintEnumerator {
 
         stages[0].enumerate();
 
+        if (uncertain) metric.uncertain.increment();
+
         return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
       }
     }
