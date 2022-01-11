@@ -18,21 +18,18 @@ done
 
 t=$(date '+%m_%d_%H_%M')
 
-cd wtune_data
-dirname="enumerations"
-mkdir "${dirname}" 2>/dev/null || true
+cd 'wtune_data/enumerations'
 name="rules.${t}.txt"
-
-files=$(ls -t -1 | ag 'rule.+')
+files=$(ls -t -1 | ag 'run.+')
 
 while IFS= read -r line; do
   if [ "${keep}" = 0 ]; then
       break
   fi
   if [ -f "${line}/success" ]; then
-    cat "${line}/success" >>"${dirname}/${name}"
+    cat "${line}/success" >>"${name}"
     keep=$((keep - 1))
   fi
 done <<<"${files}"
 
-ln -sfr "${dirname}/${name}" "rules.partial.txt"
+ln -sfr "${name}" "../rules.partial.txt"
