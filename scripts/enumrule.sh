@@ -34,7 +34,7 @@ if [[ -z "$rerun" ]]; then
 fi
 
 if [ -z "${checkpoint}" ]; then
-  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 ${1} ${2}"
+  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 -partition=${1}/${2}"
 else
-  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 -checkpoint=${checkpoint} ${1} ${2}"
+  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 -checkpoint=${checkpoint} -partition=${1}/${2}"
 fi
