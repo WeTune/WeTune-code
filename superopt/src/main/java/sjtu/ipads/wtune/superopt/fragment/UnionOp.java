@@ -15,6 +15,13 @@ class UnionOp extends BaseOp implements Union {
   }
 
   @Override
+  protected Op copy0() {
+    final UnionOp copy = new UnionOp();
+    copy.setDeduplicated(isDeduplicated);
+    return copy;
+  }
+
+  @Override
   public boolean accept0(OpVisitor visitor) {
     return visitor.enterUnion(this);
   }
