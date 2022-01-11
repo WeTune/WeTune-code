@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_DISABLE_JOIN_FLIP;
 
 class JoinMatcher {
   private final Join op;
@@ -30,6 +31,7 @@ class JoinMatcher {
   }
 
   private Match tryMatchAt(int rootJoineeIdx, Match baseMatch) {
+    if (rootJoineeIdx < 0 && !allowFlip()) return null;
     if (!joinTree.isEligibleRoot(rootJoineeIdx)) return null;
 
     final PlanContext newPlan = joinTree.mkRootedBy(rootJoineeIdx);
@@ -40,5 +42,9 @@ class JoinMatcher {
 
     if (derived.matchOne(op, joiner)) return derived;
     else return null;
+  }
+
+  private boolean allowFlip() {
+    return (OptimizerSupport.optimizerTweaks & TWEAK_DISABLE_JOIN_FLIP) == 0;
   }
 }

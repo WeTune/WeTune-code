@@ -9,6 +9,7 @@ import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizationStep;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -16,11 +17,13 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.dumpTrace;
 
 public abstract class TestHelper {
   private static final String TEST_SCHEMA =
@@ -63,6 +66,7 @@ public abstract class TestHelper {
     final Optimizer optimizer = Optimizer.mk(bankForTest());
     optimizer.setTracing(true);
     final Set<PlanContext> optimized = optimizer.optimize(plan);
+    for (PlanContext opt : optimized) dumpTrace(optimizer, opt);
     return SetSupport.map(optimized, it -> translateAsAst(it, it.root(), false));
   }
 

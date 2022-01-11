@@ -7,13 +7,17 @@ import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.constraint.Constraints;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
@@ -27,6 +31,8 @@ class ReduceRuleBank {
   }
 
   SubstitutionBank reduce() {
+    OptimizerSupport.setOptimizerTweaks(OptimizerSupport.TWEAK_DISABLE_JOIN_FLIP);
+
     bank.removeIf(ReduceRuleBank::isUselessRule1);
     bank.removeIf(ReduceRuleBank::isUselessRule2);
 
@@ -56,7 +62,7 @@ class ReduceRuleBank {
     final List<Symbol> attrs = rule._0().symbols().symbolsOf(ATTRS);
     if (attrs.size() <= 5) return false;
 
-    for (int i = 244, bound = attrs.size() - 1; i <= bound; i++) {
+    for (int i = 0, bound = attrs.size() - 1; i <= bound; i++) {
       for (int j = i + 1; j < bound; j++)
         if (!constraints.isEq(attrs.get(i), attrs.get(j))) return false;
     }
@@ -87,7 +93,10 @@ class ReduceRuleBank {
 
   private static Set<String> optimizeAsString(PlanContext plan, SubstitutionBank rules) {
     final Optimizer optimizer = Optimizer.mk(rules);
-    return SetSupport.map(optimizer.optimize(plan), it -> stringifyTree(it, it.root()));
+    //    optimizer.setTracing(true);
+    final Set<PlanContext> optimized = optimizer.optimize(plan);
+    //    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
+    return SetSupport.map(optimized, it -> stringifyTree(it, it.root()));
   }
 
   private static void completePlan(PlanContext plan) {
@@ -105,5 +114,22 @@ class ReduceRuleBank {
     final int projNode = plan.bindNode(proj);
     plan.setChild(projNode, 0, oldRoot);
     plan.setRoot(projNode);
+  }
+
+  public static void main(String[] args) throws IOException {
+    //    final SubstitutionBank bank =
+    //        SubstitutionSupport.loadBank(Path.of("wtune_data", "rules.txt.bak"));
+    //    final SubstitutionBank rules =
+    //        SubstitutionSupport.loadBank(Path.of("wtune_data", "rules.test.txt"));
+    //    for (Substitution rule : rules.rules()) bank.add(rule);
+    //    System.out.println(bank.size());
+    final Substitution rule =
+        Substitution.parse(
+            "Proj<a5 s1>(Filter<p1 a4>(InnerJoin<a2 a3>(Input<t0>,Proj<a1 s0>(Filter<p0 a0>(Input<t1>)))))|Proj<a10 s2>(Filter<p3 a9>(Filter<p2 a8>(InnerJoin<a6 a7>(Input<t2>,Input<t3>))))|AttrsSub(a0,t1);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,s0);AttrsSub(a4,t0);AttrsSub(a5,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a6,a2);AttrsEq(a7,a3);AttrsEq(a8,a0);AttrsEq(a9,a4);AttrsEq(a10,a5);PredicateEq(p2,p0);PredicateEq(p3,p1);SchemaEq(s2,s1)");
+    //    System.out.println(bank.contains(rule));
+    //    System.out.println(rule);
+    //    System.out.println(new ReduceRuleBank(bank).isImpliedRule(rule));
+    System.out.println(isUselessRule1(rule));
+    System.out.println(isUselessRule2(rule));
   }
 }

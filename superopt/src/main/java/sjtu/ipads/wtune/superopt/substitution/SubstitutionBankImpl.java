@@ -2,64 +2,71 @@ package sjtu.ipads.wtune.superopt.substitution;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Predicate;
 
 class SubstitutionBankImpl implements SubstitutionBank {
-  private final Set<Substitution> substitutions;
-  private final Set<String> known;
-  private final Multimap<String, Substitution> fingerprintIndex;
+  private final Map<String, Substitution> rules;
+  private final Multimap<String, String> fingerprintIndex;
 
   SubstitutionBankImpl() {
-    this.substitutions = new LinkedHashSet<>(2048);
-    this.known = new HashSet<>(2048);
+    this.rules = new HashMap<>(2048);
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
   }
 
   @Override
-  public Collection<Substitution> rules() {
-    return substitutions;
+  public int size() {
+    assert rules.size() == fingerprintIndex.size();
+    return rules.size();
   }
 
   @Override
-  public boolean add(Substitution substitution) {
-    if (!known.add(substitution.canonicalStringify())) return false;
-    substitutions.add(substitution);
-    substitution.setId(substitutions.size());
-    fingerprintIndex.put(Fingerprint.mk(substitution._0()).toString(), substitution);
+  public Collection<Substitution> rules() {
+    return rules.values();
+  }
+
+  @Override
+  public boolean add(Substitution rule) {
+    final String identity = rule.canonicalStringify();
+    if (rules.containsKey(identity)) return false;
+    rule.setId(rules.size() + 1);
+    rules.put(identity, rule);
+    fingerprintIndex.put(Fingerprint.mk(rule._0()).toString(), identity);
     return true;
   }
 
   @Override
   public void remove(Substitution o) {
-    if (substitutions.remove(o)) {
-      known.remove(o.canonicalStringify());
-      fingerprintIndex.remove(Fingerprint.mk(o._0()).toString(), o);
-    }
+    final String identity = o.canonicalStringify();
+    final Substitution removed = rules.remove(identity);
+    if (removed != null) fingerprintIndex.remove(Fingerprint.mk(o._0()).toString(), identity);
   }
 
   @Override
   public void removeIf(Predicate<Substitution> check) {
-    final Iterator<Substitution> iterator = substitutions.iterator();
-    while (iterator.hasNext()) {
-      final Substitution rule = iterator.next();
+    final var iter = rules.entrySet().iterator();
+    while (iter.hasNext()) {
+      final Substitution rule = iter.next().getValue();
+      final String identity = rule.canonicalStringify();
       if (check.test(rule)) {
-        iterator.remove();
-        known.remove(rule.canonicalStringify());
-        fingerprintIndex.remove(Fingerprint.mk(rule._0()).toString(), rule);
+        iter.remove();
+        fingerprintIndex.remove(Fingerprint.mk(rule._0()).toString(), identity);
       }
     }
   }
 
   @Override
-  public boolean contains(String substitution) {
-    return known.contains(substitution);
+  public boolean contains(Substitution rule) {
+    return rules.containsKey(rule.canonicalStringify());
   }
 
   @Override
   public Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint) {
-    return fingerprintIndex.get(fingerprint.fingerprint());
+    return ListSupport.map(fingerprintIndex.get(fingerprint.fingerprint()), rules::get);
   }
 }

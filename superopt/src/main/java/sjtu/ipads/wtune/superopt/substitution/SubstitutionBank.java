@@ -6,10 +6,11 @@ import java.util.Collection;
 import java.util.function.Predicate;
 
 public interface SubstitutionBank {
+  int size();
 
   boolean add(Substitution substitution);
 
-  boolean contains(String substitution);
+  boolean contains(Substitution rule);
 
   void remove(Substitution substitution);
 
@@ -18,8 +19,4 @@ public interface SubstitutionBank {
   Collection<Substitution> rules();
 
   Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint);
-
-  default int size() {
-    return rules().size();
-  }
 }

@@ -2,6 +2,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+
+import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.setupSubqueryExprOf;
@@ -13,9 +16,16 @@ public abstract class OptimizerSupport {
   public static final String FAILURE_MALFORMED_SUBQUERY = "malformed subquery ";
   public static final String FAILURE_UNKNOWN_OP = "unknown op ";
 
+  public static final int TWEAK_DISABLE_JOIN_FLIP = 1;
+  static int optimizerTweaks = 0;
+
   private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
 
   static final System.Logger LOG = System.getLogger("optimizer");
+
+  public static void setOptimizerTweaks(int optimizerTweaks) {
+    OptimizerSupport.optimizerTweaks = optimizerTweaks;
+  }
 
   static void setLastError(String error) {
     LAST_ERROR.set(error);
@@ -49,6 +59,20 @@ public abstract class OptimizerSupport {
       }
 
     return true;
+  }
+
+  public static void dumpTrace(Optimizer optimizer, PlanContext result) {
+    System.out.println("=== begin dump trace ===");
+    final List<OptimizationStep> steps = optimizer.traceOf(result);
+    if (!steps.isEmpty()) {
+      final PlanContext startPoint = steps.get(0).source();
+      System.out.println(PlanSupport.stringifyTree(startPoint, startPoint.root(), false));
+      for (OptimizationStep step : steps) {
+        System.out.println("  ~~ " + step.rule());
+        System.out.println("==> " + step.target());
+      }
+    }
+    System.out.println("=== end dump trace ===");
   }
 
   public static String getLastError() {
