@@ -215,7 +215,7 @@ public abstract class SqlSupport {
 
   public static SqlNode mkWildcard(SqlContext ctx, String tableName) {
     final SqlNode wildcard = SqlNode.mk(ctx, Wildcard);
-    wildcard.$(Wildcard_Table, mkTableName(ctx, tableName));
+    if (tableName != null) wildcard.$(Wildcard_Table, mkTableName(ctx, tableName));
     return wildcard;
   }
 

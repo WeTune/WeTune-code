@@ -95,7 +95,7 @@ class Args extends AbstractList<Arg> {
     else return defaultVal;
   }
 
-  private static  <T> T convertTo(String value, Class<T> cls) {
+  private static <T> T convertTo(String value, Class<T> cls) {
     Class<?> destClass = cls.isPrimitive() ? primitiveToWrapper(cls) : cls;
     if (destClass == String.class) {
       return (T) value;

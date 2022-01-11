@@ -1,10 +1,12 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
+import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
@@ -36,17 +38,43 @@ public class EnumRule implements Runner {
   private int iBegin, jBegin;
   private int numWorker, workerIndex;
   private ExecutorService threadPool;
+  private Pair<Fragment, Fragment> target;
 
   private final AtomicInteger numSkipped = new AtomicInteger(0);
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
+    final String target = args.getOptional("target", String.class, null);
+    if (target != null) {
+      try {
+        final String[] targetFields = target.split("\\|");
+        final Fragment source = Fragment.parse(targetFields[0], null);
+        final Fragment destination = Fragment.parse(targetFields[1], null);
+        this.target = Pair.of(source, destination);
+        return;
+
+      } catch (Throwable ex) {
+        throw new IllegalArgumentException("invalid target: " + target, ex);
+      }
+    }
+
+    final String partition = args.getOptional("partition", String.class, "1/0");
+    final String[] partitionFields = partition.split("/");
     echo = args.getOptional("echo", boolean.class, false);
     timeout = args.getOptional("timeout", long.class, 240000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
-    numWorker = args.getPositional(0, int.class);
-    workerIndex = args.getPositional(1, int.class);
+
+    if (timeout <= 0) throw new IllegalArgumentException("invalid timeout: " + timeout);
+    if (parallelism <= 0) throw new IllegalArgumentException("invalid parallelism: " + parallelism);
+    if (partitionFields.length != 2)
+      throw new IllegalArgumentException("invalid partition: " + partition);
+    try {
+      numWorker = Integer.parseInt(partitionFields[0]);
+      workerIndex = Integer.parseInt(partitionFields[1]);
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException("invalid partition: " + partition);
+    }
 
     final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
@@ -73,7 +101,8 @@ public class EnumRule implements Runner {
 
   @Override
   public void run() throws Exception {
-    if (prevFailure != null) fromFailures();
+    if (target != null) fromTarget();
+    else if (prevFailure != null) fromFailures();
     else fromEnumeration();
   }
 
@@ -150,11 +179,33 @@ public class EnumRule implements Runner {
     }
   }
 
-  private void fromString(String fragmentPair) {
-    final String[] split = fragmentPair.split("\\|");
-    final Fragment f0 = Fragment.parse(split[0], null);
-    final Fragment f1 = Fragment.parse(split[1], null);
-    enumerate(f0, f1, -1, -1);
+  private void fromTarget() {
+    try {
+      final SymbolNaming naming = SymbolNaming.mk();
+      final Fragment source = target.getLeft();
+      final Fragment destination = target.getRight();
+      naming.name(source.symbols());
+      naming.name(destination.symbols());
+      System.out.println(source.stringify(naming));
+      System.out.println(destination.stringify(naming));
+
+      final List<Substitution> rules =
+          enumConstraints(target.getLeft(), target.getRight(), timeout);
+
+      if (rules == null) {
+        System.out.println("==> Skipped.");
+        return;
+      }
+
+      System.out.printf("==> %d Rules:\n", rules.size());
+      for (Substitution rule : rules) System.out.println(rule);
+      System.out.println("Metrics: ");
+      System.out.println(ConstraintSupport.getEnumerationMetric());
+
+    } catch (Throwable ex) {
+      System.out.println("==> Exception!");
+      ex.printStackTrace(System.out);
+    }
   }
 
   private int ordinal(int total, int i, int j) {

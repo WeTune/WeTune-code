@@ -259,7 +259,6 @@ class ToAstTranslator {
         assert filters == null && selectItems == null && groupBys == null && having == null;
         assert !deduplicated && !isAgg && qualification == null;
         q = tableSource;
-
       } else {
         if (selectItems == null && !translator.allowIncomplete)
           return translator.onError(FAILURE_MISSING_PROJECTION);
@@ -271,8 +270,10 @@ class ToAstTranslator {
         if (!isNullOrEmpty(groupBys)) spec.$(QuerySpec_GroupBy, SqlNodes.mk(sql, groupBys));
         if (having != null) spec.$(QuerySpec_Having, having);
 
-        if (selectItems != null) spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, selectItems));
-        else spec.$(QuerySpec_SelectItems, SqlNodes.mk(sql, singletonList(mkWildcard(sql, null))));
+        final SqlNodes selections;
+        if (selectItems != null) selections = SqlNodes.mk(sql, selectItems);
+        else selections = SqlNodes.mk(sql, singletonList(mkWildcard(sql, null)));
+        spec.$(QuerySpec_SelectItems, selections);
 
         if (!isAgg && deduplicated) spec.$(QuerySpec_Distinct, true);
         if (isAgg && selectItems != null) {

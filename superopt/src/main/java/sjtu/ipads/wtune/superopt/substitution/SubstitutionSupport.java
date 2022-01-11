@@ -37,13 +37,6 @@ public class SubstitutionSupport {
     return bank;
   }
 
-  public static void printReadable(Substitution substitution) {
-    System.out.println(substitution);
-    final Pair<PlanContext, PlanContext> pair = translateAsPlan(substitution);
-    System.out.println(" q0: " + pair.getLeft());
-    System.out.println(" q1: " + pair.getRight());
-  }
-
   private static void removeMeaningless(SubstitutionBank bank) {
     bank.removeIf(MeaninglessChecker::isMeaningless);
   }
