@@ -55,6 +55,11 @@ public class InfoCacheImpl implements InfoCache {
   }
 
   @Override
+  public boolean noSubqueryExpr() {
+    return subqueryExprs.forRead().isEmpty();
+  }
+
+  @Override
   public Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId) {
     return joinKeys.forRead().get(nodeId);
   }

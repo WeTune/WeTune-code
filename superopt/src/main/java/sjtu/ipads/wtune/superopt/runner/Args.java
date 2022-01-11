@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.common.utils.ListSupport;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;

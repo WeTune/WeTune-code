@@ -18,11 +18,16 @@ import sjtu.ipads.wtune.sql.schema.Table;
 import java.util.*;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Exists;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IN_SUBQUERY;
+import static sjtu.ipads.wtune.sql.plan.DependentRefInspector.inspectDepRefs;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 
 public abstract class PlanSupport {
@@ -233,43 +238,37 @@ public abstract class PlanSupport {
     return inputs;
   }
 
-  public static <T extends Collection<Expression>> T gatherExpressions(
-      PlanContext plan, int treeRoot, T collection) {
+  public static List<Expression> getExprsIn(PlanContext plan, int treeRoot) {
     final PlanKind kind = plan.kindOf(treeRoot);
     switch (kind) {
       case Input:
       case Exists:
       case SetOp:
       case Limit:
-        break;
+        return emptyList();
       case Filter:
-        collection.add(((SimpleFilterNode) plan.nodeAt(treeRoot)).predicate());
-        break;
+        return singletonList(((SimpleFilterNode) plan.nodeAt(treeRoot)).predicate());
       case InSub:
-        collection.add(((InSubNode) plan.nodeAt(treeRoot)).expr());
-        break;
+        return singletonList(((InSubNode) plan.nodeAt(treeRoot)).expr());
       case Proj:
-        collection.addAll(((ProjNode) plan.nodeAt(treeRoot)).attrExprs());
-        break;
+        return ((ProjNode) plan.nodeAt(treeRoot)).attrExprs();
       case Agg:
         {
           final AggNode agg = (AggNode) plan.nodeAt(treeRoot);
-          collection.addAll(agg.attrExprs());
-          collection.addAll(agg.groupByExprs());
-          if (agg.havingExpr() != null) collection.add(agg.havingExpr());
-          break;
+          final List<Expression> exprs =
+              new ArrayList<>(agg.attrExprs().size() + agg.groupByExprs().size() + 1);
+          exprs.addAll(agg.attrExprs());
+          exprs.addAll(agg.groupByExprs());
+          if (agg.havingExpr() != null) exprs.add(agg.havingExpr());
+          return exprs;
         }
       case Sort:
-        collection.addAll(((SortNode) plan.nodeAt(treeRoot)).sortSpec());
-        break;
+        return ((SortNode) plan.nodeAt(treeRoot)).sortSpec();
       case Join:
-        collection.add(((JoinNode) plan.nodeAt(treeRoot)).joinCond());
-        break;
+        return singletonList(((JoinNode) plan.nodeAt(treeRoot)).joinCond());
+      default:
+        throw new IllegalArgumentException("unsupported node: " + kind);
     }
-
-    for (int i = 0, bound = kind.numChildren(); i < bound; ++i)
-      gatherExpressions(plan, plan.childOf(treeRoot, i), collection);
-    return collection;
   }
 
   public static List<Value> getRefBindingLookup(PlanContext plan, int nodeId) {
@@ -364,9 +363,60 @@ public abstract class PlanSupport {
     plan.infoCache().putJoinKeyOf(joinNodeId, lhsRefs, rhsRefs);
   }
 
+  public static boolean setupSubqueryExprOf(PlanContext plan, int nodeId) {
+    /* Make expression for subquery */
+    // e.g., The expr of "InSub<q0.a>(T, Proj<R.c>(Filter<p, T.b>(R)))" is
+    //       "#.# IN (Select R.c From T Where p(#.#))"
+    final PlanKind kind = plan.kindOf(nodeId);
+    if (kind == InSub) return setupInSub(plan, nodeId);
+    else if (kind == PlanKind.Exists) return setupExists(plan, nodeId);
+    else throw new IllegalArgumentException("not a subquery filter: " + nodeId + " in " + plan);
+  }
+
+  private static boolean setupInSub(PlanContext plan, int nodeId) {
+    final SqlNode inSubExprAst = mkInSubExpr(plan, nodeId);
+    if (inSubExprAst == null) return false;
+
+    final ValuesRegistry valuesReg = plan.valuesReg();
+    final InSubNode inSub = (InSubNode) plan.nodeAt(nodeId);
+    // collect the dependent refs from the subquery.
+    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
+    final List<Value> depValueRefs = deps.getLeft();
+    final List<SqlNode> depColRefs = deps.getRight();
+    depValueRefs.addAll(0, valuesReg.valueRefsOf(inSub.expr()));
+    depColRefs.addAll(0, inSub.expr().colRefs());
+
+    final Expression inSubExpr = Expression.mk(inSubExprAst, depColRefs);
+    valuesReg.bindValueRefs(inSubExpr, depValueRefs);
+    plan.infoCache().putSubqueryExprOf(nodeId, inSubExpr);
+
+    return true;
+  }
+
+  private static boolean setupExists(PlanContext plan, int nodeId) {
+    final SqlNode existsExprAst = mkExistsExpr(plan, nodeId);
+    if (existsExprAst == null) return false;
+
+    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
+    final List<Value> depValueRefs = deps.getLeft();
+    final List<SqlNode> depColRefs = deps.getRight();
+    final Expression existsExpr = Expression.mk(existsExprAst, depColRefs);
+    plan.valuesReg().bindValueRefs(existsExpr, depValueRefs);
+    plan.infoCache().putSubqueryExprOf(nodeId, existsExpr);
+
+    return true;
+  }
+
   //// Expression-related
   public static boolean isColRef(Expression expr) {
     return ColRef.isInstance(expr.template());
+  }
+
+  public static boolean isColRefs(Expression expr) {
+    final SqlNode ast = expr.template();
+    if (ColRef.isInstance(ast)) return true;
+    if (!Tuple.isInstance(ast)) return false;
+    return all(ast.$(Tuple_Exprs), ColRef::isInstance);
   }
 
   public static Expression mkColRefExpr(Value value) {
@@ -377,12 +427,12 @@ public abstract class PlanSupport {
     return Expression.mk(mkColRef(SqlContext.mk(2), PLACEHOLDER_NAME, PLACEHOLDER_NAME));
   }
 
-  public static Expression mkColRefsExpr(int i) {
-    if (i == 1) return mkColRefExpr();
+  public static Expression mkColRefsExpr(int count) {
+    if (count == 1) return mkColRefExpr();
 
-    final SqlContext sqlCtx = SqlContext.mk(i * 2 + 1);
-    final TIntList refs = new TIntArrayList(i);
-    for (int n = 0; n < i; ++n) {
+    final SqlContext sqlCtx = SqlContext.mk(count * 2 + 1);
+    final TIntList refs = new TIntArrayList(count);
+    for (int n = 0; n < count; ++n) {
       final SqlNode ref = mkColRef(sqlCtx, PLACEHOLDER_NAME, PLACEHOLDER_NAME);
       refs.add(ref.nodeId());
     }
@@ -422,6 +472,26 @@ public abstract class PlanSupport {
     return Binary.isInstance(exprAst)
         && Literal.isInstance(exprAst.$(Binary_Left))
         && Literal.isInstance(exprAst.$(Binary_Right));
+  }
+
+  private static SqlNode mkInSubExpr(PlanContext plan, int nodeId) {
+    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
+    if (query == null) return null;
+
+    final SqlContext sqlCtx = query.context();
+    final SqlNode rhsExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
+    final SqlNode lhsExpr = copyAst(((InSubNode) plan.nodeAt(nodeId)).expr().template(), sqlCtx);
+    return SqlSupport.mkBinary(sqlCtx, IN_SUBQUERY, lhsExpr, rhsExpr);
+  }
+
+  private static SqlNode mkExistsExpr(PlanContext plan, int nodeId) {
+    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
+    if (query == null) return null;
+
+    final SqlContext sqlCtx = query.context();
+    final SqlNode queryExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
+    final SqlNode exists = SqlNode.mk(sqlCtx, Exists);
+    return exists.$(Exists_Subquery, queryExpr);
   }
 
   private static boolean mustBeQualified(PlanContext ctx, int nodeId) {

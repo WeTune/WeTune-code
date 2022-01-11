@@ -226,7 +226,6 @@ class Model {
     int path = plan.valuesReg().initiatorOf(rootRef);
     while (path != surface) {
       final int parent = plan.parentOf(path);
-      assert plan.childOf(parent, 0) == path;
       if (plan.kindOf(parent).isFilter()) return false;
       path = parent;
     }

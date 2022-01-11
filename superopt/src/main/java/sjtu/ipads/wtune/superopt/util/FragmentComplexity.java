@@ -20,7 +20,7 @@ class FragmentComplexity implements Complexity {
   private void incrementOpCount(Op op) {
     ++opCounts[op.kind().ordinal()];
     // Treat deduplication as an operator.
-    if (op.kind() == PROJ && ((Proj) op).isDeduplicated()) ++opCounts[opCounts.length - 1];
+    if (op.kind() == PROJ && ((Proj) op).isDeduplicated()) ++opCounts[opCounts.length - 2];
   }
 
   @Override

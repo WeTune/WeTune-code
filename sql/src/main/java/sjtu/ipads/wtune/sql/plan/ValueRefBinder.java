@@ -12,14 +12,11 @@ import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
-import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
-import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
+import static sjtu.ipads.wtune.sql.ast.ExprFields.Exists_Subquery;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Exists;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Table;
-import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IN_SUBQUERY;
-import static sjtu.ipads.wtune.sql.plan.DependentRefInspector.inspectDepRefs;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 
 class ValueRefBinder {
@@ -138,17 +135,8 @@ class ValueRefBinder {
     final List<Value> lookup = ListSupport.join(primaryLookup, secondaryLookup);
     if (!bind0(plan.childOf(nodeId, 1), lookup)) return false;
 
-    final SqlNode existsExprAst = mkExistsExpr(nodeId);
-    if (existsExprAst == null) return onError(FAILURE_BAD_SUBQUERY_EXPR);
-
-    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
-    final List<Value> depValueRefs = deps.getLeft();
-    final List<SqlNode> depColRefs = deps.getRight();
-    final Expression existsExpr = Expression.mk(existsExprAst, depColRefs);
-    plan.infoCache().putSubqueryExprOf(nodeId, existsExpr);
-    valuesReg.bindValueRefs(existsExpr, depValueRefs);
-
-    return true;
+    if (setupSubqueryExprOf(plan, nodeId)) return true;
+    else return onError(FAILURE_BAD_SUBQUERY_EXPR);
   }
 
   private boolean bindInSub(int nodeId, List<Value> secondaryLookup) {
@@ -161,26 +149,10 @@ class ValueRefBinder {
     valuesReg.bindValueRefs(lhsExpr, valueRefs);
     if (valueRefs.contains(null) || !bind0(plan.childOf(nodeId, 1), lookup)) return false;
 
-    inSub.setPlain(isPlainInSub(inSub));
+    inSub.setPlain(isColRefs(inSub.expr()));
 
-    /* Make expression for subquery */
-    // e.g., The expr of "InSub<q0.a>(T, Proj<R.c>(Filter<p, T.b>(R)))" is
-    //       "#.# IN (Select R.c From T Where p(#.#))"
-    final SqlNode inSubExprAst = mkInSubExpr(nodeId);
-    if (inSubExprAst == null) return onError(FAILURE_BAD_SUBQUERY_EXPR + inSub);
-
-    // collect the dependent refs from the subquery.
-    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
-    final List<Value> depValueRefs = deps.getLeft();
-    final List<SqlNode> depColRefs = deps.getRight();
-    depValueRefs.addAll(0, valueRefs);
-    depColRefs.addAll(0, lhsExpr.colRefs());
-
-    final Expression inSubExpr = Expression.mk(inSubExprAst, depColRefs);
-    plan.infoCache().putSubqueryExprOf(nodeId, inSubExpr);
-    valuesReg.bindValueRefs(inSubExpr, depValueRefs);
-
-    return true;
+    if (setupSubqueryExprOf(plan, nodeId)) return true;
+    else return onError(FAILURE_BAD_SUBQUERY_EXPR + inSub);
   }
 
   private boolean bindSort(int nodeId) {
@@ -232,16 +204,6 @@ class ValueRefBinder {
     return false;
   }
 
-  private SqlNode mkInSubExpr(int nodeId) {
-    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
-    if (query == null) return null;
-
-    final SqlContext sqlCtx = query.context();
-    final SqlNode rhsExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
-    final SqlNode lhsExpr = copyAst(((InSubNode) plan.nodeAt(nodeId)).expr().template(), sqlCtx);
-    return SqlSupport.mkBinary(sqlCtx, IN_SUBQUERY, lhsExpr, rhsExpr);
-  }
-
   private SqlNode mkExistsExpr(int nodeId) {
     final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
     if (query == null) return null;
@@ -252,10 +214,4 @@ class ValueRefBinder {
     return exists.$(Exists_Subquery, queryExpr);
   }
 
-  private static boolean isPlainInSub(InSubNode inSub) {
-    final SqlNode expr = inSub.expr().template();
-    if (ColRef.isInstance(expr)) return true;
-    if (!Tuple.isInstance(expr)) return false;
-    return all(expr.$(Tuple_Exprs), ColRef::isInstance);
-  }
 }

@@ -3,13 +3,10 @@ package sjtu.ipads.wtune.superopt.optimizer;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.plan.*;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.gatherExpressions;
 
 class ReplaceSubPlan {
   private final PlanContext replacementPlan;
@@ -36,7 +33,10 @@ class ReplaceSubPlan {
     replacedPlan.setChild(parent, childIdx, newSubPlan);
 
     final ValueRefReBinder reBinder = new ValueRefReBinder(replacedPlan);
-    if (!reBinder.rebindToRoot(newSubPlan)) return NO_SUCH_NODE;
+    if (!reBinder.rebindToRoot(newSubPlan)) {
+      reBinder.rebindToRoot(newSubPlan);
+      return NO_SUCH_NODE;
+    }
 
     final PlanNode newSubPlanNode = replacedPlan.nodeAt(newSubPlan);
     replacedPlan.deleteDetached(toRoot);
@@ -96,13 +96,16 @@ class ReplaceSubPlan {
 
     final InSubNode filterNode = (InSubNode) replacementPlan.nodeAt(fromNode);
     final Expression expr = filterNode.expr();
-    final Values refs = replacementPlan.valuesReg().valueRefsOf(expr);
+    final ValuesRegistry replacementValuesReg = replacementPlan.valuesReg();
+    final Values refs = replacementValuesReg.valueRefsOf(expr);
     final Expression subqueryExpr = replacementPlan.infoCache().getSubqueryExprOf(fromNode);
+    final Values subqueryRefs = replacementValuesReg.valueRefsOf(subqueryExpr);
 
     final int toNode = replacedPlan.bindNode(filterNode);
     replacedPlan.setChild(toNode, 0, lhs);
     replacedPlan.setChild(toNode, 1, rhs);
     replacedPlan.valuesReg().bindValueRefs(expr, refs);
+    replacedPlan.valuesReg().bindValueRefs(subqueryExpr, subqueryRefs);
     replacedPlan.infoCache().putSubqueryExprOf(toNode, subqueryExpr);
 
     return toNode;

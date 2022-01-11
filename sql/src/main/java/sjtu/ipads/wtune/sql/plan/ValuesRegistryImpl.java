@@ -7,7 +7,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.COW;
 import sjtu.ipads.wtune.sql.schema.Column;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
@@ -18,16 +21,16 @@ class ValuesRegistryImpl implements ValuesRegistry {
   private int nextId;
   private final PlanContext ctx;
   private final COW<TIntObjectMap<Values>> nodeValues;
-  private final COW<TIntObjectMap<Column>> valueColumns;
-  private final COW<TIntObjectMap<Expression>> valueExprs;
+  private final COW<Map<Value, Column>> valueColumns;
+  private final COW<Map<Value, Expression>> valueExprs;
   private final COW<Map<Expression, Values>> exprRefs;
 
   protected ValuesRegistryImpl(PlanContext ctx) {
     this.nextId = 0;
     this.ctx = ctx;
     this.nodeValues = new COW<>(new TIntObjectHashMap<>(ctx.maxNodeId()), null);
-    this.valueColumns = new COW<>(new TIntObjectHashMap<>(), null);
-    this.valueExprs = new COW<>(new TIntObjectHashMap<>(), null);
+    this.valueColumns = new COW<>(new IdentityHashMap<>(), null);
+    this.valueExprs = new COW<>(new IdentityHashMap<>(), null);
     this.exprRefs = new COW<>(new IdentityHashMap<>(), null);
   }
 
@@ -35,9 +38,9 @@ class ValuesRegistryImpl implements ValuesRegistry {
     this.ctx = newPlan;
     this.nextId = toCopy.nextId;
     this.nodeValues = new COW<>(toCopy.nodeValues.forRead(), TIntObjectHashMap::new);
-    this.valueExprs = new COW<>(toCopy.valueExprs.forRead(), TIntObjectHashMap::new);
-    this.exprRefs = new COW<>(toCopy.exprRefs.forRead(), HashMap::new);
-    this.valueColumns = new COW<>(toCopy.valueColumns.forRead(), TIntObjectHashMap::new);
+    this.valueColumns = new COW<>(toCopy.valueColumns.forRead(), IdentityHashMap::new);
+    this.valueExprs = new COW<>(toCopy.valueExprs.forRead(), IdentityHashMap::new);
+    this.exprRefs = new COW<>(toCopy.exprRefs.forRead(), IdentityHashMap::new);
   }
 
   @Override
@@ -91,12 +94,12 @@ class ValuesRegistryImpl implements ValuesRegistry {
 
   @Override
   public Column columnOf(Value value) {
-    return valueColumns.forRead().get(value.id());
+    return valueColumns.forRead().get(value);
   }
 
   @Override
   public Expression exprOf(Value value) {
-    return valueExprs.forRead().get(value.id());
+    return valueExprs.forRead().get(value);
   }
 
   @Override
@@ -122,7 +125,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
 
   @Override
   public void bindExpr(Value value, Expression expr) {
-    valueExprs.forWrite().put(value.id(), expr);
+    valueExprs.forWrite().put(value, expr);
   }
 
   void relocateNode(int from, int to) {
@@ -137,15 +140,14 @@ class ValuesRegistryImpl implements ValuesRegistry {
     if (nodeValues.forRead().containsKey(id)) {
       final Values values = nodeValues.forWrite().remove(id);
       if (values != null && !values.isEmpty() && initiatorOf(values.get(0)) == NO_SUCH_NODE)
-        for (Value value : values) removeValue(value);
+        for (Value value : values) deleteValue(value);
     }
   }
 
-  private void removeValue(Value value) {
-    final int valueId = value.id();
-    if (valueColumns.forRead().containsKey(valueId)) valueColumns.forWrite().remove(valueId);
-    if (valueExprs.forRead().containsKey(valueId)) {
-      final Expression expr = valueExprs.forWrite().remove(valueId);
+  private void deleteValue(Value value) {
+    if (valueColumns.forRead().containsKey(value)) valueColumns.forWrite().remove(value);
+    if (valueExprs.forRead().containsKey(value)) {
+      final Expression expr = valueExprs.forWrite().remove(value);
       if (expr != null) exprRefs.forWrite().remove(expr);
     }
   }
@@ -156,9 +158,10 @@ class ValuesRegistryImpl implements ValuesRegistry {
 
     final Values values = Values.mk();
     for (Column column : columns) {
-      final Value value = Value.mk(++nextId, qualification, column.name());
+      int id = ++nextId;
+      final Value value = new ValueImpl(id, qualification, column.name());
       values.add(value);
-      valueColumns.forWrite().put(value.id(), column);
+      valueColumns.forWrite().put(value, column);
     }
 
     return values;
@@ -169,7 +172,10 @@ class ValuesRegistryImpl implements ValuesRegistry {
     final List<String> attrNames = exporter.attrNames();
 
     final Values values = Values.mk();
-    for (String attrName : attrNames) values.add(Value.mk(++nextId, qualification, attrName));
+    for (String attrName : attrNames) {
+      int id = ++nextId;
+      values.add(new ValueImpl(id, qualification, attrName));
+    }
 
     return Pair.of(values, exporter.attrExprs());
   }

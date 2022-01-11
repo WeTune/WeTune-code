@@ -24,6 +24,8 @@ public interface InfoCache {
 
   void putVirtualExpr(Expression compoundExpr, int... nodes);
 
+  boolean noSubqueryExpr();
+
   default List<Value> lhsJoinKeyOf(int nodeId) {
     return getJoinKeyOf(nodeId).getLeft();
   }

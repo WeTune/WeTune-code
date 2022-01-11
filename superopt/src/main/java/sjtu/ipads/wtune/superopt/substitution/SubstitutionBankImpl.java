@@ -5,10 +5,9 @@ import com.google.common.collect.MultimapBuilder;
 import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
+import java.util.function.Predicate;
 
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.isEligible;
-
-class SubstitutionBankImpl extends AbstractSet<Substitution> implements SubstitutionBank {
+class SubstitutionBankImpl implements SubstitutionBank {
   private final Set<Substitution> substitutions;
   private final Set<String> known;
   private final Multimap<String, Substitution> fingerprintIndex;
@@ -19,27 +18,9 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
   }
 
-  static SubstitutionBank parse(List<String> lines, boolean skipCheck) {
-    final SubstitutionBank bank = new SubstitutionBankImpl();
-
-    for (String line : lines) {
-      if (line.isEmpty() || !Character.isLetter(line.charAt(0))) continue;
-
-      final Substitution substitution = Substitution.parse(line);
-      if (skipCheck || isEligible(substitution)) bank.add(substitution);
-    }
-
-    return bank;
-  }
-
   @Override
-  public Iterator<Substitution> iterator() {
-    return substitutions.iterator();
-  }
-
-  @Override
-  public int size() {
-    return substitutions.size();
+  public Collection<Substitution> rules() {
+    return substitutions;
   }
 
   @Override
@@ -52,9 +33,24 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   }
 
   @Override
-  public boolean contains(Object o) {
-    if (!(o instanceof Substitution)) return false;
-    return known.contains(((Substitution) o).canonicalStringify());
+  public void remove(Substitution o) {
+    if (substitutions.remove(o)) {
+      known.remove(o.canonicalStringify());
+      fingerprintIndex.remove(Fingerprint.mk(o._0()).toString(), o);
+    }
+  }
+
+  @Override
+  public void removeIf(Predicate<Substitution> check) {
+    final Iterator<Substitution> iterator = substitutions.iterator();
+    while (iterator.hasNext()) {
+      final Substitution rule = iterator.next();
+      if (check.test(rule)) {
+        iterator.remove();
+        known.remove(rule.canonicalStringify());
+        fingerprintIndex.remove(Fingerprint.mk(rule._0()).toString(), rule);
+      }
+    }
   }
 
   @Override
@@ -65,21 +61,5 @@ class SubstitutionBankImpl extends AbstractSet<Substitution> implements Substitu
   @Override
   public Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint) {
     return fingerprintIndex.get(fingerprint.fingerprint());
-  }
-
-  @Override
-  public boolean remove(Object o) {
-    if (substitutions.remove(o)) {
-      final Substitution s = (Substitution) o;
-      known.remove(s.canonicalStringify());
-      fingerprintIndex.remove(Fingerprint.mk(s._0()), s);
-      return true;
-    }
-    return false;
-  }
-
-  @Override
-  public boolean removeAll(Collection<?> c) {
-    return substitutions.removeAll(c);
   }
 }

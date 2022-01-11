@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class LogicProverTest {
   @Test
   public void testBank() {
-    for (Substitution rule : TestHelper.bankForTest()) {
+    for (Substitution rule : TestHelper.bankForTest().rules()) {
       try {
         final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
         final int result = LogicSupport.proveEq(uExprs);

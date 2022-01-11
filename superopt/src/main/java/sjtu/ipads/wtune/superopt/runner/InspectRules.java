@@ -19,8 +19,9 @@ public class InspectRules implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     final String indexRange = args.getOptional("indices", String.class, null);
-    file = Path.of(args.getOptional("f", String.class, "wtune_data/rules.txt"));
+    file = Path.of(args.getOptional("file", String.class, "wtune_data/rules.txt"));
 
+    if (!Files.exists(file)) throw new IllegalArgumentException("no such file: " + file);
     if (indexRange != null) {
       final String[] ranges = indexRange.split(",");
       indices = new TIntHashSet();
@@ -53,6 +54,7 @@ public class InspectRules implements Runner {
   public void run() throws Exception {
     int index = 0;
     for (String line : Files.readAllLines(file)) {
+      ++index;
       if (indices == null || indices.contains(index)) {
         final Substitution rule = Substitution.parse(line);
         final var plans = SubstitutionSupport.translateAsPlan(rule);
@@ -61,7 +63,6 @@ public class InspectRules implements Runner {
         System.out.println("q0: " + translateAsAst(source, source.root(), true));
         System.out.println("q1: " + translateAsAst(target, target.root(), true));
       }
-      ++index;
     }
   }
 }

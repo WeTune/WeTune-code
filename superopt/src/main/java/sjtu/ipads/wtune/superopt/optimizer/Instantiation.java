@@ -246,28 +246,23 @@ class Instantiation {
 
   private int mkFilterNode(Expression expr, List<Value> refs, int child) {
     final InfoCache infoCache = model.plan().infoCache();
-    final ValuesRegistry valuesReg = model.plan().valuesReg();
 
     final int subqueryNode = infoCache.getSubqueryNodeOf(expr);
     if (subqueryNode != NO_SUCH_NODE) {
-      final Expression inSubExpr = getFilterExpr(subqueryNode);
       newPlan.detachNode(subqueryNode);
       newPlan.setChild(subqueryNode, 0, child);
-      valuesReg.bindValueRefs(inSubExpr, refs);
+      rebindFilterExpr(subqueryNode, refs);
       return subqueryNode;
     }
 
     final int[] components = infoCache.getVirtualExprComponents(expr);
     if (components != null) {
+      final int total = refs.size();
       int offset = 0;
 
       newPlan.setChild(components[0], 0, child);
       for (int i = 0, bound = components.length; i < bound; ++i) {
-        final Expression filterExpr = getFilterExpr(components[i]);
-        final int numRefs = filterExpr.colRefs().size();
-        valuesReg.bindValueRefs(expr, new ArrayList<>(refs.subList(offset, offset + numRefs)));
-        offset += numRefs;
-
+        offset += rebindFilterExpr(components[i], refs.subList(offset, total));
         if (i > 0) newPlan.setChild(components[i], 0, components[i - 1]);
         newPlan.detachNode(components[i]);
       }
@@ -283,12 +278,35 @@ class Instantiation {
     return filterNodeId;
   }
 
-  private Expression getFilterExpr(int nodeId) {
+  private int rebindFilterExpr(int nodeId, List<Value> refs) {
+    final PlanKind kind = newPlan.kindOf(nodeId);
     final PlanNode node = newPlan.nodeAt(nodeId);
-    final PlanKind nodeKind = node.kind();
-    if (nodeKind == PlanKind.Filter) return ((SimpleFilterNode) node).predicate();
-    else if (nodeKind == PlanKind.InSub) return ((InSubNode) node).expr();
-    else return null;
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+
+    final int numRefs;
+    if (kind == PlanKind.Filter) {
+      final Expression expr = ((SimpleFilterNode) node).predicate();
+      numRefs = expr.colRefs().size();
+      valuesReg.bindValueRefs(expr, new ArrayList<>(refs.subList(0, numRefs)));
+
+    } else if (kind == PlanKind.InSub) {
+      final Expression lhsExpr = ((InSubNode) node).expr();
+      final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
+      numRefs = subqueryExpr.colRefs().size();
+      valuesReg.bindValueRefs(lhsExpr, new ArrayList<>(refs.subList(0, lhsExpr.colRefs().size())));
+      valuesReg.bindValueRefs(subqueryExpr, new ArrayList<>(refs.subList(0, numRefs)));
+
+    } else if (kind == PlanKind.Exists) {
+      final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
+      numRefs = subqueryExpr.colRefs().size();
+      valuesReg.bindValueRefs(subqueryExpr, new ArrayList<>(refs.subList(0, numRefs)));
+
+    } else {
+      assert false;
+      return -1;
+    }
+
+    return numRefs;
   }
 
   private static List<Value> interleaveJoinKeys(List<Value> lhsJoinKeys, List<Value> rhsJoinKeys) {

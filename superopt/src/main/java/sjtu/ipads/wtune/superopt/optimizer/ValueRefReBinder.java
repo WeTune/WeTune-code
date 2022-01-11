@@ -16,7 +16,7 @@ class ValueRefReBinder {
     this.plan = plan;
   }
 
-  boolean rebindToRoot( int leafNode) {
+  boolean rebindToRoot(int leafNode) {
     int cursor = plan.parentOf(leafNode);
     final ValueRefReBinder reBinder = new ValueRefReBinder(plan);
     while (plan.isPresent(cursor)) {
