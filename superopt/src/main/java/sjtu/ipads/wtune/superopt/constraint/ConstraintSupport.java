@@ -19,7 +19,7 @@ public interface ConstraintSupport {
   int ENUM_FLAG_ECHO = 16;
   int ENUM_FLAG_USE_SPES = 32;
 
-  static EnumerationMetrics getMetrics() {
+  static EnumerationMetrics getEnumerationMetric() {
     return EnumerationMetricsContext.instance().global();
   }
 

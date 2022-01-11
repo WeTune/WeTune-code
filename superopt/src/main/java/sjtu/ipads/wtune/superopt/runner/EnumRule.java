@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -79,22 +78,19 @@ public class EnumRule implements Runner {
   }
 
   @Override
-  public void stop() {
-    if (threadPool != null) {
+  public void stop() {}
+
+  private void onShutdown() {
+    if (this.threadPool != null) {
       threadPool.shutdown();
-      try {
-        threadPool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException ignored) {
-      }
-      System.out.println(ConstraintSupport.getMetrics().toString());
-      System.out.println("#Skipped=" + numSkipped);
+      System.out.println(ConstraintSupport.getEnumerationMetric());
+      System.out.println("#Skipped=" + numSkipped.get());
     }
   }
 
   private void openThreadPool() {
-    final ExecutorService threadPool = Executors.newFixedThreadPool(parallelism);
-    this.threadPool = threadPool;
-    Runtime.getRuntime().addShutdownHook(new Thread(threadPool::shutdown));
+    this.threadPool = Executors.newFixedThreadPool(parallelism);
+    Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
   }
 
   private void fromEnumeration() throws IOException {
@@ -189,7 +185,7 @@ public class EnumRule implements Runner {
       outLocked = true;
 
       System.out.println("Current Metrics ==>");
-      System.out.println(ConstraintSupport.getMetrics());
+      System.out.println(ConstraintSupport.getEnumerationMetric());
       System.out.println("<==");
 
       IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));

@@ -86,7 +86,7 @@ public class EnumSPESRule implements Runner {
         threadPool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
       } catch (InterruptedException ignored) {
       }
-      System.out.println(ConstraintSupport.getMetrics().toString());
+      System.out.println(ConstraintSupport.getEnumerationMetric().toString());
     }
   }
 
