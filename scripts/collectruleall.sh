@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -eu -o pipefail
+depth=${1:-1}
 
 username='zhouz'
 prefix='10.0.0.10'
@@ -31,7 +32,7 @@ mkdir -p "${dirname}" 2>/dev/null || true
 
 for var in "${ips[@]}"; do
     ip="${prefix}${var}"
-    ssh "${username}@${ip}" 'cd projects/wtune-code; scripts/collectrule.sh'
+    ssh "${username}@${ip}" "cd projects/wtune-code; scripts/collectrule.sh ${depth}"
     scp "${username}@${ip}:~/projects/wtune-code/wtune_data/rules.partial.txt" "${dirname}/rules.${ip}.txt"
     cat "${dirname}/rules.${ip}.txt" >> "${dirname}/rules.txt"
 done

@@ -87,7 +87,7 @@ class TopDownOptimizer implements Optimizer {
     // Now, P1 cannot be further transformed (nor its children), thus "fully-optimized"
     // Obviously, P1 and P3 is equivalent. P1 and P3 thus reside in the same group.
     // Then, when P2 are transformed to P3, the group is accordingly updated.
-    if (isFullyOptimized(subPlan)) return memo.eqClassOf(subPlan);
+    if (isTimedOut() || isFullyOptimized(subPlan)) return memo.eqClassOf(subPlan);
     else return dispatch(subPlan);
   }
 
@@ -143,7 +143,8 @@ class TopDownOptimizer implements Optimizer {
 
   /* find eligible substitutions and use them to transform `n` and generate new plans */
   private Set<SubPlan> transform(SubPlan subPlan) {
-    if (System.currentTimeMillis() - startAt >= timeout) return emptySet();
+    if (isTimedOut()) return emptySet();
+
     final PlanContext plan = subPlan.plan();
     final PlanKind kind = subPlan.rootKind();
     final int root = subPlan.nodeId();
@@ -154,6 +155,8 @@ class TopDownOptimizer implements Optimizer {
     // 1. fast search for candidate substitution by fingerprint
     final Iterable<Substitution> rules = fastMatchRules(subPlan);
     for (Substitution rule : rules) {
+      if (isTimedOut()) break;
+
       // 2. full match
       final Match baseMatch = new Match(rule).setSourcePlan(plan).setMatchRootNode(root);
       final List<Match> fullMatches = Match.match(baseMatch, rule._0().root(), root);
@@ -306,6 +309,10 @@ class TopDownOptimizer implements Optimizer {
     planRoot = reduceSort.reduce(planRoot);
     if (reduceSort.isReduced() && tracing) traceStep(original, plan, 2);
     return planRoot;
+  }
+
+  private boolean isTimedOut() {
+    return System.currentTimeMillis() - startAt >= timeout;
   }
 
   private void traceStep(PlanContext source, PlanContext target, Substitution rule) {
