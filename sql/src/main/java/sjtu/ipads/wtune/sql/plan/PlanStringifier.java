@@ -11,23 +11,26 @@ class PlanStringifier {
   private final PlanContext plan;
   private final ValuesRegistry values;
   private final StringBuilder builder;
+  private final boolean oneLine;
   private final boolean compact;
+  private int indentLevel;
 
-  PlanStringifier(PlanContext plan, StringBuilder builder, boolean compact) {
+  PlanStringifier(PlanContext plan, StringBuilder builder, boolean oneLine, boolean compact) {
     this.plan = plan;
     this.values = plan.valuesReg();
     this.builder = builder;
+    this.oneLine = oneLine;
     this.compact = compact;
   }
 
-  static String stringifyNode(PlanContext ctx, int id, boolean compact) {
-    final PlanStringifier stringifier = new PlanStringifier(ctx, new StringBuilder(), compact);
+  static String stringifyNode(PlanContext ctx, int id, boolean oneLine, boolean compact) {
+    final PlanStringifier stringifier = new PlanStringifier(ctx, new StringBuilder(), oneLine, compact);
     stringifier.stringifyNode(id);
     return stringifier.builder.toString();
   }
 
-  static String stringifyTree(PlanContext ctx, int id, boolean compact) {
-    final PlanStringifier stringifier = new PlanStringifier(ctx, new StringBuilder(), compact);
+  static String stringifyTree(PlanContext ctx, int id, boolean oneLine, boolean compact) {
+    final PlanStringifier stringifier = new PlanStringifier(ctx, new StringBuilder(), oneLine, compact);
     stringifier.stringifyTree(id);
     return stringifier.builder.toString();
   }
@@ -36,6 +39,7 @@ class PlanStringifier {
     stringifyNode(rootId);
     final int numChildren = plan.kindOf(rootId).numChildren();
     final int[] children = plan.childrenOf(rootId);
+    ++indentLevel;
     if (numChildren > 0) {
       builder.append('(');
       stringifyTree(children[0]);
@@ -44,10 +48,12 @@ class PlanStringifier {
       builder.append(',');
       stringifyTree(children[1]);
     }
+    --indentLevel;
     if (numChildren > 0) builder.append(')');
   }
 
   private void stringifyNode(int nodeId) {
+    appendIndent();
     switch (plan.kindOf(nodeId)) {
       case SetOp -> appendSetOp(nodeId);
       case Limit -> appendLimit(nodeId);
@@ -128,7 +134,7 @@ class PlanStringifier {
     final List<String> names = proj.attrNames();
 
     builder.append("Proj");
-    if (proj.deduplicated()) builder.append('*');
+    if (PlanSupport.isDedup(plan, nodeId)) builder.append('*');
     appendNodeId(nodeId);
     builder.append("{[");
     appendSelectItems(exprs, names);
@@ -172,7 +178,7 @@ class PlanStringifier {
     builder.append(stringifyJoinKind(joinKindOf(plan, nodeId)));
     appendNodeId(nodeId);
     builder.append('{').append(joinCond).append(",refs=[");
-    appendRefs(joinCond);
+    if(joinCond != null) appendRefs(joinCond);
     builder.append("]}");
   }
 
@@ -198,6 +204,12 @@ class PlanStringifier {
 
   private void appendRefs(Expression expr) {
     for (Value ref : values.valueRefsOf(expr)) builder.append(ref).append(',');
+  }
+
+  private void appendIndent() {
+    if (oneLine || indentLevel == 0) return;
+    builder.append('\n');
+    for (int i = 0; i < indentLevel; i++) builder.append(' ').append(' ');
   }
 
   private static String stringifyJoinKind(JoinKind kind) {

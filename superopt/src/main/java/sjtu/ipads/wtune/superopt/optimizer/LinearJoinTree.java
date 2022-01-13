@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.plan.*;
 
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Integer.max;
@@ -148,14 +149,13 @@ final class LinearJoinTree {
 
       final InfoCache infoCache = newPlan.infoCache();
       final var keys = infoCache.getJoinKeyOf(newRootJoiner);
-      infoCache.putJoinKeyOf(newRootJoiner, keys.getRight(), keys.getLeft());
+      if (keys != null) infoCache.putJoinKeyOf(newRootJoiner, keys.getRight(), keys.getLeft());
     }
 
     return newPlan;
   }
 
   private int[] calcDependencies() {
-    final InfoCache infoCache = plan.infoCache();
     final int[] dependencies = new int[joinees.length];
     final ValuesRegistry valuesReg = plan.valuesReg();
 
@@ -175,6 +175,7 @@ final class LinearJoinTree {
 
   private List<Value> getLhsRefs(int joinerNode) {
     final Expression joinCond = ((JoinNode) plan.nodeAt(joinerNode)).joinCond();
+    if (joinCond == null) return Collections.emptyList();
     final Values rhsValues = plan.valuesReg().valuesOf(plan.childOf(joinerNode, 1));
     final Values refs = plan.valuesReg().valueRefsOf(joinCond);
     return ListSupport.filter(refs, ref -> !rhsValues.contains(ref));

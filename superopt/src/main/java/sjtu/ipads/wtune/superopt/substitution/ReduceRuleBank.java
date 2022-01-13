@@ -10,14 +10,12 @@ import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;

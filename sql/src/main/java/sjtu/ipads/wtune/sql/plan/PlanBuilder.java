@@ -284,8 +284,10 @@ class PlanBuilder {
     final int rhs = build0(tableSource.$(Joined_Right));
     if (lhs == FAIL || rhs == FAIL) return FAIL;
 
-    final JoinKind joinKind = tableSource.$(Joined_Kind);
     final SqlNode condition = tableSource.$(Joined_On);
+    JoinKind joinKind = tableSource.$(Joined_Kind);
+    if (condition != null && joinKind == JoinKind.CROSS_JOIN)
+      joinKind = JoinKind.INNER_JOIN;
 
     final JoinNode joinNode = JoinNode.mk(joinKind, condition == null ? null : Expression.mk(condition));
 

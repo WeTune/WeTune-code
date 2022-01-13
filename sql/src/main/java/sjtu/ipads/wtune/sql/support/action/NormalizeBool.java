@@ -59,6 +59,7 @@ class NormalizeBool {
     assert exprKind == Unary
         || exprKind == Binary
         || exprKind == Ternary
+        || exprKind == Case
         || exprKind == Exists
         || exprKind == Match
         || exprKind == ColRef

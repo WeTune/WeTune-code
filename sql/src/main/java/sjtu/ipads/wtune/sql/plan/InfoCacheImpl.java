@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.sql.plan;
 
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.procedure.TIntObjectProcedure;
 import org.apache.commons.lang3.tuple.Pair;
@@ -15,12 +17,14 @@ import java.util.Map;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 
 public class InfoCacheImpl implements InfoCache {
+  private final COW<TIntIntMap> deduplicated;
   private final COW<TIntObjectMap<Pair<List<Value>, List<Value>>>> joinKeys;
   private final COW<TIntObjectMap<JoinKind>> joinKinds;
   private final COW<TIntObjectMap<Expression>> subqueryExprs;
   private final COW<Map<Expression, int[]>> virtualExprs;
 
   InfoCacheImpl() {
+    this.deduplicated = new COW<>(new TIntIntHashMap(), null);
     this.joinKeys = new COW<>(new TIntObjectHashMap<>(), null);
     this.joinKinds = new COW<>(new TIntObjectHashMap<>(), null);
     this.subqueryExprs = new COW<>(new TIntObjectHashMap<>(), null);
@@ -28,10 +32,16 @@ public class InfoCacheImpl implements InfoCache {
   }
 
   InfoCacheImpl(InfoCacheImpl toCopy) {
+    this.deduplicated = new COW<>(toCopy.deduplicated.forRead(), TIntIntHashMap::new);
     this.joinKeys = new COW<>(toCopy.joinKeys.forRead(), TIntObjectHashMap::new);
     this.joinKinds = new COW<>(toCopy.joinKinds.forRead(), TIntObjectHashMap::new);
     this.subqueryExprs = new COW<>(toCopy.subqueryExprs.forRead(), TIntObjectHashMap::new);
     this.virtualExprs = new COW<>(toCopy.virtualExprs.forRead(), HashMap::new);
+  }
+
+  @Override
+  public void putDeduplicatedOf(int projNodeId, boolean flag) {
+    deduplicated.forWrite().put(projNodeId, flag ? 2 : 1);
   }
 
   @Override
@@ -55,8 +65,9 @@ public class InfoCacheImpl implements InfoCache {
   }
 
   @Override
-  public boolean noSubqueryExpr() {
-    return subqueryExprs.forRead().isEmpty();
+  public Boolean getDeduplicatedOf(int projNodeId) {
+    final int value = deduplicated.forRead().get(projNodeId);
+    return value == 2 ? Boolean.TRUE : value == 1 ? Boolean.FALSE : null;
   }
 
   @Override
@@ -90,6 +101,7 @@ public class InfoCacheImpl implements InfoCache {
     if (joinKeys.forRead().containsKey(nodeId)) joinKeys.forWrite().remove(nodeId);
     if (joinKinds.forRead().containsKey(nodeId)) joinKinds.forWrite().remove(nodeId);
     if (subqueryExprs.forRead().containsKey(nodeId)) subqueryExprs.forWrite().remove(nodeId);
+    if (deduplicated.forRead().containsKey(nodeId)) deduplicated.forWrite().remove(nodeId);
   }
 
   void renumberNode(int from, int to) {
@@ -109,6 +121,12 @@ public class InfoCacheImpl implements InfoCache {
     if (subqueryExpr != null) {
       subqueryExprs.forWrite().put(to, subqueryExpr);
       subqueryExprs.forWrite().remove(from);
+    }
+
+    final int deduplicated = this.deduplicated.forRead().get(from);
+    if (deduplicated != 0) {
+      this.deduplicated.forWrite().put(to, deduplicated);
+      this.deduplicated.forWrite().remove(from);
     }
   }
 

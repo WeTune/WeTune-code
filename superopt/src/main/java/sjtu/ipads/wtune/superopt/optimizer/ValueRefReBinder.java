@@ -142,10 +142,11 @@ class ValueRefReBinder {
   }
 
   private boolean rebindJoin(int nodeId) {
-    final JoinNode joinNode = (JoinNode) plan.nodeAt(nodeId);
-    final List<Value> lookup = getRefBindingLookup(plan, nodeId);
+    final Expression joinCond = ((JoinNode) plan.nodeAt(nodeId)).joinCond();
+    if (joinCond == null) return true;
 
-    if (!rebindExpr(joinNode.joinCond(), lookup)) return false;
+    final List<Value> lookup = getRefBindingLookup(plan, nodeId);
+    if (!rebindExpr(joinCond, lookup)) return false;
 
     setupJoinKeyOf(plan, nodeId);
     return true;

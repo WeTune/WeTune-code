@@ -119,15 +119,19 @@ public abstract class PlanSupport {
   }
 
   public static String stringifyNode(PlanContext ctx, int id) {
-    return PlanStringifier.stringifyNode(ctx, id, false);
+    return PlanStringifier.stringifyNode(ctx, id, false, false);
   }
 
   public static String stringifyTree(PlanContext ctx, int id) {
-    return PlanStringifier.stringifyTree(ctx, id, false);
+    return PlanStringifier.stringifyTree(ctx, id, false, false);
   }
 
   public static String stringifyTree(PlanContext ctx, int id, boolean compact) {
-    return PlanStringifier.stringifyTree(ctx, id, compact);
+    return PlanStringifier.stringifyTree(ctx, id, compact, compact);
+  }
+
+  public static String stringifyTree(PlanContext ctx, int id, boolean compact, boolean oneLine) {
+    return PlanStringifier.stringifyTree(ctx, id, oneLine, compact);
   }
 
   public static boolean isRootRef(PlanContext ctx, Value value) {
@@ -179,8 +183,12 @@ public abstract class PlanSupport {
 
   public static boolean isDedup(PlanContext ctx, int nodeId) {
     final PlanKind nodeKind = ctx.kindOf(nodeId);
-    if (nodeKind == Proj) return ((ProjNode) ctx.nodeAt(nodeId)).deduplicated();
     if (nodeKind == SetOp) return ((SetOpNode) ctx.nodeAt(nodeId)).deduplicated();
+    if (nodeKind == Proj) {
+      final Boolean assigned = ctx.infoCache().getDeduplicatedOf(nodeId);
+      if (assigned != null) return assigned;
+      else return ((ProjNode) ctx.nodeAt(nodeId)).deduplicated();
+    }
     return false;
   }
 

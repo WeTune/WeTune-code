@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
-import sjtu.ipads.wtune.sql.plan.PlanSupport;
 
 import java.util.List;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.setupSubqueryExprOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 
 public abstract class OptimizerSupport {
   public static final String FAILURE_INCOMPLETE_MODEL = "incomplete model ";
@@ -66,10 +66,20 @@ public abstract class OptimizerSupport {
     final List<OptimizationStep> steps = optimizer.traceOf(result);
     if (!steps.isEmpty()) {
       final PlanContext startPoint = steps.get(0).source();
-      System.out.println(PlanSupport.stringifyTree(startPoint, startPoint.root(), false));
+      System.out.println(stringifyTree(startPoint, startPoint.root(), false, true));
       for (OptimizationStep step : steps) {
-        System.out.println("  ~~ " + step.rule());
-        System.out.println("==> " + step.target());
+        final PlanContext target = step.target();
+        final String ruleString;
+        if (step.rule() != null) ruleString = step.rule().toString();
+        else ruleString = switch (step.extra()) {
+                    case 1 -> "EnforceInnerJoin";
+                    case 2 -> "ReduceSort";
+                    case 3 -> "ReduceDedup";
+                    default -> "Unknown";
+            };
+
+        System.out.println("  ~~ " + ruleString);
+        System.out.println("==> " + stringifyTree(target, target.root(), false, true));
       }
     }
     System.out.println("=== end dump trace ===");

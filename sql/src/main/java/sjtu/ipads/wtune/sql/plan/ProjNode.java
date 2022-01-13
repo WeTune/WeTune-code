@@ -3,6 +3,8 @@ package sjtu.ipads.wtune.sql.plan;
 import java.util.List;
 
 public interface ProjNode extends Exporter, PlanNode {
+  void setDeduplicated(boolean deduplicated);
+
   @Override
   default PlanKind kind() {
     return PlanKind.Proj;

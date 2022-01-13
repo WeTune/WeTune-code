@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -213,7 +214,7 @@ class Match {
     if (sourcePlan.kindOf(nodeId) != PlanKind.Proj) return false;
 
     final ProjNode projNode = (ProjNode) sourcePlan.nodeAt(nodeId);
-    if (proj.isDeduplicated() ^ projNode.deduplicated()) return false;
+    if (proj.isDeduplicated() ^ PlanSupport.isDedup(sourcePlan, nodeId)) return false;
 
     final ValuesRegistry valuesReg = sourcePlan.valuesReg();
     final List<Value> outValues = valuesReg.valuesOf(nodeId);
@@ -285,7 +286,8 @@ class Match {
         matches.addAll(linkedListFlatMap(partialMatches, m -> match(m, nextOp1, nextNode1)));
       }
 
-      return matches;
+      if (matches.size() > 1) return new ArrayList<>(matches.subList(0, 1));
+      else return matches;
     }
 
     if (op.kind().isFilter()) {

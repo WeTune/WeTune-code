@@ -81,9 +81,7 @@ class UniquenessInference {
     // Proj: check if the referenced attrs are the unique-core of input of Proj node.
     // e.g. ["n"] is the unique-core of Proj<t.m AS n>(t)
     // as long as ["t.m"] is the unique-core of t
-    final ProjNode proj = (ProjNode) ctx.nodeAt(surfaceId);
-    if (proj.deduplicated()) return true;
-
+    if (PlanSupport.isDedup(ctx, surfaceId)) return true;
     final Set<Value> refAttrs = new HashSet<>(toCheck.size());
     for (Value value : toCheck) {
       final Value ref = PlanSupport.deRef(ctx, value);

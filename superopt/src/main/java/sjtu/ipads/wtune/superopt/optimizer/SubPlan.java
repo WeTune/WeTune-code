@@ -3,7 +3,6 @@ package sjtu.ipads.wtune.superopt.optimizer;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
-import sjtu.ipads.wtune.sql.plan.PlanSupport;
 
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 

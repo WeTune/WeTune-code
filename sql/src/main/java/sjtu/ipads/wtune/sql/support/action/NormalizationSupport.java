@@ -13,6 +13,8 @@ import static sjtu.ipads.wtune.sql.ast.ExprFields.Binary_Right;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.Binary;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.QuerySpec;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.QuerySpec_Where;
+import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Joined_On;
+import static sjtu.ipads.wtune.sql.ast.TableSourceKind.JoinedSource;
 import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.AND;
 
 public abstract class NormalizationSupport {
@@ -35,6 +37,11 @@ public abstract class NormalizationSupport {
     final SqlNode parent = node.parent();
     if (QuerySpec.isInstance(parent)) {
       parent.remove(QuerySpec_Where);
+      ctx.setParentOf(node.nodeId(), NO_SUCH_NODE);
+      return;
+    }
+    if (JoinedSource.isInstance(parent)) {
+      parent.remove(Joined_On);
       ctx.setParentOf(node.nodeId(), NO_SUCH_NODE);
     }
     if (!Binary.isInstance(parent)) return;

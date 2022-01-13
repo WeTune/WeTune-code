@@ -133,7 +133,7 @@ class ToAstTranslator {
     return query
         .setSelectItems(selectItems, false)
         .setQualification(mkQualification(nodeId))
-        .setDeduplicated(proj.deduplicated());
+        .setDeduplicated(PlanSupport.isDedup(plan, nodeId));
   }
 
   private QueryBuilder onAgg(int nodeId) {

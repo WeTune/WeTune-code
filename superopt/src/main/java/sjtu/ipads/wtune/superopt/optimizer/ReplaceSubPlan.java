@@ -33,10 +33,7 @@ class ReplaceSubPlan {
     replacedPlan.setChild(parent, childIdx, newSubPlan);
 
     final ValueRefReBinder reBinder = new ValueRefReBinder(replacedPlan);
-    if (!reBinder.rebindToRoot(newSubPlan)) {
-      reBinder.rebindToRoot(newSubPlan);
-      return NO_SUCH_NODE;
-    }
+    if (!reBinder.rebindToRoot(newSubPlan)) return NO_SUCH_NODE;
 
     final PlanNode newSubPlanNode = replacedPlan.nodeAt(newSubPlan);
     replacedPlan.deleteDetached(toRoot);
@@ -151,6 +148,10 @@ class ReplaceSubPlan {
     }
     toValuesReg.bindValues(toNode, values);
 
+    final Boolean deduplicatedFlag = replacementPlan.infoCache().getDeduplicatedOf(fromNode);
+    if (deduplicatedFlag != null)
+      replacementPlan.infoCache().putDeduplicatedOf(toNode, deduplicatedFlag);
+
     return toNode;
   }
 
@@ -173,6 +174,8 @@ class ReplaceSubPlan {
     final Expression havingExpr = aggNode.havingExpr();
     if (havingExpr != null)
       toValuesReg.bindValueRefs(havingExpr, fromValuesReg.valueRefsOf(havingExpr));
+
+    toValuesReg.bindValues(toNode, fromValuesReg.valuesOf(fromNode));
 
     return toNode;
   }

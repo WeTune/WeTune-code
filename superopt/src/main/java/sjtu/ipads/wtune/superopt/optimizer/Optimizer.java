@@ -23,7 +23,7 @@ public interface Optimizer {
   List<OptimizationStep> traceOf(PlanContext plan);
 
   static Optimizer mk(SubstitutionBank bank) {
-    return new TopDownOptimizer(bank);
+    return new BottomUpOptimizer(bank);
   }
 
   default Set<PlanContext> optimize(SqlNode sql) {

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 class ProjNodeImpl implements ProjNode {
-  private final boolean deduplicated;
+  private boolean deduplicated;
   private final List<String> attrNames;
   private final List<Expression> expressions;
   private String qualification;
@@ -18,6 +18,11 @@ class ProjNodeImpl implements ProjNode {
   @Override
   public boolean deduplicated() {
     return deduplicated;
+  }
+
+  @Override
+  public void setDeduplicated(boolean deduplicated) {
+    this.deduplicated = deduplicated;
   }
 
   @Override

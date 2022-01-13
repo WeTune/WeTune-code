@@ -21,7 +21,7 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.LOG;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
 
-class TopDownOptimizer implements Optimizer {
+class BottomUpOptimizer implements Optimizer {
   private final SubstitutionBank rules;
 
   private Memo memo;
@@ -32,7 +32,7 @@ class TopDownOptimizer implements Optimizer {
   private boolean tracing, verbose;
   private final Lazy<Map<String, OptimizationStep>> traces;
 
-  TopDownOptimizer(SubstitutionBank rules) {
+  BottomUpOptimizer(SubstitutionBank rules) {
     this.rules = rules;
     this.traces = Lazy.mk(HashMap::new);
     this.startAt = Long.MIN_VALUE;
@@ -65,6 +65,7 @@ class TopDownOptimizer implements Optimizer {
     int planRoot = plan.root();
     planRoot = enforceInnerJoin(plan, planRoot);
     planRoot = reduceSort(plan, planRoot);
+    planRoot = reduceDedup(plan, planRoot);
 
     memo = new Memo();
     startAt = System.currentTimeMillis();
@@ -308,6 +309,14 @@ class TopDownOptimizer implements Optimizer {
     final ReduceSort reduceSort = new ReduceSort(plan);
     planRoot = reduceSort.reduce(planRoot);
     if (reduceSort.isReduced() && tracing) traceStep(original, plan, 2);
+    return planRoot;
+  }
+
+  private int reduceDedup(PlanContext plan, int planRoot) {
+    final PlanContext original = tracing ? plan.copy() : null;
+    final ReduceDedup reduceDedup = new ReduceDedup(plan);
+    planRoot = reduceDedup.reduce(planRoot);
+    if (reduceDedup.isReduced() && tracing) traceStep(original, plan, 3);
     return planRoot;
   }
 

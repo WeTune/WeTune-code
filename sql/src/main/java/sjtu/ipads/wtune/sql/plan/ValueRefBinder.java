@@ -204,14 +204,4 @@ class ValueRefBinder {
     return false;
   }
 
-  private SqlNode mkExistsExpr(int nodeId) {
-    final SqlNode query = translateAsAst(plan, plan.childOf(nodeId, 1), true);
-    if (query == null) return null;
-
-    final SqlContext sqlCtx = query.context();
-    final SqlNode queryExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
-    final SqlNode exists = SqlNode.mk(sqlCtx, Exists);
-    return exists.$(Exists_Subquery, queryExpr);
-  }
-
 }

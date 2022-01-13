@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.superopt.util;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
-import sjtu.ipads.wtune.sql.plan.ProjNode;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.fragment.OpKind;
@@ -155,8 +155,7 @@ public class Fingerprint {
 
     private char identifierOf(int node) {
       final PlanKind kind = plan.kindOf(node);
-      if (kind == PlanKind.Proj)
-        return getOpIdentifier(PROJ, ((ProjNode) plan.nodeAt(node)).deduplicated());
+      if (kind == PlanKind.Proj) return getOpIdentifier(PROJ, PlanSupport.isDedup(plan, node));
       else if (kind == PlanKind.Filter) return getOpIdentifier(SIMPLE_FILTER, false);
       else if (kind == PlanKind.InSub) return getOpIdentifier(IN_SUB_FILTER, false);
       else if (kind == PlanKind.Join)

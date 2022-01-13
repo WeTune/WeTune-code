@@ -6,6 +6,8 @@ import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import java.util.List;
 
 public interface InfoCache {
+  Boolean getDeduplicatedOf(int projNodeId);
+
   int getSubqueryNodeOf(Expression expr);
 
   int[] getVirtualExprComponents(Expression expr);
@@ -16,6 +18,8 @@ public interface InfoCache {
 
   Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId);
 
+  void putDeduplicatedOf(int projNodeId, boolean flag);
+
   void putJoinKeyOf(int joinNodeId, List<Value> lhsKeys, List<Value> rhsKeys);
 
   void putJoinKindOf(int joinNodeId, JoinKind joinKind);
@@ -23,8 +27,6 @@ public interface InfoCache {
   void putSubqueryExprOf(int inSubNodeId, Expression expr);
 
   void putVirtualExpr(Expression compoundExpr, int... nodes);
-
-  boolean noSubqueryExpr();
 
   default List<Value> lhsJoinKeyOf(int nodeId) {
     return getJoinKeyOf(nodeId).getLeft();
