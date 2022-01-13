@@ -2,6 +2,9 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
+
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.isDedup;
 
 class ReduceDedup {
   private final PlanContext plan;
@@ -18,7 +21,7 @@ class ReduceDedup {
 
     if (kind.isSubqueryFilter()) {
       final int rhsChild = plan.childOf(nodeId, 1);
-      if (plan.kindOf(rhsChild) == PlanKind.Proj) {
+      if (plan.kindOf(rhsChild) == PlanKind.Proj && isDedup(plan, rhsChild)) {
         isReduced = true;
         plan.infoCache().putDeduplicatedOf(rhsChild, false);
       }

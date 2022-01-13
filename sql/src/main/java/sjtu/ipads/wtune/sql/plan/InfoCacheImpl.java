@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sql.plan;
 
+import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -21,14 +22,16 @@ public class InfoCacheImpl implements InfoCache {
   private final COW<TIntObjectMap<Pair<List<Value>, List<Value>>>> joinKeys;
   private final COW<TIntObjectMap<JoinKind>> joinKinds;
   private final COW<TIntObjectMap<Expression>> subqueryExprs;
+  private final COW<TIntObjectMap<TIntList>> dependentNodes;
   private final COW<Map<Expression, int[]>> virtualExprs;
 
   InfoCacheImpl() {
-    this.deduplicated = new COW<>(new TIntIntHashMap(), null);
-    this.joinKeys = new COW<>(new TIntObjectHashMap<>(), null);
-    this.joinKinds = new COW<>(new TIntObjectHashMap<>(), null);
-    this.subqueryExprs = new COW<>(new TIntObjectHashMap<>(), null);
-    this.virtualExprs = new COW<>(new IdentityHashMap<>(), null);
+    this.deduplicated = new COW<>(new TIntIntHashMap(4), null);
+    this.joinKeys = new COW<>(new TIntObjectHashMap<>(4), null);
+    this.joinKinds = new COW<>(new TIntObjectHashMap<>(4), null);
+    this.subqueryExprs = new COW<>(new TIntObjectHashMap<>(4), null);
+    this.dependentNodes = new COW<>(new TIntObjectHashMap<>(4), null);
+    this.virtualExprs = new COW<>(new IdentityHashMap<>(4), null);
   }
 
   InfoCacheImpl(InfoCacheImpl toCopy) {
@@ -36,6 +39,7 @@ public class InfoCacheImpl implements InfoCache {
     this.joinKeys = new COW<>(toCopy.joinKeys.forRead(), TIntObjectHashMap::new);
     this.joinKinds = new COW<>(toCopy.joinKinds.forRead(), TIntObjectHashMap::new);
     this.subqueryExprs = new COW<>(toCopy.subqueryExprs.forRead(), TIntObjectHashMap::new);
+    this.dependentNodes = new COW<>(toCopy.dependentNodes.forRead(), TIntObjectHashMap::new);
     this.virtualExprs = new COW<>(toCopy.virtualExprs.forRead(), HashMap::new);
   }
 
@@ -57,6 +61,11 @@ public class InfoCacheImpl implements InfoCache {
   @Override
   public void putSubqueryExprOf(int inSubNodeId, Expression expr) {
     subqueryExprs.forWrite().put(inSubNodeId, expr);
+  }
+
+  @Override
+  public void putDependentNodesIn(int inSubNodeId, TIntList nodeIds) {
+    dependentNodes.forWrite().put(inSubNodeId, nodeIds);
   }
 
   @Override
@@ -90,6 +99,11 @@ public class InfoCacheImpl implements InfoCache {
     final SubqueryNodeFinder finder = new SubqueryNodeFinder(expr);
     subqueryExprs.forRead().forEachEntry(finder);
     return finder.subqueryNode;
+  }
+
+  @Override
+  public TIntList getDependentNodesIn(int nodeId) {
+    return dependentNodes.forRead().get(nodeId);
   }
 
   @Override
@@ -130,8 +144,9 @@ public class InfoCacheImpl implements InfoCache {
     }
   }
 
-  void clearVirtualExprs() {
+  void cleanTemporary() {
     virtualExprs.forWrite().clear();
+    dependentNodes.forWrite().clear();
   }
 
   private static class SubqueryNodeFinder implements TIntObjectProcedure<Expression> {

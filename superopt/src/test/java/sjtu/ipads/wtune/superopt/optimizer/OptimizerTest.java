@@ -1175,7 +1175,7 @@ public class OptimizerTest {
     final String[] expected =
         new String[] {
           "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE AND `comments`.`story_id` = 67",
-          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`story_id` = 67 AND `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE"
+          "SELECT COUNT(`comments`.`id`) FROM `comments` AS `comments` WHERE `comments`.`story_id` = 67 AND `comments`.`is_deleted` = FALSE AND `comments`.`is_moderated` = FALSE",
         };
     doTest(appName, stmtId, expected);
   }

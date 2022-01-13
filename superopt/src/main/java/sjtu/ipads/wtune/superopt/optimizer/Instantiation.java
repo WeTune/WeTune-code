@@ -111,7 +111,7 @@ class Instantiation {
 
     final Expression predicate = model.ofPred(instantiationOf(filter.predicate()));
     List<Value> values = model.ofAttrs(instantiationOf(filter.attrs()));
-    if (predicate == null || values == null || values.isEmpty())
+    if (predicate == null || values == null || values.size() != predicate.colRefs().size())
       return fail(FAILURE_INCOMPLETE_MODEL);
 
     values = reBinder.rebindRefs(values, outValuesOf(child));

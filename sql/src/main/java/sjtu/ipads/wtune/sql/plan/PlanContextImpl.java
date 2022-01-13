@@ -80,7 +80,7 @@ class PlanContextImpl extends UniformTreeContextBase<PlanKind> implements PlanCo
   @Override
   public void compact() {
     super.compact();
-    infoCache.clearVirtualExprs();
+    infoCache.cleanTemporary();
   }
 
   @Override

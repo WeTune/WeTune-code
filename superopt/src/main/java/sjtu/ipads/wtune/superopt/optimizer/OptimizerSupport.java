@@ -75,6 +75,8 @@ public abstract class OptimizerSupport {
                     case 1 -> "EnforceInnerJoin";
                     case 2 -> "ReduceSort";
                     case 3 -> "ReduceDedup";
+                    case 4 -> "ConvertExists";
+                    case 5 -> "FlipRightJoin";
                     default -> "Unknown";
             };
 

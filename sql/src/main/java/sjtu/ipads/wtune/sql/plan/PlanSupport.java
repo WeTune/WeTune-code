@@ -405,12 +405,14 @@ public abstract class PlanSupport {
     final SqlNode existsExprAst = mkExistsExpr(plan, nodeId);
     if (existsExprAst == null) return false;
 
-    final var deps = inspectDepRefs(plan, plan.childOf(nodeId, 1));
-    final List<Value> depValueRefs = deps.getLeft();
-    final List<SqlNode> depColRefs = deps.getRight();
+    final DependentRefInspector inspector = new DependentRefInspector(plan);
+    inspector.inspect(plan.childOf(nodeId, 1));
+    final List<Value> depValueRefs = inspector.dependentValueRefs();
+    final List<SqlNode> depColRefs = inspector.dependentColRefs();
     final Expression existsExpr = Expression.mk(existsExprAst, depColRefs);
     plan.valuesReg().bindValueRefs(existsExpr, depValueRefs);
     plan.infoCache().putSubqueryExprOf(nodeId, existsExpr);
+    plan.infoCache().putDependentNodesIn(nodeId, inspector.dependentNodes());
 
     return true;
   }
@@ -499,7 +501,8 @@ public abstract class PlanSupport {
     final SqlContext sqlCtx = query.context();
     final SqlNode queryExpr = SqlSupport.mkQueryExpr(sqlCtx, query);
     final SqlNode exists = SqlNode.mk(sqlCtx, Exists);
-    return exists.$(Exists_Subquery, queryExpr);
+    exists.$(Exists_Subquery, queryExpr);
+    return exists;
   }
 
   private static boolean mustBeQualified(PlanContext ctx, int nodeId) {

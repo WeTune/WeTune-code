@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -10,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIndices;
 
 public class InspectRules implements Runner {
   private Path file;
@@ -22,32 +22,7 @@ public class InspectRules implements Runner {
     file = Path.of(args.getOptional("file", String.class, "wtune_data/rules.txt"));
 
     if (!Files.exists(file)) throw new IllegalArgumentException("no such file: " + file);
-    if (indexRange != null) {
-      final String[] ranges = indexRange.split(",");
-      indices = new TIntHashSet();
-      for (String range : ranges) {
-        if (range.isEmpty()) {
-          throw new IllegalArgumentException("invalid index range: " + indexRange);
-        }
-
-        final String[] fields = range.split("-");
-
-        try {
-          if (fields.length == 1) {
-            indices.add(Integer.parseInt(fields[0]));
-          } else if (fields.length == 2) {
-            final int begin = Integer.parseInt(fields[0]);
-            final int end = Integer.parseInt(fields[1]);
-            for (int i = begin; i < end; ++i) indices.add(i);
-          }
-          continue;
-
-        } catch (NumberFormatException ignored) {
-        }
-
-        throw new IllegalArgumentException("invalid index range: " + indexRange);
-      }
-    }
+    if (indexRange != null) indices = parseIndices(indexRange);
   }
 
   @Override

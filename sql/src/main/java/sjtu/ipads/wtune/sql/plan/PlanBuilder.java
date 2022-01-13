@@ -210,7 +210,6 @@ class PlanBuilder {
       if (subqueryId == FAIL) return null;
       final int nodeId = plan.bindNode(filter);
       plan.setChild(nodeId, 1, subqueryId);
-
       filters.add(nodeId);
 
     } else if (Exists.isInstance(expr)) {
@@ -219,6 +218,7 @@ class PlanBuilder {
       if (subqueryId == FAIL) return null;
       final int nodeId = plan.bindNode(filter);
       plan.setChild(nodeId, 1, subqueryId);
+      filters.add(nodeId);
 
     } else if (!isBoolConstant(expr)){
       // Preclude ones like "1=1".

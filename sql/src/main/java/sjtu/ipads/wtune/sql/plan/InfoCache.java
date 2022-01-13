@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.sql.plan;
 
+import gnu.trove.list.TIntList;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 
@@ -16,6 +17,8 @@ public interface InfoCache {
 
   Expression getSubqueryExprOf(int nodeId);
 
+  TIntList getDependentNodesIn(int nodeId);
+
   Pair<List<Value>, List<Value>> getJoinKeyOf(int nodeId);
 
   void putDeduplicatedOf(int projNodeId, boolean flag);
@@ -25,6 +28,8 @@ public interface InfoCache {
   void putJoinKindOf(int joinNodeId, JoinKind joinKind);
 
   void putSubqueryExprOf(int inSubNodeId, Expression expr);
+
+  void putDependentNodesIn(int inSubNodeId, TIntList nodeIds);
 
   void putVirtualExpr(Expression compoundExpr, int... nodes);
 

@@ -20,10 +20,7 @@ class ReplaceSubPlan {
   int replace(int replacedSubPlan, int replacementSubPlan) {
     final Values fromValues = replacementPlan.valuesReg().valuesOf(replacementSubPlan);
     final Values toValues = replacedPlan.valuesReg().valuesOf(replacedSubPlan);
-    if (fromValues.size() != toValues.size()) {
-      replacementPlan.valuesReg().valuesOf(replacementSubPlan);
-      return NO_SUCH_NODE;
-    }
+    if (fromValues.size() != toValues.size()) return NO_SUCH_NODE;
 
     final int toRoot = replacedPlan.root();
     final int newSubPlan = copyNode(replacementSubPlan);
@@ -62,6 +59,8 @@ class ReplaceSubPlan {
         return copySort(node);
       case Limit:
         return copyLimit(node);
+      case Exists:
+        return copyExists(node);
       default:
         throw new IllegalArgumentException("unsupported node");
     }
@@ -102,6 +101,24 @@ class ReplaceSubPlan {
     replacedPlan.setChild(toNode, 0, lhs);
     replacedPlan.setChild(toNode, 1, rhs);
     replacedPlan.valuesReg().bindValueRefs(expr, refs);
+    replacedPlan.valuesReg().bindValueRefs(subqueryExpr, subqueryRefs);
+    replacedPlan.infoCache().putSubqueryExprOf(toNode, subqueryExpr);
+
+    return toNode;
+  }
+
+  private int copyExists(int fromNode) {
+    final int lhs = copyNode(replacementPlan.childOf(fromNode, 0));
+    final int rhs = copyNode(replacementPlan.childOf(fromNode, 1));
+
+    final ExistsNode filterNode = (ExistsNode) replacementPlan.nodeAt(fromNode);
+    final ValuesRegistry replacementValuesReg = replacementPlan.valuesReg();
+    final Expression subqueryExpr = replacementPlan.infoCache().getSubqueryExprOf(fromNode);
+    final Values subqueryRefs = replacementValuesReg.valueRefsOf(subqueryExpr);
+
+    final int toNode = replacedPlan.bindNode(filterNode);
+    replacedPlan.setChild(toNode, 0, lhs);
+    replacedPlan.setChild(toNode, 1, rhs);
     replacedPlan.valuesReg().bindValueRefs(subqueryExpr, subqueryRefs);
     replacedPlan.infoCache().putSubqueryExprOf(toNode, subqueryExpr);
 

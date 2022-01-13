@@ -11,12 +11,10 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
-import static com.google.common.collect.Sets.cartesianProduct;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.SetSupport.map;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.LOG;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
@@ -62,10 +60,7 @@ class BottomUpOptimizer implements Optimizer {
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
     plan = plan.copy();
-    int planRoot = plan.root();
-    planRoot = enforceInnerJoin(plan, planRoot);
-    planRoot = reduceSort(plan, planRoot);
-    planRoot = reduceDedup(plan, planRoot);
+    int planRoot = preprocess(plan);
 
     memo = new Memo();
     startAt = System.currentTimeMillis();
@@ -112,12 +107,22 @@ class BottomUpOptimizer implements Optimizer {
     if (numChildren >= 1) lhsOpts = optimize0(n.child(0));
     if (numChildren >= 2) rhsOpts = optimize0(n.child(1));
 
-    Set<SubPlan> opts = emptySet();
+    Set<SubPlan> opts = new HashSet<>(lhsOpts.size());
     if (numChildren >= 1) {
-      opts = map(lhsOpts, lhs -> replaceChild(n, 0, lhs));
+      for (SubPlan lhsOpt : lhsOpts) {
+        final SubPlan replaced = replaceChild(n, 0, lhsOpt);
+        if (replaced != null) opts.add(replaced);
+      }
     }
     if (numChildren >= 2) {
-      opts = map(cartesianProduct(opts, rhsOpts), p -> replaceChild(p.get(0), 1, p.get(1)));
+      final Set<SubPlan> newOpts = new HashSet<>(opts.size() * rhsOpts.size());
+      for (SubPlan opt : opts) {
+        for (SubPlan rhsOpt : rhsOpts) {
+          final SubPlan replaced = replaceChild(opt, 1, rhsOpt);
+          if (replaced != null) newOpts.add(replaced);
+        }
+      }
+      opts = newOpts;
     }
 
     return opts;
@@ -174,8 +179,9 @@ class BottomUpOptimizer implements Optimizer {
           final SubPlan newSubPlan = new SubPlan(newPlan, normalizedRoot);
           // If the `newNode` has been bound with a group, then no need to further optimize it.
           // (because it must either have been or is being optimized.)
-          if (!memo.isRegistered(newSubPlan) && group.add(newSubPlan)) {
-            transformed.add(newSubPlan);
+          final boolean registered = memo.isRegistered(newSubPlan);
+          if (group.add(newSubPlan)) {
+            if (!registered) transformed.add(newSubPlan);
             traceStep(subPlan.plan(), newSubPlan.plan(), rule);
           }
 
@@ -238,6 +244,7 @@ class BottomUpOptimizer implements Optimizer {
         return onInput(node);
       case Filter:
       case InSub:
+      case Exists:
         return onFilter(node);
       case Join:
         return onJoin(node);
@@ -296,6 +303,16 @@ class BottomUpOptimizer implements Optimizer {
     return new SubPlan(replacedPlan, replacedPlan.parentOf(result));
   }
 
+  private int preprocess(PlanContext plan) {
+    int planRoot = plan.root();
+    planRoot = enforceInnerJoin(plan, planRoot);
+    planRoot = reduceSort(plan, planRoot);
+    planRoot = reduceDedup(plan, planRoot);
+    planRoot = convertExists(plan, planRoot);
+    planRoot = flipRightJoin(plan, planRoot);
+    return planRoot;
+  }
+
   private int enforceInnerJoin(PlanContext plan, int planRoot) {
     final PlanContext original = tracing ? plan.copy() : null;
     final InnerJoinInference inference = new InnerJoinInference(plan);
@@ -317,6 +334,22 @@ class BottomUpOptimizer implements Optimizer {
     final ReduceDedup reduceDedup = new ReduceDedup(plan);
     planRoot = reduceDedup.reduce(planRoot);
     if (reduceDedup.isReduced() && tracing) traceStep(original, plan, 3);
+    return planRoot;
+  }
+
+  private int convertExists(PlanContext plan, int planRoot) {
+    final PlanContext original = tracing ? plan.copy() : null;
+    final ConvertExists converter = new ConvertExists(plan);
+    planRoot = converter.convert(planRoot);
+    if (converter.isConverted() && tracing) traceStep(original, plan, 4);
+    return planRoot;
+  }
+
+  private int flipRightJoin(PlanContext plan, int planRoot) {
+    final PlanContext original = tracing ? plan.copy() : null;
+    final FlipRightJoin converter = new FlipRightJoin(plan);
+    planRoot = converter.flip(planRoot);
+    if (converter.isFlipped() && tracing) traceStep(original, plan, 5);
     return planRoot;
   }
 

@@ -72,7 +72,7 @@ class ReduceSort {
     final SortSpec sort0 = resolveSortChain(plan.childOf(node, 0));
     final SortSpec sort1 = kind.numChildren() >= 2 ? resolveSortChain(plan.childOf(node, 1)) : null;
     if (kind == Filter) return sort0;
-    if (kind == InSub) {
+    if (kind.isSubqueryFilter()) {
       resolveSortChain(plan.childOf(node, 1));
       return sort0;
     }

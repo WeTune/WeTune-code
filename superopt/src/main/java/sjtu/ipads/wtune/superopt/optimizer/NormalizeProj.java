@@ -97,7 +97,12 @@ class NormalizeProj {
     final int child = plan.childOf(node, 0);
 
     if (parent == NO_SUCH_NODE) return false;
-    if (plan.kindOf(child).isFilter() && !plan.kindOf(parent).isFilter()) return false;
+    if (!plan.kindOf(child).isFilter()) return false;
+    else {
+      final PlanKind parentKind = plan.kindOf(parent);
+      if (!parentKind.isFilter()) return false;
+      if (parentKind.isSubqueryFilter() && indexOfChild(plan, node) != 0) return false;
+    }
 
     final Values inputs = plan.valuesReg().valuesOf(child);
     final Values outputs = plan.valuesReg().valuesOf(node);

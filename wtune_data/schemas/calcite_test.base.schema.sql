@@ -1,46 +1,46 @@
 CREATE TABLE `account`
 (
-    `acctno`  int,
-    `type`    varchar(20),
-    `balance` varchar(20)
+    `acctno`  int         not null,
+    `type`    varchar(20) not null,
+    `balance` int         not null
 );
 
 CREATE TABLE `bonus`
 (
-    `ename` int,
-    `job`   varchar(20),
-    `sal`   varchar(20),
-    `comm`  varchar(20)
+    `ename` varchar(20) not null,
+    `job`   varchar(10) not null,
+    `sal`   int         not null,
+    `comm`  int         not null
 );
 
 CREATE TABLE `dept`
 (
-    `deptno` int,
-    `name`   varchar(20)
+    `deptno` int primary key not null,
+    `name`   varchar(10)     not null
 );
 
 CREATE TABLE `emp`
 (
-    `empno`    int,
-    `ename`    varchar(20),
-    `job`      varchar(20),
-    `mgr`      int,
-    `hiredate` int,
-    `comm`     int,
-    `sal`      int,
-    `deptno`   int,
-    `slacker`  int
+    `empno`    int primary key not null,
+    `ename`    varchar(20)     not null,
+    `job`      varchar(10)     not null,
+    `mgr`      int             null,
+    `hiredate` int             not null,
+    `comm`     int             not null,
+    `sal`      int             not null,
+    `deptno`   int references dept (deptno),
+    `slacker`  tinyint
 );
 
 CREATE TABLE `T`
 (
-    `F0_C0` int,
-    `F0_C1` int,
+    `F0_C0` int         not null,
+    `F0_C1` int         not null,
     `F1_C0` int,
-    `F1_C2` int,
-    `F2_C3` int,
-    `F1_A0` int,
-    `F2_A0` int,
-    `K0`    int,
-    `C1`    int
+    `F1_C2` int         not null,
+    `F2_C3` int         not null,
+    `F1_A0` int         not null,
+    `F2_A0` tinyint     not null,
+    `K0`    varchar(20) not null,
+    `C1`    varchar(20)
 );
