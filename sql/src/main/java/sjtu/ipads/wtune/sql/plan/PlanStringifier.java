@@ -197,8 +197,8 @@ class PlanStringifier {
   private void appendSelectItems(List<Expression> exprs, List<String> names) {
     for (int i = 0, bound = exprs.size(); i < bound; i++) {
       final StringBuilder builder = this.builder.append(exprs.get(i));
-      if (!names.get(i).startsWith(SYN_NAME_PREFIX))
-        builder.append(" AS ").append(names.get(i)).append(',');
+      // if (!names.get(i).startsWith(SYN_NAME_PREFIX))
+      builder.append(" AS ").append(names.get(i)).append(',');
     }
   }
 

@@ -15,14 +15,13 @@ import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.nodetrans.SPESSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
-import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
-import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_USE_SPES;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 
 @Tag("enumeration")
@@ -66,7 +65,11 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testUnion() {
-    doTest(SPES, "Union*(Proj(Input),Proj(Input))", "Union*(Proj(Input),Proj(Input))");
+    doTest(
+        SPES,
+        "Union*(Proj(Input),Proj(Input))",
+        "Union*(Proj(Input),Proj(Input))",
+        "AttrsSub(a0,t0);AttrsSub(a1,t1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a2,a0);AttrsEq(a3,a1);SchemaEq(s2,s0);SchemaEq(s3,s1)");
   }
 
   @Test
@@ -80,7 +83,11 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void testAgg0() {
-    doTest(SPES, "Agg(Input)", "Agg(Input)");
+    doTest(
+        SPES,
+        "Agg(Input)",
+        "Agg(Input)",
+        "AttrsSub(a0,t0);AttrsSub(a1,t0);TableEq(t1,t0);AttrsEq(a2,a0);AttrsEq(a3,a1);PredicateEq(p1,p0);SchemaEq(s1,s0);FuncEq(f1,f0)");
   }
 
   @Test
@@ -119,7 +126,7 @@ public class ConstraintEnumeratorSPESTest {
         SPES,
         "Proj*(InSubFilter(Input,Proj(Input)))",
         "Proj*(InnerJoin(Input,Input))",
-        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2)");
+        "AttrsSub(a0,t1);AttrsSub(a1,t0);AttrsSub(a2,t0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a3,a1);AttrsEq(a4,a0);AttrsEq(a5,a2);SchemaEq(s2,s1)");
   }
 
   @Test
@@ -139,14 +146,13 @@ public class ConstraintEnumeratorSPESTest {
         SPES,
         "Proj(Proj(Input))",
         "Proj(Input)",
-        "AttrsSub(a0,t0);AttrsSub(a1,a0);TableEq(t1,t0);AttrsEq(a2,a1)");
+        "AttrsSub(a0,t0);AttrsSub(a1,s0);TableEq(t1,t0);AttrsEq(a2,a1);SchemaEq(s2,s1)");
   }
 
   @Test
   void testRemoveDeduplication() {
-    // Pass, return NEQ
+    // Pass, return no rules
     doTest(SPES, "Proj*(Input)", "Proj(Input)");
-    //        "AttrsSub(a0,t0);Unique(t0,a0);TableEq(t1,t0);AttrsEq(a1,a0)");
   }
 
   // -----------------------Test case of SPES---------------------------------

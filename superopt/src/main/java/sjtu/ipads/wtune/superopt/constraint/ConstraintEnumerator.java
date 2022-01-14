@@ -258,12 +258,13 @@ class ConstraintEnumerator {
         || (sym0.kind() == sym1.kind() && currentIsEnabled(I.indexOfEq(sym0, sym1)));
   }
 
-  private Symbol currentSourceOf(/* Attrs or Schema */ Symbol sym) {
-    if (sym.kind() == SCHEMA) {
-      final Op owner = I.sourceSymbols().ownerOf(sym);
-      assert owner.kind() == PROJ;
-      sym = ((Proj) owner).attrs();
-    }
+  private Symbol currentSourceOf(/* Attrs only */ Symbol sym) {
+    // if (sym.kind() == SCHEMA) {
+    //   final Op owner = I.sourceSymbols().ownerOf(sym);
+    //   assert owner.kind() == PROJ;
+    //   sym = ((Proj) owner).attrs();
+    // }
+    assert sym.kind() == ATTRS;
 
     final int begin = I.beginIndexOfKind(AttrsSub);
     final int end = I.endIndexOfKind(AttrsSub);
@@ -272,6 +273,32 @@ class ConstraintEnumerator {
       if (currentIsEnabled(i) && c.symbols()[0] == sym) return c.symbols()[1];
     }
     return null;
+  }
+
+  private void collectSourceChain(Symbol sym, List<Symbol> sourceChain) {
+    assert sym.kind() == ATTRS || sym.kind() == SCHEMA || sym.kind() == TABLE;
+
+    switch (sym.kind()) {
+      case ATTRS -> {
+        final Symbol source = currentSourceOf(sym);
+        assert source != null;
+        sourceChain.add(source);
+        collectSourceChain(source, sourceChain);
+      }
+      case SCHEMA -> {
+        final Op owner = I.sourceSymbols().ownerOf(sym);
+        assert owner.kind() == PROJ || owner.kind() == AGG;
+        if (owner.kind() == PROJ) {
+          final Proj proj = ((Proj) owner);
+          collectSourceChain(proj.attrs(), sourceChain);
+        } else {
+          final Agg agg = ((Agg) owner);
+          collectSourceChain(agg.groupByAttrs(), sourceChain);
+          collectSourceChain(agg.aggregateAttrs(), sourceChain);
+        }
+      }
+      case TABLE -> {}
+    }
   }
 
   private Symbol currentInstantiationOf(Symbol sym) {
@@ -469,10 +496,11 @@ class ConstraintEnumerator {
     assert source != null;
 
     final List<Symbol> sourceChain = new ArrayList<>(4);
-    while (source != null) {
-      sourceChain.add(source);
-      source = currentSourceOf(source);
-    }
+    collectSourceChain(from, sourceChain);
+    // while (source != null) {
+    //   sourceChain.add(source);
+    //   source = currentSourceOf(source);
+    // }
 
     for (Symbol sourceOfTo : I.viableSourcesOf(to)) {
       final Symbol sourceInstantiation = currentInstantiationOf(sourceOfTo);
@@ -485,10 +513,10 @@ class ConstraintEnumerator {
 
   private boolean validatePredInstantiation(Symbol from, Symbol to) {
     // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
-    return isHavingPred(from) == isHavingPred(to);
+    return isAggHavingPred(from) == isAggHavingPred(to);
   }
 
-  private boolean isHavingPred(Symbol pred) {
+  private boolean isAggHavingPred(Symbol pred) {
     assert pred.kind() == PRED;
     return pred.ctx().ownerOf(pred).kind() == AGG;
   }
@@ -504,7 +532,15 @@ class ConstraintEnumerator {
       if (currentIsEnabled(i) && other.symbols()[1] == from && other.symbols()[0] != to)
         return false;
     }
+    // Agg schema cannot be instantiated to Proj schema
+    if (isAggSchema(from) != isAggSchema(to)) return false;
+
     return true;
+  }
+
+  private boolean isAggSchema(Symbol schema) {
+    assert schema.kind() == SCHEMA;
+    return schema.ctx().ownerOf(schema).kind() == AGG;
   }
 
   private boolean validateFuncInstantiation(Symbol from, Symbol to) {

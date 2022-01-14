@@ -1,7 +1,5 @@
 package sjtu.ipads.wtune.superopt.nodetrans;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.type.RelDataType;
@@ -27,12 +25,12 @@ import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.SelectItem_Expr;
 
 public class AggTranformer extends BaseTransformer {
-  private TIntObjectMap<Expression> calAggAttrsList(List<Expression> attrExprs) {
-    TIntObjectMap<Expression> aggExprs = new TIntObjectHashMap<>();
+  private List<Integer> calAggAttrsList(List<Expression> attrExprs) {
+    List<Integer> aggExprs = new ArrayList<>();
     for (int i = 0, bound = attrExprs.size(); i < bound; i++) {
       if (Aggregate.isInstance(attrExprs.get(i).template()) ||
           Aggregate.isInstance(attrExprs.get(i).template().$(SelectItem_Expr))) {
-        aggExprs.put(i, attrExprs.get(i));
+        aggExprs.add(i);
       }
     }
     return aggExprs;
@@ -97,7 +95,7 @@ public class AggTranformer extends BaseTransformer {
     AlgeNode inputNode = transformNode(agg.child(planCtx, 0), planCtx, z3Context);
 
     final List<Expression> attrExprs = agg.attrExprs();
-    final TIntObjectMap<Expression> aggExprs = calAggAttrsList(attrExprs);
+    final List<Integer> aggExprs = calAggAttrsList(attrExprs);
 
     final List<Expression> groupByExprs = agg.groupByExprs();
     final List<Integer> groupByList = calGroupByAttrsIdxList(groupByExprs, attrExprs);
@@ -118,8 +116,8 @@ public class AggTranformer extends BaseTransformer {
 
     // aggregate call
     final List<AggregateCall> aggregateCallList = new ArrayList<>();
-    for (int i : aggExprs.keys()) {
-      Expression aggExpr = aggExprs.get(i);
+    for (int i : aggExprs) {
+      Expression aggExpr = attrExprs.get(i);
       String aggType = aggExpr.template().$(Aggregate_Name);
       if (aggType == null) aggType = aggExpr.template().$(SelectItem_Expr).$(Aggregate_Name);
       SqlAggFunction aggFunction = castAggType2AggFunction(aggType);

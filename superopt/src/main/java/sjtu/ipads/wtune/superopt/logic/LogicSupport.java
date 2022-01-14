@@ -45,9 +45,13 @@ public abstract class LogicSupport {
   }
 
   public static int proveEqBySpes(Substitution rule) {
-    var planPair = SubstitutionSupport.translateAsPlan(rule);
-    boolean eq = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
-    return eq ? EQ : NEQ;
+    try{
+      var planPair = SubstitutionSupport.translateAsPlan2(rule);
+      boolean eq = SPESSupport.prove(planPair.getLeft(), planPair.getRight());
+      return eq ? EQ : NEQ;
+    } catch (Exception e) {
+      return NEQ;
+    }
   }
 
   public static boolean isMismatchedOutput(UExprTranslationResult uExprs) {

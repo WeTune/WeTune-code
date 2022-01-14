@@ -14,10 +14,6 @@ public class TooManyAgg extends BaseMatchingRule {
   private static boolean checkOverwhelming(Agg op) {
     if (op.successor() != null && op.successor().kind() == AGG)
       return true;
-    if (op.successor() != null
-        && op.successor().successor() != null
-        && op.successor().successor().kind() == AGG)
-      return true;
 
     return false;
   }
