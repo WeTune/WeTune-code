@@ -188,8 +188,8 @@ class ConstraintEnumerator {
           new EnumerationStage[] {
             sourceEnum,
             tableInstantiation,
-            attrsInstantiation,
             schemaInstantiation,
+            attrsInstantiation,
             predInstantiation,
             mismatchedOutputBreaker,
             tableEqEnum,
@@ -209,8 +209,8 @@ class ConstraintEnumerator {
           new EnumerationStage[] {
             sourceEnum,
             tableInstantiation,
-            attrsInstantiation,
             schemaInstantiation,
+            attrsInstantiation,
             predInstantiation,
             funcInstantiation,
             mismatchedOutputBreaker,
@@ -491,36 +491,6 @@ class ConstraintEnumerator {
     return true;
   }
 
-  private boolean validateAttrsInstantiation(Symbol from, Symbol to) {
-    Symbol source = currentSourceOf(from);
-    assert source != null;
-
-    final List<Symbol> sourceChain = new ArrayList<>(4);
-    collectSourceChain(from, sourceChain);
-    // while (source != null) {
-    //   sourceChain.add(source);
-    //   source = currentSourceOf(source);
-    // }
-
-    for (Symbol sourceOfTo : I.viableSourcesOf(to)) {
-      final Symbol sourceInstantiation = currentInstantiationOf(sourceOfTo);
-      assert sourceInstantiation != null;
-      if (sourceChain.contains(sourceInstantiation)) return true;
-    }
-
-    return false;
-  }
-
-  private boolean validatePredInstantiation(Symbol from, Symbol to) {
-    // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
-    return isAggHavingPred(from) == isAggHavingPred(to);
-  }
-
-  private boolean isAggHavingPred(Symbol pred) {
-    assert pred.kind() == PRED;
-    return pred.ctx().ownerOf(pred).kind() == AGG;
-  }
-
   private boolean validateSchemaInstantiation(Symbol from, Symbol to) {
     // instantiation of SCHEMA symbol is required exclusive.
     // i.e., if a different symbol has been instantiated from `from`,
@@ -541,6 +511,45 @@ class ConstraintEnumerator {
   private boolean isAggSchema(Symbol schema) {
     assert schema.kind() == SCHEMA;
     return schema.ctx().ownerOf(schema).kind() == AGG;
+  }
+
+  private boolean validateAttrsInstantiation(Symbol from, Symbol to) {
+    // First judge whether `from` and `to` are both aggregated
+    if (isAggregatedAttrs(from) != isAggregatedAttrs(to)) return false;
+
+    Symbol source = currentSourceOf(from);
+    assert source != null;
+
+    final List<Symbol> sourceChain = new ArrayList<>(4);
+    collectSourceChain(from, sourceChain);
+    // while (source != null) {
+    //   sourceChain.add(source);
+    //   source = currentSourceOf(source);
+    // }
+
+    for (Symbol sourceOfTo : I.viableSourcesOf(to)) {
+      final Symbol sourceInstantiation = currentInstantiationOf(sourceOfTo);
+      assert sourceInstantiation != null;
+      if (sourceChain.contains(sourceInstantiation)) return true;
+    }
+
+    return false;
+  }
+
+  private boolean isAggregatedAttrs(Symbol attrs) {
+    assert attrs.kind() == ATTRS;
+    final Op owner = attrs.ctx().ownerOf(attrs);
+    return owner.kind() == AGG && attrs == ((Agg) owner).aggregateAttrs();
+  }
+
+  private boolean validatePredInstantiation(Symbol from, Symbol to) {
+    // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
+    return isAggHavingPred(from) == isAggHavingPred(to);
+  }
+
+  private boolean isAggHavingPred(Symbol pred) {
+    assert pred.kind() == PRED;
+    return pred.ctx().ownerOf(pred).kind() == AGG;
   }
 
   private boolean validateFuncInstantiation(Symbol from, Symbol to) {

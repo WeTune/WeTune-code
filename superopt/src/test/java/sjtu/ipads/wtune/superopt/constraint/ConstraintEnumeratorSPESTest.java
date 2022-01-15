@@ -198,7 +198,7 @@ public class ConstraintEnumeratorSPESTest {
 
   @Test
   void exception0() {
-    doTest(SPES, "Proj(Input)", "Proj(Agg(Input))");
+    doTest(SPES, "Proj(Proj(Agg(Input)))", "Proj(Agg(Input))");
   }
 
   @Test
