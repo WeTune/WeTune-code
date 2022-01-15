@@ -9,7 +9,8 @@ import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
-import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
+import static sjtu.ipads.wtune.sql.plan.PlanKind.Join;
+import static sjtu.ipads.wtune.sql.plan.PlanKind.Proj;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.mkColRefExpr;
 
 class NormalizeProj {
@@ -84,7 +85,7 @@ class NormalizeProj {
   boolean shouldInsertProjBefore(int node) {
     final int parent = plan.parentOf(node);
     final PlanKind nodeKind = plan.kindOf(node);
-    if (nodeKind == Filter) return parent == NO_SUCH_NODE || plan.kindOf(parent) == Join;
+    if (nodeKind.isFilter()) return parent == NO_SUCH_NODE || plan.kindOf(parent) == Join;
     if (nodeKind == Join) return parent == NO_SUCH_NODE;
     return false;
   }

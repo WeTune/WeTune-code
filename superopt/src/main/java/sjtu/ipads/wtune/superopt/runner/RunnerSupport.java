@@ -3,6 +3,9 @@ package sjtu.ipads.wtune.superopt.runner;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 abstract class RunnerSupport {
   private RunnerSupport() {}
 
@@ -32,5 +35,18 @@ abstract class RunnerSupport {
       throw new IllegalArgumentException("invalid index range: " + spec);
     }
     return indices;
+  }
+
+  static void checkFileExists(Path path) {
+    if (!Files.exists(path)) throw new IllegalArgumentException("no such file: " + path);
+  }
+
+  static int parseIntArg(String str, String argName) {
+    try {
+      return Integer.parseInt(str);
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException(
+          "invalid '-%s': %s, integer required".formatted(argName, str));
+    }
   }
 }

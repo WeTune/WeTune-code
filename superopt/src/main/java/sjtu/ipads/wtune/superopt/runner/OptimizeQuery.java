@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.runner;
 
+import me.tongfei.progressbar.ProgressBar;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
@@ -7,6 +8,7 @@ import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizationStep;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
@@ -23,65 +25,138 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIntArg;
 
 public class OptimizeQuery implements Runner {
   private Path out, trace, err;
-  private String app, startFrom;
+  private String targetApp;
+  private int stmtId;
   private boolean single;
-  private boolean echo;
+  private int verbosity;
   private SubstitutionBank rules;
 
   @Override
   public void prepare(String[] argStrings) throws IOException {
     final Args args = Args.parse(argStrings, 1);
-    echo = args.getOptional("echo", boolean.class, true);
 
-    final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
+    final String target = args.getOptional("T", "target", String.class, null);
+    if (target != null) {
+      final int index = target.indexOf('-');
+      if (index < 0) {
+        targetApp = target;
+        stmtId = -1;
+      } else {
+        targetApp = target.substring(0, index);
+        stmtId = parseIntArg(target.substring(index + 1), "stmtId");
+      }
+    }
+
+    single = args.getOptional("1", "single", boolean.class, false);
+    if (single && (target == null)) {
+      throw new IllegalArgumentException("-single/-1 must be specified with -T/-target");
+    }
+
+    verbosity = args.getOptional("v", "verbose", int.class, 0);
+    if (single && stmtId > 0) verbosity = Integer.MAX_VALUE;
+
+    final Path parentDir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data"));
+    final String ruleFileName = args.getOptional("R", "rules", String.class, "rules.txt");
+    final Path ruleFilePath = parentDir.resolve(ruleFileName);
+    RunnerSupport.checkFileExists(ruleFilePath);
+    rules = SubstitutionSupport.loadBank(ruleFilePath);
+
+    if (single) return;
+
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final Path dir = parentDir.resolve("opt" + subDirName);
+    final Path dir = parentDir.resolve("opt").resolve("run" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
-    out = dir.resolve("opts");
-    trace = dir.resolve("log");
-    err = dir.resolve("error");
-
-    app = args.getOptional("app", String.class, "");
-    startFrom = args.getOptional("from", String.class, "");
-    single = args.getOptional("single", boolean.class, false);
-
-    rules = SubstitutionSupport.loadBank(parentDir.resolve("rules").resolve("rules"));
+    out = dir.resolve("success");
+    trace = dir.resolve("trace");
+    err = dir.resolve("err");
   }
 
   @Override
   public void run() throws Exception {
-    optimizeAll(Statement.findAll());
+    if (single && stmtId > 0) {
+      optimizeOne(Statement.findOne(targetApp, stmtId));
+    } else {
+      optimizeAll(collectToRun());
+    }
+  }
+
+  private List<Statement> collectToRun() {
+    final List<Statement> toRun = new ArrayList<>();
+    boolean appLatch = targetApp == null;
+    boolean stmtLatch = stmtId <= 0;
+
+    for (Statement stmt : Statement.findAll()) {
+      if (!appLatch) appLatch = stmt.appName().equals(targetApp);
+      if (appLatch && !stmtLatch) stmtLatch = stmt.stmtId() >= stmtId;
+      if (!appLatch || !stmtLatch) continue;
+      if (single && !stmt.appName().equals(targetApp)) break;
+      toRun.add(stmt);
+    }
+
+    return toRun;
   }
 
   private PlanContext parsePlan(Statement stmt) {
     final Schema schema = stmt.app().schema("base", true);
     try {
-      final SqlNode ast = parseSql(stmt.app().dbType(), stmt.rawSql());
-      normalizeAst(ast);
-      return PlanSupport.assemblePlan(ast, schema);
-    } catch (Throwable ex) {
-      System.out.printf("[Plan] %s: %s\n", stmt, ex.getMessage());
-    }
+      final SqlNode ast = stmt.ast();
 
-    return null;
+      if (ast == null) {
+        if (verbosity >= 1) System.err.println("fail to parse sql " + stmt);
+        return null;
+      }
+
+      if (!PlanSupport.isSupported(ast)) {
+        if (verbosity >= 1)
+          System.err.println("fail to parse plan " + stmt + " due to unsupported SQL feature");
+        return null;
+      }
+
+      ast.context().setSchema(schema);
+      normalizeAst(ast);
+
+      final PlanContext plan = assemblePlan(ast, schema);
+
+      if (plan == null) {
+        if (verbosity >= 1)
+          System.err.println(
+              "fail to parse plan " + stmt + " due to " + PlanSupport.getLastError());
+      }
+
+      return plan;
+
+    } catch (Throwable ex) {
+      if (verbosity >= 1) {
+        System.err.println("fail to parse sql/plan " + stmt + " due to exception");
+        ex.printStackTrace();
+      }
+      return null;
+    }
   }
 
   private void optimizeOne(Statement stmt) {
-    if (echo) System.out.println(stmt);
-    if (isTooComplex(stmt.rawSql())) return;
+    if (verbosity >= 3) {
+      System.out.println("begin optimize " + stmt);
+      if (verbosity >= 4) System.out.println(stmt.ast().toString(false));
+    }
 
+    PlanContext plan = null;
     try {
-      final PlanContext plan = parsePlan(stmt);
+      plan = parsePlan(stmt);
       if (plan == null) return;
-      if (isSimple(plan)) return;
+
+      if (isSimple(plan)) {
+        if (verbosity >= 3) System.out.println("skip simple query " + stmt);
+        return;
+      }
 
       final Optimizer optimizer = Optimizer.mk(rules);
       optimizer.setTimeout(5000);
@@ -93,18 +168,28 @@ public class OptimizeQuery implements Runner {
       final List<String> optimizedSql = new ArrayList<>(optimized.size());
       final List<String> traces = new ArrayList<>(optimized.size());
       for (PlanContext opt : optimized) {
-        try {
-          final SqlNode sqlNode = translateAsAst(opt, opt.root(), false);
-          final String sql = sqlNode.toString();
-          optimizedSql.add(sql);
-        } catch (Throwable ex) {
+        final List<OptimizationStep> steps = optimizer.traceOf(opt);
+        if (steps.isEmpty()) continue;
+
+        final SqlNode sqlNode = translateAsAst(opt, opt.root(), false);
+        if (sqlNode == null) {
+          if (verbosity >= 1)
+            System.err.println(
+                "fail to translate optimized plan of "
+                    + stmt
+                    + " to SQL due to "
+                    + PlanSupport.getLastError());
+          if (verbosity >= 2) System.err.println(stringifyTree(opt, opt.root(), false, false));
           continue;
         }
 
-        final String trace =
-            joining(",", optimizer.traceOf(opt), it -> String.valueOf(it.ruleId()));
+        optimizedSql.add(sqlNode.toString());
+
+        final String trace = joining(",", steps, it -> String.valueOf(it.ruleId()));
         traces.add(trace);
       }
+
+      if (single) return;
 
       IOSupport.appendTo(
           out,
@@ -121,7 +206,14 @@ public class OptimizeQuery implements Runner {
           });
 
     } catch (Throwable ex) {
-      if (echo) System.err.println(stmt + " error: " + ex.getMessage());
+      System.err.println("fail to optimize stmt " + stmt);
+      if (verbosity >= 3) {
+        System.err.println(stmt.ast().toString(false));
+        if (plan != null) System.err.println(stringifyTree(plan, plan.root(), false, false));
+      }
+      if (verbosity >= 2) ex.printStackTrace();
+      if (single) return;
+
       IOSupport.appendTo(
           err,
           writer -> {
@@ -133,16 +225,11 @@ public class OptimizeQuery implements Runner {
   }
 
   private void optimizeAll(List<Statement> stmts) {
-    boolean running = startFrom.equals("");
-
-    for (Statement stmt : stmts) {
-      if (startFrom.equals(stmt.toString())) running = true;
-      if (!running) continue;
-      if (!"".equals(app) && !app.equals(stmt.appName())) continue;
-
-      optimizeOne(stmt);
-
-      if (single) break;
+    try (final ProgressBar pb = new ProgressBar("Optimization", stmts.size())) {
+      for (Statement stmt : stmts) {
+        optimizeOne(stmt);
+        pb.step();
+      }
     }
   }
 

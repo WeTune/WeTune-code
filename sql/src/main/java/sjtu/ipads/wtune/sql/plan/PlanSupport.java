@@ -26,6 +26,8 @@ import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.Exists;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.QuerySpec;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.QuerySpec_From;
 import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IN_SUBQUERY;
 import static sjtu.ipads.wtune.sql.plan.DependentRefInspector.inspectDepRefs;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
@@ -49,10 +51,11 @@ public abstract class PlanSupport {
 
   public static boolean isSupported(SqlNode ast) {
     final SqlContext ctx = ast.context();
-    for (int i = 1; i <= ctx.maxNodeId(); i++)
-      if (ctx.isPresent(i) && ctx.fieldOf(i, Aggregate_WindowSpec) != null) {
-        return false;
-      }
+    for (int i = 1; i <= ctx.maxNodeId(); i++) {
+      if (!ctx.isPresent(i)) continue;
+      if (ctx.fieldOf(i, Aggregate_WindowSpec) != null) return false;
+      if (ctx.kindOf(i) == QuerySpec && ctx.fieldOf(i, QuerySpec_From) == null) return false;
+    }
     return true;
   }
 
@@ -214,7 +217,20 @@ public abstract class PlanSupport {
       final String oldQualification = qualified.qualification();
       if (oldQualification != null && knownQualifications.add(qualified.qualification())) continue;
 
-      final String newQualification = seq.nextUnused(knownQualifications);
+      final String newQualification;
+      if (oldQualification != null) {
+        int suffix = 0;
+        while (true) {
+          final String tmp = oldQualification + (suffix++);
+          if (!knownQualifications.contains(tmp)) {
+            newQualification = tmp;
+            break;
+          }
+        }
+      } else {
+        newQualification = seq.nextUnused(knownQualifications);
+      }
+
       knownQualifications.add(newQualification);
 
       qualified.setQualification(newQualification);
@@ -506,6 +522,8 @@ public abstract class PlanSupport {
   }
 
   private static boolean mustBeQualified(PlanContext ctx, int nodeId) {
+    if (ctx.kindOf(nodeId) == Input) return true;
+
     int parent = ctx.parentOf(nodeId), child = parent;
     while (ctx.isPresent(parent)) {
       final PlanKind parentKind = ctx.kindOf(parent);

@@ -153,24 +153,24 @@ class PlanBuilder {
       if (any(items, it1 -> it1.$(SelectItem_Expr).$(Aggregate_WindowSpec) != null))
         return onError(FAILURE_UNSUPPORTED_FEATURE + "window function");
 
-      // 1. Extract column refs used in selectItems, groups and having
-      final List<SqlNode> colRefs = new ArrayList<>(items.size() + groupBys.size() + 1);
-      colRefs.addAll(gatherColRefs(items));
-      final int numRefInProj = colRefs.size();
-      colRefs.addAll(gatherColRefs(groupBys));
-      if (having != null) colRefs.addAll(gatherColRefs(having));
-
-      // 2. build Proj node
-      final Set<String> aggItemNames = map(items, it -> it.$(SelectItem_Alias));
-      final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items), aggItemNames, numRefInProj);
-
-      // 3. build Agg node
+      // 1. build Agg node
       mkAttrs(child, items, attrNames, attrExprs);
       final List<Expression> groupByExprs = new ArrayList<>(groupBys.size());
       for (SqlNode groupBy : groupBys) groupByExprs.add(Expression.mk(groupBy));
       final Expression havingExpr = having == null ? null : Expression.mk(having);
 
       final AggNode agg = AggNode.mk(deduplicated, attrNames, attrExprs, groupByExprs, havingExpr);
+
+      // 2. Extract column refs used in selectItems, groups and having
+      final List<SqlNode> colRefs = new ArrayList<>(attrExprs.size() + groupBys.size() + 1);
+      for (Expression attrExpr : attrExprs) colRefs.addAll(attrExpr.colRefs());
+      final int numRefInProj = colRefs.size();
+      colRefs.addAll(gatherColRefs(groupBys));
+      if (having != null) colRefs.addAll(gatherColRefs(having));
+
+      // 3. build Proj node
+      final Set<String> aggItemNames = map(items, it -> it.$(SelectItem_Alias));
+      final ProjNode proj = mkForwardProj(colRefs, containsDeduplicatedAgg(items), aggItemNames, numRefInProj);
 
       // 4. assemble
       final int projNodeId = plan.bindNode(proj);

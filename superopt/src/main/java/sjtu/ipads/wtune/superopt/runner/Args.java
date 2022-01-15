@@ -25,7 +25,7 @@ class Args {
       if (arg.startsWith("-")) {
         final int splitIndex = arg.indexOf('=');
         if (splitIndex == -1) {
-          if (i >= arg.length()) ret.add(arg.substring(1), null);
+          if (i >= args.length) ret.add(arg.substring(1), null);
           else {
             final String next = args[i];
             if (next.startsWith("-")) ret.add(arg.substring(1), null);
