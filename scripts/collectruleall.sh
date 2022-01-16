@@ -32,7 +32,7 @@ mkdir -p "${dirname}" 2>/dev/null || true
 
 for var in "${ips[@]}"; do
     ip="${prefix}${var}"
-    ssh "${username}@${ip}" "cd projects/wtune-code; scripts/collectrule.sh ${depth}"
+    ssh "${username}@${ip}" "cd projects/wtune-code; scripts/collectrule.sh --keep ${depth}"
     scp "${username}@${ip}:~/projects/wtune-code/wtune_data/rules.partial.txt" "${dirname}/rules.${ip}.txt"
     cat "${dirname}/rules.${ip}.txt" >> "${dirname}/rules.txt"
 done

@@ -23,6 +23,7 @@ name="rules.${t}.txt"
 files=$(ls -t -1 | ag 'run.+')
 
 while IFS= read -r line; do
+  echo "${keep}"
   if [ "${keep}" = 0 ]; then
       break
   fi
