@@ -1,12 +1,20 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PlanTranslatorTest {
+@Tag("substitution")
+@Tag("fast")
+class PlanTranslatorTest {
+  private String planToString(PlanContext plan) {
+    return PlanSupport.stringifyTree(plan, plan.root(), false, true);
+  }
+
   @Test
   public void testLeftJoin0() {
     final Substitution rule =
@@ -19,10 +27,10 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj*4{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(LeftJoin3{`#`.`#` = `#`.`#`,refs=[t0.c0,t1.c1,]}(Input1{r0 AS t0},Input2{r1 AS t1}))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj*2{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(Input1{r0 AS t0})",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 
   @Test
@@ -37,10 +45,10 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj5{[`#`.`#` AS c1,],refs=[t0.c1,],qual=q1}(LeftJoin4{`#`.`#` = `#`.`#`,refs=[t0.c1,q0.c0,]}(Input1{r0 AS t0},Proj*3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1})))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj2{[`#`.`#` AS c1,],refs=[t0.c1,],qual=q1}(Input1{r0 AS t0})",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 
   @Test
@@ -55,10 +63,10 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj5{[`#`.`#` AS c2,],refs=[t0.c2,],qual=q1}(InSub4{`#`.`#`,refs=[t0.c1,]}(Input1{r0 AS t0},Proj3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1})))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj4{[`#`.`#` AS c2,],refs=[t0.c2,],qual=q1}(InnerJoin3{`#`.`#` = `#`.`#`,refs=[t0.c1,t1.c0,]}(Input1{r0 AS t0},Input2{r1 AS t1}))",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 
   @Test
@@ -73,10 +81,10 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj5{[`#`.`#` AS c2,],refs=[t0.c2,],qual=q1}(InnerJoin4{`#`.`#` = `#`.`#`,refs=[t0.c1,q0.c0,]}(Input1{r0 AS t0},Proj3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1})))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj5{[`#`.`#` AS c2,],refs=[t0.c2,],qual=q1}(InSub4{`#`.`#`,refs=[t0.c1,]}(Input1{r0 AS t0},Proj3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1})))",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 
   @Test
@@ -90,8 +98,8 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj5{[`#`.`#` AS c2,],refs=[t0.c2,],qual=q1}(InnerJoin4{`#`.`#` = `#`.`#`,refs=[t0.c1,q0.c0,]}(Input1{r0 AS t0},Proj*3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1})))",
-        pair.getLeft().toString());
-    assertEquals("Input1{r0 AS t0}", pair.getRight().toString());
+        planToString(pair.getLeft()));
+    assertEquals("Input1{r0 AS t0}", planToString(pair.getRight()));
   }
 
   @Test
@@ -105,8 +113,8 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "InSub4{`#`.`#`,refs=[t0.c1,]}(Input1{r0 AS t0},Proj3{[`#`.`#` AS c0,],refs=[t1.c0,],qual=q0}(Input2{r1 AS t1}))",
-        pair.getLeft().toString());
-    assertEquals("Input1{r0 AS t0}", pair.getRight().toString());
+        planToString(pair.getLeft()));
+    assertEquals("Input1{r0 AS t0}", planToString(pair.getRight()));
   }
 
   @Test
@@ -121,10 +129,10 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Proj3{[`#`.`#` AS c0,],refs=[q0.c0,],qual=q1}(Proj2{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(Input1{r0 AS t0}))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj2{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q1}(Input1{r0 AS t0})",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 
   @Test
@@ -139,9 +147,9 @@ public class PlanTranslatorTest {
     final Pair<PlanContext, PlanContext> pair = SubstitutionSupport.translateAsPlan(rule);
     assertEquals(
         "Filter3{P0(`#`.`#`),refs=[q0.c0,]}(Proj2{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(Input1{r0 AS t0}))",
-        pair.getLeft().toString());
+        planToString(pair.getLeft()));
     assertEquals(
         "Proj3{[`#`.`#` AS c0,],refs=[t0.c0,],qual=q0}(Filter2{P0(`#`.`#`),refs=[t0.c0,]}(Input1{r0 AS t0}))",
-        pair.getRight().toString());
+        planToString(pair.getRight()));
   }
 }

@@ -18,6 +18,8 @@ public interface Optimizer {
 
   void setTracing(boolean flag);
 
+  void setExtended(boolean extension);
+
   void setVerbose(boolean flag);
 
   List<OptimizationStep> traceOf(PlanContext plan);

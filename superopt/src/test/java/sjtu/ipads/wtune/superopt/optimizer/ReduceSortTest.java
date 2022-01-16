@@ -27,10 +27,10 @@ public class ReduceSortTest {
     assertEquals(
         "SELECT `sub0`.`i` AS `i` "
             + "FROM (SELECT `a`.`i` AS `i` FROM `a` AS `a`) AS `sub0` "
-            + "INNER JOIN (SELECT `q0`.`i` AS `i` FROM `a` AS `q0` ORDER BY `q0`.`j` LIMIT 1) AS `sub1` "
+            + "INNER JOIN (SELECT `a0`.`i` AS `i` FROM `a` AS `a0` ORDER BY `a0`.`j` LIMIT 1) AS `sub1` "
             + "ON `sub0`.`i` = `sub1`.`i` "
-            + "WHERE `sub0`.`i` IN (SELECT `q1`.`i` AS `i` FROM `a` AS `q1`) "
-            + "AND `sub0`.`i` IN (SELECT `q2`.`i` AS `i` FROM `a` AS `q2` LIMIT 1)",
+            + "WHERE `sub0`.`i` IN (SELECT `a1`.`i` AS `i` FROM `a` AS `a1`) "
+            + "AND `sub0`.`i` IN (SELECT `a2`.`i` AS `i` FROM `a` AS `a2` LIMIT 1)",
         PlanSupport.translateAsAst(plan, newRoot, false).toString());
   }
 }

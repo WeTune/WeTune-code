@@ -203,10 +203,10 @@ class Instantiation {
       return fail(FAILURE_INCOMPLETE_MODEL);
 
     final List<Value> inValues = outValuesOf(child);
-
     aggRefs = reBinder.rebindRefs(aggRefs, inValues);
     if (aggRefs == null) return fail(FAILURE_FOREIGN_VALUE);
 
+    final List<Value> oldGroupRefs = newArrayList(groupRefs);
     groupRefs = reBinder.rebindRefs(groupRefs, ListSupport.join(outVals, inValues));
     if (groupRefs == null) return fail(FAILURE_FOREIGN_VALUE);
 
@@ -214,6 +214,7 @@ class Instantiation {
     final List<Expression> aggExprs = ListSupport.map(outVals, reg::exprOf);
     final Map<Value, Value> mapping = buildAggRefMapping(aggExprs, aggRefs);
     if (mapping == null) return fail(FAILURE_MALFORMED_AGG);
+    zip(oldGroupRefs, groupRefs, mapping::put);
 
     for (int i = 0, bound = aggExprs.size(), exprIdx = 0; i < bound; ++i) {
       Expression aggExpr = aggExprs.get(i);
@@ -247,6 +248,7 @@ class Instantiation {
     final List<String> projAttrNames = ListSupport.generate(refs.size(), i -> "agg" + i);
     final ProjNode projNode = ProjNode.mk(false, projAttrNames, projAttrExprs);
     final int projNodeId = newPlan.bindNode(projNode);
+    bindRefs(projAttrExprs, refs);
 
     newPlan.setChild(projNodeId, 0, child);
     newPlan.setChild(aggNodeId, 0, projNodeId);
@@ -271,8 +273,9 @@ class Instantiation {
     final ValuesRegistry reg = newPlan.valuesReg();
     int offset = 0;
     for (Expression expr : exprs) {
-      if (offset >= refs.size()) return false;
       final int numRefs = expr.colRefs().size();
+      if (numRefs == 0) continue;
+      if (offset + numRefs > refs.size()) return false;
       reg.bindValueRefs(expr, newArrayList(refs.subList(offset, offset + numRefs)));
       offset += numRefs;
     }
@@ -360,7 +363,7 @@ class Instantiation {
     for (Expression expr : exprs) {
       if (!Aggregate.isInstance(expr.template())) continue;
 
-      final int numRefs = expr.template().size();
+      final int numRefs = expr.colRefs().size();
       final List<Value> oldRefs = valuesReg.valueRefsOf(expr);
       final List<Value> newRefs = newArrayList(aggRefs.subList(offset, offset + numRefs));
       if (oldRefs.size() != numRefs) return null;

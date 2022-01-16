@@ -1,9 +1,12 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag("optimizer")
+@Tag("fast")
 public class FilterAssignmentTest {
   private final FilterChainHelper helper = new FilterChainHelper();
 

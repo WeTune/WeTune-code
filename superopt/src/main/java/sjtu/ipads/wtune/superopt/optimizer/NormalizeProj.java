@@ -9,8 +9,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
-import static sjtu.ipads.wtune.sql.plan.PlanKind.Join;
-import static sjtu.ipads.wtune.sql.plan.PlanKind.Proj;
+import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.mkColRefExpr;
 
 class NormalizeProj {
@@ -98,12 +97,18 @@ class NormalizeProj {
     final int child = plan.childOf(node, 0);
 
     if (parent == NO_SUCH_NODE) return false;
-    if (!plan.kindOf(child).isFilter()) return false;
-    else {
-      final PlanKind parentKind = plan.kindOf(parent);
+
+    final PlanKind childKind = plan.kindOf(child);
+    final PlanKind parentKind = plan.kindOf(parent);
+    if (childKind.isFilter()) {
       if (!parentKind.isFilter()) return false;
       if (parentKind.isSubqueryFilter() && indexOfChild(plan, node) != 0) return false;
-    }
+
+    } else if (childKind == Input) {
+      if (!parentKind.isFilter() && parentKind != Join) return false;
+      if (parentKind.isSubqueryFilter() && indexOfChild(plan, node) != 0) return false;
+
+    } else return false;
 
     final Values inputs = plan.valuesReg().valuesOf(child);
     final Values outputs = plan.valuesReg().valuesOf(node);

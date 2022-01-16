@@ -52,6 +52,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testInnerJoinElimination0() {
     doTest(
         "Proj(InnerJoin(Input,Input))",
@@ -61,6 +62,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testInnerJoinElimination1() {
     doTest(
         "Proj*(InnerJoin(Input,Input))",
@@ -90,6 +92,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testLeftJoinElimination0() {
     doTest(
         "Proj(LeftJoin(Input,Input))",
@@ -98,6 +101,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testLeftJoinElimination1() {
     doTest(
         "Proj*(LeftJoin(Input,Input))",
@@ -124,6 +128,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testLeftJoin2InnerJoin() {
     doTest(
         "LeftJoin(Input,Input)",
@@ -132,6 +137,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testIN2InnerJoin0() {
     doTest(
         "Proj(InSubFilter(Input,Proj(Input)))",
@@ -141,6 +147,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testIN2InnerJoin1() {
     doTest(
         "Proj*(InSubFilter(Input,Proj(Input)))",
@@ -150,6 +157,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testPlainFilterCollapsing() {
     doTest(
         "PlainFilter(PlainFilter(Input))",
@@ -158,6 +166,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testINSubFilterCollapsing() {
     doTest(
         "InSubFilter(InSubFilter(Input,Input),Input)",
@@ -167,6 +176,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testProjCollapsing0() {
     doTest(
         "Proj(Proj(Input))",
@@ -175,6 +185,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testInSubFilterElimination() {
     doTest(
         "InSubFilter(Input,Proj(Input))",
@@ -183,6 +194,7 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
+  @Tag("fast")
   void testRemoveDeduplication() {
     doTest(
         "Proj*(Input)",
@@ -191,7 +203,7 @@ class ConstraintEnumeratorTest {
   }
 
   //  @Test
-  @Tag("slow")
+  //  @Tag("slow")
   void testFlattenJoinSubquery() {
     doTest("Proj(InnerJoin(Input,Proj(Filter(Input))))", "Proj(Filter(InnerJoin(Input,Input)))");
   }

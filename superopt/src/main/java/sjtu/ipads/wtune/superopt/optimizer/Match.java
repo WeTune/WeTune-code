@@ -14,7 +14,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
-import static sjtu.ipads.wtune.common.tree.TreeSupport.isDescendant;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
@@ -251,7 +250,6 @@ class Match {
     collectAggregates(aggNode, aggFuncs, aggRefs);
 
     if (aggFuncs.isEmpty()) return false;
-    if (!isClosedAggregates(aggNode, aggRefs)) return false;
 
     final Expression havingPredExpr = aggNode.havingExpr();
     if (havingPredExpr != null && !valuesReg.valueRefsOf(havingPredExpr).equals(aggRefs))
@@ -261,6 +259,8 @@ class Match {
       return false;
 
     final List<Value> groupRefs = flatMap(aggNode.groupByExprs(), valuesReg::valueRefsOf);
+
+    if (!isClosedAggregates(aggNode, aggRefs, groupRefs)) return false;
     final List<Value> schema = valuesReg.valuesOf(nodeId);
 
     return model.assign(agg.schema(), schema)
@@ -280,13 +280,12 @@ class Match {
     }
   }
 
-  private boolean isClosedAggregates(AggNode aggNode, List<Value> aggRefs) {
+  private boolean isClosedAggregates(AggNode aggNode, List<Value> aggRefs, List<Value> groupRefs) {
     final ValuesRegistry valuesReg = sourcePlan.valuesReg();
     for (Expression attrExpr : aggNode.attrExprs()) {
-      if (!Aggregate.isInstance(attrExpr.template())
-          && !aggRefs.containsAll(valuesReg.valueRefsOf(attrExpr))) {
-        return false;
-      }
+      if (!Aggregate.isInstance(attrExpr.template())) continue;
+      final Values refs = valuesReg.valueRefsOf(attrExpr);
+      if (!aggRefs.containsAll(refs) && !groupRefs.containsAll(refs)) return false;
     }
     return true;
   }

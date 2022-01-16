@@ -1,10 +1,13 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static sjtu.ipads.wtune.superopt.optimizer.FilterChainHelper.mkSqlReorderedIntuition;
 
+@Tag("optimizer")
+@Tag("fast")
 public class FilterChainTest {
   private final FilterChainHelper helper = new FilterChainHelper();
 

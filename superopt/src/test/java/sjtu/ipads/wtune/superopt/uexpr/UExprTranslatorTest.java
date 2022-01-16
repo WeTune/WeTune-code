@@ -1,10 +1,13 @@
 package sjtu.ipads.wtune.superopt.uexpr;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag("uexpr")
+@Tag("fast")
 class UExprTranslatorTest {
   @Test
   public void testLeftJoin0() {

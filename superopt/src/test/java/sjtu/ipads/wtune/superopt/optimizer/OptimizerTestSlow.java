@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
@@ -12,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sjtu.ipads.wtune.superopt.TestHelper.optimizeQuery;
 import static sjtu.ipads.wtune.superopt.TestHelper.optimizeStmt;
 
+@Tag("optimizer")
+@Tag("slow")
 public class OptimizerTestSlow {
   private static void doTest(String appName, int stmtId, String... expected) {
     final Statement stmt = Statement.findOne(appName, stmtId);

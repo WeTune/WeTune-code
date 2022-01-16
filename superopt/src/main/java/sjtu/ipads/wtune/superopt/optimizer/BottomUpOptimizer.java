@@ -25,7 +25,7 @@ class BottomUpOptimizer implements Optimizer {
   private long startAt;
   private long timeout;
 
-  private boolean tracing, verbose;
+  private boolean tracing, verbose, extended;
   private final Lazy<Map<String, OptimizationStep>> traces;
 
   BottomUpOptimizer(SubstitutionBank rules) {
@@ -43,6 +43,11 @@ class BottomUpOptimizer implements Optimizer {
   @Override
   public void setTimeout(long timeout) {
     this.timeout = timeout;
+  }
+
+  @Override
+  public void setExtended(boolean extension) {
+    this.extended = extension;
   }
 
   @Override
@@ -238,11 +243,11 @@ class BottomUpOptimizer implements Optimizer {
   }
 
   protected Set<SubPlan> onAgg(SubPlan agg) {
-    return optimizeChild(agg);
+    return extended ? optimizeFull(agg) : optimizeChild(agg);
   }
 
   protected Set<SubPlan> onSetOp(SubPlan setOp) {
-    return optimizeChild(setOp);
+    return extended ? optimizeFull(setOp) : optimizeChild(setOp);
   }
 
   private Set<SubPlan> dispatch(SubPlan node) {

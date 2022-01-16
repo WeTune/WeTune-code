@@ -12,14 +12,12 @@ import sjtu.ipads.wtune.superopt.fragment.Filter;
 import sjtu.ipads.wtune.superopt.fragment.Op;
 import sjtu.ipads.wtune.superopt.fragment.Symbol;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.ListSupport.*;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 class FilterMatcher {
@@ -276,9 +274,11 @@ class FilterMatcher {
 
   private class Terminator extends SubMatcher {
     private final Match baseMatch;
+    private final Set<String> seenPlans;
 
     private Terminator(Match baseMatch) {
       this.baseMatch = baseMatch;
+      this.seenPlans = new HashSet<>(4);
     }
 
     @Override
@@ -295,6 +295,8 @@ class FilterMatcher {
 
       final FilterChain newChain = assignments.mkChain(isTrailing);
       final PlanContext matchedPlan = newChain.assemble();
+      if (!seenPlans.add(stringifyTree(matchedPlan, matchedPlan.root(), true))) return false;
+
       final int chainLength = newChain.size();
       final int firstMatchPointOffset = (isLeading && !isTrailing) ? numUnused : 0;
       final int lastMatchPointOffset = isTrailing ? chainLength - numUnused - 1 : chainLength - 1;
