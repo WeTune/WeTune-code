@@ -4,6 +4,7 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.util.ParamInterpolator;
 import sjtu.ipads.wtune.superopt.util.Complexity;
 
 import javax.sql.DataSource;
@@ -91,98 +92,18 @@ class ProfilerImpl implements Profiler {
   }
 
   private double queryCost(SqlNode ast) {
+    final ParamInterpolator interpolator = new ParamInterpolator(ast);
+    interpolator.go();
+
     String query = ast.toString();
-    if (query.contains("?") || query.contains("$")) {
-      final List<SqlNode> filled = fillParamMarker(ast);
-      query = ast.toString();
-      unFillParamMarker(filled);
-    }
+
+    interpolator.undo();
 
     final String dbType = dbProps.getProperty("dbType");
     if (SQLServer.equals(dbType)) query = adaptToSqlserver(query);
 
     final DataSource dataSource = DataSourceFactory.instance().mk(dbProps);
     return CostQuery.mk(dbType, dataSource::getConnection, query).getCost();
-  }
-
-  private static List<SqlNode> fillParamMarker(SqlNode ast) {
-    //    final Params mgr = Resolution.resolveParamFull(ast);
-    //    final List<ASTNode> filled = new ArrayList<>();
-    //    for (ParamDesc param : mgr.params()) {
-    //      final ASTNode node = param.node();
-    //      if (!Param.isInstance(node)) continue;
-    //
-    //      ParamModifier modifier = tail(param.modifiers());
-    //      if (modifier == null) continue;
-    //
-    //      ASTNode value;
-    //
-    //      if (modifier.type() == OFFSET_VAL) value = fillOffset();
-    //      else if (modifier.type() == LIMIT_VAL) value = fillLimit();
-    //      else {
-    //        if (modifier.type() == TUPLE_ELEMENT || modifier.type() == ARRAY_ELEMENT)
-    //          modifier = elemAt(param.modifiers(), -2);
-    //        if (modifier == null || modifier.type() != COLUMN_VALUE) continue;
-    //
-    //        final Column column = (Column) modifier.args()[1];
-    //        assert column != null;
-    //        value = fillColumnValue(column);
-    //      }
-    //
-    //      node.update(value);
-    //      filled.add(node);
-    //    }
-    //    return filled;
-    return null; // TODO
-  }
-
-  //  private static SqlNode fillLimit() {
-  //    final ASTNode value = ASTNode.expr(LITERAL);
-  //    value.set(LITERAL_TYPE, LiteralType.INTEGER);
-  //    value.set(LITERAL_VALUE, 100);
-  //    return value;
-  //  }
-  //
-  //  private static ASTNode fillOffset() {
-  //    final ASTNode value = ASTNode.expr(LITERAL);
-  //    value.set(LITERAL_TYPE, LiteralType.INTEGER);
-  //    value.set(LITERAL_VALUE, 0);
-  //    return value;
-  //  }
-  //
-  //  private static ASTNode fillColumnValue(Column column) {
-  //    final ASTNode value = ASTNode.expr(LITERAL);
-  //    switch (column.dataType().category()) {
-  //      case INTEGRAL -> {
-  //        value.set(LITERAL_TYPE, LiteralType.INTEGER);
-  //        value.set(LITERAL_VALUE, 1);
-  //      }
-  //      case FRACTION -> {
-  //        value.set(LITERAL_TYPE, LiteralType.FRACTIONAL);
-  //        value.set(LITERAL_VALUE, 1.0);
-  //      }
-  //      case BOOLEAN -> {
-  //        value.set(LITERAL_TYPE, LiteralType.BOOL);
-  //        value.set(LITERAL_VALUE, false);
-  //      }
-  //      case STRING -> {
-  //        value.set(LITERAL_TYPE, LiteralType.TEXT);
-  //        value.set(LITERAL_VALUE, "00001");
-  //      }
-  //      case TIME -> {
-  //        value.set(LITERAL_TYPE, LiteralType.TEXT);
-  //        value.set(LITERAL_VALUE, "2021-01-01 00:00:00.000");
-  //      }
-  //      default -> value.set(LITERAL_TYPE, LiteralType.NULL);
-  //    }
-  //    return value;
-  //  }
-  //
-  private static void unFillParamMarker(List<SqlNode> filled) {
-    for (SqlNode n : filled) {
-      //        final ASTNode marker = ASTNode.expr(PARAM_MARKER);
-      //        n.update(marker);
-    }
   }
 
   private static String adaptToSqlserver(String sql) {

@@ -21,7 +21,7 @@ import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Joined_Kind;
 import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Joined_On;
 import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.AND;
 import static sjtu.ipads.wtune.sql.ast.constants.UnaryOpKind.NOT;
-import static sjtu.ipads.wtune.sql.support.RenumberListener.watch;
+import static sjtu.ipads.wtune.sql.util.RenumberListener.watch;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.conjunctExprTo;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.detachExpr;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.clauseLocator;

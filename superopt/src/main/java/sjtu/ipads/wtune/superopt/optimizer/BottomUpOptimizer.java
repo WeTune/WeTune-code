@@ -2,7 +2,6 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -12,8 +11,7 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 import java.util.*;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.LOG;
@@ -59,14 +57,23 @@ class BottomUpOptimizer implements Optimizer {
 
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
+    final PlanContext originalPlan = plan;
+
     plan = plan.copy();
     int planRoot = preprocess(plan);
 
     memo = new Memo();
     startAt = System.currentTimeMillis();
 
-    final Set<SubPlan> subPlans = optimize0(new SubPlan(plan, planRoot));
-    return SetSupport.map(subPlans, SubPlan::plan);
+    final Set<SubPlan> results = optimize0(new SubPlan(plan, planRoot));
+    final Set<PlanContext> optimized = new HashSet<>(results.size());
+
+    for (SubPlan result : results) {
+      // Preclude the original one
+      if (result.plan() != originalPlan) optimized.add(result.plan());
+    }
+
+    return optimized;
   }
 
   private Set<SubPlan> optimize0(SubPlan subPlan) {
@@ -201,7 +208,7 @@ class BottomUpOptimizer implements Optimizer {
   }
 
   protected Set<SubPlan> onInput(SubPlan input) {
-    return memo.mkEqClass(input);
+    return singleton(input);
   }
 
   protected Set<SubPlan> onFilter(SubPlan filter) {
@@ -294,6 +301,11 @@ class BottomUpOptimizer implements Optimizer {
   }
 
   private SubPlan replaceChild(SubPlan replaced, int childIdx, SubPlan replacement) {
+    if (replacement.plan() == replaced.plan()) {
+      assert replaced.plan().childOf(replaced.nodeId(), childIdx) == replacement.nodeId();
+      return replaced;
+    }
+
     final PlanContext replacedPlan = replaced.plan().copy(), replacementPlan = replacement.plan();
     final int replacedSubPlan = replacedPlan.childOf(replaced.nodeId(), childIdx);
     final int replacementSubPlan = replacement.nodeId();

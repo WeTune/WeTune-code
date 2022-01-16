@@ -1,14 +1,15 @@
 package sjtu.ipads.wtune.superopt.runner;
 
-import sjtu.ipads.wtune.common.utils.ListSupport;
-import sjtu.ipads.wtune.sql.SqlSupport;
+import me.tongfei.progressbar.ProgressBar;
+import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.schema.Schema;
+import sjtu.ipads.wtune.sql.support.action.NormalizationSupport;
+import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.profiler.Profiler;
 
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,161 +18,222 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static sjtu.ipads.wtune.common.utils.Commons.coalesce;
-import static sjtu.ipads.wtune.common.utils.LeveledException.ignorable;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static sjtu.ipads.wtune.common.utils.Commons.isNullOrEmpty;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
+import static sjtu.ipads.wtune.common.utils.ListSupport.map;
+import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.SQLServer;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
+import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.*;
 
 public class PickMinCost implements Runner {
-  private Path inFile, inTraceFile, outFile, outTraceFile, errFile;
-  private boolean echo;
-  private PrintWriter out, traceOut, err;
+  private Path inOptFile, inTraceFile, outOptFile, outTraceFile;
+  private String targetApp;
+  private int stmtId;
+  private int verbosity;
   private Properties dbPropsSeed;
-  private Map<String, Properties> dbProps = new ConcurrentHashMap<>();
-  private String app;
+  private final Map<String, Properties> dbProps = new ConcurrentHashMap<>();
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
-    inFile = Path.of(args.getOptional("-i", String.class, "wtune_data/transformation.out"));
-    inTraceFile = Path.of(args.getOptional("-o", String.class, "wtune_data/transformation.trace"));
-    outFile = Path.of(args.getOptional("-t", String.class, inFile + ".opt"));
-    outTraceFile = Path.of(args.getOptional("-t", String.class, inTraceFile + ".opt"));
-    errFile = Path.of(args.getOptional("-e", String.class, "wtune_data/profile.err"));
-    echo = args.getOptional("echo", boolean.class, true);
-    app = args.getOptional("app", String.class, null);
 
-    final String jdbcUrl = args.getOptional("dbUrl", String.class, null);
-    final String username = args.getOptional("dbUser", String.class, null);
-    final String password = args.getOptional("dbPasswd", String.class, null);
-    final String dbType = args.getOptional("dbType", String.class, null);
-
-    if (jdbcUrl != null) {
-      dbPropsSeed = new Properties();
-      dbPropsSeed.setProperty("jdbcUrl", jdbcUrl);
-      dbPropsSeed.setProperty("username", username);
-      dbPropsSeed.setProperty("dbType", dbType);
-      if (password != null) dbPropsSeed.setProperty("password", password);
-    } else {
-      dbPropsSeed = null;
-    }
-  }
-
-  private Properties mkDbProps(Statement stmt) {
-    if (dbPropsSeed != null) {
-      Properties props = dbProps.get(stmt.appName());
-      if (props != null) return props;
-
-      props = new Properties(dbPropsSeed);
-      props.setProperty("jdbcUrl", dbPropsSeed.get("jdbcUrl") + stmt.appName() + "_base");
-      dbProps.put(stmt.appName(), props);
-      return props;
-
-    } else return stmt.app().dbProps();
-  }
-
-  private PlanContext mkPlanSafe(Schema schema, String sql) {
-    try {
-      final SqlNode ast = SqlSupport.parseSql(schema.dbType(), sql);
-      return assemblePlan(ast, schema);
-    } catch (Throwable ex) {
-      return null;
-    }
-  }
-
-  private int pickMin(String stmtName, List<String> transformed) {
-    final int pos = stmtName.indexOf('-');
-    final String appName = stmtName.substring(0, pos);
-    final int stmtId = Integer.parseInt(stmtName.substring(pos + 1));
-    final Statement stmt = Statement.findOne(appName, stmtId);
-    final Schema schema = stmt.app().schema("base");
-    final SqlNode baseAst = SqlSupport.parseSql(stmt.app().dbType(), stmt.rawSql());
-    baseAst.context().setSchema(schema);
-    //    Workflow.normalize(baseAst); // TODO
-
-    final PlanContext baseline;
-    final List<PlanContext> candidates;
-
-    try {
-      baseline = assemblePlan(baseAst, schema);
-      candidates = ListSupport.map((Iterable<String>) transformed, it -> mkPlanSafe(schema, it));
-
-      for (int i = 0; i < candidates.size(); i++) {
-        final PlanContext candidate = candidates.get(i);
-        if (candidate == null) {
-          if (echo) System.err.printf("%s\t%d\t%s\n", stmt, i, transformed.get(i));
-          err.printf("%s\t%d\t%s\n", stmt, i, transformed.get(i));
-        }
+    final String target = args.getOptional("T", "target", String.class, null);
+    if (target != null) {
+      final int index = target.indexOf('-');
+      if (index < 0) {
+        targetApp = target;
+        stmtId = -1;
+      } else {
+        targetApp = target.substring(0, index);
+        stmtId = parseIntArg(target.substring(index + 1), "stmtId");
       }
-
-      final Profiler profiler = Profiler.mk(mkDbProps(stmt));
-      profiler.setBaseline(baseline);
-      candidates.forEach(profiler::profile);
-
-      return profiler.minCostIndex();
-
-    } catch (Throwable ex) {
-      if (!ignorable(ex)) {
-        if (echo)
-          System.err.println(
-              stmt + " error: " + coalesce(ex.getMessage(), ex.getClass().getSimpleName()));
-        err.print("> ");
-        err.println(stmt);
-        ex.printStackTrace(err);
-      }
-      return -1;
     }
+
+    verbosity = args.getOptional("v", "verbosity", int.class, 0);
+    if (stmtId > 0) verbosity = Integer.MAX_VALUE;
+
+    final Path dir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data/result"));
+    inOptFile = dir.resolve("success");
+    inTraceFile = dir.resolve("trace");
+    checkFileExists(inOptFile);
+
+    outOptFile = dir.resolve("2_opt.tsv");
+    outTraceFile = dir.resolve("2_trace.tsv");
+
+    final String jdbcUrl = args.getOptional("dbUrl", String.class, "10.0.0.103");
+    final String username = args.getOptional("dbUser", String.class, "");
+    final String password = args.getOptional("dbPasswd", String.class, "");
+    final String dbType = args.getOptional("dbType", String.class, SQLServer);
+    if (jdbcUrl.isEmpty()) throw new IllegalArgumentException("jdbc url should not be empty");
+
+    dbPropsSeed = new Properties();
+    dbPropsSeed.setProperty("dbType", dbType);
+    dbPropsSeed.setProperty("jdbcUrl", jdbcUrl);
+    if (!username.isEmpty()) dbPropsSeed.setProperty("username", username);
+    if (!password.isEmpty()) dbPropsSeed.setProperty("password", password);
   }
 
   @Override
   public void run() throws Exception {
-    final List<String> transformations = Files.readAllLines(inFile);
+    final List<String> lines = Files.readAllLines(inOptFile);
     List<String> traces = Files.exists(inTraceFile) ? Files.readAllLines(inTraceFile) : null;
-    if (traces != null && traces.size() != transformations.size()) traces = null;
+    if (traces != null && traces.size() != lines.size()) {
+      traces = null;
+      if (verbosity >= 1)
+        System.err.printf("#lines of %s and %s is mismatched\n", inOptFile, inTraceFile);
+    }
 
-    out = new PrintWriter(Files.newOutputStream(outFile));
-    err = new PrintWriter(Files.newOutputStream(errFile));
-    traceOut = traces == null ? null : new PrintWriter(Files.newOutputStream(outTraceFile));
-    if (traceOut == null) System.out.println("No Trace!");
+    final List<OptimizedStatements> groups = filterToRun(collectOpts(lines, traces));
+    try (final ProgressBar pb = new ProgressBar("PickMin", groups.size())) {
+      for (OptimizedStatements group : groups) {
+        pickMin(group);
+        pb.step();
+      }
+    }
+  }
 
-    String stmtId = null;
-    List<String> group = new ArrayList<>(16);
-    List<String> groupTrace = new ArrayList<>(16);
+  private List<OptimizedStatements> collectOpts(List<String> lines, List<String> traces) {
+    final List<OptimizedStatements> optimizations = new ArrayList<>(lines.size() / 20);
 
-    //    final String startPoint = "redmine-1229";
-    //    boolean start = "".equals(startPoint);
-
-    for (int i = 0, bound = transformations.size(); i < bound; i++) {
-      if (echo && i % 500 == 0) System.out.println(i);
-      final String transformation = transformations.get(i);
-      final String[] fields = transformation.split("\t", 3);
-
-      if (app != null && !fields[0].startsWith(app)) continue;
-      //      if (fields[0].equals(startPoint)) start = true;
-      //      if (!start) continue;
-
-      if (fields[0].equals(stmtId)) {
-        group.add(fields[2]);
-        if (traces != null) groupTrace.add(traces.get(i).split("\t", 3)[2]);
+    OptimizedStatements current = null;
+    for (int i = 0, bound = lines.size(); i < bound; ++i) {
+      final String line = lines.get(i);
+      final String[] fields = line.split("\t", 3);
+      if (fields.length != 3) {
+        if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
 
-      if (stmtId != null) {
-        final int minIndex = pickMin(stmtId, group);
-        if (minIndex != -1) {
-          out.printf("%s\t%s\n", stmtId, group.get(minIndex));
-          out.flush();
-          if (traces != null) {
-            traceOut.printf("%s\t%s\n", stmtId, groupTrace.get(minIndex));
-            traceOut.flush();
-          }
-        }
+      final String[] stmtFields = fields[0].split("-");
+      final String app = stmtFields[0];
+      final int stmtId = parseIntSafe(stmtFields[1], -1);
+      if (app.isEmpty() || stmtId <= 0) {
+        if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
+        continue;
       }
 
-      stmtId = fields[0];
-      group.clear();
-      groupTrace.clear();
-      group.add(fields[2]);
-      if (traces != null) groupTrace.add(traces.get(i).split("\t", 3)[2]);
+      if (current == null || !current.appName.equals(app) || current.stmtId != stmtId) {
+        optimizations.add(current = new OptimizedStatements(app, stmtId, traces != null));
+      }
+
+      current.sqls.add(fields[2]);
+      if (traces != null) current.traces.add(traces.get(i));
+    }
+
+    return optimizations;
+  }
+
+  private List<OptimizedStatements> filterToRun(List<OptimizedStatements> opts) {
+    opts.removeIf(it -> it.sqls.isEmpty());
+
+    if (stmtId > 0) {
+      assert targetApp != null;
+      final String targetApp = this.targetApp;
+      final int stmtId = this.stmtId;
+      final OptimizedStatements found =
+          linearFind(opts, it -> targetApp.equals(it.appName) && stmtId == it.stmtId);
+      if (found == null) return emptyList();
+      else return singletonList(found);
+    }
+
+    if (targetApp != null) {
+      final String targetApp = this.targetApp;
+      opts.removeIf(it -> !targetApp.equals(it.appName));
+      return opts;
+    }
+
+    return opts;
+  }
+
+  private Properties mkDbProps(String appName) {
+    final Properties existing = dbProps.get(appName);
+    if (existing != null) return existing;
+
+    final Properties props = new Properties(dbPropsSeed);
+    props.setProperty("jdbcUrl", dbPropsSeed.get("jdbcUrl") + appName + "_base");
+    dbProps.put(appName, props);
+    return props;
+  }
+
+  private PlanContext mkPlan(Schema schema, String sql) {
+    final SqlNode ast = parseSql(schema.dbType(), sql);
+    return assemblePlan(ast, schema);
+  }
+
+  private void pickMin(OptimizedStatements group) {
+    if (verbosity >= 3) System.out.println("Begin pick min " + group);
+
+    final Profiler profiler;
+    try {
+      profiler = profile(group);
+    } catch (Throwable ex) {
+      if (verbosity >= 1) {
+        System.err.printf("fail to profile %s due exception\n", group);
+        if (verbosity >= 2) ex.printStackTrace();
+      }
+      return;
+    }
+
+    final int idx = profiler.minCostIndex();
+    if (idx < 0) {
+      if (verbosity >= 3) System.out.println("No better than baseline " + group);
+      return;
+    }
+    if (verbosity >= 3) System.out.println("Opt No." + idx + " pick for " + group);
+    if (verbosity >= 4) {
+      System.out.println("Baseline ==>");
+      System.out.println(Statement.findOne(group.appName, group.stmtId).ast().toString(false));
+      System.out.println("Optimized ==>");
+      System.out.println(
+          parseSql(App.of(group.appName).dbType(), group.sqls.get(idx)).toString(false));
+    }
+
+    if (stmtId > 0) return;
+
+    IOSupport.appendTo(
+        outOptFile,
+        writer -> writer.printf("%s-%d\t%s", group.appName, group.stmtId, group.sqls.get(idx)));
+
+    if (!isNullOrEmpty(group.traces))
+      IOSupport.appendTo(outTraceFile, writer -> writer.println(group.traces.get(idx)));
+  }
+
+  private Profiler profile(OptimizedStatements group) {
+    final Statement stmt = Statement.findOne(group.appName, group.stmtId);
+    final Schema schema = stmt.app().schema("base");
+    final SqlNode ast = stmt.ast();
+    ast.context().setSchema(schema);
+    NormalizationSupport.normalizeAst(ast);
+
+    final PlanContext baseline = assemblePlan(ast, schema);
+    final List<PlanContext> candidates = map(group.sqls, sql -> mkPlan(schema, sql));
+    final Properties dbProps = mkDbProps(group.appName);
+    final Profiler profiler = Profiler.mk(dbProps);
+    profiler.setBaseline(baseline);
+    for (PlanContext candidate : candidates) profiler.profile(candidate);
+
+    return profiler;
+  }
+
+  private static class OptimizedStatements {
+    private final String appName;
+    private final int stmtId;
+    private final List<String> sqls;
+    private final List<String> traces;
+
+    private OptimizedStatements(String appName, int stmtId, boolean hasTrace) {
+      this.appName = appName;
+      this.stmtId = stmtId;
+      this.sqls = new ArrayList<>();
+      this.traces = hasTrace ? new ArrayList<>() : null;
+    }
+
+    @Override
+    public String toString() {
+      return appName + "-" + stmtId;
     }
   }
 }

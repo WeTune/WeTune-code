@@ -74,9 +74,9 @@ public class OptimizeQuery implements Runner {
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
-    out = dir.resolve("success");
-    trace = dir.resolve("trace");
-    err = dir.resolve("err");
+    out = dir.resolve("1_opt.tsv");
+    trace = dir.resolve("1_trace.tsv");
+    err = dir.resolve("1_err.txt");
   }
 
   @Override
@@ -104,41 +104,12 @@ public class OptimizeQuery implements Runner {
     return toRun;
   }
 
-  private PlanContext parsePlan(Statement stmt) {
-    final Schema schema = stmt.app().schema("base", true);
-    try {
-      final SqlNode ast = stmt.ast();
-
-      if (ast == null) {
-        if (verbosity >= 1) System.err.println("fail to parse sql " + stmt);
-        return null;
+  private void optimizeAll(List<Statement> stmts) {
+    try (final ProgressBar pb = new ProgressBar("Optimization", stmts.size())) {
+      for (Statement stmt : stmts) {
+        optimizeOne(stmt);
+        pb.step();
       }
-
-      if (!PlanSupport.isSupported(ast)) {
-        if (verbosity >= 1)
-          System.err.println("fail to parse plan " + stmt + " due to unsupported SQL feature");
-        return null;
-      }
-
-      ast.context().setSchema(schema);
-      normalizeAst(ast);
-
-      final PlanContext plan = assemblePlan(ast, schema);
-
-      if (plan == null) {
-        if (verbosity >= 1)
-          System.err.println(
-              "fail to parse plan " + stmt + " due to " + PlanSupport.getLastError());
-      }
-
-      return plan;
-
-    } catch (Throwable ex) {
-      if (verbosity >= 1) {
-        System.err.println("fail to parse sql/plan " + stmt + " due to exception");
-        ex.printStackTrace();
-      }
-      return null;
     }
   }
 
@@ -224,12 +195,41 @@ public class OptimizeQuery implements Runner {
     }
   }
 
-  private void optimizeAll(List<Statement> stmts) {
-    try (final ProgressBar pb = new ProgressBar("Optimization", stmts.size())) {
-      for (Statement stmt : stmts) {
-        optimizeOne(stmt);
-        pb.step();
+  private PlanContext parsePlan(Statement stmt) {
+    final Schema schema = stmt.app().schema("base", true);
+    try {
+      final SqlNode ast = stmt.ast();
+
+      if (ast == null) {
+        if (verbosity >= 1) System.err.println("fail to parse sql " + stmt);
+        return null;
       }
+
+      if (!PlanSupport.isSupported(ast)) {
+        if (verbosity >= 1)
+          System.err.println("fail to parse plan " + stmt + " due to unsupported SQL feature");
+        return null;
+      }
+
+      ast.context().setSchema(schema);
+      normalizeAst(ast);
+
+      final PlanContext plan = assemblePlan(ast, schema);
+
+      if (plan == null) {
+        if (verbosity >= 1)
+          System.err.println(
+              "fail to parse plan " + stmt + " due to " + PlanSupport.getLastError());
+      }
+
+      return plan;
+
+    } catch (Throwable ex) {
+      if (verbosity >= 1) {
+        System.err.println("fail to parse sql/plan " + stmt + " due to exception");
+        ex.printStackTrace();
+      }
+      return null;
     }
   }
 

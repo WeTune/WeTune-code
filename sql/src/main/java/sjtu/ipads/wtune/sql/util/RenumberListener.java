@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.support;
+package sjtu.ipads.wtune.sql.util;
 
 import gnu.trove.list.TIntList;
 import sjtu.ipads.wtune.sql.ast.AdditionalInfo;

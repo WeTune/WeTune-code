@@ -49,4 +49,12 @@ abstract class RunnerSupport {
           "invalid '-%s': %s, integer required".formatted(argName, str));
     }
   }
+
+  static int parseIntSafe(String str, int onFailure) {
+    try {
+      return Integer.parseInt(str);
+    } catch (NumberFormatException ex) {
+      return onFailure;
+    }
+  }
 }

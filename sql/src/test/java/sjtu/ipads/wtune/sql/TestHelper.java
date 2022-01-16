@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.sql.support;
+package sjtu.ipads.wtune.sql;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.SqlSupport;

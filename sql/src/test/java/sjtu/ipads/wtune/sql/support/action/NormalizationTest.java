@@ -5,7 +5,7 @@ import sjtu.ipads.wtune.sql.ast.SqlContext;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.sql.support.TestHelper.parseSql;
+import static sjtu.ipads.wtune.sql.TestHelper.parseSql;
 
 public class NormalizationTest {
   @Test
