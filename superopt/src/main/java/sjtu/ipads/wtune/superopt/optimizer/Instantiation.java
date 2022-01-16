@@ -8,10 +8,15 @@ import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
@@ -63,6 +68,8 @@ class Instantiation {
         return instantiateSetOp((Union) op);
       case PROJ:
         return instantiateProj((Proj) op);
+      case AGG:
+        return instantiateAgg((Agg) op);
       default:
         return fail(FAILURE_UNKNOWN_OP);
     }
@@ -158,16 +165,12 @@ class Instantiation {
     final List<String> names = ListSupport.map(outAttrs, Value::name);
     final List<Expression> exprs = ListSupport.map(outAttrs, valuesReg::exprOf);
 
+    if (!bindRefs(exprs, inAttrs)) return fail(FAILURE_MISMATCHED_REFS);
+
     final ProjNode projNode = ProjNode.mk(proj.isDeduplicated(), names, exprs);
     final int projNodeId = newPlan.bindNode(projNode);
     newPlan.setChild(projNodeId, 0, child);
 
-    int offset = 0;
-    for (Expression expr : exprs) {
-      final int numRefs = expr.colRefs().size();
-      valuesReg.bindValueRefs(expr, new ArrayList<>(inAttrs.subList(offset, offset + numRefs)));
-      offset += numRefs;
-    }
     valuesReg.bindValues(projNodeId, outAttrs);
 
     return projNodeId;
@@ -190,14 +193,13 @@ class Instantiation {
     final int child = instantiate(agg.predecessors()[0]);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> outValues = null; // TODO
-    if (outValues == null) return fail(FAILURE_INCOMPLETE_MODEL);
-
+    final List<Value> outVals = model.ofAttrs(instantiationOf(agg.schema()));
     List<Value> aggRefs = model.ofAttrs(instantiationOf(agg.aggregateAttrs()));
     List<Value> groupRefs = model.ofAttrs(instantiationOf(agg.groupByAttrs()));
-    final Expression aggFunc = model.ofFunc(instantiationOf(agg.aggFunc()));
+    final List<Expression> aggFuncs = model.ofFunctions(instantiationOf(agg.aggFunc()));
     final Expression havingPred = model.ofPred(instantiationOf(agg.havingPred()));
-    if (aggRefs == null || groupRefs == null || aggFunc == null)
+
+    if (outVals == null || aggRefs == null || groupRefs == null || aggFuncs == null)
       return fail(FAILURE_INCOMPLETE_MODEL);
 
     final List<Value> inValues = outValuesOf(child);
@@ -205,30 +207,51 @@ class Instantiation {
     aggRefs = reBinder.rebindRefs(aggRefs, inValues);
     if (aggRefs == null) return fail(FAILURE_FOREIGN_VALUE);
 
-    groupRefs = reBinder.rebindRefs(groupRefs, ListSupport.join(outValues, inValues));
+    groupRefs = reBinder.rebindRefs(groupRefs, ListSupport.join(outVals, inValues));
     if (groupRefs == null) return fail(FAILURE_FOREIGN_VALUE);
 
-    final ValuesRegistry valuesReg = newPlan.valuesReg();
-    final List<String> names = ListSupport.map(outValues, Value::name);
-    final List<Expression> aggExprs = ListSupport.map(outValues, valuesReg::exprOf);
+    final ValuesRegistry reg = newPlan.valuesReg();
+    final List<Expression> aggExprs = ListSupport.map(outVals, reg::exprOf);
+    final Map<Value, Value> mapping = buildAggRefMapping(aggExprs, aggRefs);
+    if (mapping == null) return fail(FAILURE_MALFORMED_AGG);
+
+    for (int i = 0, bound = aggExprs.size(), exprIdx = 0; i < bound; ++i) {
+      Expression aggExpr = aggExprs.get(i);
+      if (Aggregate.isInstance(aggExpr.template())) {
+        aggExpr = aggFuncs.get(exprIdx++);
+        aggExprs.set(i, aggExpr);
+        reg.bindExpr(outVals.get(i), aggExpr);
+      }
+
+      if (!rebindAggExpr(aggExpr, mapping)) return fail(FAILURE_MALFORMED_AGG);
+    }
+
+    if (havingPred != null && !rebindAggExpr(havingPred, mapping))
+      return fail(FAILURE_MALFORMED_AGG);
+
+    final List<String> names = ListSupport.map(outVals, Value::name);
     final List<Expression> groupExprs = ListSupport.map(groupRefs, PlanSupport::mkColRefExpr);
+    bindRefs(groupExprs, groupRefs);
 
     final AggNode aggNode = AggNode.mk(false, names, aggExprs, groupExprs, havingPred);
     final int aggNodeId = newPlan.bindNode(aggNode);
+    reg.bindValues(aggNodeId, outVals);
 
-    return aggNodeId; // TODO
-    //
-    //    final Expression havingPred = model.ofPred(instantiationOf(agg.havingPred()));
-    //
-    //    final List<String> names = ListSupport.map(outAttrs, Value::name);
-    //    final List<Expression> exprs = ListSupport.map(outAttrs, valuesReg::exprOf);
-    //
-    //    final SetOpNode unionNode = SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
-    //    final int unionNodeId = newPlan.bindNode(unionNode);
-    //    newPlan.setChild(unionNodeId, 0, child);
-    //    newPlan.setChild(unionNodeId, 1, rhs);
-    //
-    //    return unionNodeId;
+    final List<Value> refs = new ArrayList<>();
+    for (Expression attrExpr : aggNode.attrExprs()) refs.addAll(reg.valueRefsOf(attrExpr));
+    for (Expression groupByExpr : aggNode.groupByExprs()) refs.addAll(reg.valueRefsOf(groupByExpr));
+    if (havingPred != null) refs.addAll(reg.valueRefsOf(havingPred));
+    refs.removeIf(outVals::contains);
+
+    final List<Expression> projAttrExprs = ListSupport.map(refs, PlanSupport::mkColRefExpr);
+    final List<String> projAttrNames = ListSupport.generate(refs.size(), i -> "agg" + i);
+    final ProjNode projNode = ProjNode.mk(false, projAttrNames, projAttrExprs);
+    final int projNodeId = newPlan.bindNode(projNode);
+
+    newPlan.setChild(projNodeId, 0, child);
+    newPlan.setChild(aggNodeId, 0, projNodeId);
+
+    return aggNodeId;
   }
 
   private int fail(String reason) {
@@ -244,6 +267,18 @@ class Instantiation {
     return newPlan.valuesReg().valuesOf(nodeId);
   }
 
+  private boolean bindRefs(List<Expression> exprs, List<Value> refs) {
+    final ValuesRegistry reg = newPlan.valuesReg();
+    int offset = 0;
+    for (Expression expr : exprs) {
+      if (offset >= refs.size()) return false;
+      final int numRefs = expr.colRefs().size();
+      reg.bindValueRefs(expr, newArrayList(refs.subList(offset, offset + numRefs)));
+      offset += numRefs;
+    }
+    return true;
+  }
+
   private int mkFilterNode(Expression expr, List<Value> refs, int child) {
     final InfoCache infoCache = model.plan().infoCache();
 
@@ -251,18 +286,17 @@ class Instantiation {
     if (subqueryNode != NO_SUCH_NODE) {
       newPlan.detachNode(subqueryNode);
       newPlan.setChild(subqueryNode, 0, child);
-      rebindFilterExpr(subqueryNode, refs);
+      rebindFilterExpr(subqueryNode, refs, 0);
       return subqueryNode;
     }
 
     final int[] components = infoCache.getVirtualExprComponents(expr);
     if (components != null) {
-      final int total = refs.size();
       int offset = 0;
 
       newPlan.setChild(components[0], 0, child);
       for (int i = 0, bound = components.length; i < bound; ++i) {
-        offset += rebindFilterExpr(components[i], refs.subList(offset, total));
+        offset += rebindFilterExpr(components[i], refs, offset);
         if (i > 0) newPlan.setChild(components[i], 0, components[i - 1]);
         newPlan.detachNode(components[i]);
       }
@@ -278,7 +312,7 @@ class Instantiation {
     return filterNodeId;
   }
 
-  private int rebindFilterExpr(int nodeId, List<Value> refs) {
+  private int rebindFilterExpr(int nodeId, List<Value> refs, int offset) {
     final PlanKind kind = newPlan.kindOf(nodeId);
     final PlanNode node = newPlan.nodeAt(nodeId);
     final ValuesRegistry valuesReg = newPlan.valuesReg();
@@ -287,19 +321,20 @@ class Instantiation {
     if (kind == PlanKind.Filter) {
       final Expression expr = ((SimpleFilterNode) node).predicate();
       numRefs = expr.colRefs().size();
-      valuesReg.bindValueRefs(expr, new ArrayList<>(refs.subList(0, numRefs)));
+      valuesReg.bindValueRefs(expr, newArrayList(refs.subList(offset, offset + numRefs)));
 
     } else if (kind == PlanKind.InSub) {
       final Expression lhsExpr = ((InSubNode) node).expr();
       final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
       numRefs = subqueryExpr.colRefs().size();
-      valuesReg.bindValueRefs(lhsExpr, new ArrayList<>(refs.subList(0, lhsExpr.colRefs().size())));
-      valuesReg.bindValueRefs(subqueryExpr, new ArrayList<>(refs.subList(0, numRefs)));
+      final List<Value> subList = refs.subList(offset, offset + numRefs);
+      valuesReg.bindValueRefs(lhsExpr, newArrayList(subList));
+      valuesReg.bindValueRefs(subqueryExpr, newArrayList(subList));
 
     } else if (kind == PlanKind.Exists) {
       final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
       numRefs = subqueryExpr.colRefs().size();
-      valuesReg.bindValueRefs(subqueryExpr, new ArrayList<>(refs.subList(0, numRefs)));
+      valuesReg.bindValueRefs(subqueryExpr, newArrayList(refs.subList(offset, offset + numRefs)));
 
     } else {
       assert false;
@@ -307,6 +342,34 @@ class Instantiation {
     }
 
     return numRefs;
+  }
+
+  private boolean rebindAggExpr(Expression expr, Map<Value, Value> mapping) {
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+    final List<Value> oldRefs = valuesReg.valueRefsOf(expr);
+    final List<Value> newRefs = ListSupport.map(oldRefs, mapping::get);
+    if (newRefs.contains(null)) return false;
+    valuesReg.bindValueRefs(expr, newRefs);
+    return true;
+  }
+
+  private Map<Value, Value> buildAggRefMapping(List<Expression> exprs, List<Value> aggRefs) {
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+    final Map<Value, Value> mapping = new HashMap<>(4);
+    int offset = 0;
+    for (Expression expr : exprs) {
+      if (!Aggregate.isInstance(expr.template())) continue;
+
+      final int numRefs = expr.template().size();
+      final List<Value> oldRefs = valuesReg.valueRefsOf(expr);
+      final List<Value> newRefs = newArrayList(aggRefs.subList(offset, offset + numRefs));
+      if (oldRefs.size() != numRefs) return null;
+
+      offset += numRefs;
+      zip(oldRefs, newRefs, mapping::put);
+    }
+
+    return mapping;
   }
 
   private static List<Value> interleaveJoinKeys(List<Value> lhsJoinKeys, List<Value> rhsJoinKeys) {

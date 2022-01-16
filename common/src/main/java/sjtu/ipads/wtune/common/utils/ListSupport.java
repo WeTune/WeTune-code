@@ -18,6 +18,12 @@ public abstract class ListSupport {
 
   private ListSupport() {}
 
+  public static <T> List<T> generate(int total, IntFunction<? extends T> func) {
+    final List<T> list = new ArrayList<>(total);
+    for (int i = 0; i < total; ++i) list.add(func.apply(i));
+    return list;
+  }
+
   public static <Y> List<Y> map(int[] xs, IntFunction<Y> func) {
     final List<Y> ys = new ArrayList<>(xs.length);
     for (int x : xs) ys.add(func.apply(x));

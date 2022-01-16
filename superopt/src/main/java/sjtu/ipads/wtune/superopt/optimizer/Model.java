@@ -84,7 +84,7 @@ class Model {
     return of(predSym);
   }
 
-  Expression ofFunc(Symbol funcSym) {
+  List<Expression> ofFunctions(Symbol funcSym) {
     return of(funcSym);
   }
 
@@ -93,7 +93,7 @@ class Model {
     assert sym.kind() != ATTRS || assignment instanceof List<?>;
     assert sym.kind() != PRED || assignment instanceof Expression;
     assert sym.kind() != SCHEMA || assignment instanceof List<?>;
-    assert sym.kind() != FUNC || assignment instanceof Expression;
+    assert sym.kind() != FUNC || assignment instanceof List<?>;
 
     assignments.get().put(sym, assignment);
 

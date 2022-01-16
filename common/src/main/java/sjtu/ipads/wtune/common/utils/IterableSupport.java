@@ -15,6 +15,15 @@ public interface IterableSupport {
     return null;
   }
 
+  static <T> int linearLoc(Iterable<? extends T> os, Predicate<? super T> pred) {
+    int i = 0;
+    for (T o : os) {
+      if (pred.test(o)) return i;
+      ++i;
+    }
+    return -1;
+  }
+
   static <T> Iterable<T> lazyFilter(Iterable<? extends T> os, Predicate<? super T> predicate) {
     return () -> new FilteredIterator<>(os.iterator(), predicate);
   }

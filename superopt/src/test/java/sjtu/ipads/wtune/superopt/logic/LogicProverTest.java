@@ -24,6 +24,19 @@ class LogicProverTest {
   }
 
   @Test
+  public void test() {
+    final Substitution rule =
+        Substitution.parse(
+            "InSubFilter<a0>(Input<t0>,Proj<a1 s0>(Input<t1>))|"
+                + "Input<t2>|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,t1);NotNull(t0,a0);Reference(t0,a0,t1,a1);"
+                + "TableEq(t2,t0)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result, rule.toString());
+  }
+
+  @Test
   public void testInnerJoinElimination0() {
     final Substitution rule =
         Substitution.parse(

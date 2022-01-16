@@ -14,6 +14,8 @@ public abstract class OptimizerSupport {
   public static final String FAILURE_MISMATCHED_JOIN_KEYS = "mismatched join key ";
   public static final String FAILURE_FOREIGN_VALUE = "foreign value ";
   public static final String FAILURE_MALFORMED_SUBQUERY = "malformed subquery ";
+  public static final String FAILURE_MALFORMED_AGG = "malformed aggregation ";
+  public static final String FAILURE_MISMATCHED_REFS = "mismatched refs ";
   public static final String FAILURE_UNKNOWN_OP = "unknown op ";
 
   public static final int TWEAK_DISABLE_JOIN_FLIP = 1;

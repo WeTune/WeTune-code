@@ -14,8 +14,13 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
+import static sjtu.ipads.wtune.common.tree.TreeSupport.isDescendant;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.ListSupport.flatMap;
 import static sjtu.ipads.wtune.common.utils.ListSupport.linkedListFlatMap;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.ColRef;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.GroupItem_Expr;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.locateNode;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
@@ -236,20 +241,54 @@ class Match {
   private boolean matchAgg(Agg agg, int nodeId) {
     if (sourcePlan.kindOf(nodeId) != PlanKind.Agg) return false;
 
-    final AggNode aggNode = (AggNode) sourcePlan.nodeAt(nodeId);
-    if (aggNode.attrExprs().size() != 1) return false;
-
     final ValuesRegistry valuesReg = sourcePlan.valuesReg();
-    final Expression aggFunc = aggNode.attrExprs().get(0);
-    final List<Value> aggRefs = flatMap(aggNode.attrExprs(), valuesReg::valueRefsOf);
-    final List<Value> groupRefs = flatMap(aggNode.groupByExprs(), valuesReg::valueRefsOf);
-    final Expression havingPredExpr = aggNode.havingExpr();
+    final AggNode aggNode = (AggNode) sourcePlan.nodeAt(nodeId);
+    if (aggNode.deduplicated()) return false;
 
-    // TODO
-    return model.assign(agg.aggFunc(), aggFunc)
+    final List<Expression> aggFuncs = new ArrayList<>(3);
+    final List<Value> aggRefs = new ArrayList<>(3);
+
+    collectAggregates(aggNode, aggFuncs, aggRefs);
+
+    if (aggFuncs.isEmpty()) return false;
+    if (!isClosedAggregates(aggNode, aggRefs)) return false;
+
+    final Expression havingPredExpr = aggNode.havingExpr();
+    if (havingPredExpr != null && !valuesReg.valueRefsOf(havingPredExpr).equals(aggRefs))
+      return false;
+
+    if (any(aggNode.groupByExprs(), it -> !ColRef.isInstance(it.template().$(GroupItem_Expr))))
+      return false;
+
+    final List<Value> groupRefs = flatMap(aggNode.groupByExprs(), valuesReg::valueRefsOf);
+    final List<Value> schema = valuesReg.valuesOf(nodeId);
+
+    return model.assign(agg.schema(), schema)
+        && model.assign(agg.aggFunc(), aggFuncs)
         && model.assign(agg.aggregateAttrs(), aggRefs)
         && model.assign(agg.groupByAttrs(), groupRefs)
         && (havingPredExpr == null || model.assign(agg.havingPred(), havingPredExpr));
+  }
+
+  private void collectAggregates(AggNode aggNode, List<Expression> aggFuncs, List<Value> aggRefs) {
+    final ValuesRegistry valuesReg = sourcePlan.valuesReg();
+    for (Expression attrExpr : aggNode.attrExprs()) {
+      if (Aggregate.isInstance(attrExpr.template())) {
+        aggFuncs.add(attrExpr);
+        aggRefs.addAll(valuesReg.valueRefsOf(attrExpr));
+      }
+    }
+  }
+
+  private boolean isClosedAggregates(AggNode aggNode, List<Value> aggRefs) {
+    final ValuesRegistry valuesReg = sourcePlan.valuesReg();
+    for (Expression attrExpr : aggNode.attrExprs()) {
+      if (!Aggregate.isInstance(attrExpr.template())
+          && !aggRefs.containsAll(valuesReg.valueRefsOf(attrExpr))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private Op nextOp(int childIdx) {

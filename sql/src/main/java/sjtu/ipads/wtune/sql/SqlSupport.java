@@ -336,6 +336,10 @@ public abstract class SqlSupport {
     return aggregate;
   }
 
+  public static boolean isAggregate(SqlNode expr) {
+    return expr.$(Aggregate_Name) != null;
+  }
+
   public static boolean isColRefEq(SqlNode ast) {
     return Binary.isInstance(ast)
         && EQUAL == ast.$(Binary_Op)

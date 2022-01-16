@@ -328,11 +328,15 @@ class LogicProver {
   }
 
   private BoolExpr mkAnd(BoolExpr[] preconditions) {
-    return preconditions.length == 0 ? z3.mkBool(true) : z3.mkAnd(preconditions);
+    if (preconditions.length == 0) return z3.mkBool(true);
+    else if (preconditions.length == 1) return preconditions[0];
+    else return z3.mkAnd(preconditions);
   }
 
   private ArithExpr mkMul(ArithExpr[] factors) {
-    return factors.length == 0 ? one() : z3.mkMul(factors);
+    if (factors.length == 0) return one();
+    else if (factors.length == 1) return factors[0];
+    else return z3.mkMul(factors);
   }
 
   // Translate a u-expression inside squash/negation.
@@ -486,12 +490,12 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
-    solver.push();
-    solver.add(exprs);
-    final Status res = solver.check();
-    solver.pop();
-    return res;
-    //    return solver.check(exprs);
+    //    solver.push();
+    //    solver.add(exprs);
+    //    final Status res = solver.check();
+    //    solver.pop();
+    //    return res;
+    return solver.check(exprs);
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {
