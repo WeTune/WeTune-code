@@ -247,6 +247,8 @@ class PlanTranslator2Test {
 
   @Test
   public void testAdjacentAgg() {
+    // Not a valid rule, must not be EQ
+    // remain to be modified in plan translator
     final Substitution rule =
         Substitution.parse(
             "Proj<a0 s0>(Agg<a1 a2 f0 s1 p0>(Agg<a3 a4 f1 s2 p1>(Input<t0>)))|"
