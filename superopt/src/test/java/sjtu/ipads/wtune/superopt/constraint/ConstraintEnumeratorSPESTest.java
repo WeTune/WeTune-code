@@ -205,4 +205,14 @@ public class ConstraintEnumeratorSPESTest {
   void exception1() {
     doTest(SPES, "Agg(Input)", "Agg(Proj*(Filter(Agg(Input))))");
   }
+
+  @Test
+  void exception2() {
+    doTest(SPES, "Agg(LeftJoin(Proj*(Input),Proj*(Input)))", "Agg(LeftJoin(Input,Input))");
+  }
+
+  @Test
+  void exception3() {
+    doTest(SPES, "Filter(InnerJoin(Proj*(Input),Proj*(Input)))", "InnerJoin(Proj(Input),Proj(Input))");
+  }
 }

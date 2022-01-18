@@ -36,9 +36,13 @@ public class AlgeRule {
           System.out.println(e);
         }
         if (rulePerform.preCondition()) {
+          final String before = node.toString();
           node = rulePerform.transformation();
-          node.enableRewrite();
-          canBeRewrite = true;
+          final String after = node.toString();
+          if (!before.equals(after)) {
+            node.enableRewrite();
+            canBeRewrite = true;
+          }
         }
       }
     }

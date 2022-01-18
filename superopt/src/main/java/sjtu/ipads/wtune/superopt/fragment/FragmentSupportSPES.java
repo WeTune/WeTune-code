@@ -12,7 +12,7 @@ import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 public class FragmentSupportSPES {
   private static final int DEFAULT_MAX_OPS = 4;
   private static final List<Op> DEFAULT_OP_SET =
-      map(List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, PROJ, IN_SUB_FILTER, SET_OP, AGG), Op::mk);
+      map(List.of(INNER_JOIN, LEFT_JOIN, SIMPLE_FILTER, PROJ, PROJ, IN_SUB_FILTER, SET_OP, SET_OP, AGG), Op::mk);
   private static final Set<Rule> DEFAULT_PRUNING_RULES =
       Set.of(
           new MalformedJoin(),
