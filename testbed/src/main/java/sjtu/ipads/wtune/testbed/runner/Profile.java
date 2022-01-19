@@ -65,7 +65,7 @@ public class Profile implements Runner {
   public void run() throws Exception {
     final Set<String> failures = new HashSet<>();
 
-    for (Statement stmt : Statement.findAllRewrittenByBagSem()) {
+    for (Statement stmt : Statement.findAllRewritten()) {
       if (stmts != null && !stmts.contains(stmts.toString())) continue;
       if (appNames != null && !appNames.contains(stmt.appName())) continue;
       if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;

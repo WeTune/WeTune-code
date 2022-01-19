@@ -14,38 +14,6 @@ dependencies {
     implementation('me.tongfei:progressbar:0.9.2')
 }
 
-// task(populationMain, dependsOn: 'classes', type: JavaExec) {
-    // main = 'sjtu.ipads.wtune.testbed.PopulationMain'
-    // classpath = sourceSets.main.runtimeClasspath
-    // jvmArgs(['--enable-preview'])
-// }
-
-// task(profileMain, dependsOn: 'classes', type: JavaExec) {
-    // main = 'sjtu.ipads.wtune.testbed.ProfileMain'
-    // classpath = sourceSets.main.runtimeClasspath
-    // jvmArgs(['--enable-preview'])
-// }
-
-// task(planMain, dependsOn: 'classes', type: JavaExec) {
-    // main = 'sjtu.ipads.wtune.testbed.PlanMain'
-    // classpath = sourceSets.main.runtimeClasspath
-    // jvmArgs(['--enable-preview'])
-// }
-
-// task(planMain2, dependsOn: 'classes', type: JavaExec) {
-    // main = 'sjtu.ipads.wtune.testbed.PlanMain2'
-    // classpath = sourceSets.main.runtimeClasspath
-    // jvmArgs(['--enable-preview'])
-// }
-
-
-
-// task(runQueryTest, dependsOn: 'classes', type: JavaExec) {
-    // main = 'sjtu.ipads.wtune.testbed.DBQueryTestMain'
-    // classpath = sourceSets.main.runtimeClasspath
-    // jvmArgs(['--enable-preview'])
-// }
-
 task run(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainModule = 'sjtu.ipads.wtune.testbed'

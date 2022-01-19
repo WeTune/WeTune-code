@@ -90,8 +90,6 @@ public class GenerateTableData implements Runner {
         final PopulationConfig config = mkConfigForApp(appName, tag);
         final List<String> failed = new ArrayList<>();
         for (String tableName : tableNames) {
-          pb.step();
-
           final Table table = schema.table(tableName);
           if (table == null) {
             if (verbosity >= 1) System.err.println("no such table: " + appName + '.' + tableName);

@@ -26,7 +26,7 @@ public class DbOptBagStatementDao extends DbDao implements OptBagStatementDao {
       String.format(
           "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-  private static final String OPT_STMTS_TABLE = "wtune_opt_stmts";
+  private static final String OPT_STMTS_TABLE = "wtune_opt_bag_stmts";
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";

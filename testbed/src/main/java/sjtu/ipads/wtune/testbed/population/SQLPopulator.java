@@ -33,8 +33,6 @@ public class SQLPopulator implements Populator {
     }
     actuator.end();
 
-    if (progressCallback != null) progressCallback.run();
-
     return true;
   }
 
