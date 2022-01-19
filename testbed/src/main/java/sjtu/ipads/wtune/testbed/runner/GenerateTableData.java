@@ -59,7 +59,7 @@ public class GenerateTableData implements Runner {
       readTargetSpec(targetString);
     }
 
-    tag = args.getOptional("tag", String.class, BASE);
+    tag = args.getOptional("t", "tag", String.class, BASE);
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     dir = parentDir.resolve("dump");
     failure = dir.resolve("failed_tables.txt");
