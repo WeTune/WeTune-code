@@ -140,7 +140,7 @@ public class GenerateTableData implements Runner {
       for (String spec : specs) {
         final String[] fields = spec.split("\\.", 2);
         if (fields.length == 1) putTablesOfApp(fields[0], null);
-        else putTablesOfApp(fields[1], fields[1]);
+        else putTablesOfApp(fields[0], fields[1]);
       }
     }
   }

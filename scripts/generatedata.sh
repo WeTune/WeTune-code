@@ -1,6 +1,6 @@
 #! /bin/bash
 
-targetFile='wtune_data/rewrite/result/1_tables.txt'
+targetFile='rewrite/result/1_tables.txt'
 tag='base'
 verbose='0'
 

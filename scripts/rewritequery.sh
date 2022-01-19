@@ -22,9 +22,9 @@ done
 
 set -- "${postional_args[@]}"
 
-gradle :superopt:run --args="runner.OptimizeQuery -v=${verbose} -R=${rules}"
+gradle :superopt:run --args="runner.RewriteQuery -v=${verbose} -R=${rules}"
 
-cd 'wtune_data/opt' || exit
+cd 'wtune_data/rewrite' || exit
 
 dir=$(ls -t -1 | ag 'run.+' | head -1)
 ln -sfr "${dir}" 'result'
