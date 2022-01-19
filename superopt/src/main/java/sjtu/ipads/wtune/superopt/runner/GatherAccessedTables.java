@@ -31,15 +31,14 @@ public class GatherAccessedTables implements Runner {
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
-    final Path dir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data"));
-    final String inFilePath =
-        args.getOptional("i", "input", String.class, "rewrite/result/1_query.tsv");
+    final Path dataDir = RunnerSupport.dataDir();
+    final String dir = args.getOptional("D", "dir", String.class, "rewrite/result");
+    final String inFileName = args.getOptional("i", "input", String.class, "1_query.tsv");
     String outFileName = args.getOptional("o", "output", String.class, null);
-    inFile = dir.resolve(inFilePath);
+    inFile = dataDir.resolve(dir).resolve(inFileName);
     checkFileExists(inFile);
 
     if (outFileName == null) {
-      final String inFileName = inFile.getFileName().toString();
       if ("1_query.tsv".equals(inFileName)) outFileName = "1_tables.txt";
       else if ("2_query.tsv".equals(inFileName)) outFileName = "2_tables.txt";
       else outFileName = inFileName + ".tables.txt";

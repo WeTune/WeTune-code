@@ -62,16 +62,18 @@ public class RewriteQuery implements Runner {
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (single && stmtId > 0) verbosity = Integer.MAX_VALUE;
 
-    final Path parentDir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data"));
+    final Path dataDir = RunnerSupport.dataDir();
     final String ruleFileName = args.getOptional("R", "rules", String.class, "rules.txt");
-    final Path ruleFilePath = parentDir.resolve(ruleFileName);
+
+    final Path ruleFilePath = dataDir.resolve(ruleFileName);
     IOSupport.checkFileExists(ruleFilePath);
     rules = SubstitutionSupport.loadBank(ruleFilePath);
 
     if (single) return;
 
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final Path dir = parentDir.resolve("rewrite").resolve("run" + subDirName);
+    final String dirName = args.getOptional("D", "dir", String.class, "rewrite");
+    final Path dir = dataDir.resolve(dirName).resolve("run" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 

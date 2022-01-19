@@ -40,22 +40,4 @@ public class SQLPopulator implements Populator {
   public Generator getGenerator(Element element) {
     return generators.bind(element);
   }
-
-  //  public static void main(String[] args) {
-  //    final App discourse = App.of("discourse");
-  //    final Schema schema = discourse.schema("base", true);
-  //    final Table table = schema.table("api_keys");
-  //
-  //    final SQLPopulationConfig config = new SQLPopulationConfig();
-  //    config.setDefaultUnitCount(100);
-  //
-  //    final SQLPopulator populator = new SQLPopulator();
-  //    populator.setConfig(config);
-  //
-  //    populator.populate(Collection.ofTable(table));
-  //
-  //    final Generator generator =
-  // populator.getGenerator(Element.ofColumn(table.column("user_id")));
-  //    generator.locate(53).filter(it -> it < 100).limit(1).forEach(System.out::println);
-  //  }
 }

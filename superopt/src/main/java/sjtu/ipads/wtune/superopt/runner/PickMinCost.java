@@ -56,7 +56,8 @@ public class PickMinCost implements Runner {
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (stmtId > 0) verbosity = Integer.MAX_VALUE;
 
-    final Path dir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data/result"));
+    final Path dataDir = dataDir();
+    final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "result"));
     inOptFile = dir.resolve("1_query.tsv");
     inTraceFile = dir.resolve("1_trace.tsv");
     IOSupport.checkFileExists(inOptFile);

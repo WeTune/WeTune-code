@@ -13,6 +13,7 @@ import java.nio.file.Path;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.dataDir;
 
 public class ReduceRules implements Runner {
   private Path inFile;
@@ -22,15 +23,20 @@ public class ReduceRules implements Runner {
   @Override
   public void prepare(String[] argStrings) throws IOException {
     final Args args = Args.parse(argStrings, 1);
-    inFile = Path.of(args.getOptional("i", String.class, "wtune_data/rules.txt"));
-    outFile = Path.of(args.getOptional("o", String.class, "wtune_data/rules.txt"));
-    additionalFile = Path.of(args.getOptional("a", String.class, "wtune_data/rules.test.txt"));
+    final Path dataDir = dataDir();
+    final String inFileName = args.getOptional("R", "rules", String.class, "rules.txt");
+    final String outFileName = args.getOptional("o", "output", String.class, "rules.txt");
+    final String addFileName = args.getOptional("a", String.class, "rules.test.txt");
+
+    inFile = dataDir.resolve(inFileName);
+    outFile = dataDir.resolve(outFileName);
+    additionalFile = dataDir.resolve(addFileName);
 
     if (!Files.exists(inFile)) throw new IllegalArgumentException("no such file: " + inFile);
     if (!Files.exists(additionalFile)) additionalFile = null;
     if (Files.exists(outFile)) {
       final Path filename = outFile.getFileName();
-      final Path bakFile = outFile.getParent().resolve(filename + ".bak");
+      final Path bakFile = outFile.resolveSibling(filename + ".bak");
       Files.move(outFile, bakFile, REPLACE_EXISTING, ATOMIC_MOVE);
       if (outFile.equals(inFile)) inFile = bakFile;
     }

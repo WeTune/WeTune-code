@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -81,9 +80,10 @@ public class EnumRule implements Runner {
       throw new IllegalArgumentException("invalid partition: " + partition);
     }
 
-    final Path parentDir = Path.of(args.getOptional("dir", String.class, "wtune_data"));
+    final Path dataDir = RunnerSupport.dataDir();
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final Path dir = parentDir.resolve("enumerations").resolve("run" + subDirName);
+    final String dirName = args.getOptional("D", "dir", String.class, "enumeration");
+    final Path dir = dataDir.resolve(dirName).resolve("run" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
@@ -93,10 +93,10 @@ public class EnumRule implements Runner {
     checkpoint = dir.resolve("checkpoint.txt");
 
     final String prevCheckpointFile = args.getOptional("checkpoint", String.class, null);
-    prevCheckpoint = prevCheckpointFile == null ? null : dir.resolve(prevCheckpointFile);
+    prevCheckpoint = prevCheckpointFile == null ? null : dataDir.resolve(prevCheckpointFile);
 
     final String prevFailureFile = args.getOptional("failure", String.class, null);
-    prevFailure = prevFailureFile == null ? null : dir.resolve(prevFailureFile);
+    prevFailure = prevFailureFile == null ? null : dataDir.resolve(prevFailureFile);
 
     final String from = args.getOptional("from", String.class, "0,0");
     final String[] split = from.split(",");

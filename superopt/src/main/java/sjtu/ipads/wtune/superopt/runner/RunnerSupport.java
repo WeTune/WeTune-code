@@ -3,8 +3,14 @@ package sjtu.ipads.wtune.superopt.runner;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.nio.file.Path;
+
 abstract class RunnerSupport {
   private RunnerSupport() {}
+
+  static Path dataDir() {
+    return Path.of(System.getProperty("wetune.data_dir", "wtune_data"));
+  }
 
   static TIntSet parseIndices(String spec) {
     final TIntSet indices = new TIntHashSet();

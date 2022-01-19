@@ -46,7 +46,8 @@ public class GenerateTableData implements Runner {
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
 
-    final Path parentDir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data"));
+    final Path parentDir = Runner.dataDir();
+    final String dirName = args.getOptional("D", "dir", String.class, "dump");
 
     targets = new HashMap<>();
     final String targetFileName = args.getOptional("targetFile", String.class, null);
@@ -61,7 +62,7 @@ public class GenerateTableData implements Runner {
 
     tag = args.getOptional("t", "tag", String.class, BASE);
     verbosity = args.getOptional("v", "verbose", int.class, 0);
-    dir = parentDir.resolve("dump");
+    dir = parentDir.resolve(dirName);
     failure = dir.resolve("failed_tables.txt");
     if (!Files.exists(dir)) Files.createDirectories(dir);
   }

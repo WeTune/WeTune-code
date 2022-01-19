@@ -1,6 +1,6 @@
 #! /bin/bash
 
-postional_args=()
+positional_args=()
 parallelism=32
 timeout=600000
 verbose=0
@@ -20,17 +20,17 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   "-rerun")
-    rerun=1
+    rerun="true"
     shift
     ;;
   *)
-    postional_args+=("${1}")
+    positional_args+=("${1}")
     shift
     ;;
   esac
 done
 
-set -- "${postional_args[@]}"
+set -- "${positional_args[@]}"
 
 if [[ -z "$rerun" ]]; then
   if [ -d "wtune_data/enumerations" ]; then
@@ -40,7 +40,7 @@ if [[ -z "$rerun" ]]; then
 
     while IFS= read -r line; do
       if [ -f "${line}/checkpoint.txt" ]; then
-        checkpoint="${line}/checkpoint.txt"
+        checkpoint="enumerations/${line}/checkpoint.txt"
         break
       fi
     done <<<"${files}"

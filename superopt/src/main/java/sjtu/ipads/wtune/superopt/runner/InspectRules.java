@@ -9,6 +9,7 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static sjtu.ipads.wtune.common.utils.IOSupport.checkFileExists;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIndices;
 
@@ -20,9 +21,11 @@ public class InspectRules implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     final String indexRange = args.getOptional("indices", String.class, null);
-    file = Path.of(args.getOptional("file", String.class, "wtune_data/rules.txt"));
+    final String fileName = args.getOptional("f", "file", String.class, "rules.txt");
 
-    if (!Files.exists(file)) throw new IllegalArgumentException("no such file: " + file);
+    file = RunnerSupport.dataDir().resolve(fileName);
+    checkFileExists(file);
+
     if (indexRange != null) indices = parseIndices(indexRange);
   }
 
