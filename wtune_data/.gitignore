@@ -3,6 +3,8 @@
 !data.version
 !schemas/
 !schemas/*
+!schemas_mssql
+!schemas_mssql/*
 !rules.test.txt
 !rules.txt
 !calcite_tests
