@@ -25,6 +25,7 @@ public class Entry {
   }
 
   public static void main(String[] args) throws Exception {
+    if (!args[0].startsWith("runner.")) args[0] = "runner." + args[0];
     final String clsName = Entry.class.getPackageName() + "." + args[0];
     final Class<?> cls = Class.forName(clsName);
 

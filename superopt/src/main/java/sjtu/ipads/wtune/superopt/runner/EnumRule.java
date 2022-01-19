@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
@@ -16,8 +17,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,18 +30,20 @@ import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 public class EnumRule implements Runner {
-  private Path success, failure, err, checkpoint;
-  private Path prevFailure, prevCheckpoint;
   private final Lock outLock = new ReentrantLock();
   private final Lock errLock = new ReentrantLock();
 
-  private boolean echo;
+  private Path success, failure, err, checkpoint;
+  private Path prevFailure, prevCheckpoint;
+  private int verbosity;
   private long timeout;
   private int parallelism;
   private int iBegin, jBegin;
   private int numWorker, workerIndex;
   private ExecutorService threadPool;
   private Pair<Fragment, Fragment> target;
+  private ProgressBar progressBar;
+  private CountDownLatch latch;
 
   private final AtomicInteger numSkipped = new AtomicInteger(0);
 
@@ -61,7 +66,7 @@ public class EnumRule implements Runner {
 
     final String partition = args.getOptional("partition", String.class, "1/0");
     final String[] partitionFields = partition.split("/");
-    echo = args.getOptional("echo", boolean.class, false);
+    verbosity = args.getOptional("v", "verbose", int.class, 0);
     timeout = args.getOptional("timeout", long.class, 240000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
 
@@ -82,10 +87,10 @@ public class EnumRule implements Runner {
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
-    success = dir.resolve("success");
-    failure = dir.resolve("failure");
-    err = dir.resolve("err");
-    checkpoint = dir.resolve("checkpoint");
+    success = dir.resolve("success.txt");
+    failure = dir.resolve("failure.txt");
+    err = dir.resolve("err.txt");
+    checkpoint = dir.resolve("checkpoint.txt");
 
     final String prevCheckpointFile = args.getOptional("checkpoint", String.class, null);
     prevCheckpoint = prevCheckpointFile == null ? null : dir.resolve(prevCheckpointFile);
@@ -107,28 +112,20 @@ public class EnumRule implements Runner {
   }
 
   @Override
-  public void stop() {}
-
-  private void onShutdown() {
-    if (this.threadPool != null) {
-      threadPool.shutdown();
-      System.out.println(ConstraintSupport.getEnumerationMetric());
-      System.out.println("#Skipped=" + numSkipped.get());
-    }
+  public void stop() {
+    System.out.println(ConstraintSupport.getEnumerationMetric());
+    System.out.println("#Skipped=" + numSkipped.get());
   }
 
-  private void openThreadPool() {
-    this.threadPool = Executors.newFixedThreadPool(parallelism);
-    Runtime.getRuntime().addShutdownHook(new Thread(this::onShutdown));
-  }
-
-  private void fromEnumeration() throws IOException {
+  private void fromEnumeration() throws IOException, InterruptedException {
     final List<Fragment> templates = FragmentSupport.enumFragments();
     final int numTemplates = templates.size();
 
     int[] completed = null;
     if (prevCheckpoint != null) {
       final List<String> lines = Files.readAllLines(prevCheckpoint);
+      if (verbosity >= 3) System.out.println("Continue from checkpoint: " + prevCheckpoint);
+
       completed = new int[lines.size()];
       int i = 0;
       for (String line : lines) {
@@ -141,41 +138,58 @@ public class EnumRule implements Runner {
       Files.copy(prevCheckpoint, checkpoint);
     }
 
-    final int total = (numTemplates * (numTemplates - 1)) >> 1;
-    System.out.printf("Rule Enumeration Begin! Total=%d, Partition=%d\n", total, total / numWorker);
+    final int totalPairs = (numTemplates * (numTemplates + 1)) >> 1;
+    final int myPairs = totalPairs / numWorker + (totalPairs % numWorker > workerIndex ? 1 : 0);
 
-    openThreadPool();
-    for (int i = 0; i < numTemplates; ++i) {
-      for (int j = i + 1; j < numTemplates; ++j) {
-        final int ordinal = ordinal(numTemplates, i, j);
-        if (isCompleted(completed, ordinal)) continue;
-        if (!isOwned(ordinal)) continue;
-        if (i < iBegin || (i == iBegin && j < jBegin)) continue;
+    latch = new CountDownLatch(myPairs);
+    threadPool = Executors.newFixedThreadPool(parallelism);
 
-        final Fragment f0 = templates.get(i), f1 = templates.get(j);
+    try (final ProgressBar pb = new ProgressBar("Candidates", myPairs)) {
+      progressBar = pb;
 
-        if (echo) {
-          System.out.printf("%d,%d\n", i, j);
-          System.out.println(f0);
-          System.out.println(f1);
+      for (int i = 0; i < numTemplates; ++i) {
+        for (int j = i; j < numTemplates; ++j) {
+          final int ordinal = ordinal(numTemplates, i, j);
+          if (isCompleted(completed, ordinal)) continue;
+          if (!isOwned(ordinal)) continue;
+          if (i < iBegin || (i == iBegin && j < jBegin)) continue;
+
+          final Fragment f0 = templates.get(i), f1 = templates.get(j);
+
+          if (verbosity >= 4) {
+            System.out.printf("%d,%d\n", i, j);
+            System.out.println(f0);
+            System.out.println(f1);
+          }
+
+          final int x = i, y = j;
+          threadPool.submit(() -> enumerate(f0, f1, x, y));
         }
-
-        final int x = i, y = j;
-        threadPool.submit(() -> enumerate(f0, f1, x, y));
       }
+
+      latch.await();
+      threadPool.shutdown();
     }
   }
 
-  private void fromFailures() throws IOException {
+  private void fromFailures() throws IOException, InterruptedException {
     final List<String> failures = Files.readAllLines(prevFailure);
-    final ProgressBar pb = new ProgressBar("Candidates", failures.size());
-    openThreadPool();
-    for (String failure : failures) {
-      pb.step();
-      final String[] fields = failure.split("\\|");
-      final Fragment f0 = Fragment.parse(fields[0], null);
-      final Fragment f1 = Fragment.parse(fields[1], null);
-      threadPool.submit(() -> enumerate(f0, f1, -1, -1));
+
+    latch = new CountDownLatch(failures.size());
+    threadPool = Executors.newFixedThreadPool(parallelism);
+
+    try (final ProgressBar pb = new ProgressBar("Candidates", failures.size())) {
+      progressBar = pb;
+
+      for (String failure : failures) {
+        final String[] fields = failure.split("\\|");
+        final Fragment f0 = Fragment.parse(fields[0], null);
+        final Fragment f1 = Fragment.parse(fields[1], null);
+        threadPool.submit(() -> enumerate(f0, f1, -1, -1));
+      }
+
+      latch.await();
+      threadPool.shutdown();
     }
   }
 
@@ -209,8 +223,8 @@ public class EnumRule implements Runner {
   }
 
   private int ordinal(int total, int i, int j) {
-    assert i < j;
-    return ((((total << 1) - i - 1) * i) >> 1) + j - i - 1;
+    assert i <= j;
+    return ((total * 2) - i + 1) * i / 2 + j - i;
   }
 
   private boolean isCompleted(int[] completed, int ordinal) {
@@ -221,8 +235,22 @@ public class EnumRule implements Runner {
     return ordinal % numWorker == workerIndex;
   }
 
-  private void enumerate(Fragment f0, Fragment f1, int i, int j) {
+  private void enumerate(Fragment f0_, Fragment f1_, int i, int j) {
+    enumerate0(f0_, f1_, i, j);
+    if (progressBar != null) progressBar.step();
+    if (latch != null) latch.countDown();
+  }
+
+  private void enumerate0(Fragment f0_, Fragment f1_, int i, int j) {
     boolean outLocked = false, errLocked = false;
+    final Fragment f0 = f0_;
+    final Fragment f1;
+    if (f0_ != f1_) f1 = f1_;
+    else {
+      f1 = f1_.copy();
+      FragmentSupport.setupFragment(f1);
+    }
+
     try {
       final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       if (rules == null) {
@@ -235,9 +263,11 @@ public class EnumRule implements Runner {
       outLock.lock();
       outLocked = true;
 
-      System.out.println("Current Metrics ==>");
-      System.out.println(ConstraintSupport.getEnumerationMetric());
-      System.out.println("<==");
+      if (verbosity >= 4) {
+        System.out.println("Current Metrics ==>");
+        System.out.println(ConstraintSupport.getEnumerationMetric());
+        System.out.println("<==");
+      }
 
       IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
       if (i >= 0 && j >= 1) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));

@@ -41,7 +41,7 @@ class FragmentImpl implements Fragment {
       if (names != null) names.put(op, fields);
     }
 
-    final Fragment fragment = setupFragment(new FragmentImpl(operators.pop()));
+    final Fragment fragment = FragmentSupport.setupFragment(new FragmentImpl(operators.pop()));
     if (names != null) names.forEach((op, ns) -> bindNames(op, ns, naming));
 
     return fragment;

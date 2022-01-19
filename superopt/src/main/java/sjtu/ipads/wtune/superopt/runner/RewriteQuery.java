@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
+import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
@@ -29,7 +30,7 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIntArg;
 
-public class OptimizeQuery implements Runner {
+public class RewriteQuery implements Runner {
   private Path out, trace, err;
   private String targetApp;
   private int stmtId;
@@ -64,17 +65,17 @@ public class OptimizeQuery implements Runner {
     final Path parentDir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data"));
     final String ruleFileName = args.getOptional("R", "rules", String.class, "rules.txt");
     final Path ruleFilePath = parentDir.resolve(ruleFileName);
-    RunnerSupport.checkFileExists(ruleFilePath);
+    IOSupport.checkFileExists(ruleFilePath);
     rules = SubstitutionSupport.loadBank(ruleFilePath);
 
     if (single) return;
 
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final Path dir = parentDir.resolve("opt").resolve("run" + subDirName);
+    final Path dir = parentDir.resolve("rewrite").resolve("run" + subDirName);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
-    out = dir.resolve("1_opt.tsv");
+    out = dir.resolve("1_query.tsv");
     trace = dir.resolve("1_trace.tsv");
     err = dir.resolve("1_err.txt");
   }

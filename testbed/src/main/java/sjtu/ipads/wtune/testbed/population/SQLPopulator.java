@@ -4,19 +4,17 @@ import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.common.Element;
 
-import java.lang.System.Logger.Level;
-
 public class SQLPopulator implements Populator {
   private PopulationConfig config;
   private Generators generators;
-  private boolean showProgressBar;
+  private Runnable progressCallback;
 
   @Override
   public void setConfig(PopulationConfig config) {
     if (this.config == config) return;
     this.config = config;
     this.generators = Generators.make(config);
-    this.showProgressBar = config.showProgressBar();
+    this.progressCallback = config.progressCallback();
   }
 
   @Override
@@ -28,22 +26,14 @@ public class SQLPopulator implements Populator {
     final int unitCount = config.unitCountOf(collection.collectionName());
 
     actuator.begin(collection);
-    LOG.log(Level.INFO, "begin: {0}", collection.collectionName());
-    final boolean showProgressBar = this.showProgressBar;
-    final int progressSeg = unitCount / 20;
-    final int progressBlk = progressSeg * 5;
 
     for (int i = 0; i < unitCount; i++) {
-      if (showProgressBar && i > 0)
-        if (i % progressBlk == 0) System.out.print(i);
-        else if (i % progressSeg == 0) System.out.print('.');
-
+      if (progressCallback != null) progressCallback.run();
       if (!populatable.populateOne(actuator)) return false;
     }
     actuator.end();
 
-    if (showProgressBar) System.out.println("done");
-    LOG.log(Level.INFO, "done: {0}", collection.collectionName());
+    if (progressCallback != null) progressCallback.run();
 
     return true;
   }

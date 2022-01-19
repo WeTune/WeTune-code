@@ -1,12 +1,14 @@
 package sjtu.ipads.wtune.superopt.fragment;
 
 import sjtu.ipads.wtune.superopt.fragment.pruning.*;
+import sjtu.ipads.wtune.superopt.util.Hole;
 
 import java.util.List;
 import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
+import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
 public class FragmentSupport {
@@ -33,5 +35,12 @@ public class FragmentSupport {
     final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
     enumerator.setPruningRules(DEFAULT_PRUNING_RULES);
     return enumerator.enumerate();
+  }
+
+  /** Fill holes with Input operator and call setFragment on each operator. */
+  public static Fragment setupFragment(Fragment fragment) {
+    for (Hole<Op> hole : FragmentUtils.gatherHoles(fragment)) hole.fill(mk(INPUT));
+    fragment.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(fragment)));
+    return fragment;
   }
 }

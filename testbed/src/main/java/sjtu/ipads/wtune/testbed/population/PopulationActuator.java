@@ -4,7 +4,6 @@ import sjtu.ipads.wtune.testbed.common.BatchActuator;
 import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.common.Element;
 
-import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -15,7 +14,6 @@ import java.util.stream.Stream;
 
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.PostgreSQL;
-import static sjtu.ipads.wtune.testbed.population.Populator.LOG;
 
 class PopulationActuator extends PreparedStatementActuator implements BatchActuator {
   private final int batchSize;
@@ -69,8 +67,6 @@ class PopulationActuator extends PreparedStatementActuator implements BatchActua
 
   @Override
   public void beginOne(Collection collection) {
-    LOG.log(Level.TRACE, "begin one for {0}", collection.collectionName());
-
     performSQL(() -> beginOne0(collection));
   }
 
@@ -99,7 +95,6 @@ class PopulationActuator extends PreparedStatementActuator implements BatchActua
 
   @Override
   public void endOne() {
-    LOG.log(Level.TRACE, "end one");
     performSQL(this::endOne0);
   }
 

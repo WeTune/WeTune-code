@@ -8,7 +8,6 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.PROJ;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.SET_OP;
 
@@ -38,7 +37,7 @@ class FragmentUtils {
   static boolean structuralEq(Op tree0, Op tree1) {
     if (tree0 == tree1) return true;
     if (tree0 == null || tree1 == null) return false;
-    if (!tree0.equals(tree1)) return false;
+    if (tree0.kind() != tree1.kind()) return false;
 
     final Op[] prevs0 = tree0.predecessors();
     final Op[] prevs1 = tree1.predecessors();
@@ -120,15 +119,9 @@ class FragmentUtils {
     return builder;
   }
 
-  /** Fill holes with Input operator and call setFragment on each operator. */
-  static Fragment setupFragment(FragmentImpl fragment) {
-    for (Hole<Op> hole : gatherHoles(fragment)) hole.fill(mk(OpKind.INPUT));
-    fragment.acceptVisitor(OpVisitor.traverse(it -> it.setFragment(fragment)));
-    return fragment;
-  }
-
-  static List<Hole<Op>> gatherHoles(FragmentImpl fragment) {
-    if (fragment.root() == null) return singletonList(Hole.ofSetter(fragment::setRoot0));
+  static List<Hole<Op>> gatherHoles(Fragment fragment) {
+    if (fragment.root() == null)
+      return singletonList(Hole.ofSetter(((FragmentImpl) fragment)::setRoot0));
 
     final List<Hole<Op>> holes = new ArrayList<>();
     fragment.acceptVisitor(OpVisitor.traverse(x -> gatherHoles(x, holes)));

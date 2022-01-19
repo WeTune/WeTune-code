@@ -32,7 +32,7 @@ public class SQLPopulationConfig implements PopulationConfig {
   private Function<String, PrintWriter> dumpDestinations = ignored -> new PrintWriter(System.out);
 
   private int batchSize = DEFAULT_BATCH_SIZE;
-  private boolean showProgressBar = true;
+  private Runnable progressCallback = null;
   private boolean needPrePopulation = false;
 
   private static void checkRowCount(int rowCount) {
@@ -76,6 +76,11 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
+  public Runnable progressCallback() {
+    return progressCallback;
+  }
+
+  @Override
   public void setRandGen(String collectionName, String elementName, RandGen randGen) {
     randGenMap.put(collectionName + elementName, randGen);
   }
@@ -91,11 +96,6 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public boolean showProgressBar() {
-    return showProgressBar;
-  }
-
-  @Override
   public boolean needPrePopulation() {
     return needPrePopulation;
   }
@@ -106,8 +106,8 @@ public class SQLPopulationConfig implements PopulationConfig {
   }
 
   @Override
-  public void setShowProgressBar(boolean showProgressBar) {
-    this.showProgressBar = showProgressBar;
+  public void setProgressCallback(Runnable progressCallback) {
+    this.progressCallback = progressCallback;
   }
 
   @Override

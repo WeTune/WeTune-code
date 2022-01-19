@@ -10,4 +10,5 @@ module sjtu.ipads.wtune.testbed {
   requires mysql.connector.java;
   requires org.postgresql.jdbc;
   requires com.zaxxer.hikari;
+  requires progressbar;
 }

@@ -9,84 +9,84 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DbOptBagStatementDao extends DbDao implements OptBagStatementDao{
-    private static final OptBagStatementDao INSTANCE = new DbOptBagStatementDao();
+public class DbOptBagStatementDao extends DbDao implements OptBagStatementDao {
+  private static final OptBagStatementDao INSTANCE = new DbOptBagStatementDao();
 
-    private DbOptBagStatementDao() {}
+  private DbOptBagStatementDao() {}
 
-    public static OptBagStatementDao instance() {
-        return INSTANCE;
+  public static OptBagStatementDao instance() {
+    return INSTANCE;
+  }
+
+  static final String KEY_APP_NAME = "app";
+  static final String KEY_STMT_ID = "stmtId";
+  static final String KEY_RAW_SQL = "rawSql";
+
+  private static final String SELECT_ITEMS =
+      String.format(
+          "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
+          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
+  private static final String OPT_STMTS_TABLE = "wtune_opt_stmts";
+  private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
+  private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
+  private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+
+  private static Statement toStatement(ResultSet rs) throws SQLException {
+    final Statement stmt =
+        Statement.mk(
+            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
+    stmt.setRewritten(true);
+    return stmt;
+  }
+
+  @Override
+  public Statement findOne(String appName, int stmtId) {
+    try {
+      final PreparedStatement ps = prepare(FIND_ONE);
+      ps.setString(1, appName);
+      ps.setInt(2, stmtId);
+
+      final ResultSet rs = ps.executeQuery();
+
+      if (rs.next()) return toStatement(rs);
+      else return null;
+
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
     }
+  }
 
-    static final String KEY_APP_NAME = "app";
-    static final String KEY_STMT_ID = "stmtId";
-    static final String KEY_RAW_SQL = "rawSql";
+  @Override
+  public List<Statement> findByApp(String appName) {
+    try {
+      final PreparedStatement ps = prepare(FIND_BY_APP);
+      ps.setString(1, appName);
 
-    private static final String SELECT_ITEMS =
-            String.format(
-                    "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
-                    KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-    private static final String OPT_STMTS_TABLE = "wtune_opt_bag_stmts";
-    private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
-    private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
-    private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+      final ResultSet rs = ps.executeQuery();
 
-    private static Statement toStatement(ResultSet rs) throws SQLException {
-        final Statement stmt =
-                Statement.mk(
-                        rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
-        stmt.setRewritten(true);
-        return stmt;
+      final List<Statement> stmts = new ArrayList<>(250);
+      while (rs.next()) stmts.add(toStatement(rs));
+
+      return stmts;
+
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
     }
+  }
 
-    @Override
-    public Statement findOne(String appName, int stmtId) {
-        try {
-            final PreparedStatement ps = prepare(FIND_ONE);
-            ps.setString(1, appName);
-            ps.setInt(2, stmtId);
+  @Override
+  public List<Statement> findAll() {
+    try {
+      final PreparedStatement ps = prepare(FIND_ALL);
+      final ResultSet rs = ps.executeQuery();
 
-            final ResultSet rs = ps.executeQuery();
+      final List<Statement> stmts = new ArrayList<>(10000);
+      while (rs.next()) stmts.add(toStatement(rs));
 
-            if (rs.next()) return toStatement(rs);
-            else return null;
+      return stmts;
 
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables);
-        }
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
     }
-
-    @Override
-    public List<Statement> findByApp(String appName) {
-        try {
-            final PreparedStatement ps = prepare(FIND_BY_APP);
-            ps.setString(1, appName);
-
-            final ResultSet rs = ps.executeQuery();
-
-            final List<Statement> stmts = new ArrayList<>(250);
-            while (rs.next()) stmts.add(toStatement(rs));
-
-            return stmts;
-
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables);
-        }
-    }
-
-    @Override
-    public List<Statement> findAll() {
-        try {
-            final PreparedStatement ps = prepare(FIND_ALL);
-            final ResultSet rs = ps.executeQuery();
-
-            final List<Statement> stmts = new ArrayList<>(10000);
-            while (rs.next()) stmts.add(toStatement(rs));
-
-            return stmts;
-
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables);
-        }
-    }
+  }
 }

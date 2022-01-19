@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.testbed.runner;
 
 import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.stmt.App;
@@ -24,7 +25,7 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.testbed.profile.ProfileSupport.compare;
-import static sjtu.ipads.wtune.testbed.runner.Populate.BASE;
+import static sjtu.ipads.wtune.testbed.runner.GenerateTableData.BASE;
 import static sjtu.ipads.wtune.testbed.util.DataSourceSupport.*;
 
 public class Profile implements Runner {
@@ -79,7 +80,7 @@ public class Profile implements Runner {
   }
 
   private boolean runOne(Statement original, Statement rewritten) {
-    final PopulationConfig popConfig = Populate.mkConfig(tag);
+    final PopulationConfig popConfig = GenerateTableData.mkConfig(tag);
     final ProfileConfig config = ProfileConfig.mk(Generators.make(popConfig));
     config.setDryRun(dryRun);
     config.setDbProperties(getDbProps(original.app()));

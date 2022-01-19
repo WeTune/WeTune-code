@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
+import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
@@ -52,15 +53,15 @@ public class PickMinCost implements Runner {
       }
     }
 
-    verbosity = args.getOptional("v", "verbosity", int.class, 0);
+    verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (stmtId > 0) verbosity = Integer.MAX_VALUE;
 
     final Path dir = Path.of(args.getOptional("D", "dir", String.class, "wtune_data/result"));
-    inOptFile = dir.resolve("success");
-    inTraceFile = dir.resolve("trace");
-    checkFileExists(inOptFile);
+    inOptFile = dir.resolve("1_query.tsv");
+    inTraceFile = dir.resolve("1_trace.tsv");
+    IOSupport.checkFileExists(inOptFile);
 
-    outOptFile = dir.resolve("2_opt.tsv");
+    outOptFile = dir.resolve("2_query.tsv");
     outTraceFile = dir.resolve("2_trace.tsv");
 
     final String jdbcUrl = args.getOptional("dbUrl", String.class, "10.0.0.103");

@@ -31,7 +31,7 @@ class FragmentEnumerator {
 
   List<Fragment> enumerate() {
     return enumerate0(0, singleton(new FragmentImpl(null))).stream()
-        .peek(FragmentUtils::setupFragment)
+        .peek(FragmentSupport::setupFragment)
         .filter(f -> none(pruningRules, it -> it.match(f)))
         .sorted((x, y) -> structuralCompare(x.root(), y.root()))
         .peek(FragmentImpl::symbols) // trigger initialization

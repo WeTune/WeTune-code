@@ -1,4 +1,4 @@
-package sjtu.ipads.wtune.superopt.runner;
+package sjtu.ipads.wtune.common.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,11 +12,11 @@ import static org.apache.commons.lang3.ClassUtils.primitiveToWrapper;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.ListSupport.elemAt;
 
-class Args {
+public class Args {
   private final Map<String, String> named = new LinkedHashMap<>();
   private final List<String> positional = new ArrayList<>();
 
-  static Args parse(String[] args, int begin) {
+  public static Args parse(String[] args, int begin) {
     final Args ret = new Args();
 
     for (int i = begin; i < args.length; ) {
@@ -43,7 +43,7 @@ class Args {
     return ret;
   }
 
-  <T> T getRequired(String key, Class<T> cls) {
+  public <T> T getRequired(String key, Class<T> cls) {
     final String v = get(key);
     if (v != null) return convertTo(v, cls);
     else if (cls == boolean.class || cls == Boolean.class) {
@@ -53,13 +53,13 @@ class Args {
     }
   }
 
-  <T> T getPositional(int index, Class<T> cls) {
+  public <T> T getPositional(int index, Class<T> cls) {
     final String value = elemAt(positional, index);
     if (value == null) throw new IllegalArgumentException("missing positional argument");
     return convertTo(value, cls);
   }
 
-  <T> T getOptional(String key, Class<T> cls, T defaultVal) {
+  public <T> T getOptional(String key, Class<T> cls, T defaultVal) {
     key = bareKey(key);
     final String value = named.get(key);
     if (value != null) return convertTo(value, cls);
@@ -68,7 +68,7 @@ class Args {
     else return defaultVal;
   }
 
-  <T> T getOptional(String key0, String key1, Class<T> cls, T defaultVal) {
+  public <T> T getOptional(String key0, String key1, Class<T> cls, T defaultVal) {
     final T v0 = getOptional(key0, cls, null);
     if (v0 != null) return v0;
     final T v1 = getOptional(key1, cls, null);

@@ -13,12 +13,15 @@ public class SubstitutionSupport {
     final SubstitutionBank bank = new SubstitutionBankImpl();
     final List<String> lines = Files.readAllLines(path);
 
+    int lineNum = 1;
     for (String line : lines) {
       try {
         if (line.isEmpty() || !Character.isLetter(line.charAt(0))) continue;
 
         final Substitution rule = Substitution.parse(line);
         bank.add(rule);
+        rule.setId(lineNum++);
+
       } catch (Throwable ex) {
         System.err.println("failed to add rule: " + line);
         ex.printStackTrace();

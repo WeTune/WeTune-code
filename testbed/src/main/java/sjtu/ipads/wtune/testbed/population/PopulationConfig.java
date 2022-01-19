@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.testbed.util.RandGen;
 
 import java.io.PrintWriter;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -17,9 +18,9 @@ public interface PopulationConfig {
 
   BatchActuatorFactory actuatorFactory();
 
-  boolean showProgressBar();
-
   boolean needPrePopulation();
+
+  Runnable progressCallback();
 
   void setRandomSeed(int i);
 
@@ -35,7 +36,7 @@ public interface PopulationConfig {
 
   void setBatchSize(int batchSize);
 
-  void setShowProgressBar(boolean flag);
+  void setProgressCallback(Runnable runnable);
 
   void setDump(Function<String, PrintWriter> factory);
 

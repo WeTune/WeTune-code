@@ -11,8 +11,13 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardOpenOption.*;
 
 public interface IOSupport {
+
   interface IO<T> {
     T doIO() throws IOException;
+  }
+
+  static void checkFileExists(Path path) {
+    if (!Files.exists(path)) throw new IllegalArgumentException("no such file: " + path);
   }
 
   static void appendTo(Path path, Consumer<PrintWriter> writer) {

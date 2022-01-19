@@ -1,9 +1,25 @@
 #! /bin/bash
 
 postional_args=()
+parallelism=32
+timeout=600000
+verbose=0
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  --rerun)
+  "-parallelism")
+    parallelism="${2}"
+    shift 2
+    ;;
+  "-timeout")
+    timeout="${2}"
+    shift 2
+    ;;
+  "-verbose")
+    verbose="${2}"
+    shift 2
+    ;;
+  "-rerun")
     rerun=1
     shift
     ;;
@@ -23,8 +39,8 @@ if [[ -z "$rerun" ]]; then
     files=$(ls -t -1 | ag 'run.+')
 
     while IFS= read -r line; do
-      if [ -f "${line}/checkpoint" ]; then
-        checkpoint="${line}/checkpoint"
+      if [ -f "${line}/checkpoint.txt" ]; then
+        checkpoint="${line}/checkpoint.txt"
         break
       fi
     done <<<"${files}"
@@ -33,8 +49,11 @@ if [[ -z "$rerun" ]]; then
   fi
 fi
 
+partitions=${1:-'1'}
+local_idx=${2:-'0'}
+
 if [ -z "${checkpoint}" ]; then
-  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 -partition=${1}/${2}"
+  gradle :superopt:run --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${partitions}/${local_idx}"
 else
-  gradle :superopt:run --args="runner.EnumRule -parallelism=32 -timeout=600000 -checkpoint=${checkpoint} -partition=${1}/${2}"
+  gradle :superopt:run --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -checkpoint=${checkpoint} -partition=${partitions}/${local_idx}"
 fi
