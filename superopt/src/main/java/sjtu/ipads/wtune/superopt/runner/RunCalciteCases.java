@@ -59,15 +59,16 @@ public class RunCalciteCases implements Runner {
       final Optimizer optimizer = Optimizer.mk(bank);
       optimizer.setTracing(targetLines != null);
 
-      final Set<PlanContext> optimized = optimizer.optimize(pair.p0);
-      if (targetLines != null || optimized.size() > 1) {
+      final Set<PlanContext> optimized0 = optimizer.optimize(pair.p0);
+      final Set<PlanContext> optimized1 = optimizer.optimize(pair.p1);
+      if (targetLines != null || optimized0.size() > 1) {
         System.out.printf("==== optimized of line %d ====\n", pair.lineNum);
         System.out.println("Original Query: ");
         System.out.println("  " + pair.q0);
         System.out.println("SPES result: ");
         System.out.println("  " + pair.q1);
         System.out.println("WeTune result: ");
-        for (PlanContext opt : optimized) {
+        for (PlanContext opt : optimized0) {
           System.out.println("  " + translateAsAst(opt, opt.root(), false));
           if (verbose && targetLines != null) OptimizerSupport.dumpTrace(optimizer, opt);
         }
