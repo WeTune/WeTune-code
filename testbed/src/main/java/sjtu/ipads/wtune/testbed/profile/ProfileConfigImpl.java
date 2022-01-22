@@ -16,6 +16,7 @@ class ProfileConfigImpl implements ProfileConfig {
   private int warmupCycles, profileCycles;
   private int randomSeed;
   private boolean dryRun;
+  private boolean useSqlServer;
   private Generators generators;
   private ExecutorFactory factory;
   private Function<Statement, String> paramSaveFile;
@@ -25,7 +26,7 @@ class ProfileConfigImpl implements ProfileConfig {
     this.profileCycles = 100;
     this.randomSeed = 0x98761234;
     this.generators = generators;
-    this.factory = ignored -> new NoOpExecutor();
+    this.factory = (ignored0, ignored1) -> new NoOpExecutor();
   }
 
   @Override
@@ -46,6 +47,11 @@ class ProfileConfigImpl implements ProfileConfig {
   @Override
   public boolean dryRun() {
     return dryRun;
+  }
+
+  @Override
+  public boolean useSqlServer() {
+    return useSqlServer;
   }
 
   @Override
@@ -108,13 +114,18 @@ class ProfileConfigImpl implements ProfileConfig {
   }
 
   @Override
+  public void setUseSqlServer(boolean useSqlServer) {
+    this.useSqlServer = useSqlServer;
+  }
+
+  @Override
   public void setGenerators(Generators generators) {
     this.generators = generators;
   }
 
   @Override
   public void setDbProperties(Properties properties) {
-    if (properties == null) this.factory = ignored -> new NoOpExecutor();
+    if (properties == null) this.factory = (ignored0, ignored1) -> new NoOpExecutor();
     else this.factory = new ExecutorFactoryImpl(properties);
   }
 

@@ -67,14 +67,14 @@ public class StatementImpl implements Statement {
     @Override
   public Statement rewritten() {
     if (isRewritten) return this;
-    if (otherVersion == null) otherVersion = OptStatementDao.instance().findOne(appName, stmtId);
+    if (otherVersion == null) otherVersion = Statement.findOneRewritten(appName, stmtId);
     return otherVersion;
   }
 
   @Override
   public Statement original() {
     if (!isRewritten) return this;
-    if (otherVersion == null) otherVersion = StatementDao.instance().findOne(appName, stmtId);
+    if (otherVersion == null) otherVersion = Statement.findOne(appName, stmtId);
     return otherVersion;
   }
 

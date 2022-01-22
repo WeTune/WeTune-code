@@ -19,6 +19,8 @@ public interface ProfileConfig {
 
   boolean dryRun();
 
+  boolean useSqlServer();
+
   Generators generators();
 
   ExecutorFactory executorFactory();
@@ -34,6 +36,8 @@ public interface ProfileConfig {
   void setRandomSeed(int x);
 
   void setDryRun(boolean dryRun);
+
+  void setUseSqlServer(boolean useSqlServer);
 
   void setGenerators(Generators generators);
 

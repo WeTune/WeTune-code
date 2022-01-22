@@ -23,9 +23,9 @@ class ExecutorFactoryImpl implements ExecutorFactory {
   }
 
   @Override
-  public Executor mk(String sql) {
+  public Executor mk(String sql, boolean useSqlServer) {
     try {
-      if(App.doingSQLServerTest()){ // need syntax transform in ExecutorSQLServerImpl
+      if (useSqlServer){ // need syntax transform in ExecutorSQLServerImpl
         return new ExecutorSQLServerImpl(dataSource().getConnection(), sql);
       }
       return new ExecutorImpl(dataSource().getConnection(), sql);

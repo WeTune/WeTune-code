@@ -58,16 +58,17 @@ public class PickMinCost implements Runner {
 
     final Path dataDir = dataDir();
     final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "result"));
-    inOptFile = dir.resolve("1_query.tsv");
-    inTraceFile = dir.resolve("1_trace.tsv");
+    inOptFile = dir.resolve(args.getOptional("in", String.class, "1_query.tsv"));
+    inTraceFile = dir.resolve(args.getOptional("in_trace", String.class, "1_trace.tsv"));
     IOSupport.checkFileExists(inOptFile);
 
-    outOptFile = dir.resolve("2_query.tsv");
-    outTraceFile = dir.resolve("2_trace.tsv");
+    outOptFile = dir.resolve(args.getOptional("out", String.class, "2_query.tsv"));
+    outTraceFile = dir.resolve(args.getOptional("out_trace", String.class, "2_trace.tsv"));
 
-    final String jdbcUrl = args.getOptional("dbUrl", String.class, "10.0.0.103");
-    final String username = args.getOptional("dbUser", String.class, "");
-    final String password = args.getOptional("dbPasswd", String.class, "");
+    // Default datasource is Sql Server
+    final String jdbcUrl = args.getOptional("dbUrl", String.class, "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=");
+    final String username = args.getOptional("dbUser", String.class, "SA");
+    final String password = args.getOptional("dbPasswd", String.class, "mssql2019Admin");
     final String dbType = args.getOptional("dbType", String.class, SQLServer);
     if (jdbcUrl.isEmpty()) throw new IllegalArgumentException("jdbc url should not be empty");
 
@@ -197,7 +198,7 @@ public class PickMinCost implements Runner {
 
     IOSupport.appendTo(
         outOptFile,
-        writer -> writer.printf("%s-%d\t%s", group.appName, group.stmtId, group.sqls.get(idx)));
+        writer -> writer.printf("%s\t%d\t%s\n", group.appName, group.stmtId, group.sqls.get(idx)));
 
     if (!isNullOrEmpty(group.traces))
       IOSupport.appendTo(outTraceFile, writer -> writer.println(group.traces.get(idx)));

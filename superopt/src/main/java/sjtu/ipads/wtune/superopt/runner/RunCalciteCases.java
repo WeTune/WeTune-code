@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.runner;
 
 import gnu.trove.set.TIntSet;
 import sjtu.ipads.wtune.common.utils.Args;
+import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
@@ -16,6 +17,8 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -27,25 +30,42 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIndices;
 
 public class RunCalciteCases implements Runner {
+  private static final String CALCITE_APP_NAME = "calcite_test";
+
+  private Path out;
   private Path testCases;
   private Path rulesFile;
   private App app;
   private boolean verbose;
   private TIntSet targetLines;
+  private boolean singleCase;
+  private int singleTargetLineNum;
+
+  private static List<Integer> blackList = List.of(127, 203, 229, 255, 281, 353, 395, 463);
 
   @Override
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     final String lineRangeSpec = args.getOptional("T", "line", String.class, null);
+    final Path dataDir = RunnerSupport.dataDir();
+    final String calciteDirName = "calcite";
+    final String defaultOutFileName =
+        "rewrites_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
+    final String outFileName = args.getOptional("o", "out", String.class, defaultOutFileName);
+    out = dataDir.resolve(calciteDirName).resolve(outFileName);
+
     testCases = Path.of(args.getOptional("i", "cases", String.class, "wtune_data/calcite_tests"));
     rulesFile = Path.of(args.getOptional("R", "rules", String.class, "wtune_data/rules.txt"));
     verbose = args.getOptional("v", "verbose", boolean.class, false);
-    app = App.of("calcite_test");
+    app = App.of(CALCITE_APP_NAME);
 
     if (lineRangeSpec != null) targetLines = parseIndices(lineRangeSpec);
 
     if (!Files.exists(rulesFile)) throw new IllegalArgumentException("no such file: " + rulesFile);
     if (!Files.exists(testCases)) throw new IllegalArgumentException("no such file: " + testCases);
+
+    singleTargetLineNum = args.getOptional("single", Integer.class, -1);
+    singleCase = (singleTargetLineNum > 0);
   }
 
   @Override
@@ -56,13 +76,38 @@ public class RunCalciteCases implements Runner {
     final SubstitutionBank bank = SubstitutionSupport.loadBank(rulesFile);
     for (final QueryPair pair : pairs) {
       if (targetLines != null && !targetLines.contains(pair.lineNum)) continue;
+      if ((singleCase && pair.lineNum != singleTargetLineNum)) continue;
+      if (blackList.contains(pair.lineNum)) continue;
+
       final Optimizer optimizer = Optimizer.mk(bank);
       optimizer.setTracing(targetLines != null);
 
       final Set<PlanContext> optimized0 = optimizer.optimize(pair.p0);
       final Set<PlanContext> optimized1 = optimizer.optimize(pair.p1);
+
+      System.out.printf("==== optimized of line %d ====\n", pair.lineNum);
+      IOSupport.appendTo(
+          out,
+          writer -> {
+            for (PlanContext optPlan0 : optimized0)
+              writer.printf("%s-%d\t%s\t%s\n",
+                  CALCITE_APP_NAME,
+                  pair.q0Id(),
+                  pair.q0,
+                  translateAsAst(optPlan0, optPlan0.root(), false));
+          });
+      IOSupport.appendTo(
+          out,
+          writer -> {
+            for (PlanContext optPlan1 : optimized1)
+              writer.printf("%s-%d\t%s\t%s\n",
+                  CALCITE_APP_NAME,
+                  pair.q1Id(),
+                  pair.q1,
+                  translateAsAst(optPlan1, optPlan1.root(), false));
+          });
+
       if (targetLines != null || optimized0.size() > 1) {
-        System.out.printf("==== optimized of line %d ====\n", pair.lineNum);
         System.out.println("Original Query: ");
         System.out.println("  " + pair.q0);
         System.out.println("SPES result: ");
@@ -73,6 +118,8 @@ public class RunCalciteCases implements Runner {
           if (verbose && targetLines != null) OptimizerSupport.dumpTrace(optimizer, opt);
         }
       }
+
+      if (singleCase) break;
     }
   }
 
@@ -88,6 +135,14 @@ public class RunCalciteCases implements Runner {
       this.p0 = p0;
       this.p1 = p1;
     }
+
+    private int q0Id() {
+      return lineNum;
+    }
+    private int q1Id() {
+      return lineNum + 1;
+    }
+    private int pairId() {return lineNum + 1 >> 1; }
   }
 
   private List<QueryPair> readPairs(List<String> lines) {

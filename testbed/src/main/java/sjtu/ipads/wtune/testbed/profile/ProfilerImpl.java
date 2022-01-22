@@ -40,7 +40,10 @@ class ProfilerImpl implements Profiler {
 
     final Params params = stmt.ast().context().getAdditionalInfo(PARAMS);
     this.paramsGen = ParamsGen.mk(params, config.generators());
-    this.executor = config.dryRun() ? null : config.executorFactory().mk(stmt.ast().toString());
+    this.executor =
+        config.dryRun()
+            ? null
+            : config.executorFactory().mk(stmt.ast().toString(), config.useSqlServer());
     this.metric = Metric.mk(config.profileCycles());
     this.warmupCycles = config.warmupCycles();
     this.profileCycles = config.profileCycles();

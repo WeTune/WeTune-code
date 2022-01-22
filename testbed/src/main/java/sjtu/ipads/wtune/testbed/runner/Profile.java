@@ -15,9 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -37,6 +35,7 @@ public class Profile implements Runner {
   private Path out;
   private boolean useSqlServer;
   private boolean dryRun;
+  private boolean calciteProfile;
   private Blacklist blacklist;
 
   public void prepare(String[] argStrings) throws Exception {
@@ -45,35 +44,38 @@ public class Profile implements Runner {
     final String targetStmts = args.getOptional("stmt", String.class, null);
     final String dir = args.getOptional("dir", String.class, "wtune_data");
 
-    tag = args.getOptional("tag", String.class, BASE);
-    useSqlServer = args.getOptional("sqlserver", boolean.class, false);
-    dryRun = args.getOptional("dry", boolean.class, false);
-
-    final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final String suffix = useSqlServer ? "ss" : "pg";
-    out = Path.of(dir).resolve("profile").resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
-
-    if (!Files.exists(out)) Files.createDirectories(out);
-
     if ("all".equals(targetApps)) this.appNames = SetSupport.map(App.all(), App::name);
     else this.appNames = new HashSet<>(asList(targetApps.split(",")));
 
     if (targetStmts != null) stmts = new HashSet<>(asList(targetStmts.split(",")));
+
+    tag = args.getOptional("tag", String.class, BASE);
+    useSqlServer = args.getOptional("sqlserver", boolean.class, false);
+    dryRun = args.getOptional("dry", boolean.class, false);
+    calciteProfile = appNames.contains("calcite_test");
+
+    final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
+    final String suffix = (useSqlServer ? "ss" : "pg") + "_" + (calciteProfile ? "cal" : "");
+    out = Path.of(dir).resolve("profile").resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+
+    if (!Files.exists(out)) Files.createFile(out);
   }
 
   @Override
   public void run() throws Exception {
-    final Set<String> failures = new HashSet<>();
+    final List<String> failures = new ArrayList<>();
 
-    for (Statement stmt : Statement.findAllRewritten()) {
+    final List<Statement> stmtPool = calciteProfile ?
+        Statement.findAllRewrittenOfCalcite() : Statement.findAllRewritten();
+    for (Statement stmt : stmtPool) {
       if (stmts != null && !stmts.contains(stmts.toString())) continue;
       if (appNames != null && !appNames.contains(stmt.appName())) continue;
       if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
 
-      if (runOne(stmt.original(), stmt.rewritten()))
+      if (!runOne(stmt.original(), stmt.rewritten())) {
         LOG.log(WARNING, "failed to profile {0}", stmt.original());
-
-      failures.add(stmt.toString());
+        failures.add(stmt.toString());
+      }
     }
 
     LOG.log(WARNING, "failed to profile {0}", failures);
@@ -83,6 +85,7 @@ public class Profile implements Runner {
     final PopulationConfig popConfig = GenerateTableData.mkConfig(tag);
     final ProfileConfig config = ProfileConfig.mk(Generators.make(popConfig));
     config.setDryRun(dryRun);
+    config.setUseSqlServer(useSqlServer);
     config.setDbProperties(getDbProps(original.app()));
     config.setParamSaveFile(getParamSaveFile(tag));
     config.setWarmupCycles(10);

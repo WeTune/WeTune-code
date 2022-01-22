@@ -69,7 +69,7 @@ class ParamsImpl implements Params {
 
   @Override
   public void forEach(Consumer<ParamDesc> consumer) {
-    params.forEachValue(
+    params().forEachValue(
         param -> {
           consumer.accept(param);
           return true;
@@ -79,7 +79,7 @@ class ParamsImpl implements Params {
   @Override
   public boolean forEach(Predicate<ParamDesc> consumer) {
     final ParamVisitor visitor = new ParamVisitor(consumer);
-    params.forEachValue(visitor);
+    params().forEachValue(visitor);
     return visitor.result;
   }
 
