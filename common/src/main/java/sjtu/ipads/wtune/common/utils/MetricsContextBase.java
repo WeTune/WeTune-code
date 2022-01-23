@@ -33,10 +33,9 @@ public abstract class MetricsContextBase<T extends Metrics<T>> implements Metric
   @Override
   public void updateGlobal() {
     final T local = local(false);
-    T updated, global;
+    T updated = newMetric(), global;
     do {
       global = globalMetric.get();
-      updated = newMetric();
       updated.assign(local);
       updated.accumulate(global);
     } while (!globalMetric.weakCompareAndSetVolatile(global, updated));

@@ -14,6 +14,10 @@ public class IntMetric implements Metric<Integer, IntMetric> {
     this.initValue = initValue;
   }
 
+  public void set(int value) {
+    this.value = value;
+  }
+
   @Override
   public String name() {
     return name;

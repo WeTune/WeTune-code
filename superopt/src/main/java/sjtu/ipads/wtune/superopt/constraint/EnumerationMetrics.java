@@ -1,15 +1,13 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.common.utils.IntMetric;
-import sjtu.ipads.wtune.common.utils.LongMetric;
-import sjtu.ipads.wtune.common.utils.Metric;
-import sjtu.ipads.wtune.common.utils.Metrics;
+import sjtu.ipads.wtune.common.utils.*;
 
 import java.util.List;
 
 public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoCloseable {
   public final IntMetric numEnumeratorInvocations = new IntMetric("#Enum", 1);
-  public final IntMetric numEnumeratedConstraintSets = new IntMetric("#Constraints");
+  public final IntMetric numTotalConstraintSets = new IntMetric("#TotalConstraints");
+  public final IntMetric numEnumeratedConstraintSets = new IntMetric("#EnumConstraints");
   public final IntMetric numProverInvocations = new IntMetric("#Prover");
   public final IntMetric numCacheHitEq = new IntMetric("#CacheEq");
   public final IntMetric numCacheHitNeq = new IntMetric("#CacheNeq");
@@ -25,6 +23,7 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
   private final List<Metric> metrics =
       List.of(
           numEnumeratorInvocations,
+          numTotalConstraintSets,
           numEnumeratedConstraintSets,
           numProverInvocations,
           numCacheHitEq,

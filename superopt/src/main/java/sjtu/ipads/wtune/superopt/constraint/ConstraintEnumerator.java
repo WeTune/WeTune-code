@@ -143,6 +143,7 @@ class ConstraintEnumerator {
 
         stages[0].enumerate();
 
+        metric.numTotalConstraintSets.set(I.size());
         if (uncertain) metric.uncertain.increment();
 
         return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
@@ -156,7 +157,7 @@ class ConstraintEnumerator {
     final boolean disable0 = (tweak & ENUM_FLAG_DISABLE_BREAKER_0) == ENUM_FLAG_DISABLE_BREAKER_0;
     final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
     final boolean disable2 = (tweak & ENUM_FLAG_DISABLE_BREAKER_2) == ENUM_FLAG_DISABLE_BREAKER_2;
-    final boolean dryRun = disable0 || disable1 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
+    final boolean dryRun = disable0 || disable1 || disable2 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
     final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
     final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
 
@@ -742,6 +743,8 @@ class ConstraintEnumerator {
     int enumerate();
 
     void setNextStage(EnumerationStage nextStage);
+
+    int numResponsibleConstraints();
   }
 
   private abstract static class AbstractEnumerationStage implements EnumerationStage {
@@ -815,6 +818,11 @@ class ConstraintEnumerator {
       assert false;
       return -1;
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return end - begin;
+    }
   }
 
   // instantiations
@@ -853,6 +861,11 @@ class ConstraintEnumerator {
       }
 
       return allNeq ? NEQ : EQ; // The return value of the 2nd branch does not matter.
+    }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return sourceSyms.size() * targetSyms.size();
     }
   }
 
@@ -940,6 +953,11 @@ class ConstraintEnumerator {
       }
       return false;
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return endIndex - beginIndex;
+    }
   }
 
   // FuncEq, temporarily used to enable all constraints
@@ -959,6 +977,11 @@ class ConstraintEnumerator {
       final int answer = nextStage().enumerate();
       currentSet(beginIndex, endIndex, false);
       return answer;
+    }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return endIndex - beginIndex;
     }
   }
 
@@ -1020,6 +1043,11 @@ class ConstraintEnumerator {
       final Constraint c = I.get(index);
       return kind == Reference && I.ordinalOf(c.symbols()[1]) < I.ordinalOf(c.symbols()[3]);
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return endIndex - beginIndex;
+    }
   }
 
   private class MismatchedOutputBreaker extends AbstractEnumerationStage {
@@ -1036,6 +1064,11 @@ class ConstraintEnumerator {
       }
       return nextStage().enumerate();
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
+    }
   }
 
   private class UnionMismatchedOutputBreaker extends AbstractEnumerationStage {
@@ -1051,6 +1084,11 @@ class ConstraintEnumerator {
         return NEQ;
       }
       return nextStage().enumerate();
+    }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
     }
   }
 
@@ -1070,6 +1108,11 @@ class ConstraintEnumerator {
       }
       return nextStage().enumerate();
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
+    }
   }
 
   private class InfeasibleSchemaBreaker extends AbstractEnumerationStage {
@@ -1087,6 +1130,11 @@ class ConstraintEnumerator {
       }
       return nextStage().enumerate();
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
+    }
   }
 
   private static class TimeoutBreaker extends AbstractEnumerationStage {
@@ -1103,6 +1151,11 @@ class ConstraintEnumerator {
       final long now = System.currentTimeMillis();
       if (now - start > timeout) return TIMEOUT;
       else return nextStage().enumerate();
+    }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
     }
   }
 
@@ -1147,6 +1200,11 @@ class ConstraintEnumerator {
 
       return answer;
     }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
+    }
   }
 
   private class Verifier extends AbstractEnumerationStage {
@@ -1169,6 +1227,11 @@ class ConstraintEnumerator {
       } else {
         return LogicSupport.proveEqBySpes(rule);
       }
+    }
+
+    @Override
+    public int numResponsibleConstraints() {
+      return 0;
     }
   }
 

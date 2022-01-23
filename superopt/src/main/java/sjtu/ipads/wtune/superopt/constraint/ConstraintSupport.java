@@ -97,7 +97,7 @@ public interface ConstraintSupport {
     return rules;
   }
 
-  private static int pickSource(Fragment f0, Fragment f1) {
+  static int pickSource(Fragment f0, Fragment f1) {
     if (f0.equals(f1)) return 1;
 
     final int numTables0 = f0.symbolCount(TABLE), numTables1 = f1.symbolCount(TABLE);
