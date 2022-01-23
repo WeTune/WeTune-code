@@ -81,6 +81,8 @@ public class PickMinCost implements Runner {
 
   @Override
   public void run() throws Exception {
+    final List<String> failures = new ArrayList<>();
+
     final List<String> lines = Files.readAllLines(inOptFile);
     List<String> traces = Files.exists(inTraceFile) ? Files.readAllLines(inTraceFile) : null;
     if (traces != null && traces.size() != lines.size()) {
@@ -92,10 +94,13 @@ public class PickMinCost implements Runner {
     final List<OptimizedStatements> groups = filterToRun(collectOpts(lines, traces));
     try (final ProgressBar pb = new ProgressBar("PickMin", groups.size())) {
       for (OptimizedStatements group : groups) {
-        pickMin(group);
+        if (!pickMin(group)){
+          failures.add(group.toString());
+        }
         pb.step();
       }
     }
+    System.err.println("failed to profile " + (failures));
   }
 
   private List<OptimizedStatements> collectOpts(List<String> lines, List<String> traces) {
@@ -166,7 +171,7 @@ public class PickMinCost implements Runner {
     return assemblePlan(ast, schema);
   }
 
-  private void pickMin(OptimizedStatements group) {
+  private boolean pickMin(OptimizedStatements group) {
     if (verbosity >= 3) System.out.println("Begin pick min " + group);
 
     final Profiler profiler;
@@ -177,13 +182,16 @@ public class PickMinCost implements Runner {
         System.err.printf("fail to profile %s due exception\n", group);
         if (verbosity >= 2) ex.printStackTrace();
       }
-      return;
+      return false;
     }
 
     final int idx = profiler.minCostIndex();
     if (idx < 0) {
       if (verbosity >= 3) System.out.println("No better than baseline " + group);
-      return;
+      // IOSupport.appendTo(
+      //     outOptFile,
+      //     writer -> writer.printf("%s\t%d: No better than baseline.\n", group.appName, group.stmtId));
+      return true;
     }
     if (verbosity >= 3) System.out.println("Opt No." + idx + " pick for " + group);
     if (verbosity >= 4) {
@@ -194,7 +202,7 @@ public class PickMinCost implements Runner {
           parseSql(App.of(group.appName).dbType(), group.sqls.get(idx)).toString(false));
     }
 
-    if (stmtId > 0) return;
+    if (stmtId > 0) return true;
 
     IOSupport.appendTo(
         outOptFile,
@@ -202,6 +210,8 @@ public class PickMinCost implements Runner {
 
     if (!isNullOrEmpty(group.traces))
       IOSupport.appendTo(outTraceFile, writer -> writer.println(group.traces.get(idx)));
+
+    return true;
   }
 
   private Profiler profile(OptimizedStatements group) {

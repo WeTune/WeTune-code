@@ -1,7 +1,7 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.StmtProfile;
 import sjtu.ipads.wtune.stmt.dao.CalciteOptStatementDao;
 
 import java.sql.PreparedStatement;
@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStatementDao {
   private static final CalciteOptStatementDao INSTANCE = new CalciteDbOptStatementDao();
@@ -29,9 +28,28 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
           "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
   private static final String OPT_STMTS_TABLE = "calcite_opt_stmts";
+  private static final String EVAL_TABLE = "calcite_eval";
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+
+  // Update profile query
+  private static final String CLEAN_OPT_DATA =
+      "UPDATE "
+          + OPT_STMTS_TABLE
+          + " SET p50_improve = null, p90_improve = null, p99_improve = null"
+          + " WHERE TRUE";
+  private static final String CLEAN_EVAL_DATA =
+      "UPDATE " + EVAL_TABLE + " SET q0_improve = null, q1_improve = null" + " WHERE TRUE";
+  private static final String UPDATE_OPT_DATA =
+      "UPDATE "
+          + OPT_STMTS_TABLE
+          + " SET p50_improve = ?, p90_improve = ?, p99_improve = ?"
+          + " WHERE opt_app_name = ? and opt_stmt_id = ?";
+  private static final String UPDATE_EVAL_DATA_Q0 =
+      "UPDATE " + EVAL_TABLE + " SET q0_improve = ? WHERE pair_id = ?";
+  private static final String UPDATE_EVAL_DATA_Q1 =
+      "UPDATE " + EVAL_TABLE + " SET q1_improve = ? WHERE pair_id = ?";
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
@@ -90,5 +108,48 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }
+  }
+
+  @Override
+  public void cleanProfileData() {
+    try {
+      final PreparedStatement clean0 = prepare(CLEAN_OPT_DATA);
+      final PreparedStatement clean1 = prepare(CLEAN_EVAL_DATA);
+      clean0.executeUpdate();
+      clean1.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void updateProfile(StmtProfile stmtProfile) {
+    try {
+      final PreparedStatement insert0 = prepare(UPDATE_OPT_DATA);
+      insert0.setFloat(1, stmtProfile.p50Improve());
+      insert0.setFloat(2, stmtProfile.p90Improve());
+      insert0.setFloat(3, stmtProfile.p99Improve());
+      insert0.setString(4, stmtProfile.appName());
+      insert0.setInt(5, stmtProfile.stmtId());
+      insert0.executeUpdate();
+
+      final String updateEvalQuery = isQ0(stmtProfile.stmtId()) ? UPDATE_EVAL_DATA_Q0 : UPDATE_EVAL_DATA_Q1;
+      final PreparedStatement insert1 = prepare(updateEvalQuery);
+      insert1.setFloat(1, stmtProfile.p50Improve());
+      insert1.setInt(2, pairId(stmtProfile.stmtId()));
+      insert1.executeUpdate();
+
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  private boolean isQ0(int stmtId) {
+    // Q0 is the original version of calcite stmt pairs, their id: 1, 3, 5, ...
+    return stmtId % 2 == 1;
+  }
+
+  private int pairId(int stmtId) {
+    return stmtId + 1 >> 1;
   }
 }

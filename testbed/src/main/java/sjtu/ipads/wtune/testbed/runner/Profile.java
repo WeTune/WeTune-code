@@ -68,7 +68,7 @@ public class Profile implements Runner {
     final List<Statement> stmtPool = calciteProfile ?
         Statement.findAllRewrittenOfCalcite() : Statement.findAllRewritten();
     for (Statement stmt : stmtPool) {
-      if (stmts != null && !stmts.contains(stmts.toString())) continue;
+      if (stmts != null && !stmts.contains(stmt.toString())) continue;
       if (appNames != null && !appNames.contains(stmt.appName())) continue;
       if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
 

@@ -89,22 +89,32 @@ public class RunCalciteCases implements Runner {
       IOSupport.appendTo(
           out,
           writer -> {
-            for (PlanContext optPlan0 : optimized0)
-              writer.printf("%s-%d\t%s\t%s\n",
-                  CALCITE_APP_NAME,
-                  pair.q0Id(),
-                  pair.q0,
-                  translateAsAst(optPlan0, optPlan0.root(), false));
+            for (PlanContext optPlan0 : optimized0) {
+              final SqlNode sqlNode0 = translateAsAst(optPlan0, optPlan0.root(), false);
+              if (sqlNode0 != null) {
+                writer.printf(
+                    "%s-%d\t%s\t%s\n",
+                    CALCITE_APP_NAME,
+                    pair.q0Id(),
+                    pair.q0,
+                    sqlNode0);
+              }
+            }
           });
       IOSupport.appendTo(
           out,
           writer -> {
-            for (PlanContext optPlan1 : optimized1)
-              writer.printf("%s-%d\t%s\t%s\n",
-                  CALCITE_APP_NAME,
-                  pair.q1Id(),
-                  pair.q1,
-                  translateAsAst(optPlan1, optPlan1.root(), false));
+            for (PlanContext optPlan1 : optimized1) {
+              final SqlNode sqlNode1 = translateAsAst(optPlan1, optPlan1.root(), false);
+              if (sqlNode1 != null) {
+                writer.printf(
+                    "%s-%d\t%s\t%s\n",
+                    CALCITE_APP_NAME,
+                    pair.q1Id(),
+                    pair.q1,
+                    sqlNode1);
+              }
+            }
           });
 
       if (targetLines != null || optimized0.size() > 1) {

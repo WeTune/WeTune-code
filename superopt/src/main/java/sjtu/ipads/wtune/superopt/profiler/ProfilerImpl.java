@@ -107,15 +107,15 @@ class ProfilerImpl implements Profiler {
   }
 
   private static String adaptToSqlserver(String sql) {
-    sql = sql.replaceAll("`([A-Za-z0-9_]+)`", "\\[$1\\]");
-    sql = sql.replaceAll("\"([A-Za-z0-9_]+)\"", "\\[$1\\]");
+    sql = sql.replaceAll("`([A-Za-z0-9_$]+)`", "\\[$1\\]");
+    sql = sql.replaceAll("\"([A-Za-z0-9_$]+)\"", "\\[$1\\]");
 
     sql = sql.replaceAll("TRUE", "1");
     sql = sql.replaceAll("FALSE", "0");
 
     sql =
         sql.replaceAll(
-            "(\\(SELECT (DISTINCT)*)(.+)(ORDER BY .+(ASC|DESC)\\))", "$1 TOP 100 PERCENT $3 $4");
+            "(\\(SELECT (DISTINCT)*)(.+)(ORDER BY .+(ASC|DESC)*\\))", "$1 TOP 100 PERCENT $3 $4");
 
     sql =
         sql.replaceAll(
@@ -133,6 +133,7 @@ class ProfilerImpl implements Profiler {
     sql = sql.replaceAll("'FALSE'", "0");
     sql = sql.replaceAll("'TRUE'", "1");
     sql = sql.replaceAll("USE INDEX \\([^ ]*\\)", "");
+    sql = sql.replaceAll("CROSS JOIN", "JOIN");
     sql = sql.replaceAll("(\\[[A-Za-z0-9]+] \\* \\[[A-Za-z0-9]+])", "\\($1\\) AS total");
     sql = sql.replaceAll("ORDER BY [^ ]+ IS NULL,", "ORDER BY");
 
