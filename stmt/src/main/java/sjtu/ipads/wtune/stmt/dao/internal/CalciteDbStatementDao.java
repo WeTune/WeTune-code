@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.CalciteStatementDao;
 
@@ -58,6 +59,13 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
   }
 
   @Override
+  public Pair<Statement, Statement> findPair(String appName, int stmtId){
+    final int anotherStmtId = isQ0(stmtId) ?  stmtId + 1 : stmtId - 1;
+    stmtId = Math.min(stmtId, anotherStmtId);
+    return Pair.of(findOne(appName, stmtId), findOne(appName, stmtId + 1));
+  }
+
+  @Override
   public List<Statement> findByApp(String appName) {
     try {
       final PreparedStatement ps = prepare(FIND_BY_APP);
@@ -89,5 +97,10 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }
+  }
+
+  private boolean isQ0(int stmtId) {
+    // Q0 is the original version of calcite stmt pairs, their id: 1, 3, 5, ...
+    return stmtId % 2 == 1;
   }
 }

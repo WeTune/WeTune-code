@@ -75,16 +75,16 @@ public class StmtProfileImpl implements StmtProfile {
 
   @Override
   public float p50Improve() {
-    return ((float) (1.0 - (float) p50OptLatency) / ((float) p50BaseLatency));
+    return (float) (1.0 - ((float) p50OptLatency) / ((float) p50BaseLatency));
   }
 
   @Override
   public float p90Improve() {
-    return ((float) (1.0 - (float) p90OptLatency) / ((float) p90BaseLatency));
+    return (float) (1.0 - ((float) p90OptLatency) / ((float) p90BaseLatency));
   }
 
   @Override
   public float p99Improve() {
-    return ((float) (1.0 - (float) p99OptLatency) / ((float) p99BaseLatency));
+    return (float) (1.0 - ((float) p99OptLatency) / ((float) p99BaseLatency));
   }
 }

@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.dao.*;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
@@ -39,6 +40,7 @@ public interface Statement {
     return StatementImpl.build(appName, stmtId, rawSql, stackTrace);
   }
 
+  // Find original statement(s)
   static Statement findOne(String appName, int stmtId) {
     if (appName.equals("calcite_test"))
       return CalciteStatementDao.instance().findOne(appName, stmtId);
@@ -55,6 +57,7 @@ public interface Statement {
     return StatementDao.instance().findAll();
   }
 
+  // Find optimized statement(s)
   static Statement findOneRewritten(String appName, int stmtId) {
     if (appName.equals("calcite_test"))
       return CalciteOptStatementDao.instance().findOne(appName, stmtId);
@@ -75,12 +78,16 @@ public interface Statement {
     return OptBagStatementDao.instance().findAll();
   }
 
-
+  // Find-alls in calcite, and other interface of calcite
   static List<Statement> findAllOfCalcite() {
     return CalciteStatementDao.instance().findAll();
   }
 
   static List<Statement> findAllRewrittenOfCalcite() {
     return CalciteOptStatementDao.instance().findAll();
+  }
+
+  static Pair<Statement, Statement> findOriginalPairOfCalcite(String appName, int stmtId) {
+    return CalciteStatementDao.instance().findPair(appName, stmtId);
   }
 }
