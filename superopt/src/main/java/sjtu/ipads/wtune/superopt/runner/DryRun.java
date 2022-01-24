@@ -82,13 +82,13 @@ public class DryRun implements Runner {
     threadPool = Executors.newFixedThreadPool(parallelism);
     numbers = new TIntArrayList(samples);
 
-    try (final ProgressBar pb = new ProgressBar("Samples", totalPairs)) {
+    try (final ProgressBar pb = new ProgressBar("Samples", samples)) {
       progressBar = pb;
 
       final ThreadLocalRandom r = ThreadLocalRandom.current();
       for (int n = 0; n < samples; ++n) {
-        final int x = r.nextInt(totalPairs);
-        final int y = r.nextInt(totalPairs);
+        final int x = r.nextInt(numTemplates);
+        final int y = r.nextInt(numTemplates);
         final int i = Integer.min(x, y);
         final int j = Integer.max(x, y);
         final Fragment f0 = templates.get(i), f1 = templates.get(j);
