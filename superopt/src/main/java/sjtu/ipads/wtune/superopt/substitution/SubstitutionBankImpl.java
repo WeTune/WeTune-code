@@ -13,10 +13,17 @@ import java.util.function.Predicate;
 class SubstitutionBankImpl implements SubstitutionBank {
   private final Map<String, Substitution> rules;
   private final Multimap<String, String> fingerprintIndex;
+  private boolean isExtended;
 
   SubstitutionBankImpl() {
     this.rules = new HashMap<>(2048);
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
+    this.isExtended = false;
+  }
+
+  @Override
+  public boolean isExtended() {
+    return isExtended;
   }
 
   @Override
@@ -37,6 +44,7 @@ class SubstitutionBankImpl implements SubstitutionBank {
     rule.setId(rules.size() + 1);
     rules.put(identity, rule);
     fingerprintIndex.put(Fingerprint.mk(rule._0()).toString(), identity);
+    if (!isExtended) isExtended = identity.contains("Union") || identity.contains("Agg");
     return true;
   }
 

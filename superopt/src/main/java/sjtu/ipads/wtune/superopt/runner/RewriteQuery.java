@@ -11,6 +11,7 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizationStep;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
@@ -28,6 +29,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_ENABLE_EXTENSIONS;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIntArg;
 
 public class RewriteQuery implements Runner {
@@ -80,10 +82,15 @@ public class RewriteQuery implements Runner {
     out = dir.resolve("1_query.tsv");
     trace = dir.resolve("1_trace.tsv");
     err = dir.resolve("1_err.txt");
+
+    if (ruleFileName.contains("spes")) Files.createFile(dir.resolve("use_spes"));
+    if (ruleFileName.contains("merged")) Files.createFile(dir.resolve("use_merged"));
   }
 
   @Override
   public void run() throws Exception {
+    if (rules.isExtended()) OptimizerSupport.addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+
     if (single && stmtId > 0) {
       optimizeOne(Statement.findOne(targetApp, stmtId));
     } else {
@@ -180,12 +187,12 @@ public class RewriteQuery implements Runner {
           });
 
     } catch (Throwable ex) {
-      System.err.println("fail to optimize stmt " + stmt);
-      if (verbosity >= 3) {
+      if (verbosity >= 1) System.err.println("fail to optimize stmt " + stmt);
+      if (verbosity >= 2) {
         System.err.println(stmt.ast().toString(false));
         if (plan != null) System.err.println(stringifyTree(plan, plan.root(), false, false));
+        ex.printStackTrace();
       }
-      if (verbosity >= 2) ex.printStackTrace();
       if (single) return;
 
       IOSupport.appendTo(

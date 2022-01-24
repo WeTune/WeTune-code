@@ -16,6 +16,7 @@ import java.util.*;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
@@ -66,6 +67,8 @@ class PlanTranslator {
     schema = mkSchema();
     final PlanContext sourcePlan = new PlanConstructor(rule._0(), false).translate();
     final PlanContext targetPlan = new PlanConstructor(rule._1(), true).translate();
+    if (sourcePlan == null || targetPlan == null) return Pair.of(null, null);
+
     PlanSupport.resolvePlan(sourcePlan);
     PlanSupport.resolvePlan(targetPlan);
     return Pair.of(sourcePlan, targetPlan);
@@ -282,7 +285,7 @@ class PlanTranslator {
 
     private PlanContext translate() {
       final int rootId = trTree(template.root());
-      assert rootId != NO_SUCH_NODE;
+      if (rootId == NO_SUCH_NODE) return null;
       return plan.setRoot(rootId);
     }
 
@@ -318,9 +321,12 @@ class PlanTranslator {
     private int trJoin(Join join) {
       final int lhsChild = trTree(join.predecessors()[0]);
       final int rhsChild = trTree(join.predecessors()[1]);
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode lhsKey = trAttrs(join.lhsAttrs(), join.predecessors()[0]);
       final SqlNode rhsKey = trAttrs(join.rhsAttrs(), join.predecessors()[1]);
+      if (lhsKey == null || rhsKey == null) return NO_SUCH_NODE;
+
       final SqlNode joinCond = mkBinary(sql, EQUAL, lhsKey, rhsKey);
       final Expression joinCondExpr = Expression.mk(joinCond);
       final JoinNode node = JoinNode.mk(joinKindOf(join), joinCondExpr);
@@ -334,8 +340,11 @@ class PlanTranslator {
 
     private int trSimpleFilter(SimpleFilter filter) {
       final int lhsChild = trTree(filter.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode key = trAttrs(filter.attrs(), filter.predecessors()[0]);
+      if (key == null) return NO_SUCH_NODE;
+
       final String predName = predDescOf(filter.predicate()).predName;
       final SqlNode pred = mkFuncCall(sql, predName, singletonList(key));
       final SimpleFilterNode node = SimpleFilterNode.mk(Expression.mk(pred));
@@ -349,8 +358,11 @@ class PlanTranslator {
     private int trInSubFilter(InSubFilter filter) {
       final int lhsChild = trTree(filter.predecessors()[0]);
       final int rhsChild = trTree(filter.predecessors()[1]);
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode key = trAttrs(filter.attrs(), filter.predecessors()[0]);
+      if (key == null) return NO_SUCH_NODE;
+
       final InSubNode node = InSubNode.mk(Expression.mk(key));
 
       instantiatedOps.put(filter, node);
@@ -362,8 +374,11 @@ class PlanTranslator {
 
     private int trProj(Proj proj) {
       final int lhsChild = trTree(proj.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode colRef = trAttrs(proj.attrs(), proj.predecessors()[0]);
+      if (colRef == null) return NO_SUCH_NODE;
+
       final String colName = colRef.$(ColRef_ColName).$(ColName_Col);
       final List<String> nameList = singletonList(colName);
       final List<Expression> exprList = singletonList(Expression.mk(colRef));
@@ -379,6 +394,7 @@ class PlanTranslator {
     private int trUnion(Union union) {
       final int lhsChild = trTree(union.predecessors()[0]);
       final int rhsChild = trTree(union.predecessors()[1]);
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SetOpNode node = SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
 
@@ -391,11 +407,13 @@ class PlanTranslator {
 
     private int trAgg(Agg agg) {
       final int lhsChild = trTree(agg.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode groupRefAst = trAttrs(agg.groupByAttrs(), agg.predecessors()[0]);
-      final String groupColName = attrsDescOf(agg.groupByAttrs()).colName;
-
       final SqlNode aggRefAst = trAttrs(agg.aggregateAttrs(), agg.predecessors()[0]);
+      if (aggRefAst == null || groupRefAst == null) return NO_SUCH_NODE;
+
+      final String groupColName = attrsDescOf(agg.groupByAttrs()).colName;
       final String aggColName = attrsDescOf(agg.aggregateAttrs()).colName;
       final String aggFuncName = "count"; // TODO
       final SqlNode aggAst = mkAggregate(sql, singletonList(aggRefAst), aggFuncName);
@@ -412,8 +430,9 @@ class PlanTranslator {
       aggNode.setQualification(schemaDescOf(agg.schema()).schemaName);
 
       // Insert a proj node: translate aggregation as Agg(Proj(..))
-      final var projAttrNames = List.of(groupColName, aggColName);
-      final var projAttrExprs = List.of(Expression.mk(groupRefAst), Expression.mk(aggRefAst));
+      final var projAttrNames = List.of(groupColName, aggColName, groupColName, aggColName);
+      final var projAttrExprs =
+          map(List.of(groupRefAst, aggRefAst, groupRefAst, aggRefAst), Expression::mk);
       final ProjNode projNode = ProjNode.mk(false, projAttrNames, projAttrExprs);
       projNode.setQualification(aliasSeq.next());
 
@@ -428,7 +447,7 @@ class PlanTranslator {
     private SqlNode trAttrs(Symbol attrs, Op predecessor) {
       final String name = attrsDescOf(attrs).colName;
       final String qualification = findSourceIn(deepSourceOf(attrs), predecessor);
-      assert qualification != null;
+      if (qualification == null) return null;
       return mkColRef(sql, qualification, name);
     }
 

@@ -19,14 +19,17 @@ public abstract class OptimizerSupport {
   public static final String FAILURE_UNKNOWN_OP = "unknown op ";
 
   public static final int TWEAK_DISABLE_JOIN_FLIP = 1;
+  public static final int TWEAK_ENABLE_EXTENSIONS = 2;
   static int optimizerTweaks = 0;
 
   private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
 
-  static final System.Logger LOG = System.getLogger("optimizer");
-
   public static void setOptimizerTweaks(int optimizerTweaks) {
     OptimizerSupport.optimizerTweaks = optimizerTweaks;
+  }
+
+  public static void addOptimizerTweaks(int optimizerTweaks) {
+    OptimizerSupport.optimizerTweaks |= optimizerTweaks;
   }
 
   static void setLastError(String error) {

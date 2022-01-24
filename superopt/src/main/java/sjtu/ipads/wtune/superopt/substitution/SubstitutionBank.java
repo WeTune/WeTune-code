@@ -12,6 +12,8 @@ public interface SubstitutionBank {
 
   boolean contains(Substitution rule);
 
+  boolean isExtended();
+
   void remove(Substitution substitution);
 
   void removeIf(Predicate<Substitution> check);

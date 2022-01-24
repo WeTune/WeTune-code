@@ -50,11 +50,17 @@ public class ReduceRules implements Runner {
       for (Substitution rule : rules.rules()) bank.add(rule);
     }
 
-    final int oldSize = bank.size();
-    final SubstitutionBank reducedBank = SubstitutionSupport.reduceBank(bank);
-    final int minSize = reducedBank.size();
+    SubstitutionBank reducedBank = bank;
 
-    System.out.printf("%d -> %d\n", oldSize, minSize);
+    int pass = 1;
+    while (true) {
+      final int oldSize = reducedBank.size();
+      reducedBank = SubstitutionSupport.reduceBank(reducedBank);
+      final int minSize = reducedBank.size();
+
+      System.out.printf("Pass %d: %d -> %d\n", pass++, oldSize, minSize);
+      if (minSize == oldSize) break;
+    }
 
     try (final PrintWriter out = IOSupport.newPrintWriter(outFile)) {
       for (Substitution rule : reducedBank.rules()) out.println(rule.canonicalStringify());

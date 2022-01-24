@@ -7,4 +7,6 @@
 !schemas_mssql/*
 !rules.test.txt
 !rules.txt
+!spes_rules.txt
+!merged_rules.txt
 !calcite_tests

@@ -17,8 +17,7 @@ import java.util.*;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
-import static sjtu.ipads.wtune.common.utils.ListSupport.concat;
-import static sjtu.ipads.wtune.common.utils.ListSupport.map;
+import static sjtu.ipads.wtune.common.utils.ListSupport.*;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
@@ -78,6 +77,8 @@ class PlanTranslator2 {
     schema = mkSchema();
     final PlanContext sourcePlan = new PlanConstructor(rule._0(), false).translate();
     final PlanContext targetPlan = new PlanConstructor(rule._1(), true).translate();
+    if (sourcePlan == null || targetPlan == null) return Pair.of(null, null);
+
     PlanSupport.resolvePlan(sourcePlan);
     PlanSupport.resolvePlan(targetPlan);
     return Pair.of(sourcePlan, targetPlan);
@@ -150,7 +151,8 @@ class PlanTranslator2 {
 
     // Check AttrsEq constraints:
     // If AttrsEq(a0,a1), a1 has been assigned an AttrsDesc, then a0 owns the same AttrsDesc.
-    // It could only happen iff. \exists t1,t2. AttrsSub(a1,t1) /\ AttrsSub(a2,t2) /\ TableEq(t1,t2).
+    // It could only happen iff. \exists t1,t2. AttrsSub(a1,t1) /\ AttrsSub(a2,t2) /\
+    // TableEq(t1,t2).
     for (var pair : attrsDescs.entrySet()) {
       if (constraints.isEq(pair.getKey(), attrs) && pair.getValue() != null) {
         attrsDescs.put(attrs, pair.getValue());
@@ -189,7 +191,8 @@ class PlanTranslator2 {
     final AttrsDesc attrsDesc = new AttrsDesc(colName);
     if (!isSingleColKeyAttrs(attrs)
         && !(thisOp.kind() == AGG && attrs == ((Agg) thisOp).aggregateAttrs())
-        && source.kind() == SCHEMA && srcOp.kind() == AGG) {
+        && source.kind() == SCHEMA
+        && srcOp.kind() == AGG) {
       final Symbol aggAttrs = ((Agg) srcOp).aggregateAttrs();
       attrsDesc.addColName(getSynName(aggAttrs));
     }
@@ -473,7 +476,7 @@ class PlanTranslator2 {
 
     private PlanContext translate() {
       final int rootId = trTree(template.root());
-      assert rootId != NO_SUCH_NODE;
+      if (rootId == NO_SUCH_NODE) return null;
       return plan.setRoot(rootId);
     }
 
@@ -510,8 +513,12 @@ class PlanTranslator2 {
       final int lhsChild = trTree(join.predecessors()[0]);
       final int rhsChild = trTree(join.predecessors()[1]);
 
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
+
       final SqlNode lhsKey = trAttrsSingle(join.lhsAttrs(), join.predecessors()[0]);
       final SqlNode rhsKey = trAttrsSingle(join.rhsAttrs(), join.predecessors()[1]);
+      if (lhsKey == null || rhsKey == null) return NO_SUCH_NODE;
+
       final SqlNode joinCond = mkBinary(sql, EQUAL, lhsKey, rhsKey);
       final Expression joinCondExpr = Expression.mk(joinCond);
       final JoinNode node = JoinNode.mk(joinKindOf(join), joinCondExpr);
@@ -525,8 +532,11 @@ class PlanTranslator2 {
 
     private int trSimpleFilter(SimpleFilter filter) {
       final int lhsChild = trTree(filter.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final List<SqlNode> key = trAttrs(filter.attrs(), filter.predecessors()[0]);
+      if (key == null) return NO_SUCH_NODE;
+
       final String predName = predDescOf(filter.predicate()).predName;
       final SqlNode pred = mkFuncCall(sql, predName, key);
       final SimpleFilterNode node = SimpleFilterNode.mk(Expression.mk(pred));
@@ -540,8 +550,11 @@ class PlanTranslator2 {
     private int trInSubFilter(InSubFilter filter) {
       final int lhsChild = trTree(filter.predecessors()[0]);
       final int rhsChild = trTree(filter.predecessors()[1]);
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SqlNode key = trAttrsSingle(filter.attrs(), filter.predecessors()[0]);
+      if (key == null) return NO_SUCH_NODE;
+
       final InSubNode node = InSubNode.mk(Expression.mk(key));
 
       instantiatedOps.put(filter, node);
@@ -553,8 +566,11 @@ class PlanTranslator2 {
 
     private int trProj(Proj proj) {
       final int lhsChild = trTree(proj.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final List<SqlNode> colRefs = trAttrs(proj.attrs(), proj.predecessors()[0]);
+      if (colRefs == null) return NO_SUCH_NODE;
+
       final List<String> colNameList = map(colRefs, c -> c.$(ColRef_ColName).$(ColName_Col));
       final List<Expression> exprList = map(colRefs, Expression::mk);
       final ProjNode node = ProjNode.mk(proj.isDeduplicated(), colNameList, exprList);
@@ -569,6 +585,7 @@ class PlanTranslator2 {
     private int trUnion(Union union) {
       final int lhsChild = trTree(union.predecessors()[0]);
       final int rhsChild = trTree(union.predecessors()[1]);
+      if (lhsChild == NO_SUCH_NODE || rhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final SetOpNode node = SetOpNode.mk(union.isDeduplicated(), SetOpKind.UNION);
 
@@ -581,21 +598,23 @@ class PlanTranslator2 {
 
     private int trAgg(Agg agg) {
       final int lhsChild = trTree(agg.predecessors()[0]);
+      if (lhsChild == NO_SUCH_NODE) return NO_SUCH_NODE;
 
       final List<String> groupColNames = attrsDescOf(agg.groupByAttrs()).colNames;
       final List<String> aggColNames = attrsDescOf(agg.aggregateAttrs()).colNames;
 
       // Insert a Proj node: translate aggregation as Agg(Proj(..))
-      final List<SqlNode> groupRefAstsForProj = trAttrs(agg.groupByAttrs(), agg.predecessors()[0]);
-      final List<SqlNode> aggRefAstsForProj = trAttrs(agg.aggregateAttrs(), agg.predecessors()[0]);
-      final var projAttrNames = concat(groupColNames, aggColNames);
-      final var projAttrExprs = map(concat(groupRefAstsForProj, aggRefAstsForProj), Expression::mk);
+      final List<SqlNode> groupRefAsts = trAttrs(agg.groupByAttrs(), agg.predecessors()[0]);
+      final List<SqlNode> aggRefAsts = trAttrs(agg.aggregateAttrs(), agg.predecessors()[0]);
+      if (groupRefAsts == null || aggRefAsts == null) return NO_SUCH_NODE;
+
+      final var projAttrNames = join(groupColNames, aggColNames, groupColNames, aggColNames);
+      final var projAttrExprs =
+          map(join(groupRefAsts, aggRefAsts, groupRefAsts, aggRefAsts), Expression::mk);
       final ProjNode projNode = ProjNode.mk(false, projAttrNames, projAttrExprs);
       projNode.setQualification(associateSchemaQual(schemaDescOf(agg.schema()).schemaName));
 
       // Then build Agg node based on Proj. TODO qualification
-      final List<SqlNode> groupRefAsts = trAttrs(agg.groupByAttrs(), agg.predecessors()[0]);
-      final List<SqlNode> aggRefAsts = trAttrs(agg.aggregateAttrs(), agg.predecessors()[0]);
 
       final String aggFuncName = "count"; // TODO
       final SqlNode aggAst = mkAggregate(sql, aggRefAsts, aggFuncName);
@@ -621,34 +640,22 @@ class PlanTranslator2 {
     }
 
     private List<SqlNode> trAttrs(Symbol attrs, Op predecessor) {
-      return trAttrs(attrs, predecessor, null);
-    }
-
-    private List<SqlNode> trAttrs(Symbol attrs, Op predecessor, String defaultQual) {
       List<SqlNode> colRefs = new ArrayList<>(attrsDescOf(attrs).colNames.size());
       for (String colName : attrsDescOf(attrs).colNames) {
         final String qualification =
-            defaultQual == null
-                ? findSourceIn(deepSourceOf(attrs, isAggregatedCol(colName)), predecessor)
-                : defaultQual;
-        assert qualification != null;
+            findSourceIn(deepSourceOf(attrs, isAggregatedCol(colName)), predecessor);
+        if (qualification == null) return null;
         colRefs.add(mkColRef(sql, qualification, colName));
       }
       return colRefs;
     }
 
     private SqlNode trAttrsSingle(Symbol attrs, Op predecessor) {
-      return trAttrsSingle(attrs, predecessor, null);
-    }
-
-    private SqlNode trAttrsSingle(Symbol attrs, Op predecessor, String defaultQual) {
       final List<String> names = attrsDescOf(attrs).colNames;
-      assert names.size() == 1;
+      //      assert names.size() == 1;
       final String qualification =
-          defaultQual == null
-              ? findSourceIn(deepSourceOf(attrs, isAggregatedCol(names.get(0))), predecessor)
-              : defaultQual;
-      assert qualification != null;
+          findSourceIn(deepSourceOf(attrs, isAggregatedCol(names.get(0))), predecessor);
+      if (qualification == null) return null;
       return mkColRef(sql, qualification, names.get(0));
     }
 

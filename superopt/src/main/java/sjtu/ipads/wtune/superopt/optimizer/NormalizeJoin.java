@@ -35,6 +35,7 @@ class NormalizeJoin {
 
     final int b = plan.childOf(rhs, 0), c = plan.childOf(rhs, 1);
     final int join0 = nodeId, join1 = rhs;
+
     final int parent = plan.parentOf(join0), childIdx = indexOfChild(plan, join0);
     assert plan.kindOf(c) != Join;
 
@@ -56,7 +57,7 @@ class NormalizeJoin {
 
       final InfoCache infoCache = plan.infoCache();
       final var joinKeys = infoCache.getJoinKeyOf(join1);
-      infoCache.putJoinKeyOf(join1, joinKeys.getRight(), joinKeys.getLeft());
+      if (joinKeys != null) infoCache.putJoinKeyOf(join1, joinKeys.getRight(), joinKeys.getLeft());
 
       return normalize(join1);
     }
@@ -80,8 +81,8 @@ class NormalizeJoin {
   }
 
   private List<Value> getRhsRefs(int nodeId) {
-    final List<Value> cachedRhsRefs = plan.infoCache().rhsJoinKeyOf(nodeId);
-    if (cachedRhsRefs != null) return cachedRhsRefs;
+    final var cachedJoinKey = plan.infoCache().getJoinKeyOf(nodeId);
+    if (cachedJoinKey != null) return cachedJoinKey.getRight();
 
     final ValuesRegistry valuesReg = plan.valuesReg();
     final Values refs = valuesReg.valueRefsOf(((JoinNode) plan.nodeAt(nodeId)).joinCond());

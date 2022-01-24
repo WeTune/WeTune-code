@@ -168,6 +168,8 @@ class Instantiation {
     if (!bindRefs(exprs, inAttrs)) return fail(FAILURE_MISMATCHED_REFS);
 
     final ProjNode projNode = ProjNode.mk(proj.isDeduplicated(), names, exprs);
+    projNode.setQualification(qualificationOf(outAttrs));
+
     final int projNodeId = newPlan.bindNode(projNode);
     newPlan.setChild(projNodeId, 0, child);
 
@@ -235,6 +237,8 @@ class Instantiation {
     bindRefs(groupExprs, groupRefs);
 
     final AggNode aggNode = AggNode.mk(false, names, aggExprs, groupExprs, havingPred);
+    aggNode.setQualification(qualificationOf(outVals));
+
     final int aggNodeId = newPlan.bindNode(aggNode);
     reg.bindValues(aggNodeId, outVals);
 
@@ -329,8 +333,9 @@ class Instantiation {
     } else if (kind == PlanKind.InSub) {
       final Expression lhsExpr = ((InSubNode) node).expr();
       final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
+      final int lhsNumRefs = lhsExpr.colRefs().size();
       numRefs = subqueryExpr.colRefs().size();
-      final List<Value> lhsExprRefs = refs.subList(offset, offset + lhsExpr.colRefs().size());
+      final List<Value> lhsExprRefs = refs.subList(offset, offset + lhsNumRefs);
       final List<Value> subqueryExprRefs = refs.subList(offset, offset + numRefs);
       valuesReg.bindValueRefs(lhsExpr, newArrayList(lhsExprRefs));
       valuesReg.bindValueRefs(subqueryExpr, newArrayList(subqueryExprRefs));
@@ -383,5 +388,14 @@ class Instantiation {
       joinKeys.add(rhsJoinKeys.get(i));
     }
     return joinKeys;
+  }
+
+  private static String qualificationOf(List<Value> attrs) {
+    String qualification = null;
+    for (Value attr : attrs) {
+      if (qualification == null) qualification = attr.qualification();
+      else if (!qualification.equals(attr.qualification())) return null;
+    }
+    return qualification;
   }
 }

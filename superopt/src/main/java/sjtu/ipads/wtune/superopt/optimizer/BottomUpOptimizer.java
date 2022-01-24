@@ -14,8 +14,7 @@ import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.LOG;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.normalizePlan;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
 class BottomUpOptimizer implements Optimizer {
   private final SubstitutionBank rules;
@@ -62,6 +61,8 @@ class BottomUpOptimizer implements Optimizer {
 
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
+    setExtended((optimizerTweaks & TWEAK_ENABLE_EXTENSIONS) != 0);
+
     final PlanContext originalPlan = plan;
 
     plan = plan.copy();
@@ -198,12 +199,7 @@ class BottomUpOptimizer implements Optimizer {
           }
 
         } else if (verbose) {
-          LOG.log(
-              WARNING,
-              "instantiation failed: {0}\n{1}\n{2}",
-              subPlan,
-              rule,
-              OptimizerSupport.getLastError());
+          System.err.printf("instantiation failed: %s\n%s\n%s\n", subPlan, rule, getLastError());
         }
       }
     }
@@ -307,7 +303,10 @@ class BottomUpOptimizer implements Optimizer {
 
   private SubPlan replaceChild(SubPlan replaced, int childIdx, SubPlan replacement) {
     if (replacement.plan() == replaced.plan()) {
-      assert replaced.plan().childOf(replaced.nodeId(), childIdx) == replacement.nodeId();
+      if (replaced.plan().childOf(replaced.nodeId(), childIdx) == replacement.nodeId())
+        return replaced;
+    }
+    if (replaced.child(childIdx).toString().equals(replacement.toString())) {
       return replaced;
     }
 
