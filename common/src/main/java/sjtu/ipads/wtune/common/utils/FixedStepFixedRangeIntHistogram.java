@@ -126,7 +126,11 @@ class FixedStepFixedRangeIntHistogram implements IntHistogram {
     builder.append("#Samples=").append(numSamples).append(',');
     builder.append("Range=").append('[').append(min).append(',').append(max).append(']');
     builder.append('\n');
-    for (int i = 0, bound = ranges.length; i < bound; ++i) appendRange(i, builder);
+    for (int i = 0, bound = ranges.length; i < bound; ++i) {
+      appendRange(i, builder);
+      builder.append('\n');
+    }
+    builder.deleteCharAt(builder.length() - 1);
     return builder.toString();
   }
 
@@ -138,6 +142,6 @@ class FixedStepFixedRangeIntHistogram implements IntHistogram {
     if (rangeIndex == ranges.length - 1) builder.append("+\u221E)");
     else builder.append(endOfRange(rangeIndex)).append(')');
 
-    builder.append(":\t").append(ranges[rangeIndex]).append('\n');
+    builder.append(":\t").append(ranges[rangeIndex]);
   }
 }

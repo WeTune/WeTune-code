@@ -40,6 +40,22 @@ public interface IntHistogram {
     return this;
   }
 
+  default double estimatedPercentile(double percentile) {
+    if (percentile < 0.0 || percentile > 1.0) throw new IllegalArgumentException();
+
+    int count = (int) (percentile * numSamples());
+    for (int i = 0, bound = numRanges(); i < bound; ++i) {
+      final int population = populationAt(i);
+      if (count <= population) {
+        final int begin = beginOfRange(i), end = endOfRange(i);
+        return begin + (count / (double) population) * (end - begin);
+      }
+      count -= population;
+    }
+
+    return 0;
+  }
+
   static IntHistogram mkFixed(int fromInclusive, int toExclusive, int step) {
     return FixedStepFixedRangeIntHistogram.mk(fromInclusive, toExclusive, step);
   }

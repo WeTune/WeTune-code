@@ -5,51 +5,56 @@ import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
-import sjtu.ipads.wtune.superopt.fragment.Symbols;
 
+import java.security.interfaces.RSAMultiPrimePrivateCrtKey;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_DRY_RUN;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
 
-public class PrintDryRunStatistic implements Runner {
+public class DryRun implements Runner {
   private long timeout;
   private int parallelism;
+  private int samples;
   private ExecutorService threadPool;
   private ProgressBar progressBar;
   private CountDownLatch latch;
-
-  private final AtomicInteger numSkipped = new AtomicInteger(0);
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     timeout = args.getOptional("timeout", long.class, 240000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
+    samples = args.getOptional("samples", int.class, -1);
     if (timeout <= 0) throw new IllegalArgumentException("invalid timeout: " + timeout);
     if (parallelism <= 0) throw new IllegalArgumentException("invalid parallelism: " + parallelism);
   }
 
   @Override
   public void run() throws Exception {
+    if (samples < 0) runAll();
+    else runSample();
+  }
+
+  @Override
+  public void stop() {
+    System.out.println(ConstraintSupport.getEnumerationMetric());
+  }
+
+  private void runAll() {
     final List<Fragment> templates = FragmentSupport.enumFragments();
     final int numTemplates = templates.size();
-
-    int[] completed = null;
-
     final int totalPairs = (numTemplates * (numTemplates + 1)) >> 1;
 
     latch = new CountDownLatch(totalPairs);
     threadPool = Executors.newFixedThreadPool(parallelism);
 
-    try (final ProgressBar pb = new ProgressBar("Candidates", totalPairs)) {
+    try (final ProgressBar pb = new ProgressBar("Samples", totalPairs)) {
       progressBar = pb;
 
       for (int i = 0; i < numTemplates; ++i) {
@@ -61,13 +66,38 @@ public class PrintDryRunStatistic implements Runner {
 
       latch.await();
       threadPool.shutdown();
+
+    } catch (InterruptedException ignored) {
     }
   }
 
-  @Override
-  public void stop() {
-    System.out.println(ConstraintSupport.getEnumerationMetric());
-    System.out.println("#Skipped=" + numSkipped.get());
+  private void runSample() {
+    final List<Fragment> templates = FragmentSupport.enumFragments();
+    final int numTemplates = templates.size();
+    final int totalPairs = (numTemplates * (numTemplates + 1)) >> 1;
+    final int samples = Integer.min(totalPairs, this.samples);
+
+    latch = new CountDownLatch(samples);
+    threadPool = Executors.newFixedThreadPool(parallelism);
+
+    try (final ProgressBar pb = new ProgressBar("Samples", totalPairs)) {
+      progressBar = pb;
+
+      final ThreadLocalRandom r = ThreadLocalRandom.current();
+      for (int n = 0; n < samples; ++n) {
+        final int x = r.nextInt(totalPairs);
+        final int y = r.nextInt(totalPairs);
+        final int i = Integer.min(x, y);
+        final int j = Integer.max(x, y);
+        final Fragment f0 = templates.get(i), f1 = templates.get(j);
+        threadPool.submit(() -> enumerate(f0, f1));
+      }
+
+      latch.await();
+      threadPool.shutdown();
+
+    } catch (InterruptedException ignored) {
+    }
   }
 
   private void enumerate(Fragment f0_, Fragment f1_) {
@@ -85,6 +115,14 @@ public class PrintDryRunStatistic implements Runner {
       FragmentSupport.setupFragment(f1);
     }
 
-    enumConstraints(f0, f1, timeout, ENUM_FLAG_DRY_RUN, null);
+    enumConstraints(
+        f0,
+        f1,
+        timeout,
+        ENUM_FLAG_DRY_RUN
+            | ENUM_FLAG_DISABLE_BREAKER_0
+            | ENUM_FLAG_DISABLE_BREAKER_1
+            | ENUM_FLAG_DISABLE_BREAKER_2,
+        null);
   }
 }

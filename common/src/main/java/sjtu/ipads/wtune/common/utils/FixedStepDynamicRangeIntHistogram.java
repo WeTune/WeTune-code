@@ -159,7 +159,6 @@ class FixedStepDynamicRangeIntHistogram implements IntHistogram {
 
     builder.append('\t').append('[').append(beginOfRange(expectedLogicIdx)).append(',');
     builder.append("+\u221E):\t0");
-    builder.append('\n');
     return builder.toString();
   }
 

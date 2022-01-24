@@ -46,6 +46,12 @@ public interface IterableSupport {
     return true;
   }
 
+  static int count(Iterable<?> xs) {
+    int num = 0;
+    for (Object x : xs) ++num;
+    return num;
+  }
+
   static <X, Y> Iterable<Pair<X, Y>> zip(Iterable<? extends X> xs, Iterable<? extends Y> ys) {
     return () -> new ZippedIterator<>(xs.iterator(), ys.iterator());
   }

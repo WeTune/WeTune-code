@@ -74,7 +74,6 @@ public class IntStatistic {
     builder.append("#Samples: ").append(numSamples).append('\n');
     builder.append("Range:\t[").append(min).append(',').append(max).append("]\n");
     builder.append("Avg:\t").append(avg).append('\n');
-    builder.append("PowAvg:\t").append(powAvg).append('\n');
     builder.append("StdDev:\t").append(estimatedStdDev()).append('\n');
     builder.append("P50:\t").append(estimatedP50()).append('\n');
     builder.append("P90:\t").append(estimatedP90()).append('\n');
