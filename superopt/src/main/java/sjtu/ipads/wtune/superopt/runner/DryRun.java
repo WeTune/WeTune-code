@@ -1,20 +1,20 @@
 package sjtu.ipads.wtune.superopt.runner;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import me.tongfei.progressbar.ProgressBar;
 import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
+import sjtu.ipads.wtune.superopt.constraint.EnumerationMetrics;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
 import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 
-import java.security.interfaces.RSAMultiPrimePrivateCrtKey;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
 
 public class DryRun implements Runner {
@@ -24,6 +24,7 @@ public class DryRun implements Runner {
   private ExecutorService threadPool;
   private ProgressBar progressBar;
   private CountDownLatch latch;
+  private TIntList numbers;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -79,6 +80,7 @@ public class DryRun implements Runner {
 
     latch = new CountDownLatch(samples);
     threadPool = Executors.newFixedThreadPool(parallelism);
+    numbers = new TIntArrayList(samples);
 
     try (final ProgressBar pb = new ProgressBar("Samples", totalPairs)) {
       progressBar = pb;
@@ -95,6 +97,12 @@ public class DryRun implements Runner {
 
       latch.await();
       threadPool.shutdown();
+
+      numbers.sort();
+      System.out.println("Min: " + numbers.get(0));
+      System.out.println("P50: " + numbers.get(numbers.size() / 2));
+      System.out.println("P90: " + numbers.get((int) (numbers.size() * 0.9)));
+      System.out.println("Max: " + numbers.get(numbers.size() - 1));
 
     } catch (InterruptedException ignored) {
     }
@@ -124,5 +132,12 @@ public class DryRun implements Runner {
             | ENUM_FLAG_DISABLE_BREAKER_1
             | ENUM_FLAG_DISABLE_BREAKER_2,
         null);
+
+    if (numbers != null) {
+      final EnumerationMetrics metric = getEnumerationMetric();
+      synchronized (this) {
+        numbers.add(metric.numEnumeratedConstraintSets.value());
+      }
+    }
   }
 }
