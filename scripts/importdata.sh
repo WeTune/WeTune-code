@@ -137,7 +137,7 @@ doImportData() {
   done
 }
 
-if [ "$1" = '-all' ]; then
+if [ "$1" = 'all' ]; then
   #for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
   for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'forest_blog' 'gitlab' 'homeland' 'lobsters' 'redmine' 'refinerycms' 'shopizer' 'solidus' 'spree'
   do

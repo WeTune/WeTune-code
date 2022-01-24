@@ -154,3 +154,28 @@ rewrite/
     2_tables.txt   # if the input file is rewrite/result/2_query.txt
     <input_file_name>.tables.txt   # otherwise
 ```
+
+## Create DBs and schemas
+```
+makedb(_mssql).sh
+  [-r]
+  <app_name | all> <tag>
+```
+This script aims to create databases and schemas for evaluation.
+* `-r` (optional): drop and recreate this database.
+* `app_name`: create database called `app_name`, or create databases of all apps. (broadleaf, ... , spree)
+* `tag`: 4 workload type of database: base, zipf, large, large_zipf.
+It creates database called `app_name`_`tag`. e.g. broadleaf_base.
+
+## Import Data Into DBs
+```
+importdata(_mssql).sh
+  [-t <table_name>]
+  <app_name | all> <tag>
+```
+This script aims to dump data into tables for evaluation.
+* `-t` (optional): import data into a specific table.
+  * need to confirm this table belongs to app specified by 'app_name'
+* `app_name`: import data into all used tables of the app, or import tables of all apps. (broadleaf, ... , spree)
+* `tag`: 4 workload type of data: base, zipf, large, large_zipf.
+

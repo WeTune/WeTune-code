@@ -13,6 +13,8 @@ import sjtu.ipads.wtune.superopt.profiler.Profiler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +64,14 @@ public class PickMinCost implements Runner {
     inTraceFile = dir.resolve(args.getOptional("in_trace", String.class, "1_trace.tsv"));
     IOSupport.checkFileExists(inOptFile);
 
-    outOptFile = dir.resolve(args.getOptional("out", String.class, "2_query.tsv"));
-    outTraceFile = dir.resolve(args.getOptional("out_trace", String.class, "2_trace.tsv"));
+    final String defaultOutFileName =
+        "optimize_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
+    final String defaultOutTraceFileName =
+        "optimize_trace" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
+    final String outFileName = args.getOptional("out", String.class, defaultOutFileName);
+    final String outTraceFileName = args.getOptional("out_trace", String.class, defaultOutTraceFileName);
+    outOptFile = dataDir.resolve(dir).resolve(outFileName);
+    outTraceFile = dataDir.resolve(dir).resolve(outTraceFileName);
 
     // Default datasource is Sql Server
     final String jdbcUrl = args.getOptional("dbUrl", String.class, "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=");

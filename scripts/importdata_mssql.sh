@@ -103,7 +103,7 @@ doImportData() {
 }
 
 getDefaultDataPath
-if [ "$1" = '-all' ]; then
+if [ "$1" = 'all' ]; then
   for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
   do
     dbType "$db" "$2"

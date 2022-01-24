@@ -103,11 +103,7 @@ fi
 
 
 for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
-#for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'gitlab' 'homeland' 'lobsters' 'pybbs' 'redmine' 'shopizer' 'solidus' 'spree'
 do
-#  getDbName "$1" "$2" # broadleaf base
-#  getConnProp "$3" "$4" "$5" "$6"
-
   # ./xx.sh base
   getDbName "$db" "$1" # broadleaf base
   getConnProp "$2" "$3" "$4" "$5"
