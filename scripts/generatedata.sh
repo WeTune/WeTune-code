@@ -1,6 +1,9 @@
 #! /bin/bash
 
-targetFile='rewrite/result/1_tables.txt'
+targetFile='rewrite/result/2_tables.txt'
+if [[ ! -f "${targetFile}" ]]; then
+  targetFile='rewrite/result/1_tables.txt'
+fi
 tag='base'
 verbose='0'
 

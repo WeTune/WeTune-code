@@ -330,9 +330,10 @@ class Instantiation {
       final Expression lhsExpr = ((InSubNode) node).expr();
       final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
       numRefs = subqueryExpr.colRefs().size();
-      final List<Value> subList = refs.subList(offset, offset + numRefs);
-      valuesReg.bindValueRefs(lhsExpr, newArrayList(subList));
-      valuesReg.bindValueRefs(subqueryExpr, newArrayList(subList));
+      final List<Value> lhsExprRefs = refs.subList(offset, offset + lhsExpr.colRefs().size());
+      final List<Value> subqueryExprRefs = refs.subList(offset, offset + numRefs);
+      valuesReg.bindValueRefs(lhsExpr, newArrayList(lhsExprRefs));
+      valuesReg.bindValueRefs(subqueryExpr, newArrayList(subqueryExprRefs));
 
     } else if (kind == PlanKind.Exists) {
       final Expression subqueryExpr = newPlan.infoCache().getSubqueryExprOf(nodeId);
