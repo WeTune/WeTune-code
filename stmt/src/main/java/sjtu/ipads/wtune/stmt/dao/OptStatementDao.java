@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.stmt.dao;
 
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.internal.DbOptStatementDao;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ public interface OptStatementDao {
 
   List<Statement> findAll();
 
-  static OptStatementDao instance() {
-    return DbOptStatementDao.instance();
+  static OptStatementDao instance(OptimizerType type) {
+    return DbOptStatementDao.instance(type);
   }
 }

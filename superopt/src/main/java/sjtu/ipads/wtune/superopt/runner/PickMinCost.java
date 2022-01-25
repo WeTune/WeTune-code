@@ -70,8 +70,8 @@ public class PickMinCost implements Runner {
         "optimize_trace" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
     final String outFileName = args.getOptional("out", String.class, defaultOutFileName);
     final String outTraceFileName = args.getOptional("out_trace", String.class, defaultOutTraceFileName);
-    outOptFile = dataDir.resolve(dir).resolve(outFileName);
-    outTraceFile = dataDir.resolve(dir).resolve(outTraceFileName);
+    outOptFile = dir.resolve(outFileName);
+    outTraceFile = dir.resolve(outTraceFileName);
 
     // Default datasource is Sql Server
     final String jdbcUrl = args.getOptional("dbUrl", String.class, "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=");

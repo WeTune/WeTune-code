@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao;
 
+import sjtu.ipads.wtune.stmt.CalciteStmtProfile;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.StmtProfile;
 import sjtu.ipads.wtune.stmt.dao.internal.CalciteDbOptStatementDao;
@@ -15,7 +16,7 @@ public interface CalciteOptStatementDao {
 
   void cleanProfileData();
 
-  void updateProfile(StmtProfile stmtProfile);
+  void updateProfile(CalciteStmtProfile stmtProfile);
 
   static CalciteOptStatementDao instance() {
     return CalciteDbOptStatementDao.instance();

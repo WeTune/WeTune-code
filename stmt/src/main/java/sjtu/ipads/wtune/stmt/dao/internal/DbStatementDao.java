@@ -23,8 +23,7 @@ public class DbStatementDao extends DbDao implements StatementDao {
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
   static final String KEY_STACK_TRACE = "stackTrace";
-  private static final String STMTS_TABLE =
-      App.doingSQLServerTest() ? "wtune_stmts_syntax_norm" : "wtune_stmts";
+  private static final String STMTS_TABLE = "wtune_stmts";
 
   private static final String INSERT =
       "INSERT INTO "

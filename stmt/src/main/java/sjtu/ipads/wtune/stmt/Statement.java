@@ -4,8 +4,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.dao.*;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
 import java.util.List;
+
+import static sjtu.ipads.wtune.stmt.support.OptimizerType.WeTune;
 
 public interface Statement {
   String appName();
@@ -59,23 +62,28 @@ public interface Statement {
 
   // Find optimized statement(s)
   static Statement findOneRewritten(String appName, int stmtId) {
+    return findOneRewritten(appName, stmtId, WeTune);
+  }
+  static Statement findOneRewritten(String appName, int stmtId, OptimizerType type) {
     if (appName.equals("calcite_test"))
       return CalciteOptStatementDao.instance().findOne(appName, stmtId);
-    return OptStatementDao.instance().findOne(appName, stmtId);
+    return OptStatementDao.instance(type).findOne(appName, stmtId);
   }
 
   static List<Statement> findRewrittenByApp(String appName) {
+    return findRewrittenByApp(appName, WeTune);
+  }
+  static List<Statement> findRewrittenByApp(String appName, OptimizerType type) {
     if (appName.equals("calcite_test"))
       return CalciteOptStatementDao.instance().findByApp(appName);
-    return OptStatementDao.instance().findByApp(appName);
+    return OptStatementDao.instance(type).findByApp(appName);
   }
 
   static List<Statement> findAllRewritten() {
-    return OptStatementDao.instance().findAll();
+    return findAllRewritten(WeTune);
   }
-
-  static List<Statement> findAllRewrittenByBagSem() {
-    return OptBagStatementDao.instance().findAll();
+  static List<Statement> findAllRewritten(OptimizerType type) {
+    return OptStatementDao.instance(type).findAll();
   }
 
   // Find-alls in calcite, and other interface of calcite

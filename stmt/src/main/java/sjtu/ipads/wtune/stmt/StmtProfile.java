@@ -7,18 +7,6 @@ public interface StmtProfile {
 
   int stmtId();
 
-  int p50BaseLatency();
-
-  int p90BaseLatency();
-
-  int p99BaseLatency();
-
-  int p50OptLatency();
-
-  int p90OptLatency();
-
-  int p99OptLatency();
-
   float p50Improve();
 
   float p90Improve();

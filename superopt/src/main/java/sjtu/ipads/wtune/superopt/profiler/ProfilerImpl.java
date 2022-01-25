@@ -130,6 +130,7 @@ class ProfilerImpl implements Profiler {
     sql = sql.replaceFirst("SELECT DISTINCT (.+)LIMIT ([0-9]+)", "SELECT DISTINCT TOP $2 $1");
     sql = sql.replaceFirst("SELECT (.+)LIMIT ([0-9]+)", "SELECT TOP $2 $1");
 
+    sql = sql.replaceAll("MATCH ([^ ]+) AGAINST \\('([^\\[]+)' IN BOOLEAN MODE\\)", "$1 LIKE '%$2%'");
     sql = sql.replaceAll("'FALSE'", "0");
     sql = sql.replaceAll("'TRUE'", "1");
     sql = sql.replaceAll("USE INDEX \\([^ ]*\\)", "");

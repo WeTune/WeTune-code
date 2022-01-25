@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 import sjtu.ipads.wtune.testbed.population.Generators;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 import sjtu.ipads.wtune.testbed.profile.Metric;
@@ -35,7 +36,11 @@ public class Profile implements Runner {
   private Path out;
   private boolean useSqlServer;
   private boolean dryRun;
+
+  // Determine the optimized statement pool
+  private String optimizedBy;
   private boolean calciteProfile;
+
   private Blacklist blacklist;
 
   public void prepare(String[] argStrings) throws Exception {
@@ -52,10 +57,12 @@ public class Profile implements Runner {
     tag = args.getOptional("tag", String.class, BASE);
     useSqlServer = args.getOptional("sqlserver", boolean.class, false);
     dryRun = args.getOptional("dry", boolean.class, false);
+
+    optimizedBy = args.getOptional("optimizer", String.class, "wetune");
     calciteProfile = appNames.contains("calcite_test");
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final String suffix = (useSqlServer ? "ss" : "pg") + "_" + (calciteProfile ? "cal" : "");
+    final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg") + (calciteProfile ? "_cal" : "");
     out = Path.of(dir).resolve("profile").resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
     if (!Files.exists(out)) Files.createFile(out);
@@ -65,8 +72,7 @@ public class Profile implements Runner {
   public void run() throws Exception {
     final List<String> failures = new ArrayList<>();
 
-    final List<Statement> stmtPool = calciteProfile ?
-        Statement.findAllRewrittenOfCalcite() : Statement.findAllRewritten();
+    final List<Statement> stmtPool = getStmtPool();
     for (Statement stmt : stmtPool) {
       if (stmts != null && !stmts.contains(stmt.toString())) continue;
       if (appNames != null && !appNames.contains(stmt.appName())) continue;
@@ -79,6 +85,22 @@ public class Profile implements Runner {
     }
 
     LOG.log(WARNING, "failed to profile {0}", failures);
+  }
+
+  private List<Statement> getStmtPool() {
+    if (calciteProfile) return Statement.findAllRewrittenOfCalcite();
+
+    final OptimizerType type;
+    switch (optimizedBy) {
+      case "wetune" -> type = OptimizerType.WeTune;
+      case "spes" -> type = OptimizerType.Spes;
+      case "merge" -> type = OptimizerType.Merge;
+      default -> throw new IllegalArgumentException(
+          "Unsupported optimizer " + optimizedBy + ", current supported kind: wetune, spes, merge");
+    }
+
+    System.out.println("Optimize type: " + type);
+    return Statement.findAllRewritten(type);
   }
 
   private boolean runOne(Statement original, Statement rewritten) {

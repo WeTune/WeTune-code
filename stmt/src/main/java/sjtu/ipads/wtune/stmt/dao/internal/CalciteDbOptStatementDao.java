@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
+import sjtu.ipads.wtune.stmt.CalciteStmtProfile;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.StmtProfile;
 import sjtu.ipads.wtune.stmt.dao.CalciteOptStatementDao;
@@ -37,14 +38,16 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   private static final String CLEAN_OPT_DATA =
       "UPDATE "
           + OPT_STMTS_TABLE
-          + " SET p50_improve = null, p90_improve = null, p99_improve = null"
+          + " SET p50_improve_q0 = null, p90_improve_q0 = null, p99_improve_q0 = null,"
+          + " p50_improve_q1 = null, p90_improve_q1 = null, p99_improve_q1 = null"
           + " WHERE TRUE";
   private static final String CLEAN_EVAL_DATA =
       "UPDATE " + EVAL_TABLE + " SET q0_improve = null, q1_improve = null" + " WHERE TRUE";
   private static final String UPDATE_OPT_DATA =
       "UPDATE "
           + OPT_STMTS_TABLE
-          + " SET p50_improve = ?, p90_improve = ?, p99_improve = ?"
+          + " SET p50_improve_q0 = ?, p90_improve_q0 = ?, p99_improve_q0 = ?,"
+          + " p50_improve_q1 = ?, p90_improve_q1 = ?, p99_improve_q1 = ?"
           + " WHERE opt_app_name = ? and opt_stmt_id = ?";
   private static final String UPDATE_EVAL_DATA_Q0 =
       "UPDATE " + EVAL_TABLE + " SET q0_improve = ? WHERE pair_id = ?";
@@ -123,19 +126,23 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   }
 
   @Override
-  public void updateProfile(StmtProfile stmtProfile) {
+  public void updateProfile(CalciteStmtProfile stmtProfile) {
     try {
       final PreparedStatement insert0 = prepare(UPDATE_OPT_DATA);
-      insert0.setFloat(1, stmtProfile.p50Improve());
-      insert0.setFloat(2, stmtProfile.p90Improve());
-      insert0.setFloat(3, stmtProfile.p99Improve());
-      insert0.setString(4, stmtProfile.appName());
-      insert0.setInt(5, stmtProfile.stmtId());
+      insert0.setFloat(1, stmtProfile.p50ImproveQ0());
+      insert0.setFloat(2, stmtProfile.p90ImproveQ0());
+      insert0.setFloat(3, stmtProfile.p99ImproveQ0());
+      insert0.setFloat(4, stmtProfile.p50ImproveQ1());
+      insert0.setFloat(5, stmtProfile.p90ImproveQ1());
+      insert0.setFloat(6, stmtProfile.p99ImproveQ1());
+      insert0.setString(7, stmtProfile.appName());
+      insert0.setInt(8, stmtProfile.stmtId());
       insert0.executeUpdate();
 
-      final String updateEvalQuery = isQ0(stmtProfile.stmtId()) ? UPDATE_EVAL_DATA_Q0 : UPDATE_EVAL_DATA_Q1;
+      final boolean isQ0 = isQ0(stmtProfile.stmtId());
+      final String updateEvalQuery = isQ0 ? UPDATE_EVAL_DATA_Q0 : UPDATE_EVAL_DATA_Q1;
       final PreparedStatement insert1 = prepare(updateEvalQuery);
-      insert1.setFloat(1, stmtProfile.p50Improve());
+      insert1.setFloat(1, isQ0 ? stmtProfile.p50ImproveQ0() : stmtProfile.p50ImproveQ1());
       insert1.setInt(2, pairId(stmtProfile.stmtId()));
       insert1.executeUpdate();
 

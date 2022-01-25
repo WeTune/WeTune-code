@@ -76,8 +76,8 @@ doTruncateOne() {
       -c "truncate table ${tableName} cascade" &>/dev/null || echo "truncate ${tableName} failed"
   elif [ "$dbType" = "$SQLSERVER" ]; then
     sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
-      ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL";
-      truncate table [${tableName}];
+      ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL;
+      delete from [${tableName}];
       ALTER TABLE [${tableName}] WITH CHECK CHECK CONSTRAINT ALL;
       GO
 EOF

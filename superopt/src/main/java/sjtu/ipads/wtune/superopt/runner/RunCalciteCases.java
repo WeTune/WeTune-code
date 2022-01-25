@@ -50,7 +50,9 @@ public class RunCalciteCases implements Runner {
     final Path dataDir = RunnerSupport.dataDir();
     final String calciteDirName = "calcite";
     final String defaultOutFileName =
-        "rewrites_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
+        "rewrites_"
+            + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
+            + ".tsv";
     final String outFileName = args.getOptional("o", "out", String.class, defaultOutFileName);
     out = dataDir.resolve(calciteDirName).resolve(outFileName);
 
@@ -85,35 +87,32 @@ public class RunCalciteCases implements Runner {
       final Set<PlanContext> optimized0 = optimizer.optimize(pair.p0);
       final Set<PlanContext> optimized1 = optimizer.optimize(pair.p1);
 
+      final List<String> optimizedSql0 = new ArrayList<>(optimized0.size());
+      final List<String> optimizedSql1 = new ArrayList<>(optimized1.size());
+      for (PlanContext optPlan0 : optimized0) {
+        final SqlNode sqlNode0 = translateAsAst(optPlan0, optPlan0.root(), false);
+        if (sqlNode0 != null) optimizedSql0.add(sqlNode0.toString());
+      }
+      for (PlanContext optPlan1 : optimized1) {
+        final SqlNode sqlNode1 = translateAsAst(optPlan1, optPlan1.root(), false);
+        if (sqlNode1 != null) optimizedSql1.add(sqlNode1.toString());
+      }
+
       System.out.printf("==== optimized of line %d ====\n", pair.lineNum);
       IOSupport.appendTo(
           out,
           writer -> {
-            for (PlanContext optPlan0 : optimized0) {
-              final SqlNode sqlNode0 = translateAsAst(optPlan0, optPlan0.root(), false);
-              if (sqlNode0 != null) {
-                writer.printf(
-                    "%s-%d\t%s\t%s\n",
-                    CALCITE_APP_NAME,
-                    pair.q0Id(),
-                    pair.q0,
-                    sqlNode0);
-              }
+            for (int i = 0, bound = optimizedSql0.size(); i < bound; i++) {
+              writer.printf(
+                  "%s-%d\t%s\t%s\n", CALCITE_APP_NAME, pair.q0Id(), i, optimizedSql0.get(i));
             }
           });
       IOSupport.appendTo(
           out,
           writer -> {
-            for (PlanContext optPlan1 : optimized1) {
-              final SqlNode sqlNode1 = translateAsAst(optPlan1, optPlan1.root(), false);
-              if (sqlNode1 != null) {
-                writer.printf(
-                    "%s-%d\t%s\t%s\n",
-                    CALCITE_APP_NAME,
-                    pair.q1Id(),
-                    pair.q1,
-                    sqlNode1);
-              }
+            for (int i = 0, bound = optimizedSql1.size(); i < bound; i++) {
+              writer.printf(
+                  "%s-%d\t%s\t%s\n", CALCITE_APP_NAME, pair.q1Id(), i, optimizedSql1.get(i));
             }
           });
 
@@ -149,10 +148,14 @@ public class RunCalciteCases implements Runner {
     private int q0Id() {
       return lineNum;
     }
+
     private int q1Id() {
       return lineNum + 1;
     }
-    private int pairId() {return lineNum + 1 >> 1; }
+
+    private int pairId() {
+      return lineNum + 1 >> 1;
+    }
   }
 
   private List<QueryPair> readPairs(List<String> lines) {

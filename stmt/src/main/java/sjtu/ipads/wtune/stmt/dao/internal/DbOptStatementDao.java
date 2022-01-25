@@ -1,8 +1,8 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,12 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DbOptStatementDao extends DbDao implements OptStatementDao {
-  private static final OptStatementDao INSTANCE = new DbOptStatementDao();
 
-  private DbOptStatementDao() {}
-
-  public static OptStatementDao instance() {
-    return INSTANCE;
+  public static OptStatementDao instance(OptimizerType kind) {
+    return new DbOptStatementDao(kind);
   }
 
   static final String KEY_APP_NAME = "app";
@@ -27,11 +24,26 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
       String.format(
           "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-  private static final String OPT_STMTS_TABLE =
-          App.doingSQLServerTest() ? "wtune_opt_stmts_syntax_norm" : "wtune_opt_stmts";
-  private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
-  private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
-  private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+
+  private String OPT_STMTS_TABLE;
+  private String FIND_ALL;
+  private String FIND_ONE;
+  private String FIND_BY_APP;
+
+  private DbOptStatementDao(OptimizerType kind) {
+    switch (kind) {
+      case WeTune -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune";
+      case Spes -> OPT_STMTS_TABLE = "wtune_opt_stmts_spes";
+      case Merge -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune_spes";
+    }
+    initQueryTemplates();
+  }
+
+  private void initQueryTemplates() {
+    FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
+    FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
+    FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+  }
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
