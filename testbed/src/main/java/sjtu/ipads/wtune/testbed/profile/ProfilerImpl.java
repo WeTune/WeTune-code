@@ -19,14 +19,18 @@ import static sjtu.ipads.wtune.sql.support.resolution.Params.PARAMS;
 import static sjtu.ipads.wtune.testbed.util.RandomHelper.uniformRandomInt;
 
 class ProfilerImpl implements Profiler {
+  private static final int DEFAULT_PROBING_TIMES = 5;
+
   private final Statement statement;
   private final ProfileConfig config;
   private final ParamsGen paramsGen;
   private final Executor executor;
   private final Metric metric;
 
+  private boolean probing;
   private boolean recording;
-  private long lastElapsed;
+  private long maxProbingElapsed;
+  private int probingTimes;
 
   private int warmupCycles;
   private int profileCycles;
@@ -47,6 +51,9 @@ class ProfilerImpl implements Profiler {
     this.metric = Metric.mk(config.profileCycles());
     this.warmupCycles = config.warmupCycles();
     this.profileCycles = config.profileCycles();
+
+    this.maxProbingElapsed = 0;
+    this.probingTimes = 0;
   }
 
   @Override
@@ -126,12 +133,18 @@ class ProfilerImpl implements Profiler {
 
     // probe run
     recording = false;
-    if (!run0(0)) return false;
+    probing = true;
+    for (int i = 0; i < DEFAULT_PROBING_TIMES; ++i) {
+      if (!run0(0)) return false;
+      probingTimes ++;
+      if (maxProbingElapsed > 1_000_000_000L) break;
+    }
 
     adjustNumCycles(); // for those long-running ones (e.g. > 5s), needn't to repeatedly run
 
     recording = false;
-    System.out.print(" warmup: ");
+    probing = false;
+    System.out.printf(" warmup %d cycles: ", warmupCycles);
     for (int i = 0, bound = warmupCycles; i < bound; ++i) {
       if (i % 5 == 0) System.out.print(" " + i);
       if (!run0(i)) {
@@ -140,7 +153,7 @@ class ProfilerImpl implements Profiler {
     }
 
     recording = true;
-    System.out.print(" profile: ");
+    System.out.printf(" profile %d cycles: ", profileCycles);
     for (int i = 0, bound = profileCycles; i < bound; ++i) {
       if (i % 5 == 0) System.out.print(" " + i);
       if (!run0(i)) {
@@ -185,29 +198,29 @@ class ProfilerImpl implements Profiler {
     if (elapsed < 0) return false;
     executor.endOne();
 
-    if (recording) metric.addRecord(elapsed);
+    if (probing) maxProbingElapsed = Math.max(maxProbingElapsed, elapsed);
 
-    lastElapsed = elapsed;
+    if (recording) metric.addRecord(elapsed);
 
     return true;
   }
 
   private void adjustNumCycles() {
-    if (lastElapsed >= 5_000_000_000L) { // 10 seconds
+    if (maxProbingElapsed >= 5_000_000_000L) { // 10 seconds
       warmupCycles = 0;
       profileCycles = 0;
-      metric.addRecord(lastElapsed);
+      metric.addRecord(maxProbingElapsed);
       return;
     }
 
-    final int cycleBudget = (int) (10_000_000_000L / lastElapsed);
+    final int cycleBudget = (int) (10_000_000_000L / maxProbingElapsed);
     if (cycleBudget <= profileCycles) {
       warmupCycles = 0;
       profileCycles = cycleBudget;
     } else {
       warmupCycles = Math.min(warmupCycles, cycleBudget - profileCycles);
     }
-    if (warmupCycles > 0) warmupCycles -= 1;
-    if (profileCycles > 0) profileCycles -= 1;
+    if (warmupCycles > 0) warmupCycles = Math.max(0, warmupCycles - probingTimes);
+    if (profileCycles > 0) profileCycles = Math.max(0, profileCycles - probingTimes);
   }
 }
