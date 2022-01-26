@@ -25,6 +25,7 @@ import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.testbed.profile.ProfileSupport.compare;
 import static sjtu.ipads.wtune.testbed.runner.GenerateTableData.BASE;
+import static sjtu.ipads.wtune.testbed.runner.GenerateTableData.ZIPF;
 import static sjtu.ipads.wtune.testbed.util.DataSourceSupport.*;
 
 public class Profile implements Runner {
@@ -33,6 +34,7 @@ public class Profile implements Runner {
   private Set<String> appNames;
   private String tag;
   private Set<String> stmts;
+  private String startStmt;
   private Path out;
   private boolean useSqlServer;
   private boolean dryRun;
@@ -42,6 +44,13 @@ public class Profile implements Runner {
   private boolean calciteProfile;
 
   private Blacklist blacklist;
+
+  private void initBlackList() {
+    blacklist = new Blacklist();
+    blacklist.block(ZIPF, "redmine-307");
+    blacklist.block(ZIPF, "redmine-808");
+    blacklist.block(ZIPF, "redmine-942");
+  }
 
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
@@ -54,6 +63,8 @@ public class Profile implements Runner {
 
     if (targetStmts != null) stmts = new HashSet<>(asList(targetStmts.split(",")));
 
+    startStmt = args.getOptional("start", String.class, null);
+
     tag = args.getOptional("tag", String.class, BASE);
     useSqlServer = args.getOptional("sqlserver", boolean.class, false);
     dryRun = args.getOptional("dry", boolean.class, false);
@@ -63,9 +74,11 @@ public class Profile implements Runner {
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg") + (calciteProfile ? "_cal" : "");
-    out = Path.of(dir).resolve("profile").resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+    out = Path.of(dir).resolve("profile").resolve(optimizedBy).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
     if (!Files.exists(out)) Files.createFile(out);
+
+    initBlackList();
   }
 
   @Override
@@ -73,10 +86,15 @@ public class Profile implements Runner {
     final List<String> failures = new ArrayList<>();
 
     final List<Statement> stmtPool = getStmtPool();
+    boolean started = (startStmt == null);
     for (Statement stmt : stmtPool) {
       if (stmts != null && !stmts.contains(stmt.toString())) continue;
       if (appNames != null && !appNames.contains(stmt.appName())) continue;
       if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
+      if (!started) {
+        if (startStmt.equals(stmt.toString())) started = true;
+        else continue;
+      }
 
       if (!runOne(stmt.original(), stmt.rewritten())) {
         LOG.log(WARNING, "failed to profile {0}", stmt.original());
@@ -115,30 +133,35 @@ public class Profile implements Runner {
 
     LOG.log(System.Logger.Level.INFO, "start profile {0}", original);
 
-    final Pair<Metric, Metric> comp = compare(original, rewritten, config);
-    if (comp == null) {
+    try{
+      final Pair<Metric, Metric> comp = compare(original, rewritten, config);
+      if (comp == null) {
+        LOG.log(ERROR, "failed to profile {0}", original);
+        return false;
+      }
+
+      final Metric metric0 = comp.getLeft(), metric1 = comp.getRight();
+      LOG.log(
+          System.Logger.Level.INFO,
+          "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
+          original,
+          metric0.atPercentile(0.5),
+          metric0.atPercentile(0.9),
+          metric0.atPercentile(0.99));
+      LOG.log(
+          System.Logger.Level.INFO,
+          "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
+          rewritten,
+          metric1.atPercentile(0.5),
+          metric1.atPercentile(0.9),
+          metric1.atPercentile(0.99));
+
+      logResult(original, tag, metric0, metric1);
+      return true;
+    } catch (Exception e) {
       LOG.log(ERROR, "failed to profile {0}", original);
       return false;
     }
-
-    final Metric metric0 = comp.getLeft(), metric1 = comp.getRight();
-    LOG.log(
-        System.Logger.Level.INFO,
-        "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
-        original,
-        metric0.atPercentile(0.5),
-        metric0.atPercentile(0.9),
-        metric0.atPercentile(0.99));
-    LOG.log(
-        System.Logger.Level.INFO,
-        "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
-        rewritten,
-        metric1.atPercentile(0.5),
-        metric1.atPercentile(0.9),
-        metric1.atPercentile(0.99));
-
-    logResult(original, tag, metric0, metric1);
-    return true;
   }
 
   private Properties getDbProps(App app) {

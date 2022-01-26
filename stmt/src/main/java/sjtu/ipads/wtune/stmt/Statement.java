@@ -29,6 +29,8 @@ public interface Statement {
 
   Statement rewritten();
 
+  Statement rewritten(OptimizerType type);
+
   Statement original();
 
   default App app() {

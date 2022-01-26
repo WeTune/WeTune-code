@@ -29,7 +29,6 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
           "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
   private static final String OPT_STMTS_TABLE = "calcite_opt_stmts";
-  private static final String EVAL_TABLE = "calcite_eval";
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
@@ -41,18 +40,13 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
           + " SET p50_improve_q0 = null, p90_improve_q0 = null, p99_improve_q0 = null,"
           + " p50_improve_q1 = null, p90_improve_q1 = null, p99_improve_q1 = null"
           + " WHERE TRUE";
-  private static final String CLEAN_EVAL_DATA =
-      "UPDATE " + EVAL_TABLE + " SET q0_improve = null, q1_improve = null" + " WHERE TRUE";
+
   private static final String UPDATE_OPT_DATA =
       "UPDATE "
           + OPT_STMTS_TABLE
           + " SET p50_improve_q0 = ?, p90_improve_q0 = ?, p99_improve_q0 = ?,"
           + " p50_improve_q1 = ?, p90_improve_q1 = ?, p99_improve_q1 = ?"
           + " WHERE opt_app_name = ? and opt_stmt_id = ?";
-  private static final String UPDATE_EVAL_DATA_Q0 =
-      "UPDATE " + EVAL_TABLE + " SET q0_improve = ? WHERE pair_id = ?";
-  private static final String UPDATE_EVAL_DATA_Q1 =
-      "UPDATE " + EVAL_TABLE + " SET q1_improve = ? WHERE pair_id = ?";
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
@@ -117,9 +111,7 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   public void cleanProfileData() {
     try {
       final PreparedStatement clean0 = prepare(CLEAN_OPT_DATA);
-      final PreparedStatement clean1 = prepare(CLEAN_EVAL_DATA);
       clean0.executeUpdate();
-      clean1.executeUpdate();
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }
@@ -139,24 +131,9 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
       insert0.setInt(8, stmtProfile.stmtId());
       insert0.executeUpdate();
 
-      final boolean isQ0 = isQ0(stmtProfile.stmtId());
-      final String updateEvalQuery = isQ0 ? UPDATE_EVAL_DATA_Q0 : UPDATE_EVAL_DATA_Q1;
-      final PreparedStatement insert1 = prepare(updateEvalQuery);
-      insert1.setFloat(1, isQ0 ? stmtProfile.p50ImproveQ0() : stmtProfile.p50ImproveQ1());
-      insert1.setInt(2, pairId(stmtProfile.stmtId()));
-      insert1.executeUpdate();
-
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }
   }
 
-  private boolean isQ0(int stmtId) {
-    // Q0 is the original version of calcite stmt pairs, their id: 1, 3, 5, ...
-    return stmtId % 2 == 1;
-  }
-
-  private int pairId(int stmtId) {
-    return stmtId + 1 >> 1;
-  }
 }

@@ -5,6 +5,7 @@ import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
 import sjtu.ipads.wtune.stmt.dao.StatementDao;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
 public class StatementImpl implements Statement {
   private final String appName;
@@ -64,10 +65,15 @@ public class StatementImpl implements Statement {
     return ast;
   }
 
-    @Override
+  @Override
   public Statement rewritten() {
+    return rewritten(OptimizerType.WeTune);
+  }
+
+  @Override
+  public Statement rewritten(OptimizerType type) {
     if (isRewritten) return this;
-    if (otherVersion == null) otherVersion = Statement.findOneRewritten(appName, stmtId);
+    if (otherVersion == null) otherVersion = Statement.findOneRewritten(appName, stmtId, type);
     return otherVersion;
   }
 
