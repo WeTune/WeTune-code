@@ -590,14 +590,16 @@ class ConstraintEnumerator {
     return INCOMPARABLE;
   }
 
-  private void rememberEq(List<Generalization> knownEqs, Generalization eq) {
-    knownEqs.removeIf(it -> compareVerificationResult(it, eq).greaterOrSame());
+  private boolean rememberEq(List<Generalization> knownEqs, Generalization eq) {
+    boolean relaxed = knownEqs.removeIf(it -> compareVerificationResult(it, eq).greaterOrSame());
     knownEqs.add(eq);
+    return relaxed;
   }
 
-  private void rememberNeq(List<Generalization> knownNeqs, Generalization neq) {
-    knownNeqs.removeIf(it -> compareVerificationResult(it, neq).lessOrSame());
+  private boolean rememberNeq(List<Generalization> knownNeqs, Generalization neq) {
+    boolean enhanced = knownNeqs.removeIf(it -> compareVerificationResult(it, neq).lessOrSame());
     knownNeqs.add(neq);
+    return enhanced;
   }
 
   private static boolean isKnownEq(List<Generalization> knownEqs, Generalization toCheck) {
@@ -1194,14 +1196,14 @@ class ConstraintEnumerator {
       metric.numProverInvocations.increment();
 
       if (metric.numEq.incrementIf(answer == EQ)) {
-        rememberEq(knownEqs, generalization);
+        metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization));
         metric.elapsedEq.add(elapsed);
         if (countHarmless) {
           timeoutConstraints.get().removeIf(it -> compareVerificationResult(it, generalization).greaterOrSame());
         }
 
       } else if (metric.numNeq.incrementIf(answer == NEQ)) {
-        rememberNeq(knownNeqs, generalization);
+        metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization));
         metric.elapsedNeq.add(elapsed);
       } else {
         metric.numUnknown.increment();

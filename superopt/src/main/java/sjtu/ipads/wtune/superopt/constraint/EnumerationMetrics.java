@@ -14,6 +14,8 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
   public final IntMetric numEq = new IntMetric("#Eq");
   public final IntMetric numNeq = new IntMetric("#Neq");
   public final IntMetric numUnknown = new IntMetric("#Unknown");
+  public final IntMetric numRelaxed = new IntMetric("#Relaxed");
+  public final IntMetric numReinforced = new IntMetric("#Reinforced");
   public final IntMetric numTrueUnknown = new IntMetric("#TrueUnknown");
   public final LongMetric elapsedEnum = new LongMetric("Enum(ms)");
   public final LongMetric elapsedEq = new LongMetric("Eq(ms)");
@@ -32,7 +34,9 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
           numEq,
           numNeq,
           numUnknown,
-              numTrueUnknown,
+          numRelaxed,
+          numReinforced,
+          numTrueUnknown,
           elapsedEnum,
           elapsedEq,
           elapsedNeq,

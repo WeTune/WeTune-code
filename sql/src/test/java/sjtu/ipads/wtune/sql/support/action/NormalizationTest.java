@@ -80,4 +80,14 @@ public class NormalizationTest {
     ctx.compact();
     assertEquals("SELECT 1 FROM `a` WHERE `a`.`i` = 1", sql.toString());
   }
+
+  @Test
+  void testNormalizeGrouping() {
+    final SqlNode sql = parseSql("Select a.i, a.j From a Group By a.i, a.j, 3, 2 + 3");
+    NormalizeGrouping.normalize(sql);
+    final SqlContext ctx = sql.context();
+    ctx.deleteDetached(ctx.root());
+    ctx.compact();
+    assertEquals("SELECT DISTINCT `a`.`i`, `a`.`j` FROM `a`", sql.toString());
+  }
 }

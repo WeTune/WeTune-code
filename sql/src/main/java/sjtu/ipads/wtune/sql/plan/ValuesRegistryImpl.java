@@ -148,7 +148,7 @@ class ValuesRegistryImpl implements ValuesRegistry {
     if (valueColumns.forRead().containsKey(value)) valueColumns.forWrite().remove(value);
     if (valueExprs.forRead().containsKey(value)) {
       final Expression expr = valueExprs.forWrite().remove(value);
-      if (expr != null) exprRefs.forWrite().remove(expr);
+      if (!valueExprs.forRead().containsValue(expr)) exprRefs.forWrite().remove(expr);
     }
   }
 

@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.sql.support.action;
 
 import sjtu.ipads.wtune.sql.SqlSupport;
-import sjtu.ipads.wtune.sql.ast.ExprKind;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.ast.SqlNodes;
 
@@ -27,59 +26,12 @@ class Clean {
       inlineTextConstant(node);
   }
 
-  private static boolean isConstant(SqlNode node) {
-    final ExprKind exprKind = node.$(Expr_Kind);
-    if (exprKind == null) return false;
-    switch (exprKind) {
-      case Literal:
-      case Symbol:
-        return true;
-      case Cast:
-        return isConstant(node.$(Cast_Expr));
-      case Collate:
-        return isConstant(node.$(Collate_Expr));
-      case Interval:
-        return isConstant(node.$(Interval_Expr));
-      case ConvertUsing:
-        return isConstant(node.$(ConvertUsing_Expr));
-      case Default:
-        return isConstant(node.$(Default_Col));
-      case Values:
-        return isConstant(node.$(Values_Expr));
-      case Unary:
-        return isConstant(node.$(Unary_Expr));
-      case Binary:
-        return isConstant(node.$(Binary_Left)) && isConstant(node.$(Binary_Right));
-      case Ternary:
-        return isConstant(node.$(Ternary_Left))
-            && isConstant(node.$(Ternary_Middle))
-            && isConstant(node.$(Ternary_Right));
-      case Tuple:
-        return all(node.$(Tuple_Exprs), Clean::isConstant);
-      case FuncCall:
-        return node.$(FuncCall_Name) != null
-            && !node.$(FuncCall_Name).$(Name2_1).contains("rand")
-            && all(node.$(FuncCall_Args), Clean::isConstant);
-      case Match:
-        return isConstant(node.$(Match_Expr)) && all(node.$(Match_Cols), Clean::isConstant);
-      case Case:
-        final SqlNode cond = node.$(Case_Cond);
-        final SqlNode else_ = node.$(Case_Else);
-        return (cond == null || isConstant(cond))
-            && (else_ == null || isConstant(else_))
-            && all(node.$(Case_Whens), Clean::isConstant);
-      case When:
-        return isConstant(node.$(When_Cond)) && isConstant(node.$(When_Expr));
-    }
-    return false;
-  }
-
   private static boolean isBoolConstant(SqlNode node) {
     final SqlNode parent = node.parent();
     return parent != null
         && (nodeEquals(node, parent.$(QuerySpec_Where))
             || Binary.isInstance(parent) && parent.$(Binary_Op).isLogic())
-        && isConstant(node);
+        && NormalizationSupport.isConstant(node);
   }
 
   private static void deleteBoolConstant(SqlNode node) {

@@ -80,6 +80,7 @@ public abstract class LogicSupport {
   }
 
   static boolean containsLatentSummation(UTerm term) {
+    // Sum + Sum or Sum * Sum
     final UKind kind = term.kind();
     if (kind == SUMMATION) return true;
     if (kind == SQUASH || kind == NEGATION || kind == ATOM) return false;

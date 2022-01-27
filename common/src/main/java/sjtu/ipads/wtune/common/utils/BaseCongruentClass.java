@@ -16,7 +16,7 @@ public class BaseCongruentClass<T> extends AbstractSet<T> implements CongruentCl
     this.elements = mkCollection();
   }
 
-  void merge(BaseCongruentClass<T> other) {
+  protected void merge(BaseCongruentClass<T> other) {
     assert other.elements != this.elements;
     assert other.congruence == this.congruence;
     // add all plan from `group`

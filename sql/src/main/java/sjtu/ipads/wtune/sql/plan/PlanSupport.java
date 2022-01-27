@@ -535,4 +535,8 @@ public abstract class PlanSupport {
     }
     return false;
   }
+
+  public static boolean isLiteralEq(PlanContext plan0, PlanContext plan1) {
+    return new PlanEq(plan0, plan1).isEqTree();
+  }
 }

@@ -6,10 +6,16 @@ import java.util.*;
 
 class MinCostSet implements Set<SubPlan> {
   private final Map<String, SubPlan> subPlans;
+  private final Set<String> evicted;
   private Complexity minCost;
 
   MinCostSet() {
     this.subPlans = new HashMap<>();
+    this.evicted = new HashSet<>();
+  }
+
+  public Set<String> evicted() {
+    return evicted;
   }
 
   @Override
@@ -20,6 +26,7 @@ class MinCostSet implements Set<SubPlan> {
     if (cmp > 0) return false;
     // the new plan is cheaper, abandon existing ones
     if (cmp < 0) {
+      evicted.addAll(subPlans.keySet());
       subPlans.clear();
       minCost = cost;
     }
