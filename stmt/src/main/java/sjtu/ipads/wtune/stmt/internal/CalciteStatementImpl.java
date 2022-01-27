@@ -3,11 +3,11 @@ package sjtu.ipads.wtune.stmt.internal;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.Statement;
-import sjtu.ipads.wtune.stmt.dao.OptStatementDao;
-import sjtu.ipads.wtune.stmt.dao.StatementDao;
+import sjtu.ipads.wtune.stmt.dao.CalciteOptStatementDao;
+import sjtu.ipads.wtune.stmt.dao.CalciteStatementDao;
 import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
-public class StatementImpl implements Statement {
+public class CalciteStatementImpl implements Statement {
   private final String appName;
   private final String rawSql;
   private final String stackTrace;
@@ -18,7 +18,9 @@ public class StatementImpl implements Statement {
   private boolean isRewritten;
   private Statement otherVersion;
 
-  protected StatementImpl(String appName, int stmtId, String rawSql, String stackTrace) {
+  private Statement calciteVersion;
+
+  protected CalciteStatementImpl(String appName, int stmtId, String rawSql, String stackTrace) {
     this.appName = appName;
     this.stmtId = stmtId;
     this.rawSql = rawSql;
@@ -30,8 +32,7 @@ public class StatementImpl implements Statement {
   }
 
   public static Statement build(String appName, int stmtId, String rawSql, String stackTrace) {
-    if ("broadleaf_tmp".equals(appName)) appName = "broadleaf";
-    return new StatementImpl(appName, stmtId, rawSql, stackTrace);
+    return new CalciteStatementImpl(appName, stmtId, rawSql, stackTrace);
   }
 
   @Override
@@ -73,19 +74,23 @@ public class StatementImpl implements Statement {
   @Override
   public Statement rewritten(OptimizerType type) {
     if (isRewritten) return this;
-    if (otherVersion == null) otherVersion = OptStatementDao.instance(type).findOne(appName, stmtId);
+    if (otherVersion == null)
+      otherVersion = CalciteOptStatementDao.instance().findOne(appName, stmtId);
     return otherVersion;
   }
 
   @Override
   public Statement original() {
     if (!isRewritten) return this;
-    if (otherVersion == null) otherVersion = StatementDao.instance().findOne(appName, stmtId);
+    if (otherVersion == null)
+      otherVersion = CalciteStatementDao.instance().findOne(appName, stmtId);
     return otherVersion;
   }
 
   @Override
   public Statement calciteVersion() {
+    if (calciteVersion == null)
+      calciteVersion = CalciteStatementDao.instance().findOneCalciteVersion(appName, stmtId);
     return null;
   }
 
@@ -103,4 +108,5 @@ public class StatementImpl implements Statement {
   public String toString() {
     return "%s-%d".formatted(appName(), stmtId());
   }
+
 }

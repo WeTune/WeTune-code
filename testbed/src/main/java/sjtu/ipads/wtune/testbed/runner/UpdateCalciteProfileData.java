@@ -26,30 +26,66 @@ public class UpdateCalciteProfileData implements Runner {
   public void run() throws Exception {
     final List<String> lines = Files.readAllLines(profileFile);
     ProfileUpdate.cleanCalcite();
-    for (int i = 0, bound = lines.size(); i < bound; i += 3) {
-      final String[] q0Profile = lines.get(i).split(";");
-      final String[] q1Profile = lines.get(i + 1).split(";");
-      final String[] optProfile = lines.get(i + 2).split(";");
+    for (int i = 0, bound = lines.size(); i < bound; i += 2) {
+      final String[] baseProfile = lines.get(i).split(";");
+      final String[] optProfile = lines.get(i + 1).split(";");
 
-      final String appName = optProfile[0];
-      final int appId = Integer.parseInt(optProfile[1]);
+      final String appName = baseProfile[0];
+      final String appId = baseProfile[1];
 
-      final int p50BaseQ0 = Integer.parseInt(q0Profile[3]);
-      final int p90BaseQ0 = Integer.parseInt(q0Profile[4]);
-      final int p99BaseQ0 = Integer.parseInt(q0Profile[5]);
-      final int p50BaseQ1 = Integer.parseInt(q1Profile[3]);
-      final int p90BaseQ1 = Integer.parseInt(q1Profile[4]);
-      final int p99BaseQ1 = Integer.parseInt(q1Profile[5]);
-      final int p50Opt = Integer.parseInt(optProfile[3]);
-      final int p90Opt = Integer.parseInt(optProfile[4]);
-      final int p99Opt = Integer.parseInt(optProfile[5]);
+      int p50Base = -1,
+          p90Base = -1,
+          p99Base = -1,
+          p50OptCalcite = -1,
+          p90OptCalcite = -1,
+          p99OptCalcite = -1,
+          p50OptWeTune = -1,
+          p90OptWeTune = -1,
+          p99OptWeTune = -1;
+
+      p50Base = Integer.parseInt(baseProfile[3]);
+      p90Base = Integer.parseInt(baseProfile[4]);
+      p99Base = Integer.parseInt(baseProfile[5]);
+
+      if (optProfile[2].split("_")[1].equals("cal")) {
+        p50OptCalcite = Integer.parseInt(optProfile[3]);
+        p90OptCalcite = Integer.parseInt(optProfile[4]);
+        p99OptCalcite = Integer.parseInt(optProfile[5]);
+      } else {
+        p50OptWeTune = Integer.parseInt(optProfile[3]);
+        p90OptWeTune = Integer.parseInt(optProfile[4]);
+        p99OptWeTune = Integer.parseInt(optProfile[5]);
+      }
+
+      if (i + 2 < bound) {
+        final String[] nextProfile = lines.get(i + 2).split(";");
+        if (nextProfile[0].equals(appName) && nextProfile[1].equals(appId)) {
+          final String[] optProfile1 = lines.get(i + 1).split(";");
+          if (optProfile1[2].split("_")[1].equals("cal")) {
+            p50OptCalcite = Integer.parseInt(optProfile1[3]);
+            p90OptCalcite = Integer.parseInt(optProfile1[4]);
+            p99OptCalcite = Integer.parseInt(optProfile1[5]);
+          } else {
+            p50OptWeTune = Integer.parseInt(optProfile1[3]);
+            p90OptWeTune = Integer.parseInt(optProfile1[4]);
+            p99OptWeTune = Integer.parseInt(optProfile1[5]);
+          }
+        }
+      }
 
       ProfileUpdate.updateCalciteProfile(
           CalciteStmtProfile.mk(
-              appName, appId,
-              p50BaseQ0, p90BaseQ0, p99BaseQ0,
-              p50BaseQ1, p90BaseQ1, p99BaseQ1,
-              p50Opt, p90Opt, p99Opt));
+              appName,
+              Integer.parseInt(appId),
+              p50Base,
+              p90Base,
+              p99Base,
+              p50OptCalcite,
+              p90OptCalcite,
+              p99OptCalcite,
+              p50OptWeTune,
+              p90OptWeTune,
+              p99OptWeTune));
     }
   }
 }

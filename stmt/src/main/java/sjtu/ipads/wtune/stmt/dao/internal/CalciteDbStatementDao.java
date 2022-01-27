@@ -1,12 +1,13 @@
 package sjtu.ipads.wtune.stmt.dao.internal;
 
-import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.stmt.CalciteStmtProfile;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.dao.CalciteStatementDao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,22 +24,49 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
 
+  private static final String CALCITE_STMTS_TABLE = "calcite_stmts";
   private static final String SELECT_ITEMS =
       String.format(
           "stmt_app_name AS %s, stmt_id AS %s, stmt_raw_sql AS %s ",
           KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
-  private static final String CALCITE_STMTS_TABLE = "calcite_stmts";
+  private static final String SELECT_CALCITE_ITEMS =
+      String.format(
+          "stmt_app_name AS %s, stmt_id AS %s, stmt_calcite_sql AS %s ",
+          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
+
+  // Find original statements
   private static final String FIND_ALL =
       "SELECT " + SELECT_ITEMS + "FROM " + CALCITE_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE stmt_app_name = ? AND stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE stmt_app_name = ?";
 
+  // Find calcite rewritten statements
+  private static final String FIND_ALL_CALCITE =
+      "SELECT "
+          + SELECT_CALCITE_ITEMS
+          + "FROM "
+          + CALCITE_STMTS_TABLE
+          + " WHERE stmt_calcite_sql IS NOT NULL ";
+  private static final String FIND_ONE_CALCITE =
+      FIND_ALL_CALCITE + "AND stmt_app_name = ? AND stmt_id = ?";
+  private static final String FIND_BY_APP_CALCITE = FIND_ALL_CALCITE + "AND stmt_app_name = ?";
+
+  // Update profile query
+  private static final String CLEAN_OPT_DATA =
+      "UPDATE "
+          + CALCITE_STMTS_TABLE
+          + " SET improve_calcite = null, improve_wetune = null"
+          + " WHERE TRUE";
+
+  private static final String UPDATE_OPT_DATA =
+      "UPDATE "
+          + CALCITE_STMTS_TABLE
+          + " SET improve_calcite = ?, improve_wetune = ?"
+          + " WHERE stmt_app_name = ? and stmt_id = ?";
+
   private static Statement toStatement(ResultSet rs) throws SQLException {
-    return Statement.mk(
-        rs.getString(KEY_APP_NAME),
-        rs.getInt(KEY_STMT_ID),
-        rs.getString(KEY_RAW_SQL),
-        null);
+    return Statement.mkCalcite(
+        rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
   }
 
   @Override
@@ -59,10 +87,20 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
   }
 
   @Override
-  public Pair<Statement, Statement> findPair(String appName, int stmtId){
-    final int anotherStmtId = isQ0(stmtId) ?  stmtId + 1 : stmtId - 1;
-    stmtId = Math.min(stmtId, anotherStmtId);
-    return Pair.of(findOne(appName, stmtId), findOne(appName, stmtId + 1));
+  public Statement findOneCalciteVersion(String appName, int stmtId) {
+    try {
+      final PreparedStatement ps = prepare(FIND_ONE_CALCITE);
+      ps.setString(1, appName);
+      ps.setInt(2, stmtId);
+
+      final ResultSet rs = ps.executeQuery();
+
+      if (rs.next()) return toStatement(rs);
+      else return null;
+
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
   }
 
   @Override
@@ -99,8 +137,35 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
     }
   }
 
-  private boolean isQ0(int stmtId) {
-    // Q0 is the original version of calcite stmt pairs, their id: 1, 3, 5, ...
-    return stmtId % 2 == 1;
+  @Override
+  public void cleanProfileData() {
+    try {
+      final PreparedStatement clean0 = prepare(CLEAN_OPT_DATA);
+      clean0.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void updateProfile(CalciteStmtProfile stmtProfile) {
+    try {
+      final PreparedStatement insert0 = prepare(UPDATE_OPT_DATA);
+      if (stmtProfile.p50ImproveCalcite() > 0)
+        insert0.setFloat(1, stmtProfile.p50ImproveCalcite());
+      else
+        insert0.setNull(1, Types.FLOAT);
+      if (stmtProfile.p50ImproveWeTune() > 0)
+        insert0.setFloat(2, stmtProfile.p50ImproveWeTune());
+      else
+        insert0.setNull(2, Types.FLOAT);
+
+      insert0.setString(3, stmtProfile.appName());
+      insert0.setInt(4, stmtProfile.stmtId());
+      insert0.executeUpdate();
+
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
   }
 }

@@ -41,7 +41,6 @@ public class Profile implements Runner {
 
   // Determine the optimized statement pool
   private String optimizedBy;
-  private boolean calciteProfile;
 
   private Blacklist blacklist;
 
@@ -56,7 +55,7 @@ public class Profile implements Runner {
     final Args args = Args.parse(argStrings, 1);
     final String targetApps = args.getOptional("app", String.class, "all");
     final String targetStmts = args.getOptional("stmt", String.class, null);
-    final String dir = args.getOptional("dir", String.class, "wtune_data");
+    final String dir = args.getOptional("dir", String.class, "profile");
 
     if ("all".equals(targetApps)) this.appNames = SetSupport.map(App.all(), App::name);
     else this.appNames = new HashSet<>(asList(targetApps.split(",")));
@@ -70,11 +69,10 @@ public class Profile implements Runner {
     dryRun = args.getOptional("dry", boolean.class, false);
 
     optimizedBy = args.getOptional("optimizer", String.class, "wetune");
-    calciteProfile = appNames.contains("calcite_test");
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
-    final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg") + (calciteProfile ? "_cal" : "");
-    out = Path.of(dir).resolve("profile").resolve(optimizedBy).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+    final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");
+    out = Runner.dataDir().resolve(dir).resolve(optimizedBy).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
     if (!Files.exists(out)) Files.createFile(out);
 
@@ -106,8 +104,6 @@ public class Profile implements Runner {
   }
 
   private List<Statement> getStmtPool() {
-    if (calciteProfile) return Statement.findAllRewrittenOfCalcite();
-
     final OptimizerType type;
     switch (optimizedBy) {
       case "wetune" -> type = OptimizerType.WeTune;

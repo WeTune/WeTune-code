@@ -1,15 +1,14 @@
 package sjtu.ipads.wtune.stmt.support;
 
 import sjtu.ipads.wtune.stmt.CalciteStmtProfile;
-import sjtu.ipads.wtune.stmt.StmtProfile;
-import sjtu.ipads.wtune.stmt.dao.CalciteOptStatementDao;
+import sjtu.ipads.wtune.stmt.dao.CalciteStatementDao;
 
 public interface ProfileUpdate {
   static void cleanCalcite() {
-    CalciteOptStatementDao.instance().cleanProfileData();
+    CalciteStatementDao.instance().cleanProfileData();
   }
 
   static void updateCalciteProfile(CalciteStmtProfile stmtProfile) {
-    CalciteOptStatementDao.instance().updateProfile(stmtProfile);
+    CalciteStatementDao.instance().updateProfile(stmtProfile);
   }
 }

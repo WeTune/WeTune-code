@@ -3,6 +3,7 @@ package sjtu.ipads.wtune.stmt;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.stmt.dao.*;
+import sjtu.ipads.wtune.stmt.internal.CalciteStatementImpl;
 import sjtu.ipads.wtune.stmt.internal.StatementImpl;
 import sjtu.ipads.wtune.stmt.support.OptimizerType;
 
@@ -33,6 +34,8 @@ public interface Statement {
 
   Statement original();
 
+  Statement calciteVersion();
+
   default App app() {
     return App.of(appName());
   }
@@ -45,16 +48,20 @@ public interface Statement {
     return StatementImpl.build(appName, stmtId, rawSql, stackTrace);
   }
 
+  static Statement mkCalcite(String appName, String rawSql, String stackTrace) {
+    return CalciteStatementImpl.build(appName, rawSql, stackTrace);
+  }
+
+  static Statement mkCalcite(String appName, int stmtId, String rawSql, String stackTrace) {
+    return CalciteStatementImpl.build(appName, stmtId, rawSql, stackTrace);
+  }
+
   // Find original statement(s)
   static Statement findOne(String appName, int stmtId) {
-    if (appName.equals("calcite_test"))
-      return CalciteStatementDao.instance().findOne(appName, stmtId);
     return StatementDao.instance().findOne(appName, stmtId);
   }
 
   static List<Statement> findByApp(String appName) {
-    if (appName.equals("calcite_test"))
-      return CalciteStatementDao.instance().findByApp(appName);
     return StatementDao.instance().findByApp(appName);
   }
 
@@ -67,8 +74,6 @@ public interface Statement {
     return findOneRewritten(appName, stmtId, WeTune);
   }
   static Statement findOneRewritten(String appName, int stmtId, OptimizerType type) {
-    if (appName.equals("calcite_test"))
-      return CalciteOptStatementDao.instance().findOne(appName, stmtId);
     return OptStatementDao.instance(type).findOne(appName, stmtId);
   }
 
@@ -76,8 +81,6 @@ public interface Statement {
     return findRewrittenByApp(appName, WeTune);
   }
   static List<Statement> findRewrittenByApp(String appName, OptimizerType type) {
-    if (appName.equals("calcite_test"))
-      return CalciteOptStatementDao.instance().findByApp(appName);
     return OptStatementDao.instance(type).findByApp(appName);
   }
 
@@ -88,16 +91,20 @@ public interface Statement {
     return OptStatementDao.instance(type).findAll();
   }
 
-  // Find-alls in calcite, and other interface of calcite
-  static List<Statement> findAllOfCalcite() {
+  // Calcite statements
+  static Statement findOneCalcite(String appName, int stmtId) {
+    return CalciteStatementDao.instance().findOne(appName, stmtId);
+  }
+
+  static List<Statement> findAllCalcite() {
     return CalciteStatementDao.instance().findAll();
   }
 
-  static List<Statement> findAllRewrittenOfCalcite() {
-    return CalciteOptStatementDao.instance().findAll();
+  static Statement findOneRewrittenCalcite(String appName, int stmtId) {
+    return CalciteOptStatementDao.instance().findOne(appName, stmtId);
   }
 
-  static Pair<Statement, Statement> findOriginalPairOfCalcite(String appName, int stmtId) {
-    return CalciteStatementDao.instance().findPair(appName, stmtId);
+  static List<Statement> findAllRewrittenCalcite() {
+    return CalciteOptStatementDao.instance().findAll();
   }
 }

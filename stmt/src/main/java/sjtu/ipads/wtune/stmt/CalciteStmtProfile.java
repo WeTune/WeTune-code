@@ -7,41 +7,41 @@ public interface CalciteStmtProfile {
 
   int stmtId();
 
-  float p50ImproveQ0();
+  float p50ImproveCalcite();
 
-  float p90ImproveQ0();
+  float p90ImproveCalcite();
 
-  float p99ImproveQ0();
+  float p99ImproveCalcite();
 
-  float p50ImproveQ1();
+  float p50ImproveWeTune();
 
-  float p90ImproveQ1();
+  float p90ImproveWeTune();
 
-  float p99ImproveQ1();
+  float p99ImproveWeTune();
 
   static CalciteStmtProfile mk(
       String appName,
       int stmtId,
-      int p50BaseLatencyQ0,
-      int p90BaseLatencyQ0,
-      int p99BaseLatencyQ0,
-      int p50BaseLatencyQ1,
-      int p90BaseLatencyQ1,
-      int p99BaseLatencyQ1,
-      int p50OptLatency,
-      int p90OptLatency,
-      int p99OptLatency) {
+      int p50Base,
+      int p90Base,
+      int p99Base,
+      int p50OptCalcite,
+      int p90OptCalcite,
+      int p99OptCalcite,
+      int p50OptWeTune,
+      int p90OptWeTune,
+      int p99OptWeTune) {
     return new CalCiteStmtProfileImpl(
         appName,
         stmtId,
-        p50BaseLatencyQ0,
-        p90BaseLatencyQ0,
-        p99BaseLatencyQ0,
-        p50BaseLatencyQ1,
-        p90BaseLatencyQ1,
-        p99BaseLatencyQ1,
-        p50OptLatency,
-        p90OptLatency,
-        p99OptLatency);
+        p50Base,
+        p90Base,
+        p99Base,
+        p50OptCalcite,
+        p90OptCalcite,
+        p99OptCalcite,
+        p50OptWeTune,
+        p90OptWeTune,
+        p99OptWeTune);
   }
 }

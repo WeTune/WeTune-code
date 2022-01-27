@@ -204,7 +204,11 @@ public class PickMinCost implements Runner {
     if (verbosity >= 3) System.out.println("Opt No." + idx + " pick for " + group);
     if (verbosity >= 4) {
       System.out.println("Baseline ==>");
-      System.out.println(Statement.findOne(group.appName, group.stmtId).ast().toString(false));
+      final Statement baseLineStmt =
+          group.appName.equals("calcite_test")
+              ? Statement.findOneCalcite(group.appName, group.stmtId)
+              : Statement.findOne(group.appName, group.stmtId);
+      System.out.println(baseLineStmt.ast().toString(false));
       System.out.println("Optimized ==>");
       System.out.println(
           parseSql(App.of(group.appName).dbType(), group.sqls.get(idx)).toString(false));
@@ -223,7 +227,10 @@ public class PickMinCost implements Runner {
   }
 
   private Profiler profile(OptimizedStatements group) {
-    final Statement stmt = Statement.findOne(group.appName, group.stmtId);
+    final Statement stmt =
+        group.appName.equals("calcite_test")
+            ? Statement.findOneCalcite(group.appName, group.stmtId)
+            : Statement.findOne(group.appName, group.stmtId);
     final Schema schema = stmt.app().schema("base");
     final SqlNode ast = stmt.ast();
     ast.context().setSchema(schema);

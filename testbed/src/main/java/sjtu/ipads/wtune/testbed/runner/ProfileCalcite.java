@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
-import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Arrays.asList;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
@@ -38,7 +37,7 @@ public class ProfileCalcite implements Runner {
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     final String targetStmts = args.getOptional("stmt", String.class, null);
-    final String dir = args.getOptional("dir", String.class, "wtune_data");
+    final String dir = args.getOptional("dir", String.class, "profile_calcite");
 
     if (targetStmts != null) stmts = new HashSet<>(asList(targetStmts.split(",")));
 
@@ -48,79 +47,73 @@ public class ProfileCalcite implements Runner {
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = (useSqlServer ? "ss" : "pg") + "_cal";
-    out =
-        Path.of(dir)
-            .resolve("profile_calcite")
-            .resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+    out = Runner.dataDir().resolve(dir).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
     if (!Files.exists(out)) Files.createFile(out);
   }
 
   @Override
   public void run() throws Exception {
-    final List<String> failures = new ArrayList<>();
+    final List<String> failuresCalcite = new ArrayList<>();
+    final List<String> failuresWeTune = new ArrayList<>();
 
-    final List<Statement> stmtPool = Statement.findAllRewrittenOfCalcite();
-    for (Statement stmt : stmtPool) {
-      if (stmts != null && !stmts.contains(stmt.toString())) continue;
-      if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
+    final List<Statement> stmtPool = Statement.findAllCalcite();
+    for (Statement original : stmtPool) {
+      if (stmts != null && !stmts.contains(original.toString())) continue;
+      if (blacklist != null && blacklist.isBlocked(tag, original)) continue;
 
-      Pair<Statement, Statement> originalPair =
-          Statement.findOriginalPairOfCalcite(stmt.appName(), stmt.stmtId());
-      if (!runTriple(originalPair.getLeft(), originalPair.getRight(), stmt.rewritten())) {
-        LOG.log(WARNING, "failed to profile {0}", stmt);
-        failures.add(stmt.toString());
+      final Statement rewrittenCalcite = original.calciteVersion();
+      final Statement rewrittenWeTune = original.rewritten();
+      if (rewrittenCalcite != null && !runPair(original, rewrittenCalcite, true)) {
+        LOG.log(WARNING, "failed to profile {0} with its calcite rewritten version", original);
+        failuresCalcite.add(original.toString());
+      }
+      if (rewrittenWeTune != null && !runPair(original, rewrittenWeTune, false)) {
+        LOG.log(WARNING, "failed to profile {0} with its wetune rewritten version", original);
+        failuresWeTune.add(original.toString());
       }
     }
-
-    LOG.log(WARNING, "failed to profile {0}", failures);
+    LOG.log(WARNING, "failed to profile {0} with its calcite rewritten version", failuresCalcite);
+    LOG.log(WARNING, "failed to profile {0} with its wetune rewritten version", failuresWeTune);
   }
 
-  private boolean runTriple(Statement original0, Statement original1, Statement rewritten) {
+  private boolean runPair(Statement original, Statement rewritten, boolean calciteRewrite) {
     final PopulationConfig popConfig = GenerateTableData.mkConfig(tag);
-    final ProfileConfig config0 = makeProfileConfig(popConfig, original0);
-    final ProfileConfig config1 = makeProfileConfig(popConfig, original1);
+    final ProfileConfig config = makeProfileConfig(popConfig, original);
 
-    LOG.log(System.Logger.Level.INFO, "start profile {0}", rewritten);
-
-    final Pair<Metric, Metric> comp0 = compare(original0, rewritten, config0);
-    final Pair<Metric, Metric> comp1 = compare(original1, rewritten, config1);
-    if (comp0 == null) {
-      LOG.log(ERROR, "failed to profile {0}", original0);
-      return false;
-    }
-    if (comp1 == null) {
-      LOG.log(ERROR, "failed to profile {0}", original1);
-      return false;
-    }
-
-    final Metric metricOriginal0 = comp0.getLeft(), metricRewritten = comp0.getRight();
-    final Metric metricOriginal1 = comp1.getLeft();
     LOG.log(
         System.Logger.Level.INFO,
-        "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
-        original0,
-        metricOriginal0.atPercentile(0.5),
-        metricOriginal0.atPercentile(0.9),
-        metricOriginal0.atPercentile(0.99));
-    LOG.log(
-        System.Logger.Level.INFO,
-        "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
-        original1,
-        metricOriginal1.atPercentile(0.5),
-        metricOriginal1.atPercentile(0.9),
-        metricOriginal1.atPercentile(0.99));
-    LOG.log(
-        System.Logger.Level.INFO,
-        "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
+        "start profile {0} {1}",
         rewritten,
-        metricRewritten.atPercentile(0.5),
-        metricRewritten.atPercentile(0.9),
-        metricRewritten.atPercentile(0.99));
+        calciteRewrite ? "of calcite version" : "");
 
-    logResult(
-        original0, original1, rewritten, tag, metricOriginal0, metricOriginal1, metricRewritten);
-    return true;
+    try {
+      final Pair<Metric, Metric> comp = compare(original, rewritten, config);
+      if (comp == null) {
+        return false;
+      }
+
+      final Metric metricOriginal = comp.getLeft(), metricRewritten = comp.getRight();
+      LOG.log(
+          System.Logger.Level.INFO,
+          "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
+          original,
+          metricOriginal.atPercentile(0.5),
+          metricOriginal.atPercentile(0.9),
+          metricOriginal.atPercentile(0.99));
+      LOG.log(
+          System.Logger.Level.INFO,
+          "{0} {1,number,#}\t{2,number,#}\t{3,number,#}",
+          rewritten,
+          metricRewritten.atPercentile(0.5),
+          metricRewritten.atPercentile(0.9),
+          metricRewritten.atPercentile(0.99));
+
+      logResult(original, tag, calciteRewrite, metricOriginal, metricRewritten);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private ProfileConfig makeProfileConfig(PopulationConfig popConfig, Statement stmt) {
@@ -142,40 +135,26 @@ public class ProfileCalcite implements Runner {
   }
 
   private void logResult(
-      Statement original0,
-      Statement original1,
-      Statement rewritten,
-      String tag,
-      Metric metric0,
-      Metric metric1,
-      Metric metric2) {
+      Statement stmt, String tag, boolean calciteVersion, Metric metric0, Metric metric1) {
     IOSupport.appendTo(
         out,
         writer -> {
           writer.printf(
               "%s;%d;%s;%d;%d;%d\n",
-              original0.appName(),
-              original0.stmtId(),
+              stmt.appName(),
+              stmt.stmtId(),
               tag + "_base",
               metric0.atPercentile(0.5),
               metric0.atPercentile(0.9),
               metric0.atPercentile(0.99));
           writer.printf(
               "%s;%d;%s;%d;%d;%d\n",
-              original1.appName(),
-              original1.stmtId(),
-              tag + "_base",
+              stmt.appName(),
+              stmt.stmtId(),
+              tag + (calciteVersion ? "_cal" : "_opt"),
               metric1.atPercentile(0.5),
               metric1.atPercentile(0.9),
               metric1.atPercentile(0.99));
-          writer.printf(
-              "%s;%d;%s;%d;%d;%d\n",
-              rewritten.appName(),
-              rewritten.stmtId(),
-              tag + "_opt",
-              metric2.atPercentile(0.5),
-              metric2.atPercentile(0.9),
-              metric2.atPercentile(0.99));
         });
   }
 
