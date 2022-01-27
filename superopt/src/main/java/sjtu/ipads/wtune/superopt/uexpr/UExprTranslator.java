@@ -223,7 +223,7 @@ class UExprTranslator {
       //  We have to further trace the source of s1.
       while ((index = varSchema.indexOf(restriction)) < 0) {
         source = rule.constraints().sourceOf(source);
-        assert source != null : "bug in instantiation enum!";
+        assert source != null : "wrong constraint!";
         restriction = mkSchema(source).components[0];
       }
 

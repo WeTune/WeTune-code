@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.PartialOrder;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
@@ -8,6 +9,7 @@ import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.util.*;
 
+import static java.lang.System.currentTimeMillis;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
@@ -119,10 +121,11 @@ class ConstraintEnumerator {
   private final List<Generalization> knownEqs, knownNeqs;
   private final EnumerationStage[] stages;
   private final int tweak;
-  private boolean uncertain;
 
   private SymbolNaming naming;
   private EnumerationMetrics metric;
+
+  private final Lazy<List<Generalization>> timeoutConstraints;
 
   ConstraintEnumerator(ConstraintsIndex I, long timeout, int tweak) {
     this.I = I;
@@ -130,9 +133,9 @@ class ConstraintEnumerator {
     this.enabled = new BitSet(I.size());
     this.knownEqs = new LinkedList<>();
     this.knownNeqs = new LinkedList<>();
-    this.uncertain = false;
     this.tweak = tweak;
     this.stages = mkStages();
+    this.timeoutConstraints = Lazy.mk(LinkedList::new);
     currentSet(0, I.size() - 1, false);
   }
 
@@ -144,7 +147,9 @@ class ConstraintEnumerator {
         stages[0].enumerate();
 
         metric.numTotalConstraintSets.set(I.size());
-        if (uncertain) metric.uncertain.increment();
+        if (timeoutConstraints.isInitialized()) {
+          metric.numTrueUnknown.set(timeoutConstraints.get().size());
+        }
 
         return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
       }
@@ -158,6 +163,7 @@ class ConstraintEnumerator {
     final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
     final boolean disable2 = (tweak & ENUM_FLAG_DISABLE_BREAKER_2) == ENUM_FLAG_DISABLE_BREAKER_2;
     final boolean dryRun = disable0 || disable1 || disable2 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
+    final boolean countHarmlessTimeout = (tweak & ENUM_FLAG_COUNT_HARMLESS_TIMEOUT) != 0;
     final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
     final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
 
@@ -173,14 +179,13 @@ class ConstraintEnumerator {
     final EnumerationStage mismatchedProjSchemaBreaker = new InfeasibleSchemaBreaker(disable1);
     final EnumerationStage predEqEnum = new PartitionEnumerator(PRED, dryRun);
     final EnumerationStage funcEqEnum = new ForceSymbolEqEnumerator(FUNC);
-    final EnumerationStage unionMismatchedOutputBreaker =
-        new UnionMismatchedOutputBreaker(disable0);
+    final EnumerationStage unionBreaker = new UnionMismatchedOutputBreaker(disable0);
     final EnumerationStage uniqueEnum = new BinaryEnumerator(Unique);
     final EnumerationStage notNullEnum = new BinaryEnumerator(NotNull);
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
     final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable2);
-    final EnumerationStage timeout = new TimeoutBreaker(System.currentTimeMillis(), this.timeout);
-    final VerificationCache cache = new VerificationCache(dryRun, echo);
+    final EnumerationStage timeout = new TimeoutBreaker(currentTimeMillis(), this.timeout);
+    final VerificationCache cache = new VerificationCache(dryRun, echo, countHarmlessTimeout);
     final EnumerationStage verifier = new Verifier(useSpes);
 
     final EnumerationStage[] stages;
@@ -220,7 +225,7 @@ class ConstraintEnumerator {
             // mismatchedProjSchemaBreaker,
             predEqEnum,
             funcEqEnum,
-            unionMismatchedOutputBreaker,
+            unionBreaker,
             // uniqueEnum,
             // mismatchedSummationBreaker,
             // notNullEnum,
@@ -1148,7 +1153,7 @@ class ConstraintEnumerator {
 
     @Override
     public int enumerate() {
-      final long now = System.currentTimeMillis();
+      final long now = currentTimeMillis();
       if (now - start > timeout) return TIMEOUT;
       else return nextStage().enumerate();
     }
@@ -1160,11 +1165,12 @@ class ConstraintEnumerator {
   }
 
   private class VerificationCache extends AbstractEnumerationStage {
-    private final boolean dryRun, echo;
+    private final boolean dryRun, echo, countHarmless;
 
-    private VerificationCache(boolean dryRun, boolean echo) {
+    private VerificationCache(boolean dryRun, boolean echo, boolean countHarmless) {
       this.dryRun = dryRun;
       this.echo = echo;
+      this.countHarmless = countHarmless;
     }
 
     @Override
@@ -1181,21 +1187,28 @@ class ConstraintEnumerator {
 
       if (echo && naming != null) System.out.println(I.toString(naming, enabled));
 
-      final long begin = System.currentTimeMillis();
+      final long begin = currentTimeMillis();
       final int answer = nextStage().enumerate();
-      final long elapsed = System.currentTimeMillis() - begin;
+      final long elapsed = currentTimeMillis() - begin;
 
       metric.numProverInvocations.increment();
 
       if (metric.numEq.incrementIf(answer == EQ)) {
         rememberEq(knownEqs, generalization);
         metric.elapsedEq.add(elapsed);
+        if (countHarmless) {
+          timeoutConstraints.get().removeIf(it -> compareVerificationResult(it, generalization).greaterOrSame());
+        }
+
       } else if (metric.numNeq.incrementIf(answer == NEQ)) {
         rememberNeq(knownNeqs, generalization);
         metric.elapsedNeq.add(elapsed);
       } else {
         metric.numUnknown.increment();
         metric.elapsedUnknown.add(elapsed);
+        if (countHarmless) {
+          timeoutConstraints.get().add(generalization);
+        }
       }
 
       return answer;
@@ -1218,11 +1231,9 @@ class ConstraintEnumerator {
     public int enumerate() {
       final Substitution rule = I.mkRule(enabled);
       if (!useSpes) {
-        uncertain = true;
         final UExprTranslationResult uExprs = translateToUExpr(rule);
         final int answer = LogicSupport.proveEq(uExprs);
         assert answer != FAST_REJECTED; // fast rejection should be checked early.
-        if (answer == EQ || answer == NEQ) uncertain = false;
         return answer;
       } else {
         return LogicSupport.proveEqBySpes(rule);

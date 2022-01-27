@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Integer.parseInt;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_COUNT_HARMLESS_TIMEOUT;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 public class EnumRule implements Runner {
@@ -252,7 +253,8 @@ public class EnumRule implements Runner {
     }
 
     try {
-      final List<Substitution> rules = enumConstraints(f0, f1, timeout);
+      final List<Substitution> rules =
+          enumConstraints(f0, f1, timeout, ENUM_FLAG_COUNT_HARMLESS_TIMEOUT, null);
       if (rules == null) {
         numSkipped.incrementAndGet();
         return;

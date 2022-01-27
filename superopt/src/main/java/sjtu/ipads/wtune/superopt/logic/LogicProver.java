@@ -5,6 +5,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.MapSupport;
 import sjtu.ipads.wtune.superopt.constraint.Constraint;
+import sjtu.ipads.wtune.superopt.fragment.Proj;
 import sjtu.ipads.wtune.superopt.fragment.Symbols;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.uexpr.*;
@@ -85,12 +86,16 @@ class LogicProver {
 
     for (Constraint c : rule.constraints().ofKind(Reference)) {
       final String t0 = uExprs.tableNameOf(c.symbols()[0]);
-      final String a0 = uExprs.tableNameOf(c.symbols()[1]);
+      final String a0 = uExprs.attrsNameOf(c.symbols()[1]);
       final String t1 = uExprs.tableNameOf(c.symbols()[2]);
-      final String a1 = uExprs.tableNameOf(c.symbols()[3]);
+      final String a1 = uExprs.attrsNameOf(c.symbols()[3]);
       if (enforced.add(t0 + a0 + t1 + a1)) trReferences(c);
     }
     enforced.clear();
+
+    for (Constraint c : rule.constraints().ofKind(AttrsSub)) {
+      trAttrSub(c);
+    }
 
     trOutVarEq(uExprs.sourceOutVar(), uExprs.targetOutVar());
   }
@@ -113,6 +118,29 @@ class LogicProver {
     final BoolExpr tupleIsNull = z3.mkEq(tuple, nullTuple());
     final BoolExpr body = z3.mkImplies(tupleIsNull, projIsNull);
     final BoolExpr assertion = mkForall(vars, body);
+    constraints.add(assertion);
+  }
+
+  private void trAttrSub(Constraint c) {
+    if (c.symbols()[1].kind() == TABLE) return;
+
+    final int schema = getSchema(c.symbols()[1]);
+    final var sourceAttrs = ((Proj) uExprs.rule()._0().symbols().ownerOf(c.symbols()[1])).attrs();
+
+    final FuncDecl outerProj = projFunc(uExprs.attrsDescOf(c.symbols()[0]).name().toString());
+    final FuncDecl innerProj = projFunc(uExprs.attrsDescOf(sourceAttrs).name().toString());
+    final IntNum outerSchema = z3.mkInt(schema);
+    final IntExpr innerSchema = z3.mkIntConst("s");
+
+    final Expr tuple = z3.mkConst("x", tupleSort());
+    final Expr[] vars = {tuple, innerSchema};
+    final BoolExpr assertion =
+        mkForall(
+            vars,
+            z3.mkEq(
+                outerProj.apply(outerSchema, innerProj.apply(innerSchema, tuple)),
+                outerProj.apply(innerSchema, tuple)));
+
     constraints.add(assertion);
   }
 
@@ -226,12 +254,12 @@ class LogicProver {
      complex cases: Sum{x}(X) = Sum{x,y}(Y * Z), where Z is the term using y.
      Need to apply Theorem 5.2.
 
-     The target is to proveP is valid:
-     P := (X != Y => X = 0 /\ Sum{y}(Z(y)) = 0)     | Q0
-          /\ (X = Y => X = 0 \/ Sum{y}(Z(y) = 1))   | Q1
+     The target is to prove P is valid:
+     P := (X != Y => (X = 0 /\ Sum{y}(Z(y)) = 0))     | Q0
+          /\ (X = Y => (X = 0 \/ Sum{y}(Z(y) = 1)))   | Q1
      We need to prove Q0 and Q1 are both valid.
 
-     To prove Q0's validity, we just need to prove
+     To prove Q0's validity, we just need to prove the validity of
        (X != Y => X = 0) /\ (X != Y /\ X = 0 /\ Y != 0 => Sum{y}(Z(y)) = 0)
      so we prove
        q0: X != Y /\ X != 0 is unsat
@@ -266,11 +294,11 @@ class LogicProver {
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
     // q1: X != Y /\ X = 0 /\ Y != 0 /\ Z != 0 (X != Y can be collapsed)
-    answer = check(solver, z3.mkNot(boolX), boolY, boolZ);
+    final Expr[] ys = map(diffVars, this::trVar, Expr.class);
+    answer = check(solver, z3.mkNot(boolX), boolY, mkExists(ys, boolZ));
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
     // q2: X = Y /\ X != 0 /\ \forall y. Z(y) = 0
-    final Expr[] ys = map(diffVars, this::trVar, Expr.class);
     final BoolExpr eqZ0 = mkForall(ys, z3.mkNot(boolZ));
     answer = check(solver, eqXY, boolX, eqZ0);
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
@@ -280,7 +308,7 @@ class LogicProver {
     answer = check(solver, eqXY, boolX, z3.mkGt(valueZ, one()));
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
-    // q4: X = Y /\ Z(y) != 0 /\ Z(y') != 0 /\ y != y'
+    // q4: X = Y /\ X != 0 /\ Z(y) != 0 /\ Z(y') != 0 /\ y != y'
     final FuncDecl funcY = z3.mkFuncDecl("Z", map(ys, Expr::getSort, Sort.class), z3.getBoolSort());
     solver.add(mkForall(ys, z3.mkEq(funcY.apply(ys), boolZ)));
     final Expr[] ys1 = map(diffVars, it -> trVar(UVar.mkBase(UName.mk(it + "_"))), Expr.class);
