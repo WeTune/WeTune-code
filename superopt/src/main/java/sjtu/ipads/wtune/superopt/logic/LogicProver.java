@@ -263,7 +263,7 @@ class LogicProver {
        (X != Y => X = 0) /\ (X != Y /\ X = 0 /\ Y != 0 => Sum{y}(Z(y)) = 0)
      so we prove
        q0: X != Y /\ X != 0 is unsat
-       q1: X != Y /\ X = 0 /\ Sum{y}(Z(y)) != 0 is unsat
+       q1: X != Y /\ X = 0 /\ Y != 0 /\ Sum{y}(Z(y)) != 0 is unsat
 
      To prove Q1's validity, we need to prove
           X = Y /\ X != 0 /\ Sum{y}(Z(y)) != 1 is unsat
@@ -293,9 +293,11 @@ class LogicProver {
     answer = check(solver, neqXY, boolX);
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
-    // q1: X != Y /\ X = 0 /\ Y != 0 /\ Z != 0 (X != Y can be collapsed)
+    // q1: X != Y /\ X = 0 /\ Y != 0 /\ (\exists y. Z(y) != 0) (
+    // where X != Y can be collapsed,
+    // \exists y. Z(y) can be simplified as Z != 0 (existential quantifier elimination)
     final Expr[] ys = map(diffVars, this::trVar, Expr.class);
-    answer = check(solver, z3.mkNot(boolX), boolY, mkExists(ys, boolZ));
+    answer = check(solver, z3.mkNot(boolX), boolY, boolZ);
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
     // q2: X = Y /\ X != 0 /\ \forall y. Z(y) = 0
