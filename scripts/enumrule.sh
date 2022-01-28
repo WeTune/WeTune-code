@@ -2,7 +2,7 @@
 
 positional_args=()
 parallelism=32
-timeout=600000
+timeout=60000
 verbose=0
 
 while [[ $# -gt 0 ]]; do
