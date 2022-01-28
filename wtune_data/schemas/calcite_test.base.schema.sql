@@ -26,21 +26,26 @@ CREATE TABLE `emp`
     `job`      varchar(10)     not null,
     `mgr`      int             null,
     `hiredate` int             not null,
-    `comm`     int             not null,
     `sal`      int             not null,
+    `comm`     int             not null,
     `deptno`   int references dept (deptno),
     `slacker`  tinyint
 );
 
 CREATE TABLE `T`
 (
-    `F0_C0` int         not null,
-    `F0_C1` int         not null,
-    `F1_C0` int,
-    `F1_C2` int         not null,
-    `F2_C3` int         not null,
+    `K0`    varchar(20) not null,
+    `C1`    varchar(20),
     `F1_A0` int         not null,
     `F2_A0` tinyint     not null,
-    `K0`    varchar(20) not null,
-    `C1`    varchar(20)
+    `F0_C0` int         not null,
+    `F1_C0` int,
+    `F0_C1` int         not null,
+    `F1_C2` int         not null,
+    `F2_C3` int         not null
+);
+
+CREATE TABLE ANON
+(
+    c INT
 );

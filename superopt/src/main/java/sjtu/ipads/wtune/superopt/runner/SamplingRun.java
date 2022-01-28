@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
 
-public class DryRun implements Runner {
+public class SamplingRun implements Runner {
   private long timeout;
   private int parallelism;
   private int samples;

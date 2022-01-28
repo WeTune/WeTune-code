@@ -5,11 +5,11 @@ import gnu.trove.list.array.TIntArrayList;
 import sjtu.ipads.wtune.common.field.FieldKey;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.ast.SqlVisitor;
+import sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind;
 
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
-import static sjtu.ipads.wtune.sql.ast.ExprKind.Binary;
-import static sjtu.ipads.wtune.sql.ast.ExprKind.Unary;
+import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.Expr;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.Query;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.QuerySpec_Having;
@@ -21,27 +21,45 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
   private final boolean scoped;
   private final boolean bottomUp;
   private final boolean primitive;
+  private final boolean conjunctionOnly;
+  private final boolean breakdownExpr;
   private int exemptQueryNode;
 
   protected PredicateLocator(
-      boolean scoped, boolean bottomUp, boolean primitive, int expectedNumNodes) {
+      boolean scoped,
+      boolean bottomUp,
+      boolean primitive,
+      boolean conjunctionOnly,
+      boolean breakdownExpr,
+      int expectedNumNodes) {
     this.nodes = expectedNumNodes >= 0 ? new TIntArrayList(expectedNumNodes) : new TIntArrayList();
     this.bottomUp = bottomUp;
     this.scoped = scoped;
     this.primitive = primitive;
+    this.breakdownExpr = breakdownExpr;
+    this.conjunctionOnly = conjunctionOnly;
   }
 
   @Override
   public int find(SqlNode root) {
-    exemptQueryNode = Query.isInstance(root) ? root.nodeId() : NO_SUCH_NODE;
-    root.accept(this);
+    if (breakdownExpr && Expr.isInstance(root)) {
+      traversePredicate(root);
+    } else {
+      exemptQueryNode = Query.isInstance(root) ? root.nodeId() : NO_SUCH_NODE;
+      root.accept(this);
+    }
     return nodes.isEmpty() ? NO_SUCH_NODE : nodes.get(0);
   }
 
   @Override
   public TIntList gather(SqlNode root) {
-    exemptQueryNode = Query.isInstance(root) ? root.nodeId() : NO_SUCH_NODE;
-    root.accept(this);
+    if (breakdownExpr && Expr.isInstance(root)) {
+      traversePredicate(root);
+    } else {
+      exemptQueryNode = Query.isInstance(root) ? root.nodeId() : NO_SUCH_NODE;
+      root.accept(this);
+    }
+
     return nodes;
   }
 
@@ -97,10 +115,22 @@ class PredicateLocator implements SqlVisitor, SqlGatherer, SqlFinder {
     // `expr` must be evaluated as boolean
 
     if (Binary.isInstance(expr) && expr.$(Binary_Op).isLogic()) {
-      if (!primitive && !bottomUp) nodes.add(expr.nodeId());
-      traversePredicate(expr.$(Binary_Left));
-      traversePredicate(expr.$(Binary_Right));
-      if (!primitive && bottomUp) nodes.add(expr.nodeId());
+      if (conjunctionOnly) {
+        final BinaryOpKind op = expr.$(Binary_Op);
+        if (op == BinaryOpKind.AND) {
+          if (!primitive && !bottomUp) nodes.add(expr.nodeId());
+          traversePredicate(expr.$(Binary_Left));
+          traversePredicate(expr.$(Binary_Right));
+          if (!primitive && bottomUp) nodes.add(expr.nodeId());
+        } else {
+          nodes.add(expr.nodeId());
+        }
+      } else {
+        if (!primitive && !bottomUp) nodes.add(expr.nodeId());
+        traversePredicate(expr.$(Binary_Left));
+        traversePredicate(expr.$(Binary_Right));
+        if (!primitive && bottomUp) nodes.add(expr.nodeId());
+      }
 
     } else if (Unary.isInstance(expr) && expr.$(Unary_Op).isLogic()) {
       if (!primitive && !bottomUp) nodes.add(expr.nodeId());

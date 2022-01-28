@@ -56,6 +56,13 @@ class FilterChain extends AbstractList<PlanNode> implements List<PlanNode> {
     return filterIds.length;
   }
 
+  @Override
+  public PlanNode set(int index, PlanNode element) {
+    final int oldNodeId = filterIds[index];
+    filterIds[index] = plan.nodeIdOf(element);
+    return plan.nodeAt(oldNodeId);
+  }
+
   FilterChain setPlan(PlanContext plan) {
     this.plan = plan;
     return this;

@@ -83,11 +83,25 @@ public class NormalizationTest {
 
   @Test
   void testNormalizeGrouping() {
-    final SqlNode sql = parseSql("Select a.i, a.j From a Group By a.i, a.j, 3, 2 + 3");
+    final SqlNode sql =
+        parseSql(
+            "Select a.i, a.j From a Group By a.i, a.j, 3, 2 + 3 HAVING a.i > 10 AND (count(a.i) > 1 OR a.j < 5)");
     NormalizeGrouping.normalize(sql);
     final SqlContext ctx = sql.context();
     ctx.deleteDetached(ctx.root());
     ctx.compact();
-    assertEquals("SELECT DISTINCT `a`.`i`, `a`.`j` FROM `a`", sql.toString());
+    assertEquals(
+        "SELECT DISTINCT `a`.`i`, `a`.`j` FROM `a` WHERE `a`.`i` > 10 HAVING COUNT(`a`.`i`) > 1 OR `a`.`j` < 5",
+        sql.toString());
+  }
+
+  @Test
+  void testNormalizeRightJoin() {
+    final SqlNode sql = parseSql("Select a.i From a Right Join b On a.i = b.x");
+    NormalizeRightJoin.normalize(sql);
+    final SqlContext ctx = sql.context();
+    ctx.deleteDetached(ctx.root());
+    ctx.compact();
+    assertEquals("SELECT `a`.`i` FROM `b` LEFT JOIN `a` ON `a`.`i` = `b`.`x`", sql.toString());
   }
 }

@@ -53,7 +53,7 @@ public abstract class PlanSupport {
     final SqlContext ctx = ast.context();
     for (int i = 1; i <= ctx.maxNodeId(); i++) {
       if (!ctx.isPresent(i)) continue;
-      if (ctx.fieldOf(i, Aggregate_WindowSpec) != null) return false;
+      //      if (ctx.fieldOf(i, Aggregate_WindowSpec) != null) return false;
       if (ctx.kindOf(i) == QuerySpec && ctx.fieldOf(i, QuerySpec_From) == null) return false;
     }
     return true;
@@ -123,6 +123,10 @@ public abstract class PlanSupport {
 
   public static String stringifyNode(PlanContext ctx, int id) {
     return PlanStringifier.stringifyNode(ctx, id, false, false);
+  }
+
+  public static String stringifyNode(PlanContext ctx, int id, boolean compact) {
+    return PlanStringifier.stringifyNode(ctx, id, false, compact);
   }
 
   public static String stringifyTree(PlanContext ctx, int id) {

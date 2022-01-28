@@ -1010,13 +1010,16 @@ queryExpression:
     | {serverVersion() >= 80000}? withClause queryExpressionParens lockingClause?
 ;
 
+setOp:
+    UNION_SYMBOL | EXCEPT_SYMBOL | INTERSECT_SYMBOL;
+
 queryExpressionBody:
     querySpecification
-    | queryExpressionBody UNION_SYMBOL unionOption? (
+    | queryExpressionBody setOp unionOption? (
         querySpecification
         | queryExpressionParens
     )
-    | queryExpressionParens UNION_SYMBOL unionOption? (
+    | queryExpressionParens setOp unionOption? (
         querySpecification
         | queryExpressionParens
     )
@@ -1253,7 +1256,7 @@ innerJoinType:
 ;
 
 outerJoinType:
-    type = (LEFT_SYMBOL | RIGHT_SYMBOL) OUTER_SYMBOL? JOIN_SYMBOL
+    type = (LEFT_SYMBOL | RIGHT_SYMBOL | FULL_SYMBOL) OUTER_SYMBOL? JOIN_SYMBOL
 ;
 
 /**

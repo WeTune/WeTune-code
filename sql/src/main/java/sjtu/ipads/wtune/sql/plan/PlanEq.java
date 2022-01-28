@@ -2,12 +2,12 @@ package sjtu.ipads.wtune.sql.plan;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.*;
 import static sjtu.ipads.wtune.common.utils.ListSupport.join;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 
@@ -64,7 +64,7 @@ class PlanEq {
 
     final Expression joinCond0 = ((JoinNode) plan0.nodeAt(node0)).joinCond();
     final Expression joinCond1 = ((JoinNode) plan1.nodeAt(node1)).joinCond();
-    return isEqExpr(node0, joinCond0, node1, joinCond1);
+    return isEqJoinPred(node0, joinCond0, node1, joinCond1);
   }
 
   private boolean isEqExists(int node0, int node1) {
@@ -98,7 +98,7 @@ class PlanEq {
 
     final List<Expression> group0 = agg0.groupByExprs();
     final List<Expression> group1 = agg1.groupByExprs();
-    if (group0.size() != group1.size()) return false;
+    if (group0.isEmpty() != group1.isEmpty()) return false;
 
     final Expression having0 = agg0.havingExpr();
     final Expression having1 = agg1.havingExpr();
@@ -107,8 +107,7 @@ class PlanEq {
     if (!all(zip(exprs0, exprs1), pair -> isEqExpr(node0, pair.getLeft(), node1, pair.getRight())))
       return false;
 
-    if (!all(zip(group0, group1), pair -> isEqExpr(node0, pair.getLeft(), node1, pair.getRight())))
-      return false;
+    if (any(group0, g0 -> none(group1, g1 -> isEqExpr(node0, g0, node1, g1)))) return false;
 
     return having0 == null || isEqExpr(node0, having0, node1, having1);
   }
@@ -164,6 +163,24 @@ class PlanEq {
     final TIntList indexedRefs0 = computeIndexedRefs(refs0, ctx0);
     final TIntList indexedRefs1 = computeIndexedRefs(refs1, ctx1);
     return indexedRefs0.equals(indexedRefs1);
+  }
+
+  private boolean isEqJoinPred(int node0, Expression expr0, int node1, Expression expr1) {
+    if (!Objects.equals(expr0.toString(), expr1.toString())) return false;
+
+    if (plan0.infoCache().isEquiJoin(node0) && plan1.infoCache().isEquiJoin(node1)) {
+      final var keys0 = plan0.infoCache().getJoinKeyOf(node0);
+      final var keys1 = plan1.infoCache().getJoinKeyOf(node1);
+      final List<Value> ctx0 = getRefBindingContext(plan0, node0);
+      final List<Value> ctx1 = getRefBindingContext(plan1, node1);
+      return computeIndexedRefs(keys0.getLeft(), ctx0)
+              .equals(computeIndexedRefs(keys1.getLeft(), ctx1))
+          && computeIndexedRefs(keys0.getRight(), ctx0)
+              .equals(computeIndexedRefs(keys1.getRight(), ctx1));
+
+    } else {
+      return isEqExpr(node0, expr0, node1, expr1);
+    }
   }
 
   private static List<Value> getRefBindingContext(PlanContext plan, int nodeId) {

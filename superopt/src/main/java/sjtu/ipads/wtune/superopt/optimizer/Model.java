@@ -168,7 +168,7 @@ class Model {
     final List<Column> columns = tryResolveColumns(attrs);
     if (columns == null) return false; // some attrs has no backed column
 
-    if (none(columns, column -> isParticipateIn(column, UNIQUE))) return false;
+    //    if (none(columns, column -> isParticipateIn(column, UNIQUE))) return false;
 
     final Integer input = ofTable(tableSym);
     if (input == null) return true; // not assigned yet, pass
@@ -206,14 +206,16 @@ class Model {
     if (referringAttrs == null) return true;
     final List<Column> referringColumns = tryResolveColumns(referringAttrs);
     if (referringColumns == null) return false;
-    final var fks = findIC(plan.schema(), referringColumns, FOREIGN);
-    if (fks.isEmpty()) return false;
+    //    if (fks.isEmpty()) return false;
 
     final List<Value> referredAttrs = ofAttrs(referredAttrsSym);
     if (referredAttrs == null) return true;
     final List<Column> referredCols = tryResolveColumns(referredAttrs);
     if (referredCols == null) return false;
-    if (linearFind(fks, it -> it.refColumns().equals(referredCols)) == null) return false;
+
+    final var fks = findIC(plan.schema(), referringColumns, FOREIGN);
+    if (!referringColumns.equals(referredCols)
+        && linearFind(fks, it -> it.refColumns().equals(referredCols)) == null) return false;
 
     final Integer surface = ofTable(referredTableSym);
     if (surface == null) return true;

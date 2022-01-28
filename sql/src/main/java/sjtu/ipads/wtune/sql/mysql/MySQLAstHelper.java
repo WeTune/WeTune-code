@@ -412,6 +412,7 @@ interface MySQLAstHelper {
     if (ctx == null) return null;
     else if (ctx.LEFT_SYMBOL() != null) return JoinKind.LEFT_JOIN;
     else if (ctx.RIGHT_SYMBOL() != null) return JoinKind.RIGHT_JOIN;
+    else if (ctx.FULL_SYMBOL() != null) return JoinKind.FULL_JOIN;
     else return null;
   }
 

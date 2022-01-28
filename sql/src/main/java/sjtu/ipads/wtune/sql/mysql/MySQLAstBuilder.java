@@ -370,7 +370,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
 
   @Override
   public SqlNode visitQueryExpressionBody(MySQLParser.QueryExpressionBodyContext ctx) {
-    if (ctx.UNION_SYMBOL() == null) return ctx.querySpecification().accept(this);
+    if (ctx.setOp() == null) return ctx.querySpecification().accept(this);
 
     final SqlNode left, right;
     if (ctx.queryExpressionBody() != null) {
@@ -390,7 +390,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
             : SetOpOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
     final SqlNode node = mkNode(SetOp);
-    node.$(SetOp_Kind, SetOpKind.UNION);
+    node.$(SetOp_Kind, SetOpKind.valueOf(ctx.setOp().getText()));
     node.$(SetOp_Left, wrapAsQuery(left));
     node.$(SetOp_Right, wrapAsQuery(right));
     node.$(SetOp_Option, option);
@@ -410,11 +410,8 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     final var selectItemList = ctx.selectItemList();
     final List<SqlNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
     if (selectItemList.MULT_OPERATOR() != null) items.add(mkSelectItem(mkExpr(Wildcard), null));
-    items.addAll(
-        ListSupport.<MySQLParser.SelectItemContext, SqlNode>map(
-            (Iterable<MySQLParser.SelectItemContext>) selectItemList.selectItem(),
-            (Function<? super MySQLParser.SelectItemContext, ? extends SqlNode>)
-                this::visitSelectItem));
+    items.addAll(ListSupport.map(selectItemList.selectItem(), this::visitSelectItem));
+
     node.$(QuerySpec_SelectItems, mkNodes(items));
 
     final var fromClause = ctx.fromClause();

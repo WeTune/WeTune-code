@@ -18,12 +18,36 @@ class LogicProverTest {
       try {
         final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
         final int result = LogicSupport.proveEq(uExprs);
-        assertEquals(LogicSupport.EQ, result, rule.toString());
+        if (result == LogicSupport.EQ) System.out.println(rule.toString());
+        //        assertEquals(LogicSupport.EQ, result, rule.toString());
       } catch (Throwable ex) {
         System.out.println(rule);
         break;
       }
     }
+  }
+
+  @Test
+  public void test() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj<a0 s0>(InnerJoin<k0 k1>(Input<t0>,Proj*<a1 s1>(Input<t1>)))|Proj<a2 s2>(InSubFilter<k3>(Input<t2>,Proj<a3 s3>(Input<t3>)))|AttrsEq(k1,a1);AttrsSub(a0,t0);AttrsSub(k0,t0);AttrsSub(k1,s1);AttrsSub(a1,t1);SchemaEq(s2,s0);SchemaEq(s3,s1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a2,a0);AttrsEq(k3,k0);AttrsEq(a3,k1)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result, rule.toString());
+  }
+
+  @Test
+  public void testIncorrect() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj*<a3 s1>(InnerJoin<a1 a2>(Proj<a0 s0>(Input<t0>),Input<t1>))|"
+                + "Proj<a6 s2>(InnerJoin<a4 a5>(Input<t2>,Input<t3>))|"
+                + "AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,t1);AttrsSub(a3,t1);Unique(t0,a0);Unique(t1,a3);"
+                + "TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a4,a2);AttrsEq(a5,a1);AttrsEq(a6,a3);SchemaEq(s2,s1)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.UNKNOWN, result, rule.toString());
   }
 
   @Test
@@ -208,6 +232,20 @@ class LogicProverTest {
     final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
     final int result = LogicSupport.proveEq(uExprs);
     assertEquals(LogicSupport.EQ, result);
+  }
+
+  @Test
+  void testProjCollapsing1() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj*<a1 s1>(Filter<p0 b0>(Proj<a0 s0>(Input<t0>)))|"
+                + "Proj*<a2 s2>(Filter<p1 b1>(Input<t1>))|"
+                + "AttrsSub(a1,s0);AttrsSub(b0,s0);AttrsSub(a0,t0);"
+                + "SchemaEq(s2,s1);TableEq(t1,t0);AttrsEq(a2,a1);AttrsEq(b1,b0);"
+                + "PredicateEq(p1,p0)");
+    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+    final int result = LogicSupport.proveEq(uExprs);
+    assertEquals(LogicSupport.EQ, result, rule.toString());
   }
 
   @Test

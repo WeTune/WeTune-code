@@ -253,8 +253,7 @@ public class EnumRule implements Runner {
     }
 
     try {
-      final List<Substitution> rules =
-          enumConstraints(f0, f1, timeout, ENUM_FLAG_COUNT_HARMLESS_TIMEOUT, null);
+      final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       if (rules == null) {
         numSkipped.incrementAndGet();
         return;

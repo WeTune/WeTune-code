@@ -22,7 +22,9 @@ public interface Optimizer {
 
   void setVerbose(boolean flag);
 
-  List<OptimizationStep> traceOf(PlanContext plan);
+    void setKeepOriginal(boolean keepOriginal);
+
+    List<OptimizationStep> traceOf(PlanContext plan);
 
   static Optimizer mk(SubstitutionBank bank) {
     return new BottomUpOptimizer(bank);

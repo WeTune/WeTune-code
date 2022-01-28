@@ -23,7 +23,7 @@ import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.GroupItem_Expr;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.locateNode;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.FAILURE_UNKNOWN_OP;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
 class Match {
   private final Substitution rule;
@@ -324,8 +324,8 @@ class Match {
         matches.addAll(linkedListFlatMap(partialMatches, m -> match(m, nextOp1, nextNode1)));
       }
 
-      if (matches.size() > 1) return new ArrayList<>(matches.subList(0, 1));
-      else return matches;
+      if (shouldPermuteJoinTree() || matches.size() <= 1) return matches;
+      else return new ArrayList<>(matches.subList(0, 1));
     }
 
     if (op.kind().isFilter()) {
@@ -354,5 +354,9 @@ class Match {
 
     OptimizerSupport.setLastError(FAILURE_UNKNOWN_OP + op.kind());
     return emptyList();
+  }
+
+  private static boolean shouldPermuteJoinTree() {
+    return (optimizerTweaks & TWEAK_PERMUTE_JOIN_TREE) != 0;
   }
 }

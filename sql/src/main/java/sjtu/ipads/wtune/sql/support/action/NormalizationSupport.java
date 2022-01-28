@@ -23,6 +23,7 @@ public abstract class NormalizationSupport {
 
   public static void normalizeAst(SqlNode node) {
     InlineLiteralTable.normalize(node);
+    NormalizeRightJoin.normalize(node);
     Clean.clean(node);
     NormalizeGrouping.normalize(node);
     NormalizeBool.normalize(node);
@@ -38,7 +39,9 @@ public abstract class NormalizationSupport {
     final SqlContext ctx = node.context();
     final SqlNode parent = node.parent();
     if (QuerySpec.isInstance(parent)) {
-      parent.remove(QuerySpec_Where);
+      if (nodeEquals(node, parent.$(QuerySpec_Where))) parent.remove(QuerySpec_Where);
+      else if (nodeEquals(node, parent.$(QuerySpec_Having))) parent.remove(QuerySpec_Having);
+      else throw new IllegalArgumentException();
       ctx.setParentOf(node.nodeId(), NO_SUCH_NODE);
       return;
     }

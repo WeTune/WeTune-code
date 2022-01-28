@@ -13,12 +13,12 @@ import java.util.List;
 import static sjtu.ipads.wtune.common.tree.TreeSupport.indexOfChild;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.IS;
-import static sjtu.ipads.wtune.sql.ast.constants.JoinKind.INNER_JOIN;
-import static sjtu.ipads.wtune.sql.ast.constants.JoinKind.LEFT_JOIN;
+import static sjtu.ipads.wtune.sql.ast.constants.JoinKind.*;
 import static sjtu.ipads.wtune.sql.ast.constants.LiteralKind.NULL;
 import static sjtu.ipads.wtune.sql.ast.constants.LiteralKind.UNKNOWN;
 import static sjtu.ipads.wtune.sql.plan.PlanKind.*;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.traceRef;
 
 class InnerJoinInference {
   private final PlanContext plan;
@@ -70,6 +70,19 @@ class InnerJoinInference {
         plan.infoCache().putJoinKindOf(parent, INNER_JOIN);
         modified = true;
       }
+      if (isRightJoin(parent) && indexOfChild(plan, cursor) == 0) {
+        plan.infoCache().putJoinKindOf(parent, INNER_JOIN);
+        modified = true;
+      }
+      if (isFullJoin(parent)) {
+        final int index = indexOfChild(plan, cursor);
+        if (index == 0) {
+          plan.infoCache().putJoinKindOf(parent, LEFT_JOIN);
+        } else {
+          plan.infoCache().putJoinKindOf(parent, RIGHT_JOIN);
+        }
+        modified = true;
+      }
       cursor = parent;
     }
   }
@@ -102,5 +115,13 @@ class InnerJoinInference {
 
   private boolean isLeftJoin(int node) {
     return plan.kindOf(node) == Join && joinKindOf(plan, node) == LEFT_JOIN;
+  }
+
+  private boolean isRightJoin(int node) {
+    return plan.kindOf(node) == Join && joinKindOf(plan, node) == RIGHT_JOIN;
+  }
+
+  private boolean isFullJoin(int node) {
+    return plan.kindOf(node) == Join && joinKindOf(plan, node) == FULL_JOIN;
   }
 }

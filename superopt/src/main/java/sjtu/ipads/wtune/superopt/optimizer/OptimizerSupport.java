@@ -20,6 +20,9 @@ public abstract class OptimizerSupport {
 
   public static final int TWEAK_DISABLE_JOIN_FLIP = 1;
   public static final int TWEAK_ENABLE_EXTENSIONS = 2;
+  public static final int TWEAK_KEEP_ORIGINAL_PLAN = 4;
+  public static final int TWEAK_SORT_FILTERS = 8;
+  public static final int TWEAK_PERMUTE_JOIN_TREE = 16;
   static int optimizerTweaks = 0;
 
   private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
@@ -44,9 +47,18 @@ public abstract class OptimizerSupport {
     return new NormalizeProj(plan).normalizeTree(rootId);
   }
 
+  static int normalizeFilter(PlanContext plan, int rootId) {
+    if ((optimizerTweaks & TWEAK_SORT_FILTERS) != 0) {
+      return new NormalizeFilter(plan).normalizeTree(rootId);
+    } else {
+      return rootId;
+    }
+  }
+
   static int normalizePlan(PlanContext plan, int rootId) {
     if ((rootId = normalizeJoin(plan, rootId)) == NO_SUCH_NODE) return NO_SUCH_NODE;
     if ((rootId = normalizeProj(plan, rootId)) == NO_SUCH_NODE) return NO_SUCH_NODE;
+    if ((rootId = normalizeFilter(plan, rootId)) == NO_SUCH_NODE) return NO_SUCH_NODE;
     if (!compensateSubqueryExpr(plan, rootId)) return NO_SUCH_NODE;
     return rootId;
   }

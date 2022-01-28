@@ -31,10 +31,12 @@ public class MySQLAstParser implements AstParser {
     final MySQLLexer lexer = new MySQLLexer(CharStreams.fromString(str));
     lexer.setServerVersion(serverVersion);
     lexer.setSqlMode(sqlMode);
+    if (str.contains("OVER (")) lexer.setServerVersion(80000);
 
-    final MySQLParser parser = new MySQLParser(new CommonTokenStream(lexer));
+      final MySQLParser parser = new MySQLParser(new CommonTokenStream(lexer));
     parser.setServerVersion(serverVersion);
     parser.setSqlMode(sqlMode);
+    if (str.contains("OVER (")) parser.setServerVersion(80000);
 
     lexer.removeErrorListeners();
     lexer.addErrorListener(ThrowingErrorListener.instance());

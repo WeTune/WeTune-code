@@ -314,7 +314,7 @@ class LogicProver {
     final FuncDecl funcY = z3.mkFuncDecl("Z", map(ys, Expr::getSort, Sort.class), z3.getBoolSort());
     solver.add(mkForall(ys, z3.mkEq(funcY.apply(ys), boolZ)));
     final Expr[] ys1 = map(diffVars, it -> trVar(UVar.mkBase(UName.mk(it + "_"))), Expr.class);
-    solver.add(generate(ys.length, i -> z3.mkNot(z3.mkEq(ys[i], ys1[i])), BoolExpr.class));
+    solver.add(mkOr(generate(ys.length, i -> z3.mkNot(z3.mkEq(ys[i], ys1[i])), BoolExpr.class)));
     answer = check(solver, eqXY, boolX, (BoolExpr) funcY.apply(ys), (BoolExpr) funcY.apply(ys1));
 
     return trResult(answer);
@@ -361,6 +361,12 @@ class LogicProver {
     if (preconditions.length == 0) return z3.mkBool(true);
     else if (preconditions.length == 1) return preconditions[0];
     else return z3.mkAnd(preconditions);
+  }
+
+  private BoolExpr mkOr(BoolExpr[] preconditions) {
+    if (preconditions.length == 0) return z3.mkBool(true);
+    else if (preconditions.length == 1) return preconditions[0];
+    else return z3.mkOr(preconditions);
   }
 
   private ArithExpr mkMul(ArithExpr[] factors) {
@@ -520,12 +526,12 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
-    //    solver.push();
-    //    solver.add(exprs);
-    //    final Status res = solver.check();
-    //    solver.pop();
-    //    return res;
-    return solver.check(exprs);
+    solver.push();
+    solver.add(exprs);
+    final Status res = solver.check();
+    solver.pop();
+    return res;
+    //    return solver.check(exprs);
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {

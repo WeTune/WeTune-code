@@ -857,6 +857,8 @@ UNDO_SYMBOL:                     U N D O;                                    // 
 UNICODE_SYMBOL:                  U N I C O D E;
 UNINSTALL_SYMBOL:                U N I N S T A L L;
 UNION_SYMBOL:                    U N I O N;                                  // SQL-2003-R
+EXCEPT_SYMBOL:                   E X C E P T;                                // SQL-1999-R
+INTERSECT_SYMBOL:                I N T E R S E C T;
 UNIQUE_SYMBOL:                   U N I Q U E;
 UNKNOWN_SYMBOL:                  U N K N O W N;                              // SQL-2003-R
 UNLOCK_SYMBOL:                   U N L O C K;
@@ -917,7 +919,6 @@ ROLE_SYMBOL:                     R O L E                                     {se
 ADMIN_SYMBOL:                    A D M I N                                   {serverVersion() >= 80000}?; // SQL-1999-R
 INVISIBLE_SYMBOL:                I N V I S I B L E                           {serverVersion() >= 80000}?;
 VISIBLE_SYMBOL:                  V I S I B L E                               {serverVersion() >= 80000}?;
-EXCEPT_SYMBOL:                   E X C E P T                                 {serverVersion() >= 80000}?; // SQL-1999-R
 COMPONENT_SYMBOL:                C O M P O N E N T                           {serverVersion() >= 80000}?; // MYSQL
 RECURSIVE_SYMBOL:                R E C U R S I V E                           {serverVersion() >= 80000}?; // SQL-1999-R
 JSON_OBJECTAGG_SYMBOL:           J S O N '_' O B J E C T A G G               {serverVersion() >= 80000}?; // SQL-2015-R

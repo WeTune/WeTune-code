@@ -10,7 +10,6 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.*;
 
-import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Collections.*;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
@@ -24,7 +23,7 @@ class BottomUpOptimizer implements Optimizer {
   private long startAt;
   private long timeout;
 
-  private boolean tracing, verbose, extended;
+  private boolean tracing, verbose, extended, keepOriginal;
   private final Lazy<Map<String, OptimizationStep>> traces;
 
   BottomUpOptimizer(SubstitutionBank rules) {
@@ -55,6 +54,11 @@ class BottomUpOptimizer implements Optimizer {
   }
 
   @Override
+  public void setKeepOriginal(boolean keepOriginal) {
+    this.keepOriginal = keepOriginal;
+  }
+
+  @Override
   public List<OptimizationStep> traceOf(PlanContext plan) {
     return collectTrace(plan);
   }
@@ -62,6 +66,7 @@ class BottomUpOptimizer implements Optimizer {
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
     setExtended((optimizerTweaks & TWEAK_ENABLE_EXTENSIONS) != 0);
+    setKeepOriginal((optimizerTweaks & TWEAK_KEEP_ORIGINAL_PLAN) != 0);
 
     final PlanContext originalPlan = plan;
 
@@ -76,7 +81,7 @@ class BottomUpOptimizer implements Optimizer {
 
     for (SubPlan result : results) {
       // Preclude the original one
-      if (result.plan() != originalPlan) optimized.add(result.plan());
+      if (keepOriginal || result.plan() != originalPlan) optimized.add(result.plan());
     }
 
     return optimized;
@@ -321,6 +326,9 @@ class BottomUpOptimizer implements Optimizer {
 
   private int preprocess(PlanContext plan) {
     int planRoot = plan.root();
+
+    if ((optimizerTweaks & TWEAK_SORT_FILTERS) != 0) planRoot = normalizeFilter(plan, planRoot);
+
     planRoot = enforceInnerJoin(plan, planRoot);
     planRoot = reduceSort(plan, planRoot);
     planRoot = reduceDedup(plan, planRoot);

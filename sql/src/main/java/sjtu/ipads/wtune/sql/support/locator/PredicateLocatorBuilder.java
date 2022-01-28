@@ -7,6 +7,8 @@ public class PredicateLocatorBuilder {
   private boolean scoped;
   private boolean bottomUp;
   private boolean primitive;
+  private boolean conjunctionOnly;
+  private boolean breakdownExpr;
 
   public PredicateLocatorBuilder scoped() {
     this.scoped = true;
@@ -20,6 +22,16 @@ public class PredicateLocatorBuilder {
 
   public PredicateLocatorBuilder primitive() {
     this.primitive = true;
+    return this;
+  }
+
+  public PredicateLocatorBuilder conjunctive() {
+    this.conjunctionOnly = true;
+    return this;
+  }
+
+  public PredicateLocatorBuilder breakdownExpr() {
+    this.breakdownExpr = true;
     return this;
   }
 
@@ -40,6 +52,7 @@ public class PredicateLocatorBuilder {
   }
 
   private PredicateLocator mkLocator(int expectedNodes) {
-    return new PredicateLocator(scoped, bottomUp, primitive, expectedNodes);
+    return new PredicateLocator(
+        scoped, bottomUp, primitive, conjunctionOnly, breakdownExpr, expectedNodes);
   }
 }
