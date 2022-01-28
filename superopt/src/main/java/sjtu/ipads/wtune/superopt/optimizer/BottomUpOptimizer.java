@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.util.Fingerprint;
@@ -81,7 +82,8 @@ class BottomUpOptimizer implements Optimizer {
 
     for (SubPlan result : results) {
       // Preclude the original one
-      if (keepOriginal || result.plan() != originalPlan) optimized.add(result.plan());
+      if (keepOriginal || !PlanSupport.isLiteralEq(originalPlan, result.plan()))
+        optimized.add(result.plan());
     }
 
     return optimized;

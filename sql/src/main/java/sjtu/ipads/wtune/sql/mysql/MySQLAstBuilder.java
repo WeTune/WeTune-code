@@ -25,6 +25,7 @@ import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.utils.Commons.assertFalse;
 import static sjtu.ipads.wtune.common.utils.Commons.unquoted;
 import static sjtu.ipads.wtune.common.utils.FuncSupport.func;
+import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.*;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.*;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.*;
@@ -62,7 +63,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     final SqlNode tableName = visitTableRef(ctx.tableRef());
 
     final List<SqlNode> actions =
-        ListSupport.map(
+        map(
             (Iterable<MySQLParser.AlterListItemContext>)
                 ctx.alterTableActions().alterCommandList().alterList().alterListItem(),
             (Function<? super MySQLParser.AlterListItemContext, ? extends SqlNode>)
@@ -273,12 +274,12 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
 
     if (keyList != null) {
       keys =
-          ListSupport.map(
+          map(
               (Iterable<MySQLParser.KeyPartContext>) keyList.keyPart(),
               (Function<? super MySQLParser.KeyPartContext, ? extends SqlNode>) this::visitKeyPart);
     } else if (keyListVariants != null) {
       keys =
-          ListSupport.map(
+          map(
               (Iterable<MySQLParser.KeyPartOrExpressionContext>)
                   keyListVariants.keyListWithExpression().keyPartOrExpression(),
               (Function<? super MySQLParser.KeyPartOrExpressionContext, ? extends SqlNode>)
@@ -410,7 +411,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     final var selectItemList = ctx.selectItemList();
     final List<SqlNode> items = new ArrayList<>(selectItemList.selectItem().size() + 1);
     if (selectItemList.MULT_OPERATOR() != null) items.add(mkSelectItem(mkExpr(Wildcard), null));
-    items.addAll(ListSupport.map(selectItemList.selectItem(), this::visitSelectItem));
+    items.addAll(map(selectItemList.selectItem(), this::visitSelectItem));
 
     node.$(QuerySpec_SelectItems, mkNodes(items));
 
@@ -437,11 +438,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     if (windowClause != null)
       node.$(
           QuerySpec_Windows,
-          mkNodes(
-              ListSupport.map(
-                  (Iterable<MySQLParser.WindowDefinitionContext>) windowClause.windowDefinition(),
-                  (Function<? super MySQLParser.WindowDefinitionContext, ? extends SqlNode>)
-                      this::visitWindowDefinition)));
+          mkNodes(map(windowClause.windowDefinition(), this::visitWindowDefinition)));
 
     return node;
   }
@@ -464,20 +461,14 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     if (ctx.usePartition() != null) {
       final var identifiers =
           ctx.usePartition().identifierListWithParentheses().identifierList().identifier();
-      node.$(Simple_Partition, ListSupport.map(identifiers, MySQLAstHelper::stringifyIdentifier));
+      node.$(Simple_Partition, map(identifiers, MySQLAstHelper::stringifyIdentifier));
     }
 
     if (ctx.tableAlias() != null)
       node.$(Simple_Alias, stringifyIdentifier(ctx.tableAlias().identifier()));
 
     if (ctx.indexHintList() != null)
-      node.$(
-          Simple_Hints,
-          mkNodes(
-              ListSupport.map(
-                  (Iterable<MySQLParser.IndexHintContext>) ctx.indexHintList().indexHint(),
-                  (Function<? super MySQLParser.IndexHintContext, ? extends SqlNode>)
-                      this::visitIndexHint)));
+      node.$(Simple_Hints, mkNodes(map(ctx.indexHintList().indexHint(), this::visitIndexHint)));
 
     return node;
   }
@@ -544,7 +535,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     if (ctx.expr() != null) node.$(Joined_On, toExpr(ctx.expr()));
     if (ctx.identifierListWithParentheses() != null) {
       final var identifiers = ctx.identifierListWithParentheses().identifierList().identifier();
-      node.$(Joined_Using, ListSupport.map(identifiers, MySQLAstHelper::stringifyIdentifier));
+      node.$(Joined_Using, map(identifiers, MySQLAstHelper::stringifyIdentifier));
     }
 
     final SqlNode right;
@@ -569,7 +560,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     if (indexList != null) {
       node.$(
           IndexHint_Names,
-          ListSupport.map(indexList.indexListElement(), MySQLAstHelper::parseIndexListElement));
+          map(indexList.indexListElement(), MySQLAstHelper::parseIndexListElement));
     }
 
     return node;
@@ -1042,10 +1033,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
         else args = emptyList();
 
       } else if (ctx.expr() != null) {
-        args =
-            ListSupport.map(
-                (Iterable<MySQLParser.ExprContext>) ctx.expr(),
-                (Function<? super MySQLParser.ExprContext, ? extends SqlNode>) this::toExpr);
+        args = map(ctx.expr(), this::toExpr);
 
       } else {
         args = emptyList();
@@ -1078,10 +1066,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
     } else if (ctx.substringFunction() != null) {
       node.$(FuncCall_Name, mkName2(null, "substring"));
       final var substringFunc = ctx.substringFunction();
-      args =
-          ListSupport.map(
-              (Iterable<MySQLParser.ExprContext>) substringFunc.expr(),
-              (Function<? super MySQLParser.ExprContext, ? extends SqlNode>) this::toExpr);
+      args = map(substringFunc.expr(), this::toExpr);
 
     } else if (ctx.geometryFunction() != null) {
       final var geoFunc = ctx.geometryFunction();
@@ -1094,10 +1079,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
         args = toExprs(geoFunc.exprList());
 
       } else if (geoFunc.expr() != null) {
-        args =
-            ListSupport.map(
-                (Iterable<MySQLParser.ExprContext>) geoFunc.expr(),
-                (Function<? super MySQLParser.ExprContext, ? extends SqlNode>) this::toExpr);
+        args = map(geoFunc.expr(), this::toExpr);
 
       } else {
         args = emptyList();
@@ -1254,21 +1236,34 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
 
   @Override
   public SqlNode visitWindowFunctionCall(MySQLParser.WindowFunctionCallContext ctx) {
-    // TODO
-    return super.visitWindowFunctionCall(ctx);
+    final SqlNode node = mkExpr(Aggregate);
+    if (ctx.ROW_NUMBER_SYMBOL() != null) node.$(Aggregate_Name, "ROW_NUMBER");
+    else if (ctx.RANK_SYMBOL() != null) node.$(Aggregate_Name, "RANK");
+    else if (ctx.DENSE_RANK_SYMBOL() != null) node.$(Aggregate_Name, "DENSE");
+    else if (ctx.CUME_DIST_SYMBOL() != null) node.$(Aggregate_Name, "CUME");
+    else if (ctx.PERCENT_RANK_SYMBOL() != null) node.$(Aggregate_Name, "PERNCENT_RANK");
+    else if (ctx.NTILE_SYMBOL() != null) node.$(Aggregate_Name, "NTILE");
+    else if (ctx.LEAD_SYMBOL() != null) node.$(Aggregate_Name, "LEAD");
+    else if (ctx.LAG_SYMBOL() != null) node.$(Aggregate_Name, "LAG");
+    else if (ctx.FIRST_VALUE_SYMBOL() != null) node.$(Aggregate_Name, "FIRST_VALUE");
+    else if (ctx.LAST_VALUE_SYMBOL() != null) node.$(Aggregate_Name, "LAST_VALUE");
+    else if (ctx.NTH_VALUE_SYMBOL() != null) node.$(Aggregate_Name, "NTH_VALUE");
+
+    final var clause = ctx.windowingClause();
+    if (clause.windowName() != null)
+      node.$(Aggregate_WindowName, stringifyIdentifier(clause.windowName().identifier()));
+    else if (clause.windowSpec() != null)
+      node.$(Aggregate_WindowSpec, clause.windowSpec().accept(this));
+
+    return node;
   }
 
   @Override
   public SqlNode visitSimpleExprConcat(MySQLParser.SimpleExprConcatContext ctx) {
     final SqlNode node = mkExpr(FuncCall);
     node.$(FuncCall_Name, mkName2(null, "concat"));
-    node.$(
-        FuncCall_Args,
-        mkNodes(
-            ListSupport.map(
-                (Iterable<MySQLParser.SimpleExprContext>) ctx.simpleExpr(),
-                (Function<? super MySQLParser.SimpleExprContext, ? extends SqlNode>)
-                    arg -> arg.accept(this))));
+    node.$(FuncCall_Args, mkNodes(map(ctx.simpleExpr(), arg -> arg.accept(this))));
+
     return node;
   }
 
@@ -1310,9 +1305,8 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
   public SqlNode visitSimpleExprMatch(MySQLParser.SimpleExprMatchContext ctx) {
     final SqlNode node = mkExpr(Match);
     final List<SqlNode> cols =
-        ListSupport.map(
-            (Iterable<MySQLParser.SimpleIdentifierContext>)
-                ctx.identListArg().identList().simpleIdentifier(),
+        map(
+            ctx.identListArg().identList().simpleIdentifier(),
             func(this::visitSimpleIdentifier).andThen(this::mkColRef));
     node.$(Match_Cols, mkNodes(cols));
     node.$(Match_Expr, ctx.bitExpr().accept(this));
@@ -1461,10 +1455,7 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
   }
 
   private List<SqlNode> toOrderItems(MySQLParser.OrderClauseContext ctx) {
-    return ListSupport.map(
-        (Iterable<MySQLParser.OrderExpressionContext>) ctx.orderList().orderExpression(),
-        (Function<? super MySQLParser.OrderExpressionContext, ? extends SqlNode>)
-            this::visitOrderExpression);
+    return map(ctx.orderList().orderExpression(), this::visitOrderExpression);
   }
 
   private List<SqlNode> toGroupItems(MySQLParser.OrderListContext ctx) {
@@ -1480,16 +1471,11 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
   }
 
   private List<SqlNode> toExprs(MySQLParser.ExprListContext exprList) {
-    return ListSupport.map(
-        (Iterable<MySQLParser.ExprContext>) exprList.expr(),
-        (Function<? super MySQLParser.ExprContext, ? extends SqlNode>) this::toExpr);
+    return map(exprList.expr(), this::toExpr);
   }
 
   private List<SqlNode> toExprs(MySQLParser.UdfExprListContext udfExprList) {
-    return ListSupport.map(
-        (Iterable<MySQLParser.UdfExprContext>) udfExprList.udfExpr(),
-        (Function<? super MySQLParser.UdfExprContext, ? extends SqlNode>)
-            udfExpr -> toExpr(udfExpr.expr()));
+    return map(udfExprList.udfExpr(), udfExpr -> toExpr(udfExpr.expr()));
   }
 
   private SqlNode parseTableName(

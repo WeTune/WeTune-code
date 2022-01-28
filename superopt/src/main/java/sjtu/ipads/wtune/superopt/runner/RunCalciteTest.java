@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.runner;
 
 import sjtu.ipads.wtune.common.utils.Args;
+import sjtu.ipads.wtune.common.utils.IOSupport;
+import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
@@ -8,20 +10,26 @@ import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.support.action.NormalizationSupport;
 import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.superopt.optimizer.OptimizationStep;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.IOSupport.checkFileExists;
+import static sjtu.ipads.wtune.common.utils.IOSupport.io;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
@@ -31,8 +39,11 @@ import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.dataDir;
 public class RunCalciteTest implements Runner {
   private String target;
   private Path testCasesPath, rulesPath;
+  private Path outDir, outOpt, outTrace;
   private App app;
   private int verbosity;
+  private Lazy<SubstitutionBank> rules;
+  private Lazy<List<QueryPair>> queryPairs;
 
   private interface Task {
     void execute(RunCalciteTest runner) throws Exception;
@@ -40,12 +51,24 @@ public class RunCalciteTest implements Runner {
 
   private static final Map<String, Task> TASKS =
       Map.of(
-          "CompareVerifyRule", RunCalciteTest::compareVerifyingRule,
-          "CompareVerifyQuery", RunCalciteTest::compareVerifyingQuery);
+          "VerifyRule",
+          RunCalciteTest::verifyRule,
+          "VerifyQuery",
+          RunCalciteTest::verifyQuery,
+          "GenerateRewritings",
+          RunCalciteTest::generateRewritings);
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
+    final Path dataDir = dataDir();
+    final Path parentDir =
+        dataDir.resolve(args.getOptional("D", "dir", String.class, "rewrite_calcite"));
+    final String subDirSuffix =
+        LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
+    outDir = parentDir.resolve("run" + subDirSuffix);
+    outOpt = outDir.resolve("1_opt.tsv");
+    outTrace = outDir.resolve("1_trace.tsv");
 
     app = App.of("calcite_test");
     target = args.getOptional("T", "task", String.class, "all");
@@ -54,11 +77,13 @@ public class RunCalciteTest implements Runner {
     if (!target.equals("all") && !TASKS.containsKey(target))
       throw new IllegalArgumentException("no such task: " + target);
 
-    final Path dataDir = dataDir();
     final String testCasesFile = args.getOptional("i", "input", String.class, "calcite_tests");
     final String rulesFile = args.getOptional("R", "rules", String.class, "rules.txt");
     testCasesPath = dataDir.resolve(testCasesFile);
     rulesPath = dataDir.resolve(rulesFile);
+
+    rules = Lazy.mk(io(() -> SubstitutionSupport.loadBank(rulesPath)));
+    queryPairs = Lazy.mk(io(() -> readPairs(Files.readAllLines(testCasesPath))));
   }
 
   @Override
@@ -73,14 +98,16 @@ public class RunCalciteTest implements Runner {
     }
   }
 
-  private void compareVerifyingRule() throws IOException {
+  private void verifyQuery() {}
+
+  private void verifyRule() {
     checkFileExists(testCasesPath);
     checkFileExists(rulesPath);
     OptimizerSupport.setOptimizerTweaks(
         TWEAK_KEEP_ORIGINAL_PLAN | TWEAK_SORT_FILTERS | TWEAK_PERMUTE_JOIN_TREE);
 
-    final List<QueryPair> pairs = readPairs(Files.readAllLines(testCasesPath));
-    final SubstitutionBank rules = SubstitutionSupport.loadBank(rulesPath);
+    final SubstitutionBank rules = this.rules.get();
+    final List<QueryPair> pairs = this.queryPairs.get();
 
     int count = 0;
     outer:
@@ -110,7 +137,29 @@ public class RunCalciteTest implements Runner {
     System.out.println("Total: " + count);
   }
 
-  private void compareVerifyingQuery() {}
+  private void generateRewritings() throws IOException {
+    OptimizerSupport.setOptimizerTweaks(0);
+    checkFileExists(testCasesPath);
+    checkFileExists(rulesPath);
+    if (!Files.exists(outDir)) Files.createDirectories(outDir);
+
+    final SubstitutionBank rules = this.rules.get();
+    final List<QueryPair> pairs = this.queryPairs.get();
+
+    for (final QueryPair pair : pairs) {
+      final Optimizer opt0 = Optimizer.mk(rules);
+      final Optimizer opt1 = Optimizer.mk(rules);
+      opt0.setTracing(true);
+      opt1.setTracing(true);
+      final Set<PlanContext> rewritten0 = opt0.optimize(pair.p0);
+      final Set<PlanContext> rewritten1 = opt1.optimize(pair.p1);
+
+      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 0, rewritten0));
+      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 1, rewritten1));
+      IOSupport.appendTo(outTrace, writer -> dumpTrace(writer, pair, 0, opt0, rewritten0));
+      IOSupport.appendTo(outTrace, writer -> dumpTrace(writer, pair, 1, opt1, rewritten1));
+    }
+  }
 
   private static class QueryPair {
     private final int lineNum;
@@ -125,16 +174,44 @@ public class RunCalciteTest implements Runner {
       this.p1 = p1;
     }
 
-    private int q0Id() {
+    private int id0() {
       return lineNum;
     }
 
-    private int q1Id() {
+    private int id1() {
       return lineNum + 1;
     }
 
     private int pairId() {
       return lineNum + 1 >> 1;
+    }
+  }
+
+  private void dumpRewritten(
+      PrintWriter out, QueryPair pair, int index, Set<PlanContext> rewrittenPlans) {
+    if (rewrittenPlans.isEmpty()) return;
+
+    int i = 0;
+    for (PlanContext plan : rewrittenPlans) {
+      final SqlNode sqlNode0 = translateAsAst(plan, plan.root(), false);
+      out.printf(
+          "%s-%d\t%d\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, sqlNode0);
+    }
+  }
+
+  private void dumpTrace(
+      PrintWriter out,
+      QueryPair pair,
+      int index,
+      Optimizer optimizer,
+      Set<PlanContext> rewrittenPlans) {
+    if (rewrittenPlans.isEmpty()) return;
+
+    int i = 0;
+    for (PlanContext plan : rewrittenPlans) {
+      final List<OptimizationStep> traces = optimizer.traceOf(plan);
+      final String str = joining(",", traces, it -> String.valueOf(it.ruleId()));
+      out.printf("%s-%d\t%d\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, str);
     }
   }
 
@@ -144,7 +221,7 @@ public class RunCalciteTest implements Runner {
 
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-      //      if (i != 246) continue;
+      //      if (i != 0) continue;
       final String first = lines.get(i), second = lines.get(i + 1);
       final SqlNode q0 = parseSql(MySQL, first);
       final SqlNode q1 = parseSql(MySQL, second);

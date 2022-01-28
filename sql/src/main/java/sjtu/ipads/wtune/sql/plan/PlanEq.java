@@ -166,6 +166,8 @@ class PlanEq {
   }
 
   private boolean isEqJoinPred(int node0, Expression expr0, int node1, Expression expr1) {
+    if (expr0 == null && expr1 == null) return true;
+    if ((expr0 == null) != (expr1 == null)) return false;
     if (!Objects.equals(expr0.toString(), expr1.toString())) return false;
 
     if (plan0.infoCache().isEquiJoin(node0) && plan1.infoCache().isEquiJoin(node1)) {

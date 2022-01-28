@@ -177,7 +177,7 @@ class ToAstTranslator {
     final SetOpNode setOp = (SetOpNode) plan.nodeAt(nodeId);
     final SqlNode unionNode = mkSetOp(sql, q0, q1, setOp.opKind());
     unionNode.$(SetOp_Option, setOp.deduplicated() ? DISTINCT : ALL);
-    return mkBuilder().setSource(mkQuery(sql, unionNode));
+    return mkBuilder().setSource(mkQuery(sql, unionNode)).setQualification(mkQualification(nodeId));
   }
 
   private QueryBuilder mkBuilder() {
@@ -200,11 +200,14 @@ class ToAstTranslator {
     return null;
   }
 
-  private String mkQualification(int exporterNode) {
-    final String designated = ((Exporter) plan.nodeAt(exporterNode)).qualification();
-    if (designated != null) return designated;
+  private String mkQualification(int nodeId) {
+    final PlanNode node = plan.nodeAt(nodeId);
+    if (node instanceof Exporter) {
+      final Exporter exporter = (Exporter) node;
+      if (exporter.qualification() != null) return exporter.qualification();
+    }
 
-    final Values values = plan.valuesReg().valuesOf(exporterNode);
+    final Values values = plan.valuesReg().valuesOf(nodeId);
     String guess = null;
     for (Value value : values) {
       final String qualification = value.qualification();
@@ -257,7 +260,7 @@ class ToAstTranslator {
       final SqlNode q;
       if (Query.isInstance(tableSource)) {
         assert filters == null && selectItems == null && groupBys == null && having == null;
-        assert !deduplicated && !isAgg && qualification == null;
+        assert !deduplicated && !isAgg;
         q = tableSource;
       } else {
         if (selectItems == null && !translator.allowIncomplete)
