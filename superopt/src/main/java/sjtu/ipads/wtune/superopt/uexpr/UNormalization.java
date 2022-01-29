@@ -23,12 +23,14 @@ class UNormalization {
     expr = eliminateSquash(expr);
     expr = promoteSummation(expr);
     expr = mergeSummation(expr);
+    expr = flatAddAndMul(expr);
     return expr;
   }
 
   // .. * Sum[x](..) -> Sum[x](.. * ..)
   private UTerm promoteSummation(UTerm expr) {
     expr = transformSubTerms(expr, this::promoteSummation);
+    expr = flatAddAndMul(expr);
     if (expr.kind() != MULTIPLY) return expr;
 
     Set<UVar> freeVars = null;

@@ -10,18 +10,21 @@ import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.support.action.NormalizationSupport;
 import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizationStep;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
+import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
+import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
+import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +32,7 @@ import java.util.Set;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
-import static sjtu.ipads.wtune.common.utils.IOSupport.checkFileExists;
-import static sjtu.ipads.wtune.common.utils.IOSupport.io;
+import static sjtu.ipads.wtune.common.utils.IOSupport.*;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
@@ -39,7 +41,7 @@ import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.dataDir;
 
 public class RunCalciteTest implements Runner {
   private String target;
-  private Path testCasesPath, rulesPath;
+  private Path testCasesPath, templatesPath, rulesPath;
   private Path outDir, outOpt, outTrace;
   private App app;
   private int verbosity;
@@ -78,8 +80,10 @@ public class RunCalciteTest implements Runner {
       throw new IllegalArgumentException("no such task: " + target);
 
     final String testCasesFile = args.getOptional("i", "input", String.class, "calcite_tests");
+    final String tempsFile = args.getOptional("t", "templates", String.class, "calcite_templates");
     final String rulesFile = args.getOptional("R", "rules", String.class, "rules/rules.txt");
     testCasesPath = parentDir.resolve(testCasesFile);
+    templatesPath = parentDir.resolve(tempsFile);
     rulesPath = dataDir.resolve(rulesFile);
 
     rules = Lazy.mk(io(() -> SubstitutionSupport.loadBank(rulesPath)));
@@ -98,7 +102,31 @@ public class RunCalciteTest implements Runner {
     }
   }
 
-  private void verifyQuery() {}
+  private void verifyQuery() throws IOException {
+    checkFileExists(templatesPath);
+    final List<String> lines = Files.readAllLines(templatesPath);
+    int i = 0;
+    for (String line : lines) {
+      ++i;
+      if (line.isEmpty() || !Character.isDigit(line.charAt(0))) continue;
+      final String[] fields = line.split("\s+", 2);
+      if (fields.length != 2) {
+        if (verbosity >= 1) System.err.println("unrecognized template at line: " + i);
+        continue;
+      }
+
+      try {
+        final Substitution rule = Substitution.parse(fields[1]);
+        final UExprTranslationResult uExpr = UExprSupport.translateToUExpr(rule);
+        final int result = LogicSupport.proveEq(uExpr);
+        System.out.println(fields[0] + ": " + LogicSupport.stringifyResult(result));
+
+      } catch (Throwable ex) {
+        if (verbosity >= 1) System.err.println("unrecognized template at line: " + i);
+        if (verbosity >= 2) ex.printStackTrace();
+      }
+    }
+  }
 
   private void verifyRule() {
     checkFileExists(testCasesPath);

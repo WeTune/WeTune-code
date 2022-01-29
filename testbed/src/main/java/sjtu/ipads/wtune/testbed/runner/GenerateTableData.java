@@ -236,6 +236,6 @@ public class GenerateTableData implements Runner {
       throws IOException {
     final Path baseDir = dir.resolve(postfix).resolve(appName);
     if (!Files.exists(baseDir)) Files.createDirectories(baseDir);
-    return tableName -> io(() -> newPrintWriter(baseDir.resolve(tableName + ".csv")));
+    return tableName -> runIO(() -> newPrintWriter(baseDir.resolve(tableName + ".csv")));
   }
 }

@@ -5,8 +5,12 @@
 !schemas/*
 !schemas_mssql
 !schemas_mssql/*
+!rules/
+!rules/rules.merged.txt
+!rules/rules.spes.txt
 !rules/rules.test.txt
 !rules/rules.txt
-!rules/spes_rules.txt
-!rules/merged_rules.txt
-!calcite*
+!calcite/
+!calcite/calcite_tests
+!calcite/calcite_templates
+!calcite/calcite.patch

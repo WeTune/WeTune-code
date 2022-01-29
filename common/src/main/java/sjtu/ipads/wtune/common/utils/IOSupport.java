@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.nio.file.StandardOpenOption.*;
 
@@ -38,12 +39,16 @@ public interface IOSupport {
     }
   }
 
-  static <T> T io(IO<T> io) {
+  static <T> T runIO(IO<T> io) {
     try {
       return io.doIO();
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }
+  }
+
+  static <T> Supplier<T> io(IO<T> io) {
+    return () -> runIO(io);
   }
 
   static PrintWriter newPrintWriter(Path path) throws IOException {

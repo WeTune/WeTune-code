@@ -126,7 +126,7 @@ class UExprTranslator {
           initiatedNames.put(eqSym, name);
       }
 
-      assert name != null;
+      assert name != null : rule.naming().nameOf(sym);
       return name;
     }
 
@@ -205,7 +205,7 @@ class UExprTranslator {
       assert attrSym != null;
 
       Symbol source = rule.constraints().sourceOf(attrSym);
-      assert source != null;
+      assert source != null : rule.naming().nameOf(attrSym);
 
       // apply AttrsSub: pick the component from concat (if there is)
       // Suppose we have concat(x,y), where x from T and y from R, and AttrsSub(a,R).
@@ -223,7 +223,7 @@ class UExprTranslator {
       //  We have to further trace the source of s1.
       while ((index = varSchema.indexOf(restriction)) < 0) {
         source = rule.constraints().sourceOf(source);
-        assert source != null : "wrong constraint!";
+        assert source != null : "wrong constraint! " + rule.naming().nameOf(attrSym);
         restriction = mkSchema(source).components[0];
       }
 

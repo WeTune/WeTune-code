@@ -34,6 +34,16 @@ public abstract class LogicSupport {
     NUM_INVOCATIONS.incrementAndGet();
   }
 
+  public static String stringifyResult(int result) {
+    return switch (result) {
+      case EQ -> "EQ";
+      case NEQ -> "NEQ";
+      case UNKNOWN -> "UNKNOWN";
+      case FAST_REJECTED -> "FAST_REJECTED";
+      default -> "??";
+    };
+  }
+
   public static int numInvocations() {
     return NUM_INVOCATIONS.get();
   }
