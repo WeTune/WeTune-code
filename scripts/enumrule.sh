@@ -51,6 +51,8 @@ fi
 
 echo "parallelism=${parallelism} timeout=${timeout} verbose=${verbose} partition=${num_partitions}/${from_partition}-${to_partition}"
 
+gradle :superopt:compileJava
+
 for ((i = from_partition; i <= to_partition; i++)); do
   nohup gradle :superopt:run \
     --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i}" \
