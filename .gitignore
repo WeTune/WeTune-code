@@ -24,3 +24,4 @@ opt_result*
 gradlew
 gradlew.bat
 gradle/
+enum.log*

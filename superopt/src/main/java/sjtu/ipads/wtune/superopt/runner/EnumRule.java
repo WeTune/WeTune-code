@@ -83,7 +83,7 @@ public class EnumRule implements Runner {
     final Path dataDir = RunnerSupport.dataDir();
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String dirName = args.getOptional("D", "dir", String.class, "enumeration");
-    final Path dir = dataDir.resolve(dirName).resolve("run" + subDirName);
+    final Path dir = dataDir.resolve(dirName).resolve("run" + subDirName + "_" + workerIndex);
 
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
