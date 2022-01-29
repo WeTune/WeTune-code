@@ -1,6 +1,9 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.common.utils.*;
+import sjtu.ipads.wtune.common.utils.IntMetric;
+import sjtu.ipads.wtune.common.utils.LongMetric;
+import sjtu.ipads.wtune.common.utils.Metric;
+import sjtu.ipads.wtune.common.utils.Metrics;
 
 import java.util.List;
 
@@ -14,14 +17,14 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
   public final IntMetric numEq = new IntMetric("#Eq");
   public final IntMetric numNeq = new IntMetric("#Neq");
   public final IntMetric numUnknown = new IntMetric("#Unknown");
+  public final IntMetric numUnknown0 = new IntMetric("#Unknown0");
+  public final IntMetric numUnknown1 = new IntMetric("#Unknown1");
   public final IntMetric numRelaxed = new IntMetric("#Relaxed");
   public final IntMetric numReinforced = new IntMetric("#Reinforced");
-  public final IntMetric numTrueUnknown = new IntMetric("#TrueUnknown");
   public final LongMetric elapsedEnum = new LongMetric("Enum(ms)");
   public final LongMetric elapsedEq = new LongMetric("Eq(ms)");
   public final LongMetric elapsedNeq = new LongMetric("Neq(ms)");
   public final LongMetric elapsedUnknown = new LongMetric("Unknown(ms)");
-  public final IntMetric uncertain = new IntMetric("#Uncertain");
 
   private final List<Metric> metrics =
       List.of(
@@ -34,14 +37,14 @@ public class EnumerationMetrics implements Metrics<EnumerationMetrics>, AutoClos
           numEq,
           numNeq,
           numUnknown,
+          numUnknown0,
+          numUnknown1,
           numRelaxed,
           numReinforced,
-          numTrueUnknown,
           elapsedEnum,
           elapsedEq,
           elapsedNeq,
-          elapsedUnknown,
-          uncertain);
+          elapsedUnknown);
 
   static EnumerationMetrics open() {
     return EnumerationMetricsContext.instance().local(true);

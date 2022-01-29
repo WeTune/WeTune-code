@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
@@ -125,8 +126,6 @@ class ConstraintEnumerator {
   private SymbolNaming naming;
   private EnumerationMetrics metric;
 
-  private final Lazy<List<Generalization>> timeoutConstraints;
-
   ConstraintEnumerator(ConstraintsIndex I, long timeout, int tweak) {
     this.I = I;
     this.timeout = timeout < 0 ? Long.MAX_VALUE : timeout;
@@ -135,29 +134,19 @@ class ConstraintEnumerator {
     this.knownNeqs = new LinkedList<>();
     this.tweak = tweak;
     this.stages = mkStages();
-    this.timeoutConstraints = Lazy.mk(LinkedList::new);
     currentSet(0, I.size() - 1, false);
   }
 
   List<Substitution> enumerate() {
-    if ((tweak & ENUM_FLAG_DISABLE_METRIC) == ENUM_FLAG_DISABLE_METRIC) {
-      stages[0].enumerate();
-      return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
+    try (EnumerationMetrics metric = EnumerationMetrics.open()) {
+      try (var ignored = metric.elapsedEnum.timeIt()) {
+        this.metric = metric;
 
-    } else {
-      try (EnumerationMetrics metric = EnumerationMetrics.open()) {
-        try (var ignored = metric.elapsedEnum.timeIt()) {
-          this.metric = metric;
+        stages[0].enumerate();
 
-          stages[0].enumerate();
+        metric.numTotalConstraintSets.set(I.size());
 
-          metric.numTotalConstraintSets.set(I.size());
-          if (timeoutConstraints.isInitialized()) {
-            metric.numTrueUnknown.set(timeoutConstraints.get().size());
-          }
-
-          return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
-        }
+        return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
       }
     }
   }
@@ -168,8 +157,8 @@ class ConstraintEnumerator {
     final boolean disable0 = (tweak & ENUM_FLAG_DISABLE_BREAKER_0) == ENUM_FLAG_DISABLE_BREAKER_0;
     final boolean disable1 = (tweak & ENUM_FLAG_DISABLE_BREAKER_1) == ENUM_FLAG_DISABLE_BREAKER_1;
     final boolean disable2 = (tweak & ENUM_FLAG_DISABLE_BREAKER_2) == ENUM_FLAG_DISABLE_BREAKER_2;
-    final boolean dryRun = disable0 || disable1 || disable2 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
-    final boolean countHarmlessTimeout = (tweak & ENUM_FLAG_COUNT_HARMLESS_TIMEOUT) != 0;
+    final boolean dryRun =
+        disable0 || disable1 || disable2 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
     final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
     final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
 
@@ -191,7 +180,7 @@ class ConstraintEnumerator {
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
     final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable2);
     final EnumerationStage timeout = new TimeoutBreaker(currentTimeMillis(), this.timeout);
-    final VerificationCache cache = new VerificationCache(dryRun, echo, countHarmlessTimeout);
+    final VerificationCache cache = new VerificationCache(dryRun, echo);
     final EnumerationStage verifier = new Verifier(useSpes);
 
     final EnumerationStage[] stages;
@@ -289,27 +278,27 @@ class ConstraintEnumerator {
 
   private void collectSourceChain(Symbol sym, List<Symbol> sourceChain) {
     assert sym.kind() == ATTRS || sym.kind() == SCHEMA || sym.kind() == TABLE;
+    Symbol.Kind kind = sym.kind();
 
-    switch (sym.kind()) {
-      case ATTRS -> {
-        final Symbol source = currentSourceOf(sym);
-        assert source != null;
-        sourceChain.add(source);
-        collectSourceChain(source, sourceChain);
+    if (kind == ATTRS) {
+      final Symbol source = currentSourceOf(sym);
+      assert source != null;
+      sourceChain.add(source);
+      collectSourceChain(source, sourceChain);
+      return;
+    }
+
+    if (kind == SCHEMA) {
+      final Op owner = I.sourceSymbols().ownerOf(sym);
+      assert owner.kind() == PROJ || owner.kind() == AGG;
+      if (owner.kind() == PROJ) {
+        final Proj proj = ((Proj) owner);
+        collectSourceChain(proj.attrs(), sourceChain);
+      } else {
+        final Agg agg = ((Agg) owner);
+        collectSourceChain(agg.groupByAttrs(), sourceChain);
+        collectSourceChain(agg.aggregateAttrs(), sourceChain);
       }
-      case SCHEMA -> {
-        final Op owner = I.sourceSymbols().ownerOf(sym);
-        assert owner.kind() == PROJ || owner.kind() == AGG;
-        if (owner.kind() == PROJ) {
-          final Proj proj = ((Proj) owner);
-          collectSourceChain(proj.attrs(), sourceChain);
-        } else {
-          final Agg agg = ((Agg) owner);
-          collectSourceChain(agg.groupByAttrs(), sourceChain);
-          collectSourceChain(agg.aggregateAttrs(), sourceChain);
-        }
-      }
-      case TABLE -> {}
     }
   }
 
@@ -1173,12 +1162,11 @@ class ConstraintEnumerator {
   }
 
   private class VerificationCache extends AbstractEnumerationStage {
-    private final boolean dryRun, echo, countHarmless;
+    private final boolean dryRun, echo;
 
-    private VerificationCache(boolean dryRun, boolean echo, boolean countHarmless) {
+    private VerificationCache(boolean dryRun, boolean echo) {
       this.dryRun = dryRun;
       this.echo = echo;
-      this.countHarmless = countHarmless;
     }
 
     @Override
@@ -1204,9 +1192,6 @@ class ConstraintEnumerator {
       if (metric.numEq.incrementIf(answer == EQ)) {
         metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization));
         metric.elapsedEq.add(elapsed);
-        if (countHarmless) {
-          timeoutConstraints.get().removeIf(it -> compareVerificationResult(it, generalization).greaterOrSame());
-        }
 
       } else if (metric.numNeq.incrementIf(answer == NEQ)) {
         metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization));
@@ -1214,8 +1199,11 @@ class ConstraintEnumerator {
       } else {
         metric.numUnknown.increment();
         metric.elapsedUnknown.add(elapsed);
-        if (countHarmless) {
-          timeoutConstraints.get().add(generalization);
+
+        if (any(knownEqs, it -> compareVerificationResult(it, generalization).greaterOrSame())) {
+          metric.numUnknown0.increment();
+        } else {
+          metric.numUnknown1.increment();
         }
       }
 

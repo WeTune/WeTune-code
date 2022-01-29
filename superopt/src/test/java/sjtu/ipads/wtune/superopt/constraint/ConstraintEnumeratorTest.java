@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.ENUM_FLAG_COUNT_HARMLESS_TIMEOUT;
 import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 @Tag("enumeration")
@@ -31,8 +30,7 @@ class ConstraintEnumeratorTest {
     //    System.out.println(EnumerationMetrics.current());
     //    System.out.println("=============");
 
-    final List<Substitution> results =
-        enumConstraints(f0, f1, -1, ENUM_FLAG_COUNT_HARMLESS_TIMEOUT, naming);
+    final List<Substitution> results = enumConstraints(f0, f1, -1);
     final List<String> strings = new ArrayList<>(results.size());
     for (Substitution rule : results) {
       final String str = rule.toString();

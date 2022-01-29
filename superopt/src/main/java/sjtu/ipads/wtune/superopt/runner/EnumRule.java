@@ -11,7 +11,6 @@ import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -27,21 +26,19 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Integer.parseInt;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
-import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.*;
+import static sjtu.ipads.wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 public class EnumRule implements Runner {
   private final Lock outLock = new ReentrantLock();
   private final Lock errLock = new ReentrantLock();
 
   private Path success, failure, err, checkpoint;
-  private PrintWriter successOut, checkpointOut;
   private Path prevFailure, prevCheckpoint;
   private int verbosity;
   private long timeout;
   private int parallelism;
   private int iBegin, jBegin;
   private int numWorker, workerIndex;
-  private boolean disableMetric;
   private ExecutorService threadPool;
   private Pair<Fragment, Fragment> target;
   private ProgressBar progressBar;
@@ -105,8 +102,6 @@ public class EnumRule implements Runner {
     final String[] split = from.split(",");
     iBegin = parseInt(split[0]);
     jBegin = parseInt(split[1]);
-
-    disableMetric = args.getOptional("nometric", boolean.class, true);
   }
 
   @Override
@@ -148,8 +143,6 @@ public class EnumRule implements Runner {
 
     latch = new CountDownLatch(myPairs);
     threadPool = Executors.newFixedThreadPool(parallelism);
-    successOut = new PrintWriter(Files.newOutputStream(success));
-    checkpointOut = new PrintWriter(Files.newOutputStream(checkpoint));
 
     try (final ProgressBar pb = new ProgressBar("Candidates", myPairs)) {
       progressBar = pb;
@@ -259,8 +252,7 @@ public class EnumRule implements Runner {
     }
 
     try {
-      final List<Substitution> rules =
-          enumConstraints(f0, f1, timeout, ENUM_FLAG_DISABLE_METRIC, null);
+      final List<Substitution> rules = enumConstraints(f0, f1, timeout);
       if (rules == null) {
         numSkipped.incrementAndGet();
         return;
@@ -277,8 +269,8 @@ public class EnumRule implements Runner {
         System.out.println("<==");
       }
 
-      serializedRules.forEach(successOut::println);
-      if (i >= 0 && j >= 0) checkpointOut.printf("%d,%d\n", i, j);
+      IOSupport.appendTo(success, out -> serializedRules.forEach(out::println));
+      if (i >= 0 && j >= 0) IOSupport.appendTo(checkpoint, out -> out.printf("%d,%d\n", i, j));
 
     } catch (Throwable ex) {
       errLock.lock();

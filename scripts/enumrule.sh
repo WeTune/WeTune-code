@@ -1,10 +1,11 @@
 #! /bin/bash
 
-positional_args=()
-parallelism=32
-timeout=60000
+parallelism=8
+timeout=600000
 verbose=0
+num_partitions=16
 
+# read arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
   "-parallelism")
@@ -19,9 +20,9 @@ while [[ $# -gt 0 ]]; do
     verbose="${2}"
     shift 2
     ;;
-  "-rerun")
-    rerun="true"
-    shift
+  "-partition")
+    partition="${2}"
+    shift 2
     ;;
   *)
     positional_args+=("${1}")
@@ -30,30 +31,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-set -- "${positional_args[@]}"
-
-if [[ -z "$rerun" ]]; then
-  if [ -d "wtune_data/enumerations" ]; then
-    cwd="${PWD}"
-    cd 'wtune_data/enumerations' || true
-    files=$(ls -t -1 | ag 'run.+')
-
-    while IFS= read -r line; do
-      if [ -f "${line}/checkpoint.txt" ]; then
-        checkpoint="enumerations/${line}/checkpoint.txt"
-        break
-      fi
-    done <<<"${files}"
-
-    cd "${cwd}" || exit
-  fi
+if [ -z "${partition}" ]; then
+  echo 'Please specify partitions! format: <num_partitions>/<from_partition_index>-<to_partition_index>'
+  echo 'e.g., 16/0-3'
+  exit 1
 fi
 
-partitions=${1:-'1'}
-local_idx=${2:-'0'}
+# parse partition
+IFS='/' read -ra TMP <<<"${partition}"
+num_partitions="${TMP[0]:-${num_partitions}}"
+IFS='-' read -ra TMP <<<"${TMP[1]}"
+from_partition="${TMP[0]:-0}"
+to_partition="${TMP[1]:-${from_partition}}"
 
-if [ -z "${checkpoint}" ]; then
-  gradle :superopt:run --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${partitions}/${local_idx}"
-else
-  gradle :superopt:run --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -checkpoint=${checkpoint} -partition=${partitions}/${local_idx}"
+if [ "${from_partition}" -gt "${to_partition}" ]; then
+  echo "Wrong partition spec: ${num_partitions}/${from_partition}-${to_partition}"
+  exit 1
 fi
+
+echo "parallelism=${parallelism} timeout=${timeout} verbose=${verbose} partition=${num_partitions}/${from_partition}-${to_partition}"
+
+for ((i = from_partition; i <= to_partition; i++)); do
+  nohup gradle :superopt:run \
+    --args="runner.EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i}" \
+    >"enum.log.${i}" 2>&1 &
+done
