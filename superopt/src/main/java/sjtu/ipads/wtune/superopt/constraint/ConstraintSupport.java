@@ -19,6 +19,7 @@ public interface ConstraintSupport {
   int ENUM_FLAG_ECHO = 16;
   int ENUM_FLAG_USE_SPES = 32;
   int ENUM_FLAG_COUNT_HARMLESS_TIMEOUT = 64;
+  int ENUM_FLAG_DISABLE_METRIC = 128;
 
   static EnumerationMetrics getEnumerationMetric() {
     return EnumerationMetricsContext.instance().global();

@@ -140,18 +140,24 @@ class ConstraintEnumerator {
   }
 
   List<Substitution> enumerate() {
-    try (EnumerationMetrics metric = EnumerationMetrics.open()) {
-      try (var ignored = metric.elapsedEnum.timeIt()) {
-        this.metric = metric;
+    if ((tweak & ENUM_FLAG_DISABLE_METRIC) == ENUM_FLAG_DISABLE_METRIC) {
+      stages[0].enumerate();
+      return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
 
-        stages[0].enumerate();
+    } else {
+      try (EnumerationMetrics metric = EnumerationMetrics.open()) {
+        try (var ignored = metric.elapsedEnum.timeIt()) {
+          this.metric = metric;
 
-        metric.numTotalConstraintSets.set(I.size());
-        if (timeoutConstraints.isInitialized()) {
-          metric.numTrueUnknown.set(timeoutConstraints.get().size());
+          stages[0].enumerate();
+
+          metric.numTotalConstraintSets.set(I.size());
+          if (timeoutConstraints.isInitialized()) {
+            metric.numTrueUnknown.set(timeoutConstraints.get().size());
+          }
+
+          return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
         }
-
-        return map(knownEqs, it -> I.mkRule(it.bits.get(0)));
       }
     }
   }
