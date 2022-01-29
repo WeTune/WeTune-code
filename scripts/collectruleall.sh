@@ -1,7 +1,9 @@
 #!/bin/bash
 
 set -eu -o pipefail
-depth=${1:-1}
+
+data_dir="${WETUNE_DATA_DIR:-wtune_data}"
+rule_dir='rules'
 
 username='zhouz'
 prefix='10.0.0.10'
@@ -30,17 +32,17 @@ while [[ $# -gt 0 ]]; do
 done
 ips=(${ips[@]:-${default_ips[@]}})
 
-cd wtune_data
+mkdir -p "${data_dir}/${rule_dir}"
+cd "${data_dir}/${rule_dir}"
+rule_file="rules.raw.txt"
 
-t=$(date '+%m_%d_%H_%M')
-dirname="all_rules/run${t}"
-mkdir -p "${dirname}" 2>/dev/null || true
+if [ -f "${rule_file}" ]; then
+  truncate -s0 "${rule_file}"
+fi
 
 for var in "${ips[@]}"; do
   ip="${prefix}${var}"
-  ssh "${username}@${ip}" "cd ${wetune_path}; scripts/collectrule.sh --keep ${depth}"
-  scp "${username}@${ip}:${wetune_path}/wtune_data/rules.partial.txt" "${dirname}/rules.${ip}.txt"
-  cat "${dirname}/rules.${ip}.txt" >>"${dirname}/rules.txt"
+  ssh "${username}@${ip}" "cd ${wetune_path}; scripts/collectrule.sh"
+  scp "${username}@${ip}:${wetune_path}/${data_dir}/${rule_dir}/rules.local.txt" "rules.${ip}.txt"
+  cat "rules.${ip}.txt" >>"${rule_file}"
 done
-
-ln -sfr "${dirname}/rules.txt" 'rules.txt'

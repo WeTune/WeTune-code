@@ -1,7 +1,9 @@
 #! /bin/bash
 
 verbose='0'
-rules='rules.txt'
+data_dir="${WETUNE_DATA_DIR:-wtune_data}"
+rewrite_dir="rewrite"
+rules='rules/rules.txt'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -14,17 +16,17 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   *)
-    postional_args+=("${1}")
+    positional_args+=("${1}")
     shift
     ;;
   esac
 done
 
-set -- "${postional_args[@]}"
+set -- "${positional_args[@]}"
 
-gradle :superopt:run --args="runner.RewriteQuery -v=${verbose} -R=${rules}"
+gradle :superopt:run --args="RewriteQuery -v=${verbose} -R=${rules}"
 
-cd 'wtune_data/rewrite' || exit
+cd "${data_dir}/${rewrite_dir}" || exit
 
 dir=$(ls -t -1 | ag 'run.+' | head -1)
 ln -sfr "${dir}" 'result'

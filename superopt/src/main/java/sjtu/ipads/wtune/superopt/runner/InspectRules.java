@@ -21,7 +21,7 @@ public class InspectRules implements Runner {
   public void prepare(String[] argStrings) {
     final Args args = Args.parse(argStrings, 1);
     final String indexRange = args.getOptional("indices", String.class, null);
-    final String fileName = args.getOptional("f", "file", String.class, "rules.txt");
+    final String fileName = args.getOptional("f", "file", String.class, "rules/rules.txt");
 
     file = RunnerSupport.dataDir().resolve(fileName);
     checkFileExists(file);

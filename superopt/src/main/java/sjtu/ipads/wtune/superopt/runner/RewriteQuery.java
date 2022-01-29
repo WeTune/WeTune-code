@@ -65,7 +65,7 @@ public class RewriteQuery implements Runner {
     if (single && stmtId > 0) verbosity = Integer.MAX_VALUE;
 
     final Path dataDir = RunnerSupport.dataDir();
-    final String ruleFileName = args.getOptional("R", "rules", String.class, "rules.txt");
+    final String ruleFileName = args.getOptional("R", "rules", String.class, "rules/rules.txt");
 
     final Path ruleFilePath = dataDir.resolve(ruleFileName);
     IOSupport.checkFileExists(ruleFilePath);

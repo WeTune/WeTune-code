@@ -5,8 +5,8 @@
 !schemas/*
 !schemas_mssql
 !schemas_mssql/*
-!rules.test.txt
-!rules.txt
-!spes_rules.txt
-!merged_rules.txt
+!rules/rules.test.txt
+!rules/rules.txt
+!rules/spes_rules.txt
+!rules/merged_rules.txt
 !calcite*

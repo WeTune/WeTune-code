@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.time.format.DateTimeFormatter.ofPattern;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.IOSupport.checkFileExists;
 import static sjtu.ipads.wtune.common.utils.IOSupport.io;
@@ -62,10 +63,9 @@ public class RunCalciteTest implements Runner {
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     final Path dataDir = dataDir();
-    final Path parentDir =
-        dataDir.resolve(args.getOptional("D", "dir", String.class, "rewrite_calcite"));
-    final String subDirSuffix =
-        LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
+    final Path parentDir = dataDir.resolve(args.getOptional("D", "dir", String.class, "calcite"));
+    final String subDirSuffix = LocalDateTime.now().format(ofPattern("MMddHHmmss"));
+
     outDir = parentDir.resolve("run" + subDirSuffix);
     outOpt = outDir.resolve("1_opt.tsv");
     outTrace = outDir.resolve("1_trace.tsv");
@@ -78,8 +78,8 @@ public class RunCalciteTest implements Runner {
       throw new IllegalArgumentException("no such task: " + target);
 
     final String testCasesFile = args.getOptional("i", "input", String.class, "calcite_tests");
-    final String rulesFile = args.getOptional("R", "rules", String.class, "rules.txt");
-    testCasesPath = dataDir.resolve(testCasesFile);
+    final String rulesFile = args.getOptional("R", "rules", String.class, "rules/rules.txt");
+    testCasesPath = parentDir.resolve(testCasesFile);
     rulesPath = dataDir.resolve(rulesFile);
 
     rules = Lazy.mk(io(() -> SubstitutionSupport.loadBank(rulesPath)));

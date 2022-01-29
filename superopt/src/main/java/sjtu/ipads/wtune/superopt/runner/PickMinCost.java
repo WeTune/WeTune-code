@@ -39,6 +39,10 @@ public class PickMinCost implements Runner {
   private Properties dbPropsSeed;
   private final Map<String, Properties> dbProps = new ConcurrentHashMap<>();
 
+  private static final String DEFAULT_JDBC_URL = "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=";
+  private static final String DEFAULT_JDBC_USER = "SA";
+  private static final String DEFAULT_JDBC_PASSWD = "mssql2019Admin";
+
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
@@ -59,24 +63,29 @@ public class PickMinCost implements Runner {
     if (stmtId > 0) verbosity = Integer.MAX_VALUE;
 
     final Path dataDir = dataDir();
-    final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "result"));
-    inOptFile = dir.resolve(args.getOptional("in", String.class, "1_query.tsv"));
-    inTraceFile = dir.resolve(args.getOptional("in_trace", String.class, "1_trace.tsv"));
+    final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "rewrite/result"));
+    inOptFile = dir.resolve(args.getOptional("i", "in", String.class, "1_query.tsv"));
+    inTraceFile = dir.resolve(args.getOptional("I", "in_trace", String.class, "1_trace.tsv"));
     IOSupport.checkFileExists(inOptFile);
 
     final String defaultOutFileName =
-        "optimize_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
+        "optimize_"
+            + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
+            + ".tsv";
     final String defaultOutTraceFileName =
-        "optimize_trace" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
-    final String outFileName = args.getOptional("out", String.class, "2_query.tsv");
-    final String outTraceFileName = args.getOptional("out_trace", String.class, "2_trace.tsv");
+        "optimize_trace"
+            + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"))
+            + ".tsv";
+    final String outFileName = args.getOptional("out", String.class, defaultOutFileName);
+    final String outTraceFileName =
+        args.getOptional("out_trace", String.class, defaultOutTraceFileName);
     outOptFile = dir.resolve(outFileName);
     outTraceFile = dir.resolve(outTraceFileName);
 
     // Default datasource is Sql Server
-    final String jdbcUrl = args.getOptional("dbUrl", String.class, "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=");
-    final String username = args.getOptional("dbUser", String.class, "SA");
-    final String password = args.getOptional("dbPasswd", String.class, "mssql2019Admin");
+    final String jdbcUrl = args.getOptional("dbUrl", String.class, DEFAULT_JDBC_URL);
+    final String username = args.getOptional("dbUser", String.class, DEFAULT_JDBC_USER);
+    final String password = args.getOptional("dbPasswd", String.class, DEFAULT_JDBC_PASSWD);
     final String dbType = args.getOptional("dbType", String.class, SQLServer);
     if (jdbcUrl.isEmpty()) throw new IllegalArgumentException("jdbc url should not be empty");
 
@@ -102,7 +111,7 @@ public class PickMinCost implements Runner {
     final List<OptimizedStatements> groups = filterToRun(collectOpts(lines, traces));
     try (final ProgressBar pb = new ProgressBar("PickMin", groups.size())) {
       for (OptimizedStatements group : groups) {
-        if (!pickMin(group)){
+        if (!pickMin(group)) {
           failures.add(group.toString());
         }
         pb.step();
@@ -198,7 +207,8 @@ public class PickMinCost implements Runner {
       if (verbosity >= 3) System.out.println("No better than baseline " + group);
       // IOSupport.appendTo(
       //     outOptFile,
-      //     writer -> writer.printf("%s\t%d: No better than baseline.\n", group.appName, group.stmtId));
+      //     writer -> writer.printf("%s\t%d: No better than baseline.\n", group.appName,
+      // group.stmtId));
       return true;
     }
     if (verbosity >= 3) System.out.println("Opt No." + idx + " pick for " + group);

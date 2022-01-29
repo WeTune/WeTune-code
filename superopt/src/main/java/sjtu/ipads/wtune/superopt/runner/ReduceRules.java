@@ -24,9 +24,9 @@ public class ReduceRules implements Runner {
   public void prepare(String[] argStrings) throws IOException {
     final Args args = Args.parse(argStrings, 1);
     final Path dataDir = dataDir();
-    final String inFileName = args.getOptional("R", "rules", String.class, "rules.txt");
-    final String outFileName = args.getOptional("o", "output", String.class, "rules.txt");
-    final String addFileName = args.getOptional("a", String.class, "rules.test.txt");
+    final String inFileName = args.getOptional("R", "rules", String.class, "rules/rules.raw.txt");
+    final String outFileName = args.getOptional("o", "output", String.class, "rules/rules.txt");
+    final String addFileName = args.getOptional("a", String.class, "rules/rules.test.txt");
 
     inFile = dataDir.resolve(inFileName);
     outFile = dataDir.resolve(outFileName);

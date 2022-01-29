@@ -2,12 +2,15 @@
 
 set -eu -o pipefail
 
-keep="10000000"
+data_dir="${WETUNE_DATA_DIR:-wtune_data}"
+enum_dir='enumeration'
+rule_dir='rules'
 
+# read arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-  -keep)
-    keep="$2"
+  -partition)
+    partitions="${2}"
     shift 2
     ;;
   *)
@@ -16,21 +19,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# parse partition
+IFS='-' read -ra TMP <<<"${partitions}"
+from_partition="${TMP[0]:-0}"
+to_partition="${TMP[1]:-${from_partition}}"
+
+if [ "${from_partition}" -gt "${to_partition}" ]; then
+  echo "Wrong partition spec: ${from_partition}-${to_partition}"
+  exit 1
+fi
+
+if ! [ -d "${data_dir}/${enum_dir}" ]; then
+  echo "no such directory ${data_dir}/${enum_dir}"
+  exit 1
+fi
+
+cd "${data_dir}"
+mkdir -p "${rule_dir}"
+
 t=$(date '+%m_%d_%H_%M')
+rules_file="${rule_dir}/rules.${t}.txt"
 
-cd 'wtune_data/enumerations'
-name="rules.${t}.txt"
-files=$(ls -t -1 | ag 'run.+')
-
-while IFS= read -r line; do
-  echo "${keep}"
-  if [ "${keep}" = 0 ]; then
-    break
+for ((i = from_partition; i <= to_partition; i++)); do
+  run_dir=$(ls -t -1 | ag "run.+_${i}" | head -1)
+  if [ -z "${run_dir}" ] || ! [ -f "${enum_dir}/${run_dir}/success.txt" ]; then
+    echo "Excepted ${data_dir}/${enum_dir}/run*_${i}/success.txt does not exist."
+    exit 1
   fi
-  if [ -f "${line}/success.txt" ]; then
-    cat "${line}/success.txt" >>"${name}"
-    keep=$((keep - 1))
-  fi
-done <<<"${files}"
+  cat "${enum_dir}/${run_dir}/success.txt" >>"${rules_file}"
+done
 
-ln -sfr "${name}" "../rules.partial.txt"
+ln -sfr "${rules_file}" "${rule_dir}/rules.local.txt"

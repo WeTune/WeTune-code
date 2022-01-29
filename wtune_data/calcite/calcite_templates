@@ -2,4 +2,4 @@
 47,48 Proj<a0 s0>(InnerJoin<k0 k1>(Input<t0>,Input<t1>))|Proj<a1 s1>(InnerJoin<k2 k3>(Input<t2>,Input<t3>))|AttrsSub(k0,t0);AttrsSub(k1,t1);AttrsSub(a0,t0);SchemaEq(s1,s0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(k2,k0);AttrsEq(k3,k1);AttrsEq(a1,a0);
 53,54 Proj<a0 s0>(Filter<p0 b0>(Proj<a1 s1>(Input<t0>))))|Proj<a2 s2>(Filter<p1 b1>(Proj<a3 s3>(Input<t1>))))|AttrsSub(a0,s1);AttrsSub(b0,s1);AttrsSub(a3,t1);SchemaEq(s2,s0);SchemaEq(s3,s1);TableEq(t1,t0);AttrsEq(a3,a1);AttrsEq(b1,b0);AttrsEq(a2,a0);PredicateEq(p1,p0);
 75,76 Proj<a0 s0>(Filter<p0 b0>(Input<t0>))|Proj<a1 s1>(Filter<p1 b1>(Input<t1>))|AttrsSub(a0,t0);AttrsSub(b0,t0);SchemaEq(s1,s0);TableEq(t1,t0);AttrsEq(a1,a0);AttrsEq(b1,b0);TableEq(t1,t0);
-
+83,94 Proj<a0 s0>(InnerJoin<k0 k1>(Proj<a1 s1>(Filter<p0 b0>(Input<t0>)),Input<t1>))|Proj<a2 s2>(InnerJoin<k2 k3>(Proj<a3 s3>(Filter<p1 b1>(Input<t2>)),Input<t3>))|AttrsSub(a0,s1);AttrsSub(k0,s1);AttrsSub(k1,t1);AttrsSub(a1,t0);AttrsSub(b0,t0);SchemaEq(s2,s0);SchemaEq(s3,s1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a2,a0);AttrsEq(k2,k0);AttrsEq(k3,k1);AttrsEq(a3,a1);AttrsEq(b1,b0);
