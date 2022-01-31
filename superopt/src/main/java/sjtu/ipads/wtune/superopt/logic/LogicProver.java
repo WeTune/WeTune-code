@@ -311,11 +311,11 @@ class LogicProver {
     if (answer != Status.UNSATISFIABLE) return trResult(answer);
 
     // q4: X = Y /\ X != 0 /\ Z(y) != 0 /\ Z(y') != 0 /\ y != y'
-    final FuncDecl funcY = z3.mkFuncDecl("Z", map(ys, Expr::getSort, Sort.class), z3.getBoolSort());
-    solver.add(mkForall(ys, z3.mkEq(funcY.apply(ys), boolZ)));
+    final FuncDecl funcZ = z3.mkFuncDecl("Z", map(ys, Expr::getSort, Sort.class), z3.getBoolSort());
+    solver.add(mkForall(ys, z3.mkEq(funcZ.apply(ys), boolZ)));
     final Expr[] ys1 = map(diffVars, it -> trVar(UVar.mkBase(UName.mk(it + "_"))), Expr.class);
     solver.add(mkOr(generate(ys.length, i -> z3.mkNot(z3.mkEq(ys[i], ys1[i])), BoolExpr.class)));
-    answer = check(solver, eqXY, boolX, (BoolExpr) funcY.apply(ys), (BoolExpr) funcY.apply(ys1));
+    answer = check(solver, eqXY, boolX, (BoolExpr) funcZ.apply(ys), (BoolExpr) funcZ.apply(ys1));
 
     return trResult(answer);
   }
