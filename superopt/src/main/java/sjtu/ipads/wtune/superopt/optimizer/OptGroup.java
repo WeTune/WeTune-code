@@ -14,6 +14,9 @@ class OptGroup extends BaseCongruentClass<SubPlan> {
   @Override
   protected void merge(BaseCongruentClass<SubPlan> other) {
     super.merge(other);
+
+    ((MinCostSet) elements).evicted().addAll(((OptGroup) other).evicted());
+
     final Memo memo = (Memo) this.congruence;
     for (String key : ((OptGroup) other).evicted()) {
       ((OptGroup) memo.eqClassAt(key)).elements = elements;

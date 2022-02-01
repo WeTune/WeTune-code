@@ -1,5 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
@@ -25,6 +28,7 @@ class Instantiation {
   private final Model model;
   private final PlanContext newPlan;
   private final ValueRefReBinder reBinder;
+  private final Lazy<TIntSet> usedSubqueryNode;
 
   private String error;
 
@@ -33,6 +37,7 @@ class Instantiation {
     this.model = model;
     this.newPlan = model.plan().copy();
     this.reBinder = new ValueRefReBinder(newPlan);
+    this.usedSubqueryNode = Lazy.mk(TIntHashSet::new);
   }
 
   PlanContext instantiatedPlan() {
@@ -291,10 +296,14 @@ class Instantiation {
 
     final int subqueryNode = infoCache.getSubqueryNodeOf(expr);
     if (subqueryNode != NO_SUCH_NODE) {
-      newPlan.detachNode(subqueryNode);
-      newPlan.setChild(subqueryNode, 0, child);
-      rebindFilterExpr(subqueryNode, refs, 0);
-      return subqueryNode;
+      if (usedSubqueryNode.get().add(subqueryNode)) {
+        newPlan.detachNode(subqueryNode);
+        newPlan.setChild(subqueryNode, 0, child);
+        rebindFilterExpr(subqueryNode, refs, 0);
+        return subqueryNode;
+      } else {
+        return fail(FAILURE_ABUSED_SUBQUERY);
+      }
     }
 
     final int[] components = infoCache.getVirtualExprComponents(expr);

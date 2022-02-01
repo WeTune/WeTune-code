@@ -132,7 +132,7 @@ public class RunCalciteTest implements Runner {
     checkFileExists(testCasesPath);
     checkFileExists(rulesPath);
     OptimizerSupport.setOptimizerTweaks(
-        TWEAK_KEEP_ORIGINAL_PLAN | TWEAK_SORT_FILTERS | TWEAK_PERMUTE_JOIN_TREE);
+        TWEAK_KEEP_ORIGINAL_PLAN | TWEAK_SORT_FILTERS_DURING_REWRITE | TWEAK_PERMUTE_JOIN_TREE);
 
     final SubstitutionBank rules = this.rules.get();
     final List<QueryPair> pairs = this.queryPairs.get();

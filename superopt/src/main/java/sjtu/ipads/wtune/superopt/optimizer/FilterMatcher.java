@@ -214,6 +214,8 @@ class FilterMatcher {
       for (int i = 0, bound = nodeChain.size(); i < bound; ++i)
         if (!assignments.isUsed(i)) toMergeFilters.add(i);
 
+      if (toMergeFilters.isEmpty()) return false;
+
       assignments.setCombined(opIdx, toMergeFilters.toArray());
       final boolean result = next.match(match);
       assignments.unset(opIdx);

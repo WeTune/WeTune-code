@@ -17,12 +17,14 @@ public abstract class OptimizerSupport {
   public static final String FAILURE_MALFORMED_AGG = "malformed aggregation ";
   public static final String FAILURE_MISMATCHED_REFS = "mismatched refs ";
   public static final String FAILURE_UNKNOWN_OP = "unknown op ";
+  public static final String FAILURE_ABUSED_SUBQUERY = "abused subquery ";
 
   public static final int TWEAK_DISABLE_JOIN_FLIP = 1;
   public static final int TWEAK_ENABLE_EXTENSIONS = 2;
   public static final int TWEAK_KEEP_ORIGINAL_PLAN = 4;
-  public static final int TWEAK_SORT_FILTERS = 8;
-  public static final int TWEAK_PERMUTE_JOIN_TREE = 16;
+  public static final int TWEAK_SORT_FILTERS_DURING_REWRITE = 8;
+  public static final int TWEAK_SORT_FILTERS_BEFORE_OUTPUT = 16;
+  public static final int TWEAK_PERMUTE_JOIN_TREE = 32;
   static int optimizerTweaks = 0;
 
   private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();
@@ -48,7 +50,7 @@ public abstract class OptimizerSupport {
   }
 
   static int normalizeFilter(PlanContext plan, int rootId) {
-    if ((optimizerTweaks & TWEAK_SORT_FILTERS) != 0) {
+    if ((optimizerTweaks & TWEAK_SORT_FILTERS_DURING_REWRITE) != 0) {
       return new NormalizeFilter(plan).normalizeTree(rootId);
     } else {
       return rootId;
@@ -97,8 +99,8 @@ public abstract class OptimizerSupport {
                     default -> "Unknown";
             };
 
-        System.out.println("  ~~ " + ruleString);
-        System.out.println("==> " + stringifyTree(target, target.root(), false, true));
+        System.out.println("~~ " + ruleString);
+        System.out.println("==> " + stringifyTree(target, target.root(), true, true));
       }
     }
     System.out.println("=== end dump trace ===");

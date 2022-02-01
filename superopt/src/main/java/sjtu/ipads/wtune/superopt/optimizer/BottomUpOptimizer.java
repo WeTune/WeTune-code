@@ -78,15 +78,7 @@ class BottomUpOptimizer implements Optimizer {
     startAt = System.currentTimeMillis();
 
     final Set<SubPlan> results = optimize0(new SubPlan(plan, planRoot));
-    final Set<PlanContext> optimized = new HashSet<>(results.size());
-
-    for (SubPlan result : results) {
-      // Preclude the original one
-      if (keepOriginal || !PlanSupport.isLiteralEq(originalPlan, result.plan()))
-        optimized.add(result.plan());
-    }
-
-    return optimized;
+    return collectRewritten(originalPlan, results);
   }
 
   private Set<SubPlan> optimize0(SubPlan subPlan) {
@@ -329,7 +321,8 @@ class BottomUpOptimizer implements Optimizer {
   private int preprocess(PlanContext plan) {
     int planRoot = plan.root();
 
-    if ((optimizerTweaks & TWEAK_SORT_FILTERS) != 0) planRoot = normalizeFilter(plan, planRoot);
+    if ((optimizerTweaks & TWEAK_SORT_FILTERS_DURING_REWRITE) != 0)
+      planRoot = normalizeFilter(plan, planRoot);
 
     planRoot = enforceInnerJoin(plan, planRoot);
     planRoot = reduceSort(plan, planRoot);
@@ -377,6 +370,30 @@ class BottomUpOptimizer implements Optimizer {
     planRoot = converter.flip(planRoot);
     if (converter.isFlipped() && tracing) traceStep(original, plan, 5);
     return planRoot;
+  }
+
+  private Set<PlanContext> collectRewritten(PlanContext origin, Set<SubPlan> subPlans) {
+    final boolean shouldSortFilters = (optimizerTweaks & TWEAK_SORT_FILTERS_BEFORE_OUTPUT) != 0;
+    if (shouldSortFilters) {
+      origin = origin.copy();
+      normalizeFilter(origin, origin.root());
+    }
+
+    final Set<String> known = new HashSet<>(subPlans.size());
+    final Set<PlanContext> rewritings = new HashSet<>(subPlans.size());
+    for (SubPlan subPlan : subPlans) {
+      // Preclude the original one
+      final PlanContext plan = subPlan.plan();
+      if (shouldSortFilters) normalizeFilter(plan, plan.root());
+
+      if (keepOriginal || !PlanSupport.isLiteralEq(origin, plan)) {
+        if (known.add(stringifyTree(plan, plan.root(), true))) {
+          rewritings.add(plan);
+        }
+      }
+    }
+
+    return rewritings;
   }
 
   private boolean isTimedOut() {

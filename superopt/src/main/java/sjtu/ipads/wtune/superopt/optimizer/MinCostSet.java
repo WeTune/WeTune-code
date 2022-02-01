@@ -23,7 +23,10 @@ class MinCostSet implements Set<SubPlan> {
     final Complexity cost = Complexity.mk(subPlan.plan(), subPlan.nodeId());
     final int cmp = minCost == null ? -1 : cost.compareTo(minCost);
     // the new plan is more costly, abandon it
-    if (cmp > 0) return false;
+    if (cmp > 0) {
+      evicted.add(subPlan.toString());
+      return false;
+    }
     // the new plan is cheaper, abandon existing ones
     if (cmp < 0) {
       evicted.addAll(subPlans.keySet());

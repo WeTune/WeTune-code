@@ -29,7 +29,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_ENABLE_EXTENSIONS;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIntArg;
 
 public class RewriteQuery implements Runner {
@@ -89,7 +89,8 @@ public class RewriteQuery implements Runner {
 
   @Override
   public void run() throws Exception {
-    if (rules.isExtended()) OptimizerSupport.addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+    if (rules.isExtended()) addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+    addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
 
     if (single && stmtId > 0) {
       optimizeOne(Statement.findOne(targetApp, stmtId));
@@ -162,6 +163,12 @@ public class RewriteQuery implements Runner {
                     + PlanSupport.getLastError());
           if (verbosity >= 2) System.err.println(stringifyTree(opt, opt.root(), false, false));
           continue;
+        }
+
+        if (single) {
+          System.out.println("===== Rewritings =====");
+          System.out.println(sqlNode.toString(false));
+          OptimizerSupport.dumpTrace(optimizer, opt);
         }
 
         optimizedSql.add(sqlNode.toString());
@@ -254,7 +261,7 @@ public class RewriteQuery implements Runner {
     if (plan.kindOf(node) != PlanKind.Proj || PlanSupport.isDedup(plan, node)) return false;
     node = plan.childOf(node, 0);
 
-    while (plan.kindOf(node).isFilter()) node = plan.childOf(node, 0);
+    while (plan.kindOf(node) == PlanKind.Filter) node = plan.childOf(node, 0);
     return plan.kindOf(node) == PlanKind.Input;
   }
 }
