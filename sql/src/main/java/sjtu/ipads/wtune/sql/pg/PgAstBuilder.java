@@ -233,12 +233,13 @@ public class PgAstBuilder extends PGParserBaseVisitor<SqlNode> implements AstBui
   public SqlNode visitSelect_ops_no_parens(PGParser.Select_ops_no_parensContext ctx) {
     if (ctx.select_ops() != null) {
       final SqlNode node = mkNode(SetOp);
-      node.$(SetOp_Left, ctx.select_ops().accept(this));
+      node.$(SetOp_Left, wrapAsQuery(ctx.select_ops().accept(this)));
       node.$(
           SetOp_Right,
-          ctx.select_stmt() != null
-              ? ctx.select_stmt().accept(this)
-              : ctx.select_primary().accept(this));
+          wrapAsQuery(
+              ctx.select_stmt() != null
+                  ? ctx.select_stmt().accept(this)
+                  : ctx.select_primary().accept(this)));
 
       final SetOpKind op;
       if (ctx.UNION() != null) op = UNION;

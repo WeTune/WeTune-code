@@ -22,6 +22,7 @@ import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.*;
 import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Derived_Subquery;
 import static sjtu.ipads.wtune.sql.ast.TableSourceFields.Simple_Table;
 import static sjtu.ipads.wtune.sql.support.resolution.Relation.isRelationRoot;
+import static sjtu.ipads.wtune.sql.support.resolution.ResolutionSupport.getOuterRelation;
 
 class ResolveRelation implements SqlVisitor {
   private final SqlContext ctx;
@@ -43,7 +44,9 @@ class ResolveRelation implements SqlVisitor {
   private class SetupInfo implements SqlVisitor {
     @Override
     public boolean enter(SqlNode node) {
-      if (isRelationRoot(node)) relations.bindRelationRoot(node);
+      if (isRelationRoot(node)) {
+        relations.bindRelationRoot(node);
+      }
       return true;
     }
   }
@@ -52,8 +55,7 @@ class ResolveRelation implements SqlVisitor {
     @Override
     public boolean enterSimpleTableSource(SqlNode tableSource) {
       final RelationImpl relation = relations.enclosingRelationOf(tableSource);
-      final RelationImpl outerRelation =
-          ((RelationImpl) ResolutionSupport.getOuterRelation(relation));
+      final RelationImpl outerRelation = ((RelationImpl) getOuterRelation(relation));
       outerRelation.addInput(relation);
       return false;
     }
@@ -64,6 +66,15 @@ class ResolveRelation implements SqlVisitor {
       final RelationImpl outerRelation = relations.enclosingRelationOf(tableSource);
       outerRelation.addInput(relation);
       return true;
+    }
+
+    @Override
+    public void leaveSetOp(SqlNode union) {
+      final RelationImpl lhs = relations.enclosingRelationOf(union.$(SetOp_Left));
+      final RelationImpl rhs = relations.enclosingRelationOf(union.$(SetOp_Right));
+      final RelationImpl outerRelation = relations.enclosingRelationOf(union);
+      outerRelation.addInput(lhs);
+      outerRelation.addInput(rhs);
     }
   }
 

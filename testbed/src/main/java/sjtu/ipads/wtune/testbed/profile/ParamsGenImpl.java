@@ -77,7 +77,7 @@ public class ParamsGenImpl implements ParamsGen {
 
   @Override
   public int seedOf(Relation relation) {
-    return seeds.getOrDefault(relation, -1);
+    return seeds.getOrDefault(relation, 0);
   }
 
   @Override

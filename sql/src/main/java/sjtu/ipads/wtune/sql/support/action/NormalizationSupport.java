@@ -29,6 +29,7 @@ public abstract class NormalizationSupport {
     NormalizeBool.normalize(node);
     NormalizeJoinCond.normalize(node);
     NormalizeTuple.normalize(node);
+    node.context().clearAdditionalInfo();
   }
 
   public static void installParamMarkers(SqlNode node) {

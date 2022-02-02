@@ -73,6 +73,11 @@ public class SqlContextImpl extends LabeledTreeContextBase<SqlKind> implements S
   }
 
   @Override
+  public void clearAdditionalInfo() {
+    if (additionalInfo.isInitialized()) additionalInfo.get().clear();
+  }
+
+  @Override
   protected void relocate(int from, int to) {
     super.relocate(from, to);
     notifyRelocate(from, to);

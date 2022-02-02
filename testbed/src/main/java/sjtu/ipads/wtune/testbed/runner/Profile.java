@@ -74,7 +74,10 @@ public class Profile implements Runner {
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");
     out = Runner.dataDir().resolve(dir).resolve(optimizedBy).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
-    if (!Files.exists(out)) Files.createFile(out);
+    if (!Files.exists(out)) {
+      Files.createDirectories(out.getParent());
+      Files.createFile(out);
+    }
 
     initBlackList();
   }

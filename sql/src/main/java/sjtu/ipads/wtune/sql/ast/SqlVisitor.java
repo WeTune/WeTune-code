@@ -291,7 +291,7 @@ public interface SqlVisitor {
     return true;
   }
 
-  default void leaveUnion(SqlNode union) {}
+  default void leaveSetOp(SqlNode union) {}
 
   default boolean enterStatement(SqlNode statement) {
     return true;

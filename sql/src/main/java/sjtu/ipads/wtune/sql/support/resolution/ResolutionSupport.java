@@ -98,6 +98,7 @@ public abstract class ResolutionSupport {
     if (!ColRef.isInstance(colRef)) return null;
 
     final Relation relation = getEnclosingRelation(colRef);
+    getEnclosingRelation(colRef);
     final String qualification = colRef.$(ColRef_ColName).$(ColName_Table);
     final String name = colRef.$(ColRef_ColName).$(ColName_Col);
 

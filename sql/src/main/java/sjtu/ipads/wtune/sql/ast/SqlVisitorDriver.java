@@ -183,7 +183,7 @@ interface SqlVisitorDriver {
         break;
 
       case SetOp:
-        v.leaveUnion(n);
+        v.leaveSetOp(n);
         break;
     }
 

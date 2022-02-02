@@ -72,7 +72,7 @@ public abstract class RandomHelper {
   }
 
   public static int randUniqueIntDec(int seed, int index, int digits) {
-    // here `seed` needn't to be hash
+    // here `seed` needn't be hash
     if (index < 0 || digits > 9 || index >= MathHelper.pow10(digits))
       throw new IllegalArgumentException("impossible to generate unique random integer");
 

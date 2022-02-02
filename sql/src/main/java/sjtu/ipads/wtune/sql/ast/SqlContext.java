@@ -18,6 +18,8 @@ public interface SqlContext extends LabeledTreeContext<SqlKind> {
 
   void removeAdditionalInfo(AdditionalInfo.Key<?> key);
 
+  void clearAdditionalInfo();
+
   static SqlContext mk(int expectedNumNodes) {
     return new SqlContextImpl(expectedNumNodes, null);
   }
