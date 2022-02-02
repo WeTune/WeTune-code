@@ -20,14 +20,14 @@ task antlrMysql {
             if (Os.isFamily(Os.FAMILY_WINDOWS))
                 exec {
                     workingDir resourceDir
-                    commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+                    commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\lib\\antlr-4.8-complete.jar",
                             '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                             '-package', 'sjtu.ipads.wtune.sql.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
                 }
             else
                 exec {
                     workingDir resourceDir
-                    commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
+                    commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/lib/antlr-4.8-complete.jar",
                             '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                             '-package', 'sjtu.ipads.wtune.sql.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
                 }
@@ -44,14 +44,14 @@ task antlrPg {
             if (Os.isFamily(Os.FAMILY_WINDOWS))
                 exec {
                     workingDir resourceDir
-                    commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\scripts\\antlr-4.8-complete.jar",
+                    commandLine 'powershell', 'java', '-Xmx1024m', '-jar', "$rootDir\\lib\\antlr-4.8-complete.jar",
                             '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                             '-package', 'sjtu.ipads.wtune.sql.pg.internal', 'PGLexer.g4', 'PGParser.g4'
                 }
             else
                 exec {
                     workingDir resourceDir
-                    commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/scripts/antlr-4.8-complete.jar",
+                    commandLine 'java', '-Xmx1024m', '-jar', "$rootDir/lib/antlr-4.8-complete.jar",
                             '-Dlanguage=Java', '-no-listener', '-visitor', '-o', "../../../$genDir",
                             '-package', 'sjtu.ipads.wtune.sql.pg.internal', 'PGLexer.g4', 'PGParser.g4'
                 }

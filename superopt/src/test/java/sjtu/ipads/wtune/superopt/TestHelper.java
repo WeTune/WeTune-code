@@ -49,7 +49,7 @@ public abstract class TestHelper {
     if (bank != null) return bank;
 
     try {
-      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "rules", "rules.reduced.txt"));
+      bank = SubstitutionSupport.loadBank(Paths.get("wtune_data", "rules", "rules.test.txt"));
     } catch (IOException ioe) {
       throw new UncheckedIOException(ioe);
     }

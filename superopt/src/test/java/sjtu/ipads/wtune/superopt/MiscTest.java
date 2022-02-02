@@ -65,13 +65,13 @@ public class MiscTest {
 
   @Test
   void test1() throws IOException {
-    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.raw.txt"));
-    final String ruleStr =
-        "InSubFilter<a4>(InnerJoin<a1 a2>(Proj*<a0 s0>(Input<t0>),Input<t1>),Proj<a3 s1>(Input<t2>))|InnerJoin<a8 a9>(Proj<a7 s2>(InnerJoin<a5 a6>(Input<t3>,Input<t4>)),Input<t5>)|AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,t1);AttrsSub(a3,t2);AttrsSub(a4,s0);Unique(t0,a0);Unique(t2,a3);TableEq(t3,t2);TableEq(t4,t0);TableEq(t5,t1);AttrsEq(a5,a3);AttrsEq(a6,a4);AttrsEq(a7,a0);AttrsEq(a8,a1);AttrsEq(a9,a2);SchemaEq(s2,s0)";
-    final Substitution rule = Substitution.parse(ruleStr);
-    final Pair<PlanContext, PlanContext> plan = SubstitutionSupport.translateAsPlan(rule);
-    completePlan(plan.getLeft());
-    Optimizer.mk(bank).optimize(plan.getLeft());
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.reduced.txt"));
+    final SubstitutionBank bank1 = loadBank(Path.of("wtune_data", "rules", "rules.spes.txt"));
+    int count = 0;
+    for (Substitution rule : bank1.rules()) {
+      if (!bank0.contains(rule)) ++count;
+    }
+    System.out.println(bank1.size() + " " + count);
   }
 
   private static void completePlan(PlanContext plan) {
