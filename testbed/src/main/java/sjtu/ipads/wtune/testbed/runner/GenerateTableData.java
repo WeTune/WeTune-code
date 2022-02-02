@@ -10,6 +10,7 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.sql.schema.Table;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.support.OptimizerType;
 import sjtu.ipads.wtune.testbed.common.Collection;
 import sjtu.ipads.wtune.testbed.population.PopulationConfig;
 import sjtu.ipads.wtune.testbed.population.SQLPopulator;
@@ -37,6 +38,7 @@ public class GenerateTableData implements Runner {
   static final String LARGE_ZIPF = "large_zipf";
 
   private Map<String, Set<String>> targets;
+  private OptimizerType optimizedBy;
   private int verbosity;
   private String tag;
   private Path dir, failure;
@@ -57,13 +59,15 @@ public class GenerateTableData implements Runner {
       readTargetFile(targetFile);
     } else {
       final String targetString = args.getOptional("T", "target", String.class, "opt_used");
+      if (targetString.equals("opt_used"))
+        optimizedBy = OptimizerType.valueOf(args.getOptional("optimizer", String.class, "WeTune"));
       readTargetSpec(targetString);
     }
 
     tag = args.getOptional("t", "tag", String.class, BASE);
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     dir = parentDir.resolve(dirName);
-    failure = dir.resolve("failed_tables.txt");
+    failure = dir.resolve("failed_tables_" + tag + ".txt");
     if (!Files.exists(dir)) Files.createDirectories(dir);
   }
 
@@ -161,7 +165,7 @@ public class GenerateTableData implements Runner {
       getUsedTables(stmts, targets);
 
     } else if ("opt_used".equals(restriction)) {
-      final List<Statement> stmts = Statement.findRewrittenByApp(app.name());
+      final List<Statement> stmts = Statement.findRewrittenByApp(app.name(), optimizedBy);
       getUsedTables(stmts, targets);
 
     } else {

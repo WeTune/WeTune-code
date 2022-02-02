@@ -68,7 +68,7 @@ public class Profile implements Runner {
     useSqlServer = args.getOptional("sqlserver", boolean.class, false);
     dryRun = args.getOptional("dry", boolean.class, false);
 
-    optimizedBy = args.getOptional("optimizer", String.class, "wetune");
+    optimizedBy = args.getOptional("optimizer", String.class, "WeTune");
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");
@@ -94,7 +94,7 @@ public class Profile implements Runner {
         else continue;
       }
 
-      if (!runOne(stmt.original(), stmt.rewritten())) {
+      if (!runOne(stmt.original(), stmt.rewritten(OptimizerType.valueOf(optimizedBy)))) {
         LOG.log(WARNING, "failed to profile {0}", stmt.original());
         failures.add(stmt.toString());
       }
@@ -104,15 +104,7 @@ public class Profile implements Runner {
   }
 
   private List<Statement> getStmtPool() {
-    final OptimizerType type;
-    switch (optimizedBy) {
-      case "wetune" -> type = OptimizerType.WeTune;
-      case "spes" -> type = OptimizerType.Spes;
-      case "merge" -> type = OptimizerType.Merge;
-      default -> throw new IllegalArgumentException(
-          "Unsupported optimizer " + optimizedBy + ", current supported kind: wetune, spes, merge");
-    }
-
+    final OptimizerType type = OptimizerType.valueOf(optimizedBy);
     System.out.println("Optimize type: " + type);
     return Statement.findAllRewritten(type);
   }

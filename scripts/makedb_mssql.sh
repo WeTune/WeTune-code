@@ -40,10 +40,16 @@ getConnProp() {
 doMakeTable() {
   if [ "$recreate" ]; then
     echo "drop db $dbName"
-    sqlcmd -U "$username" -P "$password" -S "$host","$port" -q "drop database if exists $dbName;"
+    sqlcmd -U "$username" -P "$password" -S "$host","$port" <<EOF
+      drop database if exists [${dbName}];
+      GO
+EOF
   fi
   echo "create db $dbName"
-  sqlcmd -U "$username" -P "$password" -S "$host","$port" -q "create database $dbName;"
+  sqlcmd -U "$username" -P "$password" -S "$host","$port" <<EOF
+      create database [${dbName}];
+      GO
+EOF
   sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "$schemaFile"
 }
 

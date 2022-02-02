@@ -33,15 +33,15 @@ public class UpdateCalciteProfileData implements Runner {
       final String appName = baseProfile[0];
       final String appId = baseProfile[1];
 
-      int p50Base = -1,
-          p90Base = -1,
-          p99Base = -1,
-          p50OptCalcite = -1,
-          p90OptCalcite = -1,
-          p99OptCalcite = -1,
-          p50OptWeTune = -1,
-          p90OptWeTune = -1,
-          p99OptWeTune = -1;
+      Integer p50Base = null,
+          p90Base = null,
+          p99Base = null,
+          p50OptCalcite = null,
+          p90OptCalcite = null,
+          p99OptCalcite = null,
+          p50OptWeTune = null,
+          p90OptWeTune = null,
+          p99OptWeTune = null;
 
       p50Base = Integer.parseInt(baseProfile[3]);
       p90Base = Integer.parseInt(baseProfile[4]);
@@ -60,7 +60,7 @@ public class UpdateCalciteProfileData implements Runner {
       if (i + 2 < bound) {
         final String[] nextProfile = lines.get(i + 2).split(";");
         if (nextProfile[0].equals(appName) && nextProfile[1].equals(appId)) {
-          final String[] optProfile1 = lines.get(i + 1).split(";");
+          final String[] optProfile1 = lines.get(i + 3).split(";");
           if (optProfile1[2].split("_")[1].equals("cal")) {
             p50OptCalcite = Integer.parseInt(optProfile1[3]);
             p90OptCalcite = Integer.parseInt(optProfile1[4]);
@@ -70,6 +70,7 @@ public class UpdateCalciteProfileData implements Runner {
             p90OptWeTune = Integer.parseInt(optProfile1[4]);
             p99OptWeTune = Integer.parseInt(optProfile1[5]);
           }
+          i += 2;
         }
       }
 

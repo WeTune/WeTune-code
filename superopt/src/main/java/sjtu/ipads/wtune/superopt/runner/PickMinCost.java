@@ -68,8 +68,8 @@ public class PickMinCost implements Runner {
         "optimize_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
     final String defaultOutTraceFileName =
         "optimize_trace" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")) + ".tsv";
-    final String outFileName = args.getOptional("out", String.class, defaultOutFileName);
-    final String outTraceFileName = args.getOptional("out_trace", String.class, defaultOutTraceFileName);
+    final String outFileName = args.getOptional("out", String.class, "2_query.tsv");
+    final String outTraceFileName = args.getOptional("out_trace", String.class, "2_trace.tsv");
     outOptFile = dir.resolve(outFileName);
     outTraceFile = dir.resolve(outTraceFileName);
 

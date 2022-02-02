@@ -91,7 +91,7 @@ public class CalciteStatementImpl implements Statement {
   public Statement calciteVersion() {
     if (calciteVersion == null)
       calciteVersion = CalciteStatementDao.instance().findOneCalciteVersion(appName, stmtId);
-    return null;
+    return calciteVersion;
   }
 
   @Override

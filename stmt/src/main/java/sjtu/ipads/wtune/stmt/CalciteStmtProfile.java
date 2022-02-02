@@ -7,30 +7,30 @@ public interface CalciteStmtProfile {
 
   int stmtId();
 
-  float p50ImproveCalcite();
+  Float p50ImproveCalcite();
 
-  float p90ImproveCalcite();
+  Float p90ImproveCalcite();
 
-  float p99ImproveCalcite();
+  Float p99ImproveCalcite();
 
-  float p50ImproveWeTune();
+  Float p50ImproveWeTune();
 
-  float p90ImproveWeTune();
+  Float p90ImproveWeTune();
 
-  float p99ImproveWeTune();
+  Float p99ImproveWeTune();
 
   static CalciteStmtProfile mk(
       String appName,
       int stmtId,
-      int p50Base,
-      int p90Base,
-      int p99Base,
-      int p50OptCalcite,
-      int p90OptCalcite,
-      int p99OptCalcite,
-      int p50OptWeTune,
-      int p90OptWeTune,
-      int p99OptWeTune) {
+      Integer p50Base,
+      Integer p90Base,
+      Integer p99Base,
+      Integer p50OptCalcite,
+      Integer p90OptCalcite,
+      Integer p99OptCalcite,
+      Integer p50OptWeTune,
+      Integer p90OptWeTune,
+      Integer p99OptWeTune) {
     return new CalCiteStmtProfileImpl(
         appName,
         stmtId,

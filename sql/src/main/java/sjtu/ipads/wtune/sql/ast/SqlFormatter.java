@@ -299,6 +299,7 @@ public class SqlFormatter implements SqlVisitor{
       case INTEGER, LONG, FRACTIONAL, HEX -> append(value);
       case BOOL -> append(value.toString().toUpperCase());
       case NULL -> append("NULL");
+      case NOT_NULL -> append("NOT NULL");
       case UNKNOWN -> append("UNKNOWN");
       case TEMPORAL -> builder
           .append(literal.$(Literal_Unit).toUpperCase())

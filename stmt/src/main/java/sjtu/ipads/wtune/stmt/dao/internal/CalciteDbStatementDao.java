@@ -151,14 +151,14 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
   public void updateProfile(CalciteStmtProfile stmtProfile) {
     try {
       final PreparedStatement insert0 = prepare(UPDATE_OPT_DATA);
-      if (stmtProfile.p50ImproveCalcite() > 0)
-        insert0.setFloat(1, stmtProfile.p50ImproveCalcite());
-      else
+      if (stmtProfile.p50ImproveCalcite() == null)
         insert0.setNull(1, Types.FLOAT);
-      if (stmtProfile.p50ImproveWeTune() > 0)
-        insert0.setFloat(2, stmtProfile.p50ImproveWeTune());
       else
+        insert0.setFloat(1, stmtProfile.p50ImproveCalcite());
+      if (stmtProfile.p50ImproveWeTune() == null)
         insert0.setNull(2, Types.FLOAT);
+      else
+        insert0.setFloat(2, stmtProfile.p50ImproveWeTune());
 
       insert0.setString(3, stmtProfile.appName());
       insert0.setInt(4, stmtProfile.stmtId());
