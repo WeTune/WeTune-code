@@ -148,6 +148,7 @@ public class Profile implements Runner {
       return true;
     } catch (Exception e) {
       LOG.log(ERROR, "failed to profile {0}", original);
+      e.printStackTrace();
       return false;
     }
   }
