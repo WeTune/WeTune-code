@@ -526,12 +526,12 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
-    solver.push();
-    solver.add(exprs);
-    final Status res = solver.check();
-    solver.pop();
-    return res;
-    //    return solver.check(exprs);
+    //    solver.push();
+    //    solver.add(exprs);
+    //    final Status res = solver.check();
+    //    solver.pop();
+    //    return res;
+    return solver.check(exprs);
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {

@@ -31,7 +31,11 @@ class LogicProverTest {
   public void test() {
     final Substitution rule =
         Substitution.parse(
-            "Proj<a3 s0>(Filter<p0 a2>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)))|Proj<a7 s1>(Filter<p1 a6>(InnerJoin<a4 a5>(Input<t2>,Input<t3>)))|AttrsSub(a3,t1);AttrsSub(a2,t0);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsEq(a3,a1);SchemaEq(s1,s0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a4,a0);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a0);PredicateEq(p1,p0);");
+            "Filter<p1 a4>(InnerJoin<a2 a3>(Input<t0>,Proj<a1 s0>(Filter<p0 a0>(Input<t1>))))|"
+                + "Filter<p3 a9>(Filter<p2 a8>(InnerJoin<a6 a7>(Input<t2>,Proj<a5 s1>(Input<t3>))))|"
+                + "AttrsSub(a0,t1);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,s0);AttrsSub(a4,t0);"
+                + "SchemaEq(s1,s0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a3);"
+                + "AttrsEq(a8,a0);AttrsEq(a9,a4);PredicateEq(p2,p0);PredicateEq(p3,p1)");
     final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
     final int result = LogicSupport.proveEq(uExprs);
     assertEquals(LogicSupport.EQ, result, rule.toString());

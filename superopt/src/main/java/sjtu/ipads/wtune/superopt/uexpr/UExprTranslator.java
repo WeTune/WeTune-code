@@ -214,7 +214,7 @@ class UExprTranslator {
       final SchemaDesc restrictionSchema = mkSchema(source);
       assert restrictionSchema.components.length == 1;
       int restriction = restrictionSchema.components[0];
-      int index = -1;
+      int index;
 
       // indirection source cases.
       //  e.g. Proj<a0 s0>(Proj<a1 s1>(t0)) vs. Proj<a2 s2>(t0)

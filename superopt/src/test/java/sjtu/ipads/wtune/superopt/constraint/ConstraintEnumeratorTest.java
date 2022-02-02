@@ -30,7 +30,7 @@ class ConstraintEnumeratorTest {
     //    System.out.println(EnumerationMetrics.current());
     //    System.out.println("=============");
 
-    final List<Substitution> results = enumConstraints(f0, f1, -1);
+    final List<Substitution> results = enumConstraints(f0, f1, 900000);
     final List<String> strings = new ArrayList<>(results.size());
     for (Substitution rule : results) {
       final String str = rule.toString();
@@ -49,6 +49,14 @@ class ConstraintEnumeratorTest {
   void init(TestInfo testInfo) {
     String methodName = testInfo.getTestMethod().orElseThrow().getName();
     System.out.println("----------" + methodName + "----------");
+  }
+
+  //  @Test
+  //  @Tag("slow")
+  void testPredicatePushUp() {
+    doTest(
+        "Proj*(Filter(InnerJoin(Input,Proj*(Filter(Input)))))",
+        "Proj*(Filter(Filter(InnerJoin(Input,Input))))");
   }
 
   @Test

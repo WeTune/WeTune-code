@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
@@ -11,7 +10,6 @@ import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
-import sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -65,11 +63,14 @@ public class MiscTest {
 
   @Test
   void test1() throws IOException {
-    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.reduced.txt"));
-    final SubstitutionBank bank1 = loadBank(Path.of("wtune_data", "rules", "rules.spes.txt"));
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.2.txt"));
+    final SubstitutionBank bank1 = loadBank(Path.of("wtune_data", "rules", "rules.test.txt"));
     int count = 0;
     for (Substitution rule : bank1.rules()) {
-      if (!bank0.contains(rule)) ++count;
+      if (!bank0.contains(rule)) {
+        System.out.println(rule);
+        ++count;
+      }
     }
     System.out.println(bank1.size() + " " + count);
   }

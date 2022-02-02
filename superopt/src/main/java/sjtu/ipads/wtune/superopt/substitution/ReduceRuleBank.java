@@ -9,6 +9,8 @@ import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -20,8 +22,8 @@ import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_DISABLE_JOIN_FLIP;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_ENABLE_EXTENSIONS;
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan;
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.translateAsPlan2;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.*;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
 
 class ReduceRuleBank {
   private final SubstitutionBank bank;
@@ -89,30 +91,36 @@ class ReduceRuleBank {
     final PlanContext plan = mkProbingPlan(rule);
     if (plan == null) return true;
 
-    completePlan(plan);
+    final boolean isCappedByProj = completePlan(plan);
 
     final String str = stringifyTree(plan, plan.root());
-    final Set<String> optimized0 = optimizeAsString(plan, bank);
+    final Set<String> optimized0 = optimizeAsString(plan, bank, isCappedByProj);
     bank.remove(rule);
-    final Set<String> optimized1 = optimizeAsString(plan, bank);
+    final Set<String> optimized1 = optimizeAsString(plan, bank, isCappedByProj);
     optimized0.remove(str);
     optimized1.remove(str);
 
     return !optimized1.isEmpty() && optimized1.containsAll(optimized0);
   }
 
-  private static Set<String> optimizeAsString(PlanContext plan, SubstitutionBank rules) {
+  private static Set<String> optimizeAsString(
+      PlanContext plan, SubstitutionBank rules, boolean isCappedByProj) {
     final Optimizer optimizer = Optimizer.mk(rules);
-    //    optimizer.setTracing(true);
-    final Set<PlanContext> optimized = optimizer.optimize(plan);
-    //    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
+    optimizer.setTracing(true);
+    final Set<PlanContext> optimized;
+    if (!isCappedByProj) {
+      optimized = optimizer.optimize(plan);
+    } else {
+      optimized = optimizer.optimizePartial(plan, plan.childOf(plan.root(), 0));
+    }
+    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
     return SetSupport.map(optimized, it -> stringifyTree(it, it.root()));
   }
 
-  private static void completePlan(PlanContext plan) {
+  private static boolean completePlan(PlanContext plan) {
     final int oldRoot = plan.root();
     final PlanKind oldRootKind = plan.kindOf(oldRoot);
-    if (oldRootKind != PlanKind.Join && !oldRootKind.isFilter()) return;
+    if (oldRootKind != PlanKind.Join && !oldRootKind.isFilter()) return false;
 
     final ValuesRegistry valuesReg = plan.valuesReg();
     final Values inValues = valuesReg.valuesOf(oldRoot);
@@ -124,6 +132,7 @@ class ReduceRuleBank {
     final int projNode = plan.bindNode(proj);
     plan.setChild(projNode, 0, oldRoot);
     plan.setRoot(projNode);
+    return true;
   }
 
   private static PlanContext mkProbingPlan(Substitution rule) {
@@ -267,20 +276,12 @@ class ReduceRuleBank {
     }
   }
 
-  public static void main(String[] args) {
-    final Substitution rule0 =
+  public static void main(String[] args) throws IOException {
+    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.2.txt"));
+    final ReduceRuleBank reducer = new ReduceRuleBank(bank);
+    final Substitution rule =
         Substitution.parse(
-            "Proj<a3 s0>(Filter<p0 a2>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)))|"
-                + "Proj<a7 s1>(Filter<p1 a6>(InnerJoin<a4 a5>(Input<t2>,Input<t3>)))|"
-                + "AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t0);TableEq(t0,t1);"
-                + "TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a4,a1);AttrsEq(a5,a0);AttrsEq(a6,a2);AttrsEq(a7,a1);PredicateEq(p1,p0);SchemaEq(s1,s0)");
-    System.out.println(isJoinFlipRule(rule0));
-
-    final Substitution rule1 =
-        Substitution.parse(
-            "Proj<a3 s0>(Filter<p0 a2>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)))|"
-                + "Proj<a7 s1>(Filter<p1 a6>(InnerJoin<a4 a5>(Input<t2>,Input<t3>)))|"
-                + "AttrsEq(a1,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a4,a0);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a0);PredicateEq(p1,p0);SchemaEq(s1,s0)");
-    System.out.println(isJoinFlipRule(rule1));
+            "Proj*<a4 s1>(InnerJoin<a2 a3>(Proj*<a1 s0>(Filter<p0 a0>(Input<t0>)),Input<t1>))|Proj*<a8 s2>(Filter<p1 a7>(InnerJoin<a5 a6>(Input<t2>,Input<t3>)))|AttrsSub(a0,t0);AttrsSub(a1,t0);AttrsSub(a2,s0);AttrsSub(a3,t1);AttrsSub(a4,t1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a5,a2);AttrsEq(a6,a3);AttrsEq(a7,a0);AttrsEq(a8,a4);PredicateEq(p1,p0);SchemaEq(s2,s1)");
+    System.out.println(reducer.isImpliedRule(rule));
   }
 }

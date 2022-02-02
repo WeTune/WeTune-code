@@ -64,7 +64,7 @@ public abstract class TestHelper {
     normalizeAst(ast);
     final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
     final Optimizer optimizer = Optimizer.mk(bankForTest());
-    optimizer.setTimeout(5000);
+//    optimizer.setTimeout(5000);
     optimizer.setTracing(true);
     final Set<PlanContext> optimized = optimizer.optimize(plan);
     for (PlanContext opt : optimized) dumpTrace(optimizer, opt);

@@ -14,6 +14,8 @@ import static java.util.Collections.emptySet;
 public interface Optimizer {
   Set<PlanContext> optimize(PlanContext plan);
 
+  Set<PlanContext> optimizePartial(PlanContext plan, int root);
+
   void setTimeout(long timeout);
 
   void setTracing(boolean flag);
@@ -22,9 +24,9 @@ public interface Optimizer {
 
   void setVerbose(boolean flag);
 
-    void setKeepOriginal(boolean keepOriginal);
+  void setKeepOriginal(boolean keepOriginal);
 
-    List<OptimizationStep> traceOf(PlanContext plan);
+  List<OptimizationStep> traceOf(PlanContext plan);
 
   static Optimizer mk(SubstitutionBank bank) {
     return new BottomUpOptimizer(bank);

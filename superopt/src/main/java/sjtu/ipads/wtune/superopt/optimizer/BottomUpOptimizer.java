@@ -4,6 +4,7 @@ import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
+import sjtu.ipads.wtune.sql.plan.PlanNode;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
@@ -78,6 +79,27 @@ class BottomUpOptimizer implements Optimizer {
     startAt = System.currentTimeMillis();
 
     final Set<SubPlan> results = optimize0(new SubPlan(plan, planRoot));
+    return collectRewritten(originalPlan, results);
+  }
+
+  @Override
+  public Set<PlanContext> optimizePartial(PlanContext plan, int rootId) {
+    setExtended((optimizerTweaks & TWEAK_ENABLE_EXTENSIONS) != 0);
+    setKeepOriginal((optimizerTweaks & TWEAK_KEEP_ORIGINAL_PLAN) != 0);
+
+    final PlanContext originalPlan = plan;
+    plan = plan.copy();
+
+    final PlanNode subTreeRootNode = plan.nodeAt(rootId);
+
+    int planRoot = preprocess(plan);
+
+    final int subTreeRoot = plan.nodeIdOf(subTreeRootNode);
+
+    memo = new Memo();
+    startAt = System.currentTimeMillis();
+
+    final Set<SubPlan> results = optimize0(new SubPlan(plan, subTreeRoot));
     return collectRewritten(originalPlan, results);
   }
 
