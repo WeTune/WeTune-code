@@ -6,10 +6,10 @@
 !schemas_mssql
 !schemas_mssql/*
 !rules/
+!rules/rules.txt
 !rules/rules.merged.txt
 !rules/rules.spes.txt
 !rules/rules.test.txt
-!rules/rules.txt
 !calcite/
 !calcite/calcite_tests
 !calcite/calcite_templates
