@@ -125,7 +125,8 @@ else
   getConnProp "$3" "$4" "$5" "$6"
   findDataDir
   if [ ! "$dataDir" ]; then
-    continue
+    echo "data not found for ${dbName}."
+    exit
   fi
 
   if [ -z "$table" ]; then
