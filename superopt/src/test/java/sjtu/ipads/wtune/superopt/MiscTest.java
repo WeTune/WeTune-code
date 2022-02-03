@@ -1,26 +1,32 @@
 package sjtu.ipads.wtune.superopt;
 
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sql.ast.ExprKind;
+import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlKind;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
-import sjtu.ipads.wtune.sql.plan.*;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
-import sjtu.ipads.wtune.sql.support.action.NormalizationSupport;
 import sjtu.ipads.wtune.stmt.App;
+import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
+import static sjtu.ipads.wtune.sql.ast.SqlKind.GroupItem;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
+import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
 
 public class MiscTest {
@@ -49,8 +55,8 @@ public class MiscTest {
     final SqlNode ast = parseSql(MySQL, sql);
     final Schema schema = calcite.schema("base");
     ast.context().setSchema(schema);
-    NormalizationSupport.normalizeAst(ast);
-    final PlanContext plan = PlanSupport.assemblePlan(ast, schema);
+    normalizeAst(ast);
+    final PlanContext plan = assemblePlan(ast, schema);
     final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules.test.txt"));
     final Optimizer optimizer = Optimizer.mk(bank);
     final Set<PlanContext> optimized = optimizer.optimize(plan);
@@ -73,22 +79,5 @@ public class MiscTest {
       }
     }
     System.out.println(bank1.size() + " " + count);
-  }
-
-  private static void completePlan(PlanContext plan) {
-    final int oldRoot = plan.root();
-    final PlanKind oldRootKind = plan.kindOf(oldRoot);
-    if (oldRootKind != PlanKind.Join && !oldRootKind.isFilter()) return;
-
-    final ValuesRegistry valuesReg = plan.valuesReg();
-    final Values inValues = valuesReg.valuesOf(oldRoot);
-    final List<String> names = ListSupport.map(inValues, Value::name);
-    final List<Expression> exprs = ListSupport.map(inValues, PlanSupport::mkColRefExpr);
-    zip(exprs, inValues, (e, v) -> valuesReg.bindValueRefs(e, newArrayList(v)));
-
-    final ProjNode proj = ProjNode.mk(false, names, exprs);
-    final int projNode = plan.bindNode(proj);
-    plan.setChild(projNode, 0, oldRoot);
-    plan.setRoot(projNode);
   }
 }

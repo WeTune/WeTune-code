@@ -33,8 +33,14 @@ This package includes the source code and the testing scripts in the paper
 * Gradle 7.3.3
 * z3 4.8.9  *(SMT solver)*
 * antlr 4.8  *(Generate tokenizer and parser for SQL AST)*
+* Microsoft SQL Server `{TODO:version}` *(Evaluate the usefulness of rules)*
 
-Please use the scripts `{TODO}` to install Java and Gradle. z3 and antlr library have been put in `lib/` off-the-shelf.
+Please run
+```shell
+TODO
+```
+to install Java, Gradle and SQL Server.
+z3 and antlr library have been put in `lib/` off-the-shelf.
 
 #### Compilation
 

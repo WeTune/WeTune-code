@@ -20,6 +20,8 @@ public interface Expression {
   /** Interpolate names to placeholders. */
   SqlNode interpolate(SqlContext ctx, Values values);
 
+  Expression copy();
+
   static Expression mk(SqlNode ast) {
     return new ExpressionImpl(ast);
   }

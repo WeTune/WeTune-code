@@ -172,6 +172,8 @@ public class RunCalciteTest implements Runner {
     if (!Files.exists(outDir)) Files.createDirectories(outDir);
 
     final SubstitutionBank rules = this.rules.get();
+    if(rules.isExtended()) addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+
     final List<QueryPair> pairs = this.queryPairs.get();
 
     for (final QueryPair pair : pairs) {
@@ -236,10 +238,23 @@ public class RunCalciteTest implements Runner {
     if (rewrittenPlans.isEmpty()) return;
 
     int i = 0;
+    boolean extendedRuleUsed = false;
     for (PlanContext plan : rewrittenPlans) {
       final List<OptimizationStep> traces = optimizer.traceOf(plan);
       final String str = joining(",", traces, it -> String.valueOf(it.ruleId()));
       out.printf("%s-%d\t%d\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, str);
+
+      if (rules.get().isExtended() && !extendedRuleUsed) {
+        for (OptimizationStep trace : traces)
+          if (trace.rule() != null && trace.rule().isExtended()) {
+            extendedRuleUsed = true;
+            break;
+          }
+      }
+    }
+
+    if (extendedRuleUsed) {
+      System.out.println("extended rule used: " + pair.lineNum);
     }
   }
 
@@ -249,7 +264,7 @@ public class RunCalciteTest implements Runner {
 
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-      //      if (i != 0) continue;
+//        if (i != 260) continue;
       final String first = lines.get(i), second = lines.get(i + 1);
       final SqlNode q0 = parseSql(MySQL, first);
       final SqlNode q1 = parseSql(MySQL, second);

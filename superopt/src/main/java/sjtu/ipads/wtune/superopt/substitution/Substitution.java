@@ -24,6 +24,15 @@ public interface Substitution {
 
   String canonicalStringify();
 
+  default boolean isExtended() {
+    final String str0 = _0().toString();
+    final String str1 = _1().toString();
+    return str0.contains("Agg")
+        || str0.contains("Union")
+        || str1.contains("Agg")
+        || str1.contains("Union");
+  }
+
   static Substitution parse(String str) {
     return SubstitutionImpl.parse(str);
   }

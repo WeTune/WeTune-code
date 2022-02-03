@@ -10,8 +10,7 @@ import static sjtu.ipads.wtune.sql.SqlSupport.copyAst;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Table;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.PLACEHOLDER_NAME;
-import static sjtu.ipads.wtune.sql.plan.PlanSupport.mkColRefExpr;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.locator.LocatorSupport.gatherColRefs;
 
 public class ExpressionImpl implements Expression {
@@ -34,6 +33,12 @@ public class ExpressionImpl implements Expression {
     this.template = ast;
     this.colRefs = colRefs;
     this.internalRefs = colRefs;
+  }
+
+  private ExpressionImpl(SqlNode ast, List<SqlNode> internalRefs, List<SqlNode> colRefs) {
+    this.template = ast;
+    this.internalRefs = internalRefs;
+    this.colRefs = colRefs;
   }
 
   @Override
@@ -69,6 +74,11 @@ public class ExpressionImpl implements Expression {
     final SqlNode newAst = copyAst(template, ctx);
     for (SqlNode colRef : internalRefs) putPlaceholder(colRef);
     return newAst;
+  }
+
+  @Override
+  public Expression copy() {
+    return new ExpressionImpl(template, internalRefs, colRefs);
   }
 
   @Override

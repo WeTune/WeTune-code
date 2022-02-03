@@ -2,22 +2,22 @@ package sjtu.ipads.wtune.superopt.optimizer;
 
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import sjtu.ipads.wtune.common.utils.Commons;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.ListSupport;
+import sjtu.ipads.wtune.sql.ast.ExprKind;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
 import sjtu.ipads.wtune.sql.plan.*;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static sjtu.ipads.wtune.common.utils.Commons.dumpException;
+import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
@@ -29,6 +29,7 @@ class Instantiation {
   private final PlanContext newPlan;
   private final ValueRefReBinder reBinder;
   private final Lazy<TIntSet> usedSubqueryNode;
+  private final Lazy<Set<Expression>> usedFunction;
 
   private String error;
 
@@ -38,6 +39,7 @@ class Instantiation {
     this.newPlan = model.plan().copy();
     this.reBinder = new ValueRefReBinder(newPlan);
     this.usedSubqueryNode = Lazy.mk(TIntHashSet::new);
+    this.usedFunction = Lazy.mk(Commons::newIdentitySet);
   }
 
   PlanContext instantiatedPlan() {
@@ -226,7 +228,7 @@ class Instantiation {
     for (int i = 0, bound = aggExprs.size(), exprIdx = 0; i < bound; ++i) {
       Expression aggExpr = aggExprs.get(i);
       if (Aggregate.isInstance(aggExpr.template())) {
-        aggExpr = aggFuncs.get(exprIdx++);
+        aggExpr = rebindFuncExpr(aggFuncs.get(exprIdx++));
         aggExprs.set(i, aggExpr);
         reg.bindExpr(outVals.get(i), aggExpr);
       }
@@ -369,6 +371,11 @@ class Instantiation {
     if (newRefs.contains(null)) return false;
     valuesReg.bindValueRefs(expr, newRefs);
     return true;
+  }
+
+  private Expression rebindFuncExpr(Expression expr) {
+    if (usedFunction.get().add(expr)) return expr;
+    else return expr.copy();
   }
 
   private Map<Value, Value> buildAggRefMapping(List<Expression> exprs, List<Value> aggRefs) {

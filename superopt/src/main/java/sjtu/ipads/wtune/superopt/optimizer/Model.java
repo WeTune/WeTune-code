@@ -1,6 +1,8 @@
 package sjtu.ipads.wtune.superopt.optimizer;
 
 import com.google.common.collect.Iterables;
+import org.apache.commons.lang3.tuple.Pair;
+import sjtu.ipads.wtune.common.utils.IterableSupport;
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.sql.ast.constants.ConstraintKind;
 import sjtu.ipads.wtune.sql.plan.*;
@@ -100,7 +102,7 @@ class Model {
     for (Symbol eqSym : constraints.eqClassOf(sym)) {
       if (eqSym == sym) continue;
       final Object otherAssignment = of(eqSym);
-      if (otherAssignment != null && !checkCompatible(assignment, otherAssignment)) {
+      if (otherAssignment != null && !checkCompatible(sym.kind(), assignment, otherAssignment)) {
         return false;
       }
     }
@@ -119,15 +121,26 @@ class Model {
     else return null;
   }
 
-  private boolean checkCompatible(Object v0, Object v1) {
-    if (v0 instanceof Expression)
+  private boolean checkCompatible(Symbol.Kind kind, Object v0, Object v1) {
+    if (kind == PRED)
       return v1 instanceof Expression && Objects.equals(v0.toString(), v1.toString());
-    if (v0 instanceof List)
+    if (kind == ATTRS)
       return v1 instanceof List && isAttrsEq((List<Value>) v0, (List<Value>) v1);
-    if (v0 instanceof Integer)
+    if (kind == TABLE)
       return v1 instanceof Integer && isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
+    if (kind == FUNC)
+      return v1 instanceof List<?> && isFuncsEq((List<Expression>) v0, (List<Expression>) v1);
 
     throw new IllegalArgumentException("unexpected assignment: " + v0);
+  }
+
+  private boolean isFuncsEq(List<Expression> v0, List<Expression> v1) {
+    if (v0.size() != v1.size()) return false;
+    for (var pair : zip(v0, v1)) {
+      if (!pair.getLeft().toString().equals(pair.getRight().toString()))
+        return false;
+    }
+    return true;
   }
 
   private boolean checkConstraint(Constraint constraint) {

@@ -27,6 +27,7 @@ import java.util.Set;
 
 import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
@@ -36,7 +37,7 @@ public class RewriteQuery implements Runner {
   private Path out, trace, err;
   private String targetApp;
   private int stmtId;
-  private boolean single;
+  private boolean single, excludeNonEssential;
   private int verbosity;
   private SubstitutionBank rules;
 
@@ -63,6 +64,8 @@ public class RewriteQuery implements Runner {
 
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (single && stmtId > 0) verbosity = Integer.MAX_VALUE;
+
+    excludeNonEssential = args.getOptional("E", boolean.class, false);
 
     final Path dataDir = RunnerSupport.dataDir();
     final String ruleFileName = args.getOptional("R", "rules", String.class, "rules/rules.txt");
@@ -151,7 +154,9 @@ public class RewriteQuery implements Runner {
       final List<String> traces = new ArrayList<>(optimized.size());
       for (PlanContext opt : optimized) {
         final List<OptimizationStep> steps = optimizer.traceOf(opt);
+
         if (steps.isEmpty()) continue;
+        if (excludeNonEssential && all(steps, step-> step.rule() == null)) continue;
 
         final SqlNode sqlNode = translateAsAst(opt, opt.root(), false);
         if (sqlNode == null) {

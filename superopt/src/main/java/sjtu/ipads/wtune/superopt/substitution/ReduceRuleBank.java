@@ -1,6 +1,7 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import me.tongfei.progressbar.ProgressBar;
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.plan.*;
@@ -106,14 +107,14 @@ class ReduceRuleBank {
   private static Set<String> optimizeAsString(
       PlanContext plan, SubstitutionBank rules, boolean isCappedByProj) {
     final Optimizer optimizer = Optimizer.mk(rules);
-    optimizer.setTracing(true);
+    //    optimizer.setTracing(true);
     final Set<PlanContext> optimized;
     if (!isCappedByProj) {
       optimized = optimizer.optimize(plan);
     } else {
       optimized = optimizer.optimizePartial(plan, plan.childOf(plan.root(), 0));
     }
-    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
+    //    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
     return SetSupport.map(optimized, it -> stringifyTree(it, it.root()));
   }
 
@@ -136,8 +137,11 @@ class ReduceRuleBank {
   }
 
   private static PlanContext mkProbingPlan(Substitution rule) {
-    if (isExtendedRule(rule)) return translateAsPlan2(rule).getLeft();
-    else return translateAsPlan(rule).getLeft();
+    final var pair = isExtendedRule(rule) ? translateAsPlan2(rule) : translateAsPlan(rule);
+    final PlanContext left = pair.getLeft(), right = pair.getRight();
+    if (left == null || right == null) return null;
+    if (PlanSupport.isLiteralEq(left, right)) return null;
+    return left;
   }
 
   private static boolean isExtendedRule(Substitution rule) {
@@ -277,11 +281,13 @@ class ReduceRuleBank {
   }
 
   public static void main(String[] args) throws IOException {
-    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.2.txt"));
+    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.spes.0203.txt"));
     final ReduceRuleBank reducer = new ReduceRuleBank(bank);
     final Substitution rule =
         Substitution.parse(
-            "Proj*<a4 s1>(InnerJoin<a2 a3>(Proj*<a1 s0>(Filter<p0 a0>(Input<t0>)),Input<t1>))|Proj*<a8 s2>(Filter<p1 a7>(InnerJoin<a5 a6>(Input<t2>,Input<t3>)))|AttrsSub(a0,t0);AttrsSub(a1,t0);AttrsSub(a2,s0);AttrsSub(a3,t1);AttrsSub(a4,t1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a5,a2);AttrsEq(a6,a3);AttrsEq(a7,a0);AttrsEq(a8,a4);PredicateEq(p1,p0);SchemaEq(s2,s1)");
+            "Union(Proj<a2 s0>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)),Proj<a3 s1>(Input<t2>))|"
+                + "Union(Proj<a4 s2>(Input<t3>),Proj<a7 s3>(InnerJoin<a5 a6>(Input<t4>,Input<t5>)))|"
+                + "AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t2);TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);TableEq(t3,t0);TableEq(t4,t1);TableEq(t5,t2);AttrsEq(a4,a2);AttrsEq(a5,a1);AttrsEq(a6,a3);AttrsEq(a7,a1);SchemaEq(s2,s1);SchemaEq(s3,s0)");
     System.out.println(reducer.isImpliedRule(rule));
   }
 }

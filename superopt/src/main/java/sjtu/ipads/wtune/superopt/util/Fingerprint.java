@@ -4,15 +4,13 @@ import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
-import sjtu.ipads.wtune.superopt.fragment.Fragment;
-import sjtu.ipads.wtune.superopt.fragment.Op;
-import sjtu.ipads.wtune.superopt.fragment.OpKind;
-import sjtu.ipads.wtune.superopt.fragment.Proj;
+import sjtu.ipads.wtune.superopt.fragment.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static java.lang.Integer.min;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.isDedup;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.joinKindOf;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
 
@@ -53,6 +51,10 @@ public class Fingerprint {
         return 'j';
       case LEFT_JOIN:
         return 'l';
+      case AGG:
+        return 'a';
+      case SET_OP:
+        return dedup ? 'v' : 'u';
       default:
         return '?';
     }
@@ -93,7 +95,11 @@ public class Fingerprint {
         return fingerprint = new Fingerprint(builder.toString());
       }
 
-      builder.append(getOpIdentifier(op.kind(), op.kind() == PROJ && ((Proj) op).isDeduplicated()));
+      final boolean dedup =
+          op.kind() == PROJ && ((Proj) op).isDeduplicated()
+              || op.kind() == SET_OP && ((Union) op).isDeduplicated();
+
+      builder.append(getOpIdentifier(op.kind(), dedup));
       build(op.predecessors()[0], limit - 1);
 
       return fingerprint;
@@ -144,9 +150,13 @@ public class Fingerprint {
         final int total = counts[0], leftJoins = counts[1];
         mkFingerprintForJoin(total, leftJoins, budget, treeChild);
 
-      } else if (nodeKind == PlanKind.Proj) {
+      } else if (nodeKind == PlanKind.Proj || nodeKind == PlanKind.SetOp) {
         builder.append(identifierOf(node));
         build(plan.childOf(node, 0), budget - 1);
+        popChars(builder, 1);
+      } else if (nodeKind == PlanKind.Agg) {
+        builder.append(identifierOf(node));
+        build(plan.childOf(plan.childOf(node, 0), 0), budget - 1);
         popChars(builder, 1);
       }
 
@@ -155,7 +165,9 @@ public class Fingerprint {
 
     private char identifierOf(int node) {
       final PlanKind kind = plan.kindOf(node);
-      if (kind == PlanKind.Proj) return getOpIdentifier(PROJ, PlanSupport.isDedup(plan, node));
+      if (kind == PlanKind.Proj) return getOpIdentifier(PROJ, isDedup(plan, node));
+      else if (kind == PlanKind.SetOp) return getOpIdentifier(SET_OP, isDedup(plan, node));
+      else if (kind == PlanKind.Agg) return getOpIdentifier(AGG, false);
       else if (kind == PlanKind.Filter) return getOpIdentifier(SIMPLE_FILTER, false);
       else if (kind == PlanKind.InSub) return getOpIdentifier(IN_SUB_FILTER, false);
       else if (kind == PlanKind.Join)
