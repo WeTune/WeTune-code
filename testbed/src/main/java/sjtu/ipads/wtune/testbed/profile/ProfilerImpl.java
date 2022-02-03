@@ -135,7 +135,7 @@ class ProfilerImpl implements Profiler {
     recording = false;
     probing = true;
     for (int i = 0; i < DEFAULT_PROBING_TIMES; ++i) {
-      if (!run0(0)) return false;
+      if (!run0(i)) return false;
       probingTimes ++;
       if (maxProbingElapsed > 1_000_000_000L) break;
     }

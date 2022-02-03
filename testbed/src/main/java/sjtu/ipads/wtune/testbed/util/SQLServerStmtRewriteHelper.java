@@ -8,7 +8,7 @@ public interface SQLServerStmtRewriteHelper {
 //        sql = sql.replaceAll("(\\(SELECT .+ )ORDER BY .+(ASC|DESC)\\)", "$1\\)");
         sql = sql.replaceAll("(\\(SELECT (DISTINCT)*)(.+)(ORDER BY ([^ ])+( ASC| DESC)*\\))", "$1 TOP 100 PERCENT $3 $4");
 
-        sql = sql.replaceAll("(ORDER BY [^\\(\\)]+) LIMIT ([0-9]+) OFFSET ([0-9]+)", "$1 OFFSET $3 ROWS FETCH NEXT $2 ROWS ONLY");
+        sql = sql.replaceAll("(ORDER BY [^()]+) LIMIT ([0-9]+) OFFSET ([0-9]+)", "$1 OFFSET $3 ROWS FETCH NEXT $2 ROWS ONLY");
         sql = sql.replaceAll("LIMIT ([0-9]+) OFFSET ([0-9]+)", "LIMIT $1");
 
         sql = sql.replaceAll("\\(SELECT DISTINCT (.+) LIMIT ([0-9]+)\\)", "\\(SELECT DISTINCT TOP $2 $1\\)");

@@ -44,7 +44,7 @@ findDataDir() {
   if [ ! "$dataDir" ]; then
     dataDir=$(find .. -type d -wholename "*/$path" | head -1)
   fi
-  dataDir=${dataDir:?"$path not found"}
+#  dataDir=${dataDir:-"not found"}
 }
 
 doTruncateOne() {
@@ -109,6 +109,9 @@ if [ "$1" = 'all' ]; then
     dbType "$db" "$2"
     getConnProp "$3" "$4" "$5" "$6"
     findDataDir
+    if [ ! "$dataDir" ]; then
+      continue
+    fi
 
     doImportData
   done
@@ -121,6 +124,9 @@ else
   dbType "$1" "$2" # appName, tag
   getConnProp "$3" "$4" "$5" "$6"
   findDataDir
+  if [ ! "$dataDir" ]; then
+    continue
+  fi
 
   if [ -z "$table" ]; then
     doImportData
