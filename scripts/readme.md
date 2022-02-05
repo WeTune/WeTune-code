@@ -157,7 +157,7 @@ rewrite/
 
 ## Create DBs and schemas
 ```
-makedb(_mssql).sh
+makedb_mssql.sh
   [-r]
   <app_name | all> <tag>
 ```
@@ -169,7 +169,7 @@ It creates database called `app_name`_`tag`. e.g. broadleaf_base.
 
 ## Import Data Into DBs
 ```
-importdata(_mssql).sh
+importdata_mssql.sh
   [-t <table_name>]
   <app_name | all> <tag>
 ```

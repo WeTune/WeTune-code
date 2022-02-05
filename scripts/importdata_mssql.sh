@@ -51,7 +51,11 @@ doTruncateOne() {
   local tableName=${1}
   echo "truncating ${tableName}"
 
-  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "${defaultDataPath}/schemas_mssql/${appName}.sql"
+#  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "${defaultDataPath}/schemas_mssql/${appName}.sql"
+  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
+    delete from ${tableName} where true;
+    GO
+EOF
 }
 
 doImportOne() {
@@ -85,11 +89,11 @@ EOF
 
 doImportData() {
   echo "gonna import $(find "$dataDir" -maxdepth 1 -name '*.csv' | wc -l) tables in $dataDir to $dbName@$host:$port"
-#  for fileName in "$dataDir"/*.csv; do
-#    fileName=$(basename -- "$fileName")
-#    local tableName="${fileName%.*}"
-#    doTruncateOne "$tableName"
-#  done
+  for fileName in "$dataDir"/*.csv; do
+    fileName=$(basename -- "$fileName")
+    local tableName="${fileName%.*}"
+    doTruncateOne "$tableName"
+  done
   for fileName in "$dataDir"/*.csv; do
     fileName=$(basename -- "$fileName")
     local tableName="${fileName%.*}"

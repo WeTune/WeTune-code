@@ -126,13 +126,13 @@ public class TestSPESNewOps {
 
   @Test
   void tempTest() {
-    final Substitution substitution0 = Substitution.parse("Proj<a0>(InnerJoin<a1 a2>(Input<t0>,Input<t1>))|" +
-            "Proj<a3>(Input<t2>)|" +
-            "TableEq(t1,t2);AttrsEq(a0,a3);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a0,t1)");
-//    final Substitution substitution0 = Substitution.parse("Proj<a0>(Input<t0>)|" +
-//            "Proj<a1>(Input<t1>)|" +
-//            "TableEq(t0,t1);AttrsEq(a0,a1);AttrsSub(a0,t0)");
-    var pair = SubstitutionSupport.translateAsPlan(substitution0);
+    final Substitution substitution0 = Substitution.parse("Proj<a3 s2>(Agg<a1 a2 f0 s1 p0>(Proj*<a0 s0>(Input<t0>)))|" +
+        "Proj<a7 s5>(Agg<a5 a6 f1 s4 p1>(Proj<a4 s3>(Input<t1>)))|" +
+        "AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,s0);AttrsSub(a3,s1);" +
+        "TableEq(t1,t0);AttrsEq(a4,a0);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a3);" +
+        "PredicateEq(p1,p0);SchemaEq(s3,s0);SchemaEq(s4,s1);SchemaEq(s5,s2);FuncEq(f1,f0)");
+    int res = LogicSupport.proveEqBySpes(substitution0);
+    System.out.println(res);
   }
 
   @Test

@@ -112,6 +112,7 @@ public class ProfileCalcite implements Runner {
       logResult(original, tag, calciteRewrite, metricOriginal, metricRewritten);
       return true;
     } catch (Exception e) {
+      e.printStackTrace();
       return false;
     }
   }
