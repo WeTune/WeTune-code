@@ -2,16 +2,44 @@ package sjtu.ipads.wtune.superopt.logic;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import sjtu.ipads.wtune.sql.plan.PlanContext;
 import sjtu.ipads.wtune.superopt.TestHelper;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
+import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
+import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
+import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.*;
 
 @Tag("prover")
 @Tag("fast")
 class LogicProverTest {
+  @Test
+  public void testSpes0() {
+    final Substitution rule =
+        Substitution.parse(
+            "Proj<a3 s2>(Agg<a1 a2 f0 s1 p0>(Proj*<a0 s0>(Input<t0>)))|Proj<a7 s5>(Agg<a5 a6 f1 s4 p1>(Proj<a4 s3>(Input<t1>)))|AttrsSub(a0,t0);AttrsSub(a1,s0);AttrsSub(a2,s0);AttrsSub(a3,s1);TableEq(t1,t0);AttrsEq(a4,a0);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a3);PredicateEq(p1,p0);SchemaEq(s3,s0);SchemaEq(s4,s1);SchemaEq(s5,s2);FuncEq(f1,f0)");
+    final int result = LogicSupport.proveEqBySpes(rule);
+    assertEquals(LogicSupport.EQ, result, rule.toString());
+  }
+
+  @Test
+  public void testSpes1() {
+    final Substitution rule =
+        Substitution.parse(
+            "Union*(Union*(Input<t0>,Input<t1>),Input<t2>)|"
+                + "Union*(Input<t3>,Input<t4>)|"
+                + "TableEq(t0,t1);TableEq(t3,t0);TableEq(t4,t2)");
+    final int result = LogicSupport.proveEqBySpes(rule);
+    assertEquals(LogicSupport.EQ, result, rule.toString());
+  }
+
   @Test
   public void testBank() {
     for (Substitution rule : TestHelper.bankForTest().rules()) {
@@ -28,17 +56,45 @@ class LogicProverTest {
   }
 
   @Test
-  public void test() {
-    final Substitution rule =
-        Substitution.parse(
-            "Filter<p1 a4>(InnerJoin<a2 a3>(Input<t0>,Proj<a1 s0>(Filter<p0 a0>(Input<t1>))))|"
-                + "Filter<p3 a9>(Filter<p2 a8>(InnerJoin<a6 a7>(Input<t2>,Proj<a5 s1>(Input<t3>))))|"
-                + "AttrsSub(a0,t1);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,s0);AttrsSub(a4,t0);"
-                + "SchemaEq(s1,s0);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(a5,a1);AttrsEq(a6,a2);AttrsEq(a7,a3);"
-                + "AttrsEq(a8,a0);AttrsEq(a9,a4);PredicateEq(p2,p0);PredicateEq(p3,p1)");
-    final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
-    final int result = LogicSupport.proveEq(uExprs);
-    assertEquals(LogicSupport.EQ, result, rule.toString());
+  public void testUsed() throws IOException {
+    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.used.txt"));
+    for (Substitution rule : bank.rules()) {
+      try {
+        if (!rule.isExtended()) {
+          final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
+          final int result = LogicSupport.proveEq(uExprs);
+          if (result != LogicSupport.EQ) System.err.println(rule.toString());
+
+          final var pair = translateAsPlan(rule);
+          final PlanContext plan = pair.getLeft();
+          System.out.println(translateAsAst(plan, plan.root(), true));
+          System.out.println(plan.schema().toDdl(MySQL, new StringBuilder()).toString());
+        } else {
+          final var pair = translateAsPlan2(rule);
+          final PlanContext plan = pair.getLeft();
+          System.out.println(translateAsAst(plan, plan.root(), true));
+          System.out.println(plan.schema().toDdl(MySQL, new StringBuilder()).toString());
+        }
+
+      } catch (Throwable ex) {
+        System.err.println(rule);
+        break;
+      }
+    }
+  }
+
+  @Test
+  public void testUsedSpes() throws IOException {
+    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.used.txt"));
+    int count = 0;
+    for (Substitution rule : bank.rules()) {
+      final int result = LogicSupport.proveEqBySpes(rule);
+      if (result == LogicSupport.EQ) {
+        ++count;
+        System.out.println("Rule " + rule.id() + " can be proved.");
+      }
+    }
+    System.out.println(count + " can be proved in all.");
   }
 
   @Test

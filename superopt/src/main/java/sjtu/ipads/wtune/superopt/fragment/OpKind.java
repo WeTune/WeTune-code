@@ -55,7 +55,7 @@ public enum OpKind {
       case "LeftJoin" -> LEFT_JOIN;
       case "InnerJoin" -> INNER_JOIN;
       case "PlainFilter", "SimpleFilter", "Filter" -> SIMPLE_FILTER;
-      case "SubqueryFilter", "InSubFilter" -> IN_SUB_FILTER;
+      case "SubqueryFilter", "InSubFilter", "InSub" -> IN_SUB_FILTER;
       case "Input" -> INPUT;
       case "Proj", "Proj*" -> PROJ;
       case "Union", "Union*" -> SET_OP;

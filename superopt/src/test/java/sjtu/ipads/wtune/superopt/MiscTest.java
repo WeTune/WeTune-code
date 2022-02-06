@@ -6,21 +6,25 @@ import sjtu.ipads.wtune.sql.ast.SqlContext;
 import sjtu.ipads.wtune.sql.ast.SqlKind;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.plan.PlanContext;
+import sjtu.ipads.wtune.sql.plan.PlanKind;
 import sjtu.ipads.wtune.sql.plan.PlanSupport;
 import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
+import sjtu.ipads.wtune.stmt.StmtProfile;
+import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
+import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
+import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.ast.SqlKind.GroupItem;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
@@ -28,6 +32,7 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
+import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.translateToUExpr;
 
 public class MiscTest {
   @Test
@@ -79,5 +84,106 @@ public class MiscTest {
       }
     }
     System.out.println(bank1.size() + " " + count);
+  }
+
+  @Test
+  void test2() throws IOException {
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.spes.0204.txt"));
+    int both = 0;
+    int spesOnly = 0;
+    for (Substitution rule : bank0.rules()) {
+      if (rule.isExtended()) ++spesOnly;
+      else {
+        final UExprTranslationResult uExprs = translateToUExpr(rule);
+        final int result = LogicSupport.proveEq(uExprs);
+        if (result == LogicSupport.EQ) {
+          System.out.println(rule.id());
+          ++both;
+        } else {
+          ++spesOnly;
+        }
+      }
+    }
+    System.out.println("both=" + both + ", spes=" + spesOnly);
+  }
+
+  @Test
+  void test3() throws IOException {
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.spes.0204.txt"));
+    final Optimizer optimizer = Optimizer.mk(bank0);
+    final Statement stmt =
+        Statement.mk(
+            "spree",
+            "SELECT COUNT(*) FROM ( SELECT spree_products.*, spree_prices.amount FROM `spree_products` INNER JOIN `spree_variants` ON `spree_variants`.`deleted_at` IS NULL AND `spree_variants`.`product_id` = `spree_products`.`id` AND `spree_variants`.`is_master` = TRUE INNER JOIN `spree_prices` ON `spree_prices`.`deleted_at` IS NULL AND `spree_prices`.`variant_id` = `spree_variants`.`id` WHERE `spree_products`.`deleted_at` IS NULL AND ( `spree_products`.deleted_at IS NULL or `spree_products`.deleted_at >= '2020-05-01 07:05:50.594745' ) AND ( `spree_products`.discontinue_on IS NULL or `spree_products`.discontinue_on >= '2020-05-01 07:05:50.594964' ) AND ( `spree_products`.available_on <= '2020-05-01 07:05:50.594949' ) AND `spree_prices`.`currency` = 'USD' ) sub WHERE sub.amount > 1242",
+            null);
+    final SqlNode ast = stmt.ast();
+    ast.context().setSchema(stmt.app().schema("base"));
+
+    for (PlanContext plan : optimizer.optimize(ast)) {
+      System.out.println(PlanSupport.translateAsAst(plan, plan.root(), false));
+    }
+  }
+
+  @Test
+  void test4() throws IOException {
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.spes.0204.txt"));
+    final Optimizer optimizer = Optimizer.mk(bank0);
+    final Statement stmt =
+        Statement.mk(
+            "discourse",
+            "SELECT COUNT(\"users\".\"username\") AS count_all, email_tokens.email AS email_tokens_email "
+                + "FROM \"users\" INNER JOIN \"email_tokens\" ON \"email_tokens\".\"user_id\" = \"users\".\"id\" "
+                + "WHERE \"users\".\"username\" IS NOT NULL GROUP BY email_tokens.email HAVING \"users\".\"username\" IS NOT NULL",
+            null);
+    final SqlNode ast = stmt.ast();
+    ast.context().setSchema(stmt.app().schema("base"));
+
+    for (PlanContext plan : optimizer.optimize(ast)) {
+      System.out.println(PlanSupport.translateAsAst(plan, plan.root(), false));
+    }
+  }
+
+  @Test
+  void test5() throws IOException {
+    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.spes.0204.txt"));
+    final Optimizer optimizer = Optimizer.mk(bank0);
+    final Statement stmt =
+        Statement.mk(
+            "redmine",
+            "SELECT SUM(`time_entries`.`hours`) AS sum_hours, `time_entries`.`issue_id` AS time_entries_issue_id FROM `time_entries` INNER JOIN (SELECT * FROM `projects`) AS `sub` ON `sub`.`id` = `time_entries`.`project_id` WHERE `time_entries`.`issue_id` = 3 GROUP BY `time_entries`.`issue_id`",
+            null);
+    final SqlNode ast = stmt.ast();
+    ast.context().setSchema(stmt.app().schema("base"));
+
+    for (PlanContext plan : optimizer.optimize(ast)) {
+      System.out.println(PlanSupport.translateAsAst(plan, plan.root(), false));
+    }
+  }
+
+  @Test
+  void test6() throws IOException {
+    int count = 0, exceptions = 0, unsupported = 0;
+    for (Statement statement : Statement.findAllCalcite()) {
+      try {
+        final PlanContext plan = assemblePlan(statement.ast(), statement.app().schema("base"));
+        if (plan == null) ++unsupported;
+        else if (isSimple(plan)) ++count;
+      } catch (Throwable ex) {
+        ++exceptions;
+      }
+    }
+    System.out.println(
+        "count=" + count + " exceptions=" + exceptions + " unsupported=" + unsupported);
+  }
+
+  private static boolean isSimple(PlanContext plan) {
+    int node = plan.root();
+    if (plan.kindOf(node) == PlanKind.Limit) node = plan.childOf(node, 0);
+    if (plan.kindOf(node) == PlanKind.Sort) node = plan.childOf(node, 0);
+    if (plan.kindOf(node) != PlanKind.Proj || PlanSupport.isDedup(plan, node)) return false;
+    node = plan.childOf(node, 0);
+
+    while (plan.kindOf(node) == PlanKind.Filter) node = plan.childOf(node, 0);
+    return plan.kindOf(node) == PlanKind.Input;
   }
 }

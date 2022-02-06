@@ -150,8 +150,8 @@ class PlanBuilder {
         This is a vendor-extension.)
       */
 
-      if (any(items, it1 -> it1.$(SelectItem_Expr).$(Aggregate_WindowSpec) != null))
-        return onError(FAILURE_UNSUPPORTED_FEATURE + "window function");
+//      if (any(items, it1 -> it1.$(SelectItem_Expr).$(Aggregate_WindowSpec) != null))
+//        return onError(FAILURE_UNSUPPORTED_FEATURE + "window function");
 
       // 1. build Agg node
       mkAttrs(child, items, attrNames, attrExprs);

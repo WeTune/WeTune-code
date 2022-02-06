@@ -305,6 +305,7 @@ interface SqlVisitorDriver {
       case Aggregate -> {
         safeVisitList(Aggregate_Args, n, v);
         safeVisitList(Aggregate_Order, n, v);
+        safeVisitChild(Aggregate_WindowSpec, n, v);
       }
       case ConvertUsing -> safeVisitChild(ConvertUsing_Expr, n, v);
       case Case -> {

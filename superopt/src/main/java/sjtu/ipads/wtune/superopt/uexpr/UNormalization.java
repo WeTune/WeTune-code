@@ -21,7 +21,9 @@ class UNormalization {
 
   private UTerm normalizeTerm0(UTerm expr) {
     expr = eliminateSquash(expr);
+    expr = flatAddAndMul(expr);
     expr = promoteSummation(expr);
+    expr = flatAddAndMul(expr);
     expr = mergeSummation(expr);
     expr = flatAddAndMul(expr);
     return expr;
@@ -74,9 +76,7 @@ class UNormalization {
 
   // squash(..squash(..)..) -> squash(..)
   private UTerm eliminateSquash(UTerm expr) {
-    expr = eliminateSquash0(expr, false);
-    expr = flatAddAndMul(expr);
-    return expr;
+    return eliminateSquash0(expr, false);
   }
 
   private UTerm eliminateSquash0(UTerm expr, boolean isActivated) {

@@ -1,9 +1,11 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
-import org.apache.commons.lang3.StringUtils;
+import com.microsoft.z3.Expr;
 import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.NameSequence;
+import sjtu.ipads.wtune.sql.SqlSupport;
 import sjtu.ipads.wtune.sql.ast.SqlContext;
+import sjtu.ipads.wtune.sql.ast.SqlKind;
 import sjtu.ipads.wtune.sql.ast.SqlNode;
 import sjtu.ipads.wtune.sql.ast.constants.JoinKind;
 import sjtu.ipads.wtune.sql.ast.constants.SetOpKind;
@@ -17,11 +19,13 @@ import java.util.*;
 
 import static java.util.Collections.singletonList;
 import static sjtu.ipads.wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.ListSupport.*;
 import static sjtu.ipads.wtune.sql.SqlSupport.*;
 import static sjtu.ipads.wtune.sql.ast.ExprFields.ColRef_ColName;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.ColName_Col;
+import static sjtu.ipads.wtune.sql.ast.SqlNodeFields.GroupItem_Expr;
 import static sjtu.ipads.wtune.sql.ast.constants.BinaryOpKind.EQUAL;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.*;
@@ -332,7 +336,7 @@ class PlanTranslator2 {
     final Set<String> initiatedConstraints = new HashSet<>();
     for (Constraint notNull : constraints.ofKind(NotNull)) {
       final AttrsDesc attrs = attrsDescs.get(notNull.symbols()[1]);
-      final String colNames = StringUtils.joinWith(",", attrs.colNames);
+      final String colNames = joining(",", attrs.colNames);
       if (!initiatedConstraints.add(colNames)) continue;
 
       final TableDesc table = sourceDescs.get(notNull.symbols()[0]).tableDesc;
@@ -350,7 +354,7 @@ class PlanTranslator2 {
     initiatedConstraints.clear();
     for (Constraint uniqueKey : constraints.ofKind(Unique)) {
       final AttrsDesc attrs = attrsDescs.get(uniqueKey.symbols()[1]);
-      final String colNames = StringUtils.joinWith(",", attrs.colNames);
+      final String colNames = joining(",", attrs.colNames);
       if (!initiatedConstraints.add(colNames)) continue;
 
       final TableDesc table = sourceDescs.get(uniqueKey.symbols()[0]).tableDesc;
@@ -372,8 +376,8 @@ class PlanTranslator2 {
 
       final AttrsDesc attrs = attrsDescs.get(foreignKey.symbols()[1]);
       final AttrsDesc refAttrs = attrsDescs.get(foreignKey.symbols()[3]);
-      final String colNames = StringUtils.joinWith(",", attrs.colNames);
-      final String refColNames = StringUtils.joinWith(",", refAttrs.colNames);
+      final String colNames = joining(",", attrs.colNames);
+      final String refColNames = joining(",", refAttrs.colNames);
       if (!initiatedConstraints.add(colNames + "-" + refColNames)) continue;
 
       final TableDesc refTable = sourceDescs.get(foreignKey.symbols()[2]).tableDesc;
@@ -626,7 +630,7 @@ class PlanTranslator2 {
 
       final var attrNames = concat(groupColNames, singletonList(getSynName(agg.aggregateAttrs())));
       final var attrExprs = map(concat(groupRefAsts, singletonList(aggAst)), Expression::mk);
-      final var groupExprs = map(groupRefAsts, Expression::mk);
+      final var groupExprs = map(groupRefAsts, this::mkGroupItemExpr);
       final AggNode aggNode = AggNode.mk(false, attrNames, attrExprs, groupExprs, havingExpr);
       aggNode.setQualification(schemaDescOf(agg.schema()).schemaName);
 
@@ -696,6 +700,12 @@ class PlanTranslator2 {
       }
 
       return null;
+    }
+
+    private Expression mkGroupItemExpr(SqlNode colRef) {
+      final SqlNode groupItem = SqlNode.mk(sql, SqlKind.GroupItem);
+      groupItem.$(GroupItem_Expr, copyAst(colRef, sql));
+      return Expression.mk(groupItem);
     }
 
     private static JoinKind joinKindOf(Join join) {

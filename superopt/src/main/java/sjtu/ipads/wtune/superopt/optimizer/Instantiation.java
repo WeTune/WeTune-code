@@ -227,8 +227,9 @@ class Instantiation {
 
     for (int i = 0, bound = aggExprs.size(), exprIdx = 0; i < bound; ++i) {
       Expression aggExpr = aggExprs.get(i);
+
       if (Aggregate.isInstance(aggExpr.template())) {
-        aggExpr = rebindFuncExpr(aggFuncs.get(exprIdx++));
+        aggExpr = aggFuncs.get(exprIdx++);
         aggExprs.set(i, aggExpr);
         reg.bindExpr(outVals.get(i), aggExpr);
       }
@@ -236,8 +237,10 @@ class Instantiation {
       if (!rebindAggExpr(aggExpr, mapping)) return fail(FAILURE_MALFORMED_AGG);
     }
 
-    if (havingPred != null && !rebindAggExpr(havingPred, mapping))
+    if (havingPred != null && havingPred.colRefs().size() != groupRefs.size())
       return fail(FAILURE_MALFORMED_AGG);
+
+    newPlan.valuesReg().bindValueRefs(havingPred, groupRefs);
 
     final List<String> names = ListSupport.map(outVals, Value::name);
     final List<Expression> groupExprs = ListSupport.map(groupRefs, PlanSupport::mkColRefExpr);
@@ -371,11 +374,6 @@ class Instantiation {
     if (newRefs.contains(null)) return false;
     valuesReg.bindValueRefs(expr, newRefs);
     return true;
-  }
-
-  private Expression rebindFuncExpr(Expression expr) {
-    if (usedFunction.get().add(expr)) return expr;
-    else return expr.copy();
   }
 
   private Map<Value, Value> buildAggRefMapping(List<Expression> exprs, List<Value> aggRefs) {

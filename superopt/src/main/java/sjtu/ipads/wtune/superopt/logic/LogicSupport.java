@@ -28,10 +28,16 @@ public abstract class LogicSupport {
   public static final int EQ = 0, NEQ = -1, UNKNOWN = 1, FAST_REJECTED = -2;
   private static final AtomicInteger NUM_INVOCATIONS = new AtomicInteger(0);
 
+  static boolean dumpFormulas;
+
   private LogicSupport() {}
 
   static void incrementNumInvocations() {
     NUM_INVOCATIONS.incrementAndGet();
+  }
+
+  public static void setDumpFormulas(boolean dumpFormulas) {
+    LogicSupport.dumpFormulas = dumpFormulas;
   }
 
   public static String stringifyResult(int result) {

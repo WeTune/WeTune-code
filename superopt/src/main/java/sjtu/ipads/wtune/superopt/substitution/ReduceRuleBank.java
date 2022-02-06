@@ -1,7 +1,6 @@
 package sjtu.ipads.wtune.superopt.substitution;
 
 import me.tongfei.progressbar.ProgressBar;
-import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.ListSupport;
 import sjtu.ipads.wtune.common.utils.SetSupport;
 import sjtu.ipads.wtune.sql.plan.*;
@@ -19,12 +18,9 @@ import java.util.Set;
 import static com.google.common.collect.Lists.newArrayList;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.ATTRS;
-import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.PRED;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_DISABLE_JOIN_FLIP;
-import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_ENABLE_EXTENSIONS;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.*;
-import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
 
 class ReduceRuleBank {
   private final SubstitutionBank bank;
@@ -34,12 +30,13 @@ class ReduceRuleBank {
   }
 
   SubstitutionBank reduce() {
-    OptimizerSupport.addOptimizerTweaks(TWEAK_DISABLE_JOIN_FLIP);
-    if (bank.isExtended()) OptimizerSupport.addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+    addOptimizerTweaks(TWEAK_DISABLE_JOIN_FLIP);
+    if (bank.isExtended()) addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
 
     bank.removeIf(ReduceRuleBank::isUselessHeuristic1);
     bank.removeIf(ReduceRuleBank::isUselessHeuristic2);
     bank.removeIf(ReduceRuleBank::isJoinFlipRule);
+    if (bank.isExtended()) bank.removeIf(ReduceRuleBank::isWrongDueToBug);
 
     try (final ProgressBar pb = new ProgressBar("Reduce", bank.size())) {
       final List<Substitution> rules = new ArrayList<>(bank.rules());
@@ -53,7 +50,7 @@ class ReduceRuleBank {
 
         } catch (Throwable ex) {
           System.err.println(i + " " + rule);
-          ex.printStackTrace();
+          //          ex.printStackTrace();
           bank.remove(rule);
           //          throw ex;
         }
@@ -77,15 +74,26 @@ class ReduceRuleBank {
   }
 
   private static boolean isUselessHeuristic2(Substitution rule) {
-    // Two RHS Pred symbols share the same instantiation.
+    // Two RHS Pred or Func symbols share the same instantiation.
     final Constraints constraints = rule.constraints();
+
     final List<Symbol> preds = rule._1().symbols().symbolsOf(PRED);
-    final Set<Symbol> instantiations = SetSupport.map(preds, constraints::instantiationOf);
-    return instantiations.size() < preds.size();
+    final Set<Symbol> predInstantiations = SetSupport.map(preds, constraints::instantiationOf);
+    if (predInstantiations.size() < preds.size()) return true;
+
+    final List<Symbol> funcs = rule._1().symbols().symbolsOf(FUNC);
+    final Set<Symbol> funcInstantiations = SetSupport.map(preds, constraints::instantiationOf);
+    if (funcInstantiations.size() < funcs.size()) return true;
+
+    return false;
   }
 
   private static boolean isJoinFlipRule(Substitution rule) {
     return new CheckFlipJoin(rule).check();
+  }
+
+  private static boolean isWrongDueToBug(Substitution rule) {
+    return rule.toString().contains("InSub");
   }
 
   private boolean isImpliedRule(Substitution rule) {
@@ -115,7 +123,7 @@ class ReduceRuleBank {
       optimized = optimizer.optimizePartial(plan, plan.childOf(plan.root(), 0));
     }
     //    for (PlanContext opt : optimized) OptimizerSupport.dumpTrace(optimizer, opt);
-    return SetSupport.map(optimized, it -> stringifyTree(it, it.root()));
+    return SetSupport.map(optimized, it -> stringifyTree(it, it.root(), true));
   }
 
   private static boolean completePlan(PlanContext plan) {
@@ -137,16 +145,11 @@ class ReduceRuleBank {
   }
 
   private static PlanContext mkProbingPlan(Substitution rule) {
-    final var pair = isExtendedRule(rule) ? translateAsPlan2(rule) : translateAsPlan(rule);
+    final var pair = rule.isExtended() ? translateAsPlan2(rule) : translateAsPlan(rule);
     final PlanContext left = pair.getLeft(), right = pair.getRight();
     if (left == null || right == null) return null;
     if (PlanSupport.isLiteralEq(left, right)) return null;
     return left;
-  }
-
-  private static boolean isExtendedRule(Substitution rule) {
-    final String str = rule.toString();
-    return str.contains("Agg") || str.contains("Union");
   }
 
   private static List<Join> collectJoins(Fragment fragment) {
@@ -281,13 +284,11 @@ class ReduceRuleBank {
   }
 
   public static void main(String[] args) throws IOException {
-    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.spes.0203.txt"));
+    final SubstitutionBank bank = loadBank(Path.of("wtune_data", "rules", "rules.spes.txt"));
     final ReduceRuleBank reducer = new ReduceRuleBank(bank);
     final Substitution rule =
         Substitution.parse(
-            "Union(Proj<a2 s0>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)),Proj<a3 s1>(Input<t2>))|"
-                + "Union(Proj<a4 s2>(Input<t3>),Proj<a7 s3>(InnerJoin<a5 a6>(Input<t4>,Input<t5>)))|"
-                + "AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a3);AttrsEq(a2,a3);AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);AttrsSub(a3,t2);TableEq(t0,t1);TableEq(t0,t2);TableEq(t1,t2);TableEq(t3,t0);TableEq(t4,t1);TableEq(t5,t2);AttrsEq(a4,a2);AttrsEq(a5,a1);AttrsEq(a6,a3);AttrsEq(a7,a1);SchemaEq(s2,s1);SchemaEq(s3,s0)");
+            "Union*(Agg<a0 a1 f0 s0 p0>(Input<t0>),Agg<a2 a3 f1 s1 p1>(Input<t1>))|Union*(Agg<a4 a5 f2 s2 p2>(Input<t2>),Agg<a6 a7 f3 s3 p3>(Input<t3>))|TableEq(t0,t1);AttrsEq(a0,a1);AttrsEq(a0,a2);AttrsEq(a0,a3);AttrsEq(a1,a2);AttrsEq(a1,a3);AttrsEq(a2,a3);FuncEq(f0,f1);AttrsSub(a0,t0);AttrsSub(a1,t0);AttrsSub(a2,t1);AttrsSub(a3,t1);TableEq(t2,t1);TableEq(t3,t0);AttrsEq(a4,a2);AttrsEq(a5,a3);AttrsEq(a6,a0);AttrsEq(a7,a1);PredicateEq(p2,p1);PredicateEq(p3,p0);SchemaEq(s2,s0);SchemaEq(s3,s1);FuncEq(f2,f1);FuncEq(f3,f0)");
     System.out.println(reducer.isImpliedRule(rule));
   }
 }

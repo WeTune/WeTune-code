@@ -20,6 +20,8 @@ import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findIC;
 import static sjtu.ipads.wtune.sql.schema.SchemaSupport.findRelatedIC;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.Reference;
 import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.*;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.TWEAK_ENABLE_QUERY_AS_EQ_INPUT;
+import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.optimizerTweaks;
 
 class Model {
   private final Model base;
@@ -124,12 +126,17 @@ class Model {
   private boolean checkCompatible(Symbol.Kind kind, Object v0, Object v1) {
     if (kind == PRED)
       return v1 instanceof Expression && Objects.equals(v0.toString(), v1.toString());
-    if (kind == ATTRS)
-      return v1 instanceof List && isAttrsEq((List<Value>) v0, (List<Value>) v1);
-    if (kind == TABLE)
-      return v1 instanceof Integer && isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
+    if (kind == ATTRS) return v1 instanceof List && isAttrsEq((List<Value>) v0, (List<Value>) v1);
     if (kind == FUNC)
       return v1 instanceof List<?> && isFuncsEq((List<Expression>) v0, (List<Expression>) v1);
+    if (kind == TABLE) {
+      if (!(v1 instanceof Integer)) return false;
+      if ((optimizerTweaks & TWEAK_ENABLE_QUERY_AS_EQ_INPUT) == 0) {
+        return isEqualTree(plan, (Integer) v0, plan, (Integer) v1);
+      } else {
+        return isLiteralEq(plan, (Integer) v0, plan, (Integer) v1);
+      }
+    }
 
     throw new IllegalArgumentException("unexpected assignment: " + v0);
   }
@@ -137,8 +144,7 @@ class Model {
   private boolean isFuncsEq(List<Expression> v0, List<Expression> v1) {
     if (v0.size() != v1.size()) return false;
     for (var pair : zip(v0, v1)) {
-      if (!pair.getLeft().toString().equals(pair.getRight().toString()))
-        return false;
+      if (!pair.getLeft().toString().equals(pair.getRight().toString())) return false;
     }
     return true;
   }

@@ -13,6 +13,7 @@ import sjtu.ipads.wtune.superopt.uexpr.*;
 import java.util.*;
 
 import static com.google.common.collect.Sets.difference;
+import static com.google.common.collect.Sets.newIdentityHashSet;
 import static sjtu.ipads.wtune.common.utils.ArraySupport.*;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
@@ -52,46 +53,48 @@ class LogicProver {
 
   private void trConstraints() {
     final Symbols srcSide = rule._0().symbols();
-    final Set<String> enforced = new HashSet<>();
+    final Set<String> touched = new HashSet<>();
 
     for (var tableSym : srcSide.symbolsOf(TABLE)) {
       final String tableName = uExprs.tableNameOf(tableSym);
-      if (enforced.add(tableName)) trTableBasic(tableName);
+      if (touched.add(tableName)) trTableBasic(tableName);
     }
-    enforced.clear();
+    touched.clear();
 
     for (var attrsSym : srcSide.symbolsOf(ATTRS)) {
       final String attrsName = uExprs.attrsNameOf(attrsSym);
-      if (enforced.add(attrsName)) trAttrsBasic(attrsName);
+      if (touched.add(attrsName)) trAttrsBasic(attrsName);
     }
-    enforced.clear();
+    touched.clear();
+
+    for (Constraint c : rule.constraints().ofKind(TableEq)) {
+      if (c.symbols()[0].ctx() == srcSide && c.symbols()[1].ctx() == srcSide) trTableEq(c);
+    }
 
     for (Constraint c : rule.constraints().ofKind(AttrsEq)) {
       if (c.symbols()[0].ctx() == srcSide && c.symbols()[1].ctx() == srcSide) trAttrsEq(c);
     }
-    //noinspection RedundantOperationOnEmptyContainer
-    enforced.clear();
 
     for (Constraint c : rule.constraints().ofKind(NotNull)) {
-      if (enforced.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
+      if (touched.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
         trNotNull(c);
     }
-    enforced.clear();
+    touched.clear();
 
     for (Constraint c : rule.constraints().ofKind(Unique)) {
-      if (enforced.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
+      if (touched.add(uExprs.tableNameOf(c.symbols()[0]) + uExprs.attrsNameOf(c.symbols()[1])))
         trUnique(c);
     }
-    enforced.clear();
+    touched.clear();
 
     for (Constraint c : rule.constraints().ofKind(Reference)) {
       final String t0 = uExprs.tableNameOf(c.symbols()[0]);
       final String a0 = uExprs.attrsNameOf(c.symbols()[1]);
       final String t1 = uExprs.tableNameOf(c.symbols()[2]);
       final String a1 = uExprs.attrsNameOf(c.symbols()[3]);
-      if (enforced.add(t0 + a0 + t1 + a1)) trReferences(c);
+      if (touched.add(t0 + a0 + t1 + a1)) trReferences(c);
     }
-    enforced.clear();
+    touched.clear();
 
     for (Constraint c : rule.constraints().ofKind(AttrsSub)) {
       trAttrSub(c);
@@ -142,6 +145,21 @@ class LogicProver {
                 outerProj.apply(innerSchema, tuple)));
 
     constraints.add(assertion);
+  }
+
+  private void trTableEq(Constraint c) {
+    final int schema0 = getSchema(c.symbols()[0]);
+    final int schema1 = getSchema(c.symbols()[1]);
+    if (schema0 == schema1) return;
+
+    final IntNum s0 = z3.mkInt(schema0), s1 = z3.mkInt(schema1);
+    final Expr tuple = z3.mkConst("x", tupleSort());
+    final Expr[] vars = new Expr[] {tuple};
+    for (var attrSym : rule._0().symbols().symbolsOf(ATTRS)) {
+      final FuncDecl projFunc = projFunc(uExprs.attrsDescOf(attrSym).name().toString());
+      final BoolExpr assertion = z3.mkEq(projFunc.apply(s0, tuple), projFunc.apply(s1, tuple));
+      constraints.add(mkForall(vars, assertion));
+    }
   }
 
   private void trAttrsEq(Constraint c) {
@@ -526,12 +544,18 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
-    //    solver.push();
-    //    solver.add(exprs);
-    //    final Status res = solver.check();
-    //    solver.pop();
-    //    return res;
-    return solver.check(exprs);
+    if (dumpFormulas) {
+      solver.push();
+      solver.add(exprs);
+      System.out.println(solver);
+      System.out.println("(check-sat)");
+      final Status res = solver.check();
+      solver.pop();
+      return res;
+
+    } else {
+      return solver.check(exprs);
+    }
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {

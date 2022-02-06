@@ -41,6 +41,7 @@ class UExprTranslator {
   private final NameSequence tableSeq, attrsSeq, predSeq, varSeq;
   private final Map<Symbol, UName> initiatedNames;
   private final Lazy<Set<Pair<SchemaDesc, SchemaDesc>>> knownEqSchemas;
+  private final Map<SchemaDesc, UVar> pivotVars;
   private final UExprTranslationResult result;
   private final boolean enableDependentSubquery, enableSchemaFeasibilityCheck;
   private int nextSchema;
@@ -53,6 +54,7 @@ class UExprTranslator {
     this.varSeq = NameSequence.mkIndexed("x", 0);
     this.initiatedNames = new HashMap<>(16);
     this.knownEqSchemas = Lazy.mk(HashSet::new);
+    this.pivotVars = new HashMap<>();
     this.result = new UExprTranslationResult(rule);
     this.enableDependentSubquery = (tweak & UEXPR_FLAG_SUPPORT_DEPENDENT_SUBQUERY) != 0;
     this.enableSchemaFeasibilityCheck = (tweak & UEXPR_FLAG_CHECK_SCHEMA_FEASIBLE) != 0;
@@ -134,6 +136,7 @@ class UExprTranslator {
       /* Create a variable with distinct name and given schema. */
       final UVar var = UVar.mkBase(UName.mk(varSeq.next()));
       result.setVarSchema(var, schema);
+      pivotVars.put(schema, var);
       return var;
     }
 
@@ -201,10 +204,14 @@ class UExprTranslator {
 
     private UVar mkProj(Symbol attrSym, AttrsDesc desc, UVar base) {
       // project `attrSym` (whose desc is `desc`) on the `base` tuple
-      if (isTargetSide) attrSym = rule.constraints().instantiationOf(attrSym);
+      Symbol source = null;
+      if (isTargetSide) {
+        source = rule.constraints().sourceOf(attrSym);
+        if (source == null) attrSym = rule.constraints().instantiationOf(attrSym);
+      }
       assert attrSym != null;
 
-      Symbol source = rule.constraints().sourceOf(attrSym);
+      if (source == null) source = rule.constraints().sourceOf(attrSym);
       assert source != null : rule.naming().nameOf(attrSym);
 
       // apply AttrsSub: pick the component from concat (if there is)
@@ -426,7 +433,11 @@ class UExprTranslator {
       //   Sum{x,y}(.. * t0(x) * [k0(x) = k1(a(y))] * t1(y)), instead of
       //   Sum{x,z}(.. * t0(x) * [k0(x) = k1(z)] * Sum{y}([z = a(y)] * t1(y))).
       // This will save a lot of bother in the subsequent process.
-      final UVar outVar = isClosed ? mkFreshVar(outSchema) : projVar;
+      final UVar outVar;
+      if (!isClosed) outVar = projVar;
+      else if (!isTargetSide) outVar = mkFreshVar(outSchema);
+      else outVar = pivotVars.get(outSchema);
+
       push(freeVars, outVar);
       push(visibleVars, outVar);
 

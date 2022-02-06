@@ -67,7 +67,7 @@ class BottomUpOptimizer implements Optimizer {
 
   @Override
   public Set<PlanContext> optimize(PlanContext plan) {
-    setExtended((optimizerTweaks & TWEAK_ENABLE_EXTENSIONS) != 0);
+    setExtended(rules.isExtended());
     setKeepOriginal((optimizerTweaks & TWEAK_KEEP_ORIGINAL_PLAN) != 0);
 
     final PlanContext originalPlan = plan;

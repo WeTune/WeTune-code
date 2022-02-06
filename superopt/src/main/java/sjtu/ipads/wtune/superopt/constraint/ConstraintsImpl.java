@@ -56,8 +56,7 @@ class ConstraintsImpl extends AbstractList<Constraint> implements Constraints {
         sym1 = tmp;
       }
 
-      // add this after migration completion:
-      assert sym0.ctx() == srcSyms && sym1.ctx() != srcSyms;
+      assert c.kind() == Kind.AttrsSub || (sym0.ctx() == srcSyms && sym1.ctx() != srcSyms);
 
       instantiationSource.put(sym1, sym0);
     }

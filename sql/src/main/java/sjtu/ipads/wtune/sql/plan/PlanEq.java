@@ -20,7 +20,11 @@ class PlanEq {
   }
 
   boolean isEqTree() {
-    return isStructuralEq(plan0.root(), plan1.root()) && isSemanticEq(plan0.root(), plan1.root());
+    return isEqTree(plan0.root(), plan1.root());
+  }
+
+  boolean isEqTree(int root0, int root1) {
+    return isStructuralEq(root0, root1) && isSemanticEq(root0, root1);
   }
 
   private boolean isStructuralEq(int node0, int node1) {

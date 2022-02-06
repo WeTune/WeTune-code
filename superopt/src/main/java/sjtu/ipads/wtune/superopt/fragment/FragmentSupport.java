@@ -6,6 +6,7 @@ import sjtu.ipads.wtune.superopt.util.Hole;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.linearFind;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.superopt.fragment.Op.mk;
@@ -44,6 +45,15 @@ public class FragmentSupport {
   public static List<Fragment> enumFragments() {
     final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, DEFAULT_MAX_OPS);
     enumerator.setPruningRules(EXTENDED_PRUNING_RULES);
+    return enumerator.enumerate();
+  }
+
+  public static List<Fragment> enumFragments(int numOps, int pruneLevel) {
+    final FragmentEnumerator enumerator = new FragmentEnumerator(DEFAULT_OP_SET, numOps);
+    enumerator.setPruningRules(
+        pruneLevel == 0
+            ? emptySet()
+            : pruneLevel == 1 ? BASIC_PRUNING_RULES : EXTENDED_PRUNING_RULES);
     return enumerator.enumerate();
   }
 

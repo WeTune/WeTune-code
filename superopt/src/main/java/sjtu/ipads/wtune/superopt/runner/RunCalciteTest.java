@@ -33,6 +33,7 @@ import java.util.Set;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.IOSupport.*;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
 import static sjtu.ipads.wtune.sql.SqlSupport.parseSql;
 import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
@@ -156,7 +157,7 @@ public class RunCalciteTest implements Runner {
             System.out.printf("%d,%d\n", pair.lineNum, pair.lineNum + 1);
             if (verbosity >= 1) {
               System.out.println("Both are rewritten to: ");
-              System.out.println(translateAsAst(plan0, plan0.root(), false).toString());
+              System.out.println(translateAsAst(plan0, plan0.root(), false));
             }
             continue outer;
           }
@@ -238,23 +239,19 @@ public class RunCalciteTest implements Runner {
     if (rewrittenPlans.isEmpty()) return;
 
     int i = 0;
-    boolean extendedRuleUsed = false;
     for (PlanContext plan : rewrittenPlans) {
       final List<OptimizationStep> traces = optimizer.traceOf(plan);
       final String str = joining(",", traces, it -> String.valueOf(it.ruleId()));
       out.printf("%s-%d\t%d\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, str);
 
-      if (rules.get().isExtended() && !extendedRuleUsed) {
-        for (OptimizationStep trace : traces)
-          if (trace.rule() != null && trace.rule().isExtended()) {
-            extendedRuleUsed = true;
-            break;
-          }
+      if (rules.get().isExtended() && any(traces, step -> step.rule() != null && step.rule().isExtended())) {
+        final int stmtId = pair.lineNum + index;
+        final SqlNode ast = index == 0 ? pair.q0 : pair.q1;
+        System.out.println("calcite_tests\t" + stmtId + "\t" + ast
+                           + "\t" + translateAsAst(plan, plan.root(), false)
+                           + "\t" + str);
+        break;
       }
-    }
-
-    if (extendedRuleUsed) {
-      System.out.println("extended rule used: " + pair.lineNum);
     }
   }
 
@@ -264,7 +261,7 @@ public class RunCalciteTest implements Runner {
 
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-//        if (i != 260) continue;
+//        if (i != 136) continue;
       final String first = lines.get(i), second = lines.get(i + 1);
       final SqlNode q0 = parseSql(MySQL, first);
       final SqlNode q1 = parseSql(MySQL, second);

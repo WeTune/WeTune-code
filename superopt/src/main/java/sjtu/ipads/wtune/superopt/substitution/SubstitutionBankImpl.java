@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.superopt.util.Fingerprint;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -16,7 +17,7 @@ class SubstitutionBankImpl implements SubstitutionBank {
   private boolean isExtended;
 
   SubstitutionBankImpl() {
-    this.rules = new HashMap<>(2048);
+    this.rules = new LinkedHashMap<>(2048);
     this.fingerprintIndex = MultimapBuilder.hashKeys(2048).arrayListValues(32).build();
     this.isExtended = false;
   }

@@ -10,7 +10,7 @@ num_cpus=$(grep -c ^processor /proc/cpuinfo)
 while [[ $# -gt 0 ]]; do
   case $1 in
   -partition)
-    partitions="${2}"
+    partition="${2}"
     shift 2
     ;;
   *)

@@ -2202,4 +2202,9 @@ public class OptimizerTest {
     };
     doTest(app, stmtId, expected);
   }
+
+  @Test
+  void testGitlab123() {
+
+  }
 }

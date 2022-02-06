@@ -25,6 +25,7 @@ public abstract class OptimizerSupport {
   public static final int TWEAK_SORT_FILTERS_DURING_REWRITE = 8;
   public static final int TWEAK_SORT_FILTERS_BEFORE_OUTPUT = 16;
   public static final int TWEAK_PERMUTE_JOIN_TREE = 32;
+  public static final int TWEAK_ENABLE_QUERY_AS_EQ_INPUT = 64;
   static int optimizerTweaks = 0;
 
   private static final ThreadLocal<String> LAST_ERROR = new ThreadLocal<>();

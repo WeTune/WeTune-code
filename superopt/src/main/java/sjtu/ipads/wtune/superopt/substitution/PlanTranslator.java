@@ -453,8 +453,14 @@ class PlanTranslator {
 
     private Symbol deepSourceOf(Symbol attrs) {
       final Constraints constraints = rule.constraints();
-      if (isTargetSide) attrs = constraints.instantiationOf(attrs);
-      Symbol source = constraints.sourceOf(attrs);
+
+      Symbol source = null;
+      if (isTargetSide) {
+        source = constraints.sourceOf(attrs);
+        if (source == null) attrs = constraints.instantiationOf(attrs);
+      }
+      if (source == null) source = constraints.sourceOf(attrs);
+
       while (source.kind() != TABLE) {
         final Op op = srcSyms.ownerOf(source);
         assert op.kind() == PROJ;
