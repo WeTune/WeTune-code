@@ -5,6 +5,7 @@ enum_dir='enumeration'
 rule_dir='rules'
 num_partitions=32
 num_cpus=$(grep -c ^processor /proc/cpuinfo)
+parallelism=4
 
 # read arguments
 while [[ $# -gt 0 ]]; do
@@ -49,7 +50,7 @@ t=$(date '+%m%d%H%M%S')
 rules_file="${rule_dir}/rules.${t}.txt"
 
 for ((i = from_partition; i <= to_partition; i++)); do
-  run_dir=$(ls -t -1 "${enum_dir}" | ag "run.+_${i}" | head -1)
+  run_dir=$(ls -t -1 "${enum_dir}" | grep "run.\+_${i}" | head -1)
   if [ -z "${run_dir}" ] || ! [ -f "${enum_dir}/${run_dir}/success.txt" ]; then
     echo "Excepted ${data_dir}/${enum_dir}/run*_${i}/success.txt does not exist."
     exit 1
@@ -60,4 +61,4 @@ for ((i = from_partition; i <= to_partition; i++)); do
 done
 
 ln -sfr "${rules_file}" "${rule_dir}/rules.local.txt"
-echo "$(wc -l "${rules_file}") rules discovered."
+echo "$(wc -l "${rules_file}" | cut -f1 -d' ') rules discovered."
