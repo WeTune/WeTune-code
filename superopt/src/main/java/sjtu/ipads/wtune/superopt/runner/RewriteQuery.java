@@ -35,7 +35,7 @@ import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.parseIntArg;
 
 public class RewriteQuery implements Runner {
-  private Path out, trace, err;
+  private Path out, err;
   private String targetApp;
   private int stmtId;
   private boolean single, excludeNonEssential;
@@ -84,7 +84,6 @@ public class RewriteQuery implements Runner {
     if (!Files.exists(dir)) Files.createDirectories(dir);
 
     out = dir.resolve("1_query.tsv");
-    trace = dir.resolve("1_trace.tsv");
     err = dir.resolve("1_err.txt");
 
     if (ruleFileName.contains("spes")) Files.createFile(dir.resolve("use_spes"));

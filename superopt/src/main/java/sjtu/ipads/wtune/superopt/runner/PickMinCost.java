@@ -32,7 +32,7 @@ import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.*;
 
 public class PickMinCost implements Runner {
-  private Path inOptFile, inTraceFile, outOptFile, outTraceFile;
+  private Path inOptFile, outOptFile, outTraceFile;
   private String targetApp;
   private int stmtId;
   private int verbosity;
@@ -65,7 +65,6 @@ public class PickMinCost implements Runner {
     final Path dataDir = dataDir();
     final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "rewrite/result"));
     inOptFile = dir.resolve(args.getOptional("i", "in", String.class, "1_query.tsv"));
-    inTraceFile = dir.resolve(args.getOptional("I", "in_trace", String.class, "1_trace.tsv"));
     IOSupport.checkFileExists(inOptFile);
 
     final String defaultOutFileName =
@@ -101,14 +100,8 @@ public class PickMinCost implements Runner {
     final List<String> failures = new ArrayList<>();
 
     final List<String> lines = Files.readAllLines(inOptFile);
-    List<String> traces = Files.exists(inTraceFile) ? Files.readAllLines(inTraceFile) : null;
-    if (traces != null && traces.size() != lines.size()) {
-      traces = null;
-      if (verbosity >= 1)
-        System.err.printf("#lines of %s and %s is mismatched\n", inOptFile, inTraceFile);
-    }
 
-    final List<OptimizedStatements> groups = filterToRun(collectOpts(lines, traces));
+    final List<OptimizedStatements> groups = filterToRun(collectOpts(lines));
     try (final ProgressBar pb = new ProgressBar("PickMin", groups.size())) {
       for (OptimizedStatements group : groups) {
         if (!pickMin(group)) {
@@ -120,32 +113,31 @@ public class PickMinCost implements Runner {
     System.err.println("failed to profile " + (failures));
   }
 
-  private List<OptimizedStatements> collectOpts(List<String> lines, List<String> traces) {
+  private List<OptimizedStatements> collectOpts(List<String> lines) {
     final List<OptimizedStatements> optimizations = new ArrayList<>(lines.size() / 20);
 
     OptimizedStatements current = null;
     for (int i = 0, bound = lines.size(); i < bound; ++i) {
       final String line = lines.get(i);
-      final String[] fields = line.split("\t", 3);
-      if (fields.length != 3) {
+      final String[] fields = line.split("\t", 5);
+      if (fields.length != 5) {
         if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
 
-      final String[] stmtFields = fields[0].split("-");
-      final String app = stmtFields[0];
-      final int stmtId = parseIntSafe(stmtFields[1], -1);
+      final String app = fields[0];
+      final int stmtId = parseIntSafe(fields[1], -1);
       if (app.isEmpty() || stmtId <= 0) {
         if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
 
       if (current == null || !current.appName.equals(app) || current.stmtId != stmtId) {
-        optimizations.add(current = new OptimizedStatements(app, stmtId, traces != null));
+        optimizations.add(current = new OptimizedStatements(app, stmtId, true));
       }
 
-      current.sqls.add(fields[2]);
-      if (traces != null) current.traces.add(traces.get(i));
+      current.sqls.add(fields[3]);
+      current.traces.add(fields[4]);
     }
 
     return optimizations;

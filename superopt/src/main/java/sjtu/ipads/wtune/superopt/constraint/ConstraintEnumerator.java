@@ -1,5 +1,6 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
+import org.apache.commons.lang3.tuple.Pair;
 import sjtu.ipads.wtune.common.utils.PartialOrder;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
@@ -10,6 +11,7 @@ import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.any;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.common.utils.ListSupport.map;
 import static sjtu.ipads.wtune.common.utils.PartialOrder.*;
 import static sjtu.ipads.wtune.superopt.constraint.Constraint.Kind.*;
@@ -694,8 +696,21 @@ class ConstraintEnumerator {
       return currentInstantiationOf(((Proj) tgtOp).schema()) == ((Proj) srcOp).schema();
 
     } else if (srcKind.isJoin() && tgtKind.isJoin()) {
-      return isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
-          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1]);
+      if (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
+          && isOutputAligned(srcOp.predecessors()[1], tgtOp.predecessors()[1])) {
+        return true;
+      } else if (isDifferentShapeJoin(srcOp, tgtOp)) {
+        final List<Op> srcChildren = flattenJoinTree(srcOp, new ArrayList<>(3));
+        final List<Op> tgtChildren = flattenJoinTree(tgtOp, new ArrayList<>(3));
+        for (var pair : zip(srcChildren, tgtChildren)) {
+          if (!isOutputAligned(pair.getLeft(), pair.getRight())) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        return false;
+      }
 
     } else if (srcKind == SET_OP && tgtKind == SET_OP) {
       return (isOutputAligned(srcOp.predecessors()[0], tgtOp.predecessors()[0])
@@ -709,6 +724,20 @@ class ConstraintEnumerator {
     } else {
       return false;
     }
+  }
+
+  private boolean isDifferentShapeJoin(Op join0, Op join1) {
+    return join0.predecessors()[1].kind().isJoin() != join1.predecessors()[1].kind().isJoin();
+  }
+
+  private List<Op> flattenJoinTree(Op op, List<Op> children) {
+    if (op.kind().isJoin()) {
+      flattenJoinTree(op.predecessors()[0], children);
+      flattenJoinTree(op.predecessors()[1], children);
+    } else {
+      children.add(op);
+    }
+    return children;
   }
 
   private static Op skipFilters(Op op) {

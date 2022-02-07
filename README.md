@@ -132,9 +132,6 @@ This command typically finishes in 30-50 minutes, depending on the number of dis
 >
 > z3 incurs high inter-thread lock contention. The script uses multi-process instead of multi-thread to mitigate this problem.
 
-> The overall running time can be reduced by limiting the time budget of each plan template pair to searching for most-relaxed
-> constraint set (Section 4.3 in the paper). Please refer to [Part II](#part-ii) for details. However, too short timeout may impact the usefulness of discovered rules.
-
 ### Rewrite Queries Using Discovered Rules
 
 ```shell
