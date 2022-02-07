@@ -10,9 +10,10 @@ while [[ $# -gt 0 ]]; do
     shift 1
     ;;
   *)
-    shift
+    index="${2}"
+    shift 2
     ;;
   esac
 done
 
-gradle :superopt:run --args="RunEnumExample -dump=${dump}"
+gradle :superopt:run --args="RunEnumExample -dump=${dump} -I=${index}"
