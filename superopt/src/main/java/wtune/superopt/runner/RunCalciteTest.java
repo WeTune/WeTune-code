@@ -187,10 +187,8 @@ public class RunCalciteTest implements Runner {
       final Set<PlanContext> rewritten0 = opt0.optimize(pair.p0);
       final Set<PlanContext> rewritten1 = opt1.optimize(pair.p1);
 
-      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 0, rewritten0));
-      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 1, rewritten1));
-      IOSupport.appendTo(outTrace, writer -> dumpTrace(writer, pair, 0, opt0, rewritten0));
-      IOSupport.appendTo(outTrace, writer -> dumpTrace(writer, pair, 1, opt1, rewritten1));
+      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 0, opt0, rewritten0));
+      IOSupport.appendTo(outOpt, writer -> dumpRewritten(writer, pair, 1, opt1, rewritten1));
     }
   }
 
@@ -221,14 +219,16 @@ public class RunCalciteTest implements Runner {
   }
 
   private void dumpRewritten(
-      PrintWriter out, QueryPair pair, int index, Set<PlanContext> rewrittenPlans) {
+          PrintWriter out, QueryPair pair, int index, Optimizer opt, Set<PlanContext> rewrittenPlans) {
     if (rewrittenPlans.isEmpty()) return;
 
     int i = 0;
     for (PlanContext plan : rewrittenPlans) {
       final SqlNode sqlNode0 = translateAsAst(plan, plan.root(), false);
+      final List<OptimizationStep> traces = opt.traceOf(plan);
+      final String str = joining(",", traces, it -> String.valueOf(it.ruleId()));
       out.printf(
-          "%s-%d\t%d\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, sqlNode0);
+          "%s\t%d\t%d\t%s\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, sqlNode0, str);
     }
   }
 

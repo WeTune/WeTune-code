@@ -35,9 +35,9 @@ set -- "${positional_args[@]}"
 if [ -n "${calcite}" ]; then
   gradle :superopt:run --args="RunCalciteTest -T=GenerateRewritings -R=${rules}"
 
-  cd "${data_dir}/calcite" || exit
+  cd "${data_dir}/calcite/" || exit
 
-  dir=$(ls -t -1 | ag 'run.+' | head -1)
+  dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" 'result'
   echo "$(cut -f1,2 'result/1_query.txt' | uniq | wc -l) queries rewritten."
 
@@ -46,7 +46,7 @@ else
 
   cd "${data_dir}/${rewrite_dir}" || exit
 
-  dir=$(ls -t -1 | ag 'run.+' | head -1)
+  dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" 'result'
   echo "$(cut -f1,2 'result/1_query.txt' | uniq | wc -l) queries rewritten."
 fi
