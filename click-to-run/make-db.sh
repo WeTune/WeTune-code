@@ -13,7 +13,7 @@ password='mssql2019Admin'
 schemaFile=
 
 findSchema() {
-  local fileName=${appName}.sql
+  local fileName=${1}.sql
   schemaFile=$(find "${data_dir}" -name "$fileName" | head -1)
 }
 
@@ -30,7 +30,7 @@ EOF
       create database [${dbName}];
       GO
 EOF
-  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "$schemaFile"
+  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "$schemaFile" 1>/dev/null 2>&1
 }
 
 while [[ $# -gt 0 ]]; do
@@ -58,7 +58,7 @@ if [ "$appName" = 'all' ]; then
   for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
   do
     dbName=${db}_${tag} # e.g. broadleaf_base
-    findSchema
+    findSchema ${db}
     if [ ! "$schemaFile" ]; then
       continue
     fi
@@ -66,7 +66,7 @@ if [ "$appName" = 'all' ]; then
   done
 else
   dbName=${appName}_${tag}
-  findSchema
+  findSchema ${appName}
   if [ ! "$schemaFile" ]; then
     echo "db schema not found for ${dbName}."
     exit

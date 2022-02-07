@@ -1,7 +1,7 @@
 #! /bin/bash
 
 verbose=0
-target="opt_used"
+target=
 optimizer="WeTune"
 tag="base"
 
@@ -31,6 +31,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [ ! "$target" ]; then
+  if [ "$tag" == 'base'] || [ "$tag" == 'zipf']; then
+    target="used"
+  else
+    target="opt_used"
+  fi
+fi
+
 echo "Begin generating data of ${tag} workload."
 gradle :testbed:run \
     --args="GenerateTableData -v=${verbose} -target=${target} -optimizer=${optimizer} -tag=${tag}"
@@ -51,7 +59,7 @@ username='SA'
 password='mssql2019Admin'
 
 findAppDataDir() {
-  local path="$tag/$appName"
+  local path="${1}"/"${2}"
   appDataDir=$(find "${data_dir}" -type d -wholename "*/$path" | head -1)
 }
 
@@ -117,7 +125,7 @@ doImportData() {
 for app in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
 do
   dbName=${app}_${tag}
-  findAppDataDir
+  findAppDataDir "${tag}" "${app}"
   if [ ! "$appDataDir" ]; then
     continue
   fi

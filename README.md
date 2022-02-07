@@ -103,30 +103,28 @@ This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtun
 ### Evaluate the Rewritings
 
 ```shell
+click-to-run/estimate-cost.sh
+
 click-to-run/make-db.sh
 click-to-run/generate-data.sh
-```
 
-These scripts generate and insert data into Sql Server database for use of evaluation.
-
-Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server.
-
-Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server. Dumped data files can be found in
-directory `wtune_data/dump/`.
-
-```shell
-click-to-run/estimate-cost.sh
 click-to-run/profile-cost.sh
 ```
 
-These scripts pick the optimized queries and profile them using Sql Server database.
+These scripts pick the optimized queries and profile them using Sql Server database. 
 
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
 pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
 in `wtune_data/rewrite/result/2_query.tsv` and used rules will be stored in
 `wtune_data/rewrite/result/2_trace.tsv`.
 
-`click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by default.
+Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server.
+
+Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server.
+Dumped data files can be found in directory `wtune_data/dump/`.
+
+And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
+default.
 
 **Please refer to [Evaluation Configuration](#Evaluation Configuration) for more details about parameters of the scripts
 in this section.**
@@ -232,23 +230,17 @@ if you would like to evaluate on different type of workload or evaluate queries 
 can set additional parameters to the scripts in section [Evaluate the Rewritings](#Evaluate the Rewritings):
 
 ```shell
+click-to-run/estimate-cost.sh 
 click-to-run/make-db.sh
 click-to-run/generate-data.sh [-tag] <workload_type> [-optimizer] <verifier_type>
-```
-
-```shell
-click-to-run/estimate-cost.sh 
 click-to-run/profile-cost.sh [-tag] <workload_type> [-optimizer] <verifier_type>
 ```
 
 For example, to evaluation queries optimized by `Spes` on workload type of `zipf`, run:
 
 ```shell
+click-to-run/estimate-cost.sh 
 click-to-run/make-db.sh
 click-to-run/generate-data.sh -tag zipf -optimizer Spes
-```
-
-```shell
-click-to-run/estimate-cost.sh 
 click-to-run/profile-cost.sh -tag zipf -optimizer Spes
 ```
