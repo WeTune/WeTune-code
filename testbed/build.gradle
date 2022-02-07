@@ -16,8 +16,8 @@ dependencies {
 
 task run(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    mainModule = 'sjtu.ipads.wtune.testbed'
-    mainClass = 'sjtu.ipads.wtune.testbed.Entry'
+    mainModule = 'wtune.testbed'
+    mainClass = 'wtune.testbed.Entry'
     modularity.inferModulePath = false
     jvmArgs += ['--module-path', classpath.asPath]
 }

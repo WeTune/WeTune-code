@@ -1,4 +1,4 @@
-module sjtu.ipads.wtune.sql {
+module wtune.sql {
   exports wtune.sql;
   exports wtune.sql.util;
   exports wtune.sql.support.action;
@@ -9,7 +9,7 @@ module sjtu.ipads.wtune.sql {
   exports wtune.sql.ast;
   exports wtune.sql.ast.constants;
 
-  requires sjtu.ipads.wtune.common;
+  requires wtune.common;
   requires org.antlr.antlr4.runtime;
   requires org.apache.commons.lang3;
   requires com.google.common;

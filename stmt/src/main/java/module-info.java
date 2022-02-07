@@ -1,6 +1,6 @@
-module sjtu.ipads.wtune.stmt {
-  requires sjtu.ipads.wtune.common;
-  requires sjtu.ipads.wtune.sql;
+module wtune.stmt {
+  requires wtune.common;
+  requires wtune.sql;
   requires sqlite.jdbc;
   requires java.sql;
   requires com.google.common;

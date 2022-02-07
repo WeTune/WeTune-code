@@ -1,4 +1,4 @@
-module sjtu.ipads.wtune.common {
+module wtune.common {
   exports wtune.common.utils;
   exports wtune.common.tree;
   exports wtune.common.field;

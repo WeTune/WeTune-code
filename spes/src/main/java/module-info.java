@@ -1,4 +1,4 @@
-module sjtu.ipads.wtune.spes {
+module wtune.spes {
   exports wtune.spes.AlgeNode;
   exports wtune.spes.AlgeNodeParser;
   exports wtune.spes.AlgeRule;

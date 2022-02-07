@@ -1,7 +1,7 @@
-module sjtu.ipads.wtune.testbed {
-  requires sjtu.ipads.wtune.common;
-  requires sjtu.ipads.wtune.sql;
-  requires sjtu.ipads.wtune.stmt;
+module wtune.testbed {
+  requires wtune.common;
+  requires wtune.sql;
+  requires wtune.stmt;
   requires org.apache.commons.lang3;
   requires com.google.common;
   requires trove4j;

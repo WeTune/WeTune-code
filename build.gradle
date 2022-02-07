@@ -5,7 +5,7 @@ plugins {
 }
 
 allprojects {
-    group = 'sjtu.ipads.wtune'
+    group = 'wtune'
     version = '0.1'
 }
 
