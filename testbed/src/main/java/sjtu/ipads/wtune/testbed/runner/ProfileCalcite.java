@@ -42,7 +42,7 @@ public class ProfileCalcite implements Runner {
     if (targetStmts != null) stmts = new HashSet<>(asList(targetStmts.split(",")));
 
     tag = args.getOptional("tag", String.class, BASE);
-    useSqlServer = args.getOptional("sqlserver", boolean.class, false);
+    useSqlServer = args.getOptional("sqlserver", boolean.class, true);
     dryRun = args.getOptional("dry", boolean.class, false);
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));

@@ -65,10 +65,10 @@ public class Profile implements Runner {
     startStmt = args.getOptional("start", String.class, null);
 
     tag = args.getOptional("tag", String.class, BASE);
-    useSqlServer = args.getOptional("sqlserver", boolean.class, false);
+    useSqlServer = args.getOptional("sqlserver", boolean.class, true);
     dryRun = args.getOptional("dry", boolean.class, false);
 
-    optimizedBy = args.getOptional("optimizer", String.class, "WeTune");
+    optimizedBy = args.getOptional("opt", "optimizer", String.class, "WeTune");
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");

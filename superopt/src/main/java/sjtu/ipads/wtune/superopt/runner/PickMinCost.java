@@ -218,13 +218,20 @@ public class PickMinCost implements Runner {
 
     if (stmtId > 0) return true;
 
-    IOSupport.appendTo(
-        outOptFile,
-        writer -> writer.printf("%s\t%d\t%s\n", group.appName, group.stmtId, group.sqls.get(idx)));
-
-    if (!isNullOrEmpty(group.traces))
+    if (!isNullOrEmpty(group.traces)) {
+      IOSupport.appendTo(
+          outOptFile,
+          writer ->
+              writer.printf(
+                  "%s\t%d\t%s\t%s\n",
+                  group.appName, group.stmtId, group.sqls.get(idx), group.traces.get(idx)));
       IOSupport.appendTo(outTraceFile, writer -> writer.println(group.traces.get(idx)));
-
+    } else {
+      IOSupport.appendTo(
+          outOptFile,
+          writer ->
+              writer.printf("%s\t%d\t%s\n", group.appName, group.stmtId, group.sqls.get(idx)));
+    }
     return true;
   }
 

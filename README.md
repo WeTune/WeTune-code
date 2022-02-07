@@ -43,49 +43,7 @@ gradle -v
 systemctl start mssql-server
 systemctl status mssql-server
 ```
-
-The installation scripts are as follows. 
-```shell
-# installing Java 17
-sudo add-apt-repository ppa:linuxuprising/java
-sudo apt update
-sudo apt-get install -y oracle-java17-installer oracle-java17-set-default
-
-# installing Gradle 7.3.3
-wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip -P /tmp
-sudo unzip -d /opt/gradle /tmp/gradle-7.3.3-bin.zip
-sudo touch /etc/profile.d/gradle.sh
-sudo chmod a+wx /etc/profile.d/gradle.sh
-sudo echo -e "export GRADLE_HOME=/opt/gradle/gradle-7.3.3 \nexport PATH=\${GRADLE_HOME}/bin:\${PATH}" >> /etc/profile.d/gradle.sh
-source /etc/profile
-
-# installing Sql Server 2019
-wget -qO- https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list)"
-sudo apt-get update
-sudo apt-get install -y mssql-server
-
-# Sql Server setup
-# Choose the 2nd edition of Sql Server
-# Enter password: mssql2019Admin
-sudo /opt/mssql/bin/mssql-conf setup
-
-# firewall setup
-sudo ufw enable
-sudo ufw allow 1433
-
-# installing Sql Server command-line tools
-curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
-sudo apt-get update 
-sudo apt-get install -y mssql-tools unixodbc-dev 
-
-sudo touch /etc/profile.d/mssql.sh
-sudo chmod a+wx /etc/profile.d/mssql.sh
-sudo echo -e 'export PATH="$PATH:/opt/mssql-tools/bin"'>> /etc/profile.d/mssql.sh
-source /etc/profile
-```
-to install Java, Gradle and SQL Server.
+Refer to `click-to-run/environment-setup.sh` for detailed installation scripts.
 
 z3 and antlr library have been put in `lib/` off-the-shelf.
 
@@ -152,17 +110,20 @@ click-to-run/import-data.sh
 These scripts populate and insert data into Sql Server database for use of evaluation.
 
 Use `click-to-run/populate-data.sh` to populate data. Data files can be found in 
-directory `wtune_data/dump/`. It usually takes no more than 15 minutes even if for large workloads.
+directory `wtune_data/dump/`. It usually takes no more than 15 minutes even for large workloads.
 Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server 
 and use `click-to-run/import-data.sh` to import populated data to Sql Server.
-Please refer to [Part II](#part-ii) for details.
 
 ```shell
 click-to-run/estimate-cost.sh
 click-to-run/profile-cost.sh
 ```
+These scripts pick the optimized queries and profile them using Sql Server database.
+`click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
+pick one rewritten query with the minimal cost by asking the database's cost model.
+And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by default.
 
-`{TODO}`
+**Please refer to [Part II](#part-ii) for more details about parameters of the scripts in this section.**
 
 ## Run Examples
 
