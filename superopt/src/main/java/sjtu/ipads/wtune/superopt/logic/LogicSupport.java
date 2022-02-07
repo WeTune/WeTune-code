@@ -16,7 +16,7 @@ import static sjtu.ipads.wtune.superopt.uexpr.UKind.*;
 public abstract class LogicSupport {
   static {
     final String timeout = System.getProperty("wetune.smt_timeout", "20");
-    Global.setParameter("smt.random_seed", "112358");
+    Global.setParameter("smt.random_seed", "9876543210");
     Global.setParameter("smt.qi.quick_checker", "2");
     Global.setParameter("smt.qi.max_multi_patterns", "1024");
     Global.setParameter("smt.mbqi.max_iterations", "3");
