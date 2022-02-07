@@ -121,6 +121,7 @@ public class RunCalciteTest implements Runner {
         final UExprTranslationResult uExpr = UExprSupport.translateToUExpr(rule);
         final int result = LogicSupport.proveEq(uExpr);
         System.out.println(fields[0] + ": " + LogicSupport.stringifyResult(result));
+        System.out.println("  rule: " + rule);
 
       } catch (Throwable ex) {
         if (verbosity >= 1) System.err.println("unrecognized template at line: " + i);
@@ -158,8 +159,9 @@ public class RunCalciteTest implements Runner {
             System.out.printf("%d,%d\n", pair.lineNum, pair.lineNum + 1);
             if (verbosity >= 1) {
               System.out.println("Both are rewritten to: ");
-              System.out.println(translateAsAst(plan0, plan0.root(), false));
+//              System.out.println(translateAsAst(plan0, plan0.root(), false));
             }
+            System.out.println("  " + translateAsAst(plan0, plan0.root(), false));
             continue outer;
           }
     }
