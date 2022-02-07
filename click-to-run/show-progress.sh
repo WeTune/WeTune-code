@@ -41,5 +41,5 @@ else
 fi
 
 for ((i = from_partition; i <= to_partition; i++)); do
-  echo "${i}: $(tail -1 enum.log."${i}" || echo 'not started')"
+  echo "${i}: $(tail -1 enum_log/enum.log."${i}" || echo 'not started')"
 done

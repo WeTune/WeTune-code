@@ -56,8 +56,10 @@ gradle compileJava
 echo "Begin rule discovery. "
 echo "#process=${num_partitions}  #threads_per_process=${parallelism} timeout_per_pair=${timeout}ms"
 
+mkdir -p enum_log
+
 for ((i = from_partition; i <= to_partition; i++)); do
   nohup gradle :superopt:run \
     --args="EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i}" \
-    >"enum.log.${i}" 2>&1 &
+    >"enum_log/num.log.${i}" 2>&1 &
 done
