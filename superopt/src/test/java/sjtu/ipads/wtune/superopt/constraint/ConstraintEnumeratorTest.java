@@ -51,12 +51,10 @@ class ConstraintEnumeratorTest {
     System.out.println("----------" + methodName + "----------");
   }
 
-  //  @Test
-  //  @Tag("slow")
-  void testPredicatePushUp() {
-    doTest(
-        "Proj*(Filter(InnerJoin(Input,Proj*(Filter(Input)))))",
-        "Proj*(Filter(Filter(InnerJoin(Input,Input))))");
+  @Test
+  @Tag("slow")
+  void test() {
+    doTest("Proj(Proj*(Input))", "Proj(Filter(Proj*(Filter(Input))))");
   }
 
   @Test

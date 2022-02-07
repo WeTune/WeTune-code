@@ -136,7 +136,6 @@ class UExprTranslator {
       /* Create a variable with distinct name and given schema. */
       final UVar var = UVar.mkBase(UName.mk(varSeq.next()));
       result.setVarSchema(var, schema);
-      pivotVars.put(schema, var);
       return var;
     }
 
@@ -291,6 +290,7 @@ class UExprTranslator {
       push(freeVars, var);
       push(visibleVars, var);
       result.setVarSchema(var, desc.schema());
+      pivotVars.put(desc.schema(), var);
       return UMul.mk(desc.term());
     }
 
@@ -442,6 +442,7 @@ class UExprTranslator {
       push(visibleVars, outVar);
 
       result.setVarSchema(outVar, outSchema);
+      pivotVars.put(outSchema, outVar);
 
       if (isClosed) {
         // If new var is required, we need to add a predicate [outVar = a(inVar)].

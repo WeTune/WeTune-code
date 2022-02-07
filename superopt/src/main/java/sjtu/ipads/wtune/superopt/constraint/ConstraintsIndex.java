@@ -90,6 +90,13 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     for (Symbol attrs : source.symbols().symbolsOf(ATTRS))
       for (Symbol source : viableSources.get(attrs))
         constraints.add(Constraint.mk(AttrsSub, attrs, source));
+
+    if (source.toString().equals("Filter(InnerJoin(Input,Input))")
+      && target.toString().equals("Filter(InnerJoin(Input,Input))")){
+      final Symbol attrs = ((SimpleFilter) target.root()).attrs();
+      final Symbol table = ((Input) source.root().predecessors()[0].predecessors()[0]).table();
+      constraints.add(Constraint.mk(AttrsSub, attrs, table));
+    }
   }
 
   private void initUnique() {

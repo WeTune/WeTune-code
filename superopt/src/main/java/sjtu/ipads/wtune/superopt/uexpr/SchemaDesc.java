@@ -29,6 +29,11 @@ public class SchemaDesc {
   }
 
   @Override
+  public String toString() {
+    return Arrays.toString(components);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;

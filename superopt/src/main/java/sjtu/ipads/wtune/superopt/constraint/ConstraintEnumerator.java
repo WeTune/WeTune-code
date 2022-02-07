@@ -1231,16 +1231,22 @@ class ConstraintEnumerator {
       metric.numProverInvocations.increment();
 
       if (metric.numEq.incrementIf(answer == EQ)) {
-        if (metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization)))
-          System.out.println("  => Relax. Current EQ cache size: " + knownEqs.size());
-        else System.out.println("  => Current EQ cache size: " + knownEqs.size());
+        if (metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization))) {
+          if (isVerbose())
+            System.out.println("  => Relax. Current EQ cache size: " + knownEqs.size());
+        } else {
+          if (isVerbose()) System.out.println("  => Current EQ cache size: " + knownEqs.size());
+        }
 
         metric.elapsedEq.add(elapsed);
 
       } else if (metric.numNeq.incrementIf(answer == NEQ)) {
-        if (metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization)))
-          System.out.println(" => Strengthen. Current NEQ cache size: " + knownNeqs.size());
-        else System.out.println("  => Current NEQ cache size: " + knownNeqs.size());
+        if (metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization))) {
+          if (isVerbose())
+            System.out.println(" => Strengthen. Current NEQ cache size: " + knownNeqs.size());
+        } else {
+          if (isVerbose()) System.out.println("  => Current NEQ cache size: " + knownNeqs.size());
+        }
 
         metric.elapsedNeq.add(elapsed);
       } else {
