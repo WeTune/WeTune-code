@@ -7,13 +7,13 @@ while [[ $# -gt 0 ]]; do
   case $1 in
   -dump)
     dump='true'
-    shift 1
+    shift
     ;;
   *)
-    index="${2}"
-    shift 2
+    index="${1}"
+    shift
     ;;
   esac
 done
 
-gradle :superopt:run --args="RunEnumExample -dump=${dump} -I=${index}"
+gradle :superopt:run --args="RunEnumExample -v=${dump} -I=${index}"
