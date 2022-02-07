@@ -3,7 +3,7 @@
 data_dir="${WETUNE_DATA_DIR:-wtune_data}"
 appName='all'
 tag='base'
-recreate=
+recreate='true'
 
 host='localhost'
 port='1433'

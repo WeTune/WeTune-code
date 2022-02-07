@@ -219,7 +219,7 @@ click-to-run/generate-data.sh [-tag] <workload_type> [-optimizer] <verifier_type
 click-to-run/estimate-cost.sh 
 click-to-run/profile-cost.sh [-tag] <workload_type> [-optimizer] <verifier_type>
 ```
-For example, to evaluation queries optimized by Spes on workload type of `zipf`, run: 
+For example, to evaluation queries optimized by `Spes` on workload type of `zipf`, run: 
 ```shell
 click-to-run/make-db.sh
 click-to-run/generate-data.sh -tag zipf -optimizer Spes
