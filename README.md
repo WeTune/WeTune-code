@@ -40,6 +40,7 @@ You can use the following commands to check.
 ```shell
 java --version
 gradle -v
+systemctl start mssql-server
 systemctl status mssql-server
 ```
 
@@ -145,7 +146,18 @@ This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtun
 
 ```shell
 click-to-run/populate-data.sh
+click-to-run/make-db.sh
 click-to-run/import-data.sh
+```
+These scripts populate and insert data into Sql Server database for use of evaluation.
+
+Use `click-to-run/populate-data.sh` to populate data. Data files can be found in 
+directory `wtune_data/dump/`. It usually takes no more than 15 minutes even if for large workloads.
+Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server 
+and use `click-to-run/import-data.sh` to import populated data to Sql Server.
+Please refer to [Part II](#part-ii) for details.
+
+```shell
 click-to-run/estimate-cost.sh
 click-to-run/profile-cost.sh
 ```

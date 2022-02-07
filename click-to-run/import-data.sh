@@ -9,7 +9,7 @@ appDataDir=
 absoluteAppDataPath=
 target_table=
 
-host='10.0.0.103'
+host='localhost'
 port='1433'
 username='SA'
 password='mssql2019Admin'
