@@ -49,7 +49,10 @@ public class ProfileCalcite implements Runner {
     final String suffix = (useSqlServer ? "ss" : "pg") + "_cal";
     out = Runner.dataDir().resolve(dir).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
-    if (!Files.exists(out)) Files.createFile(out);
+    if (!Files.exists(out)) {
+      Files.createDirectories(out.getParent());
+      Files.createFile(out);
+    }
   }
 
   @Override

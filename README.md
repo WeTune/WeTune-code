@@ -103,36 +103,33 @@ This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtun
 ### Evaluate the Rewritings
 
 ```shell
-click-to-run/generate-data.sh
 click-to-run/make-db.sh
-click-to-run/import-data.sh
+click-to-run/generate-data.sh
 ```
 
-These scripts populate and insert data into Sql Server database for use of evaluation.
+These scripts generate and insert data into Sql Server database for use of evaluation.
 
-Use `click-to-run/generate-data.sh` to populate data. Data files can be found in directory `wtune_data/dump/`. It
-usually takes no more than 15 minutes even for large workloads. Use `click-to-run/make-db.sh` to create databases and
-corresponding schemas in Sql Server and use `click-to-run/import-data.sh` to import populated data to Sql Server.
+Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server.
+
+Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server.
+Dumped data files can be found in directory `wtune_data/dump/`.
 
 ```shell
 click-to-run/estimate-cost.sh
-click-to-run/save-rewrite-stmts.sh
 click-to-run/profile-cost.sh
 ```
 
 These scripts pick the optimized queries and profile them using Sql Server database.
 
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
-pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
-in `wtune_data/rewrite/result/2_query.tsv`.
+pick one rewritten query with the minimal cost by asking the database's cost model.
+The result will be stored in `wtune_data/rewrite/result/2_query.tsv` and used rules will be stored in 
+`wtune_data/rewrite/result/2_trace.tsv`.
 
-`click-to-run/save-rewrite-stmts.sh` saves optimized queries of the previous step to the sqlite
-database `wtune_data/wtune.db`, which stores data of this project. This is only an intermediate step during evaluation.
-
-Finally, `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
+And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
 default.
 
-**Please refer to [Part II](#part-ii) for more details about parameters of the scripts in this section.**
+**Please refer to [Evaluation Configuration](#Evaluation Configuration) for more details about parameters of the scripts in this section.**
 
 ## Run Examples
 
@@ -189,3 +186,37 @@ constraint sets. Each of the examined constraint set and its verification result
 metrics will be appended after enumeration completes.
 
 P.S. If `-dump` is specified, for some pairs, the output floods for a few minutes, you may want to dump it to a file.
+
+## Evaluation Configuration
+
+### Workload types
+
+In the paper, we evaluate queries on 4 different workload types:
+
+| Workload type | # of rows | Data distribution |
+|---------------|-----------|-------------------|
+| base          | 10 k      | uniform           |
+| zipf          | 10 k      | zipfian           |
+| large         | 1 M       | uniform            |
+| large_zipf    | 1 M       | zipfian           |
+
+### Prover types
+
+Currently, we list 2 kinds of verifier: `WeTune` and `Spes`. 
+
+### Parameter selection
+
+By default, the scripts above evaluate queries optimized by `WeTune` on workload of `base` type.
+However, for example, if you would like to evaluate on different type of workload 
+or evaluate queries optimized by a different verifier, you can set additional parameters to
+the scripts in section [Evaluate the Rewritings](#Evaluate the Rewritings):
+
+```shell
+click-to-run/make-db.sh
+click-to-run/generate-data.sh [-tag] <workload_type> [-optimizer] <verifier_type>
+```
+```shell
+click-to-run/estimate-cost.sh 
+click-to-run/profile-cost.sh -tag zipf
+```
+Moreover, 
