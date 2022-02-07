@@ -115,7 +115,8 @@ class FilterMatcher {
     }
 
     if (model.isAssigned(attrsSym)) return new GroupedFilterSubMatcher(buddies.toArray(), 0);
-    if (isFreeAttr && !op.kind().isSubquery()) return new FreeFilterSubMatcher(opIdx, !isTrailing);
+    if (isFreeAttr && !op.kind().isSubquery())
+      return new FreeFilterSubMatcher(opIdx, !isTrailing && !isLeading);
     else return new GroupedFilterSubMatcher(buddies.toArray(), op.kind().isSubquery() ? 2 : 1);
   }
 

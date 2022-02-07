@@ -127,6 +127,7 @@ public class RunCalciteTest implements Runner {
         if (verbosity >= 2) ex.printStackTrace();
       }
     }
+    System.out.println("Verified " + i + " queries.");
   }
 
   private void verifyRule() {
@@ -163,7 +164,7 @@ public class RunCalciteTest implements Runner {
           }
     }
 
-    System.out.println("Total: " + count);
+    System.out.println("Verified " + count + " transformations.");
   }
 
   private void generateRewritings() throws IOException {
@@ -261,7 +262,7 @@ public class RunCalciteTest implements Runner {
 
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-//        if (i != 136) continue;
+//        if (i != 18) continue;
       final String first = lines.get(i), second = lines.get(i + 1);
       final SqlNode q0 = parseSql(MySQL, first);
       final SqlNode q1 = parseSql(MySQL, second);

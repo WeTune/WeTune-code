@@ -12,6 +12,9 @@ import sjtu.ipads.wtune.sql.schema.Schema;
 import sjtu.ipads.wtune.stmt.App;
 import sjtu.ipads.wtune.stmt.Statement;
 import sjtu.ipads.wtune.stmt.StmtProfile;
+import sjtu.ipads.wtune.superopt.constraint.ConstraintSupport;
+import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
 import sjtu.ipads.wtune.superopt.optimizer.Optimizer;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
@@ -21,6 +24,7 @@ import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,6 +35,8 @@ import static sjtu.ipads.wtune.sql.ast.SqlNode.MySQL;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.assemblePlan;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.stringifyTree;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.countInput;
+import static sjtu.ipads.wtune.superopt.fragment.FragmentSupport.countOps;
 import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBank;
 import static sjtu.ipads.wtune.superopt.uexpr.UExprSupport.translateToUExpr;
 
@@ -145,19 +151,27 @@ public class MiscTest {
 
   @Test
   void test5() throws IOException {
-    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "rules", "rules.spes.0204.txt"));
-    final Optimizer optimizer = Optimizer.mk(bank0);
-    final Statement stmt =
-        Statement.mk(
-            "redmine",
-            "SELECT SUM(`time_entries`.`hours`) AS sum_hours, `time_entries`.`issue_id` AS time_entries_issue_id FROM `time_entries` INNER JOIN (SELECT * FROM `projects`) AS `sub` ON `sub`.`id` = `time_entries`.`project_id` WHERE `time_entries`.`issue_id` = 3 GROUP BY `time_entries`.`issue_id`",
-            null);
-    final SqlNode ast = stmt.ast();
-    ast.context().setSchema(stmt.app().schema("base"));
-
-    for (PlanContext plan : optimizer.optimize(ast)) {
-      System.out.println(PlanSupport.translateAsAst(plan, plan.root(), false));
+    final List<Fragment> fragments = FragmentSupport.enumFragments(4, 1);
+    System.out.println(fragments.size() * fragments.size());
+    int count = 0;
+    for (int i = 0; i < fragments.size(); ++i) {
+      for (int j = i; j < fragments.size(); ++j) {
+        final Fragment src = fragments.get(i);
+        final Fragment dest = fragments.get(j);
+        final int flag = ConstraintSupport.pickSource(src, dest);
+        if (flag == 1 || flag == 2) count += 1;
+        else if (flag == 3) count += 2;
+      }
     }
+    System.out.println(count);
+    //    final SubstitutionBank bank0 = loadBank(Path.of("wtune_data", "prepared", "rules.txt"));
+    //    int count = 0;
+    //    for (Substitution rule : bank0.rules()) {
+    //      final int numOps0 = countOps(rule._0().root());
+    //      final int numOps1 = countOps(rule._1().root());
+    //      if (numOps0 < numOps1) ++count;
+    //    }
+    //    System.out.println(count);
   }
 
   @Test

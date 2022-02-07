@@ -1,7 +1,9 @@
 # WeTune
 
-This package includes the source code and the testing scripts in the paper
+This codebase includes the source code and the testing scripts in the paper
 *Automatic Discovery and Verification of Query Rewrite Rules*
+
+**Still under development and not ready for release.**
 
 ```shell
 .
@@ -59,14 +61,13 @@ This section gives the instruction of the whole workflow of WeTune, including
 
 The whole procedure typically takes several days (mainly for rule discovery). If you are particularly curious about how
 WeTune works, please refer to Section [Run Example](#run-examples), which gives instructions of running individual
-examples in each step and inspecting the internal of WeTune. Also, please refer to Section [SPES](#spes) for the
-comparison with SPES verifier and the evaluation of integrating SPES verifier.
+examples in each step and inspecting the internal of WeTune.
 
 #### Discover Rules
 
 ```shell
 click-to-run/discover-rules.sh  # launches background processes
-# Inspect progress:
+# Check progress:
 click-to-run/show-progress.sh
 # After the all processes finished:
 click-to-run/collect-rules.sh 
@@ -74,22 +75,22 @@ click-to-run/reduce-rules.sh
 ```
 
 The first commands launches many processes running in the background. Note they will consume all CPUs and takes a long
-time (~`{TODO}` hours) to finish. Use `click-to-run/show-progress.sh` to inspect the progress of each process. The
+time (~3600 CPU hours) to finish. Use `click-to-run/show-progress.sh` to inspect the progress of each process. The
 discovered rules so far can be found in `wtune_data/enumeration/run_*/success.txt` (`*` is a timestamp).
 
 The second commands aggregates `wtune_data/enumeration/run_*/succcess.txt`, and outputs
 to `wtune_data/rules/rules.local.txt`.
 
-The third commands reduces rules (see Section `{TODO}` in paper) and outputs the reduced rules
-to `wtune_data/rules/rules.txt`. This command typically finishes in 30-50 minutes, depending on the number of discovered
-rules.
+The third commands reduces rules (see Section 7 in paper) and outputs the reduced rules to `wtune_data/rules/rules.txt`.
+This command typically finishes in 30-50 minutes, depending on the number of discovered rules.
 
 
-> **Why multi-process instead of multi-threads?**
+> **Why multi-process instead of multi-thread?**
 >
 > z3 incurs high inter-thread lock contention. The script uses multi-process instead of multi-thread to mitigate this problem.
 
-> The overall running time can be limited by a smaller `-timeout`. Please refer to [Part II](#part-ii) for details. However, too short timeout may impact the usefulness of discovered rules.
+> The overall running time can be reduced by limiting the time budget of each plan template pair to searching for most-relaxed
+> constraint set (Section 4.3 in the paper). Please refer to [Part II](#part-ii) for details. However, too short timeout may impact the usefulness of discovered rules.
 
 #### Rewrite Queries Using Discovered Rules
 
@@ -117,7 +118,6 @@ This section provides the instruction of run examples:
 * template enumeration
 * rule verification
 * constraint enumeration
-* rewrite query using rules
 
 #### Template Enumeration Example
 
@@ -133,12 +133,16 @@ All templates of max size 4 (after pruning) will be printed, 3113 in total.
 click-to-run/run-verify-example.sh [rule_index]
 ```
 
-You will find the file `wtune_data/prepared/rules.examples.txt`, which containing example rules. You may specify the
-index of one of these rules and inspect the output. The following items will be printed:
+`[rule_index]` can be 1-35, corresponds to Table 7 in the paper.
+
+For each rule, the following items will be printed:
 
 * The rule itself.
 * A query q0, on which the rule can be applied.
 * A query q1, the rewrite result after applying the rule to q0.
+
+For rule 1-31, which can be proved by WeTune built-in verifier, these additional items will be printed:
+
 * A pair of U-Expression, translated from the rule.
 * One or more Z3 snippets, the formula submitted to Z3.
 
@@ -149,6 +153,16 @@ and `(p0 /\ p1 /\ ... /\ pn)` are both UNSAT. This is particularly the case when
 
 #### Constraint Enumeration
 
-#### Query Rewrite
+```shell
+click-to-run/run-enum-example.sh [rule_index]
+```
+
+`[rule_index]` can be 1-35, corresponds to Table 7 in the paper.
+
+WeTune will enumerate the constraints between the plan template of given rule, and search for the most-relaxed
+constraint sets. Each of the examined constraint set and its verification result will be printed. The found rules and
+metrics will be appended after enumeration completes.
+
+P.S. for some pairs the output floods for a few minutes, you may want to dump it to a file.
 
 ## Part II: Step-by-Step Instructions

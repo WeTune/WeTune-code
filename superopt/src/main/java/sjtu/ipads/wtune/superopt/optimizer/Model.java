@@ -124,6 +124,7 @@ class Model {
   }
 
   private boolean checkCompatible(Symbol.Kind kind, Object v0, Object v1) {
+    if (kind == SCHEMA) return true;
     if (kind == PRED)
       return v1 instanceof Expression && Objects.equals(v0.toString(), v1.toString());
     if (kind == ATTRS) return v1 instanceof List && isAttrsEq((List<Value>) v0, (List<Value>) v1);

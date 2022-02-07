@@ -25,7 +25,7 @@ class NormalizeJoin {
 
   private int normalize(int nodeId) {
     if (plan.kindOf(nodeId) != Join) return nodeId;
-    if (plan.kindOf(plan.childOf(nodeId, 1)) != Join) return nodeId;
+    //    if (plan.kindOf(plan.childOf(nodeId, 1)) != Join) return nodeId;
 
     @SuppressWarnings("unused")
     final int lhs = normalize(plan.childOf(nodeId, 0));

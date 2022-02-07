@@ -2,6 +2,7 @@ package sjtu.ipads.wtune.superopt.constraint;
 
 import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.superopt.fragment.Fragment;
+import sjtu.ipads.wtune.superopt.fragment.FragmentSupport;
 import sjtu.ipads.wtune.superopt.fragment.SymbolNaming;
 import sjtu.ipads.wtune.superopt.substitution.Substitution;
 import sjtu.ipads.wtune.superopt.util.Complexity;
@@ -16,8 +17,14 @@ public interface ConstraintSupport {
   int ENUM_FLAG_DISABLE_BREAKER_0 = 2 | ENUM_FLAG_DRY_RUN;
   int ENUM_FLAG_DISABLE_BREAKER_1 = 4 | ENUM_FLAG_DRY_RUN;
   int ENUM_FLAG_DISABLE_BREAKER_2 = 8 | ENUM_FLAG_DRY_RUN;
-  int ENUM_FLAG_ECHO = 16;
+  int ENUM_FLAG_VERBOSE = 16;
   int ENUM_FLAG_USE_SPES = 32;
+  int ENUM_FLAG_SINGLE_DIRECTION = 64;
+  int ENUM_FLAG_DUMP = ENUM_FLAG_SINGLE_DIRECTION | ENUM_FLAG_VERBOSE;
+
+  static boolean isVerbose(int tweak) {
+    return (tweak & ENUM_FLAG_VERBOSE) == ENUM_FLAG_VERBOSE;
+  }
 
   static EnumerationMetrics getEnumerationMetric() {
     return EnumerationMetricsContext.instance().global();
@@ -39,7 +46,8 @@ public interface ConstraintSupport {
 
   static List<Substitution> enumConstraints(
       Fragment f0, Fragment f1, long timeout, int tweaks, SymbolNaming naming) {
-    final int bias = pickSource(f0, f1);
+    int bias = pickSource(f0, f1);
+    if ((tweaks & ENUM_FLAG_SINGLE_DIRECTION) != 0) bias = bias & 1;
     if (bias == 0) return null;
 
     List<Substitution> rules = null;
@@ -106,16 +114,21 @@ public interface ConstraintSupport {
     final Lazy<Complexity> complexity0 = Lazy.mk(() -> Complexity.mk(f0));
     final Lazy<Complexity> complexity1 = Lazy.mk(() -> Complexity.mk(f1));
 
+    final int ops0 = FragmentSupport.countOps(f0.root());
+    final int ops1 = FragmentSupport.countOps(f1.root());
+
     int qualified = 0;
 
     if (numTables0 >= numTables1
         && (numAttrs0 != 0 || numAttrs1 == 0)
         && (numPreds0 != 0 || numPreds1 == 0)
+        && ops0 >= ops1
         && complexity0.get().compareTo(complexity1.get()) >= 0) qualified |= 1;
 
     if (numTables1 >= numTables0
         && (numAttrs1 != 0 || numAttrs0 == 0)
         && (numPreds1 != 0 || numPreds0 == 0)
+        && ops1 >= ops0
         && complexity1.get().compareTo(complexity0.get()) >= 0) qualified |= 2;
 
     return qualified;

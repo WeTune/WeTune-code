@@ -7,9 +7,6 @@ import sjtu.ipads.wtune.superopt.substitution.SubstitutionBank;
 import sjtu.ipads.wtune.superopt.uexpr.UExprSupport;
 import sjtu.ipads.wtune.superopt.uexpr.UExprTranslationResult;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.translateAsAst;
 import static sjtu.ipads.wtune.superopt.logic.LogicSupport.*;
 import static sjtu.ipads.wtune.superopt.runner.RunnerSupport.dataDir;
@@ -36,10 +33,15 @@ public class RunRuleExample implements Runner {
 
   @Override
   public void run() throws Exception {
-    run(rule);
+    runBasic(rule);
+    if (rule.id() > 31) {
+      runSpes(rule);
+    } else {
+      runBuiltin(rule);
+    }
   }
 
-  private static void run(Substitution rule) {
+  private static void runBasic(Substitution rule) {
     System.out.println("1. Rule String");
     System.out.println("  " + rule);
     System.out.println();
@@ -52,7 +54,9 @@ public class RunRuleExample implements Runner {
     System.out.println("  " + q0);
     System.out.println("  " + q1);
     System.out.println();
+  }
 
+  private static void runBuiltin(Substitution rule) {
     final UExprTranslationResult uExprs = UExprSupport.translateToUExpr(rule);
     System.out.println("3. U-Expression");
     System.out.println("  [[q0]](" + uExprs.sourceOutVar() + ") := " + uExprs.sourceExpr());
@@ -62,7 +66,13 @@ public class RunRuleExample implements Runner {
     System.out.println("4. First-Order Formulas (Z3 Script)");
     setDumpFormulas(true);
     final int result = proveEq(uExprs);
-    System.out.println(
-        "==> Result: " + (result == EQ ? "UNSAT" : result == NEQ ? "SAT" : "UNKNOWN"));
+    System.out.println();
+    System.out.println("Rule-" + rule.id() + ": " + stringifyResult(result));
+  }
+
+  private static void runSpes(Substitution rule) {
+    final int result = proveEqBySpes(rule);
+    System.out.println();
+    System.out.println("Rule-" + rule.id() + ": " + stringifyResult(result));
   }
 }

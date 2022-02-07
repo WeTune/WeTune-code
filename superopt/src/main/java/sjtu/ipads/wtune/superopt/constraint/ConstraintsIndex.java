@@ -228,6 +228,16 @@ class ConstraintsIndex extends AbstractList<Constraint> implements List<Constrai
     return builder.toString();
   }
 
+  String toString(SymbolNaming naming) {
+    final int bound = size();
+    final StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < bound; i++) {
+      constraints.get(i).stringify(naming, builder);
+      builder.append(';');
+    }
+    return builder.toString();
+  }
+
   @Override
   public Constraint get(int index) {
     return constraints.get(index);

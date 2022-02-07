@@ -28,6 +28,7 @@ import java.util.Set;
 import static sjtu.ipads.wtune.common.utils.Commons.countOccurrences;
 import static sjtu.ipads.wtune.common.utils.Commons.joining;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.all;
+import static sjtu.ipads.wtune.common.utils.IterableSupport.stream;
 import static sjtu.ipads.wtune.sql.plan.PlanSupport.*;
 import static sjtu.ipads.wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
@@ -156,7 +157,7 @@ public class RewriteQuery implements Runner {
         final List<OptimizationStep> steps = optimizer.traceOf(opt);
 
         if (steps.isEmpty()) continue;
-        if (excludeNonEssential && all(steps, step-> step.rule() == null)) continue;
+        if (excludeNonEssential && all(steps, step -> step.rule() == null)) continue;
 
         final SqlNode sqlNode = translateAsAst(opt, opt.root(), false);
         if (sqlNode == null) {
@@ -188,14 +189,9 @@ public class RewriteQuery implements Runner {
           out,
           writer -> {
             for (int i = 0, bound = optimizedSql.size(); i < bound; i++)
-              writer.printf("%s\t%d\t%s\n", stmt, i, optimizedSql.get(i));
-          });
-
-      IOSupport.appendTo(
-          trace,
-          writer -> {
-            for (int i = 0, bound = traces.size(); i < bound; i++)
-              writer.printf("%s\t%d\t%s\n", stmt, i, traces.get(i));
+              writer.printf(
+                  "%s\t%d\t%d\t%s\t%s\n",
+                  stmt.appName(), stmt.stmtId(), i, optimizedSql.get(i), traces.get(i));
           });
 
     } catch (Throwable ex) {

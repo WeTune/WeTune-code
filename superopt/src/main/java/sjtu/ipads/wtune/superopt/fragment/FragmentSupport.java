@@ -57,6 +57,26 @@ public class FragmentSupport {
     return enumerator.enumerate();
   }
 
+  public static int countOps(Op op) {
+    if (op.kind() == INPUT) return 0;
+
+    int count = 0;
+    for (Op predecessor : op.predecessors()) {
+      count += countOps(predecessor);
+    }
+    return count + 1;
+  }
+
+  public static int countInput(Op op) {
+    if (op.kind() == INPUT) return 1;
+
+    int count = 0;
+    for (Op predecessor : op.predecessors()) {
+      count += countOps(predecessor);
+    }
+    return count;
+  }
+
   /** Fill holes with Input operator and call setFragment on each operator. */
   public static Fragment setupFragment(Fragment fragment) {
     for (Hole<Op> hole : FragmentUtils.gatherHoles(fragment)) hole.fill(mk(INPUT));

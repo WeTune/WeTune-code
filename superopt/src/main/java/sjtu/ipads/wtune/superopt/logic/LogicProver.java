@@ -33,6 +33,8 @@ class LogicProver {
   private final List<BoolExpr> constraints;
   private final Cache cache;
 
+  private int callCount;
+
   LogicProver(UExprTranslationResult uExprs, Context z3) {
     this.rule = uExprs.rule();
     this.uExprs = uExprs;
@@ -547,9 +549,12 @@ class LogicProver {
     if (dumpFormulas) {
       solver.push();
       solver.add(exprs);
+      System.out.println("==== Begin of Snippet-" + (++callCount) + " ====");
       System.out.println(solver);
       System.out.println("(check-sat)");
+      System.out.println("==== End of Snippet-" + callCount + " ====");
       final Status res = solver.check();
+      System.out.println("==> Result: " + res);
       solver.pop();
       return res;
 

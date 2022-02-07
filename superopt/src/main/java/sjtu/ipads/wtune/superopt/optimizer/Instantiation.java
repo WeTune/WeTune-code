@@ -21,6 +21,7 @@ import static sjtu.ipads.wtune.common.utils.Commons.newIdentitySet;
 import static sjtu.ipads.wtune.common.utils.IterableSupport.zip;
 import static sjtu.ipads.wtune.sql.ast.ExprKind.Aggregate;
 import static sjtu.ipads.wtune.superopt.fragment.OpKind.INNER_JOIN;
+import static sjtu.ipads.wtune.superopt.fragment.Symbol.Kind.TABLE;
 import static sjtu.ipads.wtune.superopt.optimizer.OptimizerSupport.*;
 
 class Instantiation {
@@ -29,7 +30,6 @@ class Instantiation {
   private final PlanContext newPlan;
   private final ValueRefReBinder reBinder;
   private final Lazy<TIntSet> usedSubqueryNode;
-  private final Lazy<Set<Expression>> usedFunction;
 
   private String error;
 
@@ -39,7 +39,6 @@ class Instantiation {
     this.newPlan = model.plan().copy();
     this.reBinder = new ValueRefReBinder(newPlan);
     this.usedSubqueryNode = Lazy.mk(TIntHashSet::new);
-    this.usedFunction = Lazy.mk(Commons::newIdentitySet);
   }
 
   PlanContext instantiatedPlan() {
@@ -95,8 +94,8 @@ class Instantiation {
     final int rhs = instantiate(join.predecessors()[1]);
     if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    List<Value> lhsKeys = model.ofAttrs(instantiationOf(join.lhsAttrs()));
-    List<Value> rhsKeys = model.ofAttrs(instantiationOf(join.rhsAttrs()));
+    List<Value> lhsKeys = interpretAttrs(join.lhsAttrs());
+    List<Value> rhsKeys = interpretAttrs(join.rhsAttrs());
 
     if (lhsKeys == null || rhsKeys == null) return fail(FAILURE_INCOMPLETE_MODEL);
     if (lhsKeys.size() != rhsKeys.size() || lhsKeys.isEmpty())
@@ -119,12 +118,39 @@ class Instantiation {
     return joinNodeId;
   }
 
+  private List<Value> interpretAttrs(Symbol attrs) {
+    final List<Value> nominalInterpretation = model.ofAttrs(instantiationOf(attrs));
+    if (nominalInterpretation == null) return null;
+
+    final Symbol actualSrcSym = rule.constraints().sourceOf(attrs);
+    final Symbol nominalSrcSym = rule.constraints().sourceOf(instantiationOf(attrs));
+    if (actualSrcSym == null || actualSrcSym.kind() != TABLE || nominalSrcSym.kind() != TABLE)
+      return nominalInterpretation;
+
+    final int actualSource = model.ofTable(actualSrcSym);
+    final int nominalSource = model.ofTable(nominalSrcSym);
+
+    final ValuesRegistry valuesReg = newPlan.valuesReg();
+    final Values actualValues = valuesReg.valuesOf(actualSource);
+    final Values nominalValues = valuesReg.valuesOf(nominalSource);
+    if (actualValues.size() != nominalValues.size()) return null;
+
+    final List<Value> actualInterpretation = new ArrayList<>(nominalInterpretation.size());
+    for (Value nominalValue : nominalInterpretation) {
+      final int index = nominalValues.indexOf(nominalValue);
+      if (index < 0) return null;
+      actualInterpretation.add(actualValues.get(index));
+    }
+
+    return actualInterpretation;
+  }
+
   private int instantiateFilter(SimpleFilter filter) {
     final int child = instantiate(filter.predecessors()[0]);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
     final Expression predicate = model.ofPred(instantiationOf(filter.predicate()));
-    List<Value> values = model.ofAttrs(instantiationOf(filter.attrs()));
+    List<Value> values = interpretAttrs(filter.attrs());
     if (predicate == null || values == null || values.size() != predicate.colRefs().size())
       return fail(FAILURE_INCOMPLETE_MODEL);
 
@@ -139,7 +165,7 @@ class Instantiation {
     final int rhs = instantiate(inSub.predecessors()[1]);
     if (lhs == NO_SUCH_NODE || rhs == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    List<Value> values = model.ofAttrs(instantiationOf(inSub.attrs()));
+    List<Value> values = interpretAttrs(inSub.attrs());
     if (values == null || values.isEmpty()) return fail(FAILURE_INCOMPLETE_MODEL);
 
     values = reBinder.rebindRefs(values, outValuesOf(lhs));
@@ -162,7 +188,7 @@ class Instantiation {
     final List<Value> outAttrs = model.ofSchema(instantiationOf(proj.schema()));
     if (outAttrs == null) return fail(FAILURE_INCOMPLETE_MODEL);
 
-    List<Value> inAttrs = model.ofAttrs(instantiationOf(proj.attrs()));
+    List<Value> inAttrs = interpretAttrs(proj.attrs());
     if (inAttrs == null) return fail(FAILURE_INCOMPLETE_MODEL);
 
     inAttrs = reBinder.rebindRefs(inAttrs, outValuesOf(child));
@@ -202,9 +228,9 @@ class Instantiation {
     final int child = instantiate(agg.predecessors()[0]);
     if (child == NO_SUCH_NODE) return NO_SUCH_NODE;
 
-    final List<Value> outVals = model.ofAttrs(instantiationOf(agg.schema()));
-    List<Value> aggRefs = model.ofAttrs(instantiationOf(agg.aggregateAttrs()));
-    List<Value> groupRefs = model.ofAttrs(instantiationOf(agg.groupByAttrs()));
+    final List<Value> outVals = interpretAttrs(agg.schema());
+    List<Value> aggRefs = interpretAttrs(agg.aggregateAttrs());
+    List<Value> groupRefs = interpretAttrs(agg.groupByAttrs());
     final List<Expression> aggFuncs = model.ofFunctions(instantiationOf(agg.aggFunc()));
     final Expression havingPred = model.ofPred(instantiationOf(agg.havingPred()));
 

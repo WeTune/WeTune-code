@@ -1,6 +1,5 @@
 package sjtu.ipads.wtune.superopt.constraint;
 
-import sjtu.ipads.wtune.common.utils.Lazy;
 import sjtu.ipads.wtune.common.utils.PartialOrder;
 import sjtu.ipads.wtune.superopt.fragment.*;
 import sjtu.ipads.wtune.superopt.logic.LogicSupport;
@@ -141,6 +140,13 @@ class ConstraintEnumerator {
     try (EnumerationMetrics metric = EnumerationMetrics.open()) {
       try (var ignored = metric.elapsedEnum.timeIt()) {
         this.metric = metric;
+        if (isVerbose()) {
+          System.out.println("source: " + I.sourceTemplate().stringify(naming));
+          System.out.println("target: " + I.targetTemplate().stringify(naming));
+          System.out.println("C*: size=" + I.size());
+          System.out.println("  " + I.toString(naming));
+          System.out.println();
+        }
 
         stages[0].enumerate();
 
@@ -159,7 +165,6 @@ class ConstraintEnumerator {
     final boolean disable2 = (tweak & ENUM_FLAG_DISABLE_BREAKER_2) == ENUM_FLAG_DISABLE_BREAKER_2;
     final boolean dryRun =
         disable0 || disable1 || disable2 || (tweak & ENUM_FLAG_DRY_RUN) == ENUM_FLAG_DRY_RUN;
-    final boolean echo = (tweak & ENUM_FLAG_ECHO) == ENUM_FLAG_ECHO;
     final boolean useSpes = (tweak & ENUM_FLAG_USE_SPES) == ENUM_FLAG_USE_SPES;
 
     final EnumerationStage sourceEnum = new AttrsSourceEnumerator();
@@ -180,7 +185,7 @@ class ConstraintEnumerator {
     final EnumerationStage refEnum = new BinaryEnumerator(Reference);
     final EnumerationStage mismatchedSummationBreaker = new MismatchedSummationBreaker(disable2);
     final EnumerationStage timeout = new TimeoutBreaker(currentTimeMillis(), this.timeout);
-    final VerificationCache cache = new VerificationCache(dryRun, echo);
+    final VerificationCache cache = new VerificationCache(dryRun);
     final EnumerationStage verifier = new Verifier(useSpes);
 
     final EnumerationStage[] stages;
@@ -240,6 +245,9 @@ class ConstraintEnumerator {
     this.naming = naming;
   }
 
+  private boolean isVerbose() {
+    return ConstraintSupport.isVerbose(tweak) && naming != null;
+  }
   //// inspection of current state ////
 
   private void currentSet(int index, boolean enable) {
@@ -274,6 +282,12 @@ class ConstraintEnumerator {
       if (currentIsEnabled(i) && c.symbols()[0] == sym) return c.symbols()[1];
     }
     return null;
+  }
+
+  private Symbol deepSourceOf(Symbol sym) {
+    final List<Symbol> sourceChain = new ArrayList<>(3);
+    collectSourceChain(sym, sourceChain);
+    return sourceChain.get(sourceChain.size() - 1);
   }
 
   private void collectSourceChain(Symbol sym, List<Symbol> sourceChain) {
@@ -343,6 +357,10 @@ class ConstraintEnumerator {
     }
   }
 
+  private int checkTableEqForced(int index) {
+    return FREE;
+  }
+
   private int checkAttrsSubForced(int index) {
     final Constraint attrsSub = I.get(index);
     final Symbol attrsSym = attrsSub.symbols()[0];
@@ -355,15 +373,19 @@ class ConstraintEnumerator {
     return FREE;
   }
 
-  private int checkTableEqForced(int index) {
-    return FREE;
-  }
-
   private int checkAttrsEqForced(int index) {
     final Constraint attrsEq = I.get(index);
     final Symbol attrs0 = attrsEq.symbols()[0], attrs1 = attrsEq.symbols()[1];
     final Symbol source0 = currentSourceOf(attrs0), source1 = currentSourceOf(attrs1);
-    return !currentIsEq(source0, source1) ? MUST_DISABLE : FREE;
+    assert source0 != null && source1 != null;
+
+    if (source0.kind() == source1.kind()) {
+      return !currentIsEq(source0, source1) ? MUST_DISABLE : FREE;
+    } else {
+      final Symbol deepSource0 = deepSourceOf(attrs0);
+      final Symbol deepSource1 = deepSourceOf(attrs1);
+      return !currentIsEq(deepSource0, deepSource1) ? MUST_DISABLE : FREE;
+    }
   }
 
   private int checkPredEqForced(int index) {
@@ -509,11 +531,6 @@ class ConstraintEnumerator {
     return true;
   }
 
-  private boolean isAggSchema(Symbol schema) {
-    assert schema.kind() == SCHEMA;
-    return schema.ctx().ownerOf(schema).kind() == AGG;
-  }
-
   private boolean validateAttrsInstantiation(Symbol from, Symbol to) {
     // First judge whether `from` and `to` are both aggregated
     if (isAggregatedAttrs(from) != isAggregatedAttrs(to)) return false;
@@ -537,24 +554,29 @@ class ConstraintEnumerator {
     return false;
   }
 
+  private boolean validatePredInstantiation(Symbol from, Symbol to) {
+    // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
+    return isAggHavingPred(from) == isAggHavingPred(to);
+  }
+
+  private boolean validateFuncInstantiation(Symbol from, Symbol to) {
+    return true;
+  }
+
+  private boolean isAggSchema(Symbol schema) {
+    assert schema.kind() == SCHEMA;
+    return schema.ctx().ownerOf(schema).kind() == AGG;
+  }
+
   private boolean isAggregatedAttrs(Symbol attrs) {
     assert attrs.kind() == ATTRS;
     final Op owner = attrs.ctx().ownerOf(attrs);
     return owner.kind() == AGG && attrs == ((Agg) owner).aggregateAttrs();
   }
 
-  private boolean validatePredInstantiation(Symbol from, Symbol to) {
-    // A HAVING PRED symbol is required not instantiated to a PRED in filter, and vice versa.
-    return isAggHavingPred(from) == isAggHavingPred(to);
-  }
-
   private boolean isAggHavingPred(Symbol pred) {
     assert pred.kind() == PRED;
     return pred.ctx().ownerOf(pred).kind() == AGG;
-  }
-
-  private boolean validateFuncInstantiation(Symbol from, Symbol to) {
-    return true;
   }
 
   //// helper methods ////
@@ -908,7 +930,10 @@ class ConstraintEnumerator {
         // Only AttrsEq may conflict.
         // Guarantee: if a set of AttrsEq (denoted by Eq_a) are not conflict under a set of TableEq
         // (denoted as Eq_t), then under any stronger Eq_t' than Eq_t, Eq_a won't conflict.
-        if (isAttrsEqInfeasible()) continue;
+        if (isAttrsEqInfeasible()) {
+          resetConstraints();
+          continue;
+        }
 
         final Generalization generalization = generalize(enabled);
         if (!dryRun && isKnownNeq(localKnownNeqs, generalization)) continue;
@@ -1020,7 +1045,19 @@ class ConstraintEnumerator {
 
       if (!mustDisable) {
         answer0 = enumerate0(index + 1);
-        if (answer0 == NEQ && !isConflictingReference(index)) return NEQ;
+        if (answer0 == NEQ && !isConflictingReference(index)) {
+          if (isVerbose()) {
+            final BitSet tmp = (BitSet) enabled.clone();
+            tmp.clear(index, I.beginIndexOfInstantiation(TABLE));
+            tmp.set(index);
+            System.out.println(
+                "Due to known NEQ, skip relaxing "
+                    + I.get(index).stringify(naming)
+                    + " in "
+                    + I.toString(naming, tmp));
+          }
+          return NEQ;
+        }
         if (answer0 == TIMEOUT) return TIMEOUT;
         assert answer0 != FAST_REJECTED && answer0 != CONFLICT;
       }
@@ -1061,9 +1098,7 @@ class ConstraintEnumerator {
 
     @Override
     public int enumerate() {
-      if (!disabled && !isOutputAligned()) {
-        return NEQ;
-      }
+      if (!disabled && !isOutputAligned()) return NEQ;
       return nextStage().enumerate();
     }
 
@@ -1162,39 +1197,51 @@ class ConstraintEnumerator {
   }
 
   private class VerificationCache extends AbstractEnumerationStage {
-    private final boolean dryRun, echo;
+    private final boolean dryRun;
 
-    private VerificationCache(boolean dryRun, boolean echo) {
+    private VerificationCache(boolean dryRun) {
       this.dryRun = dryRun;
-      this.echo = echo;
     }
 
     @Override
     public int enumerate() {
       metric.numEnumeratedConstraintSets.increment();
-      if (dryRun) {
-        if (echo && naming != null) System.out.println(I.toString(naming, enabled));
-        return EQ;
-      }
+
+      if (isVerbose()) System.out.println("Going to verify: " + I.toString(naming, enabled));
+      if (dryRun) return EQ;
 
       final Generalization generalization = generalize(enabled);
-      if (metric.numCacheHitEq.incrementIf(isKnownEq(knownEqs, generalization))) return EQ;
-      if (metric.numCacheHitNeq.incrementIf(isKnownNeq(knownNeqs, generalization))) return NEQ;
-
-      if (echo && naming != null) System.out.println(I.toString(naming, enabled));
+      if (metric.numCacheHitEq.incrementIf(isKnownEq(knownEqs, generalization))) {
+        if (isVerbose()) System.out.println("  => Answer from cache: EQ");
+        return EQ;
+      }
+      if (metric.numCacheHitNeq.incrementIf(isKnownNeq(knownNeqs, generalization))) {
+        if (isVerbose()) System.out.println("  => Answer from cache: NEQ");
+        return NEQ;
+      }
 
       final long begin = currentTimeMillis();
       final int answer = nextStage().enumerate();
       final long elapsed = currentTimeMillis() - begin;
 
+      if (isVerbose())
+        System.out.println(
+            "  => Answer from verifier: " + stringifyResult(answer) + ", " + elapsed + "ms");
+
       metric.numProverInvocations.increment();
 
       if (metric.numEq.incrementIf(answer == EQ)) {
-        metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization));
+        if (metric.numRelaxed.incrementIf(rememberEq(knownEqs, generalization)))
+          System.out.println("  => Relax. Current EQ cache size: " + knownEqs.size());
+        else System.out.println("  => Current EQ cache size: " + knownEqs.size());
+
         metric.elapsedEq.add(elapsed);
 
       } else if (metric.numNeq.incrementIf(answer == NEQ)) {
-        metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization));
+        if (metric.numReinforced.incrementIf(rememberNeq(knownNeqs, generalization)))
+          System.out.println(" => Strengthen. Current NEQ cache size: " + knownNeqs.size());
+        else System.out.println("  => Current NEQ cache size: " + knownNeqs.size());
+
         metric.elapsedNeq.add(elapsed);
       } else {
         metric.numUnknown.increment();
