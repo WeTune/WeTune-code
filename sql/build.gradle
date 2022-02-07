@@ -32,7 +32,7 @@ task antlrMysql {
                             '-package', 'sjtu.ipads.wtune.sql.mysql.internal', 'MySQLLexer.g4', 'MySQLParser.g4'
                 }
         } else {
-            println("use generated parser file for mysql")
+//            println("use generated parser file for mysql")
         }
     }
 }
@@ -56,7 +56,7 @@ task antlrPg {
                             '-package', 'sjtu.ipads.wtune.sql.pg.internal', 'PGLexer.g4', 'PGParser.g4'
                 }
         } else {
-            println("use generated parser file for postgresql")
+//            println("use generated parser file for postgresql")
         }
     }
 }

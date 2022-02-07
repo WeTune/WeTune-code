@@ -15,11 +15,14 @@ import static sjtu.ipads.wtune.superopt.substitution.SubstitutionSupport.loadBan
 
 public class RunEnumExample implements Runner {
   private Substitution rule;
+  private boolean dump;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
     final String rules = args.getOptional("R", "rules", String.class, "prepared/rules.example.txt");
+    dump = args.getOptional("v", "verbose", boolean.class, true);
+
     final SubstitutionBank bank = loadBank(dataDir().resolve(rules));
     final int index = args.getOptional("I", "index", int.class, 0);
     for (Substitution rule : bank.rules()) {
@@ -33,9 +36,10 @@ public class RunEnumExample implements Runner {
 
   @Override
   public void run() throws Exception {
+    final int tweak = dump ? ENUM_FLAG_DUMP : 0;
 
     final List<Substitution> rules =
-        enumConstraints(rule._0(), rule._1(), -1, ENUM_FLAG_DUMP, rule.naming());
+        enumConstraints(rule._0(), rule._1(), -1, tweak, rule.naming());
 
     if (Commons.isNullOrEmpty(rules)) {
       System.out.println();
