@@ -69,7 +69,7 @@ public class RunCalciteTest implements Runner {
     final String subDirSuffix = LocalDateTime.now().format(ofPattern("MMddHHmmss"));
 
     outDir = parentDir.resolve("run" + subDirSuffix);
-    outOpt = outDir.resolve("1_opt.tsv");
+    outOpt = outDir.resolve("1_query.tsv");
     outTrace = outDir.resolve("1_trace.tsv");
 
     app = App.of("calcite_test");
