@@ -1,5 +1,6 @@
 #! /bin/bash
 
+data_dir="${WETUNE_DATA_DIR:-wtune_data}"
 verbose=0
 target=
 optimizer="WeTune"
