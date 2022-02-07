@@ -36,7 +36,9 @@ public class RunEnumExample implements Runner {
 
   @Override
   public void run() throws Exception {
-    final int tweak = dump ? ENUM_FLAG_DUMP : 0;
+    int tweak = 0;
+    if (dump) tweak |= ENUM_FLAG_DUMP;
+    if (rule.id() > 31) tweak |= ENUM_FLAG_USE_SPES;
 
     final List<Substitution> rules =
         enumConstraints(rule._0(), rule._1(), -1, tweak, rule.naming());
