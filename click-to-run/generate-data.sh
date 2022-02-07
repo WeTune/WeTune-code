@@ -59,7 +59,7 @@ username='SA'
 password='mssql2019Admin'
 
 findAppDataDir() {
-  local path="${1}"/"${2}"
+  local path="$1/$2"
   appDataDir=$(find "${data_dir}" -type d -wholename "*/$path" | head -1)
 }
 
