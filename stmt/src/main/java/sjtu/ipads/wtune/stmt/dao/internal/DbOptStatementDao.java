@@ -7,6 +7,7 @@ import sjtu.ipads.wtune.stmt.support.OptimizerType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,10 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
   private String FIND_ONE;
   private String FIND_BY_APP;
 
+  // Update optimized stmts query
+  private String CLEAN_OPT_STMT;
+  private String ADD_OPT_STMTS;
+
   private DbOptStatementDao(OptimizerType kind) {
     switch (kind) {
       case WeTune -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune";
@@ -43,6 +48,8 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
     FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
     FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
     FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
+    CLEAN_OPT_STMT = "DELETE FROM " + OPT_STMTS_TABLE + " WHERE TRUE";
+    ADD_OPT_STMTS = "INSERT INTO " + OPT_STMTS_TABLE + " VALUES (?, ?, ?, ?)";
   }
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
@@ -99,6 +106,36 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
 
       return stmts;
 
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void cleanOptStmts() {
+    try {
+      final PreparedStatement clean0 = prepare(CLEAN_OPT_STMT);
+      clean0.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void updateOptStmts(Statement stmt) {
+    try {
+      final PreparedStatement insert0 = prepare(ADD_OPT_STMTS);
+
+      insert0.setString(1, stmt.appName());
+      insert0.setInt(2, stmt.stmtId());
+
+      insert0.setString(3, stmt.rawSql());
+      if (stmt.stackTrace() == null)
+        insert0.setNull(4, Types.VARCHAR);
+      else
+        insert0.setString(4, stmt.stackTrace());
+
+      insert0.executeUpdate();
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }

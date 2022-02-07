@@ -13,6 +13,10 @@ public interface OptStatementDao {
 
   List<Statement> findAll();
 
+  void cleanOptStmts();
+
+  void updateOptStmts(Statement stmt);
+
   static OptStatementDao instance(OptimizerType type) {
     return DbOptStatementDao.instance(type);
   }

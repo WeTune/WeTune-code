@@ -116,12 +116,19 @@ and use `click-to-run/import-data.sh` to import populated data to Sql Server.
 
 ```shell
 click-to-run/estimate-cost.sh
+click-to-run/save-opt-stmts.sh
 click-to-run/profile-cost.sh
 ```
 These scripts pick the optimized queries and profile them using Sql Server database.
+
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
 pick one rewritten query with the minimal cost by asking the database's cost model.
-And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by default.
+The result will be stored in `wtune_data/rewrite/result/2_query.tsv`.
+
+`click-to-run/save-opt-stmts.sh` saves optimized queries of the previous step to the sqlite database `wtune_data/wtune.db`, 
+which stores data of this project. This is only an intermediate step during evaluation.
+
+Finally, `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by default.
 
 **Please refer to [Part II](#part-ii) for more details about parameters of the scripts in this section.**
 

@@ -3,7 +3,7 @@ package sjtu.ipads.wtune.testbed.runner;
 import sjtu.ipads.wtune.common.utils.Args;
 import sjtu.ipads.wtune.common.utils.IOSupport;
 import sjtu.ipads.wtune.stmt.CalciteStmtProfile;
-import sjtu.ipads.wtune.stmt.support.ProfileUpdate;
+import sjtu.ipads.wtune.stmt.support.UpdateProfile;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +25,7 @@ public class UpdateCalciteProfileData implements Runner {
   @Override
   public void run() throws Exception {
     final List<String> lines = Files.readAllLines(profileFile);
-    ProfileUpdate.cleanCalcite();
+    UpdateProfile.cleanCalcite();
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
       final String[] baseProfile = lines.get(i).split(";");
       final String[] optProfile = lines.get(i + 1).split(";");
@@ -74,7 +74,7 @@ public class UpdateCalciteProfileData implements Runner {
         }
       }
 
-      ProfileUpdate.updateCalciteProfile(
+      UpdateProfile.updateCalciteProfile(
           CalciteStmtProfile.mk(
               appName,
               Integer.parseInt(appId),

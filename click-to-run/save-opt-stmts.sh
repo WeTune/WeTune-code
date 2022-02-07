@@ -1,14 +1,14 @@
 #! /bin/bash
 
 data_dir="${WETUNE_DATA_DIR:-wtune_data}"
-profile_dir="profile"
-tag="base"
+verbose='0'
 optimizer="WeTune"
+rewrite_dir="rewrite"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  "-tag")
-    tag="${2}"
+  "-v" | "-verbose")
+    verbose="${2}"
     shift 2
     ;;
   "-opt" | "-optimizer")
@@ -22,5 +22,4 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-gradle :testbed:run --args="Profile -dir=${profile_dir} -tag=${tag} -optimizer=${optimizer} "
-
+gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} "
