@@ -6,6 +6,6 @@ module sjtu.ipads.wtune.stmt {
   requires com.google.common;
   requires org.apache.commons.lang3;
 
-  exports sjtu.ipads.wtune.stmt;
-  exports sjtu.ipads.wtune.stmt.support;
+  exports wtune.stmt;
+  exports wtune.stmt.support;
 }

@@ -1,13 +1,13 @@
 module sjtu.ipads.wtune.sql {
-  exports sjtu.ipads.wtune.sql;
-  exports sjtu.ipads.wtune.sql.util;
-  exports sjtu.ipads.wtune.sql.support.action;
-  exports sjtu.ipads.wtune.sql.support.locator;
-  exports sjtu.ipads.wtune.sql.support.resolution;
-  exports sjtu.ipads.wtune.sql.schema;
-  exports sjtu.ipads.wtune.sql.plan;
-  exports sjtu.ipads.wtune.sql.ast;
-  exports sjtu.ipads.wtune.sql.ast.constants;
+  exports wtune.sql;
+  exports wtune.sql.util;
+  exports wtune.sql.support.action;
+  exports wtune.sql.support.locator;
+  exports wtune.sql.support.resolution;
+  exports wtune.sql.schema;
+  exports wtune.sql.plan;
+  exports wtune.sql.ast;
+  exports wtune.sql.ast.constants;
 
   requires sjtu.ipads.wtune.common;
   requires org.antlr.antlr4.runtime;

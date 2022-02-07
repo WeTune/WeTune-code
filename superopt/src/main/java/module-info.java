@@ -1,5 +1,5 @@
 module sjtu.ipads.wtune.superopt {
-  exports sjtu.ipads.wtune.superopt;
+  exports wtune.superopt;
 
   requires com.google.common;
   requires org.apache.commons.lang3;

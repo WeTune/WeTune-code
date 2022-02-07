@@ -1,7 +1,7 @@
 module sjtu.ipads.wtune.common {
-  exports sjtu.ipads.wtune.common.utils;
-  exports sjtu.ipads.wtune.common.tree;
-  exports sjtu.ipads.wtune.common.field;
+  exports wtune.common.utils;
+  exports wtune.common.tree;
+  exports wtune.common.field;
 
   requires com.google.common;
   requires org.apache.commons.lang3;
