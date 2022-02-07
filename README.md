@@ -33,19 +33,15 @@ This codebase includes the source code and the testing scripts in the paper
 * Gradle 7.3.3
 * z3 4.8.9  *(SMT solver)*
 * antlr 4.8  *(Generate tokenizer and parser for SQL AST)*
-* Microsoft SQL Server `2019` *(Evaluate the usefulness of rules)*
+* Microsoft SQL Server 2019 *(Evaluate the usefulness of rules)*
 
-We have already installed Java, Gradle and SQL Server (along with its command-line tools). 
-You can use the following commands to check.
+z3 and antlr library have been put in `lib/` off-the-shelf. Please use to deploy the other environment.
+
 ```shell
-java --version
-gradle -v
-systemctl start mssql-server
-systemctl status mssql-server
+click-to-run/environment-setup.sh
 ```
-Refer to `click-to-run/environment-setup.sh` for detailed installation scripts.
 
-z3 and antlr library have been put in `lib/` off-the-shelf.
+On the AWS machine, all requirements have been deployed.
 
 ### Compilation
 
@@ -68,23 +64,27 @@ examples in each step and inspecting the internal of WeTune.
 ### Discover Rules
 
 ```shell
-click-to-run/discover-rules.sh  # launches background processes
+# Launch background processes to run rule discovery
+click-to-run/discover-rules.sh  
+
+# After the all processes finished:
+click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh
+
 # Check progress:
 click-to-run/show-progress.sh
-# After the all processes finished:
-click-to-run/collect-rules.sh 
-click-to-run/reduce-rules.sh
+
+# Use this to terminate all process
+click-to-run/stop-discovery.sh
 ```
 
 The first commands launches many processes running in the background. Note they will consume all CPUs and takes a long
 time (~3600 CPU hours) to finish. Use `click-to-run/show-progress.sh` to inspect the progress of each process. The
 discovered rules so far can be found in `wtune_data/enumeration/run_*/success.txt` (`*` is a timestamp).
 
-The second commands aggregates `wtune_data/enumeration/run_*/succcess.txt`, and outputs
-to `wtune_data/rules/rules.local.txt`.
+The second commands aggregates `wtune_data/enumeration/run_*/succcess.txt` and reduce rules (Section 7 in paper)
+and outputs the reduced rules to `wtune_data/rules/rules.txt`.
 
-The third commands reduces rules (see Section 7 in paper) and outputs the reduced rules to `wtune_data/rules/rules.txt`.
-This command typically finishes in 30-50 minutes, depending on the number of discovered rules.
+The third are used to check the progress. The fourth can terminate all background tasks launched by the first command.
 
 
 > **Why multi-process instead of multi-thread?**
@@ -103,32 +103,34 @@ This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtun
 ### Evaluate the Rewritings
 
 ```shell
-click-to-run/populate-data.sh
+click-to-run/generate-data.sh
 click-to-run/make-db.sh
 click-to-run/import-data.sh
 ```
+
 These scripts populate and insert data into Sql Server database for use of evaluation.
 
-Use `click-to-run/populate-data.sh` to populate data. Data files can be found in 
-directory `wtune_data/dump/`. It usually takes no more than 15 minutes even for large workloads.
-Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server 
-and use `click-to-run/import-data.sh` to import populated data to Sql Server.
+Use `click-to-run/generate-data.sh` to populate data. Data files can be found in directory `wtune_data/dump/`. It
+usually takes no more than 15 minutes even for large workloads. Use `click-to-run/make-db.sh` to create databases and
+corresponding schemas in Sql Server and use `click-to-run/import-data.sh` to import populated data to Sql Server.
 
 ```shell
 click-to-run/estimate-cost.sh
-click-to-run/save-opt-stmts.sh
+click-to-run/save-rewrite-stmts.sh
 click-to-run/profile-cost.sh
 ```
+
 These scripts pick the optimized queries and profile them using Sql Server database.
 
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
-pick one rewritten query with the minimal cost by asking the database's cost model.
-The result will be stored in `wtune_data/rewrite/result/2_query.tsv`.
+pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
+in `wtune_data/rewrite/result/2_query.tsv`.
 
-`click-to-run/save-opt-stmts.sh` saves optimized queries of the previous step to the sqlite database `wtune_data/wtune.db`, 
-which stores data of this project. This is only an intermediate step during evaluation.
+`click-to-run/save-rewrite-stmts.sh` saves optimized queries of the previous step to the sqlite
+database `wtune_data/wtune.db`, which stores data of this project. This is only an intermediate step during evaluation.
 
-Finally, `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by default.
+Finally, `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
+default.
 
 **Please refer to [Part II](#part-ii) for more details about parameters of the scripts in this section.**
 
