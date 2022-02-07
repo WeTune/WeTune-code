@@ -91,14 +91,26 @@ The third are used to check the progress. The fourth can terminate all backgroun
 >
 > z3 incurs high inter-thread lock contention. The script uses multi-process instead of multi-thread to mitigate this problem.
 
+> Since the rule discovery takes a substantial time, we have provided enumerated rules
+> in `wtune_data/prepared/rules.txt` and `wtune_data/prepared/rules.spes.txt`
+
 ### Rewrite Queries Using Discovered Rules
 
 ```shell
-click-to-run/rewrite-queries.sh
+click-to-run/rewrite-queries.sh [-calcite] [-R <path/to/rules>]
 ```
 
-This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtune_data/wtune.db`. It usually finishes in
-30 minutes. The output can be found in `wtune_data/rewrite/result/1_query.tsv`.
+This script uses the rules in `<path/to/rules>` to rewrite queries.
+
+* `-R`: path to rule file, rooted by `wtune_data/`. Default: `wtune_data/rules/rules.txt` if exists,
+  otherwise `wtune_data/prepared/rules.txt`)
+
+* `-calcite`: if specified, rewrite calcite 464 queries. otherwise, rewrite 8000+ application queries.
+
+If rewriting application queries, the rewritten queries can be found in `wtune_data/rewrite/result/1_query.tsv` if
+rewriting application queries.
+
+If rewriting Calcite queries, the rewritten queries can be found in `wtune_data/calcite/result`.
 
 ### Evaluate the Rewritings
 

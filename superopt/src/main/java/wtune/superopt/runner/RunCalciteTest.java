@@ -42,7 +42,7 @@ import static wtune.sql.plan.PlanSupport.*;
 public class RunCalciteTest implements Runner {
   private String target;
   private Path testCasesPath, templatesPath, rulesPath;
-  private Path outDir, outOpt, outTrace;
+  private Path outDir, outOpt;
   private App app;
   private int verbosity;
   private Lazy<SubstitutionBank> rules;
@@ -70,7 +70,6 @@ public class RunCalciteTest implements Runner {
 
     outDir = parentDir.resolve("run" + subDirSuffix);
     outOpt = outDir.resolve("1_query.tsv");
-    outTrace = outDir.resolve("1_trace.tsv");
 
     app = App.of("calcite_test");
     target = args.getOptional("T", "task", String.class, "all");
