@@ -798,10 +798,11 @@ class ConstraintEnumerator {
       final List<Symbol> allAttrs = I.sourceSymbols().symbolsOf(ATTRS);
       this.attrs = new ArrayList<>(allAttrs.size());
       this.sourceChoices = new ArrayList<>(allAttrs.size());
-      this.numOptionals = (end - begin - 1) - allAttrs.size();
 
+      int numChoices = 0;
       for (Symbol attr : allAttrs) {
         final Collection<Symbol> sources = I.viableSourcesOf(attr);
+        numChoices += sources.size();
         if (sources.size() == 1) continue;
 
         assert sources.size() > 1;
@@ -812,6 +813,8 @@ class ConstraintEnumerator {
         attrs.add(attr);
         sourceChoices.add(constraintIndices);
       }
+
+      this.numOptionals = (end - begin) - numChoices;
     }
 
     @Override
