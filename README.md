@@ -3,8 +3,6 @@
 This codebase includes the source code and the testing scripts in the paper
 *Automatic Discovery and Verification of Query Rewrite Rules*
 
-**Still under development and not ready for release.**
-
 ```shell
 .
 |-- click-to-run    # Click-to-run scripts for Part I.
@@ -25,11 +23,11 @@ This codebase includes the source code and the testing scripts in the paper
     |-- wtune.db    # Sqlite DB storing the persistent statistics
 ```
 
-## Part I: Getting Start Guide
+**Still under development and not ready for release.**
 
-### Environment Setup
+## Environment Setup
 
-#### Requirements
+### Requirements
 
 * Java 17
 * Gradle 7.3.3
@@ -45,13 +43,13 @@ TODO
 
 to install Java, Gradle and SQL Server. z3 and antlr library have been put in `lib/` off-the-shelf.
 
-#### Compilation
+### Compilation
 
 ```shell
 gradle compileJava
 ```
 
-### WeTune Workflow
+## WeTune Workflow
 
 This section gives the instruction of the whole workflow of WeTune, including
 
@@ -59,11 +57,11 @@ This section gives the instruction of the whole workflow of WeTune, including
 2. rewriting queries using rules
 3. pick useful rules by evaluating the rewritings.
 
-The whole procedure typically takes several days (mainly for rule discovery). If you are particularly curious about how
+The whole procedure typically takes several days (mainly for rule discovery). If you are particularly interested in how
 WeTune works, please refer to Section [Run Example](#run-examples), which gives instructions of running individual
 examples in each step and inspecting the internal of WeTune.
 
-#### Discover Rules
+### Discover Rules
 
 ```shell
 click-to-run/discover-rules.sh  # launches background processes
@@ -92,7 +90,7 @@ This command typically finishes in 30-50 minutes, depending on the number of dis
 > The overall running time can be reduced by limiting the time budget of each plan template pair to searching for most-relaxed
 > constraint set (Section 4.3 in the paper). Please refer to [Part II](#part-ii) for details. However, too short timeout may impact the usefulness of discovered rules.
 
-#### Rewrite Queries Using Discovered Rules
+### Rewrite Queries Using Discovered Rules
 
 ```shell
 click-to-run/rewrite-queries.sh
@@ -101,7 +99,7 @@ click-to-run/rewrite-queries.sh
 This script uses `wtune_data/rules/rules.txt` to rewrite queries stored in `wtune_data/wtune.db`. It usually finishes in
 30 minutes. The output can be found in `wtune_data/rewrite/result/1_query.tsv`.
 
-#### Evaluate the Rewritings
+### Evaluate the Rewritings
 
 ```shell
 click-to-run/populate-data.sh
@@ -111,7 +109,7 @@ click-to-run/profile-cost.sh
 
 `{TODO}`
 
-### Run Examples
+## Run Examples
 
 This section provides the instruction of run examples:
 
@@ -119,7 +117,7 @@ This section provides the instruction of run examples:
 * rule verification
 * constraint enumeration
 
-#### Template Enumeration Example
+### Template Enumeration Example
 
 ```shell
 click-to-run/run-template-example.sh
@@ -127,13 +125,13 @@ click-to-run/run-template-example.sh
 
 All templates of max size 4 (after pruning) will be printed, 3113 in total.
 
-#### Rule Verification
+### Rule Verification
 
 ```shell
 click-to-run/run-verify-example.sh [rule_index]
 ```
 
-`[rule_index]` can be 1-35, corresponds to Table 7 in the paper.
+`<rule_index>` can be 1-35, corresponds to Table 7 in the paper.
 
 For each rule, the following items will be printed:
 
@@ -151,18 +149,18 @@ For rule 1-31, which can be proved by WeTune built-in verifier, these additional
 > To relief the burden of Z3, When we are going to prove `(p0 /\ p1 ... /\ pn) /\ (q \/ r)` is UNSAT, we separately prove that `(p0 /\ p1 ... /\ pn) /\ q`
 and `(p0 /\ p1 /\ ... /\ pn)` are both UNSAT. This is particularly the case when applying theorem 5.2.
 
-#### Constraint Enumeration
+### Constraint Enumeration
 
 ```shell
-click-to-run/run-enum-example.sh [rule_index]
+click-to-run/run-enum-example.sh [-dump] <rule_index>
 ```
 
-`[rule_index]` can be 1-35, corresponds to Table 7 in the paper.
+`<rule_index>` can be 1-35, corresponds to Table 7 in the paper.
+
+`-dump` specifies whether to dump all searched constraint sets to output.
 
 WeTune will enumerate the constraints between the plan template of given rule, and search for the most-relaxed
 constraint sets. Each of the examined constraint set and its verification result will be printed. The found rules and
 metrics will be appended after enumeration completes.
 
-P.S. for some pairs the output floods for a few minutes, you may want to dump it to a file.
-
-## Part II: Step-by-Step Instructions
+P.S. If `-dump` is specified, for some pairs, the output floods for a few minutes, you may want to dump it to a file.

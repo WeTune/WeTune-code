@@ -14,3 +14,5 @@
 !calcite/calcite_tests
 !calcite/calcite_templates
 !calcite/calcite.patch
+!prepared/
+!prepared/*

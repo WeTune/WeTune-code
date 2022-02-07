@@ -52,12 +52,6 @@ class ConstraintEnumeratorTest {
   }
 
   @Test
-  @Tag("slow")
-  void test() {
-    doTest("Proj(Proj*(Input))", "Proj(Filter(Proj*(Filter(Input))))");
-  }
-
-  @Test
   @Tag("fast")
   void testInnerJoinElimination0() {
     doTest(

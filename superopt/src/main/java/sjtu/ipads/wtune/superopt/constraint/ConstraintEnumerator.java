@@ -789,6 +789,7 @@ class ConstraintEnumerator {
     private final int begin, end;
     private final List<Symbol> attrs;
     private final List<int[]> sourceChoices;
+    private final int numOptionals;
 
     private AttrsSourceEnumerator() {
       this.begin = I.beginIndexOfKind(AttrsSub);
@@ -797,6 +798,7 @@ class ConstraintEnumerator {
       final List<Symbol> allAttrs = I.sourceSymbols().symbolsOf(ATTRS);
       this.attrs = new ArrayList<>(allAttrs.size());
       this.sourceChoices = new ArrayList<>(allAttrs.size());
+      this.numOptionals = (end - begin - 1) - allAttrs.size();
 
       for (Symbol attr : allAttrs) {
         final Collection<Symbol> sources = I.viableSourcesOf(attr);
@@ -819,7 +821,7 @@ class ConstraintEnumerator {
     }
 
     private int enumerate0(int symIndex) {
-      if (symIndex >= attrs.size()) return nextStage().enumerate();
+      if (symIndex >= attrs.size()) return enumerateOptional(0);
 
       final int[] sources = sourceChoices.get(symIndex);
       for (int source : sources) currentSet(source, false);
@@ -830,6 +832,19 @@ class ConstraintEnumerator {
 
         if (answer == TIMEOUT) return TIMEOUT;
       }
+
+      return EQ; // doesn't matter
+    }
+
+    private int enumerateOptional(int optionIndex) {
+      if (optionIndex >= numOptionals) return nextStage().enumerate();
+
+      final int constraintIndex = end - numOptionals + optionIndex;
+      currentSet(constraintIndex, true);
+      enumerateOptional(optionIndex + 1);
+
+      currentSet(constraintIndex, false);
+      enumerateOptional(optionIndex + 1);
 
       return EQ; // doesn't matter
     }
