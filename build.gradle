@@ -58,7 +58,6 @@ subprojects {
     }
 
     ext.download = { String url, java.nio.file.Path path, String mod = null ->
-        def proxy = "http://ipads:ipads123@202.120.40.82:11235"
         def wd = path.getParent().toAbsolutePath().toString()
         def fileName = path.getFileName().toString()
 
@@ -69,7 +68,6 @@ subprojects {
                 exec {
                     workingDir(wd)
                     commandLine 'powershell', 'Invoke-WebRequest', "'$url'",
-                            '-Proxy', "\"$proxy\"",
                             '-OutFile', "$fileName"
                 }
 
@@ -77,8 +75,6 @@ subprojects {
                 exec {
                     workingDir(wd)
                     commandLine 'wget', '-e', 'use_proxy=yes',
-                            '-e', "http_proxy=$proxy",
-                            '-e', "https_proxy=$proxy",
                             '--no-check-certificate',
                             "$url",
                             '-O', "$fileName"
