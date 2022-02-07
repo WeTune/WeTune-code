@@ -111,7 +111,7 @@ click-to-run/generate-data.sh
 click-to-run/profile-cost.sh
 ```
 
-These scripts pick the optimized queries and profile them using Sql Server database. 
+These scripts pick the optimized queries and profile them using Sql Server database.
 
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
 pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
@@ -120,8 +120,8 @@ in `wtune_data/rewrite/result/2_query.tsv` and used rules will be stored in
 
 Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server.
 
-Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server.
-Dumped data files can be found in directory `wtune_data/dump/`.
+Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server. Dumped data files can be found in
+directory `wtune_data/dump/`.
 
 And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
 default.
