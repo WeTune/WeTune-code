@@ -27,5 +27,5 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "Begin rule reducing."
-gradle :superopt:run --args="ReduceRules -R=${in} -o=${out} -a=none"
+gradle :superopt:run --args="ReduceRules -R=${in} -o=${out}"
 echo "$(wc -l "${data_dir}/${out}" | cut -f1 -d' ') non-reducible rules discovered."
