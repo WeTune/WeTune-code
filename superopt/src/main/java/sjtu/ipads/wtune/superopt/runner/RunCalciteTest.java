@@ -262,7 +262,7 @@ public class RunCalciteTest implements Runner {
 
     final List<QueryPair> pairs = new ArrayList<>(lines.size() >> 1);
     for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-//        if (i != 18) continue;
+//        if (i != 92) continue;
       final String first = lines.get(i), second = lines.get(i + 1);
       final SqlNode q0 = parseSql(MySQL, first);
       final SqlNode q1 = parseSql(MySQL, second);
