@@ -12,7 +12,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeNode.AlgeNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanKind;
 import wtune.sql.plan.PlanNode;

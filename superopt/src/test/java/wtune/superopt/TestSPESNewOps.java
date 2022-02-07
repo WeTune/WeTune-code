@@ -3,7 +3,7 @@ package wtune.superopt;
 import com.microsoft.z3.Context;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeNode.AlgeNode;
 import wtune.sql.SqlSupport;
 import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;

@@ -3,9 +3,9 @@ package wtune.superopt.nodetrans;
 import com.microsoft.z3.Context;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
-import sjtu.ipads.wtune.spes.AlgeNode.TableNode;
+import wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeNode.SPJNode;
+import wtune.spes.AlgeNode.TableNode;
 import wtune.sql.plan.InputNode;
 
 import java.util.ArrayList;

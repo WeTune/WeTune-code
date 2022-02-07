@@ -1,8 +1,8 @@
 package wtune.superopt.nodetrans;
 
 import com.microsoft.z3.Context;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.spes.AlgeRule.AlgeRule;
+import wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeRule.AlgeRule;
 import wtune.sql.plan.PlanContext;
 
 public class SPESSupport {

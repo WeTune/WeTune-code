@@ -1,8 +1,8 @@
 package wtune.superopt.nodetrans;
 
 import org.apache.calcite.rel.type.RelDataType;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
+import wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeNode.UnionNode;
 import wtune.sql.plan.*;
 
 import java.util.ArrayList;

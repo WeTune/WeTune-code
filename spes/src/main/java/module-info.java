@@ -1,10 +1,10 @@
 module sjtu.ipads.wtune.spes {
-  exports sjtu.ipads.wtune.spes.AlgeNode;
-  exports sjtu.ipads.wtune.spes.AlgeNodeParser;
-  exports sjtu.ipads.wtune.spes.AlgeRule;
-  exports sjtu.ipads.wtune.spes.RexNodeHelper;
-  exports sjtu.ipads.wtune.spes.SymbolicRexNode;
-  exports sjtu.ipads.wtune.spes.Z3Helper;
+  exports wtune.spes.AlgeNode;
+  exports wtune.spes.AlgeNodeParser;
+  exports wtune.spes.AlgeRule;
+  exports wtune.spes.RexNodeHelper;
+  exports wtune.spes.SymbolicRexNode;
+  exports wtune.spes.Z3Helper;
 
   requires com.google.common;
   requires org.apache.commons.lang3;

@@ -2,10 +2,10 @@ package wtune.superopt.nodetrans;
 
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import sjtu.ipads.wtune.spes.AlgeNode.AlgeNode;
-import sjtu.ipads.wtune.spes.AlgeNode.SPJNode;
-import sjtu.ipads.wtune.spes.AlgeNode.UnionNode;
-import sjtu.ipads.wtune.spes.RexNodeHelper.RexNodeHelper;
+import wtune.spes.AlgeNode.AlgeNode;
+import wtune.spes.AlgeNode.SPJNode;
+import wtune.spes.AlgeNode.UnionNode;
+import wtune.spes.RexNodeHelper.RexNodeHelper;
 import wtune.sql.plan.Expression;
 import wtune.sql.plan.ProjNode;
 import wtune.sql.plan.Value;
