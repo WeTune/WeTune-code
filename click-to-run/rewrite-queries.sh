@@ -39,7 +39,7 @@ if [ -n "${calcite}" ]; then
 
   dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" 'result'
-  echo "$(cut -f1,2 'result/1_query.txt' | uniq | wc -l) queries rewritten."
+  echo "$(cut -f1,2 'result/1_query.tsv' | uniq | wc -l) queries rewritten."
 
 else
   gradle :superopt:run --args="RewriteQuery -v=${verbose} -R=${rules}"
@@ -48,5 +48,5 @@ else
 
   dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" 'result'
-  echo "$(cut -f1,2 'result/1_query.txt' | uniq | wc -l) queries rewritten."
+  echo "$(cut -f1,2 'result/1_query.tsv' | uniq | wc -l) queries rewritten."
 fi
