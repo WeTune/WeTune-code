@@ -21,6 +21,10 @@ while [[ $# -gt 0 ]]; do
     verbose="${2}"
     shift 2
     ;;
+  "-spes")
+    useSpes='true'
+    shift
+    ;;
   "-partition")
     partition="${2}"
     shift 2
@@ -31,7 +35,6 @@ while [[ $# -gt 0 ]]; do
     ;;
   esac
 done
-
 
 # parse partition
 if [ -z "${partition}" ]; then
@@ -51,7 +54,7 @@ else
   fi
 fi
 
-gradle compileJava 
+gradle compileJava
 
 echo "Begin rule discovery. "
 echo "#process=${num_partitions}  #threads_per_process=${parallelism} timeout_per_pair=${timeout}ms"
@@ -60,6 +63,6 @@ mkdir -p enum_log
 
 for ((i = from_partition; i <= to_partition; i++)); do
   nohup gradle :superopt:run \
-    --args="EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i}" \
+    --args="EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i} -useSpes=${useSpes}" \
     >"enum_log/num.log.${i}" 2>&1 &
 done

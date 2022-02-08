@@ -5,8 +5,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.superopt.constraint.ConstraintSupport;
+import wtune.superopt.constraint.EnumerationMetrics;
 import wtune.superopt.fragment.Fragment;
 import wtune.superopt.fragment.FragmentSupport;
+import wtune.superopt.fragment.FragmentSupportSPES;
 import wtune.superopt.fragment.SymbolNaming;
 import wtune.superopt.substitution.Substitution;
 
@@ -27,6 +29,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.lang.Integer.parseInt;
 import static wtune.common.utils.ListSupport.map;
 import static wtune.superopt.constraint.ConstraintSupport.enumConstraints;
+import static wtune.superopt.constraint.ConstraintSupport.enumConstraintsSPES;
+import static wtune.superopt.fragment.FragmentSupport.enumFragments;
+import static wtune.superopt.fragment.FragmentSupportSPES.enumFragmentsSPES;
 
 public class EnumRule implements Runner {
   private final Lock outLock = new ReentrantLock();
@@ -34,6 +39,7 @@ public class EnumRule implements Runner {
 
   private Path success, failure, err, checkpoint;
   private Path prevFailure, prevCheckpoint;
+  private boolean useSpes;
   private int verbosity;
   private long timeout;
   private int parallelism;
@@ -68,6 +74,7 @@ public class EnumRule implements Runner {
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     timeout = args.getOptional("timeout", long.class, 240000L);
     parallelism = args.getOptional("parallelism", int.class, 1);
+    useSpes = args.getOptional("useSpes", boolean.class, false);
 
     if (timeout <= 0) throw new IllegalArgumentException("invalid timeout: " + timeout);
     if (parallelism <= 0) throw new IllegalArgumentException("invalid parallelism: " + parallelism);
@@ -113,12 +120,30 @@ public class EnumRule implements Runner {
 
   @Override
   public void stop() {
-    System.out.println(ConstraintSupport.getEnumerationMetric());
-    System.out.println("#Skipped=" + numSkipped.get());
+    final EnumerationMetrics metric = ConstraintSupport.getEnumerationMetric();
+    final Integer enumPairs = metric.numEnumeratorInvocations.value();
+    final Integer enumSets = metric.numEnumeratedConstraintSets.value();
+    final Integer numProver = metric.numProverInvocations.value();
+    System.out.println();
+    System.out.println("===== Statistics =====");
+    System.out.println("# of enumerated pairs: " + enumPairs);
+    System.out.println("# of skipped pairs: " + numSkipped.get());
+    System.out.println("# of enumerated constraint sets" + enumSets);
+    System.out.println("  average: " + enumSets / enumPairs + " sets per pair");
+    System.out.println("# of verifier invocation: " + numProver);
+    System.out.print("# of EQ from verifier: " + metric.numEq.value());
+    System.out.println(", " + metric.elapsedEq.value() + "ms");
+    System.out.print("# of NEQ from verifier: " + metric.numNeq.value());
+    System.out.println(", " + metric.elapsedNeq.value() + "ms");
+    System.out.print("# of UNKNOWN from verifier: " + metric.numUnknown.value());
+    System.out.println(", " + metric.elapsedUnknown.value() + "ms");
+    System.out.println("# of EQ from cache: " + metric.numCacheHitEq.value());
+    System.out.println("# of NEQ from cache: " + metric.numCacheHitNeq.value());
+    System.out.println();
   }
 
   private void fromEnumeration() throws IOException, InterruptedException {
-    final List<Fragment> templates = FragmentSupport.enumFragments();
+    final List<Fragment> templates = useSpes ? enumFragmentsSPES() : enumFragments();
     final int numTemplates = templates.size();
 
     int[] completed = null;
@@ -252,7 +277,8 @@ public class EnumRule implements Runner {
     }
 
     try {
-      final List<Substitution> rules = enumConstraints(f0, f1, timeout);
+      final List<Substitution> rules =
+          useSpes ? enumConstraints(f0, f1, timeout) : enumConstraintsSPES(f0, f1, timeout);
       if (rules == null) {
         numSkipped.incrementAndGet();
         return;

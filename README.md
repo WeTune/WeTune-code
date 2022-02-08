@@ -57,18 +57,20 @@ This section gives the instruction of the whole workflow of WeTune, including
 2. rewriting queries using rules
 3. pick useful rules by evaluating the rewritings.
 
-The whole procedure typically takes several days (mainly for rule discovery). If you are particularly interested in how
-WeTune works, please refer to Section [Run Example](#run-examples), which gives instructions of running individual
-examples in each step and inspecting the internal of WeTune.
+The whole procedure typically takes several days (mainly for rule discovery).
+
+If you are particularly interested in how WeTune works, please refer to the section [Run Example](#run-examples), which
+gives instructions of running a few individual examples of the enumeration and equivalence proof. The detailed output
+will help understand the internal of WeTune.
 
 ### Discover Rules
 
 ```shell
 # Launch background processes to run rule discovery
-click-to-run/discover-rules.sh  
+click-to-run/discover-rules.sh [-spes]
 
 # After the all processes finished:
-click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh
+click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh [-spes]
 
 # Check progress:
 click-to-run/show-progress.sh
@@ -77,15 +79,21 @@ click-to-run/show-progress.sh
 click-to-run/stop-discovery.sh
 ```
 
-The first commands launches many processes running in the background. Note they will consume all CPUs and takes a long
-time (~3600 CPU hours) to finish. Use `click-to-run/show-progress.sh` to inspect the progress of each process. The
-discovered rules so far can be found in `wtune_data/enumeration/run_*/success.txt` (`*` is a timestamp).
+The first commands launches many processes running in the background.
 
-The second commands aggregates `wtune_data/enumeration/run_*/succcess.txt` and reduce rules (Section 7 in paper)
-and outputs the reduced rules to `wtune_data/rules/rules.txt`.
+* `-spes`: use SEPS verifier to prove rule correctness.
+
+The procedure will consume all CPUs and take a long time (~3600 CPU hours) to finish. The discovered rules so far can be
+found in `wtune_data/enumeration/run_*/success.txt` (`*` here is a timestamp).
+
+The second commands aggregates `wtune_data/enumeration/run_*/succcess.txt` and reduce the rules (Section 7 in paper).
+The resulting rules can be found in `wtune_data/rules/rules.txt`.
+
+* `-spes`: output to `wtune_data/rules/rules.spes.txt`.
 
 The third are used to check the progress. The fourth can terminate all background tasks launched by the first command.
 
+> For the simplicity of demonstration, we separate the enumeration using the built-in and SPES verifier.
 
 > **Why multi-process instead of multi-thread?**
 >
@@ -103,7 +111,7 @@ click-to-run/rewrite-queries.sh [-calcite] [-R <path/to/rules>]
 This script uses the rules in `<path/to/rules>` to rewrite queries.
 
 * `-R`: path to rule file, rooted by `wtune_data/`. Default: `wtune_data/rules/rules.txt` if exists,
-  otherwise `wtune_data/prepared/rules.txt`)
+  otherwise `wtune_data/prepared/rules.txt`.
 
 * `-calcite`: if specified, rewrite calcite 464 queries. otherwise, rewrite 8000+ application queries.
 

@@ -19,6 +19,10 @@ while [[ $# -gt 0 ]]; do
     out="${2}"
     shift 2
     ;;
+  "-spes")
+    out="${rules_dir}/rules.spes.txt"
+    shift
+    ;;
   *)
     positional_args+=("${1}")
     shift
