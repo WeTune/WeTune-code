@@ -101,6 +101,7 @@ public class AppImpl implements App {
 
   private static final String[] APP_NAMES = {
     "broadleaf",
+    "calcite_test",
     "diaspora",
     "discourse",
     "eladmin",

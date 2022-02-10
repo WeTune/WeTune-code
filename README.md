@@ -250,8 +250,8 @@ if you would like to evaluate on different type of workload or evaluate queries 
 can set additional parameters to the scripts in section [Evaluate the Rewritings](#Evaluate the Rewritings):
 
 ```shell
-click-to-run/estimate-cost.sh 
-click-to-run/make-db.sh
+click-to-run/estimate-cost.sh [-optimizer] <verifier_type>
+click-to-run/make-db.sh [-tag] <workload_type>
 click-to-run/generate-data.sh [-tag] <workload_type> [-optimizer] <verifier_type>
 click-to-run/profile-cost.sh [-tag] <workload_type> [-optimizer] <verifier_type>
 ```
@@ -259,8 +259,8 @@ click-to-run/profile-cost.sh [-tag] <workload_type> [-optimizer] <verifier_type>
 For example, to evaluation queries optimized by `Spes` on workload type of `zipf`, run:
 
 ```shell
-click-to-run/estimate-cost.sh 
-click-to-run/make-db.sh
+click-to-run/estimate-cost.sh -optimizer Spes
+click-to-run/make-db.sh -tag zipf
 click-to-run/generate-data.sh -tag zipf -optimizer Spes
 click-to-run/profile-cost.sh -tag zipf -optimizer Spes
 ```

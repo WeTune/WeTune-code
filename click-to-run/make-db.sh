@@ -43,10 +43,6 @@ while [[ $# -gt 0 ]]; do
     tag="${2}"
     shift 2
     ;;
-  "-r" | "-recreate")
-      recreate='true'
-      shift 1
-      ;;
   *)
     positional_args+=("${1}")
     shift
@@ -55,7 +51,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$appName" = 'all' ]; then
-  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+  for db in 'broadleaf' 'calcite_test' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
   do
     dbName=${db}_${tag} # e.g. broadleaf_base
     findSchema ${db}

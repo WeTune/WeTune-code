@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ ! "$target" ]; then
-  if [ "$tag" == 'base'] || [ "$tag" == 'zipf']; then
+  if [[ "$tag" == 'base' ]] || [[ "$tag" == 'zipf' ]]; then
     target="used"
   else
     target="opt_used"
@@ -123,7 +123,7 @@ doImportData() {
 }
 
 
-for app in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+for app in 'broadleaf' 'calcite_test' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
 do
   dbName=${app}_${tag}
   findAppDataDir "${tag}" "${app}"
