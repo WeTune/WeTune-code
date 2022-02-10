@@ -1,6 +1,7 @@
 #! /bin/bash
 
 data_dir="${WETUNE_DATA_DIR:-wtune_data}"
+dump_dir="dump"
 verbose=0
 target=
 optimizer="WeTune"
@@ -38,6 +39,11 @@ if [ ! "$target" ]; then
   else
     target="opt_used"
   fi
+fi
+
+dump_file_dir=$(find "${data_dir}" -type d -wholename "*/${dump_dir}/${tag}" | head -1)
+if [ "${dump_file_dir}" ]; then
+  rm -rf "${dump_file_dir}"
 fi
 
 echo "Begin generating data of ${tag} workload."
@@ -90,7 +96,6 @@ doImportOne() {
   sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
     ALTER TABLE [${tableName}] NOCHECK CONSTRAINT ALL;
     BULK INSERT [${tableName}] FROM '${absoluteAppDataPath}/${tableName}.csv' WITH( FIELDTERMINATOR=';', ROWTERMINATOR='\n' );
-    ALTER TABLE [${tableName}] WITH CHECK CHECK CONSTRAINT ALL;
     GO
 EOF
 }
