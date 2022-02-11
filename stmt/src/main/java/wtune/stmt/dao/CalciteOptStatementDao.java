@@ -12,6 +12,10 @@ public interface CalciteOptStatementDao {
 
   List<Statement> findAll();
 
+  void cleanOptStmts();
+
+  void updateOptStmts(Statement stmt);
+
   static CalciteOptStatementDao instance() {
     return CalciteDbOptStatementDao.instance();
   }

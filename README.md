@@ -105,28 +105,29 @@ The third are used to check the progress. The fourth can terminate all backgroun
 ### Rewrite Queries Using Discovered Rules
 
 ```shell
-click-to-run/rewrite-queries.sh [-calcite] [-R <path/to/rules>]
+click-to-run/rewrite-queries.sh [-spes] [-calcite] [-R <path/to/rules>]
 ```
 
 This script uses the rules in `<path/to/rules>` to rewrite queries.
 
 * `-R`: path to rule file, rooted by `wtune_data/`. Default: `wtune_data/rules/rules.txt` if exists,
   otherwise `wtune_data/prepared/rules.txt`.
-
+* `-spes`: if specified, use rules proved by SPES to rewrite queries. Default path to rule file: `wtune_data/rules/rules.spes.txt` if exists,
+  otherwise `wtune_data/prepared/rules.spes.txt`. 
 * `-calcite`: if specified, rewrite calcite 464 queries. otherwise, rewrite 8000+ application queries.
 
-If rewriting application queries, the rewritten queries can be found in `wtune_data/rewrite/result/1_query.tsv` if
-rewriting application queries.
+If rewriting application queries, the rewritten queries can be found in `wtune_data/rewrite/result/1_query.tsv`.
+If using SPES rules, the path becomes `wtune_data/rewrite/result_spes/1_query.tsv`.
 
 If rewriting Calcite queries, the rewritten queries can be found in `wtune_data/calcite/result`.
+If using SPES rules, the path becomes `wtune_data/calcite/result_spes`.
 
 ### Evaluate the Rewritings
 
 ```shell
-click-to-run/estimate-cost.sh
-click-to-run/make-db.sh
-click-to-run/generate-data.sh
-click-to-run/profile-cost.sh
+click-to-run/estimate-cost.sh [-spes] [-calcite]
+click-to-run/prepare-workload.sh [-spes] [-calcite] [-tag] <workload_type>
+click-to-run/profile-cost.sh [-spes] [-calcite] [-tag] <workload_type>
 ```
 
 These scripts pick the optimized queries and profile them using Sql Server database.
@@ -136,16 +137,41 @@ pick one rewritten query with the minimal cost by asking the database's cost mod
 in `wtune_data/rewrite/result/2_query.tsv` and used rules will be stored in
 `wtune_data/rewrite/result/2_trace.tsv`.
 
-Use `click-to-run/make-db.sh` to create databases and corresponding schemas in Sql Server.
+Use `click-to-run/prepare-workload.sh` to prepare profiling workload data in Sql Server database.
+It creates databases and corresponding schemas in Sql Server, then generate and import data to Sql Server. 
+Dumped data files can be found in directory `wtune_data/dump/`.
 
-Use `click-to-run/generate-data.sh` to generate data and import data to Sql Server. Dumped data files can be found in
-directory `wtune_data/dump/`.
-
-And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/` by
+And `click-to-run/profile-cost.sh` profiles the optimized queries. The output file is in `wtune_data/profile/result` by
 default.
 
-**Please refer to [Evaluation Configuration](#Evaluation Configuration) for more details about parameters of the scripts
-in this section.**
+* `-spes`: if you are going to estimate and profile queries optimized by SPES, add this option to the scripts above. 
+For `click-to-run/estimate-cost.sh`, it will take `wtune_data/rewrite/result_spes/1_query.tsv` as input
+and output file will be in `wtune_data/rewrite/result_spes/` as well.
+For profiling, the results will be in `wtune_data/profile/result_spes` instead.
+* `-calcite`: if you are going to estimate and profile calcite's 464 queries, add this option. The corresponding directories
+will become `wtune_data/calcite/` and `wtune_data/profile_calcite/`.
+* `-tag`: workload type. Default type: `base`. See details below.
+
+#### Workload types
+In the paper, we evaluate queries on 4 different workload types:
+
+| Workload type | # of rows | Data distribution |
+|---------------|-----------|-------------------|
+| base          | 10 k      | uniform           |
+| zipf          | 10 k      | zipfian           |
+| large         | 1 M       | uniform           |
+| large_zipf    | 1 M       | zipfian           |
+
+If you would like to evaluate on different type of workload, you
+can set `-tag` option to the scripts.
+
+For example, to evaluate queries on workload type of `zipf`, run:
+```shell
+click-to-run/estimate-cost.sh 
+click-to-run/prepare-workload.sh -tag zipf 
+click-to-run/profile-cost.sh -tag zipf 
+```
+The profiling result is actually stored in file `wtune_data/profile/result/{workload_type}` by default.
 
 ## Run Examples
 
@@ -224,37 +250,3 @@ This script verify the equivalence of Calcite query pairs by directly both of tw
 rewritten queries coincide, which effectively indicates WeTune can verify the transformation between the two query. The
 ordinal (line number) of 73 verifiable pairs will be printed, together with the rewritten query.
 
-## Evaluation Configuration
-
-### Workload types
-
-In the paper, we evaluate queries on 4 different workload types:
-
-| Workload type | # of rows | Data distribution |
-|---------------|-----------|-------------------|
-| base          | 10 k      | uniform           |
-| zipf          | 10 k      | zipfian           |
-| large         | 1 M       | uniform            |
-| large_zipf    | 1 M       | zipfian           |
-
-### Evaluation Parameter selection
-
-By default, the scripts above evaluate queries optimized by built-in verifier on workload of `base` type. However, for example,
-if you would like to evaluate on different type of workload or evaluate queries optimized by a different verifier, you
-can set additional parameters to the scripts in section [Evaluate the Rewritings](#Evaluate the Rewritings):
-
-```shell
-click-to-run/estimate-cost.sh [-spes] 
-click-to-run/make-db.sh [-tag] <workload_type>
-click-to-run/generate-data.sh [-tag] <workload_type> [-spes]
-click-to-run/profile-cost.sh [-tag] <workload_type> [-spes]
-```
-
-For example, to evaluation queries optimized by SPES on workload type of `zipf`, run:
-
-```shell
-click-to-run/estimate-cost.sh -spes
-click-to-run/make-db.sh -tag zipf
-click-to-run/generate-data.sh -tag zipf -spes
-click-to-run/profile-cost.sh -tag zipf -spes
-```

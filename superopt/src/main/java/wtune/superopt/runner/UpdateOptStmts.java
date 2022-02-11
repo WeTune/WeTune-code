@@ -17,6 +17,7 @@ public class UpdateOptStmts implements Runner {
   private Path optFile;
   private int verbosity;
   private String optimizedBy;
+  private boolean calcite;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -24,6 +25,7 @@ public class UpdateOptStmts implements Runner {
 
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     optimizedBy = args.getOptional("opt", "optimizer", String.class, "WeTune");
+    calcite = args.getOptional("calcite", boolean.class, false);
 
     final Path dataDir = dataDir();
     final Path dir = dataDir.resolve(args.getOptional("D", "dir", String.class, "rewrite/result"));
@@ -36,7 +38,9 @@ public class UpdateOptStmts implements Runner {
     final List<String> lines = Files.readAllLines(optFile);
     final OptimizerType optimizerType = OptimizerType.valueOf(optimizedBy);
 
-    UpdateStmts.cleanOptStmts(optimizerType);
+    if (calcite) UpdateStmts.cleanCalciteOptStmts();
+    else UpdateStmts.cleanOptStmts(optimizerType);
+
     for (int i = 0, bound = lines.size(); i < bound; i++) {
       final String line = lines.get(i);
       final String[] fields = line.split("\t", 4);
@@ -51,7 +55,9 @@ public class UpdateOptStmts implements Runner {
         if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
-      UpdateStmts.updateOptStmts(Statement.mk(app, stmtId, rawSql, trace), optimizerType);
+      if (calcite)
+        UpdateStmts.updateCalciteOptStmts(Statement.mkCalcite(app, stmtId, rawSql, trace));
+      else UpdateStmts.updateOptStmts(Statement.mk(app, stmtId, rawSql, trace), optimizerType);
     }
   }
 }

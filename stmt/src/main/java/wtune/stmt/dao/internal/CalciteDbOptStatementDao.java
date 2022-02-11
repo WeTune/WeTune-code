@@ -6,6 +6,7 @@ import wtune.stmt.dao.CalciteOptStatementDao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
   private static final String FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
 
+  // Update optimized stmts query
+  private static final String CLEAN_OPT_STMT = "DELETE FROM " + OPT_STMTS_TABLE + " WHERE TRUE";
+  private static final String ADD_OPT_STMTS = "INSERT INTO " + OPT_STMTS_TABLE + " VALUES (?, ?, ?, ?, null)";
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
@@ -91,4 +95,33 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
     }
   }
 
+  @Override
+  public void cleanOptStmts() {
+    try {
+      final PreparedStatement clean0 = prepare(CLEAN_OPT_STMT);
+      clean0.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void updateOptStmts(Statement stmt) {
+    try {
+      final PreparedStatement insert0 = prepare(ADD_OPT_STMTS);
+
+      insert0.setString(1, stmt.appName());
+      insert0.setInt(2, stmt.stmtId());
+
+      insert0.setString(3, stmt.rawSql());
+      if (stmt.stackTrace() == null)
+        insert0.setNull(4, Types.VARCHAR);
+      else
+        insert0.setString(4, stmt.stackTrace());
+
+      insert0.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
 }

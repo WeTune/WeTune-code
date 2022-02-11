@@ -43,6 +43,10 @@ while [[ $# -gt 0 ]]; do
     tag="${2}"
     shift 2
     ;;
+  "-calcite")
+    appName='calcite_test'
+    shift
+    ;;
   *)
     positional_args+=("${1}")
     shift

@@ -6,6 +6,7 @@ verbose=0
 target=
 optimizer="WeTune"
 tag="base"
+appName="all"
 
 # read arguments
 while [[ $# -gt 0 ]]; do
@@ -18,13 +19,21 @@ while [[ $# -gt 0 ]]; do
     target="${2}"
     shift 2
     ;;
+  "-tag")
+    tag="${2}"
+    shift 2
+    ;;
+  "-app")
+    appName="${2}"
+    shift 2
+    ;;
   "-spes")
     optimizer="SPES"
     shift 1
     ;;
-  "-tag")
-    tag="${2}"
-    shift 2
+  "-calcite")
+    appName='calcite_test'
+    shift 1
     ;;
   *)
     positional_args+=("${1}")
@@ -54,7 +63,6 @@ echo "Finish generating data of ${tag} workload."
 
 echo "Begin importing data into database."
 
-appName="all"
 dbName=
 appDataDir=
 absoluteAppDataPath=
@@ -81,7 +89,6 @@ doTruncateOne() {
   local tableName=${1}
 
   echo "truncating ${tableName}"
-#  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "${data_dir}/schemas_mssql/${appName}.sql"
   sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
     DELETE FROM [${tableName}];
     GO
@@ -109,7 +116,7 @@ EOF
 }
 
 doImportData() {
-  echo "gonna import $(find "$appDataDir" -maxdepth 1 -name '*.csv' | wc -l) target_tables in $appDataDir to $dbName@$host:$port"
+  echo "gonna import $(find "$appDataDir" -maxdepth 1 -name '*.csv' | wc -l) tables in $appDataDir to $dbName@$host:$port"
   for fileName in "$appDataDir"/*.csv; do
     fileName=$(basename -- "$fileName")
     local tableName="${fileName%.*}"
@@ -127,14 +134,24 @@ doImportData() {
   done
 }
 
+if [ "$appName" = 'all' ]; then
+  for app in 'broadleaf' 'calcite_test' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+  do
+    dbName=${app}_${tag}
+    findAppDataDir "${tag}" "${app}"
+    if [ ! "$appDataDir" ]; then
+      continue
+    fi
 
-for app in 'broadleaf' 'calcite_test' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
-do
-  dbName=${app}_${tag}
-  findAppDataDir "${tag}" "${app}"
+    doImportData
+  done
+else
+  dbName=${appName}_${tag}
+  findAppDataDir "${tag}" "${appName}"
   if [ ! "$appDataDir" ]; then
-    continue
+    echo "data not found for ${dbName}."
+    exit
   fi
 
   doImportData
-done
+fi

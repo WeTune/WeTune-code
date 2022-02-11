@@ -3,6 +3,7 @@
 data_dir="${WETUNE_DATA_DIR:-wtune_data}"
 verbose='0'
 rewrite_dir="rewrite"
+result_dir="result"
 optimizer="WeTune"
 
 while [[ $# -gt 0 ]]; do
@@ -12,7 +13,14 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   "-spes")
+    spes='true'
+    result_dir="result_spes"
     optimizer="SPES"
+    shift 1
+    ;;
+  "-calcite")
+    calcite='true'
+    rewrite_dir='calcite'
     shift 1
     ;;
   *)
@@ -22,11 +30,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-gradle :superopt:run --args="PickMinCost -v=${verbose} "
+gradle :superopt:run --args="PickMinCost -v=${verbose} -D=${rewrite_dir}/${result_dir}"
 
 cwd=$(pwd)
 cd "${data_dir}/${rewrite_dir}" || exit
-echo "$(cut -f1,2 'result/2_query.tsv' | uniq | wc -l) queries rewritten."
+echo "$(cut -f1,2 "${result_dir}/2_query.tsv" | uniq | wc -l) queries rewritten."
 cd "${cwd}" || exit
 
-gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} "
+if [ -n "${calcite}" ]; then
+  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -calcite"
+else
+  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} "
+fi
