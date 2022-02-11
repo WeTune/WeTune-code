@@ -11,9 +11,9 @@ while [[ $# -gt 0 ]]; do
     tag="${2}"
     shift 2
     ;;
-  "-opt" | "-optimizer")
-    optimizer="${2}"
-    shift 2
+  "-spes")
+    optimizer="SPES"
+    shift 1
     ;;
   *)
     positional_args+=("${1}")

@@ -81,7 +81,7 @@ click-to-run/stop-discovery.sh
 
 The first commands launches many processes running in the background.
 
-* `-spes`: use SEPS verifier to prove rule correctness.
+* `-spes`: use SPES verifier to prove rule correctness.
 
 The procedure will consume all CPUs and take a long time (~3600 CPU hours) to finish. The discovered rules so far can be
 found in `wtune_data/enumeration/run_*/success.txt` (`*` here is a timestamp).
@@ -124,10 +124,8 @@ If rewriting Calcite queries, the rewritten queries can be found in `wtune_data/
 
 ```shell
 click-to-run/estimate-cost.sh
-
 click-to-run/make-db.sh
 click-to-run/generate-data.sh
-
 click-to-run/profile-cost.sh
 ```
 
@@ -239,28 +237,24 @@ In the paper, we evaluate queries on 4 different workload types:
 | large         | 1 M       | uniform            |
 | large_zipf    | 1 M       | zipfian           |
 
-### Prover types
+### Evaluation Parameter selection
 
-Currently, we list 2 kinds of verifier: `WeTune` and `Spes`.
-
-### Parameter selection
-
-By default, the scripts above evaluate queries optimized by `WeTune` on workload of `base` type. However, for example,
+By default, the scripts above evaluate queries optimized by built-in verifier on workload of `base` type. However, for example,
 if you would like to evaluate on different type of workload or evaluate queries optimized by a different verifier, you
 can set additional parameters to the scripts in section [Evaluate the Rewritings](#Evaluate the Rewritings):
 
 ```shell
-click-to-run/estimate-cost.sh [-optimizer] <verifier_type>
+click-to-run/estimate-cost.sh [-spes] 
 click-to-run/make-db.sh [-tag] <workload_type>
-click-to-run/generate-data.sh [-tag] <workload_type> [-optimizer] <verifier_type>
-click-to-run/profile-cost.sh [-tag] <workload_type> [-optimizer] <verifier_type>
+click-to-run/generate-data.sh [-tag] <workload_type> [-spes]
+click-to-run/profile-cost.sh [-tag] <workload_type> [-spes]
 ```
 
-For example, to evaluation queries optimized by `Spes` on workload type of `zipf`, run:
+For example, to evaluation queries optimized by SPES on workload type of `zipf`, run:
 
 ```shell
-click-to-run/estimate-cost.sh -optimizer Spes
+click-to-run/estimate-cost.sh -spes
 click-to-run/make-db.sh -tag zipf
-click-to-run/generate-data.sh -tag zipf -optimizer Spes
-click-to-run/profile-cost.sh -tag zipf -optimizer Spes
+click-to-run/generate-data.sh -tag zipf -spes
+click-to-run/profile-cost.sh -tag zipf -spes
 ```

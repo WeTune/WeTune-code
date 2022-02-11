@@ -18,9 +18,9 @@ while [[ $# -gt 0 ]]; do
     target="${2}"
     shift 2
     ;;
-  "-optimizer")
-    optimizer="${2}"
-    shift 2
+  "-spes")
+    optimizer="SPES"
+    shift 1
     ;;
   "-tag")
     tag="${2}"
@@ -83,7 +83,7 @@ doTruncateOne() {
   echo "truncating ${tableName}"
 #  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "${data_dir}/schemas_mssql/${appName}.sql"
   sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
-    DELETE FROM ${tableName};
+    DELETE FROM [${tableName}];
     GO
 EOF
 }

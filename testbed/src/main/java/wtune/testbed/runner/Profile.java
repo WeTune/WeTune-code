@@ -1,5 +1,6 @@
 package wtune.testbed.runner;
 
+import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.lang3.tuple.Pair;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
@@ -86,18 +87,21 @@ public class Profile implements Runner {
 
     final List<Statement> stmtPool = getStmtPool();
     boolean started = (startStmt == null);
-    for (Statement stmt : stmtPool) {
-      if (stmts != null && !stmts.contains(stmt.toString())) continue;
-      if (appNames != null && !appNames.contains(stmt.appName())) continue;
-      if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
-      if (!started) {
-        if (startStmt.equals(stmt.toString())) started = true;
-        else continue;
-      }
+    try (final ProgressBar pb = new ProgressBar("Profile", stmtPool.size())) {
+      for (Statement stmt : stmtPool) {
+        if (stmts != null && !stmts.contains(stmt.toString())) continue;
+        if (appNames != null && !appNames.contains(stmt.appName())) continue;
+        if (blacklist != null && blacklist.isBlocked(tag, stmt)) continue;
+        if (!started) {
+          if (startStmt.equals(stmt.toString())) started = true;
+          else continue;
+        }
 
-      if (!runOne(stmt.original(), stmt.rewritten(OptimizerType.valueOf(optimizedBy)))) {
-        LOG.log(WARNING, "failed to profile {0}", stmt.original());
-        failures.add(stmt.toString());
+        if (!runOne(stmt.original(), stmt.rewritten(OptimizerType.valueOf(optimizedBy)))) {
+          LOG.log(WARNING, "failed to profile {0}", stmt.original());
+          failures.add(stmt.toString());
+        }
+        pb.step();
       }
     }
 
@@ -149,7 +153,7 @@ public class Profile implements Runner {
       return true;
     } catch (Exception e) {
       LOG.log(ERROR, "failed to profile {0}", original);
-      e.printStackTrace();
+      // e.printStackTrace();
       return false;
     }
   }
