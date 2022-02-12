@@ -20,11 +20,12 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
   static final String KEY_APP_NAME = "app";
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
+  static final String KEY_TRACE = "trace";
 
   private static final String SELECT_ITEMS =
       String.format(
-          "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
-          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
+          "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s, trace AS %s ",
+          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL, KEY_TRACE);
 
   private String OPT_STMTS_TABLE;
   private String FIND_ALL;
@@ -55,7 +56,7 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
         Statement.mk(
-            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
+            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), rs.getString(KEY_TRACE));
     stmt.setRewritten(true);
     return stmt;
   }

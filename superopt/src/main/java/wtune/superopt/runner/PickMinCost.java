@@ -225,7 +225,10 @@ public class PickMinCost implements Runner {
               writer.printf(
                   "%s\t%d\t%s\t%s\n",
                   group.appName, group.stmtId, group.sqls.get(idx), group.traces.get(idx)));
-      IOSupport.appendTo(outTraceFile, writer -> writer.println(group.traces.get(idx)));
+      IOSupport.appendTo(
+          outTraceFile,
+          writer ->
+              writer.printf("%s\t%d\t%d\t%s\n", group.appName, group.stmtId, idx, group.traces.get(idx)));
     } else {
       IOSupport.appendTo(
           outOptFile,

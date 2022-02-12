@@ -22,11 +22,12 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   static final String KEY_APP_NAME = "app";
   static final String KEY_STMT_ID = "stmtId";
   static final String KEY_RAW_SQL = "rawSql";
+  static final String KEY_TRACE = "trace";
 
   private static final String SELECT_ITEMS =
       String.format(
-          "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s ",
-          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL);
+          "opt_app_name AS %s, opt_stmt_id AS %s, opt_raw_sql AS %s, trace AS %s ",
+          KEY_APP_NAME, KEY_STMT_ID, KEY_RAW_SQL, KEY_TRACE);
   private static final String OPT_STMTS_TABLE = "calcite_opt_stmts";
   private static final String FIND_ALL = "SELECT " + SELECT_ITEMS + "FROM " + OPT_STMTS_TABLE + " ";
   private static final String FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
@@ -39,7 +40,7 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   private static Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
         Statement.mkCalcite(
-            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
+            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), rs.getString(KEY_TRACE));
     stmt.setRewritten(true);
     return stmt;
   }

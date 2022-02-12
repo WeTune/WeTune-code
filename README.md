@@ -173,6 +173,24 @@ click-to-run/profile-cost.sh -tag zipf
 ```
 The profiling result is actually stored in file `wtune_data/profile/result/{workload_type}` by default.
 
+### View results
+Finally, you can run: 
+```shell
+click-to-run/view-all.sh [-spes] [-calcite]
+```
+to view rewriting and profiling results together. 
+The resulting files are stored in `wtune_data/viewall/result/` by default.
+```shell
+|-- viewall
+    |-- result
+        |-- rules.tsv       # Used rules during rewriting
+        |-- statistic.tsv   # Rewritten queries and profiling results
+```
+* `-spes`: view results of queries optimized by SPES. 
+Corresponding output files are in `wtune_data/viewall/result_spes/`. 
+* `-calcite`: view results of calcite 464 queries. 
+Corresponding output files are in `wtune_data/viewall_calcite/result/`.
+
 ## Run Examples
 
 This section provides the instruction of run examples:
