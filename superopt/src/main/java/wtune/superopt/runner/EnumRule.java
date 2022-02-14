@@ -278,7 +278,7 @@ public class EnumRule implements Runner {
 
     try {
       final List<Substitution> rules =
-          useSpes ? enumConstraints(f0, f1, timeout) : enumConstraintsSPES(f0, f1, timeout);
+          !useSpes ? enumConstraints(f0, f1, timeout) : enumConstraintsSPES(f0, f1, timeout);
       if (rules == null) {
         numSkipped.incrementAndGet();
         return;
