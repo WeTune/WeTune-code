@@ -6,6 +6,7 @@ enum_dir='enumeration'
 parallelism=4
 timeout=900000
 verbose=0
+useSpes='false'
 num_partitions=32
 num_cpus=$(grep -c ^processor /proc/cpuinfo)
 
@@ -73,3 +74,15 @@ for ((i = from_partition; i <= to_partition; i++)); do
     --args="EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i} -useSpes=${useSpes}" \
     >"enum_log/num.log.${i}" 2>&1 &
 done
+
+# check whether each process interrupts unexpectedly
+echo "Set up a monitor to check whether each process interrupts unexpectedly."
+
+nohup click-to-run/discover-rules-monitor.sh \
+  -parallelism "${parallelism}" \
+  -timeout "${timeout}" \
+  -verbose "${verbose}" \
+  -spes "${useSpes}" \
+  -num_partitions "${num_partitions}" \
+  -from_partition "${from_partition}" \
+  -to_partition "${to_partition}" >/dev/null 2>&1 &

@@ -49,6 +49,7 @@ public class EnumRule implements Runner {
   private Pair<Fragment, Fragment> target;
   private ProgressBar progressBar;
   private CountDownLatch latch;
+  private int iEnd, jEnd;
 
   private final AtomicInteger numSkipped = new AtomicInteger(0);
 
@@ -145,6 +146,7 @@ public class EnumRule implements Runner {
   private void fromEnumeration() throws IOException, InterruptedException {
     final List<Fragment> templates = useSpes ? enumFragmentsSPES() : enumFragments();
     final int numTemplates = templates.size();
+    setLastOwnedPair(numTemplates);
 
     int[] completed = null;
     if (prevCheckpoint != null) {
@@ -260,6 +262,22 @@ public class EnumRule implements Runner {
     return ordinal % numWorker == workerIndex;
   }
 
+  private void setLastOwnedPair(int total) {
+    for (int i = total - 1; i >= 0; --i) {
+      for (int j = total - 1; j >= i; --j) {
+        if (isOwned(ordinal(total, i, j))) {
+          iEnd = i; jEnd = j;
+          return;
+        }
+      }
+    }
+    assert false;
+  }
+
+  private boolean isLastPair(int i, int j) {
+    return i == iEnd && j == jEnd;
+  }
+
   private void enumerate(Fragment f0_, Fragment f1_, int i, int j) {
     enumerate0(f0_, f1_, i, j);
     if (progressBar != null) progressBar.step();
@@ -321,6 +339,8 @@ public class EnumRule implements Runner {
           });
 
     } finally {
+      if (i >= 0 && j >= 0 && isLastPair(i, j))
+        IOSupport.appendTo(checkpoint, out -> out.printf("finished\n"));
       if (outLocked) outLock.unlock();
       if (errLocked) errLock.unlock();
     }

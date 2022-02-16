@@ -50,14 +50,17 @@ t=$(date '+%m%d%H%M%S')
 rules_file="${rule_dir}/rules.${t}.txt"
 
 for ((i = from_partition; i <= to_partition; i++)); do
-  run_dir=$(ls -t -1 "${enum_dir}" | grep "run.\+_${i}" | head -1)
-  if [ -z "${run_dir}" ] || ! [ -f "${enum_dir}/${run_dir}/success.txt" ]; then
-    echo "Excepted ${data_dir}/${enum_dir}/run*_${i}/success.txt does not exist."
-    exit 1
-  else
-    echo "Found partition file: ${data_dir}/${enum_dir}/${run_dir}/success.txt"
-  fi
-  cat "${enum_dir}/${run_dir}/success.txt" >>"${rules_file}"
+#  run_dir=$(ls -t -1 "${enum_dir}" | grep "run.\+_${i}" | head -1)
+  run_dirs=$(ls -t -1 "${enum_dir}" | grep "run.\+_${i}")
+  for run_dir in ${run_dirs}; do
+    if ! [ -f "${enum_dir}/${run_dir}/success.txt" ]; then
+      echo "Excepted ${data_dir}/${enum_dir}/run*_${i}/success.txt does not exist."
+      exit 1
+    else
+      echo "Found partition file: ${data_dir}/${enum_dir}/${run_dir}/success.txt"
+    fi
+    cat "${enum_dir}/${run_dir}/success.txt" >>"${rules_file}"
+  done
 done
 
 ln -sfr "${rules_file}" "${rule_dir}/rules.local.txt"

@@ -81,7 +81,9 @@ click-to-run/stop-discovery.sh
 
 The first commands launches many processes running in the background.
 
-* `-spes`: use SPES verifier to prove rule correctness.
+* `-spes`: use SPES verifier to prove rule correctness. We recommend to use 
+`click-to-run/discover-rules-continuous.sh [-spes]` instead for SPES verifier since sometimes the processes 
+may be unexpectedly shut down in current implementation, which remains to be fixed in the future work.
 
 The procedure will consume all CPUs and take a long time (~3600 CPU hours) to finish. The discovered rules so far can be
 found in `wtune_data/enumeration/run_*/success.txt` (`*` here is a timestamp).
