@@ -1,6 +1,7 @@
 package wtune.stmt.dao.internal;
 
 import wtune.stmt.Statement;
+import wtune.stmt.StmtProfile;
 import wtune.stmt.dao.OptStatementDao;
 import wtune.stmt.support.OptimizerType;
 
@@ -35,6 +36,7 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
   // Update optimized stmts query
   private String CLEAN_OPT_STMT;
   private String ADD_OPT_STMTS;
+  private String UPDATE_PROFILE_TEMPLATE;
 
   private DbOptStatementDao(OptimizerType kind) {
     switch (kind) {
@@ -50,7 +52,10 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
     FIND_ONE = FIND_ALL + "WHERE opt_app_name = ? AND opt_stmt_id = ?";
     FIND_BY_APP = FIND_ALL + "WHERE opt_app_name = ?";
     CLEAN_OPT_STMT = "DELETE FROM " + OPT_STMTS_TABLE + " WHERE TRUE";
-    ADD_OPT_STMTS = "INSERT INTO " + OPT_STMTS_TABLE + " VALUES (?, ?, ?, ?)";
+    ADD_OPT_STMTS = "INSERT INTO " + OPT_STMTS_TABLE + " VALUES (?, ?, ?, ?, null, null, null, null)";
+    UPDATE_PROFILE_TEMPLATE =
+        "UPDATE " + OPT_STMTS_TABLE +
+        " SET %s_improve = ? WHERE opt_app_name = ? AND opt_stmt_id = ?";
   }
 
   private static Statement toStatement(ResultSet rs) throws SQLException {
@@ -137,6 +142,22 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
         insert0.setString(4, stmt.stackTrace());
 
       insert0.executeUpdate();
+    } catch (SQLException throwables) {
+      throw new RuntimeException(throwables);
+    }
+  }
+
+  @Override
+  public void updateStmtProfile(StmtProfile stmtProfile) {
+    try {
+      final String updateQuery = UPDATE_PROFILE_TEMPLATE.formatted(stmtProfile.workloadType());
+      final PreparedStatement update0 = prepare(updateQuery);
+
+      update0.setDouble(1, stmtProfile.p50Improve());
+      update0.setString(2, stmtProfile.appName());
+      update0.setInt(3, stmtProfile.stmtId());
+
+      update0.executeUpdate();
     } catch (SQLException throwables) {
       throw new RuntimeException(throwables);
     }

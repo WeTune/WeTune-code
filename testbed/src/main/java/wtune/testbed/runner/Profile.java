@@ -45,9 +45,6 @@ public class Profile implements Runner {
 
   private void initBlackList() {
     blacklist = new Blacklist();
-    blacklist.block(GenerateTableData.ZIPF, "redmine-307");
-    blacklist.block(GenerateTableData.ZIPF, "redmine-808");
-    blacklist.block(GenerateTableData.ZIPF, "redmine-942");
   }
 
   public void prepare(String[] argStrings) throws Exception {

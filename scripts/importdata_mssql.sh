@@ -53,7 +53,7 @@ doTruncateOne() {
 
 #  sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" -i "${defaultDataPath}/schemas_mssql/${appName}.sql"
   sqlcmd -U "$username" -P "$password" -S "$host","$port" -d "$dbName" <<EOF
-    delete from ${tableName} where true;
+    delete from [${tableName}];
     GO
 EOF
 }

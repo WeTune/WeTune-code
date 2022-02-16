@@ -1,6 +1,7 @@
 package wtune.stmt.dao;
 
 import wtune.stmt.Statement;
+import wtune.stmt.StmtProfile;
 import wtune.stmt.dao.internal.DbOptStatementDao;
 import wtune.stmt.support.OptimizerType;
 
@@ -16,6 +17,8 @@ public interface OptStatementDao {
   void cleanOptStmts();
 
   void updateOptStmts(Statement stmt);
+
+  void updateStmtProfile(StmtProfile stmtProfile);
 
   static OptStatementDao instance(OptimizerType type) {
     return DbOptStatementDao.instance(type);

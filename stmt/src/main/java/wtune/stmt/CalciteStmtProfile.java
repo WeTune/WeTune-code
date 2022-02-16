@@ -22,15 +22,15 @@ public interface CalciteStmtProfile {
   static CalciteStmtProfile mk(
       String appName,
       int stmtId,
-      Integer p50Base,
-      Integer p90Base,
-      Integer p99Base,
-      Integer p50OptCalcite,
-      Integer p90OptCalcite,
-      Integer p99OptCalcite,
-      Integer p50OptWeTune,
-      Integer p90OptWeTune,
-      Integer p99OptWeTune) {
+      Long p50Base,
+      Long p90Base,
+      Long p99Base,
+      Long p50OptCalcite,
+      Long p90OptCalcite,
+      Long p99OptCalcite,
+      Long p50OptWeTune,
+      Long p90OptWeTune,
+      Long p99OptWeTune) {
     return new CalCiteStmtProfileImpl(
         appName,
         stmtId,

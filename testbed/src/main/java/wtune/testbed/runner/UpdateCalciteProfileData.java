@@ -33,7 +33,7 @@ public class UpdateCalciteProfileData implements Runner {
       final String appName = baseProfile[0];
       final String appId = baseProfile[1];
 
-      Integer p50Base = null,
+      Long p50Base = null,
           p90Base = null,
           p99Base = null,
           p50OptCalcite = null,
@@ -43,18 +43,18 @@ public class UpdateCalciteProfileData implements Runner {
           p90OptWeTune = null,
           p99OptWeTune = null;
 
-      p50Base = Integer.parseInt(baseProfile[3]);
-      p90Base = Integer.parseInt(baseProfile[4]);
-      p99Base = Integer.parseInt(baseProfile[5]);
+      p50Base = Long.parseLong(baseProfile[3]);
+      p90Base = Long.parseLong(baseProfile[4]);
+      p99Base = Long.parseLong(baseProfile[5]);
 
       if (optProfile[2].split("_")[1].equals("cal")) {
-        p50OptCalcite = Integer.parseInt(optProfile[3]);
-        p90OptCalcite = Integer.parseInt(optProfile[4]);
-        p99OptCalcite = Integer.parseInt(optProfile[5]);
+        p50OptCalcite = Long.parseLong(optProfile[3]);
+        p90OptCalcite = Long.parseLong(optProfile[4]);
+        p99OptCalcite = Long.parseLong(optProfile[5]);
       } else {
-        p50OptWeTune = Integer.parseInt(optProfile[3]);
-        p90OptWeTune = Integer.parseInt(optProfile[4]);
-        p99OptWeTune = Integer.parseInt(optProfile[5]);
+        p50OptWeTune = Long.parseLong(optProfile[3]);
+        p90OptWeTune = Long.parseLong(optProfile[4]);
+        p99OptWeTune = Long.parseLong(optProfile[5]);
       }
 
       if (i + 2 < bound) {
@@ -62,13 +62,13 @@ public class UpdateCalciteProfileData implements Runner {
         if (nextProfile[0].equals(appName) && nextProfile[1].equals(appId)) {
           final String[] optProfile1 = lines.get(i + 3).split(";");
           if (optProfile1[2].split("_")[1].equals("cal")) {
-            p50OptCalcite = Integer.parseInt(optProfile1[3]);
-            p90OptCalcite = Integer.parseInt(optProfile1[4]);
-            p99OptCalcite = Integer.parseInt(optProfile1[5]);
+            p50OptCalcite = Long.parseLong(optProfile1[3]);
+            p90OptCalcite = Long.parseLong(optProfile1[4]);
+            p99OptCalcite = Long.parseLong(optProfile1[5]);
           } else {
-            p50OptWeTune = Integer.parseInt(optProfile1[3]);
-            p90OptWeTune = Integer.parseInt(optProfile1[4]);
-            p99OptWeTune = Integer.parseInt(optProfile1[5]);
+            p50OptWeTune = Long.parseLong(optProfile1[3]);
+            p90OptWeTune = Long.parseLong(optProfile1[4]);
+            p99OptWeTune = Long.parseLong(optProfile1[5]);
           }
           i += 2;
         }

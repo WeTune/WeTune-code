@@ -7,23 +7,27 @@ public interface StmtProfile {
 
   int stmtId();
 
-  float p50Improve();
+  String workloadType();
 
-  float p90Improve();
+  double p50Improve();
 
-  float p99Improve();
+  double p90Improve();
+
+  double p99Improve();
 
   static StmtProfile mk(String appName,
                         int stmtId,
-                        int p50BaseLatency,
-                        int p90BaseLatency,
-                        int p99BaseLatency,
-                        int p50OptLatency,
-                        int p90OptLatency,
-                        int p99OptLatency) {
+                        String workloadType,
+                        long p50BaseLatency,
+                        long p90BaseLatency,
+                        long p99BaseLatency,
+                        long p50OptLatency,
+                        long p90OptLatency,
+                        long p99OptLatency) {
     return new StmtProfileImpl(
         appName,
         stmtId,
+        workloadType,
         p50BaseLatency,
         p90BaseLatency,
         p99BaseLatency,

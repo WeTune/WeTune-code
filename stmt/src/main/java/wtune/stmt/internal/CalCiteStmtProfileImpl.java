@@ -7,30 +7,30 @@ public class CalCiteStmtProfileImpl implements CalciteStmtProfile {
   private final String appName;
   private final int stmtId;
 
-  private final Integer p50BaseLatency;
-  private final Integer p90BaseLatency;
-  private final Integer p99BaseLatency;
+  private final Long p50BaseLatency;
+  private final Long p90BaseLatency;
+  private final Long p99BaseLatency;
 
-  private final Integer p50OptLatencyCalcite;
-  private final Integer p90OptLatencyCalcite;
-  private final Integer p99OptLatencyCalcite;
+  private final Long p50OptLatencyCalcite;
+  private final Long p90OptLatencyCalcite;
+  private final Long p99OptLatencyCalcite;
 
-  private final Integer p50OptLatencyWeTune;
-  private final Integer p90OptLatencyWeTune;
-  private final Integer p99OptLatencyWeTune;
+  private final Long p50OptLatencyWeTune;
+  private final Long p90OptLatencyWeTune;
+  private final Long p99OptLatencyWeTune;
 
   public CalCiteStmtProfileImpl(
       String appName,
       int stmtId,
-      Integer p50BaseLatency,
-      Integer p90BaseLatency,
-      Integer p99BaseLatency,
-      Integer p50OptLatencyCalcite,
-      Integer p90OptLatencyCalcite,
-      Integer p99OptLatencyCalcite,
-      Integer p50OptLatencyWeTune,
-      Integer p90OptLatencyWeTune,
-      Integer p99OptLatencyWeTune) {
+      Long p50BaseLatency,
+      Long p90BaseLatency,
+      Long p99BaseLatency,
+      Long p50OptLatencyCalcite,
+      Long p90OptLatencyCalcite,
+      Long p99OptLatencyCalcite,
+      Long p50OptLatencyWeTune,
+      Long p90OptLatencyWeTune,
+      Long p99OptLatencyWeTune) {
     this.appName = appName;
     this.stmtId = stmtId;
     this.p50BaseLatency = p50BaseLatency;
