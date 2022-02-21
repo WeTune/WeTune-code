@@ -40,6 +40,7 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
 
   private DbOptStatementDao(OptimizerType kind) {
     switch (kind) {
+      case WeTune_Raw -> OPT_STMTS_TABLE = "wtune_opt_stmts";
       case WeTune -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune";
       case SPES -> OPT_STMTS_TABLE = "wtune_opt_stmts_spes";
       case Merge -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune_spes";

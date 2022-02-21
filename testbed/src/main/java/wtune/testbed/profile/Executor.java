@@ -18,7 +18,4 @@ public interface Executor extends Actuator {
 
   void close();
 
-  static Executor make(Connection connection, String sql) {
-    return new ExecutorImpl(connection, sql);
-  }
 }

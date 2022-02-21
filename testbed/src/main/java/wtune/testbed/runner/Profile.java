@@ -107,7 +107,6 @@ public class Profile implements Runner {
 
   private List<Statement> getStmtPool() {
     final OptimizerType type = OptimizerType.valueOf(optimizedBy);
-    System.out.println("Optimize type: " + type);
     return Statement.findAllRewritten(type);
   }
 
@@ -117,7 +116,7 @@ public class Profile implements Runner {
     config.setDryRun(dryRun);
     config.setUseSqlServer(useSqlServer);
     config.setDbProperties(getDbProps(original.app()));
-    config.setParamSaveFile(getParamSaveFile(tag));
+    config.setParamSaveFile(getParamSaveFile());
     config.setWarmupCycles(10);
     config.setProfileCycles(100);
 
@@ -185,8 +184,8 @@ public class Profile implements Runner {
         });
   }
 
-  private static Function<Statement, String> getParamSaveFile(String tag) {
+  private Function<Statement, String> getParamSaveFile() {
     return stmt ->
-        "wtune_data/params/%s_%s_%s".formatted(stmt, stmt.isRewritten() ? "opt" : "base", tag);
+        "wtune_data/params/%s_%s_%s_%s".formatted(stmt, stmt.isRewritten() ? "opt" : "base", tag, optimizedBy);
   }
 }

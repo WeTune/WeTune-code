@@ -125,7 +125,7 @@ public class ProfileCalcite implements Runner {
     config.setDryRun(dryRun);
     config.setUseSqlServer(useSqlServer);
     config.setDbProperties(getDbProps(stmt.app()));
-    config.setParamSaveFile(getParamSaveFile(tag));
+    config.setParamSaveFile(getParamSaveFile());
     config.setWarmupCycles(10);
     config.setProfileCycles(100);
     return config;
@@ -162,7 +162,7 @@ public class ProfileCalcite implements Runner {
         });
   }
 
-  private static Function<Statement, String> getParamSaveFile(String tag) {
+  private Function<Statement, String> getParamSaveFile() {
     return stmt ->
         "wtune_data/params/%s_%s_%s".formatted(stmt, stmt.isRewritten() ? "opt" : "base", tag);
   }
