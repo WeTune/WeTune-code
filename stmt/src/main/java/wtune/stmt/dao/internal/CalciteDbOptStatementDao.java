@@ -2,6 +2,7 @@ package wtune.stmt.dao.internal;
 
 import wtune.stmt.Statement;
 import wtune.stmt.dao.CalciteOptStatementDao;
+import wtune.stmt.support.OptimizerType;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,11 +38,12 @@ public class CalciteDbOptStatementDao extends DbDao implements CalciteOptStateme
   private static final String CLEAN_OPT_STMT = "DELETE FROM " + OPT_STMTS_TABLE + " WHERE TRUE";
   private static final String ADD_OPT_STMTS = "INSERT INTO " + OPT_STMTS_TABLE + " VALUES (?, ?, ?, ?, null)";
 
-  private static Statement toStatement(ResultSet rs) throws SQLException {
+  private Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
         Statement.mkCalcite(
             rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), rs.getString(KEY_TRACE));
     stmt.setRewritten(true);
+    stmt.setOptimizerType(OptimizerType.WeTune);
     return stmt;
   }
 

@@ -3,6 +3,7 @@ package wtune.stmt.dao.internal;
 import wtune.stmt.CalciteStmtProfile;
 import wtune.stmt.Statement;
 import wtune.stmt.dao.CalciteStatementDao;
+import wtune.stmt.support.OptimizerType;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -69,6 +70,14 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
         rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
   }
 
+  private static Statement toCalciteRewrittenStatement(ResultSet rs) throws SQLException {
+    final Statement stmt =
+        Statement.mkCalcite(
+            rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), null);
+    stmt.setOptimizerType(OptimizerType.Calcite);
+    return stmt;
+  }
+
   @Override
   public Statement findOne(String appName, int stmtId) {
     try {
@@ -95,7 +104,7 @@ public class CalciteDbStatementDao extends DbDao implements CalciteStatementDao 
 
       final ResultSet rs = ps.executeQuery();
 
-      if (rs.next()) return toStatement(rs);
+      if (rs.next()) return toCalciteRewrittenStatement(rs);
       else return null;
 
     } catch (SQLException throwables) {

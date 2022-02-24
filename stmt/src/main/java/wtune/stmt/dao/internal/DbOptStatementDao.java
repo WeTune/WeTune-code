@@ -38,12 +38,16 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
   private String ADD_OPT_STMTS;
   private String UPDATE_PROFILE_TEMPLATE;
 
+  private OptimizerType optimizerType;
+
   private DbOptStatementDao(OptimizerType kind) {
+    this.optimizerType = kind;
     switch (kind) {
       case WeTune_Raw -> OPT_STMTS_TABLE = "wtune_opt_stmts";
       case WeTune -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune";
       case SPES -> OPT_STMTS_TABLE = "wtune_opt_stmts_spes";
       case Merge -> OPT_STMTS_TABLE = "wtune_opt_stmts_wtune_spes";
+      case Calcite -> OPT_STMTS_TABLE = "wtune_opt_stmts_calcite";
     }
     initQueryTemplates();
   }
@@ -59,11 +63,12 @@ public class DbOptStatementDao extends DbDao implements OptStatementDao {
         " SET %s_improve = ? WHERE opt_app_name = ? AND opt_stmt_id = ?";
   }
 
-  private static Statement toStatement(ResultSet rs) throws SQLException {
+  private Statement toStatement(ResultSet rs) throws SQLException {
     final Statement stmt =
         Statement.mk(
             rs.getString(KEY_APP_NAME), rs.getInt(KEY_STMT_ID), rs.getString(KEY_RAW_SQL), rs.getString(KEY_TRACE));
     stmt.setRewritten(true);
+    stmt.setOptimizerType(optimizerType);
     return stmt;
   }
 

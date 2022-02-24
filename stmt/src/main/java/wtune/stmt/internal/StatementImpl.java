@@ -7,6 +7,9 @@ import wtune.stmt.dao.OptStatementDao;
 import wtune.stmt.dao.StatementDao;
 import wtune.stmt.support.OptimizerType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class StatementImpl implements Statement {
   private final String appName;
   private final String rawSql;
@@ -16,13 +19,18 @@ public class StatementImpl implements Statement {
   private SqlNode ast;
 
   private boolean isRewritten;
-  private Statement otherVersion;
+  private Statement original;
+  private OptimizerType optimizerType;
+  private final Map<OptimizerType, Statement> rewrittenVersions;
 
   protected StatementImpl(String appName, int stmtId, String rawSql, String stackTrace) {
     this.appName = appName;
     this.stmtId = stmtId;
     this.rawSql = rawSql;
     this.stackTrace = stackTrace;
+    this.optimizerType = null;
+
+    this.rewrittenVersions = new HashMap<>();
   }
 
   public static Statement build(String appName, String rawSql, String stackTrace) {
@@ -60,6 +68,11 @@ public class StatementImpl implements Statement {
   }
 
   @Override
+  public OptimizerType optimizerType() {
+    return optimizerType;
+  }
+
+  @Override
   public SqlNode ast() {
     if (ast == null) ast = SqlSupport.parseSql(app().dbType(), rawSql);
     return ast;
@@ -72,21 +85,17 @@ public class StatementImpl implements Statement {
 
   @Override
   public Statement rewritten(OptimizerType type) {
-    if (isRewritten) return this;
-    if (otherVersion == null) otherVersion = OptStatementDao.instance(type).findOne(appName, stmtId);
-    return otherVersion;
+    if (isRewritten && type == optimizerType) return this;
+    if (!rewrittenVersions.containsKey(type))
+      rewrittenVersions.put(type, OptStatementDao.instance(type).findOne(appName, stmtId));
+    return rewrittenVersions.get(type);
   }
 
   @Override
   public Statement original() {
-    if (!isRewritten) return this;
-    if (otherVersion == null) otherVersion = StatementDao.instance().findOne(appName, stmtId);
-    return otherVersion;
-  }
-
-  @Override
-  public Statement calciteVersion() {
-    return null;
+    if (!isRewritten) original = this;
+    if (original == null) original = StatementDao.instance().findOne(appName, stmtId);
+    return original;
   }
 
   @Override
@@ -97,6 +106,11 @@ public class StatementImpl implements Statement {
   @Override
   public void setRewritten(boolean isRewritten) {
     this.isRewritten = isRewritten;
+  }
+
+  @Override
+  public void setOptimizerType(OptimizerType type) {
+    this.optimizerType = type;
   }
 
   @Override

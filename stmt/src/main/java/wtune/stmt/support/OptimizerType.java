@@ -4,5 +4,6 @@ public enum OptimizerType {
   WeTune_Raw,
   WeTune,
   SPES,
-  Merge
+  Merge,
+  Calcite
 }

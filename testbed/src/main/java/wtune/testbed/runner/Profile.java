@@ -68,7 +68,10 @@ public class Profile implements Runner {
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");
-    out = Runner.dataDir().resolve(dir).resolve(optimizedBy).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+    out = Runner.dataDir()
+            .resolve(dir)
+            .resolve(optimizedBy)
+            .resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
 
     if (!Files.exists(out)) {
       Files.createDirectories(out.getParent());
@@ -122,7 +125,7 @@ public class Profile implements Runner {
 
     LOG.log(System.Logger.Level.INFO, "start profile {0}", original);
 
-    try{
+    try {
       final Pair<Metric, Metric> comp = compare(original, rewritten, config);
       if (comp == null) {
         LOG.log(ERROR, "failed to profile {0}", original);
@@ -186,6 +189,8 @@ public class Profile implements Runner {
 
   private Function<Statement, String> getParamSaveFile() {
     return stmt ->
-        "wtune_data/params/%s_%s_%s_%s".formatted(stmt, stmt.isRewritten() ? "opt" : "base", tag, optimizedBy);
+        stmt.isRewritten()
+            ? "wtune_data/params/%s_%s_%s_%s".formatted(stmt, "opt", stmt.optimizerType(), tag)
+            : "wtune_data/params/%s_%s_%s".formatted(stmt, "base", tag);
   }
 }

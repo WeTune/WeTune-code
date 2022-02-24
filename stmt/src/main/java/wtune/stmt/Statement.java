@@ -22,19 +22,21 @@ public interface Statement {
 
   boolean isRewritten();
 
+  OptimizerType optimizerType();
+
   SqlNode ast();
 
   void setStmtId(int stmtId);
 
   void setRewritten(boolean rewritten);
 
+  void setOptimizerType(OptimizerType type);
+
   Statement rewritten();
 
   Statement rewritten(OptimizerType type);
 
   Statement original();
-
-  Statement calciteVersion();
 
   default App app() {
     return App.of(appName());

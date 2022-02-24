@@ -18,23 +18,23 @@ password=
 table=
 
 dbType() {
-#  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
-#    dbType=${POSTGRESQL}
-#    appName=${1}
-#  else
-#    head="${1%:*}"
-#    tail="${1##*:}"
-#    if [ "${tail}" != "$1" ]; then
-#      dbType=${tail}
-#      appName=${head}
-#    else
-#      dbType=${MYSQL}
-#      appName=${1}
-#    fi
-#  fi
+  if [ "$1" = 'discourse' ] || [ "$1" = 'gitlab' ] || [ "$1" = 'homeland' ]; then
+    dbType=${POSTGRESQL}
+    appName=${1}
+  else
+    head="${1%:*}"
+    tail="${1##*:}"
+    if [ "${tail}" != "$1" ]; then
+      dbType=${tail}
+      appName=${head}
+    else
+      dbType=${MYSQL}
+      appName=${1}
+    fi
+  fi
 
-  dbType=${MYSQL}
-  appName=${1}
+#  dbType=${MYSQL}
+#  appName=${1}
 
   postfix=${2?:"no postfix specified"}
   dbName=${appName}_${postfix}
@@ -138,8 +138,8 @@ doImportData() {
 }
 
 if [ "$1" = 'all' ]; then
-  #for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
-  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'forest_blog' 'gitlab' 'homeland' 'lobsters' 'redmine' 'refinerycms' 'shopizer' 'solidus' 'spree'
+  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'febs' 'forest_blog' 'gitlab' 'guns' 'halo' 'homeland' 'lobsters' 'publiccms' 'pybbs' 'redmine' 'refinerycms' 'sagan' 'shopizer' 'solidus' 'spree'
+#  for db in 'broadleaf' 'diaspora' 'discourse' 'eladmin' 'fatfreecrm' 'forest_blog' 'gitlab' 'homeland' 'lobsters' 'redmine' 'refinerycms' 'shopizer' 'solidus' 'spree'
   do
     dbType "$db" "$2"
     getConnProp "$3" "$4" "$5" "$6"

@@ -7,6 +7,9 @@ import wtune.stmt.dao.CalciteOptStatementDao;
 import wtune.stmt.dao.CalciteStatementDao;
 import wtune.stmt.support.OptimizerType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class CalciteStatementImpl implements Statement {
   private final String appName;
   private final String rawSql;
@@ -16,15 +19,18 @@ public class CalciteStatementImpl implements Statement {
   private SqlNode ast;
 
   private boolean isRewritten;
-  private Statement otherVersion;
-
-  private Statement calciteVersion;
+  private Statement original;
+  private OptimizerType optimizerType;
+  private final Map<OptimizerType, Statement> rewrittenVersions;
 
   protected CalciteStatementImpl(String appName, int stmtId, String rawSql, String stackTrace) {
     this.appName = appName;
     this.stmtId = stmtId;
     this.rawSql = rawSql;
     this.stackTrace = stackTrace;
+    this.optimizerType = null;
+
+    this.rewrittenVersions = new HashMap<>();
   }
 
   public static Statement build(String appName, String rawSql, String stackTrace) {
@@ -61,6 +67,11 @@ public class CalciteStatementImpl implements Statement {
   }
 
   @Override
+  public OptimizerType optimizerType() {
+    return optimizerType;
+  }
+
+  @Override
   public SqlNode ast() {
     if (ast == null) ast = SqlSupport.parseSql(app().dbType(), rawSql);
     return ast;
@@ -73,25 +84,22 @@ public class CalciteStatementImpl implements Statement {
 
   @Override
   public Statement rewritten(OptimizerType type) {
-    if (isRewritten) return this;
-    if (otherVersion == null)
-      otherVersion = CalciteOptStatementDao.instance().findOne(appName, stmtId);
-    return otherVersion;
+    if (isRewritten && type == optimizerType) return this;
+    if (!rewrittenVersions.containsKey(type)) {
+      if (type == OptimizerType.Calcite)
+        rewrittenVersions.put(type, CalciteStatementDao.instance().findOneCalciteVersion(appName, stmtId));
+      else
+        rewrittenVersions.put(type, CalciteOptStatementDao.instance().findOne(appName, stmtId));
+    }
+    return rewrittenVersions.get(type);
   }
 
   @Override
   public Statement original() {
-    if (!isRewritten) return this;
-    if (otherVersion == null)
-      otherVersion = CalciteStatementDao.instance().findOne(appName, stmtId);
-    return otherVersion;
-  }
-
-  @Override
-  public Statement calciteVersion() {
-    if (calciteVersion == null)
-      calciteVersion = CalciteStatementDao.instance().findOneCalciteVersion(appName, stmtId);
-    return calciteVersion;
+    if (!isRewritten) original = this;
+    if (original == null)
+      original = CalciteStatementDao.instance().findOne(appName, stmtId);
+    return original;
   }
 
   @Override
@@ -102,6 +110,11 @@ public class CalciteStatementImpl implements Statement {
   @Override
   public void setRewritten(boolean isRewritten) {
     this.isRewritten = isRewritten;
+  }
+
+  @Override
+  public void setOptimizerType(OptimizerType type) {
+    this.optimizerType = type;
   }
 
   @Override

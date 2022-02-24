@@ -5,6 +5,7 @@ import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.stmt.App;
 import wtune.stmt.Statement;
+import wtune.stmt.support.OptimizerType;
 import wtune.testbed.population.Generators;
 import wtune.testbed.population.PopulationConfig;
 import wtune.testbed.profile.Metric;
@@ -65,7 +66,7 @@ public class ProfileCalcite implements Runner {
       if (stmts != null && !stmts.contains(original.toString())) continue;
       if (blacklist != null && blacklist.isBlocked(tag, original)) continue;
 
-      final Statement rewrittenCalcite = original.calciteVersion();
+      final Statement rewrittenCalcite = original.rewritten(OptimizerType.Calcite);
       final Statement rewrittenWeTune = original.rewritten();
       if (rewrittenCalcite != null && !runPair(original, rewrittenCalcite, true)) {
         LOG.log(WARNING, "failed to profile {0} with its calcite rewritten version", original);
@@ -164,6 +165,8 @@ public class ProfileCalcite implements Runner {
 
   private Function<Statement, String> getParamSaveFile() {
     return stmt ->
-        "wtune_data/params/%s_%s_%s".formatted(stmt, stmt.isRewritten() ? "opt" : "base", tag);
+        stmt.isRewritten()
+            ? "wtune_data/params/%s_%s_%s_%s".formatted(stmt, "opt", stmt.optimizerType(), tag)
+            : "wtune_data/params/%s_%s_%s".formatted(stmt, "base", tag);
   }
 }

@@ -260,7 +260,7 @@ public class ShowAllStatistics implements Runner {
           stmt.appName(),
           stmt.stmtId(),
           stmt.original().rawSql(),
-          stmt.calciteVersion().rawSql(),
+          stmt.rewritten(OptimizerType.Calcite).rawSql(),
           stmt.rewritten(optimizer).rawSql(),
           stmt.rewritten(optimizer).stackTrace(),
           calciteImprove,
