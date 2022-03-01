@@ -157,7 +157,7 @@ public class GenerateTableData implements Runner {
       return;
     }
 
-    if (restriction == null || "all".equals(restriction)) {
+    if (restriction == null || "all".equals(restriction) || appName.equals("calcite_test")) {
       targets.put(appName, SetSupport.map(schema.tables(), Table::name));
 
     } else if ("used".equals(restriction)) {
@@ -177,7 +177,7 @@ public class GenerateTableData implements Runner {
 
   private static void getUsedTables(List<Statement> statements, Map<String, Set<String>> tables) {
     for (Statement stmt : statements) {
-      final SqlNode ast = stmt.ast();
+      final SqlNode ast = stmt.original().ast();
       if (ast == null) continue;
 
       final Set<String> usedTables = tables.computeIfAbsent(stmt.appName(), deaf(HashSet::new));

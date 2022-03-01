@@ -19,10 +19,15 @@ public interface SQLServerStmtRewriteHelper {
         sql = sql.replaceAll("MATCH ([^ ]+) AGAINST \\('([^\\[]+)' IN BOOLEAN MODE\\)", "$1 LIKE '%$2%'");
         sql = sql.replaceAll("'FALSE'", "0");
         sql = sql.replaceAll("'TRUE'", "1");
+        sql = sql.replaceAll("TRUE", "1");
+        sql = sql.replaceAll("FALSE", "0");
         sql = sql.replaceAll("USE INDEX \\([^ ]*\\)", "");
         sql = sql.replaceAll("CROSS JOIN", "JOIN");
         sql = sql.replaceAll("(\\[[A-Za-z0-9]+\\] \\* \\[[A-Za-z0-9]+\\])", "\\($1\\) AS total");
-        sql = sql.replaceAll("ORDER BY [^ ]+ IS NULL,", "ORDER BY");
+
+        sql = sql.replaceAll("ORDER BY \\([^ ]+ IS NULL\\) IS NULL, [^ ]+ IS NULL,", "ORDER BY");
+        sql = sql.replaceAll("ORDER BY [^ ]+ IS NULL (ASC|DESC),", "ORDER BY");
+        sql = sql.replaceAll("( [^ \\(\\)]+ IS NULL( ASC| DESC|),)( [^ ]+( ASC| DESC|)(,)*)", "$3");
 
         return sql;
     }
