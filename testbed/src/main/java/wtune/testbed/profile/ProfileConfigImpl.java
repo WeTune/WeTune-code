@@ -17,6 +17,7 @@ class ProfileConfigImpl implements ProfileConfig {
   private int randomSeed;
   private boolean dryRun;
   private boolean useSqlServer;
+  private boolean calciteConn;
   private Generators generators;
   private ExecutorFactory factory;
   private Function<Statement, String> paramSaveFile;
@@ -26,7 +27,7 @@ class ProfileConfigImpl implements ProfileConfig {
     this.profileCycles = 100;
     this.randomSeed = 0x98761234;
     this.generators = generators;
-    this.factory = (ignored0, ignored1) -> new NoOpExecutor();
+    this.factory = (ignored0, ignored1, ignored2) -> new NoOpExecutor();
   }
 
   @Override
@@ -52,6 +53,11 @@ class ProfileConfigImpl implements ProfileConfig {
   @Override
   public boolean useSqlServer() {
     return useSqlServer;
+  }
+
+  @Override
+  public boolean calciteConn() {
+    return calciteConn;
   }
 
   @Override
@@ -119,13 +125,18 @@ class ProfileConfigImpl implements ProfileConfig {
   }
 
   @Override
+  public void setCalciteConn(boolean calciteConn) {
+    this.calciteConn = calciteConn;
+  }
+
+  @Override
   public void setGenerators(Generators generators) {
     this.generators = generators;
   }
 
   @Override
   public void setDbProperties(Properties properties) {
-    if (properties == null) this.factory = (ignored0, ignored1) -> new NoOpExecutor();
+    if (properties == null) this.factory = (ignored0, ignored1, ignored2) -> new NoOpExecutor();
     else this.factory = new ExecutorFactoryImpl(properties);
   }
 

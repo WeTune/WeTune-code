@@ -11,4 +11,6 @@ module wtune.testbed {
   requires org.postgresql.jdbc;
   requires com.zaxxer.hikari;
   requires progressbar;
+  requires calcite.core;
+  requires log4jdbc;
 }

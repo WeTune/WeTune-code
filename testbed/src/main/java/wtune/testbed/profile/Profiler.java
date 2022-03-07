@@ -25,6 +25,8 @@ public interface Profiler {
 
   boolean run();
 
+  boolean runOnce();
+
   void close();
 
   static Profiler make(Statement stmt, ProfileConfig config) {

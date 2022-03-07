@@ -21,6 +21,8 @@ public interface ProfileConfig {
 
   boolean useSqlServer();
 
+  boolean calciteConn();
+
   Generators generators();
 
   ExecutorFactory executorFactory();
@@ -38,6 +40,8 @@ public interface ProfileConfig {
   void setDryRun(boolean dryRun);
 
   void setUseSqlServer(boolean useSqlServer);
+
+  void setCalciteConn(boolean calciteConn);
 
   void setGenerators(Generators generators);
 

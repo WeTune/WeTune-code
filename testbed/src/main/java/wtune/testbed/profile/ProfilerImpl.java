@@ -47,7 +47,8 @@ class ProfilerImpl implements Profiler {
     this.executor =
         config.dryRun()
             ? null
-            : config.executorFactory().mk(stmt.ast().toString(), config.useSqlServer());
+            : config.executorFactory().mk(
+                    stmt.ast().toString(), config.useSqlServer(), config.calciteConn());
     this.metric = Metric.mk(config.profileCycles());
     this.warmupCycles = config.warmupCycles();
     this.profileCycles = config.profileCycles();
@@ -163,6 +164,12 @@ class ProfilerImpl implements Profiler {
     System.out.println();
 
     return true;
+  }
+
+  @Override
+  public boolean runOnce() {
+    if (config.dryRun()) return true;
+    return run0(0);
   }
 
   @Override

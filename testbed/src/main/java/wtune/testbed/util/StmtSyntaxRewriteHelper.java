@@ -1,6 +1,6 @@
 package wtune.testbed.util;
 
-public interface SQLServerStmtRewriteHelper {
+public interface StmtSyntaxRewriteHelper {
     static String regexRewriteForSQLServer(String sql){
         sql = sql.replaceAll("`([A-Za-z0-9_$]+)`", "\\[$1\\]");
         sql = sql.replaceAll("\"([A-Za-z0-9_$]+)\"", "\\[$1\\]");
@@ -28,6 +28,12 @@ public interface SQLServerStmtRewriteHelper {
         sql = sql.replaceAll("ORDER BY \\([^ ]+ IS NULL\\) IS NULL, [^ ]+ IS NULL,", "ORDER BY");
         sql = sql.replaceAll("ORDER BY [^ ]+ IS NULL (ASC|DESC),", "ORDER BY");
         sql = sql.replaceAll("( [^ \\(\\)]+ IS NULL( ASC| DESC|),)( [^ ]+( ASC| DESC|)(,)*)", "$3");
+
+        return sql;
+    }
+
+    static String regexRewriteForCalcite(String sql) {
+        sql = sql.replaceAll("`([A-Za-z0-9_$]+)`", "\"$1\"");
 
         return sql;
     }

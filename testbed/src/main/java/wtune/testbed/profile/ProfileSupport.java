@@ -84,6 +84,24 @@ public interface ProfileSupport {
     return Pair.of(profiler0.metric(), profiler1.metric());
   }
 
+  static boolean dryRunStmt(Statement stmt0, ProfileConfig config) {
+    setupParams(stmt0);
+
+    final Profiler profiler0 = Profiler.make(stmt0, config);
+
+    if (!tryReadParams(profiler0, config)) {
+      ParamsGen.alignTables(profiler0.paramsGen(), profiler0.paramsGen());
+      if (!profiler0.prepare()) return false;
+      trySaveParams(profiler0, config);
+    }
+
+    if (!profiler0.runOnce()) return false;
+
+    profiler0.close();
+    config.executorFactory().close();
+    return true;
+  }
+
   private static void setupLIMIT(SqlNode limitClause) {
     if (Param.isInstance(limitClause)) {
       limitClause.$(Expr_Kind, Literal);

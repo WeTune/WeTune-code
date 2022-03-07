@@ -3,7 +3,7 @@ package wtune.testbed;
 import wtune.testbed.plantree.PlanTree;
 import wtune.testbed.plantree.PlanTreeNode;
 import wtune.testbed.util.DataSourceSupport;
-import wtune.testbed.util.SQLServerStmtRewriteHelper;
+import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -91,7 +91,7 @@ public class PlanMain2 {
                 String[] info1 = line1.split(";"); String[] info2 = line2.split(";");
                 stmtId = info1[0].split("\\.")[0];
                 app = stmtId.split("-")[0];
-                baseStmt = SQLServerStmtRewriteHelper.regexRewriteForSQLServer(info1[1]); optStmt = SQLServerStmtRewriteHelper.regexRewriteForSQLServer(info2[1]);
+                baseStmt = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(info1[1]); optStmt = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(info2[1]);
 
                 System.out.println("executing sql: " + stmtId + " \tat workload " + oneTag);
                 if(!currentApp.equals(app)){
