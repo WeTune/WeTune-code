@@ -29,6 +29,14 @@ public interface IOSupport {
     }
   }
 
+  static void writeTo(Path path, Consumer<PrintWriter> writer) {
+    try (final var out = new PrintWriter(Files.newOutputStream(path, WRITE, CREATE))) {
+      writer.accept(out);
+    } catch (IOException ioe) {
+      throw new UncheckedIOException(ioe);
+    }
+  }
+
   static void printWithLock(Path path, Consumer<PrintWriter> writer) {
     try (final var os = new FileOutputStream(path.toFile(), true);
         final var out = new PrintWriter(os);

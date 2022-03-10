@@ -2,7 +2,10 @@ package wtune.sql.plan;
 
 import wtune.common.utils.ListSupport;
 
+import java.util.Arrays;
 import java.util.List;
+
+import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
 
 public interface PlanNode {
   PlanKind kind();
@@ -16,11 +19,15 @@ public interface PlanNode {
   }
 
   default int numChildren(PlanContext context) {
-    return context.childrenOf(nodeId(context)).length;
+    int[] childrenIds =
+            Arrays.stream(context.childrenOf(nodeId(context))).filter(i -> i != NO_SUCH_NODE).toArray();
+    return childrenIds.length;
   }
 
   default List<PlanNode> children(PlanContext context) {
-    return ListSupport.map(context.childrenOf(nodeId(context)), context::nodeAt);
+    int[] childrenIds =
+        Arrays.stream(context.childrenOf(nodeId(context))).filter(i -> i != NO_SUCH_NODE).toArray();
+    return ListSupport.map(childrenIds, context::nodeAt);
   }
 
   default PlanNode child(PlanContext context, int index) {

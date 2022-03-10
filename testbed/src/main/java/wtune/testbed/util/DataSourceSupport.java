@@ -36,7 +36,7 @@ public interface DataSourceSupport {
   static Properties sqlserverProps(String db) {
     final Properties props = new Properties();
     props.setProperty(
-        "url", "jdbc:sqlserver://localhost:1433;DatabaseName=" + db);
+        "url", "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=" + db);
     props.setProperty("username", "SA");
     props.setProperty("password", "mssql2019Admin");
     return props;

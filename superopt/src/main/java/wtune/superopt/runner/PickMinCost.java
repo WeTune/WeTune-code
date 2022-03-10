@@ -39,7 +39,7 @@ public class PickMinCost implements Runner {
   private Properties dbPropsSeed;
   private final Map<String, Properties> dbProps = new ConcurrentHashMap<>();
 
-  private static final String DEFAULT_JDBC_URL = "jdbc:sqlserver://localhost:1433;DatabaseName=";
+  private static final String DEFAULT_JDBC_URL = "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=";
   private static final String DEFAULT_JDBC_USER = "SA";
   private static final String DEFAULT_JDBC_PASSWD = "mssql2019Admin";
 
