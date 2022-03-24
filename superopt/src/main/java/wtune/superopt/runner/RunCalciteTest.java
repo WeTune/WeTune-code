@@ -36,7 +36,7 @@ import static wtune.common.utils.IOSupport.checkFileExists;
 import static wtune.common.utils.IOSupport.io;
 import static wtune.common.utils.IterableSupport.any;
 import static wtune.sql.SqlSupport.parseSql;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 import static wtune.sql.plan.PlanSupport.*;
 
 public class RunCalciteTest implements Runner {

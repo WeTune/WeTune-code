@@ -18,7 +18,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.Set;
 
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 import static wtune.sql.plan.PlanSupport.translateAsAst;
 import static wtune.sql.support.action.NormalizationSupport.normalizeAst;
 import static wtune.superopt.optimizer.OptimizerSupport.dumpTrace;

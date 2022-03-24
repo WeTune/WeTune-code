@@ -31,7 +31,7 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final Schema schema = SqlSupport.parseSchema(SqlNode.MySQL, createTable);
+    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, createTable);
 
     assertEquals(2, schema.tables().size());
 

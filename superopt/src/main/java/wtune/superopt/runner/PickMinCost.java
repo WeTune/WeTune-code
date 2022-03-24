@@ -1,6 +1,7 @@
 package wtune.superopt.runner;
 
 import me.tongfei.progressbar.ProgressBar;
+import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.sql.ast.SqlNode;
@@ -27,7 +28,7 @@ import static wtune.common.utils.Commons.isNullOrEmpty;
 import static wtune.common.utils.IterableSupport.linearFind;
 import static wtune.common.utils.ListSupport.map;
 import static wtune.sql.SqlSupport.parseSql;
-import static wtune.sql.ast.SqlNode.SQLServer;
+import static wtune.common.datasource.DbSupport.SQLServer;
 import static wtune.sql.plan.PlanSupport.assemblePlan;
 import static wtune.superopt.runner.RunnerSupport.*;
 
@@ -36,12 +37,8 @@ public class PickMinCost implements Runner {
   private String targetApp;
   private int stmtId;
   private int verbosity;
-  private Properties dbPropsSeed;
+  private boolean useSqlServer;
   private final Map<String, Properties> dbProps = new ConcurrentHashMap<>();
-
-  private static final String DEFAULT_JDBC_URL = "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=";
-  private static final String DEFAULT_JDBC_USER = "SA";
-  private static final String DEFAULT_JDBC_PASSWD = "mssql2019Admin";
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -82,17 +79,7 @@ public class PickMinCost implements Runner {
     outTraceFile = dir.resolve(outTraceFileName);
 
     // Default datasource is Sql Server
-    final String jdbcUrl = args.getOptional("dbUrl", String.class, DEFAULT_JDBC_URL);
-    final String username = args.getOptional("dbUser", String.class, DEFAULT_JDBC_USER);
-    final String password = args.getOptional("dbPasswd", String.class, DEFAULT_JDBC_PASSWD);
-    final String dbType = args.getOptional("dbType", String.class, SQLServer);
-    if (jdbcUrl.isEmpty()) throw new IllegalArgumentException("jdbc url should not be empty");
-
-    dbPropsSeed = new Properties();
-    dbPropsSeed.setProperty("dbType", dbType);
-    dbPropsSeed.setProperty("jdbcUrl", jdbcUrl);
-    if (!username.isEmpty()) dbPropsSeed.setProperty("username", username);
-    if (!password.isEmpty()) dbPropsSeed.setProperty("password", password);
+    useSqlServer = args.getOptional("sqlserver", boolean.class, true);
   }
 
   @Override
@@ -169,8 +156,9 @@ public class PickMinCost implements Runner {
     final Properties existing = dbProps.get(appName);
     if (existing != null) return existing;
 
-    final Properties props = new Properties(dbPropsSeed);
-    props.setProperty("jdbcUrl", dbPropsSeed.get("jdbcUrl") + appName + "_base");
+    final String dbName = appName + "_base";
+    final String dbType = useSqlServer ? SQLServer : App.of(appName).dbType();
+    final Properties props = DbSupport.dbProps(dbType, dbName);
     dbProps.put(appName, props);
     return props;
   }

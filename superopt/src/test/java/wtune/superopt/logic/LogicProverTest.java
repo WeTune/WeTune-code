@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 import static wtune.sql.plan.PlanSupport.translateAsAst;
 import static wtune.superopt.substitution.SubstitutionSupport.*;
 

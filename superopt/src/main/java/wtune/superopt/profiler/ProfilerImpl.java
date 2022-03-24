@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.SQLServer;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.SQLServer;
 import static wtune.sql.plan.PlanSupport.translateAsAst;
 
 class ProfilerImpl implements Profiler {

@@ -1,6 +1,7 @@
 package wtune.testbed.runner;
 
 import org.apache.commons.lang3.tuple.Pair;
+import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.stmt.App;
@@ -20,10 +21,9 @@ import java.util.function.Function;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Arrays.asList;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.SQLServer;
 import static wtune.testbed.profile.ProfileSupport.compare;
 import static wtune.testbed.runner.GenerateTableData.BASE;
-import static wtune.testbed.util.DataSourceSupport.*;
 
 public class ProfileCalcite implements Runner {
   public static final System.Logger LOG = System.getLogger("profile");
@@ -134,9 +134,8 @@ public class ProfileCalcite implements Runner {
 
   private Properties getDbProps(App app) {
     final String dbName = app.name() + "_" + tag;
-    if (useSqlServer) return sqlserverProps(dbName);
-    else if (MySQL.equals(app.dbType())) return mysqlProps(dbName);
-    else return pgProps(dbName);
+    if (useSqlServer) return DbSupport.dbProps(SQLServer, dbName);
+    else return DbSupport.dbProps(app.dbType(), dbName);
   }
 
   private void logResult(

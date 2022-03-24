@@ -15,7 +15,7 @@ import wtune.superopt.substitution.Substitution;
 import wtune.superopt.substitution.SubstitutionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 
 @Tag("slow")
 @Tag("enumeration")

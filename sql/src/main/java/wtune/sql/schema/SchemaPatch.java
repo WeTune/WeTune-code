@@ -1,7 +1,7 @@
 package wtune.sql.schema;
 
 import org.apache.commons.lang3.NotImplementedException;
-import wtune.sql.ast.SqlNode;
+import wtune.common.datasource.DbSupport;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public interface SchemaPatch {
   default String toDDL(String dbType) {
     switch (type()) {
       case FOREIGN_KEY:
-        if (SqlNode.PostgreSQL.equals(dbType)) {
+        if (DbSupport.PostgreSQL.equals(dbType)) {
           return "ALTER TABLE \"%s\" ADD CONSTRAINT \"fk_%s_%s_refs_%s\" FOREIGN KEY (%s) REFERENCES \"%s\"(\"%s\")"
               .formatted(
                   table(),
@@ -53,7 +53,7 @@ public interface SchemaPatch {
         }
       case INDEX:
       case UNIQUE:
-        if (SqlNode.PostgreSQL.equals(dbType)) {
+        if (DbSupport.PostgreSQL.equals(dbType)) {
           return "CREATE %sINDEX \"index_%s\" ON \"%s\"(%s)"
               .formatted(
                   type() == Type.UNIQUE ? "UNIQUE " : "",

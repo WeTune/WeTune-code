@@ -2,6 +2,7 @@ package wtune.testbed.runner;
 
 import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.stmt.App;
@@ -10,7 +11,6 @@ import wtune.stmt.support.OptimizerType;
 import wtune.testbed.population.Generators;
 import wtune.testbed.population.PopulationConfig;
 import wtune.testbed.profile.ProfileConfig;
-import wtune.testbed.util.DataSourceSupport;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Arrays.asList;
-import static wtune.sql.ast.SqlNode.MySQL;
 import static wtune.testbed.profile.ProfileSupport.dryRunStmt;
 
 public class CalciteDryRunToRewrite implements Runner {
@@ -148,8 +147,7 @@ public class CalciteDryRunToRewrite implements Runner {
 
   private Properties getCalciteWrappedDbProps(App app) {
     final String dbName = app.name() + "_" + tag;
-    if (MySQL.equals(app.dbType())) return DataSourceSupport.mysqlPropsCalciteWrap(dbName);
-    else return DataSourceSupport.pgPropsCalciteWrap(dbName);
+    return DbSupport.dbPropsCalciteWrap(app.dbType(), dbName);
   }
 
   private Function<Statement, String> getParamSaveFile() {

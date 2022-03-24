@@ -24,7 +24,7 @@ public class TableTest {
             + "unique (j DESC) using rtree,"
             + "constraint fk_cons foreign key fk (k) references b(y)"
             + ") ENGINE = 'myisam';";
-    final Schema schema = SqlSupport.parseSchema(SqlNode.MySQL, createTable);
+    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, createTable);
     final Table table = schema.table("t");
 
     {

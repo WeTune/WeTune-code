@@ -7,9 +7,9 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.PostgreSQL;
-import static wtune.testbed.util.DataSourceSupport.makeDataSource;
+import static wtune.common.datasource.DbSupport.makeDataSource;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.PostgreSQL;
 
 class BatchActuatorFactoryImpl implements BatchActuatorFactory {
   private final Properties dbProperties;
@@ -20,7 +20,7 @@ class BatchActuatorFactoryImpl implements BatchActuatorFactory {
   BatchActuatorFactoryImpl(Properties properties, int batchSize) {
     this.dbProperties = properties;
     this.batchSize = batchSize;
-    this.dbType = determineDbType(properties.getProperty("url"));
+    this.dbType = determineDbType(properties.getProperty("jdbcUrl"));
   }
 
   private DataSource dataSource() {

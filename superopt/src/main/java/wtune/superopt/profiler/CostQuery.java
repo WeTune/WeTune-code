@@ -1,7 +1,7 @@
 package wtune.superopt.profiler;
 
 
-import static wtune.sql.ast.SqlNode.*;
+import static wtune.common.datasource.DbSupport.*;
 
 public interface CostQuery {
   double getCost();

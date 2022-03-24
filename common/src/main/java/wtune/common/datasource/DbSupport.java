@@ -1,4 +1,4 @@
-package wtune.testbed.util;
+package wtune.common.datasource;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -6,19 +6,37 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 import java.util.Properties;
 
-import static wtune.common.datasource.DbSupport.*;
+public interface DbSupport {
+  String MySQL = "mysql";
+  String PostgreSQL = "postgresql";
+  String SQLServer = "sqlserver";
 
-public interface DataSourceSupport {
   static DataSource makeDataSource(Properties dbProps) {
     final HikariConfig config = new HikariConfig();
     config.setJdbcUrl(dbProps.getProperty("jdbcUrl"));
     config.setUsername(dbProps.getProperty("username"));
     config.setPassword(dbProps.getProperty("password"));
-    config.setMaximumPoolSize(2);
     return new HikariDataSource(config);
   }
 
-  static Properties pgProps(String db) {
+  static Properties dbProps(String dbType, String dbName) {
+    return switch (dbType) {
+      case MySQL -> DbSupport.mysqlProps(dbName);
+      case PostgreSQL -> DbSupport.pgProps(dbName);
+      case SQLServer -> DbSupport.sqlserverProps(dbName);
+      default -> throw new IllegalArgumentException("unknown db type");
+    };
+  }
+
+  static Properties dbPropsCalciteWrap(String dbType, String dbName) {
+    return switch (dbType) {
+      case MySQL -> DbSupport.mysqlPropsCalciteWrap(dbName);
+      case PostgreSQL -> DbSupport.pgPropsCalciteWrap(dbName);
+      default -> throw new IllegalArgumentException("unknown db type");
+    };
+  }
+
+  private static Properties pgProps(String db) {
     final Properties props = new Properties();
     props.setProperty("dbType", PostgreSQL);
     props.setProperty("jdbcUrl", "jdbc:postgresql://10.0.0.103:5432/" + db);
@@ -27,7 +45,7 @@ public interface DataSourceSupport {
     return props;
   }
 
-  static Properties mysqlProps(String db) {
+  private static Properties mysqlProps(String db) {
     final Properties props = new Properties();
     props.setProperty("dbType", MySQL);
     props.setProperty(
@@ -37,7 +55,7 @@ public interface DataSourceSupport {
     return props;
   }
 
-  static Properties sqlserverProps(String db) {
+  private static Properties sqlserverProps(String db) {
     final Properties props = new Properties();
     props.setProperty("dbType", SQLServer);
     props.setProperty(
@@ -47,7 +65,7 @@ public interface DataSourceSupport {
     return props;
   }
 
-  static Properties mysqlPropsCalciteWrap(String db) {
+  private static Properties mysqlPropsCalciteWrap(String db) {
     final Properties props = new Properties();
     props.setProperty("dbType", MySQL);
     props.setProperty("jdbcUrl", "jdbc:log4jdbc:mysql://10.0.0.103:3306/" + db);
@@ -56,7 +74,7 @@ public interface DataSourceSupport {
     return props;
   }
 
-  static Properties pgPropsCalciteWrap(String db) {
+  private static Properties pgPropsCalciteWrap(String db) {
     final Properties props = new Properties();
     props.setProperty("dbType", PostgreSQL);
     props.setProperty("jdbcUrl", "jdbc:log4jdbc:postgresql://10.0.0.103:5432/" + db);

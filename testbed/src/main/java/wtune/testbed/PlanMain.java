@@ -1,8 +1,8 @@
 package wtune.testbed;
 
+import wtune.common.datasource.DbSupport;
 import wtune.testbed.plantree.PlanTree;
 import wtune.testbed.plantree.PlanTreeNode;
-import wtune.testbed.util.DataSourceSupport;
 import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
@@ -50,7 +50,7 @@ public class PlanMain {
 
     private static void getConnAndShowPlanOn(String app, String tag) throws SQLException{
         String db = app + "_" + tag;
-        DataSource dataSource = DataSourceSupport.makeDataSource(DataSourceSupport.sqlserverProps(db));
+        DataSource dataSource = DbSupport.makeDataSource(DbSupport.sqlserverProps(db));
         conn = dataSource.getConnection();
 
         // SET SHOWPLAN_ALL ON

@@ -5,8 +5,8 @@ import wtune.sql.ast.constants.Category;
 import java.util.Collections;
 import java.util.List;
 
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.PostgreSQL;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.PostgreSQL;
 import static wtune.sql.ast.constants.DataTypeName.*;
 
 class SqlDataTypeImpl implements SqlDataType {

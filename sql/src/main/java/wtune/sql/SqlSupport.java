@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static wtune.common.datasource.DbSupport.*;
 import static wtune.common.tree.TreeSupport.nodeEquals;
 import static wtune.common.utils.Commons.unquoted;
 import static wtune.sql.ast.constants.BinaryOpKind.*;
@@ -40,9 +41,9 @@ public abstract class SqlSupport {
   }
 
   public static String quoted(String dbType, String name) {
-    if ("mysql".equals(dbType)) return '`' + name + '`';
-    else if ("postgresql".equals(dbType)) return '"' + name + '"';
-    else if ("mssql".equals(dbType)) return '[' + name + ']';
+    if (MySQL.equals(dbType)) return '`' + name + '`';
+    else if (PostgreSQL.equals(dbType)) return '"' + name + '"';
+    else if (SQLServer.equals(dbType)) return '[' + name + ']';
     else throw new IllegalArgumentException("unknown db type: " + dbType);
   }
 

@@ -24,7 +24,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static wtune.sql.SqlSupport.parseSql;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 import static wtune.sql.plan.PlanSupport.assemblePlan;
 import static wtune.sql.plan.PlanSupport.stringifyTree;
 import static wtune.sql.support.action.NormalizationSupport.normalizeAst;

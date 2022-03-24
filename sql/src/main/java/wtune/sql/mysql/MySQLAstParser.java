@@ -3,6 +3,7 @@ package wtune.sql.mysql;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import wtune.common.datasource.DbSupport;
 import wtune.sql.ast.SqlNode;
 import wtune.sql.mysql.internal.MySQLLexer;
 import wtune.sql.mysql.internal.MySQLParser;
@@ -47,7 +48,7 @@ public class MySQLAstParser implements AstParser {
   public SqlNode parse(String string) {
     final SqlNode ast = parse(string, MySQLParser::query);
     if (ast == null) return null;
-    ast.context().setDbType(SqlNode.MySQL);
+    ast.context().setDbType(DbSupport.MySQL);
     return ast;
   }
 

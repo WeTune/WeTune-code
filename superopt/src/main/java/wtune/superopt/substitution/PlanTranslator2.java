@@ -20,7 +20,7 @@ import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static wtune.common.utils.Commons.joining;
 import static wtune.sql.SqlSupport.*;
 import static wtune.sql.ast.ExprFields.ColRef_ColName;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.MySQL;
 import static wtune.sql.ast.SqlNodeFields.ColName_Col;
 import static wtune.sql.ast.SqlNodeFields.GroupItem_Expr;
 import static wtune.sql.ast.constants.BinaryOpKind.EQUAL;

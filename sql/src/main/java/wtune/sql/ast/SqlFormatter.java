@@ -6,8 +6,8 @@ import java.util.List;
 
 import static wtune.common.utils.Commons.coalesce;
 import static wtune.common.utils.Commons.trimTrailing;
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.PostgreSQL;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.PostgreSQL;
 import static wtune.sql.ast.SqlNodeFields.*;
 import static wtune.sql.ast.TableSourceFields.*;
 import static wtune.sql.ast.constants.BinaryOpKind.MEMBER_OF;

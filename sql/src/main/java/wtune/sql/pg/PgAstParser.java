@@ -3,6 +3,7 @@ package wtune.sql.pg;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import wtune.common.datasource.DbSupport;
 import wtune.sql.ast.SqlNode;
 import wtune.sql.parser.AstParser;
 import wtune.sql.parser.ThrowingErrorListener;
@@ -30,7 +31,7 @@ public class PgAstParser implements AstParser {
   public SqlNode parse(String string) {
     final SqlNode ast = parse(string, PGParser::statement);
     if (ast == null) return null;
-    ast.context().setDbType(SqlNode.PostgreSQL);
+    ast.context().setDbType(DbSupport.PostgreSQL);
     return ast;
   }
 }

@@ -1,5 +1,6 @@
 package wtune.sql.schema;
 
+import wtune.common.datasource.DbSupport;
 import wtune.common.utils.ListSupport;
 import wtune.sql.SqlSupport;
 import wtune.sql.ast.SqlContext;
@@ -36,8 +37,8 @@ class TableImpl implements Table {
     final String schema = simpleName(tableName.$(SqlNodeFields.TableName_Schema));
     final String name = simpleName(tableName.$(SqlNodeFields.TableName_Table));
     final String engine =
-        SqlNode.PostgreSQL.equals(tableDef.dbType())
-            ? SqlNode.PostgreSQL
+        DbSupport.PostgreSQL.equals(tableDef.dbType())
+            ? DbSupport.PostgreSQL
             : coalesce(tableDef.$(SqlNodeFields.CreateTable_Engine), "innodb");
 
     return new TableImpl(schema, name, engine);

@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.PostgreSQL;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.PostgreSQL;
 
 class PopulationActuator extends PreparedStatementActuator implements BatchActuator {
   private final int batchSize;

@@ -2,6 +2,7 @@ package wtune.testbed.runner;
 
 import me.tongfei.progressbar.ProgressBar;
 import org.apache.commons.lang3.tuple.Pair;
+import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
 import wtune.common.utils.SetSupport;
@@ -12,7 +13,6 @@ import wtune.testbed.population.Generators;
 import wtune.testbed.population.PopulationConfig;
 import wtune.testbed.profile.Metric;
 import wtune.testbed.profile.ProfileConfig;
-import wtune.testbed.util.DataSourceSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +24,7 @@ import java.util.function.Function;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.util.Arrays.asList;
-import static wtune.sql.ast.SqlNode.MySQL;
+import static wtune.common.datasource.DbSupport.SQLServer;
 import static wtune.testbed.profile.ProfileSupport.compare;
 
 public class Profile implements Runner {
@@ -159,9 +159,8 @@ public class Profile implements Runner {
 
   private Properties getDbProps(App app) {
     final String dbName = app.name() + "_" + tag;
-    if (useSqlServer) return DataSourceSupport.sqlserverProps(dbName);
-    else if (MySQL.equals(app.dbType())) return DataSourceSupport.mysqlProps(dbName);
-    else return DataSourceSupport.pgProps(dbName);
+    if (useSqlServer) return DbSupport.dbProps(SQLServer, dbName);
+    else return DbSupport.dbProps(app.dbType(), dbName);
   }
 
   private void logResult(Statement stmt, String tag, Metric metric0, Metric metric1) {

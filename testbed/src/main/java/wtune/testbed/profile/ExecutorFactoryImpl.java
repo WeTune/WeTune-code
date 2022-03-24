@@ -2,7 +2,7 @@ package wtune.testbed.profile;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.calcite.jdbc.CalciteConnection;
-import wtune.testbed.util.DataSourceSupport;
+import wtune.common.datasource.DbSupport;
 import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
@@ -20,7 +20,7 @@ class ExecutorFactoryImpl implements ExecutorFactory {
   }
 
   private Connection connection() throws SQLException{
-    if (dataSource == null) dataSource = DataSourceSupport.makeDataSource(dbProperties);
+    if (dataSource == null) dataSource = DbSupport.makeDataSource(dbProperties);
     return dataSource.getConnection();
   }
 
@@ -36,7 +36,7 @@ class ExecutorFactoryImpl implements ExecutorFactory {
             "      factory: 'org.apache.calcite.adapter.jdbc.JdbcSchema$Factory'," +
             "      operand: {" +
             "        jdbcDriver: 'net.sf.log4jdbc.DriverSpy'," +
-            "        jdbcUrl:'" + dbProperties.getProperty("url") + "'," +
+            "        jdbcUrl:'" + dbProperties.getProperty("jdbcUrl") + "'," +
             "        jdbcUser: '" + dbProperties.getProperty("username") + "'," +
             "        jdbcPassword: '" + dbProperties.getProperty("password") + "'" +
             "      }" +

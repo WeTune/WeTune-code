@@ -3,9 +3,6 @@ package wtune.sql.ast;
 import wtune.common.tree.LabeledTreeNode;
 
 public interface SqlNode extends LabeledTreeNode<SqlKind, SqlContext, SqlNode> {
-  String MySQL = "mysql";
-  String PostgreSQL = "postgresql";
-  String SQLServer = "sqlserver";
 
   void accept(SqlVisitor visitor);
 

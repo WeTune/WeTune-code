@@ -5,8 +5,8 @@ import wtune.sql.ast.SqlNode;
 import wtune.stmt.Statement;
 import wtune.superopt.profiler.ConnectionProvider;
 
-import static wtune.sql.ast.SqlNode.MySQL;
-import static wtune.sql.ast.SqlNode.PostgreSQL;
+import static wtune.common.datasource.DbSupport.MySQL;
+import static wtune.common.datasource.DbSupport.PostgreSQL;
 
 public interface Registration {
   void register(Statement stmt, SqlNode optimized);

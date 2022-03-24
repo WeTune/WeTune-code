@@ -1,7 +1,6 @@
 package wtune.superopt.profiler;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import wtune.common.datasource.DbSupport;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
@@ -21,14 +20,6 @@ public class DataSourceFactory {
 
   public synchronized DataSource mk(Properties props) {
     return dataSources.computeIfAbsent(
-        props.getProperty("jdbcUrl"), ignored -> mkDataSource(props));
-  }
-
-  private static DataSource mkDataSource(Properties props) {
-    final HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(props.getProperty("jdbcUrl"));
-    config.setUsername(props.getProperty("username"));
-    config.setPassword(props.getProperty("password"));
-    return new HikariDataSource(config);
+        props.getProperty("jdbcUrl"), ignored -> DbSupport.makeDataSource(props));
   }
 }

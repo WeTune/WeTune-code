@@ -1,5 +1,8 @@
 module wtune.superopt {
   exports wtune.superopt;
+  exports wtune.superopt.optimizer;
+  exports wtune.superopt.profiler;
+  exports wtune.superopt.substitution;
 
   requires com.google.common;
   requires org.apache.commons.lang3;
