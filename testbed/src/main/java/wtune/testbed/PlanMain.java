@@ -50,7 +50,7 @@ public class PlanMain {
 
     private static void getConnAndShowPlanOn(String app, String tag) throws SQLException{
         String db = app + "_" + tag;
-        DataSource dataSource = DbSupport.makeDataSource(DbSupport.sqlserverProps(db));
+        DataSource dataSource = DbSupport.makeDataSource(DbSupport.dbProps(DbSupport.SQLServer, db));
         conn = dataSource.getConnection();
 
         // SET SHOWPLAN_ALL ON
