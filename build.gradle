@@ -1,7 +1,10 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id 'org.javamodularity.moduleplugin' version '1.7.0' apply false
+    id 'java-library'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 allprojects {
@@ -11,9 +14,10 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'com.github.johnrengelman.shadow'
 
-    sourceCompatibility = JavaVersion.VERSION_16
-    targetCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     repositories {
         flatDir { dirs("$rootDir/lib") }
@@ -99,4 +103,20 @@ task cleanAll {
             dependsOn("${it.name}:cleanAll")
         }
     }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    version = 1.0
+    from subprojects.collect { it.sourceSets.main.output }
+}
+
+task fatJar(type: ShadowJar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archivesBaseName = rootProject.name
+
+    from subprojects.collect { it.sourceSets.main.output }
+    from subprojects.collect { it.configurations.compileClasspath }
+    zip64 true
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }
