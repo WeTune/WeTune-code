@@ -16,11 +16,18 @@ import java.util.Set;
 import static wtune.sql.plan.PlanSupport.assemblePlan;
 import static wtune.sql.plan.PlanSupport.translateAsAst;
 import static wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static wtune.superopt.optimizer.OptimizerSupport.*;
 
 public class OptimizeSQLSupport {
   private static final String SQL_PARSE_ERR_MSG = "Error in parsing SQL query.";
   private static final String CANNOT_OPTIMIZE_MSG = "This SQL cannot be further optimized.";
   private static final String OPT_SQL_PARSE_ERR_MSG = "Error in parsing optimized SQL query.";
+  private static final Integer TIME_OUT_MS = 10000;
+
+  static {
+    addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+    addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
+  }
 
   public static OptimizeStat optimizeSQL(
       String rawSql, String appName, Schema schema, SubstitutionBank rules) {
@@ -29,7 +36,7 @@ public class OptimizeSQLSupport {
 
     // Rewrite this SQL, output multiple SQLs
     final Optimizer optimizer = Optimizer.mk(rules);
-    optimizer.setTimeout(5000);
+    optimizer.setTimeout(TIME_OUT_MS);
     optimizer.setTracing(true);
 
     final Set<PlanContext> optimized = optimizer.optimize(plan);
