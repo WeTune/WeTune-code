@@ -16,6 +16,7 @@ import static java.util.Collections.*;
 import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static wtune.sql.plan.PlanSupport.stringifyTree;
 import static wtune.superopt.optimizer.OptimizerSupport.*;
+import static wtune.superopt.optimizer.PreprocessRule.*;
 
 class BottomUpOptimizer implements Optimizer {
   private final SubstitutionBank rules;
@@ -358,7 +359,7 @@ class BottomUpOptimizer implements Optimizer {
     final PlanContext original = tracing ? plan.copy() : null;
     final InnerJoinInference inference = new InnerJoinInference(plan);
     inference.inferenceAndEnforce(planRoot);
-    if (inference.isModified() && tracing) traceStep(original, plan, 1);
+    if (inference.isModified() && tracing) traceStep(original, plan, EnforceInnerJoin.ruleId());
     return planRoot;
   }
 
@@ -366,7 +367,7 @@ class BottomUpOptimizer implements Optimizer {
     final PlanContext original = tracing ? plan.copy() : null;
     final ReduceSort reduceSort = new ReduceSort(plan);
     planRoot = reduceSort.reduce(planRoot);
-    if (reduceSort.isReduced() && tracing) traceStep(original, plan, 2);
+    if (reduceSort.isReduced() && tracing) traceStep(original, plan, ReduceSort.ruleId());
     return planRoot;
   }
 
@@ -374,7 +375,7 @@ class BottomUpOptimizer implements Optimizer {
     final PlanContext original = tracing ? plan.copy() : null;
     final ReduceDedup reduceDedup = new ReduceDedup(plan);
     planRoot = reduceDedup.reduce(planRoot);
-    if (reduceDedup.isReduced() && tracing) traceStep(original, plan, 3);
+    if (reduceDedup.isReduced() && tracing) traceStep(original, plan, ReduceDedup.ruleId());
     return planRoot;
   }
 
@@ -382,7 +383,7 @@ class BottomUpOptimizer implements Optimizer {
     final PlanContext original = tracing ? plan.copy() : null;
     final ConvertExists converter = new ConvertExists(plan);
     planRoot = converter.convert(planRoot);
-    if (converter.isConverted() && tracing) traceStep(original, plan, 4);
+    if (converter.isConverted() && tracing) traceStep(original, plan, ConvertExists.ruleId());
     return planRoot;
   }
 
@@ -390,7 +391,7 @@ class BottomUpOptimizer implements Optimizer {
     final PlanContext original = tracing ? plan.copy() : null;
     final FlipRightJoin converter = new FlipRightJoin(plan);
     planRoot = converter.flip(planRoot);
-    if (converter.isFlipped() && tracing) traceStep(original, plan, 5);
+    if (converter.isFlipped() && tracing) traceStep(original, plan, FlipRightJoin.ruleId());
     return planRoot;
   }
 

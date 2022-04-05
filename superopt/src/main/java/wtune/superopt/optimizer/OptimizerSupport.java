@@ -91,14 +91,7 @@ public abstract class OptimizerSupport {
         final PlanContext target = step.target();
         final String ruleString;
         if (step.rule() != null) ruleString = step.rule().toString();
-        else ruleString = switch (step.extra()) {
-                    case 1 -> "EnforceInnerJoin";
-                    case 2 -> "ReduceSort";
-                    case 3 -> "ReduceDedup";
-                    case 4 -> "ConvertExists";
-                    case 5 -> "FlipRightJoin";
-                    default -> "Unknown";
-            };
+        else ruleString = PreprocessRule.getDescByRuleId(step.extra());
 
         System.out.println("~~ " + ruleString);
         System.out.println("==> " + stringifyTree(target, target.root(), true, true));

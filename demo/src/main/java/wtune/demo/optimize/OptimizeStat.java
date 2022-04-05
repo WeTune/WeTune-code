@@ -5,23 +5,23 @@ import wtune.superopt.optimizer.OptimizationStep;
 import java.util.List;
 
 public record OptimizeStat(String rawSql,
-                           String optSql,
-                           List<OptimizationStep> rules,
+                           List<String> optSqls,
+                           List<List<OptimizationStep>> ruleSteps,
                            String msg) {
-  public OptimizeStat(String rawSql, String optSql, List<OptimizationStep> rules) {
-    this(rawSql, optSql, rules, null);
+  private OptimizeStat(String rawSql, List<String> optSql, List<List<OptimizationStep>> ruleSteps) {
+    this(rawSql, optSql, ruleSteps, null);
   }
 
-  public OptimizeStat(String rawSql, String msg) {
+  private OptimizeStat(String rawSql, String msg) {
     this(rawSql, null, null, msg);
   }
 
   public boolean isOptimized() {
-    return optSql != null;
+    return optSqls != null;
   }
 
-  public static OptimizeStat success(String rawSql, String optSql, List<OptimizationStep> rules) {
-    return new OptimizeStat(rawSql, optSql, rules);
+  public static OptimizeStat success(String rawSql, List<String> optSqls, List<List<OptimizationStep>> ruleSteps) {
+    return new OptimizeStat(rawSql, optSqls, ruleSteps);
   }
 
   public static OptimizeStat fail(String rawSql, String msg) {

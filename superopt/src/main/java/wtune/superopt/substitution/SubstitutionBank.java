@@ -21,4 +21,8 @@ public interface SubstitutionBank {
   Collection<Substitution> rules();
 
   Iterable<Substitution> ruleOfFingerprint(Fingerprint fingerprint);
+
+  static SubstitutionBank mk() {
+    return new SubstitutionBankImpl();
+  }
 }

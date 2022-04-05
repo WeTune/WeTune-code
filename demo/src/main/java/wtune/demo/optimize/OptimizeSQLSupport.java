@@ -6,10 +6,13 @@ import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanSupport;
 import wtune.sql.schema.Schema;
+import wtune.superopt.optimizer.OptimizationStep;
 import wtune.superopt.optimizer.Optimizer;
 import wtune.superopt.profiler.Profiler;
 import wtune.superopt.substitution.SubstitutionBank;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -29,7 +32,33 @@ public class OptimizeSQLSupport {
     addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
   }
 
+  /** Rewrite a SQL and return all rewritten SQLs */
   public static OptimizeStat optimizeSQL(
+      String rawSql, Schema schema, SubstitutionBank rules) {
+    final PlanContext plan = parsePlan(rawSql, schema.dbType(), schema);
+    if (plan == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
+
+    // Rewrite this SQL, output multiple SQLs
+    final Optimizer optimizer = Optimizer.mk(rules);
+    optimizer.setTimeout(TIME_OUT_MS);
+    optimizer.setTracing(true);
+
+    final Set<PlanContext> optimized = optimizer.optimize(plan);
+    if (optimized.isEmpty()) return OptimizeStat.fail(rawSql, CANNOT_OPTIMIZE_MSG);
+
+    final List<String> optSqls = new ArrayList<>();
+    final List<List<OptimizationStep>> ruleSteps = new ArrayList<>();
+    for (PlanContext optPlan : optimized) {
+      final SqlNode optAst = translateAsAst(optPlan, optPlan.root(), false);
+      if (optAst == null) continue;
+      optSqls.add(optAst.toString(false));
+      ruleSteps.add(optimizer.traceOf(optPlan));
+    }
+    return OptimizeStat.success(rawSql, optSqls, ruleSteps);
+  }
+
+  /** Rewrite a SQL and pick the one with minimum cost */
+  public static OptimizeStat optimizeSQLToMinCost(
       String rawSql, String appName, Schema schema, SubstitutionBank rules) {
     final PlanContext plan = parsePlan(rawSql, schema.dbType(), schema);
     if (plan == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
@@ -53,7 +82,8 @@ public class OptimizeSQLSupport {
     final SqlNode optAst = translateAsAst(optPlan, optPlan.root(), false);
     if (optAst == null) return OptimizeStat.fail(rawSql, OPT_SQL_PARSE_ERR_MSG);
 
-    return OptimizeStat.success(rawSql, optAst.toString(false), optimizer.traceOf(optPlan));
+    return OptimizeStat.success(
+        rawSql, List.of(optAst.toString(false)), List.of(optimizer.traceOf(optPlan)));
   }
 
   private static PlanContext parsePlan(String rawSql, String dbType, Schema schema) {
