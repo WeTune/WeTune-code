@@ -2,12 +2,8 @@ package wtune.sql.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import wtune.sql.SqlSupport;
-import wtune.sql.schema.Column;
-import wtune.sql.schema.Constraint;
-import wtune.sql.schema.Schema;
-import wtune.sql.schema.Table;
-import wtune.sql.ast.SqlNode;
+import wtune.common.datasource.DbSupport;
+import wtune.sql.schema.*;
 
 import java.util.List;
 
@@ -31,7 +27,7 @@ public class SchemaTest {
             + ") ENGINE = 'myisam';"
             + "create table b (x int(10), y int);";
 
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, createTable);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, createTable);
 
     assertEquals(2, schema.tables().size());
 

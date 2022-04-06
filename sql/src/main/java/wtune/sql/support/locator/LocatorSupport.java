@@ -1,9 +1,6 @@
 package wtune.sql.support.locator;
 
-import wtune.sql.ast.SqlContext;
-import wtune.sql.ast.SqlNode;
-import wtune.sql.ast.SqlNodes;
-import wtune.sql.ast.ExprKind;
+import wtune.sql.ast.*;
 
 public interface LocatorSupport {
   static NodeLocatorBuilder nodeLocator() {
@@ -30,5 +27,9 @@ public interface LocatorSupport {
       gatherer.gather(root);
     }
     return ctx == null ? SqlNodes.mkEmpty() : SqlNodes.mk(ctx, gatherer.nodeIds());
+  }
+
+  static SqlNodes gatherSimpleSources(SqlNode root) {
+    return nodeLocator().accept(TableSourceKind.SimpleSource).scoped().gather(root);
   }
 }

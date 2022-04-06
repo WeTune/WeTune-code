@@ -6,15 +6,13 @@ import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanSupport;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.superopt.optimizer.OptimizationStep;
 import wtune.superopt.optimizer.Optimizer;
 import wtune.superopt.profiler.Profiler;
 import wtune.superopt.substitution.SubstitutionBank;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 import static wtune.sql.plan.PlanSupport.assemblePlan;
 import static wtune.sql.plan.PlanSupport.translateAsAst;
@@ -34,8 +32,13 @@ public class OptimizeSQLSupport {
 
   /** Rewrite a SQL and return all rewritten SQLs */
   public static OptimizeStat optimizeSQL(
-      String rawSql, Schema schema, SubstitutionBank rules) {
-    final PlanContext plan = parsePlan(rawSql, schema.dbType(), schema);
+      String rawSql, String dbType, Schema schema, SubstitutionBank rules) {
+    // Parse sql to AST, parse AST to plan
+    final SqlNode ast = SqlSupport.parseSql(dbType, rawSql);
+    if (ast == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
+    if (schema == null) schema = SchemaSupport.parseSimpleSchema(dbType, ast);
+
+    final PlanContext plan = parsePlan(ast, schema);
     if (plan == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
 
     // Rewrite this SQL, output multiple SQLs
@@ -46,9 +49,13 @@ public class OptimizeSQLSupport {
     final Set<PlanContext> optimized = optimizer.optimize(plan);
     if (optimized.isEmpty()) return OptimizeStat.fail(rawSql, CANNOT_OPTIMIZE_MSG);
 
+    // Sort rewritten plans by their number of plan node (complexity), and return result
+    final List<PlanContext> optimizedListSorted = new ArrayList<>(optimized);
+    optimizedListSorted.sort(Comparator.comparing(PlanContext::maxNodeId));
+
     final List<String> optSqls = new ArrayList<>();
     final List<List<OptimizationStep>> ruleSteps = new ArrayList<>();
-    for (PlanContext optPlan : optimized) {
+    for (PlanContext optPlan : optimizedListSorted) {
       final SqlNode optAst = translateAsAst(optPlan, optPlan.root(), false);
       if (optAst == null) continue;
       optSqls.add(optAst.toString(false));
@@ -58,9 +65,13 @@ public class OptimizeSQLSupport {
   }
 
   /** Rewrite a SQL and pick the one with minimum cost */
+  @Deprecated
   public static OptimizeStat optimizeSQLToMinCost(
       String rawSql, String appName, Schema schema, SubstitutionBank rules) {
-    final PlanContext plan = parsePlan(rawSql, schema.dbType(), schema);
+    // Parse sql to AST, parse AST to plan
+    assert schema != null;
+    final SqlNode ast = SqlSupport.parseSql(schema.dbType(), rawSql);
+    final PlanContext plan = parsePlan(ast, schema);
     if (plan == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
 
     // Rewrite this SQL, output multiple SQLs
@@ -86,9 +97,8 @@ public class OptimizeSQLSupport {
         rawSql, List.of(optAst.toString(false)), List.of(optimizer.traceOf(optPlan)));
   }
 
-  private static PlanContext parsePlan(String rawSql, String dbType, Schema schema) {
+  private static PlanContext parsePlan(SqlNode ast, Schema schema) {
     try {
-      final SqlNode ast = SqlSupport.parseSql(dbType, rawSql);
       if (ast == null || !PlanSupport.isSupported(ast)) return null;
 
       ast.context().setSchema(schema);

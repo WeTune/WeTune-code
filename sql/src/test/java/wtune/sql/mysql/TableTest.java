@@ -2,11 +2,11 @@ package wtune.sql.mysql;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import wtune.sql.SqlSupport;
+import wtune.common.datasource.DbSupport;
 import wtune.sql.schema.Column;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.sql.schema.Table;
-import wtune.sql.ast.SqlNode;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,7 +24,7 @@ public class TableTest {
             + "unique (j DESC) using rtree,"
             + "constraint fk_cons foreign key fk (k) references b(y)"
             + ") ENGINE = 'myisam';";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, createTable);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, createTable);
     final Table table = schema.table("t");
 
     {

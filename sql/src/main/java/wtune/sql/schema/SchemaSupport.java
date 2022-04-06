@@ -2,6 +2,7 @@ package wtune.sql.schema;
 
 import wtune.common.utils.IterableSupport;
 import wtune.common.utils.ListSupport;
+import wtune.sql.ast.SqlNode;
 import wtune.sql.ast.constants.ConstraintKind;
 
 import java.util.Collections;
@@ -32,4 +33,15 @@ public class SchemaSupport {
     if (table == null) throw new NoSuchElementException("no such table: " + ownerTable);
     return lazyFilter(table.constraints(type), it -> it.columns().contains(column));
   }
+
+  public static Schema parseSchema(String dbType, String schemaDef) {
+    return Schema.parse(dbType, schemaDef);
+  }
+
+  public static Schema parseSimpleSchema(String dbType, SqlNode ast) {
+    final SchemaDetector detector = new SchemaDetector(ast, dbType);
+    if (detector.detect()) return detector.getSchema();
+    return null;
+  }
+
 }

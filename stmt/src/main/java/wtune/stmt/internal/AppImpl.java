@@ -1,8 +1,8 @@
 package wtune.stmt.internal;
 
 import wtune.common.datasource.DbSupport;
-import wtune.sql.SqlSupport;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.stmt.App;
 import wtune.stmt.dao.SchemaPatchDao;
 import wtune.stmt.utils.FileUtils;
@@ -81,7 +81,7 @@ public class AppImpl implements App {
   private Schema readSchema(String tag) {
     final String str = FileUtils.readFile("schemas", name + "." + tag + ".schema.sql");
     if (str == null) return null;
-    return SqlSupport.parseSchema(dbType, str);
+    return SchemaSupport.parseSchema(dbType, str);
   }
 
   private static final String[] APP_NAMES = {

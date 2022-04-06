@@ -13,6 +13,7 @@ import wtune.superopt.util.Fingerprint;
 import java.util.*;
 
 import static java.util.Collections.*;
+import static java.util.Objects.requireNonNull;
 import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
 import static wtune.sql.plan.PlanSupport.stringifyTree;
 import static wtune.superopt.optimizer.OptimizerSupport.*;
@@ -30,7 +31,7 @@ class BottomUpOptimizer implements Optimizer {
   private final Lazy<Map<String, OptimizationStep>> traces;
 
   BottomUpOptimizer(SubstitutionBank rules) {
-    this.rules = rules;
+    this.rules = requireNonNull(rules);
     this.traces = Lazy.mk(HashMap::new);
     this.startAt = Long.MIN_VALUE;
     this.timeout = Long.MAX_VALUE;

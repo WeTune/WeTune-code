@@ -5,7 +5,6 @@ import wtune.common.field.FieldKey;
 import wtune.common.tree.LabeledTreeFields;
 import wtune.sql.ast.constants.*;
 import wtune.sql.parser.AstParser;
-import wtune.sql.schema.Schema;
 import wtune.sql.util.SqlCopier;
 import wtune.sql.ast.*;
 
@@ -34,10 +33,6 @@ public abstract class SqlSupport {
       if (!PARSING_ERROR_MUTED) System.err.println(ex.getMessage());
       return null;
     }
-  }
-
-  public static Schema parseSchema(String dbType, String schemaDef) {
-    return Schema.parse(dbType, schemaDef);
   }
 
   public static String quoted(String dbType, String name) {

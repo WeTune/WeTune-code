@@ -1,9 +1,11 @@
 package wtune.sql.plan;
 
 import org.junit.jupiter.api.Test;
+import wtune.common.datasource.DbSupport;
 import wtune.sql.SqlSupport;
 import wtune.sql.ast.SqlNode;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -15,7 +17,7 @@ class UniquenessInferenceTest {
   void testJoin() {
     final String schemaDef =
         "Create Table t (i int primary key, j int); Create Table s (m int primary key, n int)";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql0 = "Select * From t Inner Join s On t.i = s.m";
     final SqlNode ast0 = SqlSupport.parseSql(DbSupport.MySQL, sql0);
@@ -42,7 +44,7 @@ class UniquenessInferenceTest {
   @Test
   void testFilter() {
     final String schemaDef = "Create Table t (i int, j int, primary key(i,j)); ";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql0 = "Select * From t Where t.j = 3";
     final SqlNode ast0 = SqlSupport.parseSql(DbSupport.MySQL, sql0);
@@ -58,7 +60,7 @@ class UniquenessInferenceTest {
   @Test
   void testAgg() {
     final String schemaDef = "Create Table t (i int, j int); ";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql = "Select * From t Group By t.i";
     final SqlNode ast = SqlSupport.parseSql(DbSupport.MySQL, sql);

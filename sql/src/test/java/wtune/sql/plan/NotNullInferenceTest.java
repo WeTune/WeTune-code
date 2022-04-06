@@ -1,9 +1,11 @@
 package wtune.sql.plan;
 
 import org.junit.jupiter.api.Test;
+import wtune.common.datasource.DbSupport;
 import wtune.sql.SqlSupport;
 import wtune.sql.ast.SqlNode;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,7 +15,7 @@ class NotNullInferenceTest {
   void testJoin() {
     final String schemaDef =
         "Create Table t (i int NOT NULL, j int); Create Table s (m int NOT NULL, n int)";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql0 = "Select * From t Inner Join s On t.i = s.m";
     final SqlNode ast0 = SqlSupport.parseSql(DbSupport.MySQL, sql0);
@@ -41,7 +43,7 @@ class NotNullInferenceTest {
   @Test
   void testFilter() {
     final String schemaDef = "Create Table t (i int NOT NULL, j int)";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql0 = "Select * From t Where t.j = 10";
     final SqlNode ast0 = SqlSupport.parseSql(DbSupport.MySQL, sql0);
@@ -56,7 +58,7 @@ class NotNullInferenceTest {
   @Test
   void testAgg() {
     final String schemaDef = "Create Table t (i int NOT NULL, j int)";
-    final Schema schema = SqlSupport.parseSchema(DbSupport.MySQL, schemaDef);
+    final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, schemaDef);
 
     final String sql0 = "Select * From t Group By t.i";
     final SqlNode ast0 = SqlSupport.parseSql(DbSupport.MySQL, sql0);

@@ -7,6 +7,7 @@ import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanSupport;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.stmt.App;
 import wtune.stmt.Statement;
 import wtune.superopt.optimizer.Optimizer;
@@ -31,7 +32,7 @@ public abstract class TestHelper {
           + "CREATE TABLE c ( u INT PRIMARY KEY, v CHAR(10), w DECIMAL(1, 10) );"
           + "CREATE TABLE d ( p INT, q CHAR(10), r DECIMAL(1, 10), UNIQUE KEY (p), FOREIGN KEY (p) REFERENCES c (u) );";
   private static final Lazy<Schema> SCHEMA =
-      Lazy.mk(() -> SqlSupport.parseSchema(MySQL, TEST_SCHEMA));
+      Lazy.mk(() -> SchemaSupport.parseSchema(MySQL, TEST_SCHEMA));
 
   private static SubstitutionBank bank;
 

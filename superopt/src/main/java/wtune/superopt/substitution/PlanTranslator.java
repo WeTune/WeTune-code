@@ -8,6 +8,7 @@ import wtune.sql.ast.constants.JoinKind;
 import wtune.sql.ast.constants.SetOpKind;
 import wtune.sql.plan.*;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.superopt.constraint.Constraint;
 import wtune.superopt.constraint.Constraints;
 import wtune.superopt.fragment.*;
@@ -217,7 +218,7 @@ class PlanTranslator {
           .append(");\n");
     }
 
-    return parseSchema(MySQL, builder.toString());
+    return SchemaSupport.parseSchema(MySQL, builder.toString());
   }
 
   private static class TableDesc {

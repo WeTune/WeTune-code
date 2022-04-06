@@ -9,6 +9,7 @@ import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanSupport;
 import wtune.sql.schema.Schema;
+import wtune.sql.schema.SchemaSupport;
 import wtune.superopt.logic.LogicSupport;
 import wtune.superopt.nodetrans.SPESSupport;
 import wtune.superopt.substitution.Substitution;
@@ -148,7 +149,7 @@ public class TestSPESNewOps {
   }
 
   static PlanContext mkPlan(String sql, String schemaSQL) {
-    final Schema schema = SqlSupport.parseSchema(MySQL, schemaSQL);
+    final Schema schema = SchemaSupport.parseSchema(MySQL, schemaSQL);
     final SqlNode ast = SqlSupport.parseSql(MySQL, sql);
     return PlanSupport.assemblePlan(ast, schema);
   }
