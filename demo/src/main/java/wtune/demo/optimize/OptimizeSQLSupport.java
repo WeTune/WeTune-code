@@ -21,6 +21,7 @@ import static wtune.superopt.optimizer.OptimizerSupport.*;
 
 public class OptimizeSQLSupport {
   private static final String SQL_PARSE_ERR_MSG = "Error in parsing SQL query.";
+  private static final String SCHEMA_INVALID_MSG = "Cannot detect a valid schema, please manually define a schema.";
   private static final String CANNOT_OPTIMIZE_MSG = "This SQL cannot be further optimized.";
   private static final String OPT_SQL_PARSE_ERR_MSG = "Error in parsing optimized SQL query.";
   private static final Integer TIME_OUT_MS = 10000;
@@ -36,7 +37,9 @@ public class OptimizeSQLSupport {
     // Parse sql to AST, parse AST to plan
     final SqlNode ast = SqlSupport.parseSql(dbType, rawSql);
     if (ast == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
-    if (schema == null) schema = SchemaSupport.parseSimpleSchema(dbType, ast);
+
+    schema = schema != null ? schema : SchemaSupport.parseSimpleSchema(dbType, ast);
+    if (schema == null) return OptimizeStat.fail(rawSql, SCHEMA_INVALID_MSG);
 
     final PlanContext plan = parsePlan(ast, schema);
     if (plan == null) return OptimizeStat.fail(rawSql, SQL_PARSE_ERR_MSG);
