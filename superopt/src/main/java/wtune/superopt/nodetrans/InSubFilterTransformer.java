@@ -64,7 +64,9 @@ public class InSubFilterTransformer extends BaseTransformer {
   public AlgeNode transform() {
     InSubNode inSubFilter = ((InSubNode) planNode);
     AlgeNode leftInput = transformNode(inSubFilter.child(planCtx, 0), planCtx, z3Context);
-    AlgeNode rightSubQuery = transformNode(inSubFilter.child(planCtx, 1), planCtx, z3Context);
+    AlgeNode rightSubQuery =
+        AggTranformer.distinctToAgg(
+            transformNode(inSubFilter.child(planCtx, 1), planCtx, z3Context));
 
     List<RexNode> leftOutput = leftExpr(inSubFilter);
     List<RexNode> rightOutput =

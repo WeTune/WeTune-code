@@ -15,8 +15,8 @@ class UExprTranslatorTest {
         Substitution.parse(
             "Proj*<a1 s1>(LeftJoin<a2 a3>(Input<t1>,Input<t2>)|"
                 + "Proj*<a0 s0>(Input<t0>)|"
-                + "TableEq(t0,t1);AttrsEq(a0,a1);AttrsEq(a1,a2);"
-                + "AttrsSub(a0,t0);AttrsSub(a2,t1);AttrsSub(a1,t1);AttrsSub(a3,t2)");
+                + "TableEq(t0,t1);AttrsEq(a0,a1);AttrsEq(a1,a2);SchemaEq(s0,s1);"
+                + "AttrsSub(a2,t1);AttrsSub(a1,t1);AttrsSub(a3,t2)");
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(
         "|∑{x0,x1}([x3 = a0(x0)] * r0(x0) * (r1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(r1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))|",
