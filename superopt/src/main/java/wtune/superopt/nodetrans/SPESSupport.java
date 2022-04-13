@@ -8,9 +8,8 @@ import wtune.sql.plan.PlanContext;
 public class SPESSupport {
   public static boolean prove(PlanContext plan1, PlanContext plan2) {
     try (final Context ctx = new Context()) {
-      BaseTransformer.resetEnv();
-      AlgeNode algeNode0 = AlgeRule.normalize(plan2AlgeNode(plan1, ctx));
-      AlgeNode algeNode1 = AlgeRule.normalize(plan2AlgeNode(plan2, ctx));
+      final AlgeNode algeNode0 = AlgeRule.normalize(plan2AlgeNode(plan1, ctx));
+      final AlgeNode algeNode1 = AlgeRule.normalize(plan2AlgeNode(plan2, ctx));
 
       if (algeNode0 == null || algeNode1 == null) return false;
 
@@ -22,6 +21,7 @@ public class SPESSupport {
   }
 
   public static AlgeNode plan2AlgeNode(PlanContext planCtx, Context z3Context) {
-    return BaseTransformer.transformNode(planCtx.planRoot(), planCtx, z3Context);
+    final TransformCtx transCtx = TransformCtx.mk(planCtx, z3Context);
+    return transCtx.transform();
   }
 }

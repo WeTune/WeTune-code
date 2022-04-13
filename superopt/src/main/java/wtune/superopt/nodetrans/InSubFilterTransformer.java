@@ -10,21 +10,25 @@ import wtune.spes.AlgeNode.AlgeNode;
 import wtune.spes.AlgeNode.SPJNode;
 import wtune.spes.AlgeNode.UnionNode;
 import wtune.spes.RexNodeHelper.RexNodeHelper;
-import wtune.sql.plan.InSubNode;
-import wtune.sql.plan.Value;
-import wtune.sql.plan.Values;
+import wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
+
 public class InSubFilterTransformer extends BaseTransformer {
+  public InSubFilterTransformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   private static RexNode InSubFilter2JoinCondition(
       List<RexNode> leftOutput, List<RexNode> rightOutput) {
     if (leftOutput.size() != rightOutput.size()) return null;
 
-    List<RexNode> eqConditions = new ArrayList<>();
+    final List<RexNode> eqConditions = new ArrayList<>();
     for (int i = 0, bound = leftOutput.size(); i < bound; i++) {
       eqConditions.add(
           rexBuilder.makeCall(
@@ -39,10 +43,11 @@ public class InSubFilterTransformer extends BaseTransformer {
   }
 
   private List<RexNode> leftExpr(InSubNode inSubFilter) {
-    Values valuesOfNode = planCtx.valuesOf(planNode);
-    Values filterValues = planCtx.valuesReg().valueRefsOf(inSubFilter.expr());
+    final PlanContext planCtx = transCtx.planCtx();
+    final Values valuesOfNode = planCtx.valuesOf(planNode);
+    final Values filterValues = planCtx.valuesReg().valueRefsOf(inSubFilter.expr());
 
-    List<RexNode> filterRexNodes = new ArrayList<>();
+    final List<RexNode> filterRexNodes = new ArrayList<>();
     for (Value filterVal : filterValues) {
       int idx = valuesOfNode.indexOf(filterVal);
       filterRexNodes.add(new RexInputRef(idx, defaultIntType()));
@@ -52,7 +57,7 @@ public class InSubFilterTransformer extends BaseTransformer {
   }
 
   private List<RexNode> rightExpr(List<RexNode> rightOutput, int offset) {
-    List<RexNode> rightOutputWithOffset = new ArrayList<>(rightOutput.size());
+    final List<RexNode> rightOutputWithOffset = new ArrayList<>(rightOutput.size());
     for (RexNode rexNode : rightOutput) {
       int idxPlusOffset = ((RexInputRef) rexNode).getIndex() + offset;
       rightOutputWithOffset.add(new RexInputRef(idxPlusOffset, rexNode.getType()));
@@ -61,23 +66,25 @@ public class InSubFilterTransformer extends BaseTransformer {
   }
 
   @Override
-  public AlgeNode transform() {
-    InSubNode inSubFilter = ((InSubNode) planNode);
-    AlgeNode leftInput = transformNode(inSubFilter.child(planCtx, 0), planCtx, z3Context);
-    AlgeNode rightSubQuery =
+  public AlgeNode transformNode() {
+    final InSubNode inSubFilter = ((InSubNode) planNode);
+    final AlgeNode leftInput =
+        Transformer.dispatch(transCtx, inSubFilter.child(transCtx.planCtx(), 0));
+    final AlgeNode rightSubQuery =
         AggTranformer.distinctToAgg(
-            transformNode(inSubFilter.child(planCtx, 1), planCtx, z3Context));
+            Transformer.dispatch(transCtx, inSubFilter.child(transCtx.planCtx(), 1)));
 
-    List<RexNode> leftOutput = leftExpr(inSubFilter);
-    List<RexNode> rightOutput =
+    final List<RexNode> leftOutput = leftExpr(inSubFilter);
+    final List<RexNode> rightOutput =
         rightExpr(rightSubQuery.getOutputExpr(), leftInput.getOutputExpr().size());
-    RexNode joinCondition = InSubFilter2JoinCondition(leftOutput, rightOutput);
+    final RexNode joinCondition = InSubFilter2JoinCondition(leftOutput, rightOutput);
 
     if (joinCondition == null) return null;
 
-    List<AlgeNode> result = innerJoinAll(leftInput, rightSubQuery, z3Context, joinCondition);
+    final List<AlgeNode> result =
+        innerJoinAll(leftInput, rightSubQuery, transCtx.z3Context(), joinCondition);
     // InSub Filter should be like InnerJoin
-    return constructNode(result, z3Context);
+    return constructNode(result, transCtx.z3Context());
   }
 
   private AlgeNode constructNode(List<AlgeNode> result, Context z3Context) {

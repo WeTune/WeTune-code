@@ -9,49 +9,53 @@ import wtune.spes.AlgeNode.AlgeNode;
 import wtune.spes.AlgeNode.SPJNode;
 import wtune.spes.AlgeNode.UnionNode;
 import wtune.spes.RexNodeHelper.RexNodeHelper;
-import wtune.sql.plan.Expression;
-import wtune.sql.plan.SimpleFilterNode;
-import wtune.sql.plan.Value;
-import wtune.sql.plan.Values;
+import wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
+
 public class SimpleFilterTransformer extends BaseTransformer {
+  public SimpleFilterTransformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   private RexNode Expression2FilterCondition(Expression filterCond) {
     // Likewise, value in `joinCondValues` is in `valuesOfNode`
-    Values valuesOfNode = planCtx.valuesOf(planNode);
-    Values predValues = planCtx.valuesReg().valueRefsOf(filterCond);
+    final PlanContext planCtx = transCtx.planCtx();
+    final Values valuesOfNode = planCtx.valuesOf(planNode);
+    final Values predValues = planCtx.valuesReg().valueRefsOf(filterCond);
 
     // A little dirty code
-    Comparable<Integer> predId = Integer.parseInt(filterCond.toString().substring(1, 2));
-    //RexLiteral literal = (RexLiteral) rexBuilder.makeLiteral(predId, defaultIntType(), false);
+    // final Comparable<Integer> predId = Integer.parseInt(filterCond.toString().substring(1, 2));
+    // RexLiteral literal = (RexLiteral) rexBuilder.makeLiteral(predId, defaultIntType(), false);
 
-    List<RexInputRef> inputRefList = new ArrayList<>();
+    final List<RexInputRef> inputRefList = new ArrayList<>();
     for (Value predVal : predValues) {
       int idx = valuesOfNode.indexOf(predVal);
       // $i
       RexInputRef inputRef = new RexInputRef(idx, defaultIntType());
       // =($i, n)
-      //RexCall rexCall =
+      // RexCall rexCall =
       //    (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, List.of(inputRef, literal));
       inputRefList.add(inputRef);
     }
     if (inputRefList.isEmpty()) return null;
 
     // create a new UDF to present Pi
-    SqlFunction udfPred = getOrCreatePred(filterCond.toString().substring(0, 2));
+    final SqlFunction udfPred =
+        transCtx.getOrCreatePredicate(filterCond.toString().substring(0, 2));
     return (RexCall) rexBuilder.makeCall(udfPred, inputRefList);
   }
 
   @Override
-  public AlgeNode transform() {
-    SimpleFilterNode filter = ((SimpleFilterNode) planNode);
-    RexNode filterCondition = Expression2FilterCondition(filter.predicate());
-
+  public AlgeNode transformNode() {
+    final SimpleFilterNode filter = ((SimpleFilterNode) planNode);
+    final RexNode filterCondition = Expression2FilterCondition(filter.predicate());
     if (filterCondition == null) return null;
 
-    AlgeNode inputNode = transformNode(filter.child(planCtx, 0), planCtx, z3Context);
+    final AlgeNode inputNode = Transformer.dispatch(transCtx, filter.child(transCtx.planCtx(), 0));
     if (inputNode instanceof UnionNode) {
       return distributeCondition((UnionNode) inputNode, filterCondition);
     }

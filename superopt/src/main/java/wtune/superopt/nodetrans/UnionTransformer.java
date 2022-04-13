@@ -8,21 +8,26 @@ import wtune.sql.plan.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
 
 public class UnionTransformer extends BaseTransformer{
+  public UnionTransformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   @Override
-  public AlgeNode transform() {
-    SetOpNode union = ((SetOpNode) planNode);
-    List<AlgeNode> inputs = new ArrayList<>();
-    for (PlanNode child : union.children(planCtx)) {
-      AlgeNode childNode = transformNode(child, planCtx, z3Context);
+  public AlgeNode transformNode() {
+    final SetOpNode union = ((SetOpNode) planNode);
+    final List<AlgeNode> inputs = new ArrayList<>();
+    for (PlanNode child : union.children(transCtx.planCtx())) {
+      final AlgeNode childNode = Transformer.dispatch(transCtx, child);
       inputs.addAll(normalizeNodes(childNode));
     }
-    List<RelDataType> inputTypes = new ArrayList<>();
-    for(int i = 0, bound = colNumOfInput(union, planCtx); i < bound; i++) {
+    final List<RelDataType> inputTypes = new ArrayList<>();
+    for(int i = 0, bound = colNumOfInput(union, transCtx.planCtx()); i < bound; i++) {
       inputTypes.add(defaultIntType());
     }
-    UnionNode unionNode = new UnionNode(inputs, z3Context, inputTypes);
+    final UnionNode unionNode = new UnionNode(inputs, transCtx.z3Context(), inputTypes);
 
     if (union.deduplicated()) return AggTranformer.distinctToAgg(unionNode);
     else return unionNode;

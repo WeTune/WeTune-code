@@ -6,24 +6,28 @@ import wtune.spes.AlgeNode.AlgeNode;
 import wtune.spes.AlgeNode.SPJNode;
 import wtune.spes.AlgeNode.UnionNode;
 import wtune.spes.RexNodeHelper.RexNodeHelper;
-import wtune.sql.plan.Expression;
-import wtune.sql.plan.ProjNode;
-import wtune.sql.plan.Value;
-import wtune.sql.plan.Values;
+import wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
+
 public class ProjTransformer extends BaseTransformer {
+  public ProjTransformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   private RexNode Expression2RexNode(Expression expr) {
-    Values valuesOfInput = planCtx.valuesOf(planNode.child(planCtx, 0));
+    final PlanContext planCtx = transCtx.planCtx();
+    final Values valuesOfInput = planCtx.valuesOf(planNode.child(planCtx, 0));
 
     // Get a value's index just in projected values
     // Since expr's valueRefs may not equal to values on this plan node
-    Values values = planCtx.valuesReg().valueRefsOf(expr);
+    final Values values = planCtx.valuesReg().valueRefsOf(expr);
     assert !values.isEmpty();
 
-    List<RexInputRef> rexRefs = new ArrayList<>(values.size());
+    final List<RexInputRef> rexRefs = new ArrayList<>(values.size());
     for (Value val : values) {
       int idx = valuesOfInput.indexOf(val);
       if (idx < 0) return null;
@@ -35,11 +39,11 @@ public class ProjTransformer extends BaseTransformer {
   }
 
   @Override
-  public AlgeNode transform() {
-    ProjNode proj = ((ProjNode) planNode);
-    AlgeNode childNode = transformNode(proj.child(planCtx, 0), planCtx, z3Context);
+  public AlgeNode transformNode() {
+    final ProjNode proj = ((ProjNode) planNode);
+    final AlgeNode childNode = Transformer.dispatch(transCtx, proj.child(transCtx.planCtx(), 0));
 
-    List<RexNode> columns = new ArrayList<>();
+    final List<RexNode> columns = new ArrayList<>();
     for (Expression projExpr : proj.attrExprs()) {
       RexNode rexRef = Expression2RexNode(projExpr);
       if (rexRef == null) return null;

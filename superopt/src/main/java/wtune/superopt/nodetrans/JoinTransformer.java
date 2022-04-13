@@ -15,29 +15,33 @@ import wtune.spes.AlgeNode.UnionNode;
 import wtune.spes.AlgeRule.AlgeRule;
 import wtune.spes.RexNodeHelper.NotIn;
 import wtune.spes.RexNodeHelper.RexNodeHelper;
-import wtune.sql.plan.Expression;
-import wtune.sql.plan.JoinNode;
-import wtune.sql.plan.Value;
-import wtune.sql.plan.Values;
+import wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
+
 public class JoinTransformer extends BaseTransformer{
+  public JoinTransformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   private RexNode Expression2JoinCondition(Expression joinCond) {
     // t0(c0, c1, c2), t1(c3, c4) t0 join t1 on t0.c0 = t1.c3
     // valuesOfNode: ($0 $1 $2 $3 $4)
     // joinCondValues: ($0 $3)
     // Value in `joinCondValues` is in `valuesOfNode`
-    Values valuesOfNode = planCtx.valuesOf(planNode);
-    Values joinCondValues = planCtx.valuesReg().valueRefsOf(joinCond);
+    final PlanContext planCtx = transCtx.planCtx();
+    final Values valuesOfNode = planCtx.valuesOf(planNode);
+    final Values joinCondValues = planCtx.valuesReg().valueRefsOf(joinCond);
     if (joinCondValues.size() != 2) {
       throw new UnsupportedOperationException(
           "Unsupported join type for AlgeNode: operator num is " + joinCondValues.size());
     }
-    List<RexInputRef> rexRefs = new ArrayList<>(joinCondValues.size());
+    final List<RexInputRef> rexRefs = new ArrayList<>(joinCondValues.size());
     for (Value val : joinCondValues) {
       int idx = valuesOfNode.indexOf(val); // $(idx)
       rexRefs.add(new RexInputRef(idx, defaultIntType()));
@@ -47,27 +51,27 @@ public class JoinTransformer extends BaseTransformer{
   }
 
   @Override
-  public AlgeNode transform() {
-    JoinNode join = ((JoinNode) planNode);
-    AlgeNode leftNode = transformNode(join.child(planCtx, 0), planCtx, z3Context);
-    AlgeNode rightNode = transformNode(join.child(planCtx, 1), planCtx, z3Context);
+  public AlgeNode transformNode() {
+    final JoinNode join = ((JoinNode) planNode);
+    final AlgeNode leftNode = Transformer.dispatch(transCtx, join.child(transCtx.planCtx(), 0));
+    final AlgeNode rightNode = Transformer.dispatch(transCtx, join.child(transCtx.planCtx(), 1));
 
-    RexNode joinCondition = Expression2JoinCondition(join.joinCond());
-    List<AlgeNode> result = innerJoinAll(leftNode,rightNode,z3Context,joinCondition);
+    final RexNode joinCondition = Expression2JoinCondition(join.joinCond());
+    final List<AlgeNode> result = innerJoinAll(leftNode,rightNode,transCtx.z3Context(),joinCondition);
     switch (join.joinKind()) {
-      case INNER_JOIN -> { return constructNode(result,z3Context); }
+      case INNER_JOIN -> { return constructNode(result,transCtx.z3Context()); }
       case LEFT_JOIN -> {
-        result.addAll(leftJoinAll(leftNode,rightNode,joinCondition,z3Context));
-        return constructNode(result,z3Context);
+        result.addAll(leftJoinAll(leftNode,rightNode,joinCondition,transCtx.z3Context()));
+        return constructNode(result,transCtx.z3Context());
       }
       case RIGHT_JOIN -> {
-        result.addAll(rightJoinAll(leftNode,rightNode,joinCondition,z3Context));
-        return constructNode(result,z3Context);
+        result.addAll(rightJoinAll(leftNode,rightNode,joinCondition,transCtx.z3Context()));
+        return constructNode(result,transCtx.z3Context());
       }
       case FULL_JOIN -> {
-        result.addAll(leftJoinAll(leftNode,rightNode,joinCondition,z3Context));
-        result.addAll(rightJoinAll(leftNode,rightNode,joinCondition,z3Context));
-        return constructNode(result,z3Context);
+        result.addAll(leftJoinAll(leftNode,rightNode,joinCondition,transCtx.z3Context()));
+        result.addAll(rightJoinAll(leftNode,rightNode,joinCondition,transCtx.z3Context()));
+        return constructNode(result,transCtx.z3Context());
       }
       default -> throw new UnsupportedOperationException(
           "Unsupported join type for AlgeNode: " + join.joinKind().text());

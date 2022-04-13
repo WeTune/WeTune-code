@@ -12,21 +12,25 @@ import wtune.spes.AlgeNode.AggregateNode;
 import wtune.spes.AlgeNode.AlgeNode;
 import wtune.spes.AlgeNode.TableNode;
 import wtune.spes.AlgeRule.JoinToProject;
-import wtune.sql.plan.AggNode;
-import wtune.sql.plan.Expression;
-import wtune.sql.plan.Values;
+import wtune.sql.plan.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static wtune.superopt.nodetrans.Transformer.defaultIntType;
 
 import static wtune.sql.ast.ExprFields.Aggregate_Name;
 import static wtune.sql.ast.ExprKind.Aggregate;
 import static wtune.sql.ast.SqlNodeFields.SelectItem_Expr;
 
 public class AggTranformer extends BaseTransformer {
+  public AggTranformer(TransformCtx transCtx, PlanNode planNode) {
+    super(transCtx, planNode);
+  }
+
   private List<Integer> calAggAttrsList(List<Expression> attrExprs) {
-    List<Integer> aggExprs = new ArrayList<>();
+    final List<Integer> aggExprs = new ArrayList<>();
     for (int i = 0, bound = attrExprs.size(); i < bound; i++) {
       if (Aggregate.isInstance(attrExprs.get(i).template()) ||
           Aggregate.isInstance(attrExprs.get(i).template().$(SelectItem_Expr))) {
@@ -38,7 +42,7 @@ public class AggTranformer extends BaseTransformer {
 
   private List<Integer> calGroupByAttrsIdxList
           (List<Expression> groupByExprs, List<Expression> attrExprs) {
-    List<Integer> groupByList = new ArrayList<>(groupByExprs.size());
+    final List<Integer> groupByList = new ArrayList<>(groupByExprs.size());
     for (Expression grpExpr: groupByExprs) {
       for (int i = 0, bound = attrExprs.size(); i < bound; i++) {
         if (identicalExprs(grpExpr, attrExprs.get(i))) {
@@ -51,8 +55,9 @@ public class AggTranformer extends BaseTransformer {
   }
 
   private boolean identicalExprs(Expression expr1, Expression expr2) {
-    Values values1 = planCtx.valuesReg().valueRefsOf(expr1);
-    Values values2 = planCtx.valuesReg().valueRefsOf(expr2);
+    final PlanContext planCtx = transCtx.planCtx();
+    final Values values1 = planCtx.valuesReg().valueRefsOf(expr1);
+    final Values values2 = planCtx.valuesReg().valueRefsOf(expr2);
     if (values1.size() == values2.size()) {
       for (int j = 0, bound0 = values1.size(); j < bound0; j++) {
         if (values1.get(j) != values2.get(j)) return false;
@@ -90,9 +95,9 @@ public class AggTranformer extends BaseTransformer {
   }
 
   @Override
-  public AlgeNode transform() {
-    AggNode agg = (AggNode) planNode;
-    AlgeNode inputNode = transformNode(agg.child(planCtx, 0), planCtx, z3Context);
+  public AlgeNode transformNode() {
+    final AggNode agg = (AggNode) planNode;
+    final AlgeNode inputNode = Transformer.dispatch(transCtx, agg.child(transCtx.planCtx(), 0));
 
     final List<Expression> attrExprs = agg.attrExprs();
     final List<Integer> aggExprs = calAggAttrsList(attrExprs);
@@ -107,7 +112,7 @@ public class AggTranformer extends BaseTransformer {
     }
 
     // column types
-    ArrayList<RelDataType> columnTypes = new ArrayList<>();
+    final ArrayList<RelDataType> columnTypes = new ArrayList<>();
     for (int i = 0; i < groupByList.size(); i++) {
       int index = groupByList.get(i);
       RelDataType type = inputNode.getOutputExpr().get(index).getType();
@@ -136,12 +141,12 @@ public class AggTranformer extends BaseTransformer {
       columnTypes.add(defaultIntType());
     }
     final AggregateNode newAggNode =
-        new AggregateNode(groupByList, aggregateCallList, columnTypes, inputNode, z3Context);
+        new AggregateNode(groupByList, aggregateCallList, columnTypes, inputNode, transCtx.z3Context());
 
     // having condition
     final Expression havingPredExpr = agg.havingExpr();
     if (havingPredExpr == null)
-      return JoinTransformer.wrapBySPJ(newAggNode, z3Context);
+      return JoinTransformer.wrapBySPJ(newAggNode, transCtx.z3Context());
 
     int havingAttrIdx = -1;
     for(int i = 0, bound = attrExprs.size(); i < bound; i++) {
@@ -151,12 +156,12 @@ public class AggTranformer extends BaseTransformer {
       }
     }
     if (havingAttrIdx < 0)
-      return JoinTransformer.wrapBySPJ(newAggNode, z3Context);
+      return JoinTransformer.wrapBySPJ(newAggNode, transCtx.z3Context());
 
     final RexInputRef havingAttrs = new RexInputRef(havingAttrIdx, defaultIntType());
-    final SqlFunction havingPred = getOrCreatePred(havingPredExpr.toString().substring(0, 2));
+    final SqlFunction havingPred = transCtx.getOrCreatePredicate(havingPredExpr.toString().substring(0, 2));
     final RexNode havingCond = rexBuilder.makeCall(havingPred, Collections.singletonList(havingAttrs));
-    return JoinTransformer.wrapBySPJWithCondition(newAggNode, Collections.singleton(havingCond), z3Context);
+    return JoinTransformer.wrapBySPJWithCondition(newAggNode, Collections.singleton(havingCond), transCtx.z3Context());
   }
 
   private static boolean trivialAgg(AlgeNode input, List<Integer> groupByList) {
