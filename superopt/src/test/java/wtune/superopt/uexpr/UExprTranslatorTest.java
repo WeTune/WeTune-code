@@ -19,9 +19,9 @@ class UExprTranslatorTest {
                 + "AttrsSub(a2,t1);AttrsSub(a1,t1);AttrsSub(a3,t2)");
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(
-        "|∑{x0,x1}([x3 = a0(x0)] * r0(x0) * (r1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(r1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))|",
+        "||∑{x0,x1}([x3 = a0(x0)] * r0(x0) * (r1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(r1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))||",
         result.sourceExpr().toString());
-    assertEquals("|∑{x0}([x4 = a0(x0)] * r0(x0))|", result.targetExpr().toString());
+    assertEquals("||∑{x0}([x4 = a0(x0)] * r0(x0))||", result.targetExpr().toString());
     assertEquals("x3", result.sourceOutVar().toString());
     assertEquals("x4", result.targetOutVar().toString());
   }
@@ -113,7 +113,7 @@ class UExprTranslatorTest {
 
     final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
     assertEquals(
-        "r0(x0) * |∑{x1}([a1(x0) = a0(x1)] * not([IsNull(a0(x1))]) * r1(x1))|",
+        "r0(x0) * ||∑{x1}([a1(x0) = a0(x1)] * not([IsNull(a0(x1))]) * r1(x1))||",
         result.sourceExpr().toString());
     assertEquals("r0(x0)", result.targetExpr().toString());
     assertEquals("x0", result.sourceOutVar().toString());

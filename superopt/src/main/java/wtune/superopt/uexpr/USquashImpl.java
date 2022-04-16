@@ -15,6 +15,6 @@ record USquashImpl(UTerm body) implements USquash {
 
   @Override
   public String toString() {
-    return "|" + body + "|";
+    return "||" + body + "||";
   }
 }
