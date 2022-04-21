@@ -33,7 +33,7 @@ class UExprTranslator {
   private static final UName NAME_IS_NULL = UName.mk(UTerm.FUNC_IS_NULL_NAME);
 
   private final Substitution rule;
-  private final NameSequence tableSeq, attrsSeq, predSeq, varSeq;
+  private final NameSequence varSeq;
   private final Map<Symbol, UName> initiatedNames;
   private final Lazy<Set<Pair<SchemaDesc, SchemaDesc>>> knownEqSchemas;
   private final Map<SchemaDesc, UVar> pivotVars;
@@ -43,9 +43,6 @@ class UExprTranslator {
 
   UExprTranslator(Substitution rule, int tweak) {
     this.rule = rule;
-    this.tableSeq = NameSequence.mkIndexed("r", 0);
-    this.attrsSeq = NameSequence.mkIndexed("a", 0);
-    this.predSeq = NameSequence.mkIndexed("p", 0);
     this.varSeq = NameSequence.mkIndexed("x", 0);
     this.initiatedNames = new HashMap<>(16);
     this.knownEqSchemas = Lazy.mk(HashSet::new);
@@ -109,7 +106,7 @@ class UExprTranslator {
       return true;
     }
 
-    private UName mkName(Symbol sym, NameSequence nameSeq) {
+    private UName mkName(Symbol sym) {
       /* Create a new or retrieve an existing name for a symbol. */
       final UName existing = initiatedNames.get(sym);
       if (existing != null) return existing;
@@ -118,7 +115,8 @@ class UExprTranslator {
       if (isTargetSide) {
         name = initiatedNames.get(rule.constraints().instantiationOf(sym));
       } else {
-        name = UName.mk(nameSeq.next());
+        //name = UName.mk(nameSeq.next());
+        name = UName.mk(rule.naming().nameOf(sym));
         for (Symbol eqSym : rule.constraints().eqSymbols().eqClassOf(sym))
           initiatedNames.put(eqSym, name);
       }
@@ -156,7 +154,7 @@ class UExprTranslator {
         desc = result.symToTable.get(rule.constraints().instantiationOf(tableSym));
 
       } else {
-        final UName name = mkName(tableSym, tableSeq);
+        final UName name = mkName(tableSym);
         final SchemaDesc schema = mkSchema(tableSym);
         final UVar var = mkFreshVar(schema);
         final UTable tableTerm = UTable.mk(name, var);
@@ -170,7 +168,7 @@ class UExprTranslator {
 
     private AttrsDesc mkAttrDesc(Symbol attrSym) {
       // The congruent Attrs (i.e., identically named) share a desc instance.
-      final UName name = mkName(attrSym, attrsSeq);
+      final UName name = mkName(attrSym);
       final AttrsDesc existing = result.symToAttrs.get(attrSym);
       if (existing != null) return existing;
 
@@ -187,7 +185,7 @@ class UExprTranslator {
 
     private PredDesc mkPredDesc(Symbol predSym) {
       // The congruent Pred (i.e., identically named) share a desc instance.
-      final UName name = mkName(predSym, predSeq);
+      final UName name = mkName(predSym);
       final PredDesc existing = result.symToPred.get(predSym);
       if (existing != null) return existing;
 
