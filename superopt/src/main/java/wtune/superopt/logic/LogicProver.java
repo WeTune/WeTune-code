@@ -538,21 +538,20 @@ class LogicProver {
 
   private Status check(Solver solver, BoolExpr... exprs) {
     LogicSupport.incrementNumInvocations();
+    solver.push();
+    solver.add(exprs);
+    final Status res = solver.check();
     if (LogicSupport.dumpFormulas) {
-      solver.push();
-      solver.add(exprs);
       System.out.println("==== Begin of Snippet-" + (++callCount) + " ====");
       System.out.println(solver);
       System.out.println("(check-sat)");
       System.out.println("==== End of Snippet-" + callCount + " ====");
-      final Status res = solver.check();
       System.out.println("==> Result: " + res);
-      solver.pop();
       return res;
-
-    } else {
-      return solver.check(exprs);
     }
+    solver.pop();
+    return res;
+    //return solver.check(exprs);
   }
 
   private static Pair<UTerm, UTerm> separateFactors(UTerm mul, Set<UVar> vars) {
