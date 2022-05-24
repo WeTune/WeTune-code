@@ -16,11 +16,19 @@ public interface LocatorSupport {
   }
 
   static SqlNodes gatherColRefs(SqlNode root) {
-    return nodeLocator().accept(ExprKind.ColRef).scoped().gather(root);
+    return gatherColRefs(root, true);
+  }
+
+  static SqlNodes gatherColRefs(SqlNode root, boolean scoped) {
+    return nodeLocator().accept(ExprKind.ColRef).scoped(scoped).gather(root);
   }
 
   static SqlNodes gatherColRefs(Iterable<SqlNode> roots) {
-    final SqlGatherer gatherer = nodeLocator().accept(ExprKind.ColRef).scoped().gatherer();
+    return gatherColRefs(roots, true);
+  }
+
+  static SqlNodes gatherColRefs(Iterable<SqlNode> roots, boolean scoped) {
+    final SqlGatherer gatherer = nodeLocator().accept(ExprKind.ColRef).scoped(scoped).gatherer();
     SqlContext ctx = null;
     for (SqlNode root : roots) {
       if (ctx == null) ctx = root.context();
@@ -30,6 +38,10 @@ public interface LocatorSupport {
   }
 
   static SqlNodes gatherSimpleSources(SqlNode root) {
-    return nodeLocator().accept(TableSourceKind.SimpleSource).scoped().gather(root);
+    return gatherSimpleSources(root, true);
+  }
+
+  static SqlNodes gatherSimpleSources(SqlNode root, boolean scoped) {
+    return nodeLocator().accept(TableSourceKind.SimpleSource).scoped(scoped).gather(root);
   }
 }

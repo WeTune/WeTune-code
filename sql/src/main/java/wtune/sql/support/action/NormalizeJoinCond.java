@@ -21,7 +21,7 @@ import static wtune.sql.util.RenumberListener.watch;
 
 class NormalizeJoinCond {
   static void normalize(SqlNode root) {
-    for (SqlNode querySpec : LocatorSupport.nodeLocator().accept(SqlKind.QuerySpec).bottomUp().gather(root)) {
+    for (SqlNode querySpec : LocatorSupport.nodeLocator().accept(SqlKind.QuerySpec).bottomUp(true).gather(root)) {
       process(querySpec);
     }
   }

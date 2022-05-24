@@ -31,7 +31,7 @@ public class SchemaDetector {
    */
 
   private static final SqlDataType defaultDataType =
-      SqlDataType.mk(Category.INTEGRAL, "integer", 32, -1);
+      SqlDataType.mk(Category.INTEGRAL, "integer", -1, -1);
 
   private final SqlNode sqlAst;
   private final String dbType;
@@ -52,7 +52,7 @@ public class SchemaDetector {
     try {
       if (!registerTableSources()) return false;
 
-      final List<SqlNode> colRefs = gatherColRefs(sqlAst);
+      final List<SqlNode> colRefs = gatherColRefs(sqlAst, false);
       for (SqlNode colRef : colRefs) {
         final String qualName = colRef.$(ExprFields.ColRef_ColName).$(SqlNodeFields.ColName_Table);
         final String colName = colRef.$(ExprFields.ColRef_ColName).$(SqlNodeFields.ColName_Col);
@@ -84,7 +84,7 @@ public class SchemaDetector {
     tableInfo.clear();
     aliasInfo.clear();
 
-    final List<SqlNode> tables = gatherSimpleSources(sqlAst);
+    final List<SqlNode> tables = gatherSimpleSources(sqlAst, false);
     for (SqlNode table : tables) {
       final String tableName =
           table.$(TableSourceFields.Simple_Table).$(SqlNodeFields.TableName_Table);

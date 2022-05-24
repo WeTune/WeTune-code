@@ -15,13 +15,13 @@ public class NodeLocatorBuilder {
   private Predicate<SqlNode> criteria;
   private Predicate<SqlNode> brake;
 
-  public NodeLocatorBuilder scoped() {
-    this.scoped = true;
+  public NodeLocatorBuilder scoped(boolean scoped) {
+    this.scoped = scoped;
     return this;
   }
 
-  public NodeLocatorBuilder bottomUp() {
-    this.bottomUp = true;
+  public NodeLocatorBuilder bottomUp(boolean bottomUp) {
+    this.bottomUp = bottomUp;
     return this;
   }
 
