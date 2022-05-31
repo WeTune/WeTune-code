@@ -24,7 +24,7 @@ public class OptimizeSQLSupport {
   private static final String SCHEMA_INVALID_MSG = "Cannot detect a valid schema, please manually define a schema.";
   private static final String CANNOT_OPTIMIZE_MSG = "This SQL cannot be further optimized.";
   private static final String OPT_SQL_PARSE_ERR_MSG = "Error in parsing optimized SQL query.";
-  private static final Integer TIME_OUT_MS = 10000;
+  private static final Integer TIME_OUT_MS = Integer.MAX_VALUE;
 
   static {
     addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
