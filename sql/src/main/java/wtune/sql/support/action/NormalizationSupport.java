@@ -23,7 +23,7 @@ public abstract class NormalizationSupport {
     NormalizeGrouping.normalize(node);
     NormalizeBool.normalize(node);
     NormalizeJoinCond.normalize(node);
-    NormalizeTuple.normalize(node);
+    //NormalizeTuple.normalize(node);
     node.context().clearAdditionalInfo();
   }
 

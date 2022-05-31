@@ -56,6 +56,54 @@ public class OptimizeSQLTest {
   }
 
   @Test
+  void testOptimizeSQL2() {
+    final String rawSql =
+        "SELECT COUNT(*) FROM `roles` INNER JOIN `roles_users` ON `roles`.`id` = `roles_users`.`role_id` " +
+            "WHERE `roles_users`.`user_id` = 2400 AND `roles`.`id` IN (25, 26)";
+    final String schemaStr =
+        """
+            CREATE TABLE `roles_users` (
+               `id` int(11) NOT NULL,
+               `role_id` int(11) DEFAULT NULL,
+               `user_id` int(11) DEFAULT NULL,
+               PRIMARY KEY (`id`)
+             );
+             CREATE TABLE `roles`(
+                 `id`
+                 int(11) NOT NULL,
+                 PRIMARY KEY(`id`)
+             );""";
+    final Schema schema = Schema.parse(DbSupport.MySQL, schemaStr);
+
+    final OptimizeStat optRes =
+        OptimizeSQLSupport.optimizeSQL(rawSql, DbSupport.MySQL, schema, bank);
+    System.out.println(optRes.optSqls());
+  }
+
+  @Test
+  void testOptimizeSQL3() {
+    final String rawSql =
+        "SELECT `n`.* FROM `notes` AS `n` " +
+            "WHERE `n`.`type` = '1' AND `n`.`id` IN (SELECT `m`.`id` FROM `notes` AS `m` WHERE `m`.`commit_id` = '10232')";
+    //final String rawSql =
+    //    "SELECT `n`.`id` AS `id`, `n`.`type` AS `type`, `n`.`commit_id` AS `commit_id` FROM `notes` AS `m` " +
+    //        "INNER JOIN `notes` AS `n` ON `m`.`id` = `n`.`id` WHERE `n`.`type` = '1' AND `m`.`commit_id` = '10232'";
+    final String schemaStr =
+        """
+            CREATE TABLE `notes` (
+             `id` int NOT NULL,
+             `type` int NOT NULL,
+             `commit_id` int NOT NULL,
+             PRIMARY KEY (`id`)
+            ) ;""";
+    final Schema schema = Schema.parse(DbSupport.MySQL, schemaStr);
+
+    final OptimizeStat optRes =
+        OptimizeSQLSupport.optimizeSQL(rawSql, DbSupport.MySQL, schema, bank);
+    System.out.println(optRes.optSqls().get(0));
+  }
+
+  @Test
   void testOptimizeSQLWithoutSchema0() {
     final String rawSql =
         "SELECT t1.`id` FROM `tags` as t1 LEFT JOIN `tags` as t2 ON t1.`id` = t2.`id` WHERE t1.name = 'abc'";
