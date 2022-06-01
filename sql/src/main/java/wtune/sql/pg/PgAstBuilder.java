@@ -240,8 +240,11 @@ public class PgAstBuilder extends PGParserBaseVisitor<SqlNode> implements AstBui
       else return assertFalse();
       node.$(SqlNodeFields.SetOp_Kind, op);
 
-      if (ctx.set_qualifier() != null)
-        node.$(SqlNodeFields.SetOp_Option, SetOpOption.valueOf(ctx.set_qualifier().getText().toUpperCase()));
+      final SetOpOption option =
+          ctx.set_qualifier() == null
+              ? SetOpOption.DISTINCT
+              : SetOpOption.valueOf(ctx.set_qualifier().getText().toUpperCase());
+      node.$(SqlNodeFields.SetOp_Option, option);
 
       return node;
 

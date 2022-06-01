@@ -381,11 +381,11 @@ class MySQLAstBuilder extends MySQLParserBaseVisitor<SqlNode> implements AstBuil
 
     final SetOpOption option =
         ctx.unionOption() == null
-            ? null
+            ? SetOpOption.DISTINCT
             : SetOpOption.valueOf(ctx.unionOption().getText().toUpperCase());
 
     final SqlNode node = mkNode(SqlKind.SetOp);
-    node.$(SqlNodeFields.SetOp_Kind, SetOpKind.valueOf(ctx.setOp().getText()));
+    node.$(SqlNodeFields.SetOp_Kind, SetOpKind.valueOf(ctx.setOp().getText().toUpperCase()));
     node.$(SqlNodeFields.SetOp_Left, wrapAsQuery(left));
     node.$(SqlNodeFields.SetOp_Right, wrapAsQuery(right));
     node.$(SqlNodeFields.SetOp_Option, option);
