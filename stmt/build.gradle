@@ -7,7 +7,8 @@ dependencies {
     implementation('org.apache.commons:commons-lang3:3.10')
 }
 
-def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
+//def url = "https://docs.google.com/uc?export=download&id=1YsPhfmYp0z-jg8T6Z8bBfScFJdXf6Mhm"
+def url = "https://drive.google.com/uc?export=download&id=13NSrbNpF9szcxbmHMKpO-2r6vhzF11c4"
 
 def downloadTask = tasks.register("downloadDb", {
     doFirst {
