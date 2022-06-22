@@ -50,7 +50,6 @@ public class OptimizeSQLTest {
 
     final OptimizeStat optRes =
         OptimizeSQLSupport.optimizeSQL(rawSql, DbSupport.MySQL, schema, bank);
-    //assert optRes.isOptimized();
     System.out.println(optRes.optSqls());
     System.out.println(optRes.ruleSteps());
   }
@@ -85,9 +84,25 @@ public class OptimizeSQLTest {
     final String rawSql =
         "SELECT `n`.* FROM `notes` AS `n` " +
             "WHERE `n`.`type` = '1' AND `n`.`id` IN (SELECT `m`.`id` FROM `notes` AS `m` WHERE `m`.`commit_id` = '10232')";
-    //final String rawSql =
-    //    "SELECT `n`.`id` AS `id`, `n`.`type` AS `type`, `n`.`commit_id` AS `commit_id` FROM `notes` AS `m` " +
-    //        "INNER JOIN `notes` AS `n` ON `m`.`id` = `n`.`id` WHERE `n`.`type` = '1' AND `m`.`commit_id` = '10232'";
+    final String schemaStr =
+        """
+            CREATE TABLE `notes` (
+             `id` int NOT NULL,
+             `type` int NOT NULL,
+             `commit_id` int NOT NULL,
+             PRIMARY KEY (`id`)
+            ) ;""";
+    final Schema schema = Schema.parse(DbSupport.MySQL, schemaStr);
+
+    final OptimizeStat optRes =
+        OptimizeSQLSupport.optimizeSQL(rawSql, DbSupport.MySQL, schema, bank);
+    System.out.println(optRes.optSqls().get(0));
+  }
+
+  @Test
+  void testOptimizeSQL4() {
+    final String rawSql =
+        "SELECT `m`.* FROM `notes` AS `m` union SELECT `n`.* FROM `notes` AS `n`";
     final String schemaStr =
         """
             CREATE TABLE `notes` (
