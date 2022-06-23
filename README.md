@@ -5,7 +5,7 @@ discover new query rewrite rules for SQL query optimization.
 ## Publications 
 Zhaoguo Wang, Zhou Zhou, Yicun Yang, Haoran Ding, Gansen Hu, 
 Ding Ding, Chuzhe Tang, Haibo Chen, and Jinyang Li. 2022. 
-WeTune: Automatic Discovery and Verification of Query Rewrite Rules. 
+[WeTune: Automatic Discovery and Verification of Query Rewrite Rules.](https://dl.acm.org/doi/10.1145/3514221.3526125) 
 In Proceedings of the 2022 International Conference on Management of Data (SIGMOD ’22).
 
 ## CodeBase
