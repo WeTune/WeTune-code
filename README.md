@@ -1,11 +1,20 @@
 # WeTune
+WeTune is a rule generator that can automatically 
+discover new query rewrite rules for SQL query optimization.
 
+## Publications 
+Zhaoguo Wang, Zhou Zhou, Yicun Yang, Haoran Ding, Gansen Hu, 
+Ding Ding, Chuzhe Tang, Haibo Chen, and Jinyang Li. 2022. 
+WeTune: Automatic Discovery and Verification of Query Rewrite Rules. 
+In Proceedings of the 2022 International Conference on Management of Data (SIGMOD ’22).
+
+## CodeBase
 This codebase includes the source code and the testing scripts in the paper
 *Automatic Discovery and Verification of Query Rewrite Rules*
 
 ```shell
 .
-|-- click-to-run    # Click-to-run scripts for Part I.
+|-- click-to-run    # Click-to-run scripts for WeTune.
 |-- lib             # Required external library.
 |-- common          # Common utilities.
 |-- sql             # Data structures of SQL AST and query plan.
@@ -17,13 +26,13 @@ This codebase includes the source code and the testing scripts in the paper
     |-- logic       # SMT-based verifier.
     |-- optimizer   # Rewriter.
 |-- testbed         # Evaluation framework.
-|-- spes/           # SPES-based verifier.
+|-- spes/           # Integrated SPES-based verifier.
 |-- wtune_data/     # Data input/output directory.
     |-- schemas/    # Schemas of applications.
+    |-- schemas_mssql/ # Schemas of applications for SQL Server
     |-- wtune.db    # Sqlite DB storing the persistent statistics
 ```
 
-**Still under development and not ready for release.**
 
 ## Environment Setup
 
@@ -35,13 +44,12 @@ This codebase includes the source code and the testing scripts in the paper
 * antlr 4.8  *(Generate tokenizer and parser for SQL AST)*
 * Microsoft SQL Server 2019 *(Evaluate the usefulness of rules)*
 
-z3 and antlr library have been put in `lib/` off-the-shelf. Please use to deploy the other environment.
+z3 and antlr library have been put in `lib/` off-the-shelf.
+You can follow the steps of the script below to set up your environment.
 
 ```shell
 click-to-run/environment-setup.sh
 ```
-
-On the AWS machine, all requirements have been deployed.
 
 ### Compilation
 
