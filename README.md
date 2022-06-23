@@ -142,6 +142,10 @@ click-to-run/profile-cost.sh [-spes] [-calcite] [-tag] <workload_type>
 
 These scripts pick the optimized queries and profile them using Sql Server database.
 
+**For database connection parameters in the scripts above 
+and in file `common/src/main/java/wtune/common/datasource/DbSupport.java`
+, you can change them according to your evaluation environment.**
+
 `click-to-run/estimate-cost.sh` takes previously generated file `wtune_data/rewrite/result/1_query.tsv` as input and
 pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
 in `wtune_data/rewrite/result/2_query.tsv` and used rules will be stored in
