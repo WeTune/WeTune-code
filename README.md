@@ -38,6 +38,7 @@ This codebase includes the source code and the testing scripts in the paper
 
 ### Requirements
 
+* Ubuntu 20.04 (or below)
 * Java 17
 * Gradle 7.3.3
 * z3 4.8.9  *(SMT solver)*
@@ -126,7 +127,7 @@ click-to-run/prepare-workload.sh -tag base
 click-to-run/estimate-cost.sh
 
 # Profile the performance of rewritten queries
-# If you pofile on the `base` workload type, no need to run `prepare-workload.sh` again
+# If you profile on the `base` workload type, no need to run `prepare-workload.sh` again
 click-to-run/prepare-workload.sh [-tag <workload_type>]
 
 click-to-run/profile-cost.sh [-tag <workload_type>]
@@ -134,9 +135,12 @@ click-to-run/profile-cost.sh [-tag <workload_type>]
 
 These scripts pick the optimized queries and profile them using Sql Server database.
 
-> For database connection parameters in the scripts above
-> and in file `common/src/main/java/wtune/common/datasource/DbSupport.java`
-> , you can change them according to your evaluation environment.**
+> For database connection parameters at line 8 ~ 11 of
+> `click-to-run/make-db.sh`, line 71 ~ 74 of
+> `click-to-run/generate-date.sh` (these 2 scripts are invoked by `click-to-run/prepare-workload.sh`),
+> and the function `sqlserverProps` at line 58 of file
+> `common/src/main/java/wtune/common/datasource/DbSupport.java`,
+> you can change them according to your evaluation environment.**
 
 Use `click-to-run/prepare-workload.sh` to prepare profiling workload data in Sql Server database.
 It creates databases and corresponding schemas in Sql Server, then generate and import data to Sql Server.
@@ -391,3 +395,4 @@ click-to-run/verify-calcite-transformation.sh
 This script verify the equivalence of Calcite query pairs by directly both of two queries and checking whether the
 rewritten queries coincide, which effectively indicates WeTune can verify the transformation between the two query. The
 ordinal (line number) of 73 verifiable pairs will be printed, together with the rewritten query.
+
