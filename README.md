@@ -150,7 +150,7 @@ Dumped data files can be found in directory `wtune_data/dump/`.
 pick one rewritten query with the minimal cost by asking the database's cost model. The result will be stored
 in `wtune_data/rewrite/result/2_query.tsv`. Used rules of each rewritten query (which are considered as useful rules) 
 will be stored in `wtune_data/rewrite/result/2_trace.tsv`, represented as a sequence of rule ids separated by commas.
-
+The id of each rule is exactly its line number (start from 1) of the file containing all the rules. 
 And `click-to-run/profile-cost.sh` evaluates the optimized queries. The output file is in `wtune_data/profile/result/` by
 default.
 
