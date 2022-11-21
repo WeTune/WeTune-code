@@ -12,6 +12,7 @@ import wtune.stmt.Statement;
 import wtune.superopt.optimizer.OptimizationStep;
 import wtune.superopt.optimizer.Optimizer;
 import wtune.superopt.optimizer.OptimizerSupport;
+import wtune.superopt.substitution.Substitution;
 import wtune.superopt.substitution.SubstitutionBank;
 import wtune.superopt.substitution.SubstitutionSupport;
 
@@ -20,10 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import static wtune.common.utils.Commons.countOccurrences;
 import static wtune.common.utils.Commons.joining;
@@ -35,11 +33,13 @@ import static wtune.superopt.runner.RunnerSupport.parseIntArg;
 
 public class RewriteQuery implements Runner {
   private Path out, err;
+  private Path rulesOut;
   private String targetApp;
   private int stmtId;
   private boolean single, excludeNonEssential;
   private int verbosity;
   private SubstitutionBank rules;
+  private Map<Integer, Substitution> ruleRecord;
 
   @Override
   public void prepare(String[] argStrings) throws IOException {
@@ -73,6 +73,7 @@ public class RewriteQuery implements Runner {
     final Path ruleFilePath = dataDir.resolve(ruleFileName);
     IOSupport.checkFileExists(ruleFilePath);
     rules = SubstitutionSupport.loadBank(ruleFilePath);
+    ruleRecord = new HashMap<>();
 
     if (single) return;
 
@@ -84,6 +85,7 @@ public class RewriteQuery implements Runner {
 
     out = dir.resolve("1_query.tsv");
     err = dir.resolve("1_err.txt");
+    rulesOut = dir.resolve("1_rules.tsv");
 
     if (ruleFileName.contains("spes")) Files.createFile(dir.resolve("use_spes"));
     if (ruleFileName.contains("merged")) Files.createFile(dir.resolve("use_merged"));
@@ -99,6 +101,7 @@ public class RewriteQuery implements Runner {
     } else {
       optimizeAll(collectToRun());
     }
+    storeRules();
   }
 
   private List<Statement> collectToRun() {
@@ -151,6 +154,7 @@ public class RewriteQuery implements Runner {
 
       final List<String> optimizedSql = new ArrayList<>(optimized.size());
       final List<String> traces = new ArrayList<>(optimized.size());
+      final Set<Substitution> rules = new HashSet<>();
       for (PlanContext opt : optimized) {
         final List<OptimizationStep> steps = optimizer.traceOf(opt);
 
@@ -179,6 +183,8 @@ public class RewriteQuery implements Runner {
 
         final String trace = joining(",", steps, it -> String.valueOf(it.ruleId()));
         traces.add(trace);
+        steps.stream()
+                .forEach(optStep -> rules.add(optStep.rule()));
       }
 
       if (single) return;
@@ -191,6 +197,13 @@ public class RewriteQuery implements Runner {
                   "%s\t%d\t%d\t%s\t%s\n",
                   stmt.appName(), stmt.stmtId(), i, optimizedSql.get(i), traces.get(i));
           });
+
+
+        for (Substitution rule: rules){
+          if (rule != null && !ruleRecord.containsKey(rule.id())){
+            ruleRecord.put(rule.id(), rule);
+          }
+      }
 
     } catch (Throwable ex) {
       if (verbosity >= 1) System.err.println("fail to optimize stmt " + stmt);
@@ -246,6 +259,21 @@ public class RewriteQuery implements Runner {
         ex.printStackTrace();
       }
       return null;
+    }
+  }
+
+  private void storeRules() {
+    ArrayList<Integer> rules = new ArrayList<>(ruleRecord.keySet());
+    Collections.sort(rules);
+    for (Integer ruleId : rules) {
+      IOSupport.appendTo(
+              rulesOut,
+              writer -> {
+                writer.printf(
+                        "%d\t%s\n",
+                        ruleId, ruleRecord.get(ruleId));
+              }
+      );
     }
   }
 

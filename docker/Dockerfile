@@ -55,6 +55,7 @@ RUN apt-get install -y curl && \
     ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev
 ENV PATH /opt/mssql-tools/bin:$PATH
 
+RUN apt-get install git-lfs && git lfs install
 
 RUN rm -rf /var/lib/apt/lists/* && \
     apt-get clean

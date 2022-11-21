@@ -40,5 +40,5 @@ cd "${cwd}" || exit
 if [ -n "${calcite}" ]; then
   gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -calcite"
 else
-  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} "
+  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -dir=${rewrite_dir}/${result_dir}"
 fi

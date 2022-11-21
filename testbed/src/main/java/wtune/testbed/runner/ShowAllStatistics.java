@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+
 import static wtune.testbed.runner.GenerateTableData.*;
 
 public class ShowAllStatistics implements Runner {
@@ -22,9 +23,14 @@ public class ShowAllStatistics implements Runner {
   // Output
   private Path outRulesFile;
   private Path outStatistic;
-
+  private Path outOptInfo;
+  private Path outUsefulRulesFile;
   private OptimizerType optimizer;
   private boolean calcite;
+  private static final double BOUND_VALID = 0.1;
+  private static final double BOUND_INVALID = -0.05;
+  private Set<String> rulesRecord;
+  private Map<String, String> rulesPool;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -32,13 +38,15 @@ public class ShowAllStatistics implements Runner {
 
     final Path dataDir = Runner.dataDir();
     final Path rewriteDir =
-        dataDir.resolve(args.getOptional("rewriteDir", String.class, "rewrite/result"));
+            dataDir.resolve(args.getOptional("rewriteDir", String.class, "rewrite/result"));
     rewriteTraceFile =
-        rewriteDir.resolve(args.getOptional("traceFile", String.class, "2_trace.tsv"));
+            rewriteDir.resolve(args.getOptional("traceFile", String.class, "2_trace.tsv"));
+    final Path usedRulesFile = rewriteDir.resolve("1_rules.tsv");
     profileDir = dataDir.resolve(args.getOptional("profileDir", String.class, "profile/result"));
 
     IOSupport.checkFileExists(rewriteTraceFile);
     IOSupport.checkFileExists(profileDir);
+    IOSupport.checkFileExists(usedRulesFile);
 
     final String subDirName = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String outDir = args.getOptional("out", "O", String.class, "viewall");
@@ -48,41 +56,47 @@ public class ShowAllStatistics implements Runner {
 
     outRulesFile = dir.resolve("rules.tsv");
     outStatistic = dir.resolve("statistic.tsv");
+    outOptInfo = dir.resolve("optimizationInfo.tsv");
+    outUsefulRulesFile = dir.resolve("usefulRules.tsv");
+
 
     optimizer = OptimizerType.valueOf(args.getOptional("opt", "optimizer", String.class, "WeTune"));
     calcite = args.getOptional("calcite", boolean.class, false);
+    rulesRecord = new HashSet<>();
+    rulesPool = new HashMap<>();
+    List<String> rules = Files.readAllLines(usedRulesFile);
+    rules.stream()
+            .forEach(rule -> {
+              String[] split = rule.split("\t", 2);
+              rulesPool.put(split[0], split[1]);
+            });
   }
 
   @Override
   public void run() throws Exception {
-    collectRules();
+//        collectRules();
 
     if (calcite) collectStatisticCalcite();
     else collectStatistic();
+    collectRules();
   }
 
   private void collectRules() throws IOException {
-    final List<String> traceLines = Files.readAllLines(rewriteTraceFile);
-    Set<String> ruleSet = new HashSet<>();
-    for (int i = 0, bound = traceLines.size(); i < bound; ++i) {
-      String[] fields = traceLines.get(i).split("\t", 4);
-      if (fields.length != 4) {
-        continue;
-      }
-      String[] traces = fields[3].split(",");
-      ruleSet.addAll(Arrays.asList(traces));
-    }
-    List<String> ruleList = new ArrayList<>(ruleSet);
-    Collections.sort(ruleList);
-    for (String ruleId : ruleList) {
-      IOSupport.appendTo(outRulesFile, writer -> writer.printf("%s\n", ruleId));
+    IOSupport.appendTo(outUsefulRulesFile, writer -> writer.printf("%s\t%s\n", "ruleId", "rule"));
+    List<String> ruleList = new ArrayList<>(rulesRecord);
+    List<Integer> ruleIdList =
+            ruleList.stream()
+                    .map(Integer::parseInt)
+                    .sorted().toList();
+    for (Integer ruleId : ruleIdList) {
+      IOSupport.appendTo(outUsefulRulesFile, writer -> writer.printf("%d\t%s\n", ruleId, rulesPool.get(String.valueOf(ruleId))));
     }
   }
 
   private void collectStatistic() throws IOException {
     Map<String, StatementStatistic> statementStatMap = new HashMap<>();
     Map<String, Boolean> workloadExist =
-        new HashMap<>(Map.of(BASE, false, ZIPF, false, LARGE, false, LARGE_ZIPF, false));
+            new HashMap<>(Map.of(BASE, false, ZIPF, false, LARGE, false, LARGE_ZIPF, false));
 
     for (String tag : List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
       final Path profileFile = profileDir.resolve(tag);
@@ -95,44 +109,75 @@ public class ShowAllStatistics implements Runner {
         final String[] fieldsOpt = lines.get(i + 1).split(";");
 
         final String appName = fieldsBase[0];
-        final int stmtId = Integer.parseInt(fieldsBase[1]);
-        final int baseLatency = Integer.parseInt(fieldsBase[3]);
-        final int optLatency = Integer.parseInt(fieldsOpt[3]);
+        final long stmtId = Long.parseLong(fieldsBase[1]);
+        final long baseLatency = Long.parseLong(fieldsBase[3]);
+        final long optLatency = Long.parseLong(fieldsOpt[3]);
         final double p50Improvement = 1.0 - ((double) optLatency) / ((double) baseLatency);
 
         final StatementStatistic stat = statementStatMap.computeIfAbsent(
-            "%s-%d".formatted(appName, stmtId),
-            s -> new StatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
+                "%s-%d".formatted(appName, stmtId),
+                s -> new StatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
         stat.updateProfile(p50Improvement, tag);
       }
     }
 
     // Write header
-    final StringBuilder sb = new StringBuilder(
-        String.format("%s\t%s\t%s\t%s\t%s", "appName", "stmtId", "rawSql", "optSql", "usedRules"));
-    if (workloadExist.get(BASE)) sb.append("\t%s".formatted("baseImprove"));
-    if (workloadExist.get(ZIPF))sb.append("\t%s".formatted("zipfImprove"));
-    if (workloadExist.get(LARGE)) sb.append("\t%s".formatted("largeImprove"));
-    if (workloadExist.get(LARGE_ZIPF)) sb.append("\t%s".formatted("large_zipfImprove"));
-    IOSupport.appendTo(outStatistic, writer -> writer.printf("%s\n", sb.toString()));
+//        final StringBuilder sb = new StringBuilder(
+//                String.format("%s\t%s\t%s\t%s\t%s", "appName", "stmtId", "rawSql", "optSql", "usedRules"));
+//        writeHeader(workloadExist, sb, outStatistic);
+
+    final StringBuilder sbOptInfo = new StringBuilder(
+            String.format("%s\t%s\t%s", "appName", "stmtId", "usedRules"));
+    writeHeader(workloadExist, sbOptInfo, outOptInfo);
 
     // Write data
     List<String> stmtStatKeyList = new ArrayList<>(statementStatMap.keySet());
     Collections.sort(stmtStatKeyList);
     for (String stmtKey : stmtStatKeyList) {
       final StatementStatistic statistic = statementStatMap.get(stmtKey);
-      IOSupport.appendTo(
-          outStatistic,
-          writer -> writer.printf("%s\n",
+//            IOSupport.appendTo(
+//                    outStatistic,
+//                    writer -> writer.printf("%s\n",
+//                            statistic.toString(
+//                                    workloadExist.get(BASE),
+//                                    workloadExist.get(ZIPF),
+//                                    workloadExist.get(LARGE),
+//                                    workloadExist.get(LARGE_ZIPF)
+//                            )
+//                    )
+//            );
+
+      String optLine =
               statistic.toString(
-                  workloadExist.get(BASE),
-                  workloadExist.get(ZIPF),
-                  workloadExist.get(LARGE),
-                  workloadExist.get(LARGE_ZIPF)
-              )
-          )
-      );
+                      workloadExist.get(BASE),
+                      workloadExist.get(ZIPF),
+                      workloadExist.get(LARGE),
+                      workloadExist.get(LARGE_ZIPF),
+                      BOUND_VALID,
+                      BOUND_INVALID
+              );
+      if (optLine != null) {
+        IOSupport.appendTo(
+                outOptInfo,
+                writer -> writer.printf("%s\n", optLine)
+        );
+        String ruleTrace = optLine.split("\t")[2];
+        for (String ruleId : ruleTrace.split(",")) {
+          if (Integer.parseInt(ruleId) > 1) {
+            rulesRecord.add(ruleId);
+          }
+        }
+      }
     }
+  }
+
+
+  private void writeHeader(Map<String, Boolean> workloadExist, StringBuilder sbOptInfo, Path outOptInfo) {
+    if (workloadExist.get(BASE)) sbOptInfo.append("\t%s".formatted("baseImprove"));
+    if (workloadExist.get(ZIPF)) sbOptInfo.append("\t%s".formatted("zipfImprove"));
+    if (workloadExist.get(LARGE)) sbOptInfo.append("\t%s".formatted("largeImprove"));
+    if (workloadExist.get(LARGE_ZIPF)) sbOptInfo.append("\t%s".formatted("large_zipfImprove"));
+    IOSupport.appendTo(outOptInfo, writer -> writer.printf("%s\n", sbOptInfo.toString()));
   }
 
   private void collectStatisticCalcite() throws IOException {
@@ -155,7 +200,7 @@ public class ShowAllStatistics implements Runner {
       final int stmtId = Integer.parseInt(fieldsBase[1]);
       final String probeAppName = fieldsWeTuneOpt[0];
       final int probeStmtId = Integer.parseInt(fieldsWeTuneOpt[1]);
-      if (! (appName.equals(probeAppName) && stmtId == probeStmtId)) {
+      if (!(appName.equals(probeAppName) && stmtId == probeStmtId)) {
         continue;
       }
 
@@ -163,13 +208,13 @@ public class ShowAllStatistics implements Runner {
       final int calciteOptLatency = Integer.parseInt(fieldsCalciteOpt[3]);
       final int weTuneOptLatency = Integer.parseInt(fieldsWeTuneOpt[3]);
       final double calciteP50Improvement =
-          1.0 - ((double) calciteOptLatency) / ((double) baseLatency);
+              1.0 - ((double) calciteOptLatency) / ((double) baseLatency);
       final double weTuneP50Improvement =
-          1.0 - ((double) weTuneOptLatency) / ((double) baseLatency);
+              1.0 - ((double) weTuneOptLatency) / ((double) baseLatency);
 
-      final CalciteStatementStatistic stat =  statementStatMap.computeIfAbsent(
-          "%s-%d".formatted(appName, stmtId),
-          s -> new CalciteStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
+      final CalciteStatementStatistic stat = statementStatMap.computeIfAbsent(
+              "%s-%d".formatted(appName, stmtId),
+              s -> new CalciteStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
       stat.updateCalciteImprove(calciteP50Improvement);
       stat.updateWeTuneImprove(weTuneP50Improvement);
 
@@ -178,10 +223,10 @@ public class ShowAllStatistics implements Runner {
 
     // Write header
     final String header =
-        String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
-            "appName", "stmtId",
-            "rawSql", "calciteOptSql", "optSql", "usedRules",
-            "calciteImprove", "weTuneImprove");
+            String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+                    "appName", "stmtId",
+                    "rawSql", "calciteOptSql", "optSql", "usedRules",
+                    "calciteImprove", "weTuneImprove");
     IOSupport.appendTo(outStatistic, writer -> writer.printf("%s\n", header));
 
     // Write data
@@ -190,7 +235,7 @@ public class ShowAllStatistics implements Runner {
     for (String stmtKey : stmtStatKeyList) {
       final CalciteStatementStatistic statistic = statementStatMap.get(stmtKey);
       IOSupport.appendTo(
-          outStatistic, writer -> writer.printf("%s\n", statistic.toString())
+              outStatistic, writer -> writer.printf("%s\n", statistic.toString())
       );
     }
   }
@@ -215,24 +260,46 @@ public class ShowAllStatistics implements Runner {
       }
     }
 
-    public String toString(boolean base, boolean zipf, boolean large, boolean largeZipf) {
-      final StringBuilder sb = new StringBuilder(this.toString());
+    public String toString(boolean base, boolean zipf, boolean large, boolean largeZipf, double valid, double invalid) {
+      if ((base && baseImprove != null && baseImprove < invalid)
+              || (zipf && zipfImprove != null && zipfImprove < invalid)
+              || (large && largeImprove != null && largeImprove < invalid)
+              || (largeZipf && large_zipfImprove != null && large_zipfImprove < invalid)) {
+        return null;
+      }
+      if (!((base && baseImprove != null && baseImprove > valid)
+              || (zipf && zipfImprove != null && zipfImprove > valid)
+              || (large && largeImprove != null && largeImprove > valid)
+              || (largeZipf && large_zipfImprove != null && large_zipfImprove > valid))) {
+        return null;
+      }
+
+      final StringBuilder sb = new StringBuilder();
+      sb.append(String.format("%s\t%d\t%s", stmt.appName(), stmt.stmtId(), stmt.rewritten(optimizer).stackTrace()));
+      return getImprovement(base, zipf, large, largeZipf, sb);
+    }
+
+    private String getImprovement(boolean base, boolean zipf, boolean large, boolean largeZipf, StringBuilder sb) {
       if (base) sb.append("\t%s".formatted(baseImprove));
       if (zipf) sb.append("\t%s".formatted(zipfImprove));
       if (large) sb.append("\t%s".formatted(largeImprove));
       if (largeZipf) sb.append("\t%s".formatted(large_zipfImprove));
-
       return sb.toString();
+    }
+
+    public String toString(boolean base, boolean zipf, boolean large, boolean largeZipf) {
+      final StringBuilder sb = new StringBuilder(this.toString());
+      return getImprovement(base, zipf, large, largeZipf, sb);
     }
 
     @Override
     public String toString() {
       return String.format("%s\t%d\t%s\t%s\t%s",
-          stmt.appName(),
-          stmt.stmtId(),
-          stmt.original().rawSql(),
-          stmt.rewritten(optimizer).rawSql(),
-          stmt.rewritten(optimizer).stackTrace());
+              stmt.appName(),
+              stmt.stmtId(),
+              stmt.original().rawSql(),
+              stmt.rewritten(optimizer).rawSql(),
+              stmt.rewritten(optimizer).stackTrace());
     }
   }
 
@@ -257,14 +324,14 @@ public class ShowAllStatistics implements Runner {
     @Override
     public String toString() {
       return String.format("%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s",
-          stmt.appName(),
-          stmt.stmtId(),
-          stmt.original().rawSql(),
-          stmt.rewritten(OptimizerType.Calcite).rawSql(),
-          stmt.rewritten(optimizer).rawSql(),
-          stmt.rewritten(optimizer).stackTrace(),
-          calciteImprove,
-          weTuneImprove);
+              stmt.appName(),
+              stmt.stmtId(),
+              stmt.original().rawSql(),
+              stmt.rewritten(OptimizerType.Calcite).rawSql(),
+              stmt.rewritten(optimizer).rawSql(),
+              stmt.rewritten(optimizer).stackTrace(),
+              calciteImprove,
+              weTuneImprove);
     }
   }
 }

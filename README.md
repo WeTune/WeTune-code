@@ -116,7 +116,7 @@ This script uses the rules in `<path/to/rules>` to rewrite 8000+ web application
 * `-R`: path to rule file, rooted by `wtune_data/`. Default: `wtune_data/rules/rules.txt` if exists,
   otherwise `wtune_data/prepared/rules.txt`.
 
-The rewritten queries can be found in `wtune_data/rewrite/result/1_query.tsv`.
+The rewritten queries can be found in `wtune_data/rewrite/result/1_query.tsv` and the used rules is stored in `wtune_data/rewrite/result/1_rules.tsv`.
 
 ### Evaluate the Rewritings
 
@@ -186,8 +186,8 @@ The resulting files are stored in `wtune_data/viewall/result/` by default.
 ```shell
 |-- viewall
     |-- result
-        |-- rules.tsv       # Used rules during rewriting
-        |-- statistic.tsv   # Rewritten queries and profiling results
+        |-- optimizationInfo.tsv       # Rewritten queries that are effective
+        |-- usefulRules.tsv   # Rules used in the effective rewritten queries 
 ```
 
 ## SPES Verifier
@@ -241,7 +241,7 @@ This script uses the rules in `<path/to/rules>` to rewrite queries.
 * `-R`: path to rule file, rooted by `wtune_data/`. Default: `wtune_data/rules/rules.spes.txt` if exists,
   otherwise `wtune_data/prepared/rules.spes.txt`.
 
-The rewritten queries can be found in `wtune_data/rewrite/result_spes/1_query.tsv`.
+The rewritten queries can be found in `wtune_data/rewrite/result_spes/1_query.tsv` and the used rules is stored in `wtune_data/rewrite/result_spes/1_rules.tsv`.
 
 ### Evaluate the Rewritings
 

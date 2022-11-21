@@ -57,6 +57,7 @@ if [ -n "${calcite}" ]; then
 
   cd "${data_dir}/calcite/" || exit
 
+  rm ${result_dir}
   dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" "${result_dir}"
   echo "$(cut -f1,2 "${result_dir}/1_query.tsv" | uniq | wc -l) queries rewritten."
@@ -66,6 +67,7 @@ else
 
   cd "${data_dir}/${rewrite_dir}" || exit
 
+  rm ${result_dir}
   dir=$(ls -t -1 | grep 'run.\+' | head -1)
   ln -sfr "${dir}" "${result_dir}"
   echo "$(cut -f1,2 "${result_dir}/1_query.tsv" | uniq | wc -l) queries rewritten."

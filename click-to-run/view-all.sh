@@ -6,7 +6,7 @@ profile_dir="profile"
 sub_dir="result"
 
 out_dir="viewall"
-out_sub_dir="view"
+out_sub_dir="result"
 
 optimizer="WeTune"
 
