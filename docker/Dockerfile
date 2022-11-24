@@ -9,7 +9,7 @@ LABEL description="WeTune Docker"
 ARG DEBIAN_FRONTEND=noninteractive
 
 
-RUN apt-get update
+RUN apt-get -y update && apt-get -y upgrade
 
 # installing Java 17
 RUN apt-get install -y openjdk-17-jdk openjdk-17-jre

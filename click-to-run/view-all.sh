@@ -14,7 +14,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
   "-spes")
     sub_dir="result_spes"
-    out_sub_dir="view_spes"
+    out_sub_dir="result_spes"
     optimizer="SPES"
     shift 1
     ;;

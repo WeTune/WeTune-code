@@ -25,4 +25,5 @@ gradlew
 gradlew.bat
 gradle/
 enum.log*
+docker/result_from_docker
 #support/
