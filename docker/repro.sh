@@ -16,14 +16,32 @@ docker exec wetune sudo MSSQL_SA_PASSWORD=mssql2019Admin \
                   MSSQL_PID=developer \
                   /opt/mssql/bin/mssql-conf -n setup accept-eula
 
+######### choose to whether to run discovery.sh ########
+read -r -p "Do you want to run discovery.sh to find rules which takes about 3600 CPU hours in our machine? [Y/n] " input
+
+case $input in
+    [yY][eE][sS]|[yY])
+    echo "you choose yes"
+		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/discover-rules.sh"
+    docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/loop-until-discover-end.sh"
+		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh"
+		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/show-progress.sh"
+		;;
+
+    [nN][oO]|[nN])
+		echo "you choose no"
+    ;;
+
+    *)
+		echo "Invalid input..."
+		exit 1
+		;;
+esac
+
 ######## wetune: rewrite queries && pick one with the minimal cost#########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -tag base"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/estimate-cost.sh"
-
-######## spes: rewrite queries && pick one with the minimal cost #########
-docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh -spes"
-docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/estimate-cost.sh -spes"
 
 ######## prepare workload in sqlserver #########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -tag zipf"
@@ -36,19 +54,15 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh 
                                               bash click-to-run/profile-cost.sh -tag large &&
                                               bash click-to-run/profile-cost.sh -tag large_zipf"
 
-######## spes: profile the performance of rewritten queries ##########
-docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -spes -tag base &&
-                                              bash click-to-run/profile-cost.sh -spes -tag zipf &&
-                                              bash click-to-run/profile-cost.sh -spes -tag large &&
-                                              bash click-to-run/profile-cost.sh -spes -tag large_zipf"
+######## view rewriting and profiling results of both wetune #########
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh"
 
-######## view rewriting and profiling results of both wetune and spes #########
-docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh && bash click-to-run/view-all.sh -spes"
-
-########
+######## copy result from docker container to host machine ##########
 sudo mkdir "result_from_docker"
 docker cp wetune:/home/root/wetune/wtune_data/rewrite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/profile ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/viewall ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
 
 docker exec -it wetune /bin/bash

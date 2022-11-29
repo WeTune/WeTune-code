@@ -27,3 +27,4 @@ gradle/
 enum.log*
 docker/result_from_docker
 #support/
+enum_log/
