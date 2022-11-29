@@ -1,26 +1,0 @@
-> Task :common:compileJava UP-TO-DATE
-> Task :common:processResources NO-SOURCE
-> Task :common:classes UP-TO-DATE
-> Task :common:jar UP-TO-DATE
-> Task :spes:compileJava UP-TO-DATE
-> Task :spes:processResources NO-SOURCE
-> Task :spes:classes UP-TO-DATE
-> Task :spes:jar UP-TO-DATE
-> Task :sql:antlrMysql
-> Task :sql:copyMysql NO-SOURCE
-> Task :sql:antlrPg
-> Task :sql:copyPg NO-SOURCE
-> Task :sql:compileJava UP-TO-DATE
-> Task :sql:processResources UP-TO-DATE
-> Task :sql:classes UP-TO-DATE
-> Task :sql:jar UP-TO-DATE
-> Task :stmt:compileJava UP-TO-DATE
-> Task :stmt:processResources UP-TO-DATE
-> Task :stmt:classes UP-TO-DATE
-> Task :stmt:jar UP-TO-DATE
-> Task :superopt:compileJava UP-TO-DATE
-> Task :superopt:processResources UP-TO-DATE
-> Task :superopt:classes UP-TO-DATE
-
-> Task :superopt:run
-Candidates   0% [33m│                   │[0m     41/353728 (0:00:01 / 2:24:01) Candidates   0% [33m│                   │[0m    164/353728 (0:00:02 / 1:11:54) Candidates   0% [33m│                   │[0m    261/353728 (0:00:03 / 1:07:44) Candidates   0% [33m│                   │[0m    389/353728 (0:00:04 / 1:00:34) Candidates   0% [33m│                   │[0m    390/353728 (0:00:06 / 1:30:37) Candidates   0% [33m│                   │[0m    402/353728 (0:00:34 / 8:18:04) Candidates   0% [33m│                   │[0m    403/353728 (0:00:39 / 9:29:53) Candidates   0% [33m│                  │[0m    404/353728 (0:01:02 / 15:03:44) Candidates   0% [33m│                  │[0m    405/353728 (0:01:41 / 24:28:33) Candidates   0% [33m│                  │[0m    406/353728 (0:02:53 / 41:49:14) Candidates   0% [33m│                  │[0m    407/353728 (0:03:26 / 49:40:31) Candidates   0% [33m│                  │[0m    408/353728 (0:03:40 / 52:55:17) Candidates   0% [33m│                  │[0m    568/353728 (0:03:42 / 38:20:31) Candidates   0% [33m│                  │[0m    594/353728 (0:03:58 / 39:18:12) Candidates   0% [33m│                  │[0m    604/353728 (0:04:00 / 38:58:35) Candidates   0% [33m│                  │[0m    635/353728 (0:04:01 / 37:13:29) Candidates   0% [33m│                  │[0m    738/353728 (0:04:04 / 32:25:07) Candidates   0% [33m│                  │[0m    758/353728 (0:04:47 / 37:07:24) Candidates   0% [33m│                  │[0m    983/353728 (0:04:53 / 29:12:22) 
