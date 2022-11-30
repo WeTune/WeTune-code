@@ -25,7 +25,6 @@ case $input in
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/discover-rules.sh"
     docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/loop-until-discover-end.sh"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh"
-		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/show-progress.sh"
 		;;
 
     [nN][oO]|[nN])
