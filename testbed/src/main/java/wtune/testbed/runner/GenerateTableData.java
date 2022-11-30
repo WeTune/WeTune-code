@@ -76,7 +76,7 @@ public class GenerateTableData implements Runner {
     if (targets.isEmpty()) return;
     if (verbosity >= 3) System.out.println("Targets:");
     int numTargets = 0;
-    int lineNums = LARGE.equals(tag) || LARGE_ZIPF.equals(tag) ? 1_000_000 : 10_000;
+    int lineNums = LARGE.equals(tag) || LARGE_ZIPF.equals(tag) ? 100_000 : 10_000;
     for (var pair : targets.entrySet()) {
       numTargets += pair.getValue().size();
       if (verbosity >= 3)
