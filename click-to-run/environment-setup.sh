@@ -3,7 +3,7 @@
 # installing Java 17
 sudo add-apt-repository ppa:linuxuprising/java
 sudo apt update
-sudo apt-get install -y oracle-java17-installer oracle-java17-set-default
+sudo apt-get install -y openjdk-17-jdk openjdk-17-jre
 
 # installing Gradle 7.3.3
 wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip -P /tmp
