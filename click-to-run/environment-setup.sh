@@ -22,6 +22,8 @@ sudo apt-get install -y mssql-server
 # Sql Server setup
 # Choose the 2nd edition of Sql Server
 # Enter password: mssql2019Admin
+# (The password here only serves for evaluation scripts of the system
+# and does not involve the actual data in the production environment.)
 sudo /opt/mssql/bin/mssql-conf setup
 
 # firewall setup

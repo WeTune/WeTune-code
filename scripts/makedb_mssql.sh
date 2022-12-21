@@ -35,6 +35,8 @@ getConnProp() {
   port=${2:-'1433'}
   username=${3:-'SA'}
   password=${4:-'mssql2019Admin'}
+  # The information here only serves for evaluation scripts of the system
+  # and does not involve the actual data in the production environment.
 }
 
 doMakeTable() {

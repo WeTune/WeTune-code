@@ -42,6 +42,8 @@ public interface DbSupport {
     props.setProperty("jdbcUrl", "jdbc:postgresql://10.0.0.103:5432/" + db);
     props.setProperty("username", "root");
     props.setProperty("password", "admin");
+    // The information here only serves for evaluation scripts of the system
+    // and does not involve the actual data in the production environment.
     return props;
   }
 
@@ -52,6 +54,8 @@ public interface DbSupport {
         "jdbcUrl", "jdbc:mysql://10.0.0.103:3306/" + db + "?rewriteBatchedStatements=true");
     props.setProperty("username", "root");
     props.setProperty("password", "admin");
+    // The information here only serves for evaluation scripts of the system
+    // and does not involve the actual data in the production environment.
     return props;
   }
 
@@ -62,6 +66,8 @@ public interface DbSupport {
         "jdbcUrl", "jdbc:sqlserver://10.0.0.103:1433;DatabaseName=" + db);
     props.setProperty("username", "SA");
     props.setProperty("password", "mssql2019Admin");
+    // The information here only serves for evaluation scripts of the system
+    // and does not involve the actual data in the production environment.
     return props;
   }
 
@@ -71,6 +77,8 @@ public interface DbSupport {
     props.setProperty("jdbcUrl", "jdbc:log4jdbc:mysql://10.0.0.103:3306/" + db);
     props.setProperty("username", "root");
     props.setProperty("password", "admin");
+    // The information here only serves for evaluation scripts of the system
+    // and does not involve the actual data in the production environment.
     return props;
   }
 
@@ -80,6 +88,8 @@ public interface DbSupport {
     props.setProperty("jdbcUrl", "jdbc:log4jdbc:postgresql://10.0.0.103:5432/" + db);
     props.setProperty("username", "root");
     props.setProperty("password", "admin");
+    // The information here only serves for evaluation scripts of the system
+    // and does not involve the actual data in the production environment.
     return props;
   }
 }

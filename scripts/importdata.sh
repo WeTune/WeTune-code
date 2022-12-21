@@ -46,16 +46,22 @@ getConnProp() {
     port=${2:-'5432'}
     username=${3:-'root'}
     password=${4}
+    # The information here only serves for evaluation scripts of the system
+    # and does not involve the actual data in the production environment.
   elif [ "$dbType" = "$MYSQL" ]; then
     host=${1:-'10.0.0.103'}
     port=${2:-'3306'}
     username=${3:-'root'}
     password=${4:-'admin'}
+    # The information here only serves for evaluation scripts of the system
+    # and does not involve the actual data in the production environment.
   elif [ "$dbType" = "$SQLSERVER" ]; then
     host=${1:-'10.0.0.103'}
     port=${2:-'1433'}
     username=${3:-'SA'}
     password=${4:-'mssql2019Admin'}
+    # The information here only serves for evaluation scripts of the system
+    # and does not involve the actual data in the production environment.
   fi
 }
 
