@@ -30,4 +30,9 @@ class UnionOp extends BaseOp implements Union {
   public void leave0(OpVisitor visitor) {
     visitor.leaveUnion(this);
   }
+
+  @Override
+  public int shadowHash() {
+    return super.hashCode() * 31 + Boolean.hashCode(isDeduplicated);
+  }
 }

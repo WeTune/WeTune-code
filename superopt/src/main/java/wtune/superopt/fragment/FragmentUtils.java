@@ -38,7 +38,11 @@ class FragmentUtils {
     if (tree0 == tree1) return true;
     if (tree0 == null || tree1 == null) return false;
     if (tree0.kind() != tree1.kind()) return false;
-    if (tree0 instanceof ProjOp && tree1 instanceof ProjOp && ((ProjOp) tree0).isDeduplicated != ((ProjOp) tree1).isDeduplicated)
+    if (tree0.kind() == PROJ && tree1.kind() == PROJ
+        && ((Proj) tree0).isDeduplicated() != ((Proj) tree1).isDeduplicated())
+      return false;
+    if (tree0.kind() == SET_OP && tree1.kind() == SET_OP
+        && ((Union) tree0).isDeduplicated() != ((Union) tree1).isDeduplicated())
       return false;
 
     final Op[] prevs0 = tree0.predecessors();
