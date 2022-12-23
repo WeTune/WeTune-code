@@ -16,4 +16,6 @@
 !calcite/calcite.patch
 !prepared/
 !prepared/*
+!issues/
+!issues/issues
 #!wtune.db

@@ -22,7 +22,7 @@ public class CalciteRewritePlanCompare implements Runner {
   private String outDir;
 
   // Statistics
-  private Map<Statement, List<RewriteIssue>> issues;
+  private Map<Statement, List<Issue>> issues;
   private Path calciteIssues;
 
   @Override
@@ -100,7 +100,7 @@ public class CalciteRewritePlanCompare implements Runner {
       final var stmtIssues = issues.get(stmt);
       final StringBuilder issueBuilder = new StringBuilder();
 
-      for (var issue : RewriteIssue.values()) {
+      for (var issue : Issue.values()) {
         if (stmtIssues.contains(issue)) issueBuilder.append(issue).append(",");
         else issueBuilder.append(",");
       }
@@ -121,11 +121,11 @@ public class CalciteRewritePlanCompare implements Runner {
     if (inputCntCalcite > inputCntCmp) {
       issues
           .computeIfAbsent(stmt, statement -> new ArrayList<>())
-          .add(RewriteIssue.CALCITE_MORE_INPUTS);
+          .add(Issue.CALCITE_MORE_INPUTS);
     } else if (inputCntCalcite < inputCntCmp) {
       issues
           .computeIfAbsent(stmt, statement -> new ArrayList<>())
-          .add(RewriteIssue.CALCITE_LESS_INPUTS);
+          .add(Issue.CALCITE_LESS_INPUTS);
     }
   }
 
@@ -143,11 +143,11 @@ public class CalciteRewritePlanCompare implements Runner {
     if (containDistinctCalcite && !containDistinctCmp) {
       issues
           .computeIfAbsent(stmt, statement -> new ArrayList<>())
-          .add(RewriteIssue.CALCITE_RESERVE_DISTINCT);
+          .add(Issue.CALCITE_RESERVE_DISTINCT);
     } else if (!containDistinctCalcite && containDistinctCmp) {
       issues
           .computeIfAbsent(stmt, statement -> new ArrayList<>())
-          .add(RewriteIssue.CALCITE_DROP_DISTINCT);
+          .add(Issue.CALCITE_DROP_DISTINCT);
     }
   }
 
@@ -160,14 +160,16 @@ public class CalciteRewritePlanCompare implements Runner {
     }
     return false;
   }
+
+  private enum Issue {
+    // Negative
+    CALCITE_MORE_INPUTS,
+    CALCITE_RESERVE_DISTINCT,
+
+    // Positive
+    CALCITE_LESS_INPUTS,
+    CALCITE_DROP_DISTINCT
+  }
 }
 
-enum RewriteIssue {
-  // Negative
-  CALCITE_MORE_INPUTS,
-  CALCITE_RESERVE_DISTINCT,
 
-  // Positive
-  CALCITE_LESS_INPUTS,
-  CALCITE_DROP_DISTINCT
-}
