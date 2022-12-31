@@ -13,16 +13,20 @@ public interface StmtSyntaxRewriteHelper {
 
         sql = sql.replaceAll("\\(SELECT DISTINCT (.+) LIMIT ([0-9]+)\\)", "\\(SELECT DISTINCT TOP $2 $1\\)");
         sql = sql.replaceAll("\\(SELECT (.+) LIMIT ([0-9]+)\\)", "\\(SELECT TOP $2 $1\\)");
-        sql = sql.replaceFirst("SELECT DISTINCT (.+)LIMIT ([0-9]+)", "SELECT DISTINCT TOP $2 $1");
-        sql = sql.replaceFirst("SELECT (.+)LIMIT ([0-9]+)", "SELECT TOP $2 $1");
+        sql = sql.replaceFirst("SELECT DISTINCT (.+) LIMIT ([0-9]+)", "SELECT DISTINCT TOP $2 $1");
+        sql = sql.replaceFirst("SELECT (.+) LIMIT ([0-9]+)", "SELECT TOP $2 $1");
 
         sql = sql.replaceAll("MATCH ([^ ]+) AGAINST \\('([^\\[]+)' IN BOOLEAN MODE\\)", "$1 LIKE '%$2%'");
+        sql = sql.replaceAll("IS TRUE", "= 1");
+        sql = sql.replaceAll("IS FALSE", "= 0");
+        sql = sql.replaceAll("IS NOT TRUE", "<> 1");
+        sql = sql.replaceAll("IS NOT FALSE", "<> 0");
         sql = sql.replaceAll("'FALSE'", "0");
         sql = sql.replaceAll("'TRUE'", "1");
         sql = sql.replaceAll("TRUE", "1");
         sql = sql.replaceAll("FALSE", "0");
         sql = sql.replaceAll("USE INDEX \\([^ ]*\\)", "");
-        sql = sql.replaceAll("CROSS JOIN", "JOIN");
+        // sql = sql.replaceAll("CROSS JOIN", "JOIN");
         sql = sql.replaceAll("(\\[[A-Za-z0-9]+\\] \\* \\[[A-Za-z0-9]+\\])", "\\($1\\) AS total");
 
         sql = sql.replaceAll("ORDER BY \\([^ ]+ IS NULL\\) IS NULL, [^ ]+ IS NULL,", "ORDER BY");

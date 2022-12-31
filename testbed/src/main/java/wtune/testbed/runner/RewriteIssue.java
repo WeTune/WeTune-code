@@ -3,6 +3,7 @@ package wtune.testbed.runner;
 import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
+import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
 import java.nio.file.Files;
@@ -19,6 +20,7 @@ import java.util.List;
 import static wtune.common.datasource.DbSupport.*;
 
 public class RewriteIssue implements Runner {
+  private static final String DEFAULT_TAG = GenerateTableData.BASE;
   private int verbosity;
   private boolean single;
   private String targetApp;
@@ -45,9 +47,7 @@ public class RewriteIssue implements Runner {
         targetIssueId = Runner.parseIntArg(target.substring(index + 1), "issueId");
       }
     }
-    single = args.getOptional("1", "single", boolean.class, false);
-    if (single && target == null)
-      throw new IllegalArgumentException("-single/-1 must be specified with -T/-target");
+    single = target != null;
 
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (single) verbosity = Integer.MAX_VALUE;
@@ -67,13 +67,22 @@ public class RewriteIssue implements Runner {
   public void run() throws Exception {
     final List<String> lines = Files.readAllLines(issueFile);
     final List<Issue> issues = collectIssues(lines);
+    System.out.println(issues.size());
     for (Issue issue : issues) {
-      writeBasicInfo(issue);
-      checkMySQL(issue);
-      checkPg(issue);
-      checkSQLServer(issue);
-      checkWeTune(issue);
+      try {
+        writeBasicInfo(issue);
+        // checkMySQL(issue);
+        // checkPg(issue);
+        checkSQLServer(issue);
+        // checkWeTune(issue);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
+  }
+
+  @Override
+  public void stop() throws Exception {
     mysqlExplainer.close();
     pgExplainer.close();
     sqlServerExplainer.close();
@@ -83,34 +92,41 @@ public class RewriteIssue implements Runner {
     final Path outFile = outDir.resolve(issue.issueFullId());
     IOSupport.appendTo(outFile,
         writer ->
-            writer.printf("%s\nDescription: %s\nIssue Url: %s\n", issue.issueFullId(), issue.desc(), issue.url()));
+            writer.printf("%s\nDescription: %s\nIssue Url: %s\n\n", issue.issueFullId(), issue.desc(), issue.url()));
   }
 
   private void checkMySQL(Issue issue) throws SQLException {
-    final String dbName = issue.appName() + "_base";
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
     final String planInfo0 = mysqlExplainer.explain(dbName, issue.rawSql());
     final String planInfo1 = mysqlExplainer.explain(dbName, issue.optSql());
     final Path outFile = outDir.resolve(issue.issueFullId());
-    IOSupport.appendTo(outFile, writer -> writer.printf("Raw SQL plan in MySQL: \n%s\n", planInfo0));
-    IOSupport.appendTo(outFile, writer -> writer.printf("Opt SQL plan in MySQL: \n%s\n", planInfo1));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Raw query plan in MySQL: \n%s\n", planInfo0));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Opt query plan in MySQL: \n%s\n", planInfo1));
   }
 
   private void checkPg(Issue issue) throws SQLException {
-    final String dbName = issue.appName() + "_base";
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
     final String planInfo0 = pgExplainer.explain(dbName, issue.rawSql());
     final String planInfo1 = pgExplainer.explain(dbName, issue.optSql());
     final Path outFile = outDir.resolve(issue.issueFullId());
-    IOSupport.appendTo(outFile, writer -> writer.printf("Raw SQL plan in PostgreSQL: \n%s\n", planInfo0));
-    IOSupport.appendTo(outFile, writer -> writer.printf("Opt SQL plan in PostgreSQL: \n%s\n", planInfo1));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Raw query plan in PostgreSQL: \n%s\n", planInfo0));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Opt query plan in PostgreSQL: \n%s\n", planInfo1));
   }
 
   private void checkSQLServer(Issue issue) throws SQLException {
-    final String dbName = issue.appName() + "_base";
-    final String planInfo0 = sqlServerExplainer.explain(dbName, issue.rawSql());
-    final String planInfo1 = sqlServerExplainer.explain(dbName, issue.optSql());
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+    final String rawSql_ = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(issue.rawSql());
+    final String optSql_ = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(issue.optSql());
+    if (verbosity >= 1) {
+      System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
+      System.out.println(rawSql_);
+      System.out.println(optSql_);
+    }
+    final String planInfo0 = sqlServerExplainer.explain(dbName, rawSql_);
+    final String planInfo1 = sqlServerExplainer.explain(dbName, optSql_);
     final Path outFile = outDir.resolve(issue.issueFullId());
-    IOSupport.appendTo(outFile, writer -> writer.printf("Raw SQL plan in SQL Server: \n%s\n", planInfo0));
-    IOSupport.appendTo(outFile, writer -> writer.printf("Opt SQL plan in SQL Server: \n%s\n", planInfo1));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Raw query plan in SQL Server: \n%s\n", planInfo0));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Opt query plan in SQL Server: \n%s\n", planInfo1));
   }
 
   private void checkWeTune(Issue issue) {
@@ -128,21 +144,21 @@ public class RewriteIssue implements Runner {
         if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
-      final String appName = fields[0];
-      final int issueId = Runner.parseIntSafe(fields[1], -1);
+      final int issueId = Runner.parseIntSafe(fields[0], -1);
       if (issueId <= 0) {
         if (verbosity >= 1) System.err.println("malformed line " + i + " " + line);
         continue;
       }
-      if (single && !(appName.equals(targetApp) || issueId == targetIssueId)) continue;
+      final String appName = fields[1];
+      if (single && !(appName.equals(targetApp) && issueId == targetIssueId)) continue;
 
-      issues.add(new Issue(fields[0], issueId, fields[2], fields[3], fields[4], fields[5]));
+      issues.add(new Issue(issueId, appName, fields[2], fields[3], fields[4], fields[5]));
     }
 
     return issues;
   }
 
-  private record Issue(String appName, int issueId, String desc, String url, String rawSql, String optSql) {
+  private record Issue(int issueId, String appName, String desc, String url, String rawSql, String optSql) {
     private String issueFullId() {
       return appName + "#" + issueId;
     }
