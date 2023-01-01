@@ -3,6 +3,7 @@ package wtune.testbed.runner;
 import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
+import wtune.testbed.plantree.SQLServerPlanTree;
 import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
@@ -91,12 +92,17 @@ public class RewriteIssue implements Runner {
   private void writeBasicInfo(Issue issue) {
     final Path outFile = outDir.resolve(issue.issueFullId());
     IOSupport.appendTo(outFile,
-        writer ->
-            writer.printf("%s\nDescription: %s\nIssue Url: %s\n\n", issue.issueFullId(), issue.desc(), issue.url()));
+        writer -> writer.printf(
+            "Issue id: %s\nDescription: %s\nIssue Url: %s\n\n", issue.issueFullId(), issue.desc(), issue.url()));
   }
 
   private void checkMySQL(Issue issue) throws SQLException {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+    if (verbosity >= 1) {
+      System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
+      System.out.println(issue.rawSql());
+      System.out.println(issue.optSql());
+    }
     final String planInfo0 = mysqlExplainer.explain(dbName, issue.rawSql());
     final String planInfo1 = mysqlExplainer.explain(dbName, issue.optSql());
     final Path outFile = outDir.resolve(issue.issueFullId());
@@ -106,6 +112,11 @@ public class RewriteIssue implements Runner {
 
   private void checkPg(Issue issue) throws SQLException {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+    if (verbosity >= 1) {
+      System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
+      System.out.println(issue.rawSql());
+      System.out.println(issue.optSql());
+    }
     final String planInfo0 = pgExplainer.explain(dbName, issue.rawSql());
     final String planInfo1 = pgExplainer.explain(dbName, issue.optSql());
     final Path outFile = outDir.resolve(issue.issueFullId());
@@ -127,6 +138,11 @@ public class RewriteIssue implements Runner {
     final Path outFile = outDir.resolve(issue.issueFullId());
     IOSupport.appendTo(outFile, writer -> writer.printf("Raw query plan in SQL Server: \n%s\n", planInfo0));
     IOSupport.appendTo(outFile, writer -> writer.printf("Opt query plan in SQL Server: \n%s\n", planInfo1));
+    final SQLServerPlanTree planTree0 = SQLServerPlanTree.constructPlanTree(planInfo0);
+    final SQLServerPlanTree planTree1 = SQLServerPlanTree.constructPlanTree(planInfo1);
+    final boolean canRewrite = SQLServerPlanTree.samePlan(planTree0, planTree1);
+    IOSupport.appendTo(outFile,
+        writer -> writer.printf("SQL Server %s perform such rewrite.\n\n", canRewrite ? "can" : "cannot"));
   }
 
   private void checkWeTune(Issue issue) {
@@ -223,20 +239,25 @@ public class RewriteIssue implements Runner {
         currDbName = dbName;
         prepare();
       }
-      final ResultSet res = stmt.executeQuery(sql);
-      final StringBuilder builder = new StringBuilder();
-      while (res.next()) {
-        builder.append(String.join(";",
-            res.getString("StmtText"),
-            res.getString("NodeId"),
-            res.getString("Parent"),
-            res.getString("PhysicalOp"),
-            res.getString("LogicalOp"),
-            res.getString("Argument"),
-            res.getString("TotalSubtreeCost")));
-        builder.append("\n");
+      try {
+        final ResultSet res = stmt.executeQuery(sql);
+        final StringBuilder builder = new StringBuilder();
+        while (res.next()) {
+          builder.append(String.join(";",
+              res.getString("StmtText"),
+              res.getString("NodeId"),
+              res.getString("Parent"),
+              res.getString("PhysicalOp"),
+              res.getString("LogicalOp"),
+              res.getString("Argument"),
+              res.getString("TotalSubtreeCost")));
+          builder.append("\n");
+        }
+        return builder.toString();
+      } catch (SQLException e) {
+        e.printStackTrace();
+        return e.getClass() + ": " + e.getMessage();
       }
-      return builder.toString();
     }
 
     @Override
@@ -265,13 +286,18 @@ public class RewriteIssue implements Runner {
         currDbName = dbName;
         prepare();
       }
-      final ResultSet res = stmt.executeQuery("EXPLAIN FORMAT=TREE (" + sql + ");");
-      final StringBuilder builder = new StringBuilder();
-      while (res.next()) {
-        builder.append(res.getString(LABEL));
-        builder.append("\n");
+      try {
+        final ResultSet res = stmt.executeQuery("EXPLAIN FORMAT=TREE (" + sql + ");");
+        final StringBuilder builder = new StringBuilder();
+        while (res.next()) {
+          builder.append(res.getString(LABEL));
+          builder.append("\n");
+        }
+        return builder.toString();
+      } catch (SQLException e) {
+        // e.printStackTrace();
+        return e.getClass() + ": " + e.getMessage();
       }
-      return builder.toString();
     }
   }
 
@@ -289,13 +315,18 @@ public class RewriteIssue implements Runner {
         currDbName = dbName;
         prepare();
       }
-      final ResultSet res = stmt.executeQuery("EXPLAIN (" + sql + ");");
-      final StringBuilder builder = new StringBuilder();
-      while (res.next()) {
-        builder.append(res.getString(LABEL));
-        builder.append("\n");
+      try {
+        final ResultSet res = stmt.executeQuery("EXPLAIN (" + sql + ");");
+        final StringBuilder builder = new StringBuilder();
+        while (res.next()) {
+          builder.append(res.getString(LABEL));
+          builder.append("\n");
+        }
+        return builder.toString();
+      } catch (SQLException e) {
+        // e.printStackTrace();
+        return e.getClass() + ": " + e.getMessage();
       }
-      return builder.toString();
     }
   }
 }
