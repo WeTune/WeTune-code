@@ -21,7 +21,7 @@ import java.util.Properties;
 
 import static wtune.common.datasource.DbSupport.*;
 
-public class RewriteIssue implements Runner {
+public class IssueStudy implements Runner {
   private static final String DEFAULT_TAG = GenerateTableData.BASE;
   private int verbosity;
   private boolean single;
@@ -37,7 +37,7 @@ public class RewriteIssue implements Runner {
   private static final PlanExplainer sqlServerExplainer = new SQLServerExplainer();
   private static final PlanExplainer calciteRunner = new CalciteWrapperRunner();
 
-  private int mysqlCounter, pgCounter, sqlServerCounter, calciteCounter, wetuneCounter;
+  private List<String> mysqlSuccess, pgSuccess, sqlServerSuccess, calciteSuccess, wetuneSuccess;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -66,11 +66,11 @@ public class RewriteIssue implements Runner {
     if (!Files.exists(outDir)) Files.createDirectories(outDir);
 
     summaryFile = outDir.resolve("viewall");
-    mysqlCounter = 0;
-    pgCounter = 0;
-    sqlServerCounter = 0;
-    calciteCounter = 0;
-    wetuneCounter = 0;
+    mysqlSuccess = new ArrayList<>();
+    pgSuccess = new ArrayList<>();
+    sqlServerSuccess = new ArrayList<>();
+    calciteSuccess = new ArrayList<>();
+    wetuneSuccess = new ArrayList<>();
   }
 
   @Override
@@ -104,15 +104,20 @@ public class RewriteIssue implements Runner {
 
   private void writeSummaryInfo() {
     // IOSupport.appendTo(summaryFile,
-    //     writer -> writer.printf("MySQL can successfully rewrite queries in %d issues.\n\n", mysqlCounter));
+    //     writer -> writer.printf("MySQL successfully rewrites queries in %d issues.\n", mysqlSuccess.size()));
+    // IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", mysqlSuccess));
     // IOSupport.appendTo(summaryFile,
-    //     writer -> writer.printf("PostgreSQL can successfully rewrite queries in %d issues.\n\n", pgCounter));
+    //     writer -> writer.printf("PostgreSQL successfully rewrites queries in %d issues.\n", pgSuccess.size()));
+    // IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", pgSuccess));
     IOSupport.appendTo(summaryFile,
-        writer -> writer.printf("SQL Server can successfully rewrite queries in %d issues.\n\n", sqlServerCounter));
+        writer -> writer.printf("SQL Server successfully rewrites queries in %d issues.\n", sqlServerSuccess.size()));
+    IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", sqlServerSuccess));
     IOSupport.appendTo(summaryFile,
-        writer -> writer.printf("Calcite can successfully rewrite queries in %d issues.\n\n", calciteCounter));
+        writer -> writer.printf("Calcite successfully rewrites queries in %d issues.\n", calciteSuccess.size()));
+    IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", calciteSuccess));
     IOSupport.appendTo(summaryFile,
-        writer -> writer.printf("WeTune can successfully rewrite queries in %d issues.\n\n", wetuneCounter));
+        writer -> writer.printf("WeTune successfully rewrites queries in %d issues.\n", wetuneSuccess.size()));
+    IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", wetuneSuccess));
   }
 
   private void writeBasicInfo(Issue issue) {
@@ -169,7 +174,7 @@ public class RewriteIssue implements Runner {
     final boolean canRewrite = SQLServerPlanTree.samePlan(planTree0, planTree1);
     IOSupport.appendTo(outFile,
         writer -> writer.printf("SQL Server %s perform such rewrite.\n\n", canRewrite ? "can" : "cannot"));
-    if (canRewrite) ++sqlServerCounter;
+    if (canRewrite) sqlServerSuccess.add(issue.issueFullId());
   }
 
   private static final String CALCITE_REWRITE_DIR = "rewrite_calcite";
