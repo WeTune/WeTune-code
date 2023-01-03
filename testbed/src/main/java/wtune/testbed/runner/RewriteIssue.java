@@ -1,22 +1,23 @@
 package wtune.testbed.runner;
 
+import org.apache.calcite.jdbc.CalciteConnection;
 import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
+import wtune.stmt.App;
 import wtune.testbed.plantree.SQLServerPlanTree;
 import wtune.testbed.util.StmtSyntaxRewriteHelper;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static wtune.common.datasource.DbSupport.*;
 
@@ -29,10 +30,14 @@ public class RewriteIssue implements Runner {
 
   private Path issueFile;
   private Path outDir;
+  private Path summaryFile;
 
   private static final PlanExplainer mysqlExplainer = new MySQLExplainer();
   private static final PlanExplainer pgExplainer = new PgExplainer();
   private static final PlanExplainer sqlServerExplainer = new SQLServerExplainer();
+  private static final PlanExplainer calciteRunner = new CalciteWrapperRunner();
+
+  private int mysqlCounter, pgCounter, sqlServerCounter, calciteCounter, wetuneCounter;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -48,11 +53,9 @@ public class RewriteIssue implements Runner {
         targetIssueId = Runner.parseIntArg(target.substring(index + 1), "issueId");
       }
     }
-    single = target != null;
-
+    single = (target != null);
     verbosity = args.getOptional("v", "verbose", int.class, 0);
     if (single) verbosity = Integer.MAX_VALUE;
-
 
     final Path dataDir = Runner.dataDir();
     final Path issueDir = dataDir.resolve("issues");
@@ -62,24 +65,33 @@ public class RewriteIssue implements Runner {
     outDir = issueDir.resolve("run" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss")));
     if (!Files.exists(outDir)) Files.createDirectories(outDir);
 
+    summaryFile = outDir.resolve("viewall");
+    mysqlCounter = 0;
+    pgCounter = 0;
+    sqlServerCounter = 0;
+    calciteCounter = 0;
+    wetuneCounter = 0;
   }
 
   @Override
   public void run() throws Exception {
+    Class.forName("net.sf.log4jdbc.DriverSpy");
+
     final List<String> lines = Files.readAllLines(issueFile);
     final List<Issue> issues = collectIssues(lines);
-    System.out.println(issues.size());
     for (Issue issue : issues) {
       try {
         writeBasicInfo(issue);
         // checkMySQL(issue);
         // checkPg(issue);
         checkSQLServer(issue);
+        // checkCalcite(issue);
         // checkWeTune(issue);
       } catch (Exception e) {
         e.printStackTrace();
       }
     }
+    writeSummaryInfo();
   }
 
   @Override
@@ -87,6 +99,20 @@ public class RewriteIssue implements Runner {
     mysqlExplainer.close();
     pgExplainer.close();
     sqlServerExplainer.close();
+    calciteRunner.close();
+  }
+
+  private void writeSummaryInfo() {
+    // IOSupport.appendTo(summaryFile,
+    //     writer -> writer.printf("MySQL can successfully rewrite queries in %d issues.\n\n", mysqlCounter));
+    // IOSupport.appendTo(summaryFile,
+    //     writer -> writer.printf("PostgreSQL can successfully rewrite queries in %d issues.\n\n", pgCounter));
+    IOSupport.appendTo(summaryFile,
+        writer -> writer.printf("SQL Server can successfully rewrite queries in %d issues.\n\n", sqlServerCounter));
+    IOSupport.appendTo(summaryFile,
+        writer -> writer.printf("Calcite can successfully rewrite queries in %d issues.\n\n", calciteCounter));
+    IOSupport.appendTo(summaryFile,
+        writer -> writer.printf("WeTune can successfully rewrite queries in %d issues.\n\n", wetuneCounter));
   }
 
   private void writeBasicInfo(Issue issue) {
@@ -99,7 +125,7 @@ public class RewriteIssue implements Runner {
   private void checkMySQL(Issue issue) throws SQLException {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
     if (verbosity >= 1) {
-      System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
+      System.out.println("Checking " + issue.issueFullId() + " on MySQL: ");
       System.out.println(issue.rawSql());
       System.out.println(issue.optSql());
     }
@@ -113,7 +139,7 @@ public class RewriteIssue implements Runner {
   private void checkPg(Issue issue) throws SQLException {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
     if (verbosity >= 1) {
-      System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
+      System.out.println("Checking " + issue.issueFullId() + " on PostgreSQL: ");
       System.out.println(issue.rawSql());
       System.out.println(issue.optSql());
     }
@@ -143,12 +169,41 @@ public class RewriteIssue implements Runner {
     final boolean canRewrite = SQLServerPlanTree.samePlan(planTree0, planTree1);
     IOSupport.appendTo(outFile,
         writer -> writer.printf("SQL Server %s perform such rewrite.\n\n", canRewrite ? "can" : "cannot"));
+    if (canRewrite) ++sqlServerCounter;
+  }
+
+  private static final String CALCITE_REWRITE_DIR = "rewrite_calcite";
+  private static final Path CALCITE_REWRITE_LOG_FILE_PATH =
+      Runner.dataDir().resolve(CALCITE_REWRITE_DIR).resolve("rewrite_log.tsv");
+  private static final Path CALCITE_REWRITE_ERR_FILE_PATH =
+      Runner.dataDir().resolve(CALCITE_REWRITE_DIR).resolve("err.txt");
+
+  static {
+    try {
+      Files.deleteIfExists(CALCITE_REWRITE_LOG_FILE_PATH);
+      Files.deleteIfExists(CALCITE_REWRITE_ERR_FILE_PATH);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void checkCalcite(Issue issue) throws SQLException {
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+    if (verbosity >= 1) {
+      System.out.println("Checking " + issue.issueFullId() + " on Calcite: ");
+      System.out.println(issue.rawSql());
+      System.out.println(issue.optSql());
+    }
+    // Only dry run the query through Calcite wrapper
+    // Then get rewritten query from logs of log4j, which is stored in fixed path
+    // See `CALCITE_REWRITE_LOG_FILE_PATH` for the position
+    IOSupport.appendTo(CALCITE_REWRITE_LOG_FILE_PATH,
+        writer -> writer.printf("=====%s\n".formatted(issue.issueFullId())));
+
+    calciteRunner.explain(dbName, issue.rawSql());
   }
 
   private void checkWeTune(Issue issue) {
-  }
-
-  private void checkCalcite(Issue issue) {
   }
 
   private List<Issue> collectIssues(List<String> lines) {
@@ -326,6 +381,58 @@ public class RewriteIssue implements Runner {
       } catch (SQLException e) {
         // e.printStackTrace();
         return e.getClass() + ": " + e.getMessage();
+      }
+    }
+  }
+
+  private static class CalciteWrapperRunner extends BaseExplainer {
+
+    @Override
+    public String dbType() {
+      // Dynamically changed
+      return App.of(currDbName.split("_")[0]).dbType();
+    }
+
+    @Override
+    public void prepare() throws SQLException {
+      close();
+      final Properties props = DbSupport.dbPropsCalciteWrap(dbType(), currDbName);
+      final Properties info = new Properties();
+      info.put("model", "inline:{" +
+          "  version: '1.0'," +
+          "  defaultSchema: '" + "default" + "'," +
+          "  schemas: [" +
+          "    {" +
+          "      name: '" + "default" + "'," +
+          "      type: 'custom'," +
+          "      factory: 'org.apache.calcite.adapter.jdbc.JdbcSchema$Factory'," +
+          "      operand: {" +
+          "        jdbcDriver: 'net.sf.log4jdbc.DriverSpy'," +
+          "        jdbcUrl:'" + props.getProperty("jdbcUrl") + "'," +
+          "        jdbcUser: '" + props.getProperty("username") + "'," +
+          "        jdbcPassword: '" + props.getProperty("password") + "'" +
+          "      }" +
+          "    }" +
+          "  ]" +
+          "}");
+      conn = DriverManager
+          .getConnection("jdbc:calcite:caseSensitive=false", info)
+          .unwrap(CalciteConnection.class);
+      stmt = conn.createStatement();
+    }
+
+    @Override
+    public String explain(String dbName, String sql) throws SQLException {
+      if (!currDbName.equals(dbName)) {
+        currDbName = dbName;
+        prepare();
+      }
+      try {
+        final ResultSet res = stmt.executeQuery(sql);
+        return null;
+      } catch (SQLException e) {
+        e.printStackTrace();
+        return null;
       }
     }
   }

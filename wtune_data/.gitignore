@@ -18,4 +18,5 @@
 !prepared/*
 !issues/
 !issues/issues
+!issues/calcite_rewrites
 #!wtune.db

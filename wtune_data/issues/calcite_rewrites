@@ -1,0 +1,594 @@
+=====discourse#2
+SELECT "t5"."id", "t5"."user_id", "t5"."topic_id", "t5"."post_number", "t5"."raw", "t5"."cooked",
+"t5"."created_at", "t5"."updated_at", "t5"."reply_to_post_number", "t5"."reply_count", "t5"."quote_count",
+"t5"."deleted_at", "t5"."off_topic_count", "t5"."like_count", "t5"."incoming_link_count", "t5"."bookmark_count",
+"t5"."avg_time", "t5"."score", "t5"."reads", "t5"."post_type", "t5"."sort_order", "t5"."last_editor_id",
+"t5"."hidden", "t5"."hidden_reason_id", "t5"."notify_moderators_count", "t5"."spam_count",
+"t5"."illegal_count", "t5"."inappropriate_count", "t5"."last_version_at", "t5"."user_deleted",
+"t5"."reply_to_user_id", "t5"."percent_rank", "t5"."notify_user_count", "t5"."like_score",
+"t5"."deleted_by_id", "t5"."edit_reason", "t5"."word_count", "t5"."version", "t5"."cook_method",
+"t5"."wiki", "t5"."baked_at", "t5"."baked_version", "t5"."hidden_at", "t5"."self_edits", "t5"."reply_quoted",
+"t5"."via_email", "t5"."raw_email", "t5"."public_version", "t5"."action_code", "t5"."image_url",
+"t5"."locked_by_id", "t5"."id0", "t5"."group_id", "t5"."topic_id0" FROM (SELECT "t0"."topic_id"
+AS "TOPIC_ID", "t0"."topic_id" FROM (SELECT "id", "user_id", "topic_id" FROM "topic_allowed_users"
+WHERE "user_id" = 1086) AS "t0" INNER JOIN (SELECT "id", "topic_id" FROM "topic_allowed_users")
+AS "t1" ON "t0"."topic_id" = "t1"."topic_id" AND "t1"."id" <> "t0"."id" GROUP BY "t0"."topic_id"
+HAVING COUNT(*) = 1) AS "t4" INNER JOIN (SELECT * FROM "posts" LEFT JOIN "topic_allowed_groups"
+ON "posts"."topic_id" = "topic_allowed_groups"."topic_id" WHERE "topic_allowed_groups"."id"
+IS NULL) AS "t5" ON "t4"."topic_id" = "t5"."topic_id" AND "t4"."TOPIC_ID" = "t5"."topic_id"
+
+=====discourse#3
+SELECT "id", "parent_theme_id", "child_theme_id", "created_at", "updated_at" FROM "child_themes"
+WHERE "parent_theme_id" = 4076 GROUP BY "id", "parent_theme_id", "child_theme_id", "created_at",
+"updated_at"
+
+=====discourse#4
+SELECT * FROM (SELECT * FROM (SELECT "id", "created_at", "user_id", "category_id", "visible",
+"closed", "archived", "archetype" FROM "topics" WHERE "visible" AND ("created_at" > '2004-01-10T05:23:45'
+AND "created_at" < '2004-01-24T07:45:25') AND ("archetype" <> 'regular' AND (NOT "closed" AND
+NOT "archived"))) AS "t0" LEFT JOIN (SELECT "user_id", "topic_id", "notification_level" FROM
+"topic_users" WHERE "user_id" = 3287) AS "t2" ON "t0"."id" = "t2"."topic_id" WHERE CASE WHEN
+"t2"."notification_level" IS NOT NULL THEN CAST("t2"."notification_level" AS INTEGER) <> 3
+ELSE TRUE END) AS "t3" LEFT JOIN (SELECT "category_id", "user_id" FROM "category_users" WHERE
+"user_id" = 5904) AS "t5" ON "t3"."category_id" = "t5"."category_id" LEFT JOIN (SELECT "id"
+FROM "users") AS "t6" ON "t3"."user_id" = "t6"."id"
+
+=====discourse#5
+SELECT "posts"."id", "posts"."user_id", "posts"."topic_id", "posts"."post_number", "posts"."raw",
+"posts"."cooked", "posts"."created_at", "posts"."updated_at", "posts"."reply_to_post_number",
+"posts"."reply_count", "posts"."quote_count", "posts"."deleted_at", "posts"."off_topic_count",
+"posts"."like_count", "posts"."incoming_link_count", "posts"."bookmark_count", "posts"."avg_time",
+"posts"."score", "posts"."reads", "posts"."post_type", "posts"."sort_order", "posts"."last_editor_id",
+"posts"."hidden", "posts"."hidden_reason_id", "posts"."notify_moderators_count", "posts"."spam_count",
+"posts"."illegal_count", "posts"."inappropriate_count", "posts"."last_version_at", "posts"."user_deleted",
+"posts"."reply_to_user_id", "posts"."percent_rank", "posts"."notify_user_count", "posts"."like_score",
+"posts"."deleted_by_id", "posts"."edit_reason", "posts"."word_count", "posts"."version", "posts"."cook_method",
+"posts"."wiki", "posts"."baked_at", "posts"."baked_version", "posts"."hidden_at", "posts"."self_edits",
+"posts"."reply_quoted", "posts"."via_email", "posts"."raw_email", "posts"."public_version",
+"posts"."action_code", "posts"."image_url", "posts"."locked_by_id" FROM "posts" LEFT JOIN (SELECT
+"id" AS "ID", TRUE AS "i" FROM "posts" WHERE "percent_rank" <= 88.0 AND "topic_id" = 7290 GROUP
+BY "id", TRUE) AS "t1" ON "posts"."id" = "t1"."ID" WHERE "posts"."topic_id" = 6020 AND "posts"."post_number"
+= 1 OR "t1"."i" IS NOT NULL
+
+=====discourse#6
+SELECT * FROM "posts" INNER JOIN "topics" ON "posts"."topic_id" = "topics"."id" INNER JOIN
+"categories" ON "topics"."category_id" = "categories"."id"
+
+SELECT COUNT(*) AS "c", COUNT(*) AS "ck" FROM "categories" WHERE "search_priority" = 5
+(Repeatedly execute this query)
+
+=====discourse#7
+SELECT * FROM "posts"
+
+SELECT "post_timings"."topic_id" AS "TOPIC_ID", "post_timings"."post_number" AS "POST_NUMBER",
+EXP(CAST(COALESCE(SUM("post_timings"."msecs"), 0) / COUNT(*) AS INTEGER)) AS "GMEAN" FROM "post_timings"
+INNER JOIN (SELECT "user_id", "topic_id", "post_number" FROM "posts") AS "t" ON "post_timings"."post_number"
+= "t"."post_number" AND "post_timings"."topic_id" = "t"."topic_id" AND "t"."user_id" <> "post_timings"."user_id"
+GROUP BY "post_timings"."topic_id", "post_timings"."post_number"
+
+=====discourse#8
+java.lang.IllegalStateException: Unable to implement EnumerableCalc(expr#0..52=[{inputs}], expr#53=[=($t0, $t52)], proj#0..51=[{exprs}], $condition=[$t53]): rowcount = 37.5, cumulative cost = {3551747.500000001 rows, 7337961.0 cpu, 0.0 io}, id = 866
+  EnumerableCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0}]): rowcount = 250.0, cumulative cost = {3551710.000000001 rows, 7311211.0 cpu, 0.0 io}, id = 854
+    JdbcToEnumerableConverter: rowcount = 100.0, cumulative cost = {110.0 rows, 111.0 cpu, 0.0 io}, id = 816
+      JdbcTableScan(table=[[default, categories]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 1
+    EnumerableAggregate(group=[{0}]): rowcount = 2.5, cumulative cost = {35512.50000000001 rows, 73111.0 cpu, 0.0 io}, id = 852
+      EnumerableCalc(expr#0..53=[{inputs}], expr#54=[IS NULL($t52)], expr#55=[NOT($t14)], expr#56=[AND($t54, $t55)], expr#57=[IS NOT NULL($t53)], expr#58=[OR($t56, $t57)], proj#0..53=[{exprs}], $condition=[$t58]): rowcount = 25.0, cumulative cost = {35510.00000000001 rows, 73111.0 cpu, 0.0 io}, id = 862
+        EnumerableCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}]): rowcount = 100.0, cumulative cost = {35485.00000000001 rows, 61711.00000000001 cpu, 0.0 io}, id = 848
+          EnumerableCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}]): rowcount = 100.0, cumulative cost = {13120.0 rows, 21420.999999999996 cpu, 0.0 io}, id = 830
+            JdbcToEnumerableConverter: rowcount = 100.0, cumulative cost = {110.0 rows, 111.0 cpu, 0.0 io}, id = 819
+              JdbcTableScan(table=[[default, categories]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 1
+            JdbcToEnumerableConverter: rowcount = 1.0, cumulative cost = {128.1 rows, 213.1 cpu, 0.0 io}, id = 828
+              JdbcAggregate(group=[{0}]): rowcount = 1.0, cumulative cost = {128.0 rows, 213.0 cpu, 0.0 io}, id = 826
+                JdbcProject(i=[true]): rowcount = 15.0, cumulative cost = {127.0 rows, 213.0 cpu, 0.0 io}, id = 824
+                  JdbcFilter(condition=[=($1, $cor0.id)]): rowcount = 15.0, cumulative cost = {115.0 rows, 201.0 cpu, 0.0 io}, id = 822
+                    JdbcTableScan(table=[[default, category_groups]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 5
+          EnumerableAggregate(group=[{0}]): rowcount = 1.0, cumulative cost = {221.65 rows, 402.90000000000003 cpu, 0.0 io}, id = 846
+            JdbcToEnumerableConverter: rowcount = 1.0, cumulative cost = {220.65 rows, 402.90000000000003 cpu, 0.0 io}, id = 844
+              JdbcProject(i=[true]): rowcount = 1.0, cumulative cost = {220.55 rows, 402.8 cpu, 0.0 io}, id = 842
+                JdbcJoin(condition=[=($2, $6)], joinType=[inner]): rowcount = 1.0, cumulative cost = {219.75 rows, 402.0 cpu, 0.0 io}, id = 840
+                  JdbcFilter(condition=[AND(=($5, 2081219153), =($1, $cor0.id))]): rowcount = 2.25, cumulative cost = {102.25 rows, 201.0 cpu, 0.0 io}, id = 833
+                    JdbcTableScan(table=[[default, category_groups]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 5
+                  JdbcAggregate(group=[{1}]): rowcount = 1.5, cumulative cost = {116.5 rows, 201.0 cpu, 0.0 io}, id = 838
+                    JdbcFilter(condition=[=($2, 1420)]): rowcount = 15.0, cumulative cost = {115.0 rows, 201.0 cpu, 0.0 io}, id = 836
+                      JdbcTableScan(table=[[default, group_users]]): rowcount = 100.0, cumulative cost = {100.0 rows, 101.0 cpu, 0.0 io}, id = 11
+
+=====discourse#10
+SELECT COUNT(*) FROM (SELECT "id" FROM "topics") AS "t" INNER JOIN (SELECT "t1"."topic_id"
+FROM (SELECT "user_id", "topic_id", "deleted_at" FROM "posts" WHERE "deleted_at" IS NULL AND
+"user_id" = 9627) AS "t1" INNER JOIN (SELECT "id", "user_id" FROM "topics") AS "t2" ON "t1"."topic_id"
+= "t2"."id" AND "t2"."user_id" <> "t1"."user_id" GROUP BY "t1"."topic_id") AS "t3" ON "t"."id"
+= "t3"."topic_id"
+
+=====discourse#11
+SELECT * FROM "posts" INNER JOIN "topics" ON "posts"."topic_id" = "topics"."id"
+
+SELECT COUNT(*) AS "c", COUNT(*) AS "ck" FROM "post_search_data" WHERE "locale" = '0'
+(Repeatedly execute this query)
+
+=====discourse#12
+SELECT * FROM "category_users"
+
+SELECT COUNT(*) AS "c", COUNT(*) AS "ck" FROM "users"
+(Repeatedly execute this query)
+
+=====discourse#13
+SELECT * FROM "group_users"
+
+SELECT * FROM (SELECT "id" FROM "groups") AS "t" INNER JOIN (SELECT "group_id", "user_id" FROM
+"group_users") AS "t0" ON "t"."id" = "t0"."group_id" INNER JOIN (SELECT "id" FROM "users")
+AS "t1" ON "t0"."user_id" = "t1"."id"
+
+SELECT COUNT(*) AS "c", COUNT(*) AS "ck" FROM "users" WHERE "admin"
+(Repeatedly execute this query)
+
+=====discourse#14
+SELECT "t2"."id", "t2"."username", "t2"."created_at", "t2"."updated_at", "t2"."name", "t2"."seen_notification_id",
+"t2"."last_posted_at", "t2"."password_hash", "t2"."salt", "t2"."active", "t2"."username_lower",
+"t2"."last_seen_at", "t2"."admin", "t2"."last_emailed_at", "t2"."trust_level", "t2"."approved",
+"t2"."approved_by_id", "t2"."approved_at", "t2"."previous_visit_at", "t2"."suspended_at", "t2"."suspended_till",
+"t2"."date_of_birth", "t2"."views", "t2"."flag_level", "t2"."ip_address", "t2"."moderator",
+"t2"."title", "t2"."uploaded_avatar_id", "t2"."locale", "t2"."primary_group_id", "t2"."registration_ip_address",
+"t2"."staged", "t2"."first_seen_at", "t2"."silenced_till", "t2"."group_locked_trust_level",
+"t2"."manual_locked_trust_level", "t2"."secure_identifier" FROM (SELECT "users"."id", "users"."username",
+"users"."created_at", "users"."updated_at", "users"."name", "users"."seen_notification_id",
+"users"."last_posted_at", "users"."password_hash", "users"."salt", "users"."active", "users"."username_lower",
+"users"."last_seen_at", "users"."admin", "users"."last_emailed_at", "users"."trust_level",
+"users"."approved", "users"."approved_by_id", "users"."approved_at", "users"."previous_visit_at",
+"users"."suspended_at", "users"."suspended_till", "users"."date_of_birth", "users"."views",
+"users"."flag_level", "users"."ip_address", "users"."moderator", "users"."title", "users"."uploaded_avatar_id",
+"users"."locale", "users"."primary_group_id", "users"."registration_ip_address", "users"."staged",
+"users"."first_seen_at", "users"."silenced_till", "users"."group_locked_trust_level", "users"."manual_locked_trust_level",
+"users"."secure_identifier", "t0"."user_id" FROM "users" INNER JOIN (SELECT "user_id" FROM
+"group_users" WHERE "group_id" = 8861 GROUP BY "user_id") AS "t0" ON "users"."id" = "t0"."user_id"
+WHERE "users"."active" FETCH NEXT 20 ROWS ONLY) AS "t2"
+
+=====discourse#15
+SELECT * FROM "notifications"
+
+SELECT COUNT(*) AS "c" FROM "topics" WHERE "deleted_at" IS NULL
+(Repeatedly execute this query)
+
+=====discourse#17
+SELECT "t11"."id", "t11"."title", "t11"."last_posted_at", "t11"."created_at", "t11"."updated_at",
+"t11"."views", "t11"."posts_count", "t11"."user_id", "t11"."last_post_user_id", "t11"."reply_count",
+"t11"."featured_user1_id", "t11"."featured_user2_id", "t11"."featured_user3_id", "t11"."avg_time",
+"t11"."deleted_at", "t11"."highest_post_number", "t11"."image_url", "t11"."like_count", "t11"."incoming_link_count",
+"t11"."category_id", "t11"."visible", "t11"."moderator_posts_count", "t11"."closed", "t11"."archived",
+"t11"."bumped_at", "t11"."has_summary", "t11"."archetype", "t11"."featured_user4_id", "t11"."notify_moderators_count",
+"t11"."spam_count", "t11"."pinned_at", "t11"."score", "t11"."percent_rank", "t11"."subtype",
+"t11"."slug", "t11"."deleted_by_id", "t11"."participant_count", "t11"."word_count", "t11"."excerpt",
+"t11"."pinned_globally", "t11"."pinned_until", "t11"."fancy_title", "t11"."highest_staff_post_number",
+"t11"."featured_link", "t11"."reviewable_score" FROM (SELECT "t"."id", "t"."title", "t"."last_posted_at",
+"t"."created_at", "t"."updated_at", "t"."views", "t"."posts_count", "t"."user_id", "t"."last_post_user_id",
+"t"."reply_count", "t"."featured_user1_id", "t"."featured_user2_id", "t"."featured_user3_id",
+"t"."avg_time", "t"."deleted_at", "t"."highest_post_number", "t"."image_url", "t"."like_count",
+"t"."incoming_link_count", "t"."category_id", "t"."visible", "t"."moderator_posts_count", "t"."closed",
+"t"."archived", "t"."bumped_at", "t"."has_summary", "t"."archetype", "t"."featured_user4_id",
+"t"."notify_moderators_count", "t"."spam_count", "t"."pinned_at", "t"."score", "t"."percent_rank",
+"t"."subtype", "t"."slug", "t"."deleted_by_id", "t"."participant_count", "t"."word_count",
+"t"."excerpt", "t"."pinned_globally", "t"."pinned_until", "t"."fancy_title", "t"."highest_staff_post_number",
+"t"."featured_link", "t"."reviewable_score", "t1"."user_id" AS "user_id0", "t1"."topic_id",
+"t3"."topic_id" AS "topic_id0", "t6"."TOPIC_ID", "t6"."i", "t9"."TOPIC_ID" AS "TOPIC_ID0",
+"t9"."i" AS "i0" FROM (SELECT * FROM "topics" WHERE "deleted_at" IS NULL AND "archetype" =
+'private_message' AND "id" NOT IN (42145, 60069, 68559) AND "visible" = 't') AS "t" LEFT JOIN
+(SELECT "user_id", "topic_id" FROM "topic_users" WHERE "user_id" = 13455) AS "t1" ON "t"."id"
+= "t1"."topic_id" INNER JOIN (SELECT "topic_id" FROM "topic_allowed_users" WHERE "user_id"
+= 13455 GROUP BY "topic_id") AS "t3" ON "t"."id" = "t3"."topic_id" LEFT JOIN (SELECT "topic_id"
+AS "TOPIC_ID", TRUE AS "i" FROM "topic_allowed_users" WHERE "user_id" IN (-10, 2, 1995, 8307,
+17621, 22980) GROUP BY "topic_id", TRUE) AS "t6" ON "t"."id" = "t6"."TOPIC_ID" LEFT JOIN (SELECT
+"topic_id" AS "TOPIC_ID", TRUE AS "i" FROM "topic_allowed_groups" WHERE "group_id" = -10 GROUP
+BY "topic_id", TRUE) AS "t9" ON "t"."id" = "t9"."TOPIC_ID" WHERE "t6"."i" IS NOT NULL OR "t9"."i"
+IS NOT NULL ORDER BY "t"."bumped_at" DESC) AS "t11"
+
+=====discourse#18
+SELECT * FROM "categories" INNER JOIN "topics" ON "categories"."topic_id" = "topics"."id" AND
+("categories"."id" = 1 OR "categories"."parent_category_id" = 1 AND "categories"."topic_id"
+<> "topics"."id")
+
+=====gitlab#19
+SELECT * FROM "issues" WHERE "project_id" = 13083 AND "iid" = 1 ORDER BY "id" DESC FETCH NEXT
+1 ROWS ONLY
+
+=====gitlab#21
+SELECT "ci_pipelines"."id", "ci_pipelines"."ref", "ci_pipelines"."sha", "ci_pipelines"."before_sha",
+"ci_pipelines"."created_at", "ci_pipelines"."updated_at", "ci_pipelines"."tag", "ci_pipelines"."yaml_errors",
+"ci_pipelines"."committed_at", "ci_pipelines"."project_id", "ci_pipelines"."status", "ci_pipelines"."started_at",
+"ci_pipelines"."finished_at", "ci_pipelines"."duration", "ci_pipelines"."user_id", "ci_pipelines"."lock_version",
+"ci_pipelines"."auto_canceled_by_id", "ci_pipelines"."pipeline_schedule_id", "ci_pipelines"."source",
+"ci_pipelines"."config_source", "ci_pipelines"."protected", "ci_pipelines"."failure_reason",
+"ci_pipelines"."iid", "ci_pipelines"."merge_request_id", "ci_pipelines"."source_sha", "ci_pipelines"."target_sha",
+"ci_pipelines"."external_pull_request_id" FROM "ci_pipelines" INNER JOIN (SELECT "EXPR$0" FROM
+(SELECT "ref", MAX("id") AS "EXPR$0" FROM "ci_pipelines" WHERE "project_id" = 14074169 AND
+"ref" IN ('actually', 'existing', 'here', 'refs') GROUP BY "ref") AS "t0" GROUP BY "EXPR$0")
+AS "t1" ON "ci_pipelines"."id" = "t1"."EXPR$0" ORDER BY "ci_pipelines"."id" DESC FETCH NEXT
+20 ROWS ONLY
+
+=====gitlab#22
+SELECT "t1"."id", "t1"."title", "t1"."author_id", "t1"."project_id", "t1"."created_at", "t1"."updated_at",
+"t1"."description", "t1"."milestone_id", "t1"."iid", "t1"."updated_by_id", "t1"."weight", "t1"."confidential",
+"t1"."due_date", "t1"."moved_to_id", "t1"."lock_version", "t1"."title_html", "t1"."description_html",
+"t1"."time_estimate", "t1"."relative_position", "t1"."service_desk_reply_to", "t1"."cached_markdown_version",
+"t1"."last_edited_at", "t1"."last_edited_by_id", "t1"."discussion_locked", "t1"."closed_at",
+"t1"."closed_by_id", "t1"."state_id", "t1"."duplicated_to_id", "t1"."promoted_to_epic_id",
+"t1"."health_status", "t1"."external_key" FROM (SELECT "t0"."id", "t0"."title", "t0"."author_id",
+"t0"."project_id", "t0"."created_at", "t0"."updated_at", "t0"."description", "t0"."milestone_id",
+"t0"."iid", "t0"."updated_by_id", "t0"."weight", "t0"."confidential", "t0"."due_date", "t0"."moved_to_id",
+"t0"."lock_version", "t0"."title_html", "t0"."description_html", "t0"."time_estimate", "t0"."relative_position",
+"t0"."service_desk_reply_to", "t0"."cached_markdown_version", "t0"."last_edited_at", "t0"."last_edited_by_id",
+"t0"."discussion_locked", "t0"."closed_at", "t0"."closed_by_id", "t0"."state_id", "t0"."duplicated_to_id",
+"t0"."promoted_to_epic_id", "t0"."health_status", "t0"."external_key", "milestone_releases"."release_id"
+FROM (SELECT "issues"."id", "issues"."title", "issues"."author_id", "issues"."project_id",
+"issues"."created_at", "issues"."updated_at", "issues"."description", "issues"."milestone_id",
+"issues"."iid", "issues"."updated_by_id", "issues"."weight", "issues"."confidential", "issues"."due_date",
+"issues"."moved_to_id", "issues"."lock_version", "issues"."title_html", "issues"."description_html",
+"issues"."time_estimate", "issues"."relative_position", "issues"."service_desk_reply_to", "issues"."cached_markdown_version",
+"issues"."last_edited_at", "issues"."last_edited_by_id", "issues"."discussion_locked", "issues"."closed_at",
+"issues"."closed_by_id", "issues"."state_id", "issues"."duplicated_to_id", "issues"."promoted_to_epic_id",
+"issues"."health_status", "issues"."external_key", CAST("t"."id" AS BIGINT) AS "id00" FROM
+"issues" LEFT JOIN (SELECT "id" FROM "milestones") AS "t" ON "issues"."milestone_id" = "t"."id")
+AS "t0" INNER JOIN "milestone_releases" ON "t0"."id00" = "milestone_releases"."milestone_id")
+AS "t1" INNER JOIN (SELECT CAST("id" AS BIGINT) AS "id0" FROM "releases") AS "t2" ON "t1"."release_id"
+= "t2"."id0"
+
+=====gitlab#23
+SELECT COUNT(*) FROM (SELECT "id" FROM "projects") AS "t" INNER JOIN (SELECT "project_id",
+"wiki_verification_checksum", "last_wiki_verification_failure" FROM "project_repository_states"
+WHERE "last_wiki_verification_failure" IS NULL AND "wiki_verification_checksum" IS NOT NULL)
+AS "t1" ON "t"."id" = "t1"."project_id"
+
+=====gitlab#24
+SELECT COUNT(*) FROM (SELECT "id" FROM "projects") AS "t" INNER JOIN (SELECT "project_id",
+"repository_verification_checksum", "last_repository_verification_failure" FROM "project_repository_states"
+WHERE "last_repository_verification_failure" IS NULL AND "repository_verification_checksum"
+IS NOT NULL) AS "t1" ON "t"."id" = "t1"."project_id"
+
+=====gitlab#25
+SELECT COUNT(*) FROM (SELECT * FROM (SELECT * FROM (SELECT "id", "project_id", "closed_at",
+"state_id" FROM "issues" WHERE "closed_at" IS NULL AND CAST("state_id" AS INTEGER) = 1) AS
+"t0" INNER JOIN (SELECT "id", "visibility_level" FROM "projects") AS "t1" ON "t0"."project_id"
+= "t1"."id" LEFT JOIN (SELECT "project_id", "issues_access_level" FROM "project_features")
+AS "t2" ON "t1"."id" = "t2"."project_id" WHERE "t2"."issues_access_level" IS NULL OR "t2"."issues_access_level"
+IN (10, 20)) AS "t3" INNER JOIN (SELECT "issue_id" FROM "issue_assignees" WHERE "user_id" =
+1 GROUP BY "issue_id") AS "t5" ON "t3"."id" = "t5"."issue_id" LEFT JOIN (SELECT "project_id",
+TRUE AS "$f1" FROM "project_authorizations" WHERE "user_id" = 1 GROUP BY "project_id") AS "t8"
+ON "t3"."id0" = "t8"."project_id" WHERE "t8"."$f1" IS NOT NULL OR "t3"."visibility_level" IN
+(0, 10, 20)) AS "t9" INNER JOIN (SELECT "t11"."project_id" FROM (SELECT "id", "project_id",
+"closed_at", "state_id" FROM "issues" WHERE "closed_at" IS NULL AND "state_id" = 1) AS "t11"
+INNER JOIN (SELECT "issue_id" FROM "issue_assignees" WHERE "user_id" = 1 GROUP BY "issue_id")
+AS "t13" ON "t11"."id" = "t13"."issue_id" GROUP BY "t11"."project_id") AS "t14" ON "t9"."id0"
+= "t14"."project_id"
+
+=====gitlab#26
+SELECT "project_id" FROM "container_repositories"
+
+=====gitlab#27
+SELECT "user_id" AS "USER_ID", TRUE AS "i" FROM "approvals" WHERE "merge_request_id" = 2294769
+GROUP BY "user_id", TRUE
+
+SELECT * FROM (SELECT "id", "state", "ghost", "bot_type" FROM "users" WHERE "state" = 'active'
+AND (NOT "ghost" OR "ghost" IS NULL) AND (CAST("bot_type" AS INTEGER) = 0 OR "bot_type" IS
+NULL) AND "id" <> 840794) AS "t0" LEFT JOIN (SELECT "user_id" AS "USER_ID", TRUE AS "i" FROM
+"project_authorizations" WHERE "project_id" = 13083 AND "access_level" > 20 GROUP BY "user_id",
+TRUE) AS "t3" ON "t0"."id" = "t3"."USER_ID" WHERE "t3"."i" IS NOT NULL OR "t0"."id" = 443319
+
+=====gitlab#28
+SELECT COUNT(*) FROM "notes" WHERE "project_id" = 13083 AND "noteable_type" = 'MergeRequest'
+AND "noteable_id" = 3985770 OR "project_id" = 13083 AND "noteable_type" = 'Commit' AND "commit_id"
+= 'xxx'
+
+=====gitlab#29
+SELECT "t3"."id" AS "ID", "t3"."last_repository_updated_at" FROM (SELECT "t0"."id", "t0"."repository_storage",
+"t0"."last_repository_updated_at", "t1"."id" AS "id0", "t1"."project_id" FROM (SELECT "id",
+"repository_storage", "last_repository_updated_at" FROM "projects" WHERE "repository_storage"
+= 'default') AS "t0" LEFT JOIN (SELECT "id", "project_id" FROM "project_repository_states")
+AS "t1" ON "t0"."id" = "t1"."project_id" WHERE "t1"."id" IS NULL ORDER BY "t0"."last_repository_updated_at"
+FETCH NEXT 1000 ROWS ONLY) AS "t3"
+
+=====gitlab#30
+SELECT "t"."id", "t"."project_id", "t"."job_id", "t"."file_type", "t"."size", "t"."created_at",
+"t"."updated_at", "t"."expire_at", "t"."file", "t"."file_store", "t"."file_sha256", "t"."file_format",
+"t"."file_location" FROM (SELECT * FROM "ci_job_artifacts" WHERE "file_store" IS NULL OR "file_store"
+= 1) AS "t" LEFT JOIN (SELECT "id", "job_artifact_id" FROM "geo_job_artifact_deleted_events")
+AS "t0" ON "t"."id" = "t0"."job_artifact_id" WHERE "t0"."id" IS NULL FETCH NEXT 1000 ROWS ONLY
+
+=====gitlab#31
+SELECT "issues"."id", "issues"."title", "issues"."author_id", "issues"."project_id", "issues"."created_at",
+"issues"."updated_at", "issues"."description", "issues"."milestone_id", "issues"."iid", "issues"."updated_by_id",
+"issues"."weight", "issues"."confidential", "issues"."due_date", "issues"."moved_to_id", "issues"."lock_version",
+"issues"."title_html", "issues"."description_html", "issues"."time_estimate", "issues"."relative_position",
+"issues"."service_desk_reply_to", "issues"."cached_markdown_version", "issues"."last_edited_at",
+"issues"."last_edited_by_id", "issues"."discussion_locked", "issues"."closed_at", "issues"."closed_by_id",
+"issues"."state_id", "issues"."duplicated_to_id", "issues"."promoted_to_epic_id", "issues"."health_status",
+"issues"."external_key", "t"."id" AS "ISSUE_LINKS_ID" FROM (SELECT * FROM "issue_links" WHERE
+"target_id" = 1153) AS "t" INNER JOIN "issues" ON "t"."source_id" = "issues"."id" UNION SELECT
+"issues0"."id", "issues0"."title", "issues0"."author_id", "issues0"."project_id", "issues0"."created_at",
+"issues0"."updated_at", "issues0"."description", "issues0"."milestone_id", "issues0"."iid",
+"issues0"."updated_by_id", "issues0"."weight", "issues0"."confidential", "issues0"."due_date",
+"issues0"."moved_to_id", "issues0"."lock_version", "issues0"."title_html", "issues0"."description_html",
+"issues0"."time_estimate", "issues0"."relative_position", "issues0"."service_desk_reply_to",
+"issues0"."cached_markdown_version", "issues0"."last_edited_at", "issues0"."last_edited_by_id",
+"issues0"."discussion_locked", "issues0"."closed_at", "issues0"."closed_by_id", "issues0"."state_id",
+"issues0"."duplicated_to_id", "issues0"."promoted_to_epic_id", "issues0"."health_status", "issues0"."external_key",
+"t1"."id" AS "ISSUE_LINKS_ID" FROM (SELECT * FROM "issue_links" WHERE "source_id" = 1009) AS
+"t1" INNER JOIN "issues" AS "issues0" ON "t1"."source_id" = "issues0"."id" AND "t1"."target_id"
+= "issues0"."id"
+
+=====gitlab#32
+SELECT COUNT(*) FROM (SELECT "t3"."project_id" AS "project_id0", "t1"."id", "t0"."project_id"
+FROM (SELECT "project_id" FROM "todos" WHERE "user_id" = 1 AND "state" = 'pending' GROUP BY
+"project_id") AS "t0" INNER JOIN (SELECT "id" FROM "projects") AS "t1" ON "t0"."project_id"
+= "t1"."id" INNER JOIN (SELECT "project_id" FROM "todos" WHERE "user_id" = 1 AND "state" =
+'pending') AS "t3" ON "t1"."id" = "t3"."project_id") AS "t4" INNER JOIN (SELECT "t5"."id" FROM
+(SELECT "id", "visibility_level" FROM "projects") AS "t5" LEFT JOIN (SELECT "project_id", TRUE
+AS "$f1" FROM "project_authorizations" WHERE "user_id" = 1 GROUP BY "project_id") AS "t8" ON
+"t5"."id" = "t8"."project_id" WHERE "t8"."$f1" IS NOT NULL OR "t5"."visibility_level" IN (10,
+20) GROUP BY "t5"."id") AS "t10" ON "t4"."id" = "t10"."id"
+
+=====gitlab#34
+SELECT "id", "user_id", "requested_at" FROM "members" WHERE "requested_at" IS NULL
+
+SELECT * FROM "members" LEFT JOIN (SELECT "id" AS "ID", TRUE AS "i" FROM "members" WHERE "source_id"
+= 165620945 GROUP BY "id", TRUE) AS "t1" ON "members"."id" = "t1"."ID" ORDER BY "members"."id"
+
+=====gitlab#35
+SELECT * FROM "issues"
+
+SELECT COUNT(*) AS "c", COUNT("target_id") AS "ck" FROM "label_links" WHERE "target_type" =
+'default'
+(Repeatedly execute this query)
+
+=====gitlab#37
+SELECT * FROM (SELECT "id", "status", "commit_id", "type" FROM "ci_builds" WHERE "type" = 'Ci::Build'
+AND "status" IN ('canceled', 'failed') AND "commit_id" = 8088) AS "t0" INNER JOIN (SELECT "EXPR$0"
+FROM (SELECT "commit_id", "name", MAX("id") AS "EXPR$0" FROM "ci_builds" WHERE "type" = 'Ci::Build'
+GROUP BY "commit_id", "name") AS "t2" GROUP BY "EXPR$0") AS "t3" ON "t0"."id" = "t3"."EXPR$0"
+
+=====gitlab#39
+SELECT * FROM "lfs_objects"
+
+SELECT * FROM "lfs_objects_projects" WHERE "project_id" = 373049032
+
+=====gitlab#40
+SELECT "t"."id", "t"."status", "t"."finished_at", "t"."trace", "t"."created_at", "t"."updated_at",
+"t"."started_at", "t"."runner_id", "t"."coverage", "t"."commit_id", "t"."commands", "t"."name",
+"t"."options", "t"."allow_failure", "t"."stage", "t"."trigger_request_id", "t"."stage_idx",
+"t"."tag", "t"."ref", "t"."user_id", "t"."type", "t"."target_url", "t"."description", "t"."artifacts_file",
+"t"."project_id", "t"."artifacts_metadata", "t"."erased_by_id", "t"."erased_at", "t"."artifacts_expire_at",
+"t"."environment", "t"."artifacts_size", "t"."when", "t"."yaml_variables", "t"."queued_at",
+"t"."token", "t"."lock_version", "t"."coverage_regex", "t"."auto_canceled_by_id", "t"."retried",
+"t"."stage_id", "t"."artifacts_file_store", "t"."artifacts_metadata_store", "t"."protected",
+"t"."failure_reason", "t"."scheduled_at", "t"."token_encrypted", "t"."upstream_pipeline_id",
+"t"."resource_group_id", "t"."waiting_for_resource_at", "t"."processed", "t"."scheduling_type"
+FROM (SELECT * FROM "ci_builds" WHERE "type" = 'Ci::Build') AS "t" LEFT JOIN (SELECT "job_id",
+TRUE AS "$f1" FROM "ci_job_artifacts" GROUP BY "job_id") AS "t1" ON "t"."id" = "t1"."job_id"
+WHERE "t"."artifacts_file" <> '' OR "t1"."$f1" IS NOT NULL
+
+=====gitlab#41
+SELECT "projects"."id", "projects"."name", "projects"."path", "projects"."description", "projects"."created_at",
+"projects"."updated_at", "projects"."creator_id", "projects"."namespace_id", "projects"."last_activity_at",
+"projects"."import_url", "projects"."visibility_level", "projects"."archived", "projects"."avatar",
+"projects"."merge_requests_template", "projects"."star_count", "projects"."merge_requests_rebase_enabled",
+"projects"."import_type", "projects"."import_source", "projects"."approvals_before_merge",
+"projects"."reset_approvals_on_push", "projects"."merge_requests_ff_only_enabled", "projects"."issues_template",
+"projects"."mirror", "projects"."mirror_last_update_at", "projects"."mirror_last_successful_update_at",
+"projects"."mirror_user_id", "projects"."shared_runners_enabled", "projects"."runners_token",
+"projects"."build_coverage_regex", "projects"."build_allow_git_fetch", "projects"."build_timeout",
+"projects"."mirror_trigger_builds", "projects"."pending_delete", "projects"."public_builds",
+"projects"."last_repository_check_failed", "projects"."last_repository_check_at", "projects"."container_registry_enabled",
+"projects"."only_allow_merge_if_pipeline_succeeds", "projects"."has_external_issue_tracker",
+"projects"."repository_storage", "projects"."repository_read_only", "projects"."request_access_enabled",
+"projects"."has_external_wiki", "projects"."ci_config_path", "projects"."lfs_enabled", "projects"."description_html",
+"projects"."only_allow_merge_if_all_discussions_are_resolved", "projects"."repository_size_limit",
+"projects"."printing_merge_request_link_enabled", "projects"."auto_cancel_pending_pipelines",
+"projects"."service_desk_enabled", "projects"."cached_markdown_version", "projects"."delete_error",
+"projects"."last_repository_updated_at", "projects"."disable_overriding_approvers_per_merge_request",
+"projects"."storage_version", "projects"."resolve_outdated_diff_discussions", "projects"."remote_mirror_available_overridden",
+"projects"."only_mirror_protected_branches", "projects"."pull_mirror_available_overridden",
+"projects"."jobs_cache_index", "projects"."external_authorization_classification_label", "projects"."mirror_overwrites_diverged_branches",
+"projects"."pages_https_only", "projects"."external_webhook_token", "projects"."packages_enabled",
+"projects"."merge_requests_author_approval", "projects"."pool_repository_id", "projects"."runners_token_encrypted",
+"projects"."bfg_object_map", "projects"."detected_repository_languages", "projects"."merge_requests_disable_committers_approval",
+"projects"."require_password_to_approve", "projects"."emails_disabled", "projects"."max_pages_size",
+"projects"."max_artifacts_size", "projects"."pull_mirror_branch_prefix", "projects"."remove_source_branch_after_merge",
+"projects"."marked_for_deletion_at", "projects"."marked_for_deletion_by_user_id", "projects"."autoclose_referenced_issues",
+"projects"."suggestion_commit_message" FROM "projects" LEFT JOIN (SELECT "project_id", TRUE
+AS "$f1" FROM "project_authorizations" WHERE "user_id" = 7683 GROUP BY "project_id") AS "t1"
+ON "projects"."id" = "t1"."project_id" WHERE "t1"."$f1" IS NOT NULL OR "projects"."visibility_level"
+= 1473811210
+
+=====gitlab#42
+SELECT * FROM "tags" INNER JOIN (SELECT "id", "tag_id", "taggable_id", "taggable_type", "tagger_id",
+"tagger_type", "context", "created_at" FROM "taggings" WHERE "taggable_type" = 'default' GROUP
+BY "id", "tag_id", "taggable_id", "taggable_type", "tagger_id", "tagger_type", "context", "created_at")
+AS "t0" ON "tags"."id" = "t0"."tag_id"
+
+=====gitlab#43
+SELECT "t3"."id", "t3"."email", "t3"."encrypted_password", "t3"."reset_password_token", "t3"."reset_password_sent_at",
+"t3"."remember_created_at", "t3"."sign_in_count", "t3"."current_sign_in_at", "t3"."last_sign_in_at",
+"t3"."current_sign_in_ip", "t3"."last_sign_in_ip", "t3"."created_at", "t3"."updated_at", "t3"."name",
+"t3"."admin", "t3"."projects_limit", "t3"."skype", "t3"."linkedin", "t3"."twitter", "t3"."bio",
+"t3"."failed_attempts", "t3"."locked_at", "t3"."username", "t3"."can_create_group", "t3"."can_create_team",
+"t3"."state", "t3"."color_scheme_id", "t3"."password_expires_at", "t3"."created_by_id", "t3"."last_credential_check_at",
+"t3"."avatar", "t3"."confirmation_token", "t3"."confirmed_at", "t3"."confirmation_sent_at",
+"t3"."unconfirmed_email", "t3"."hide_no_ssh_key", "t3"."website_url", "t3"."admin_email_unsubscribed_at",
+"t3"."notification_email", "t3"."hide_no_password", "t3"."password_automatically_set", "t3"."location",
+"t3"."encrypted_otp_secret", "t3"."encrypted_otp_secret_iv", "t3"."encrypted_otp_secret_salt",
+"t3"."otp_required_for_login", "t3"."otp_backup_codes", "t3"."public_email", "t3"."dashboard",
+"t3"."project_view", "t3"."consumed_timestep", "t3"."layout", "t3"."hide_project_limit", "t3"."note",
+"t3"."unlock_token", "t3"."otp_grace_period_started_at", "t3"."external", "t3"."incoming_email_token",
+"t3"."organization", "t3"."auditor", "t3"."require_two_factor_authentication_from_group", "t3"."two_factor_grace_period",
+"t3"."ghost", "t3"."last_activity_on", "t3"."notified_of_own_activity", "t3"."preferred_language",
+"t3"."email_opted_in", "t3"."email_opted_in_ip", "t3"."email_opted_in_source_id", "t3"."email_opted_in_at",
+"t3"."theme_id", "t3"."accepted_term_id", "t3"."feed_token", "t3"."private_profile", "t3"."roadmap_layout",
+"t3"."include_private_contributions", "t3"."commit_email", "t3"."group_view", "t3"."managing_group_id",
+"t3"."bot_type", "t3"."first_name", "t3"."last_name", "t3"."static_object_token", "t3"."role",
+"t3"."user_type" FROM (SELECT "users"."id", "users"."email", "users"."encrypted_password",
+"users"."reset_password_token", "users"."reset_password_sent_at", "users"."remember_created_at",
+"users"."sign_in_count", "users"."current_sign_in_at", "users"."last_sign_in_at", "users"."current_sign_in_ip",
+"users"."last_sign_in_ip", "users"."created_at", "users"."updated_at", "users"."name", "users"."admin",
+"users"."projects_limit", "users"."skype", "users"."linkedin", "users"."twitter", "users"."bio",
+"users"."failed_attempts", "users"."locked_at", "users"."username", "users"."can_create_group",
+"users"."can_create_team", "users"."state", "users"."color_scheme_id", "users"."password_expires_at",
+"users"."created_by_id", "users"."last_credential_check_at", "users"."avatar", "users"."confirmation_token",
+"users"."confirmed_at", "users"."confirmation_sent_at", "users"."unconfirmed_email", "users"."hide_no_ssh_key",
+"users"."website_url", "users"."admin_email_unsubscribed_at", "users"."notification_email",
+"users"."hide_no_password", "users"."password_automatically_set", "users"."location", "users"."encrypted_otp_secret",
+"users"."encrypted_otp_secret_iv", "users"."encrypted_otp_secret_salt", "users"."otp_required_for_login",
+"users"."otp_backup_codes", "users"."public_email", "users"."dashboard", "users"."project_view",
+"users"."consumed_timestep", "users"."layout", "users"."hide_project_limit", "users"."note",
+"users"."unlock_token", "users"."otp_grace_period_started_at", "users"."external", "users"."incoming_email_token",
+"users"."organization", "users"."auditor", "users"."require_two_factor_authentication_from_group",
+"users"."two_factor_grace_period", "users"."ghost", "users"."last_activity_on", "users"."notified_of_own_activity",
+"users"."preferred_language", "users"."email_opted_in", "users"."email_opted_in_ip", "users"."email_opted_in_source_id",
+"users"."email_opted_in_at", "users"."theme_id", "users"."accepted_term_id", "users"."feed_token",
+"users"."private_profile", "users"."roadmap_layout", "users"."include_private_contributions",
+"users"."commit_email", "users"."group_view", "users"."managing_group_id", "users"."bot_type",
+"users"."first_name", "users"."last_name", "users"."static_object_token", "users"."role", "users"."user_type",
+"t1"."USER_ID", "t1"."i" FROM "users" LEFT JOIN (SELECT "user_id" AS "USER_ID", TRUE AS "i"
+FROM "emails" WHERE "email" = 'xyz@163.com' GROUP BY "user_id", TRUE) AS "t1" ON "users"."id"
+= "t1"."USER_ID" WHERE "users"."email" = 'abc@163.com' OR "t1"."i" IS NOT NULL FETCH NEXT 1
+ROWS ONLY) AS "t3"
+
+=====gitlab#44
+SELECT * FROM "members" WHERE "source_type" = 'Project' AND ("type" = 'ProjectMember' AND "source_id"
+= 13083) AND ("requested_at" IS NULL AND ("invite_token" IS NULL AND "user_id" IS NOT NULL))
+
+SELECT "user_id" AS "USER_ID", TRUE AS "i" FROM "members" WHERE "source_type" = 'Project' AND
+("type" = 'ProjectMember' AND "source_id" = 13083) AND ("requested_at" IS NULL AND ("invite_token"
+IS NULL AND "user_id" IS NOT NULL))
+
+SELECT "id", "source_id", "source_type", "user_id", "type", "invite_token", "requested_at"
+FROM "members" WHERE "source_type" = 'Namespace' AND "type" = 'GroupMember' AND "source_id"
+= 9970 AND "requested_at" IS NULL AND "invite_token" IS NULL
+
+SELECT * FROM "members" LEFT JOIN (SELECT "id" FROM "users") AS "t" ON "members"."user_id"
+= "t"."id" LEFT JOIN (SELECT "id" AS "ID", TRUE AS "i" FROM "members" WHERE "source_type" =
+'Project' AND "type" = 'ProjectMember' AND "source_id" = 13083 AND "requested_at" IS NULL AND
+"invite_token" IS NULL GROUP BY "id", TRUE) AS "t2" ON "members"."id" = "t2"."ID" ORDER BY
+"members"."id"
+
+=====gitlab#45
+SELECT "t"."id" AS "ID" FROM (SELECT "id", "diff_note_id" FROM "note_diff_files") AS "t" INNER
+JOIN (SELECT "id", "project_id", "type" FROM "notes" WHERE "type" = 'DiffNote') AS "t1" ON
+"t"."diff_note_id" = "t1"."id" LEFT JOIN (SELECT "id" FROM "projects") AS "t2" ON "t1"."project_id"
+= "t2"."id" INNER JOIN (SELECT "id" FROM (SELECT "id" FROM "notes" WHERE "noteable_id" = 18527120
+AND "noteable_type" = 'MergeRequest' UNION ALL SELECT "id" FROM "notes" WHERE "project_id"
+= 7764 AND "noteable_type" = 'Commit' AND "commit_id" = 2044708959) AS "t7" GROUP BY "id")
+AS "t8" ON "t"."diff_note_id" = "t8"."id"
+
+=====gitlab#46
+SELECT * FROM (SELECT * FROM "merge_requests" WHERE "state_id" = 1 AND "target_project_id"
+= 13083) AS "t" INNER JOIN (SELECT "label_id", "target_id", "target_type" FROM "label_links"
+WHERE "target_type" = 'MergeRequest') AS "t1" ON "t"."id" = "t1"."target_id" INNER JOIN (SELECT
+"id", "title" FROM "labels" WHERE "title" = 'bug') AS "t3" ON "t1"."label_id" = "t3"."id"
+
+=====gitlab#47
+SELECT * FROM "projects" WHERE "pending_delete" = 'f'
+
+SELECT "t"."id" AS "ID" FROM (SELECT * FROM "projects" WHERE "pending_delete" = 'f') AS "t"
+INNER JOIN (SELECT * FROM "users_star_projects" WHERE "user_id" = 1) AS "t0" ON "t"."id" =
+"t0"."project_id" INNER JOIN (SELECT * FROM "project_authorizations" WHERE "user_id" = 1) AS
+"t1" ON "t"."id" = "t1"."project_id" UNION ALL SELECT "t3"."id" AS "ID" FROM (SELECT * FROM
+"projects" WHERE "visibility_level" IN (10, 20)) AS "t3" INNER JOIN (SELECT * FROM "users_star_projects"
+WHERE "user_id" = 1) AS "t4" ON "t3"."id" = "t4"."project_id"
+
+=====spree#50
+SELECT `t`.`id`, `t`.`name`, `t`.`description`, `t`.`available_on`, `t`.`discontinue_on`, `t`.`deleted_at`,
+`t`.`slug`, `t`.`meta_description`, `t`.`meta_keywords`, `t`.`tax_category_id`, `t`.`shipping_category_id`,
+`t`.`created_at`, `t`.`updated_at`, `t`.`promotionable`, `t`.`meta_title` FROM (SELECT * FROM
+`spree_products` WHERE `deleted_at` IS NULL) AS `t` INNER JOIN (SELECT `product_id` AS `PRODUCT_ID`
+FROM `spree_variants` GROUP BY `product_id` HAVING COALESCE(SUM(`count_on_hand`), 0) > 0) AS
+`t2` ON `t`.`id` = `t2`.`PRODUCT_ID` LIMIT 100
+
+=====spree#51
+SELECT `spree_promotions`.`id`, `spree_promotions`.`description`, `spree_promotions`.`expires_at`,
+`spree_promotions`.`starts_at`, `spree_promotions`.`name`, `spree_promotions`.`type`, `spree_promotions`.`usage_limit`,
+`spree_promotions`.`match_policy`, `spree_promotions`.`code`, `spree_promotions`.`advertise`,
+`spree_promotions`.`path`, `spree_promotions`.`created_at`, `spree_promotions`.`updated_at`,
+`spree_promotions`.`promotion_category_id` FROM `spree_promotions` INNER JOIN (SELECT `order_id`,
+`promotion_id` FROM `spree_order_promotions`) AS `t` ON `spree_promotions`.`id` = `t`.`promotion_id`
+INNER JOIN (SELECT `id` FROM `spree_orders`) AS `t0` ON `t`.`order_id` = `t0`.`id`
+
+=====spree#53
+(timeout)
+
+=====spree#54
+SELECT `t`.`id`, `t`.`description`, `t`.`expires_at`, `t`.`starts_at`, `t`.`name`, `t`.`type`,
+`t`.`usage_limit`, `t`.`match_policy`, `t`.`code`, `t`.`advertise`, `t`.`path`, `t`.`created_at`,
+`t`.`updated_at`, `t`.`promotion_category_id` FROM (SELECT * FROM `spree_promotions` WHERE
+(`starts_at` IS NULL OR `starts_at` < TIMESTAMP '2020-05-06 04:33:11') AND (`expires_at` IS
+NULL OR `expires_at` > TIMESTAMP '2020-05-06 04:33:11')) AS `t` LEFT JOIN (SELECT `order_id`,
+`promotion_id` FROM `spree_order_promotions`) AS `t0` ON `t`.`id` = `t0`.`promotion_id` WHERE
+`t`.`code` IS NULL AND `t`.`path` IS NULL OR `t0`.`order_id` = 1 GROUP BY `t`.`id`, `t`.`description`,
+`t`.`expires_at`, `t`.`starts_at`, `t`.`name`, `t`.`type`, `t`.`usage_limit`, `t`.`match_policy`,
+`t`.`code`, `t`.`advertise`, `t`.`path`, `t`.`created_at`, `t`.`updated_at`, `t`.`promotion_category_id`
+
+=====diaspora#57
+SELECT `posts`.`id`, `posts`.`author_id`, `posts`.`public`, `posts`.`guid`, `posts`.`type`,
+`posts`.`text`, `posts`.`created_at`, `posts`.`updated_at`, `posts`.`provider_display_name`,
+`posts`.`root_guid`, `posts`.`likes_count`, `posts`.`comments_count`, `posts`.`o_embed_cache_id`,
+`posts`.`reshares_count`, `posts`.`interacted_at`, `posts`.`tweet_id`, `posts`.`open_graph_cache_id`,
+`posts`.`tumblr_ids` FROM (SELECT `id` FROM `people` WHERE `id` = 1) AS `t0` INNER JOIN `posts`
+ON `t0`.`id` = `posts`.`author_id` INNER JOIN ((SELECT `id` FROM `aspects` WHERE `id` = 1)
+AS `t2` INNER JOIN (SELECT `shareable_id`, `aspect_id` FROM `aspect_visibilities`) AS `t3`
+ON `t2`.`id` = `t3`.`aspect_id`) ON `posts`.`id` = `t3`.`shareable_id`
+
+=====redmine#64
+SELECT `projects`.`id`, `projects`.`name`, `projects`.`description`, `projects`.`homepage`,
+`projects`.`is_public`, `projects`.`parent_id`, `projects`.`created_on`, `projects`.`updated_on`,
+`projects`.`identifier`, `projects`.`status`, `projects`.`lft`, `projects`.`rgt`, `projects`.`inherit_members`,
+`projects`.`default_version_id`, `projects`.`default_assigned_to_id` FROM `projects` INNER
+JOIN (SELECT `project_id` FROM `enabled_modules` WHERE `name` = 'default' GROUP BY `project_id`)
+AS `t0` ON `projects`.`id` = `t0`.`project_id` WHERE `projects`.`status` <> 'ARCHIVED'
+
+=====redmine#65
+SELECT `t1`.`id`, `t1`.`tracker_id`, `t1`.`project_id`, `t1`.`subject`, `t1`.`description`,
+`t1`.`due_date`, `t1`.`category_id`, `t1`.`status_id`, `t1`.`assigned_to_id`, `t1`.`priority_id`,
+`t1`.`fixed_version_id`, `t1`.`author_id`, `t1`.`lock_version`, `t1`.`created_on`, `t1`.`updated_on`,
+`t1`.`start_date`, `t1`.`done_ratio`, `t1`.`estimated_hours`, `t1`.`parent_id`, `t1`.`root_id`,
+`t1`.`lft`, `t1`.`rgt`, `t1`.`is_private`, `t1`.`closed_on` FROM (SELECT `issues`.`id`, `issues`.`tracker_id`,
+`issues`.`project_id`, `issues`.`subject`, `issues`.`description`, `issues`.`due_date`, `issues`.`category_id`,
+`issues`.`status_id`, `issues`.`assigned_to_id`, `issues`.`priority_id`, `issues`.`fixed_version_id`,
+`issues`.`author_id`, `issues`.`lock_version`, `issues`.`created_on`, `issues`.`updated_on`,
+`issues`.`start_date`, `issues`.`done_ratio`, `issues`.`estimated_hours`, `issues`.`parent_id`,
+`issues`.`root_id`, `issues`.`lft`, `issues`.`rgt`, `issues`.`is_private`, `issues`.`closed_on`,
+`t0`.`root_id` AS `root_id0` FROM `issues` INNER JOIN (SELECT `root_id` FROM `issues` WHERE
+`id` = 1 GROUP BY `root_id`) AS `t0` ON `issues`.`root_id` = `t0`.`root_id` ORDER BY `issues`.`id`
+IS NULL, `issues`.`id`) AS `t1`
+
+=====solidus#79
+SELECT `spree_promotions`.`id`, `spree_promotions`.`description`, `spree_promotions`.`expires_at`,
+`spree_promotions`.`starts_at`, `spree_promotions`.`name`, `spree_promotions`.`type`, `spree_promotions`.`usage_limit`,
+`spree_promotions`.`match_policy`, `spree_promotions`.`advertise`, `spree_promotions`.`path`,
+`spree_promotions`.`created_at`, `spree_promotions`.`updated_at`, `spree_promotions`.`promotion_category_id`,
+`spree_promotions`.`per_code_usage_limit`, `spree_promotions`.`apply_automatically` FROM `spree_promotions`
+INNER JOIN (SELECT `order_id`, `promotion_id` FROM `spree_orders_promotions`) AS `t` ON `spree_promotions`.`id`
+= `t`.`promotion_id` INNER JOIN (SELECT `id` FROM `spree_orders`) AS `t0` ON `t`.`order_id`
+= `t0`.`id` GROUP BY `spree_promotions`.`id`, `spree_promotions`.`description`, `spree_promotions`.`expires_at`,
+`spree_promotions`.`starts_at`, `spree_promotions`.`name`, `spree_promotions`.`type`, `spree_promotions`.`usage_limit`,
+`spree_promotions`.`match_policy`, `spree_promotions`.`advertise`, `spree_promotions`.`path`,
+`spree_promotions`.`created_at`, `spree_promotions`.`updated_at`, `spree_promotions`.`promotion_category_id`,
+`spree_promotions`.`per_code_usage_limit`, `spree_promotions`.`apply_automatically`
+
+=====lobsters#88
+SELECT `story_id` AS `STORY_ID`, TRUE AS `i` FROM `hidden_stories` WHERE `user_id` = 1 GROUP
+BY `story_id`, TRUE
+
+SELECT * FROM `comments` WHERE NOT `is_deleted` AND NOT `is_moderated`
+
+SELECT COUNT(*) AS `c`, COUNT(*) AS `ck` FROM `hidden_stories` WHERE `user_id` = 1
+(Repeatedly execute this query)
+
+=====lobsters#134
+SELECT `t0`.`id` AS `ID`, TRUE AS `i` FROM (SELECT `comment_id` FROM `moderations`) AS `t`
+INNER JOIN ((SELECT `id` FROM `users`) AS `t0` INNER JOIN (SELECT `id`, `story_id`, `user_id`
+FROM `comments` WHERE `story_id` = 8895) AS `t2` ON `t0`.`id` = `t2`.`user_id`) ON `t`.`comment_id`
+= `t2`.`id` GROUP BY `t0`.`id`, TRUE
+
+SELECT * FROM `users`
+
+SELECT COUNT(*) AS `c`, COUNT(*) AS `ck` FROM (SELECT `comment_id` FROM `moderations`) AS `t`
+INNER JOIN ((SELECT `id` FROM `users`) AS `t0` INNER JOIN (SELECT `id`, `story_id`, `user_id`
+FROM `comments` WHERE `story_id` = 8895) AS `t2` ON `t0`.`id` = `t2`.`user_id`) ON `t`.`comment_id`
+= `t2`.`id`
+
