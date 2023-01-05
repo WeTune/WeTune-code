@@ -2,6 +2,7 @@ dependencies {
     implementation project(":common")
     implementation project(":sql")
     implementation project(":stmt")
+    implementation project(":superopt")
     implementation('com.google.guava:guava:29.0-jre')
     implementation('org.apache.commons:commons-lang3:3.10')
     implementation('org.jetbrains:annotations:16.0.2')

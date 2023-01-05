@@ -2,6 +2,7 @@ module wtune.testbed {
   requires wtune.common;
   requires wtune.sql;
   requires wtune.stmt;
+  requires wtune.superopt;
   requires org.apache.commons.lang3;
   requires com.google.common;
   requires trove4j;

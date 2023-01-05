@@ -7,11 +7,15 @@ import java.util.Properties;
 public interface Profiler {
   void setBaseline(PlanContext baseline);
 
+  PlanContext getBaseline();
+
   void profile(PlanContext plan);
 
   PlanContext getPlan(int index);
 
   double getCost(int index);
+
+  double getBaselineCost();
 
   int minCostIndex();
 

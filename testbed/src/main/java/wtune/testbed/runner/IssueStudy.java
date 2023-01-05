@@ -4,9 +4,18 @@ import org.apache.calcite.jdbc.CalciteConnection;
 import wtune.common.datasource.DbSupport;
 import wtune.common.utils.Args;
 import wtune.common.utils.IOSupport;
+import wtune.sql.SqlSupport;
+import wtune.sql.ast.SqlNode;
+import wtune.sql.plan.PlanContext;
+import wtune.sql.plan.PlanSupport;
+import wtune.sql.schema.Schema;
 import wtune.stmt.App;
-import wtune.testbed.plantree.SQLServerPlanTree;
-import wtune.testbed.util.StmtSyntaxRewriteHelper;
+import wtune.common.datasource.db.SQLServerPlanTree;
+import wtune.common.datasource.SQLSyntaxAdaptor;
+import wtune.superopt.optimizer.Optimizer;
+import wtune.superopt.profiler.Profiler;
+import wtune.superopt.substitution.SubstitutionBank;
+import wtune.superopt.substitution.SubstitutionSupport;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -15,11 +24,13 @@ import java.nio.file.Path;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static wtune.common.datasource.DbSupport.*;
+import static wtune.sql.plan.PlanSupport.assemblePlan;
+import static wtune.sql.plan.PlanSupport.translateAsAst;
+import static wtune.sql.support.action.NormalizationSupport.normalizeAst;
+import static wtune.superopt.optimizer.OptimizerSupport.*;
 
 public class IssueStudy implements Runner {
   private static final String DEFAULT_TAG = GenerateTableData.BASE;
@@ -84,9 +95,9 @@ public class IssueStudy implements Runner {
         writeBasicInfo(issue);
         // checkMySQL(issue);
         // checkPg(issue);
-        checkSQLServer(issue);
+        // checkSQLServer(issue);
         // checkCalcite(issue);
-        // checkWeTune(issue);
+        checkWeTune(issue);
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -125,6 +136,8 @@ public class IssueStudy implements Runner {
     IOSupport.appendTo(outFile,
         writer -> writer.printf(
             "Issue id: %s\nDescription: %s\nIssue Url: %s\n\n", issue.issueFullId(), issue.desc(), issue.url()));
+    IOSupport.appendTo(outFile,
+        writer -> writer.printf("Raw SQL query:\n %s\nOpt SQL query:\n %s\n\n", issue.rawSql(), issue.optSql()));
   }
 
   private void checkMySQL(Issue issue) throws SQLException {
@@ -157,8 +170,8 @@ public class IssueStudy implements Runner {
 
   private void checkSQLServer(Issue issue) throws SQLException {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
-    final String rawSql_ = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(issue.rawSql());
-    final String optSql_ = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(issue.optSql());
+    final String rawSql_ = SQLSyntaxAdaptor.adaptToSQLServer(issue.rawSql());
+    final String optSql_ = SQLSyntaxAdaptor.adaptToSQLServer(issue.optSql());
     if (verbosity >= 1) {
       System.out.println("Checking " + issue.issueFullId() + " on SQL Server: ");
       System.out.println(rawSql_);
@@ -167,6 +180,7 @@ public class IssueStudy implements Runner {
     final String planInfo0 = sqlServerExplainer.explain(dbName, rawSql_);
     final String planInfo1 = sqlServerExplainer.explain(dbName, optSql_);
     final Path outFile = outDir.resolve(issue.issueFullId());
+    IOSupport.appendTo(outFile, writer -> writer.printf("----------SQL Server----------: \n"));
     IOSupport.appendTo(outFile, writer -> writer.printf("Raw query plan in SQL Server: \n%s\n", planInfo0));
     IOSupport.appendTo(outFile, writer -> writer.printf("Opt query plan in SQL Server: \n%s\n", planInfo1));
     final SQLServerPlanTree planTree0 = SQLServerPlanTree.constructPlanTree(planInfo0);
@@ -208,7 +222,104 @@ public class IssueStudy implements Runner {
     calciteRunner.explain(dbName, issue.rawSql());
   }
 
-  private void checkWeTune(Issue issue) {
+  private static SubstitutionBank DEFAULT_RULE_SET;
+
+  static {
+    try {
+      DEFAULT_RULE_SET = SubstitutionSupport.loadBank(Runner.dataDir().resolve("prepared/rules.txt"));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
+    addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
+  }
+
+  private void checkWeTune(Issue issue) throws Exception {
+    final Path outFile = outDir.resolve(issue.issueFullId());
+    IOSupport.appendTo(outFile, writer -> writer.printf("----------WeTune----------: \n"));
+    // Step 1. Rewrite raw and opt query using a rule set.
+    final App app = App.of(issue.appName());
+    final String dbType = app.dbType();
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+    final SqlNode rawAst = SqlSupport.parseSql(dbType, issue.rawSql());
+    final SqlNode optAst = SqlSupport.parseSql(dbType, issue.optSql());
+    if (rawAst == null || optAst == null) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse ast of SQL queries.\n"));
+      return;
+    }
+    final PlanContext rawPlan = parsePlan(rawAst, app.schema(DEFAULT_TAG));
+    final PlanContext optPlan = parsePlan(optAst, app.schema(DEFAULT_TAG));
+    if (rawPlan == null || optPlan == null) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse plan of SQL queries.\n"));
+      return;
+    }
+
+    final Set<PlanContext> rawRewrites = getRewrittenPlan(rawPlan);
+    final Set<PlanContext> optRewrites = getRewrittenPlan(optPlan);
+    if (rawRewrites.isEmpty() && optRewrites.isEmpty()) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("No rewritings to this pair of SQL queries.\n"));
+      return;
+    }
+    // Step 2. Pick the rewritten queries of raw and opt query with the minimal cost
+    final Properties props = DbSupport.dbProps(SQLServer, dbName);
+    final Profiler rawProfiler = Profiler.mk(props), optProfiler = Profiler.mk(props);
+    rawProfiler.setBaseline(rawPlan);
+    optProfiler.setBaseline(optPlan);
+    for (PlanContext candidate : rawRewrites) rawProfiler.profile(candidate);
+    for (PlanContext candidate : optRewrites) optProfiler.profile(candidate);
+    final int rawMinCostIdx = rawProfiler.minCostIndex();
+    final int optMinCostIdx = optProfiler.minCostIndex();
+    if (rawMinCostIdx < 0 && optMinCostIdx < 0) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Cannot perform the rewrite of this issue.\n"));
+      return;
+    }
+    // Step 3. Compare the rewritten queries of raw and opt query with the original opt query
+    final double rawMinCost = rawMinCostIdx < 0 ? rawProfiler.getBaselineCost() : rawProfiler.getCost(rawMinCostIdx);
+    final double optMinCost = optMinCostIdx < 0 ? optProfiler.getBaselineCost() : optProfiler.getCost(optMinCostIdx);
+    final double baseline = optProfiler.getBaselineCost();
+    if (rawMinCost > baseline || optMinCost > baseline) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Cannot perform the rewrite of this issue.\n"));
+      return;
+    }
+    // If both <= the cost of the original opt query, then WeTune can rewrite.
+    final PlanContext rawOptPlan = rawMinCostIdx < 0 ? rawPlan : rawProfiler.getPlan(rawMinCostIdx);
+    final PlanContext optOptPlan = optMinCostIdx < 0 ? optPlan : optProfiler.getPlan(optMinCostIdx);
+    final SqlNode rawOptAst = translateAsAst(rawOptPlan, rawOptPlan.root(), false);
+    final SqlNode optOptAst = translateAsAst(optOptPlan, optOptPlan.root(), false);
+    if (rawOptAst == null || optOptAst == null) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse ast of optimized SQL queries.\n"));
+      return;
+    }
+    final String rawOptSQL = rawOptAst.toString(false);
+    final String optOptSQL = optOptAst.toString(false);
+    IOSupport.appendTo(outFile, writer -> writer.printf("Rewrite raw query of this issue into: \n%s\n\n", rawOptSQL));
+    IOSupport.appendTo(outFile, writer -> writer.printf("Rewrite opt query of this issue into: \n%s\n\n", optOptSQL));
+
+    wetuneSuccess.add(issue.issueFullId());
+  }
+
+  private static PlanContext parsePlan(SqlNode ast, Schema schema) {
+    try {
+      if (ast == null || !PlanSupport.isSupported(ast)) return null;
+
+      ast.context().setSchema(schema);
+      normalizeAst(ast);
+
+      final PlanContext plan = assemblePlan(ast, schema);
+      if (plan == null) return null;
+
+      return plan;
+    } catch (Throwable ex) {
+      return null;
+    }
+  }
+
+  private static Set<PlanContext> getRewrittenPlan(PlanContext plan) {
+    if (plan == null) return Collections.emptySet();
+    final Optimizer optimizer = Optimizer.mk(DEFAULT_RULE_SET);
+    optimizer.setTimeout(Integer.MAX_VALUE);
+    optimizer.setTracing(true);
+    return optimizer.optimize(plan);
   }
 
   private List<Issue> collectIssues(List<String> lines) {

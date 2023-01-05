@@ -4,6 +4,7 @@ module wtune.common {
   exports wtune.common.field;
   exports wtune.common.datasource;
   exports wtune.common.io;
+  exports wtune.common.datasource.db;
 
   requires com.google.common;
   requires org.apache.commons.lang3;

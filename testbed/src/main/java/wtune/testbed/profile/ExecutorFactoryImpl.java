@@ -3,7 +3,7 @@ package wtune.testbed.profile;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.calcite.jdbc.CalciteConnection;
 import wtune.common.datasource.DbSupport;
-import wtune.testbed.util.StmtSyntaxRewriteHelper;
+import wtune.common.datasource.SQLSyntaxAdaptor;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -54,8 +54,8 @@ class ExecutorFactoryImpl implements ExecutorFactory {
     try {
       final Connection conn = calciteConn ? calciteConnection() : connection();
 
-      if (calciteConn) sql = StmtSyntaxRewriteHelper.regexRewriteForCalcite(sql);
-      if (useSqlServer) sql = StmtSyntaxRewriteHelper.regexRewriteForSQLServer(sql);
+      if (calciteConn) sql = SQLSyntaxAdaptor.adaptToCalciteWrapper(sql);
+      if (useSqlServer) sql = SQLSyntaxAdaptor.adaptToSQLServer(sql);
 
       return new ExecutorImpl(conn, sql);
     } catch (SQLException ex) {
