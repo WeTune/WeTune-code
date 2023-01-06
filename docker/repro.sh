@@ -45,7 +45,7 @@ case $input in
 		;;
 esac
 
-##################################### calcite ################################
+# calcite #
 ###### rewrite queries && pick one with the minimal cost #####
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh -calcite"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -calcite -tag base"
@@ -58,6 +58,7 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh 
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh -calcite"
 
 
+# wetune #
 ######## wetune: rewrite queries && pick one with the minimal cost#########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -tag base"
@@ -69,10 +70,10 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -tag large_zipf"
 
 ######## wetune: profile the performance of rewritten queries ##########
-docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -tag base &&
-                                              bash click-to-run/profile-cost.sh -tag zipf &&
-                                              bash click-to-run/profile-cost.sh -tag large &&
-                                              bash click-to-run/profile-cost.sh -tag large_zipf"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -tag base"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -tag zipf"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -tag large"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -tag large_zipf"
 
 ######## view rewriting and profiling results of wetune #########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh"
@@ -80,13 +81,18 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh -all
 
 ######## copy result from docker container to host machine ##########
 sudo mkdir "result_from_docker"
+docker cp wetune:/home/root/wetune/wtune_data/calcite ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/profile_calcite ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/viewall_calcite ./result_from_docker
+
 docker cp wetune:/home/root/wetune/wtune_data/rewrite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/profile ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/viewall ./result_from_docker
-docker cp wetune:/home/root/wetune/wtune_data/viewall_calcite ./result_from_docker
+
+docker cp wetune:/home/root/wetune/wtune_data/viewall_statistics ./result_from_docker
+
 docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
-docker cp wetune:/home/root/wetune/wtune_data/viewall_statistics ./result_from_docker
 
 rm -r $HOST_DUMP_PATH
 rm -r $HOST_MSSQL_PATH
