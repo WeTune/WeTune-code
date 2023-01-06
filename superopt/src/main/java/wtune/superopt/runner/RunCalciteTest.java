@@ -25,10 +25,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static wtune.common.utils.Commons.joining;
@@ -43,10 +40,12 @@ public class RunCalciteTest implements Runner {
   private String target;
   private Path testCasesPath, templatesPath, rulesPath;
   private Path outDir, outOpt;
+  private Path rulesOut;
   private App app;
   private int verbosity;
   private Lazy<SubstitutionBank> rules;
   private Lazy<List<QueryPair>> queryPairs;
+  private Map<Integer, Substitution> ruleRecord;
 
   private interface Task {
     void execute(RunCalciteTest runner) throws Exception;
@@ -70,6 +69,7 @@ public class RunCalciteTest implements Runner {
 
     outDir = parentDir.resolve("run" + subDirSuffix);
     outOpt = outDir.resolve("1_query.tsv");
+    rulesOut = outDir.resolve("1_rules.tsv");
 
     app = App.of("calcite_test");
     target = args.getOptional("T", "task", String.class, "all");
@@ -86,6 +86,7 @@ public class RunCalciteTest implements Runner {
     rulesPath = dataDir.resolve(rulesFile);
 
     rules = Lazy.mk(io(() -> SubstitutionSupport.loadBank(rulesPath)));
+    ruleRecord = new HashMap<>();
     queryPairs = Lazy.mk(io(() -> readPairs(Files.readAllLines(testCasesPath))));
   }
 
@@ -99,6 +100,7 @@ public class RunCalciteTest implements Runner {
     } else {
       TASKS.get(target).execute(this);
     }
+    storeRules();
   }
 
   private void verifyQuery() throws IOException {
@@ -191,6 +193,21 @@ public class RunCalciteTest implements Runner {
     }
   }
 
+  private void storeRules() {
+    ArrayList<Integer> rules = new ArrayList<>(ruleRecord.keySet());
+    Collections.sort(rules);
+    for (Integer ruleId : rules) {
+      IOSupport.appendTo(
+              rulesOut,
+              writer -> {
+                writer.printf(
+                        "%d\t%s\n",
+                        ruleId, ruleRecord.get(ruleId));
+              }
+      );
+    }
+  }
+
   private static class QueryPair {
     private final int lineNum;
     private final SqlNode q0, q1;
@@ -225,6 +242,12 @@ public class RunCalciteTest implements Runner {
     for (PlanContext plan : rewrittenPlans) {
       final SqlNode sqlNode0 = translateAsAst(plan, plan.root(), false);
       final List<OptimizationStep> traces = opt.traceOf(plan);
+      traces.forEach(trace -> {
+        Substitution rule = trace.rule();
+        if (rule != null && !ruleRecord.containsKey(rule.id())){
+          ruleRecord.put(rule.id(), rule);
+        }
+      });
       final String str = joining(",", traces, it -> String.valueOf(it.ruleId()));
       out.printf(
           "%s\t%d\t%d\t%s\t%s\n", "calcite_test", index == 0 ? pair.id0() : pair.id1(), i++, sqlNode0, str);

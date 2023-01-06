@@ -1,20 +1,28 @@
-docker build -t wetune:0.1 .
+##### volume mapping ######
+HOST_DUMP_PATH=/data/dump
+HOST_MSSQL_PATH=/data/mssql
+DOCKER_DUMP_PATH=/home/root/wetune/wtune_data/dump
+DOCKER_MSSQL_PATH=/var/opt/mssql
 
-docker run --rm -d -it --name wetune --privileged=true wetune:0.1 /sbin/init
+##### set up sqlserver ######
+docker pull mcr.microsoft.com/mssql/server:2019-latest
+docker run -e "ACCEPT_EULA=Y" -e MSSQL_PID='Developer' -e "MSSQL_SA_PASSWORD=mssql2019Admin" -u root -p 1433:1433 --name mssql -v $HOST_MSSQL_PATH:$DOCKER_MSSQL_PATH -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH -d mcr.microsoft.com/mssql/server:2019-latest
+
+##### set up wetune #######
+docker build -t wetune:0.1 .
+docker run --rm -d -it --name wetune -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH --network=host --privileged=true wetune:0.1
 
 ########## Set Directories ########
 repo_dir='/home/root/wetune'
 
 ######### Clone Repository ################
-docker exec wetune apt-get -y update && apt-get -y upgrade
+docker exec wetune apt-get -y update
+docker exec wetune apt-get -y upgrade
 docker exec wetune apt-get install -y git
-docker exec wetune git clone https://ipads.se.sjtu.edu.cn:1312/opensource/wetune.git $repo_dir
-
-########## Set Up SqlServer ##########
-docker exec wetune apt-get install -y sudo
-docker exec wetune sudo MSSQL_SA_PASSWORD=mssql2019Admin \
-                  MSSQL_PID=developer \
-                  /opt/mssql/bin/mssql-conf -n setup accept-eula
+docker exec wetune git clone https://ipads.se.sjtu.edu.cn:1312/opensource/wetune.git /temp
+docker exec wetune mv /temp/.git /home/root/wetune
+docker exec wetune rm -rf /temp
+docker exec wetune bash -c "cd ${repo_dir} && git reset --hard HEAD"
 
 ######### choose to whether to run discovery.sh ########
 read -r -p "Do you want to run discovery.sh to find rules which takes about 3600 CPU hours in our machine? [Y/n] " input
@@ -37,6 +45,19 @@ case $input in
 		;;
 esac
 
+##################################### calcite ################################
+###### rewrite queries && pick one with the minimal cost #####
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh -calcite"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -calcite -tag base"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/estimate-cost.sh -calcite"
+
+##### profile the performance of rewritten queries #####
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh -calcite -tag base"
+
+#### view result of calcite #####
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh -calcite"
+
+
 ######## wetune: rewrite queries && pick one with the minimal cost#########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/rewrite-queries.sh"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/prepare-workload.sh -tag base"
@@ -53,15 +74,21 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/profile-cost.sh 
                                               bash click-to-run/profile-cost.sh -tag large &&
                                               bash click-to-run/profile-cost.sh -tag large_zipf"
 
-######## view rewriting and profiling results of both wetune #########
+######## view rewriting and profiling results of wetune #########
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh"
+docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh -all"
 
 ######## copy result from docker container to host machine ##########
 sudo mkdir "result_from_docker"
 docker cp wetune:/home/root/wetune/wtune_data/rewrite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/profile ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/viewall ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/viewall_calcite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
+docker cp wetune:/home/root/wetune/wtune_data/viewall_statistics ./result_from_docker
+
+rm -r $HOST_DUMP_PATH
+rm -r $HOST_MSSQL_PATH
 
 docker exec -it wetune /bin/bash

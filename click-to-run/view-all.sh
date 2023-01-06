@@ -25,6 +25,10 @@ while [[ $# -gt 0 ]]; do
     out_dir='viewall_calcite'
     shift 1
     ;;
+  "-all")
+      all='-all'
+      shift 1
+      ;;
   *)
     positional_args+=("${1}")
     shift
@@ -34,6 +38,7 @@ done
 
 gradle :testbed:run --args="ShowAllStatistics \
   ${calcite} \
+  ${all} \
   -optimizer=${optimizer} \
   -rewriteDir=${rewrite_dir}/${sub_dir} \
   -profileDir=${profile_dir}/${sub_dir} \
@@ -41,7 +46,11 @@ gradle :testbed:run --args="ShowAllStatistics \
 
 cwd=$(pwd)
 
-cd "${data_dir}/${out_dir}" || exit
+if [ -z $all ]; then
+  cd "${data_dir}/${out_dir}" || exit
+else
+  cd "${data_dir}/viewall_statistics" || exit
+fi
 
 dir=$(ls -t -1 | grep 'view.\+' | head -1)
 rm ${out_sub_dir}

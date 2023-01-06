@@ -25,12 +25,26 @@ public class ShowAllStatistics implements Runner {
   private Path outStatistic;
   private Path outOptInfo;
   private Path outUsefulRulesFile;
+  private Path outWetuneSurpassesCalcite;
+  private Path workloadBase;
+  private Path workloadZipf;
+  private Path workloadLarge;
+  private Path workloadLargeZipf;
+  private Path statistics;
   private OptimizerType optimizer;
   private boolean calcite;
+  private boolean all;
   private static final double BOUND_VALID = 0.1;
   private static final double BOUND_INVALID = -0.05;
   private Set<String> rulesRecord;
   private Map<String, String> rulesPool;
+
+  public static void main(String[] args) throws Exception {
+    args = new String[]{"ShowAllStatistics", "-all"};
+    ShowAllStatistics showAllStatistics = new ShowAllStatistics();
+    showAllStatistics.prepare(args);
+    showAllStatistics.run();
+  }
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -56,12 +70,25 @@ public class ShowAllStatistics implements Runner {
 
     outRulesFile = dir.resolve("rules.tsv");
     outStatistic = dir.resolve("statistic.tsv");
+    outWetuneSurpassesCalcite = dir.resolve("wetuneSurpassesCalcite.tsv");
     outOptInfo = dir.resolve("optimizationInfo.tsv");
     outUsefulRulesFile = dir.resolve("usefulRules.tsv");
 
 
     optimizer = OptimizerType.valueOf(args.getOptional("opt", "optimizer", String.class, "WeTune"));
     calcite = args.getOptional("calcite", boolean.class, false);
+
+    all = args.getOptional("all", boolean.class, false);
+    if (all){
+      Path fourWorkloadsResultDir = dataDir.resolve("viewall_statistics").resolve("view" + subDirName);
+      if (!Files.exists(fourWorkloadsResultDir)) Files.createDirectories(fourWorkloadsResultDir);
+      workloadBase = fourWorkloadsResultDir.resolve("base.tsv");
+      workloadZipf = fourWorkloadsResultDir.resolve("zipf.tsv");
+      workloadLarge = fourWorkloadsResultDir.resolve("large.tsv");
+      workloadLargeZipf = fourWorkloadsResultDir.resolve("large_zipf.tsv");
+      statistics = fourWorkloadsResultDir.resolve("statistics");
+    }
+
     rulesRecord = new HashSet<>();
     rulesPool = new HashMap<>();
     List<String> rules = Files.readAllLines(usedRulesFile);
@@ -77,8 +104,11 @@ public class ShowAllStatistics implements Runner {
 //        collectRules();
 
     if (calcite) collectStatisticCalcite();
-    else collectStatistic();
-    collectRules();
+    else if (all) collectAllStatisticCalcite();
+    else {
+      collectStatistic();
+      collectRules();
+    }
   }
 
   private void collectRules() throws IOException {
@@ -211,23 +241,27 @@ public class ShowAllStatistics implements Runner {
               1.0 - ((double) calciteOptLatency) / ((double) baseLatency);
       final double weTuneP50Improvement =
               1.0 - ((double) weTuneOptLatency) / ((double) baseLatency);
+      final double weTuneImproveThanCalcite = 1.0 - ((double) weTuneOptLatency) / ((double) calciteOptLatency);
 
       final CalciteStatementStatistic stat = statementStatMap.computeIfAbsent(
               "%s-%d".formatted(appName, stmtId),
               s -> new CalciteStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
       stat.updateCalciteImprove(calciteP50Improvement);
       stat.updateWeTuneImprove(weTuneP50Improvement);
+      stat.updateWeTuneImproveThanCalcite(weTuneImproveThanCalcite);
 
       i += 2;
     }
 
     // Write header
     final String header =
-            String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+            String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
                     "appName", "stmtId",
                     "rawSql", "calciteOptSql", "optSql", "usedRules",
-                    "calciteImprove", "weTuneImprove");
+                    "calciteImprove", "weTuneImprove", "weTuneImproveThanCalcite");
     IOSupport.appendTo(outStatistic, writer -> writer.printf("%s\n", header));
+
+    IOSupport.appendTo(outWetuneSurpassesCalcite, writer -> writer.printf("%s\n", header));
 
     // Write data
     List<String> stmtStatKeyList = new ArrayList<>(statementStatMap.keySet());
@@ -236,6 +270,131 @@ public class ShowAllStatistics implements Runner {
       final CalciteStatementStatistic statistic = statementStatMap.get(stmtKey);
       IOSupport.appendTo(
               outStatistic, writer -> writer.printf("%s\n", statistic.toString())
+      );
+      if (statistic.weTuneImproveThanCalcite > 0){
+        IOSupport.appendTo(
+                outWetuneSurpassesCalcite, writer -> writer.printf("%s\n", statistic.toString())
+        );
+      }
+    }
+  }
+
+  private void collectAllStatisticCalcite() throws IOException {
+    Map<String, AllStatementStatistic> statementStatMap = new HashMap<>();
+    Map<String, WorkLoadStatistic> workLoadStatisticMap = new HashMap<>();
+    final Path dataDir = Runner.dataDir();
+    Path profileDir = dataDir.resolve("profile/result");
+
+    for (String tag : List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
+      // profile
+      Path profileFile = profileDir.resolve(tag);
+      if (Files.exists(profileFile)) {
+        final List<String> lines = Files.readAllLines(profileFile);
+        for (int i = 0, bound = lines.size(); i < bound; i += 2) {
+          final String[] fieldsBase = lines.get(i).split(";");
+          final String[] fieldsOpt = lines.get(i + 1).split(";");
+
+          final String appName = fieldsBase[0];
+          final long stmtId = Long.parseLong(fieldsBase[1]);
+          final long baseLatency = Long.parseLong(fieldsBase[3]);
+          final long optLatency = Long.parseLong(fieldsOpt[3]);
+          final double p50Improvement = 1.0 - ((double) optLatency) / ((double) baseLatency);
+
+          final AllStatementStatistic stat = statementStatMap.computeIfAbsent(
+                  "%s-%d".formatted(appName, stmtId),
+                  s -> new AllStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
+          stat.updateImprove(p50Improvement);
+        }
+      }
+
+//      // profile_calcite
+//      profileFile = profileCalciteDir.resolve(tag);
+//      if (Files.exists(profileFile)) {
+//        final List<String> lines = Files.readAllLines(profileFile);
+//        for (int i = 0, bound = lines.size(); i < bound; i += 2) {
+//          final String[] fieldsBase = lines.get(i).split(";");
+//          if (i + 3 >= bound) break;
+//          final String[] fieldsWeTuneOpt = lines.get(i + 3).split(";");
+//
+//          final String appName = fieldsBase[0];
+//          final int stmtId = Integer.parseInt(fieldsBase[1]);
+//          final String probeAppName = fieldsWeTuneOpt[0];
+//          final int probeStmtId = Integer.parseInt(fieldsWeTuneOpt[1]);
+//          if (!(appName.equals(probeAppName) && stmtId == probeStmtId)) {
+//            continue;
+//          }
+//
+//          final int baseLatency = Integer.parseInt(fieldsBase[3]);
+//          final int weTuneOptLatency = Integer.parseInt(fieldsWeTuneOpt[3]);
+//          final double weTuneP50Improvement =
+//                  1.0 - ((double) weTuneOptLatency) / ((double) baseLatency);
+//
+//          final AllStatementStatistic stat = statementStatMap.computeIfAbsent(
+//                  "%s-%d".formatted(appName, stmtId),
+//                  s -> new AllStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
+//          stat.updateImprove(weTuneP50Improvement);
+//
+//          i += 2;
+//        }
+//      }
+      if (statementStatMap.isEmpty()){
+        continue;
+      }
+
+      Path outFile = null;
+      switch (tag){
+        case BASE -> outFile = workloadBase;
+        case ZIPF -> outFile = workloadZipf;
+        case LARGE -> outFile = workloadLarge;
+        case LARGE_ZIPF -> outFile = workloadLargeZipf;
+      }
+      // Write header
+      final String header =
+              String.format("%s\t%s\t%s\t%s\t%s\t%s",
+                      "appName", "stmtId",
+                      "rawSql", "optSql",
+                      "usedRules", "weTuneImprove");
+      IOSupport.appendTo(outFile, writer -> writer.printf("%s\n", header));
+
+      // Write data
+      List<String> stmtStatKeyList = new ArrayList<>(statementStatMap.keySet());
+      int queriesWithOverLatencyReductionOverNinetyCount = 0;
+      Collections.sort(stmtStatKeyList);
+      for (String stmtKey : stmtStatKeyList) {
+        final AllStatementStatistic statistic = statementStatMap.get(stmtKey);
+        IOSupport.appendTo(
+                outFile, writer -> writer.printf("%s\n", statistic.toString())
+        );
+        if (statistic.improve >= 0.9){
+          queriesWithOverLatencyReductionOverNinetyCount++;
+        }
+      }
+
+
+      WorkLoadStatistic workLoadStatistic = new WorkLoadStatistic();
+      List<AllStatementStatistic> statementList = new ArrayList<>(statementStatMap.values());
+      statementList.sort(Comparator.comparing(statistics -> statistics.improve));
+      workLoadStatistic.updateLatencyReductionForOverFiftyPercentageQueries(statementList.get(statementList.size() / 2).improve);
+      workLoadStatistic.updateQueriesNumberWithLatencyReductionOverNinety(queriesWithOverLatencyReductionOverNinetyCount);
+      workLoadStatistic.updateQueriesNumber(statementStatMap.size());
+      workLoadStatisticMap.put(tag, workLoadStatistic);
+      statementStatMap.clear();
+    }
+    // Write statistic
+    for (String workload : List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)){
+      if (!workLoadStatisticMap.containsKey(workload)){
+        continue;
+      }
+      WorkLoadStatistic workLoadStatistic = workLoadStatisticMap.get(workload);
+      IOSupport.appendTo(
+              statistics, writer -> writer.printf("%s\n", workload)
+      );
+      IOSupport.appendTo(
+              statistics, writer -> writer.printf("%s\n", String.format("at least 50%% of the queries achieve >%f%% latency reduction", workLoadStatistic.latencyReductionForOverFiftyPercentageQueries * 100))
+      );
+      IOSupport.appendTo(
+              statistics, writer -> writer.printf("%s\n\n", String.format("optimize %f%%(%d queries) with at least a 90%% latency reduction",
+                      1.0 * workLoadStatistic.queriesNumberWithLatencyReductionOverNinety / workLoadStatistic.queriesNumber * 100, workLoadStatistic.queriesNumberWithLatencyReductionOverNinety))
       );
     }
   }
@@ -308,6 +467,7 @@ public class ShowAllStatistics implements Runner {
     // Only record base workload.
     private Double weTuneImprove;
     private Double calciteImprove;
+    private Double weTuneImproveThanCalcite;
 
     public CalciteStatementStatistic(String appName, int stmtId) {
       this.stmt = Statement.findOneCalcite(appName, stmtId);
@@ -321,9 +481,13 @@ public class ShowAllStatistics implements Runner {
       this.calciteImprove = val;
     }
 
+    public void updateWeTuneImproveThanCalcite(double val) {
+      this.weTuneImproveThanCalcite = val;
+    }
+
     @Override
     public String toString() {
-      return String.format("%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s",
+      return String.format("%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
               stmt.appName(),
               stmt.stmtId(),
               stmt.original().rawSql(),
@@ -331,7 +495,52 @@ public class ShowAllStatistics implements Runner {
               stmt.rewritten(optimizer).rawSql(),
               stmt.rewritten(optimizer).stackTrace(),
               calciteImprove,
-              weTuneImprove);
+              weTuneImprove,
+              weTuneImproveThanCalcite);
+    }
+  }
+
+  private class AllStatementStatistic {
+    private final Statement stmt;
+    // Only record base workload.
+    private Double improve;
+
+    public AllStatementStatistic(String appName, int stmtId) {
+      if (appName.equals("calcite_test")) this.stmt = Statement.findOneCalcite(appName, stmtId);
+      else this.stmt = Statement.findOne(appName, stmtId);
+    }
+
+    public void updateImprove(double val) {
+      this.improve = val;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s\t%d\t%s\t%s\t%s\t%s",
+              stmt.appName(),
+              stmt.stmtId(),
+              stmt.original().rawSql(),
+              stmt.rewritten(optimizer).rawSql(),
+              stmt.rewritten(optimizer).stackTrace(),
+              improve);
+    }
+  }
+
+  private class WorkLoadStatistic{
+    private Double latencyReductionForOverFiftyPercentageQueries;
+    private Integer queriesNumberWithLatencyReductionOverNinety;
+    private Integer queriesNumber;
+
+    public void updateLatencyReductionForOverFiftyPercentageQueries(double val) {
+      this.latencyReductionForOverFiftyPercentageQueries = val;
+    }
+
+    public void updateQueriesNumber(int val){
+      this.queriesNumber = val;
+    }
+
+    public void updateQueriesNumberWithLatencyReductionOverNinety(int val) {
+      this.queriesNumberWithLatencyReductionOverNinety = val;
     }
   }
 }

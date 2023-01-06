@@ -27,28 +27,11 @@ ENV GRADLE_HOME /opt/gradle/gradle-7.3.3
 ENV PATH ${GRADLE_HOME}/bin:${PATH}
 
 
-# installing Sql Server 2019
-RUN apt-get install -y wget software-properties-common && \
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list)" && \
-    apt-get update && \
-    apt-get install -y mssql-server
-
-# Sql Server setup: choose the 2nd edition of Sql Server; enter password: mssql2019Admin
-#ENV MSSQL_SA_PASSWORD mssql2019Admin
-#ENV MSSQL_PID developer
-#RUN MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD \
-#    MSSQL_PID=$MSSQL_PID \
-#    /opt/mssql/bin/mssql-conf -n setup accept-eula
-
-
-EXPOSE 1433
-## firewall setup
-#RUN ufw enable && ufw allow 1433
 
 
 # installing Sql Server command-line tools
-RUN apt-get install -y curl && \
+RUN apt-get install -y wget software-properties-common && \
+    apt-get install -y curl && \
     curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/msprod.list && \
     apt-get update && \
