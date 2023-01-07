@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 import static wtune.testbed.runner.GenerateTableData.*;
@@ -280,69 +281,59 @@ public class ShowAllStatistics implements Runner {
   }
 
   private void collectAllStatisticCalcite() throws IOException {
-    Map<String, AllStatementStatistic> statementStatMap = new HashMap<>();
+    Map<String, StatementStatistic> statementStatMap = new HashMap<>();
     Map<String, WorkLoadStatistic> workLoadStatisticMap = new HashMap<>();
+    Map<String, Boolean> workloadExist =
+            new HashMap<>(Map.of(BASE, false, ZIPF, false, LARGE, false, LARGE_ZIPF, false));
+
     final Path dataDir = Runner.dataDir();
-    Path profileDir = dataDir.resolve("profile/result");
+    Path profileDir = dataDir.resolve("viewall/result");
+    Path optimizationInfo = profileDir.resolve("optimizationInfo.tsv");
 
-    for (String tag : List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)) {
-      // profile
-      Path profileFile = profileDir.resolve(tag);
-      if (Files.exists(profileFile)) {
-        final List<String> lines = Files.readAllLines(profileFile);
-        for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-          final String[] fieldsBase = lines.get(i).split(";");
-          final String[] fieldsOpt = lines.get(i + 1).split(";");
+    // profile
+    final List<String> lines = Files.readAllLines(optimizationInfo);
+    String headerLine = lines.get(0);
+    if (headerLine.contains("baseImprove")) {
+      workloadExist.put(BASE, true);
+    }
+    if (headerLine.contains("zipfImprove")) {
+      workloadExist.put(ZIPF, true);
+    }
+    if (headerLine.contains("largeImprove")) {
+      workloadExist.put(LARGE, true);
+    }
+    if (headerLine.contains("large_zipfImprove")) {
+      workloadExist.put(LARGE_ZIPF, true);
+    }
 
-          final String appName = fieldsBase[0];
-          final long stmtId = Long.parseLong(fieldsBase[1]);
-          final long baseLatency = Long.parseLong(fieldsBase[3]);
-          final long optLatency = Long.parseLong(fieldsOpt[3]);
-          final double p50Improvement = 1.0 - ((double) optLatency) / ((double) baseLatency);
+    // remove header
+    lines.remove(0);
+    for (String line: lines) {
+      String[] optInfo = line.split("\t");
+      final StatementStatistic stat = statementStatMap.computeIfAbsent(
+              "%s-%d".formatted(optInfo[0], Integer.parseInt(optInfo[1])),
+              s -> new StatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
 
-          final AllStatementStatistic stat = statementStatMap.computeIfAbsent(
-                  "%s-%d".formatted(appName, stmtId),
-                  s -> new AllStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
-          stat.updateImprove(p50Improvement);
-        }
+      if (optInfo.length > 3 && !optInfo[3].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[3]), BASE);
       }
-
-//      // profile_calcite
-//      profileFile = profileCalciteDir.resolve(tag);
-//      if (Files.exists(profileFile)) {
-//        final List<String> lines = Files.readAllLines(profileFile);
-//        for (int i = 0, bound = lines.size(); i < bound; i += 2) {
-//          final String[] fieldsBase = lines.get(i).split(";");
-//          if (i + 3 >= bound) break;
-//          final String[] fieldsWeTuneOpt = lines.get(i + 3).split(";");
-//
-//          final String appName = fieldsBase[0];
-//          final int stmtId = Integer.parseInt(fieldsBase[1]);
-//          final String probeAppName = fieldsWeTuneOpt[0];
-//          final int probeStmtId = Integer.parseInt(fieldsWeTuneOpt[1]);
-//          if (!(appName.equals(probeAppName) && stmtId == probeStmtId)) {
-//            continue;
-//          }
-//
-//          final int baseLatency = Integer.parseInt(fieldsBase[3]);
-//          final int weTuneOptLatency = Integer.parseInt(fieldsWeTuneOpt[3]);
-//          final double weTuneP50Improvement =
-//                  1.0 - ((double) weTuneOptLatency) / ((double) baseLatency);
-//
-//          final AllStatementStatistic stat = statementStatMap.computeIfAbsent(
-//                  "%s-%d".formatted(appName, stmtId),
-//                  s -> new AllStatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
-//          stat.updateImprove(weTuneP50Improvement);
-//
-//          i += 2;
-//        }
-//      }
-      if (statementStatMap.isEmpty()){
-        continue;
+      if (optInfo.length > 4 && !optInfo[4].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[4]), ZIPF);
       }
+      if (optInfo.length > 5 && !optInfo[5].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[5]), LARGE);
+      }
+      if (optInfo.length > 6 && !optInfo[6].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[6]), LARGE_ZIPF);
+      }
+    }
 
+
+    for (String tag: workloadExist.keySet()) {
+      WorkLoadStatistic workLoadStatistic = new WorkLoadStatistic();
+      if (!workloadExist.get(tag)) continue;
       Path outFile = null;
-      switch (tag){
+      switch (tag) {
         case BASE -> outFile = workloadBase;
         case ZIPF -> outFile = workloadZipf;
         case LARGE -> outFile = workloadLarge;
@@ -350,36 +341,32 @@ public class ShowAllStatistics implements Runner {
       }
       // Write header
       final String header =
-              String.format("%s\t%s\t%s\t%s\t%s\t%s",
-                      "appName", "stmtId",
-                      "rawSql", "optSql",
-                      "usedRules", "weTuneImprove");
+              String.format("%s\t%s\t%s",
+                      "appName", "stmtId", "weTuneImprove");
       IOSupport.appendTo(outFile, writer -> writer.printf("%s\n", header));
-
-      // Write data
       List<String> stmtStatKeyList = new ArrayList<>(statementStatMap.keySet());
-      int queriesWithOverLatencyReductionOverNinetyCount = 0;
       Collections.sort(stmtStatKeyList);
-      for (String stmtKey : stmtStatKeyList) {
-        final AllStatementStatistic statistic = statementStatMap.get(stmtKey);
-        IOSupport.appendTo(
-                outFile, writer -> writer.printf("%s\n", statistic.toString())
-        );
-        if (statistic.improve >= 0.9){
-          queriesWithOverLatencyReductionOverNinetyCount++;
+      for (String key : stmtStatKeyList) {
+        StatementStatistic statementStatistic = statementStatMap.get(key);
+        if (statementStatistic.getImprovement(tag) == null){
+          continue;
+        }
+        IOSupport.appendTo(outFile, writer -> writer.printf("%s\n", statementStatistic.toString(tag)));
+        workLoadStatistic.queriesNumber++;
+        if (statementStatistic.getImprovement(tag) >= 0.9){
+          workLoadStatistic.queriesNumberWithLatencyReductionOverNinety++;
         }
       }
-
-
-      WorkLoadStatistic workLoadStatistic = new WorkLoadStatistic();
-      List<AllStatementStatistic> statementList = new ArrayList<>(statementStatMap.values());
-      statementList.sort(Comparator.comparing(statistics -> statistics.improve));
-      workLoadStatistic.updateLatencyReductionForOverFiftyPercentageQueries(statementList.get(statementList.size() / 2).improve);
-      workLoadStatistic.updateQueriesNumberWithLatencyReductionOverNinety(queriesWithOverLatencyReductionOverNinetyCount);
-      workLoadStatistic.updateQueriesNumber(statementStatMap.size());
+      List<StatementStatistic> statementStatistics = new ArrayList<>(statementStatMap.values());
+      statementStatistics = statementStatistics.stream().filter(statistics -> statistics.getImprovement(tag) != null).collect(Collectors.toList());
+      statementStatistics.sort(Comparator.comparing(s -> s.getImprovement(tag)));
+      workLoadStatistic.latencyReductionForOverFiftyPercentageQueries = statementStatistics.get(statementStatistics.size() / 2).getImprovement(tag);
       workLoadStatisticMap.put(tag, workLoadStatistic);
-      statementStatMap.clear();
     }
+
+
+
+
     // Write statistic
     for (String workload : List.of(BASE, ZIPF, LARGE, LARGE_ZIPF)){
       if (!workLoadStatisticMap.containsKey(workload)){
@@ -449,6 +436,49 @@ public class ShowAllStatistics implements Runner {
     public String toString(boolean base, boolean zipf, boolean large, boolean largeZipf) {
       final StringBuilder sb = new StringBuilder(this.toString());
       return getImprovement(base, zipf, large, largeZipf, sb);
+    }
+
+    public String toString(String tag) {
+      switch (tag){
+        case BASE -> {
+          return String.format("%s\t%d\t%s",
+                  stmt.appName(),
+                  stmt.stmtId(),
+                  baseImprove);
+        }
+        case ZIPF ->
+        {
+          return String.format("%s\t%d\t%s",
+                  stmt.appName(),
+                  stmt.stmtId(),
+                  zipfImprove);
+        }
+        case LARGE ->
+        {
+          return String.format("%s\t%d\t%s",
+                  stmt.appName(),
+                  stmt.stmtId(),
+                  largeImprove);
+        }
+        case LARGE_ZIPF ->
+        {
+          return String.format("%s\t%d\t%s",
+                  stmt.appName(),
+                  stmt.stmtId(),
+                  large_zipfImprove);
+        }
+      }
+      return null;
+    }
+
+    private Double getImprovement(String tag) {
+      switch (tag){
+        case BASE -> { return baseImprove; }
+        case ZIPF -> { return zipfImprove; }
+        case LARGE -> { return largeImprove; }
+        case LARGE_ZIPF -> { return large_zipfImprove; }
+      }
+      return 0.0;
     }
 
     @Override
@@ -527,9 +557,10 @@ public class ShowAllStatistics implements Runner {
   }
 
   private class WorkLoadStatistic{
-    private Double latencyReductionForOverFiftyPercentageQueries;
-    private Integer queriesNumberWithLatencyReductionOverNinety;
-    private Integer queriesNumber;
+    private Double latencyReductionForOverFiftyPercentageQueries = 0.0;
+    private Integer queriesNumberWithLatencyReductionOverNinety = 0;
+    private Integer queriesNumber = 0;
+
 
     public void updateLatencyReductionForOverFiftyPercentageQueries(double val) {
       this.latencyReductionForOverFiftyPercentageQueries = val;
