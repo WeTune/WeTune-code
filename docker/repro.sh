@@ -6,10 +6,12 @@ DOCKER_MSSQL_PATH=/var/opt/mssql
 
 ##### set up sqlserver ######
 docker pull mcr.microsoft.com/mssql/server:2019-latest
+docker rm mssql -f
 docker run -e "ACCEPT_EULA=Y" -e MSSQL_PID='Developer' -e "MSSQL_SA_PASSWORD=mssql2019Admin" -u root -p 1433:1433 --name mssql -v $HOST_MSSQL_PATH:$DOCKER_MSSQL_PATH -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH -d mcr.microsoft.com/mssql/server:2019-latest
 
 ##### set up wetune #######
 docker build -t wetune:0.1 .
+docker rm wetune -f
 docker run --rm -d -it --name wetune -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH --network=host --privileged=true wetune:0.1
 
 ########## Set Directories ########
