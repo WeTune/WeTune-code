@@ -96,7 +96,4 @@ docker cp wetune:/home/root/wetune/wtune_data/viewall_statistics ./result_from_d
 docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
 
-rm -r $HOST_DUMP_PATH
-rm -r $HOST_MSSQL_PATH
-
 docker exec -it wetune /bin/bash
