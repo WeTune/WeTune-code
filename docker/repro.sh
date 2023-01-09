@@ -32,9 +32,12 @@ read -r -p "Do you want to run discovery.sh to find rules which takes about 3600
 case $input in
     [yY][eE][sS]|[yY])
     echo "you choose yes"
+    docker exec wetune bash -c "cd ${repo_dir} && git checkout rd"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/discover-rules.sh"
     docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/loop-until-discover-end.sh"
-		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh && click-to-run/reduce-rules.sh"
+		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh"
+		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/reduce-rules.sh"
+		docker exec wetune bash -c "cd ${repo_dir} && git checkout main"
 		;;
 
     [nN][oO]|[nN])
