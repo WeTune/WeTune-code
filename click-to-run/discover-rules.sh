@@ -50,8 +50,7 @@ else
   fi
 fi
 
-gradle :superopt:compileJava >/dev/null 2>&1 || echo \
-  'Error in compilation. Run `gradle compileJava` to check error.' && exit 1
+gradle compileJava
 
 echo "Begin rule discovery. "
 echo "#process=${num_partitions}  #threads_per_process=${parallelism} timeout_per_pair=${timeout}ms"
