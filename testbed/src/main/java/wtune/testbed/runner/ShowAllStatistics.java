@@ -293,6 +293,8 @@ public class ShowAllStatistics implements Runner {
     // profile
     final List<String> lines = Files.readAllLines(optimizationInfo);
     String headerLine = lines.get(0);
+    List<String> headerSplit = Arrays.asList(headerLine.split("\t"));
+    int idxBase = headerSplit.indexOf("baseImprove"), idxZipf = headerSplit.indexOf("zipfImprove"), idxLarge = headerSplit.indexOf("largeImprove"), idxLarge_zipf = headerSplit.indexOf("large_zipfImprove");
     if (headerLine.contains("baseImprove")) {
       workloadExist.put(BASE, true);
     }
@@ -314,17 +316,17 @@ public class ShowAllStatistics implements Runner {
               "%s-%d".formatted(optInfo[0], Integer.parseInt(optInfo[1])),
               s -> new StatementStatistic(s.split("-")[0], Integer.parseInt(s.split("-")[1])));
 
-      if (optInfo.length > 3 && !optInfo[3].equals("null")) {
-        stat.updateProfile(Double.parseDouble(optInfo[3]), BASE);
+      if (idxBase != -1 && !optInfo[idxBase].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[idxBase]), BASE);
       }
-      if (optInfo.length > 4 && !optInfo[4].equals("null")) {
-        stat.updateProfile(Double.parseDouble(optInfo[4]), ZIPF);
+      if (idxZipf != -1 && !optInfo[idxZipf].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[idxZipf]), ZIPF);
       }
-      if (optInfo.length > 5 && !optInfo[5].equals("null")) {
-        stat.updateProfile(Double.parseDouble(optInfo[5]), LARGE);
+      if (idxLarge != -1 && !optInfo[idxLarge].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[idxLarge]), LARGE);
       }
-      if (optInfo.length > 6 && !optInfo[6].equals("null")) {
-        stat.updateProfile(Double.parseDouble(optInfo[6]), LARGE_ZIPF);
+      if (idxLarge_zipf != -1 && !optInfo[idxLarge_zipf].equals("null")) {
+        stat.updateProfile(Double.parseDouble(optInfo[idxLarge_zipf]), LARGE_ZIPF);
       }
     }
 
