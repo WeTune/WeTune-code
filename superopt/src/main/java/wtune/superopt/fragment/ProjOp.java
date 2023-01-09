@@ -44,6 +44,6 @@ class ProjOp extends BaseOp implements Proj {
 
   @Override
   public int shadowHash() {
-    return super.hashCode() * 31 + Boolean.hashCode(isDeduplicated);
+    return super.shadowHash() * 31 + Boolean.hashCode(isDeduplicated);
   }
 }
