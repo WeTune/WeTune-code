@@ -10,7 +10,6 @@ out/
 stale_outputs_checked
 hs_err*
 */hs_err*
-*/*.so
 err
 out
 */*.dll
