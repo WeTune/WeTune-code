@@ -5,8 +5,6 @@
 !schemas/*
 !schemas_mssql
 !schemas_mssql/*
-!rules/
-!rules/rules.txt
 !rules/rules.merged.txt
 !rules/rules.spes.txt
 !rules/rules.test.txt
