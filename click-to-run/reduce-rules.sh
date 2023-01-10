@@ -2,10 +2,10 @@
 
 data_dir="${WETUNE_DATA_DIR:-wtune_data}"
 rules_dir='rules'
-out="${data_dir}/${rules_dir}/rules.txt"
-in="${data_dir}/${rules_dir}/rules.raw.txt"
+out="${rules_dir}/rules.txt"
+in="${rules_dir}/rules.raw.txt"
 if ! [ -f "${in}" ]; then
-  in="${data_dir}/${rules_dir}/rules.local.txt"
+  in="${rules_dir}/rules.local.txt"
 fi
 
 # read arguments
@@ -19,6 +19,10 @@ while [[ $# -gt 0 ]]; do
     out="${2}"
     shift 2
     ;;
+  "-spes")
+    out="${rules_dir}/rules.spes.txt"
+    shift
+    ;;
   *)
     positional_args+=("${1}")
     shift
@@ -27,5 +31,5 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "Begin rule reducing."
-gradle :superopt:run --args="ReduceRules -R=${in} -o=${out} -a=none"
-echo "$(wc -l "${out}") non-reducible rules discovered."
+gradle :superopt:run --args="ReduceRules -R=${in} -o=${out}"
+echo "$(wc -l "${data_dir}/${out}" | cut -f1 -d' ') non-reducible rules discovered."
