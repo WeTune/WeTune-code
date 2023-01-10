@@ -19,6 +19,8 @@ public interface Profiler {
 
   int minCostIndex();
 
+  int minCostIndexOfCandidates();
+
   static Profiler mk(Properties dbProps) {
     return new ProfilerImpl(dbProps);
   }

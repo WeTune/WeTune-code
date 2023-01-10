@@ -246,7 +246,7 @@ public class IssueStudy implements Runner {
     }
     final Path outFile = outDir.resolve(issue.issueFullId());
     IOSupport.appendTo(outFile, writer -> writer.printf("----------WeTune----------: \n"));
-    // Step 1. Rewrite raw and opt query using a rule set.
+    // Plan parsing.
     final App app = App.of(issue.appName());
     final String dbType = app.dbType();
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
@@ -262,39 +262,35 @@ public class IssueStudy implements Runner {
       IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse plan of SQL queries.\n"));
       return;
     }
-
+    // Rewrite raw and opt query using a rule set.
     final Set<PlanContext> rawRewrites = getRewrittenPlan(rawPlan);
     final Set<PlanContext> optRewrites = getRewrittenPlan(optPlan);
     if (rawRewrites.isEmpty() && optRewrites.isEmpty()) {
       IOSupport.appendTo(outFile, writer -> writer.printf("No rewritings to this pair of SQL queries.\n"));
       return;
     }
-    // Step 2. Pick the rewritten queries of raw and opt query with the minimal cost
+    // Pick the rewritten queries of raw and opt query with the minimal cost
     final Properties props = DbSupport.dbProps(SQLServer, dbName);
     final Profiler rawProfiler = Profiler.mk(props), optProfiler = Profiler.mk(props);
     rawProfiler.setBaseline(rawPlan);
     optProfiler.setBaseline(optPlan);
     for (PlanContext candidate : rawRewrites) rawProfiler.profile(candidate);
     for (PlanContext candidate : optRewrites) optProfiler.profile(candidate);
-    final int rawMinCostIdx = rawProfiler.minCostIndex();
-    final int optMinCostIdx = optProfiler.minCostIndex();
-    if (rawMinCostIdx < 0 && optMinCostIdx < 0) {
-      IOSupport.appendTo(outFile,
-          writer -> writer.printf("Cannot perform this issue's rewrite. " +
-              "Q_0 and Q_1's rewrites are no better than Q_0 and Q_1 respectively.\n"));
-      return;
-    }
-    // Step 3. Compare the rewritten queries of raw and opt query with the original opt query
+    int rawMinCostIdx = rawProfiler.minCostIndex();
+    int optMinCostIdx = optProfiler.minCostIndex();
+    if (rawMinCostIdx < 0) rawMinCostIdx = rawProfiler.minCostIndexOfCandidates();
+    if (optMinCostIdx < 0) optMinCostIdx = optProfiler.minCostIndexOfCandidates();
+
     final double rawMinCost = rawMinCostIdx < 0 ? rawProfiler.getBaselineCost() : rawProfiler.getCost(rawMinCostIdx);
     final double optMinCost = optMinCostIdx < 0 ? optProfiler.getBaselineCost() : optProfiler.getCost(optMinCostIdx);
     final double baseline = optProfiler.getBaselineCost();
+    // If both <= the cost of the original opt query, then WeTune can rewrite.
     if (rawMinCost > baseline || optMinCost > baseline) {
       IOSupport.appendTo(outFile,
           writer -> writer.printf("Cannot perform this issue's rewrite. " +
               "One of Q_0 and Q_1's rewrites is no better Q_1 itself.\n"));
       return;
     }
-    // If both <= the cost of the original opt query, then WeTune can rewrite.
     final PlanContext rawOptPlan = rawMinCostIdx < 0 ? rawPlan : rawProfiler.getPlan(rawMinCostIdx);
     final PlanContext optOptPlan = optMinCostIdx < 0 ? optPlan : optProfiler.getPlan(optMinCostIdx);
     final SqlNode rawOptAst = translateAsAst(rawOptPlan, rawOptPlan.root(), false);

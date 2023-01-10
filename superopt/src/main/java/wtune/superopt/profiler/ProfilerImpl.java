@@ -103,6 +103,21 @@ class ProfilerImpl implements Profiler {
     return minCostIndex;
   }
 
+  @Override
+  public int minCostIndexOfCandidates() {
+    if (costs.size() == 0) return -1;
+
+    double minCost = costs.get(0);
+    int minCostIndex = 0;
+    for (int i = 0, bound = costs.size(); i < bound; ++i) {
+      if (costs.get(i) < minCost) {
+        minCost = costs.get(i);
+        minCostIndex = i;
+      }
+    }
+    return minCostIndex;
+  }
+
   private double queryCost(SqlNode ast) {
     final ParamInterpolator interpolator = new ParamInterpolator(ast);
     interpolator.go();
