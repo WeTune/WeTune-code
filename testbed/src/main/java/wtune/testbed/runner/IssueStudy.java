@@ -14,6 +14,7 @@ import wtune.common.datasource.db.SQLServerPlanTree;
 import wtune.common.datasource.SQLSyntaxAdaptor;
 import wtune.superopt.optimizer.Optimizer;
 import wtune.superopt.profiler.Profiler;
+import wtune.superopt.substitution.Substitution;
 import wtune.superopt.substitution.SubstitutionBank;
 import wtune.superopt.substitution.SubstitutionSupport;
 
@@ -86,7 +87,7 @@ public class IssueStudy implements Runner {
 
   @Override
   public void run() throws Exception {
-    Class.forName("net.sf.log4jdbc.DriverSpy");
+    // Class.forName("net.sf.log4jdbc.DriverSpy");
 
     final List<String> lines = Files.readAllLines(issueFile);
     final List<Issue> issues = collectIssues(lines);
@@ -137,7 +138,7 @@ public class IssueStudy implements Runner {
         writer -> writer.printf(
             "Issue id: %s\nDescription: %s\nIssue Url: %s\n\n", issue.issueFullId(), issue.desc(), issue.url()));
     IOSupport.appendTo(outFile,
-        writer -> writer.printf("Raw SQL query:\n %s\nOpt SQL query:\n %s\n\n", issue.rawSql(), issue.optSql()));
+        writer -> writer.printf("Raw SQL query Q_0:\n %s\nOpt SQL query Q_1:\n %s\n\n", issue.rawSql(), issue.optSql()));
   }
 
   private void checkMySQL(Issue issue) throws SQLException {
@@ -227,6 +228,9 @@ public class IssueStudy implements Runner {
   static {
     try {
       DEFAULT_RULE_SET = SubstitutionSupport.loadBank(Runner.dataDir().resolve("prepared/rules.txt"));
+      final SubstitutionBank supplementaryBank =
+          SubstitutionSupport.loadBank(Runner.dataDir().resolve("prepared/rules.example.txt"));
+      for (Substitution rule : supplementaryBank.rules()) DEFAULT_RULE_SET.add(rule);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -235,6 +239,11 @@ public class IssueStudy implements Runner {
   }
 
   private void checkWeTune(Issue issue) throws Exception {
+    if (verbosity >= 1) {
+      System.out.println("Checking " + issue.issueFullId() + " on WeTune: ");
+      System.out.println(issue.rawSql());
+      System.out.println(issue.optSql());
+    }
     final Path outFile = outDir.resolve(issue.issueFullId());
     IOSupport.appendTo(outFile, writer -> writer.printf("----------WeTune----------: \n"));
     // Step 1. Rewrite raw and opt query using a rule set.
@@ -270,7 +279,9 @@ public class IssueStudy implements Runner {
     final int rawMinCostIdx = rawProfiler.minCostIndex();
     final int optMinCostIdx = optProfiler.minCostIndex();
     if (rawMinCostIdx < 0 && optMinCostIdx < 0) {
-      IOSupport.appendTo(outFile, writer -> writer.printf("Cannot perform the rewrite of this issue.\n"));
+      IOSupport.appendTo(outFile,
+          writer -> writer.printf("Cannot perform this issue's rewrite. " +
+              "Q_0 and Q_1's rewrites are no better than Q_0 and Q_1 respectively.\n"));
       return;
     }
     // Step 3. Compare the rewritten queries of raw and opt query with the original opt query
@@ -278,7 +289,9 @@ public class IssueStudy implements Runner {
     final double optMinCost = optMinCostIdx < 0 ? optProfiler.getBaselineCost() : optProfiler.getCost(optMinCostIdx);
     final double baseline = optProfiler.getBaselineCost();
     if (rawMinCost > baseline || optMinCost > baseline) {
-      IOSupport.appendTo(outFile, writer -> writer.printf("Cannot perform the rewrite of this issue.\n"));
+      IOSupport.appendTo(outFile,
+          writer -> writer.printf("Cannot perform this issue's rewrite. " +
+              "One of Q_0 and Q_1's rewrites is no better Q_1 itself.\n"));
       return;
     }
     // If both <= the cost of the original opt query, then WeTune can rewrite.
