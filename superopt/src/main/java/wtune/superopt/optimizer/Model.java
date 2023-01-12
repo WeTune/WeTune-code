@@ -295,8 +295,9 @@ class Model {
       final ValuesRegistry valuesReg = plan.valuesReg();
       final Expression expr0 = valuesReg.exprOf(rootRef0);
       final Expression expr1 = valuesReg.exprOf(rootRef1);
-      if (expr0 == null ^ expr1 == null) return false;
-      assert expr0 != null;
+      if (expr0 == null || expr1 == null) return false;
+      // if (expr0 == null ^ expr1 == null) return false;
+      // assert expr0 != null;
 
       if (!Objects.equals(expr0.template().toString(), expr1.template().toString())
           || !isAttrsEq(valuesReg.valueRefsOf(expr0), valuesReg.valueRefsOf(expr1))) {

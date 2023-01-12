@@ -256,8 +256,8 @@ public class IssueStudy implements Runner {
       IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse ast of SQL queries.\n"));
       return;
     }
-    final PlanContext rawPlan = parsePlan(rawAst, app.schema(DEFAULT_TAG));
-    final PlanContext optPlan = parsePlan(optAst, app.schema(DEFAULT_TAG));
+    final PlanContext rawPlan = parsePlan(rawAst, app.schema(DEFAULT_TAG, true));
+    final PlanContext optPlan = parsePlan(optAst, app.schema(DEFAULT_TAG, true));
     if (rawPlan == null || optPlan == null) {
       IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse plan of SQL queries.\n"));
       return;
@@ -269,7 +269,7 @@ public class IssueStudy implements Runner {
       IOSupport.appendTo(outFile, writer -> writer.printf("No rewritings to this pair of SQL queries.\n"));
       return;
     }
-    // Pick the rewritten queries of raw and opt query with the minimal cost
+    // Pick the rewritten queries
     final Properties props = DbSupport.dbProps(SQLServer, dbName);
     final Profiler rawProfiler = Profiler.mk(props), optProfiler = Profiler.mk(props);
     rawProfiler.setBaseline(rawPlan);
@@ -284,11 +284,9 @@ public class IssueStudy implements Runner {
     final double rawMinCost = rawMinCostIdx < 0 ? rawProfiler.getBaselineCost() : rawProfiler.getCost(rawMinCostIdx);
     final double optMinCost = optMinCostIdx < 0 ? optProfiler.getBaselineCost() : optProfiler.getCost(optMinCostIdx);
     final double baseline = optProfiler.getBaselineCost();
-    // If both <= the cost of the original opt query, then WeTune can rewrite.
-    if (rawMinCost > baseline || optMinCost > baseline) {
+    if (rawMinCost > baseline && optMinCost > baseline) {
       IOSupport.appendTo(outFile,
-          writer -> writer.printf("Cannot perform this issue's rewrite. " +
-              "One of Q_0 and Q_1's rewrites is no better Q_1 itself.\n"));
+          writer -> writer.printf("Cannot perform rewrite. Q_0 and Q_1's rewrites is no better Q_1 itself.\n"));
       return;
     }
     final PlanContext rawOptPlan = rawMinCostIdx < 0 ? rawPlan : rawProfiler.getPlan(rawMinCostIdx);
