@@ -40,6 +40,8 @@ case $input in
     [yY][eE][sS]|[yY])
     echo "you choose yes"
     docker exec wetune bash -c "cd ${repo_dir} && git checkout rd"
+    docker exec wetune bash -c "cd ${repo_dir} && git add sql/ && git reset --hard HEAD"
+    docker exec wetune bash -c "cd ${repo_dir} && gradle compileJava"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/discover-rules.sh"
     docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/loop-until-discover-end.sh"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh"
@@ -47,6 +49,8 @@ case $input in
 		docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
     docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
 		docker exec wetune bash -c "cd ${repo_dir} && git checkout main"
+		docker exec wetune bash -c "cd ${repo_dir} && git add sql/ && git reset --hard HEAD"
+    docker exec wetune bash -c "cd ${repo_dir} && gradle compileJava"
 		;;
 
     [nN][oO]|[nN])
