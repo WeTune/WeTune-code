@@ -12,7 +12,7 @@ docker run -e "ACCEPT_EULA=Y" -e MSSQL_PID='Developer' -e "MSSQL_SA_PASSWORD=mss
 ##### set up wetune #######
 docker build -t wetune:0.1 .
 docker rm wetune -f
-docker run --rm -d -it --name wetune -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH --network=host --privileged=true wetune:0.1
+docker run -d -it --name wetune -v $HOST_DUMP_PATH:$DOCKER_DUMP_PATH --network=host --privileged=true wetune:0.1
 
 ########## Set Directories ########
 repo_dir='/home/root/wetune'
@@ -26,6 +26,13 @@ docker exec wetune mv /temp/.git /home/root/wetune
 docker exec wetune rm -rf /temp
 docker exec wetune bash -c "cd ${repo_dir} && git reset --hard HEAD"
 
+
+######### download dependencies and compile sub-projects #####
+docker exec wetune bash -c "cd ${repo_dir} && gradle compileJava"
+
+######## result directory in host machine ##########
+sudo mkdir "result_from_docker"
+
 ######### choose to whether to run discovery.sh ########
 read -r -p "Do you want to run discovery.sh to find rules which takes about 3600 CPU hours in our machine? [Y/n] " input
 
@@ -37,6 +44,8 @@ case $input in
     docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/loop-until-discover-end.sh"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/collect-rules.sh"
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/reduce-rules.sh"
+		docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
+    docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
 		docker exec wetune bash -c "cd ${repo_dir} && git checkout main"
 		;;
 
@@ -85,7 +94,6 @@ docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh"
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/view-all.sh -all"
 
 ######## copy result from docker container to host machine ##########
-sudo mkdir "result_from_docker"
 docker cp wetune:/home/root/wetune/wtune_data/calcite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/profile_calcite ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/viewall_calcite ./result_from_docker
@@ -95,8 +103,5 @@ docker cp wetune:/home/root/wetune/wtune_data/profile ./result_from_docker
 docker cp wetune:/home/root/wetune/wtune_data/viewall ./result_from_docker
 
 docker cp wetune:/home/root/wetune/wtune_data/viewall_statistics ./result_from_docker
-
-docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
-docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
 
 docker exec -it wetune /bin/bash
