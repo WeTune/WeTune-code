@@ -96,7 +96,7 @@ public class IssueStudy implements Runner {
         writeBasicInfo(issue);
         // checkMySQL(issue);
         // checkPg(issue);
-        // checkSQLServer(issue);
+        checkSQLServer(issue);
         // checkCalcite(issue);
         checkWeTune(issue);
       } catch (Exception e) {
