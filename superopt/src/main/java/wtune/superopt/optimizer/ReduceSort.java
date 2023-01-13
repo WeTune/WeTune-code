@@ -3,11 +3,9 @@ package wtune.superopt.optimizer;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import wtune.common.utils.Lazy;
-import wtune.sql.plan.AggNode;
-import wtune.sql.plan.Expression;
-import wtune.sql.plan.PlanContext;
-import wtune.sql.plan.PlanKind;
+import wtune.sql.plan.*;
 
+import java.util.Collections;
 import java.util.List;
 
 import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
@@ -105,10 +103,13 @@ class ReduceSort {
 
     if (kind == Sort) {
       addSortNode(node);
+      // First check whether the input node returns exactly one tuple
+      final int child = plan.childOf(node, 0);
+      final int enforcedNode = PlanSupport.isUniqueCoreAt(plan, Collections.emptySet(), child) ? NO_SUCH_NODE : node;
 
-      if (sort0 == null) return new SortSpec(node, false, null);
-      else if (sort0.limited) return new SortSpec(node, false, new SortSpec[] {sort0});
-      else return new SortSpec(node, false, sort0.basedOn);
+      if (sort0 == null) return new SortSpec(enforcedNode, false, null);
+      else if (sort0.limited) return new SortSpec(enforcedNode, false, new SortSpec[] {sort0});
+      else return new SortSpec(enforcedNode, false, sort0.basedOn);
     }
 
     assert false;

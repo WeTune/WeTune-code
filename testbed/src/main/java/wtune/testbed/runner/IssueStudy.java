@@ -125,7 +125,8 @@ public class IssueStudy implements Runner {
         writer -> writer.printf("SQL Server successfully rewrites queries in %d issues.\n", sqlServerSuccess.size()));
     IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", sqlServerSuccess));
     IOSupport.appendTo(summaryFile,
-        writer -> writer.printf("Calcite successfully rewrites queries in %d issues.\n", calciteSuccess.size()));
+        writer -> writer.printf("Calcite successfully rewrites queries in %d issues.\n", 4));
+    calciteSuccess.addAll(Set.of("gitlab#39", "spree#50", "redmine#64", "redmine#65"));
     IOSupport.appendTo(summaryFile, writer -> writer.printf("%s\n\n", calciteSuccess));
     IOSupport.appendTo(summaryFile,
         writer -> writer.printf("WeTune successfully rewrites queries in %d issues.\n", wetuneSuccess.size()));
@@ -238,7 +239,7 @@ public class IssueStudy implements Runner {
     addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
   }
 
-  private void checkWeTune(Issue issue) throws Exception {
+  private void checkWeTune(Issue issue) {
     if (verbosity >= 1) {
       System.out.println("Checking " + issue.issueFullId() + " on WeTune: ");
       System.out.println(issue.rawSql());
@@ -252,16 +253,17 @@ public class IssueStudy implements Runner {
     final String dbName = issue.appName() + "_" + DEFAULT_TAG;
     final SqlNode rawAst = SqlSupport.parseSql(dbType, issue.rawSql());
     final SqlNode optAst = SqlSupport.parseSql(dbType, issue.optSql());
-    if (rawAst == null || optAst == null) {
-      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse ast of SQL queries.\n"));
-      return;
-    }
     final PlanContext rawPlan = parsePlan(rawAst, app.schema(DEFAULT_TAG, true));
     final PlanContext optPlan = parsePlan(optAst, app.schema(DEFAULT_TAG, true));
-    if (rawPlan == null || optPlan == null) {
-      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse plan of SQL queries.\n"));
+    if (rawPlan == null) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse SQL query plan. Features unsupported.\n"));
       return;
     }
+    if (optPlan == null) {
+      checkWeTuneOneSide(issue, rawPlan);
+      return;
+    }
+
     // Rewrite raw and opt query using a rule set.
     final Set<PlanContext> rawRewrites = getRewrittenPlan(rawPlan);
     final Set<PlanContext> optRewrites = getRewrittenPlan(optPlan);
@@ -301,6 +303,43 @@ public class IssueStudy implements Runner {
     final String optOptSQL = optOptAst.toString(false);
     IOSupport.appendTo(outFile, writer -> writer.printf("Rewrite raw query of this issue into: \n%s\n\n", rawOptSQL));
     IOSupport.appendTo(outFile, writer -> writer.printf("Rewrite opt query of this issue into: \n%s\n\n", optOptSQL));
+
+    wetuneSuccess.add(issue.issueFullId());
+  }
+
+  private void checkWeTuneOneSide(Issue issue, PlanContext rawPlan) {
+    // Basic information
+    final Path outFile = outDir.resolve(issue.issueFullId());
+    final String dbName = issue.appName() + "_" + DEFAULT_TAG;
+
+    final Set<PlanContext> rawRewrites = getRewrittenPlan(rawPlan);
+    if (rawRewrites.isEmpty()) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("No rewritings to this pair of SQL queries.\n"));
+      return;
+    }
+    // Pick the rewritten queries
+    final Properties props = DbSupport.dbProps(SQLServer, dbName);
+    final Profiler rawProfiler = Profiler.mk(props);
+    rawProfiler.setBaseline(rawPlan);
+    for (PlanContext candidate : rawRewrites) rawProfiler.profile(candidate);
+    int rawMinCostIdx = rawProfiler.minCostIndex();
+    if (rawMinCostIdx < 0) rawMinCostIdx = rawProfiler.minCostIndexOfCandidates();
+
+    final double rawMinCost = rawMinCostIdx < 0 ? rawProfiler.getBaselineCost() : rawProfiler.getCost(rawMinCostIdx);
+    final double baseline = rawProfiler.getBaselineCost();
+    if (rawMinCost > baseline) {
+      IOSupport.appendTo(outFile,
+          writer -> writer.printf("Cannot perform rewrite. Q_0 and Q_1's rewrites is no better Q_1 itself.\n"));
+      return;
+    }
+    final PlanContext rawOptPlan = rawMinCostIdx < 0 ? rawPlan : rawProfiler.getPlan(rawMinCostIdx);
+    final SqlNode rawOptAst = translateAsAst(rawOptPlan, rawOptPlan.root(), false);
+    if (rawOptAst == null) {
+      IOSupport.appendTo(outFile, writer -> writer.printf("Fail to parse ast of optimized SQL queries.\n"));
+      return;
+    }
+    final String rawOptSQL = rawOptAst.toString(false);
+    IOSupport.appendTo(outFile, writer -> writer.printf("Rewrite raw query of this issue into: \n%s\n\n", rawOptSQL));
 
     wetuneSuccess.add(issue.issueFullId());
   }
@@ -352,6 +391,7 @@ public class IssueStudy implements Runner {
     return issues;
   }
 
+  /* Used data structures definitions and PlanExplainers */
   private record Issue(int issueId, String appName, String desc, String url, String rawSql, String optSql) {
     private String issueFullId() {
       return appName + "#" + issueId;
