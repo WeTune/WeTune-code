@@ -34,7 +34,6 @@ result_dir='issue_result_from_docker'
 sudo mkdir ${result_dir}
 
 # Issue Study #
-click-to-run/make-db.sh ${calcite} -tag ${tag}
 docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/make-db.sh -tag base"
 docker exec wetune bash -c \
   "cd ${repo_dir} && bash click-to-run/generate-data.sh -target diaspora,discourse,lobsters,gitlab,redmine,solidus,spree -tag base"
