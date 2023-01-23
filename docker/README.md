@@ -1,19 +1,23 @@
-The code and scripts provided in this repository are used for the purpose of reproducibility.
+The scripts provided in `{projRootDir}/docker` are used for reproducibility.
 The requirements for the machine are listed as follows:
-Required OS: Linux.
-Required apps: Docker, bash.
-Required machine: at least 500 GiB of disk space for the docker container, most of which is used for storing tables when evaluating large workloads in SQL Server.
+* OS: Linux
+* Apps: Docker, bash
+* Disk space: at least 500 GiB disk space for the docker container *(most of which is used for storing tables when evaluating large workloads in SQL Server)*
 
-Here are the steps to execute the repro.sh:
+Here are the steps to follow:
 1. Download the repository of WeTune to your machine.
-2. Enter the directory wetune/docker.
-3. Update HOST_DUMP_PATH, HOST_MSSQL_PATH in the repro.sh script, so they point to the appropriate paths on the host machine. We suggest 350GiB(at least 250GiB) for HOST_DUMP_PATH and 650GiB (at least 600GiB)for HOST_MSSQL_PATH
-4. Execute repro.sh to start the experiments.
+2. Enter the directory `{projRootDir}/docker`.
+3. Update `HOST_DUMP_PATH`, `HOST_MSSQL_PATH` in the `repro.sh` script, so they point to the appropriate paths on the host machine. 
+We suggest 350GiB (at least 250GiB) for `HOST_DUMP_PATH` and 650GiB (at least 600GiB) for `HOST_MSSQL_PATH`
+4. Execute `repro.sh` to start the experiments.
+5. Execute `repro-issue.sh` to get the rewriting result of 50 GitHub issues mentioned in the paper. 
 
-When repro.sh finishes, the result will be copied to the host machine under the directory wetune/docker/result_from_docker. The directory structure is as follows:
+When the scripts finish, the result will be copied to the host machine under the directory 
+`{projRootDir}/docker/result_from_docker` and `{projRootDir}/docker/issue_result_from_docker`. 
+The directory structures are as follows:
 
 ```
-wetune/docker/result_from_docker
+./docker/result_from_docker/
 ├── calcite
 |	└── result 
 |
@@ -54,4 +58,15 @@ wetune/docker/result_from_docker
 └── rules.txt                                 # the resulting rules that have been reduced
 ```
 
-Note: The two containers, `wetune` and `mssql`, communicate through port 1433 of the host machine. So if you have any process using port 1433, you should stop it to free the port.
+```
+./docker/issue_result_from_docker/
+|-- issues/
+    |-- result/                                # the profiling results of four different workloads
+        |-- {appName}#{issueId}                # rewriting result of one certain issue identified by {appName}#{issueId}
+        |-- ...
+|-- calcite_rewrites                           # rewriting result of Apache Calcite
+|-- issues                                     # raw information of issues
+```
+
+Notes: The two containers, `wetune` and `mssql`, communicate through port 1433 of the host machine. 
+So if you have any process using port 1433, you should stop it to free the port.
