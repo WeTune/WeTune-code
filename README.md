@@ -14,24 +14,27 @@ This codebase includes the source code and the testing scripts in the paper
 
 ```shell
 .
-|-- click-to-run    # Click-to-run scripts for WeTune.
-|-- lib             # Required external library.
-|-- common          # Common utilities.
-|-- sql             # Data structures of SQL AST and query plan.
-|-- stmt            # Manager of queries from open-source applications.
-|-- superopt        # Core algorithm of WeTune.
-    |-- fragment    # Plan template enumeration.
-    |-- constraint  # Constraint enumeration.
-    |-- uexpr       # U-expression.
-    |-- logic       # SMT-based verifier.
-    |-- optimizer   # Rewriter.
-|-- testbed         # Evaluation framework.
-|-- spes/           # Integrated SPES-based verifier.
-|-- wtune_data/     # Data input/output directory.
-    |-- schemas/    # Schemas of applications.
+|-- click-to-run/    # Click-to-run scripts for WeTune.
+|-- docker/          # One-click-reproduce-all scripts for WeTune's reproducibility (use Docker).
+|-- lib/             # Required external library.
+|-- common/          # Common utilities.
+|-- spes/            # Integrated SPES-based verifier.
+|-- sql/             # Data structures of SQL AST and query plan.
+|-- stmt/            # Manager of queries from open-source applications.
+|-- superopt/        # Core algorithm of WeTune.
+    |-- fragment/    # Plan template enumeration.
+    |-- constraint/  # Constraint enumeration.
+    |-- uexpr/       # U-expression.
+    |-- logic/       # SMT-based verifier.
+    |-- optimizer/   # Rewriter.
+|-- testbed/         # Evaluation framework.
+|-- wtune_data/      # Data input/output directory.
+    |-- schemas/     # Schemas of applications.
     |-- schemas_mssql/ # Schemas of applications for SQL Server
-    |-- wtune.db    # Sqlite DB storing the persistent statistics
+    |-- wtune.db     # Sqlite DB storing the persistent statistics
 ```
+
+## Reproducibility
 
 
 ## Environment Setup
