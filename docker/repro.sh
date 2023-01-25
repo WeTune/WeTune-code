@@ -25,6 +25,7 @@ docker exec wetune git clone https://ipads.se.sjtu.edu.cn:1312/opensource/wetune
 docker exec wetune mv /temp/.git /home/root/wetune
 docker exec wetune rm -rf /temp
 docker exec wetune bash -c "cd ${repo_dir} && git reset --hard HEAD"
+docker exec wetune bash -c "cd ${repo_dir} && git checkout repro"
 
 
 ######### download dependencies and compile sub-projects #####
@@ -48,7 +49,7 @@ case $input in
 		docker exec wetune bash -c "cd ${repo_dir} && bash click-to-run/reduce-rules.sh"
 		docker cp wetune:/home/root/wetune/wtune_data/enumeration ./result_from_docker
     docker cp wetune:/home/root/wetune/wtune_data/rules/rules.txt ./result_from_docker
-		docker exec wetune bash -c "cd ${repo_dir} && git checkout main"
+		docker exec wetune bash -c "cd ${repo_dir} && git checkout repro"
 		docker exec wetune bash -c "cd ${repo_dir} && git add sql/ && git reset --hard HEAD"
     docker exec wetune bash -c "cd ${repo_dir} && gradle compileJava"
 		;;
