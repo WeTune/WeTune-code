@@ -25,6 +25,7 @@ docker exec wetune git clone https://ipads.se.sjtu.edu.cn:1312/opensource/wetune
 docker exec wetune mv /temp/.git /home/root/wetune
 docker exec wetune rm -rf /temp
 docker exec wetune bash -c "cd ${repo_dir} && git reset --hard HEAD"
+docker exec wetune bash -c "cd ${repo_dir} && git checkout repro"
 
 ######### download dependencies and compile sub-projects #####
 docker exec wetune bash -c "cd ${repo_dir} && gradle compileJava"
