@@ -11,7 +11,10 @@ import wtune.superopt.optimizer.OptimizationStep;
 import wtune.superopt.optimizer.Optimizer;
 import wtune.superopt.profiler.Profiler;
 import wtune.superopt.substitution.SubstitutionBank;
+import wtune.superopt.substitution.SubstitutionSupport;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import static wtune.sql.plan.PlanSupport.assemblePlan;
@@ -30,6 +33,31 @@ public class OptimizeSQLSupport {
     addOptimizerTweaks(TWEAK_ENABLE_EXTENSIONS);
     addOptimizerTweaks(TWEAK_SORT_FILTERS_BEFORE_OUTPUT);
   }
+
+  public static List<String> rewrite(String schemaStr, String sqlStr, String parser) throws IOException {
+    Schema schema = null;
+    if (schemaStr != null && !schemaStr.equals("")) {
+      schema = SchemaSupport.parseSchema(parser, schemaStr);
+    }
+
+    final InputStream path = (new Object() {
+      public InputStream getPath(String path) {
+        return this.getClass().getClassLoader().getResourceAsStream(path);
+      }
+    }).getPath("wetune/rules.all.txt");
+
+    final List<String> lines = Arrays.stream((new String(path.readAllBytes())).split("\r\n")).toList();
+    final SubstitutionBank rules = SubstitutionSupport.loadBank(lines);
+    final OptimizeStat optimizeStat = optimizeSQL(sqlStr, parser, schema, rules);
+    List<String> res = new ArrayList<>();
+    if (optimizeStat.isOptimized()){
+      res = optimizeStat.optSqls();
+    }else {
+      res.add(optimizeStat.msg());
+    }
+    return res;
+  }
+
 
   /** Rewrite a SQL and return all rewritten SQLs */
   public static OptimizeStat optimizeSQL(

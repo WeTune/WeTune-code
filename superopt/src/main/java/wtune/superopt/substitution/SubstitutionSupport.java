@@ -33,6 +33,29 @@ public class SubstitutionSupport {
     return bank;
   }
 
+  public static SubstitutionBank loadBank(List<String> lines) throws IOException {
+    final SubstitutionBank bank = new SubstitutionBankImpl();
+
+    int lineNum = 0;
+    for (String line : lines) {
+      ++lineNum;
+      try {
+        if (line.isEmpty() || !Character.isLetter(line.charAt(0))) continue;
+
+        final Substitution rule = Substitution.parse(line);
+        bank.add(rule);
+        rule.setId(lineNum);
+
+      } catch (Throwable ex) {
+        System.err.println("failed to add rule: " + line);
+        ex.printStackTrace();
+        throw ex;
+      }
+    }
+
+    return bank;
+  }
+
   public static SubstitutionBank reduceBank(SubstitutionBank bank) {
     return new ReduceRuleBank(bank).reduce();
   }

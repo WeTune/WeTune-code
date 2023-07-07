@@ -71,5 +71,5 @@ mkdir -p enum_log
 for ((i = from_partition; i <= to_partition; i++)); do
   nohup gradle :superopt:run \
     --args="EnumRule -v=${verbose} -parallelism=${parallelism} -timeout=${timeout} -partition=${num_partitions}/${i} -useSpes=${useSpes}" \
-    >"enum_log/num.log.${i}" 2>&1 &
+    >"enum_log/enum.log.${i}" 2>&1 &
 done

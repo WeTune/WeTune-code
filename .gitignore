@@ -3,6 +3,7 @@
 build/
 legacy/
 */build/
+*/bin/
 out/
 */out/
 *.un~

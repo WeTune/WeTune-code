@@ -40,7 +40,7 @@ public interface TreeSupport {
   static int countNodes(TreeContext<?> context) {
     int count = 0;
     for (int nodeId = 1, bound = context.maxNodeId(); nodeId <= bound; nodeId++) {
-      if (!context.isPresent(nodeId)) ++count;
+      if (context.isPresent(nodeId)) ++count;
     }
     return count;
   }
