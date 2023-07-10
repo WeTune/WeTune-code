@@ -260,8 +260,9 @@ class UExprTranslator {
       switch (op.kind()) {
         case INPUT:
           return trInput((Input) op);
-        case SIMPLE_FILTER:
-          return trSimpleFilter((SimpleFilter) op);
+        /*
+         * TODO: add the case of SIMPLE_FILTER
+         */
         case IN_SUB_FILTER:
           return trInSubFilter((InSubFilter) op);
         case EXISTS_FILTER:
@@ -288,16 +289,12 @@ class UExprTranslator {
     }
 
     private UTerm trSimpleFilter(SimpleFilter filter) {
-      /* Filter(p,a) --> E * [p(a(x))] */
-      final UTerm predecessor = tr(filter.predecessors()[0]);
-      if (predecessor == null) return null;
 
-      final AttrsDesc attrDesc = mkAttrDesc(filter.attrs());
-      final PredDesc predDesc = mkPredDesc(filter.predicate());
-      final UVar visibleVar = mkVisibleVar();
-      final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar);
-      final UVar booleanVar = UVar.mkFunc(predDesc.name(), projVar);
-      return UMul.mk(predecessor, UPred.mk(booleanVar));
+      /*
+       * TODO: perform the translation: Filter(p,a) --> E * [p(a(x))]
+       */
+
+      return null;
     }
 
     private UTerm trInSubFilter(InSubFilter filter) {

@@ -38,28 +38,17 @@ class FragmentEnumerator {
     }
 
     private Set<FragmentImpl> enumerateFragmentSet() {
+        Set<FragmentImpl> result = Collections.singleton(new FragmentImpl(null));
+
         /*
-         * TODO: Enumerate all the possible templates
-         *
+         * TODO: Enumerate all the possible templates into result
          */
-        return Collections.emptySet();
+
+        return result;
     }
 
-    // TODO: You may add function(s) here
+    /*
+     * TODO: You may add function(s) here
+     */
 
-    private Set<FragmentImpl> enumerate0(int depth, Set<FragmentImpl> fragments) {
-
-        if (depth >= maxOps) return fragments;
-
-        final Set<FragmentImpl> newFragments = new HashSet<>();
-        for (FragmentImpl g : fragments)
-            for (Hole<Op> hole : FragmentUtils.gatherHoles(g))
-                for (Op template : opSet)
-                    if (hole.fill(template)) {
-                        newFragments.add(g.copy());
-                        hole.unFill();
-                    }
-
-        return Sets.union(fragments, enumerate0(depth + 1, newFragments));
-    }
 }

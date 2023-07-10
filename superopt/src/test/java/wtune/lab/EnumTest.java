@@ -91,4 +91,6 @@ public class EnumTest {
                 throw new RuntimeException("unexpected templates");
         });
     }
+
+
 }
