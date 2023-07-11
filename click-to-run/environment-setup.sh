@@ -1,5 +1,7 @@
 #! /bin/bash
 
+sudo apt-get install -y unzip
+
 # installing Java 17
 sudo add-apt-repository ppa:linuxuprising/java
 sudo apt update
@@ -25,10 +27,6 @@ sudo apt-get install -y mssql-server
 # (The password here only serves for evaluation scripts of the system
 # and does not involve the actual data in the production environment.)
 sudo /opt/mssql/bin/mssql-conf setup
-
-# firewall setup
-sudo ufw enable
-sudo ufw allow 1433
 
 # installing Sql Server command-line tools
 sudo apt-get install -y curl
