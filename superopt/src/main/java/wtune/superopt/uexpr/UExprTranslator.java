@@ -288,13 +288,20 @@ class UExprTranslator {
       return UMul.mk(desc.term());
     }
 
+    /*
+    * TODO: perform the translation: Filter(p,a) --> E * [p(a(x))]
+    */
     private UTerm trSimpleFilter(SimpleFilter filter) {
 
-      /*
-       * TODO: perform the translation: Filter(p,a) --> E * [p(a(x))]
-       */
+      final UTerm predecessor = null /* TODO: translate the predecessor (E) */;
+      if (predecessor == null) return null;
 
-      return null;
+      final AttrsDesc attrDesc = mkAttrDesc(filter.attrs());
+      final PredDesc predDesc = mkPredDesc(filter.predicate());
+      final UVar visibleVar = mkVisibleVar();
+      final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar);
+      final UVar booleanVar = UVar.mkFunc(predDesc.name(), projVar);
+      return null /* TODO: return the product(E * [p(a(x))]) using UMul*/;
     }
 
     private UTerm trInSubFilter(InSubFilter filter) {
