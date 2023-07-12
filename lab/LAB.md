@@ -155,8 +155,93 @@ gradle :superopt:test --tests "wtune.lab.VeriTest"
 
 ### 2 查询改写（50'）
 
-在此部分中，你需要改写给定的几条查询语句，提高他们的执行效率。
+在此部分中，我们会给定的几条低效的、可被改写的查询语句，并给出每一语句被改写成最优形式经过的每一个步骤($q_{src} \rightarrow q_{dest}$)。你需要按如下步骤完成本部分实验：
 
-#### 2.1
+1. 改写是从源查询语句到等价的目标查询语句的一次转换，对每一个改写步骤，你需要识别出源查询模板和目标查询模板。
+2. 以第一步的源查询模板和目标查询模板为输入，利用1.1中已经完成的规则枚举代码枚举出规则。
+3. 利用第二步得到的规则改写当前改写步骤的$q_{src}$，如果能成功改写成$q_{dest}$则认为本步骤改写成功。
+4. 如果对于一条查询语句的改写分为多个步骤，则迭代地进行步骤上述流程，直到所有改写步骤完成。
 
-#### 2.2
+在1.1中已经通过几个例子介绍过查询模板与查询语句的对应关系。在本部分，你需要识别的查询模板是**无参数的**，它移除了1.1节介绍的运算符的参数，只保留运算符类型与父子节点的关系。下面以几个例子介绍查询语句对应的模板：
+
+**例1：**
+
+查询：
+
+```sql
+select distinct id
+from student
+where student.id = 10
+```
+
+模板：`Proj*(Filter(Input))`
+
+解释：`Input`节点对应数据库表`student`，`Filter`节点对应筛选条件`student.id = 10`，`Proj*`对应选择并去重操作(`select distinct id`)。**节点的父子关系代表了查询执行过程中数据的流动方向**：输入节点`Input`(表`student`)经过滤`Filter`(条件`student.id = 10`)筛选，然后被`Proj*`节点(选择并去重`select distinct id`)选择了属性`id`列并去除了重复元组，`Proj*`的输出就是查询语句的输出结果。
+
+**例2：**
+
+查询：
+
+```sql
+select name
+from student as s1
+where s1.id in (select id from student as s2)
+```
+
+模板：`Proj(InSubFilter(Input,Proj(Input)))`
+
+解释：此模板的树结构如下图所示，第一个`Input`对应数据库表`s1`，第二个`Input`对应`s2`；`Proj(Input)`对应`select id from student as s2`；`InSubFilter(Input, Proj(Input))`对应`where s1.id in (select id from student as s2)`；最外层`Proj`对应`select name`。
+
+<img src="imgs/example1.png" style="zoom:75%;" />
+
+##### 提示
+
+在完成一次改写步骤时，有几点需要特别说明，这里以一个例子说明：
+
+$q_{src}$:
+
+```sql
+select s1.id
+from student as s1
+         inner join student as s2 on s1.id = s2.id
+where s1.id > 10
+  and s2.id > 10
+```
+
+$q_{dest}$: 
+
+```sql
+select s1.id
+from student as s1
+         inner join student as s2 on s1.id = s2.id
+where s1.id > 10
+```
+
+$q_{src}$模板：`Proj(Filter(Filter(InnerJoin(Input,Input))))`
+
+$q_{dest}$模板：`Proj(Filter(InnerJoin(Input,Input)))`
+
+改写过程对应的树的结构变化如下图所示：
+
+<img src="imgs/example2.png" alt="example2" style="zoom:75%;" />
+
+在此例中，有如下需要注意的点：
+
+1. WeTune会将`Where`子句中的多个条件识别为独立的`Filter`操作。例如$q_{src}$中的`where s1.id > 10 and s2.id > 10`就是先执行`s1.id > 10`筛选条件，再执行`s2.id > 10`筛选条件。
+
+2. WeTune改写查询语句是**基于片段进行改写的**，因此你需要识别出改写过程中的最小等价片段。上图的改写过程中发生的改变是：$Filter(InnerJoin(Input,Input)) \rightarrow InnerJoin(Input,Input)$。然而这两个查询片段本身并不等价，前者比后者多了筛选条件，所以这里你应该找出的等价片段应该是$Filter(Filter(InnerJoin(Input,Input)))$和$Filter(InnerJoin(Input,Input))$。
+
+3. WeTune可以将查询语句中的片段抽象为`Input`节点：子节点输出的元组是父节点的输入，因此可以将子节点代表的查询片段视为`Input`。例如，对于上图所示的改写过程，我们可以将$InnerJoin(Input,Input)$片段替换成$Input$，从而得到如下图所示的改写过程。这样做的好处是在进行查询改写时，只要改写前后的查询中某个片段等价，就可将其视为$Input$而不必考虑该片段的结构。这样一条规则能适用于不同结构的查询，更具通用性。因此，你需要进一步将第二点中找出的等价片段简化为$Filter(Filter(Input))$和$Filter(Input)$。
+
+   <img src="imgs/example3.png" style="zoom:75%;" />
+
+##### 评估方式
+
+你需要完成的内容都在文件`superopt/src/test/java/wtune/lab/OptimizeTest.java`中，完成后可以通过如下命令进行测试：
+
+```bash
+gradle :superopt:test --tests "wtune.lab.OptimizeTest"
+```
+
+
+
