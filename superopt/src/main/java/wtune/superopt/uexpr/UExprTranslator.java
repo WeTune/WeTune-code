@@ -289,7 +289,7 @@ class UExprTranslator {
     }
 
     /*
-    * TODO: perform the translation: Filter(p,a) --> E * [p(a(x))]
+    * TODO: perform the translation: Filter<p,a>(R) --> R(x) * [p(a(x))]
     */
     private UTerm trSimpleFilter(SimpleFilter filter) {
 
@@ -299,8 +299,8 @@ class UExprTranslator {
       final AttrsDesc attrDesc = mkAttrDesc(filter.attrs());
       final PredDesc predDesc = mkPredDesc(filter.predicate());
       final UVar visibleVar = mkVisibleVar();
-      final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar);
-      final UVar booleanVar = UVar.mkFunc(predDesc.name(), projVar);
+      final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar); // a(x)
+      final UVar booleanVar = null /* TODO: make p(a(x)) using UVar*/;
       return null /* TODO: return the product(E * [p(a(x))]) using UMul*/;
     }
 
@@ -366,9 +366,15 @@ class UExprTranslator {
       return UMul.mk(lhs, USquash.mk(rhs));
     }
 
+    /*
+     * TODO: implement the translation of inner join:
+     *  InnerJoin<kl, kr>(Rl,Rr) --> Rl(x) * [Rl.kl = Rr.kr] * Rr(x) * not(isNull(Rr.kr))
+     *                                ↓             ↓           ↓            ↓
+     *                               lhs        eq cond.       rhs      not null cond.
+     */
     private UTerm trJoin(Join join) {
-      final UTerm lhs = tr(join.predecessors()[0]);
-      final UTerm rhs = tr(join.predecessors()[1]);
+      final UTerm lhs = null /* TODO: translate the left predecessor */;
+      final UTerm rhs = null /* TODO: translate the right predecessor */;
       if (lhs == null || rhs == null) return null;
 
       final UVar rhsVisibleVar = pop(visibleVars);
@@ -392,9 +398,9 @@ class UExprTranslator {
       final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsVisibleVar);
       putKnownEqSchema(result.schemaOf(lhsProjVar), result.schemaOf(rhsProjVar));
 
-      final UTerm eqCond = UPred.mk(UVar.mkEq(lhsProjVar, rhsProjVar));
-      final UTerm notNullCond = mkNotNull(rhsProjVar);
-      if (join.kind() == INNER_JOIN) return UMul.mk(lhs, eqCond, notNullCond, rhs);
+      final UTerm eqCond = null /* TODO: make the equal condition  */;
+      final UTerm notNullCond = null /* TODO: make the not null condition  */;
+      if (join.kind() == INNER_JOIN) return null /* TODO: return the production of lhs, eqCond, rhs, notNullCond using UMul*/;
 
       // left join
       UTerm newExpr = UMul.mk(rhs, eqCond, notNullCond);
