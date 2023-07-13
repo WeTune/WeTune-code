@@ -260,18 +260,17 @@ class UExprTranslator {
       switch (op.kind()) {
         case INPUT:
           return trInput((Input) op);
-        /*
-         * TODO: add the case of SIMPLE_FILTER
-         */
         case IN_SUB_FILTER:
           return trInSubFilter((InSubFilter) op);
         case EXISTS_FILTER:
           return trExistsFilter((ExistsFilter) op);
         case PROJ:
           return trProj((Proj) op);
-        case INNER_JOIN:
-        case LEFT_JOIN:
-          return trJoin((Join) op);
+
+        /* TODO-2: add the case of SIMPLE_FILTER, INNER_JOIN and LEFT_JOIN*/
+
+        /* END TODO-2 */
+
         default:
           throw new IllegalArgumentException("unknown op");
       }
@@ -288,20 +287,23 @@ class UExprTranslator {
       return UMul.mk(desc.term());
     }
 
-    /*
-    * TODO: perform the translation: Filter<p,a>(R) --> R(x) * [p(a(x))]
-    */
+    // perform the translation: Filter<p,a>(R) --> R(x) * [p(a(x))]
     private UTerm trSimpleFilter(SimpleFilter filter) {
 
-      final UTerm predecessor = null /* TODO: translate the predecessor (E) */;
-      if (predecessor == null) return null;
+      /* TODO-3a: translate the predecessor (E) */;
 
-      final AttrsDesc attrDesc = mkAttrDesc(filter.attrs());
-      final PredDesc predDesc = mkPredDesc(filter.predicate());
+      /* END TODO-3a */
+
+      final AttrsDesc attrDesc = mkAttrDesc(filter.attrs()); // a
+      final PredDesc predDesc = mkPredDesc(filter.predicate());  // p
       final UVar visibleVar = mkVisibleVar();
       final UVar projVar = mkProj(filter.attrs(), attrDesc, visibleVar); // a(x)
-      final UVar booleanVar = null /* TODO: make p(a(x)) using UVar*/;
-      return null /* TODO: return the product(E * [p(a(x))]) using UMul*/;
+
+      /* TODO-3b: build p(a(x)) using UVar*/;
+
+      /* END TODO-3b */
+
+      return /* TODO-3c: return the product(E * [p(a(x))]) using UMul*/ null /* END TODO-3c */;
     }
 
     private UTerm trInSubFilter(InSubFilter filter) {
@@ -367,14 +369,17 @@ class UExprTranslator {
     }
 
     /*
-     * TODO: implement the translation of inner join:
-     *  InnerJoin<kl, kr>(Rl,Rr) --> Rl(x) * [Rl.kl = Rr.kr] * Rr(x) * not(isNull(Rr.kr))
-     *                                ↓             ↓           ↓            ↓
-     *                               lhs        eq cond.       rhs      not null cond.
+     * implement the translation of inner join:
+     * InnerJoin<kl, kr>(Rl,Rr) --> Rl(x) * [Rl.kl = Rr.kr] * Rr(x) * not(isNull(Rr.kr))
      */
     private UTerm trJoin(Join join) {
-      final UTerm lhs = null /* TODO: translate the left predecessor */;
-      final UTerm rhs = null /* TODO: translate the right predecessor */;
+      final UTerm lhs = null;
+      final UTerm rhs = null;
+
+      /* TODO-4a: translate the predecessors (lhs and rhs) */
+
+      /* END TODO-4a */
+
       if (lhs == null || rhs == null) return null;
 
       final UVar rhsVisibleVar = pop(visibleVars);
@@ -398,9 +403,15 @@ class UExprTranslator {
       final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsVisibleVar);
       putKnownEqSchema(result.schemaOf(lhsProjVar), result.schemaOf(rhsProjVar));
 
-      final UTerm eqCond = null /* TODO: make the equal condition  */;
-      final UTerm notNullCond = null /* TODO: make the not null condition  */;
-      if (join.kind() == INNER_JOIN) return null /* TODO: return the production of lhs, eqCond, rhs, notNullCond using UMul*/;
+      final UTerm eqCond = null;
+      final UTerm notNullCond = null;
+
+      /* TODO-4b: make the equal condition and the not null condition (eqCond and notNullCond) */
+
+      /* END TODO-4b */
+
+      if (join.kind() == INNER_JOIN)
+        return /* TODO-4c: return the production of lhs, eqCond, rhs, notNullCond using UMul*/ null /* END TODO-4c */;
 
       // left join
       UTerm newExpr = UMul.mk(rhs, eqCond, notNullCond);
