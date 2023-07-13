@@ -259,7 +259,10 @@ class LogicProver {
     if (masterVars.size() == slaveVars.size()) {
       final ArithExpr masterFormula = trAsBag(masterBody);
       final ArithExpr slaveFormula = trAsBag(slaveBody);
-      return trResult(check(solver, null /* TODO: We want to prove E != E' is unsatisfiable */));
+      return trResult(check(solver,
+              /* TODO-5: We want to prove E != E' is unsatisfiable */
+              null
+              /* END TODO-5 */));
     }
 
     /*

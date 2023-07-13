@@ -30,25 +30,24 @@ class FragmentEnumerator {
     List<Fragment> enumerate() {
         Set<FragmentImpl> fragmentSet = enumerateFragmentSet();
         return fragmentSet.stream()
-                .peek(FragmentSupport::setupFragment)
-                .filter(f -> none(pruningRules, it -> it.match(f)))
+                .peek(FragmentSupport::setupFragment) // fragment initialization 1
+                .filter(f -> none(pruningRules, it -> it.match(f))) // reduce useless fragments
                 .sorted((x, y) -> FragmentUtils.structuralCompare(x.root(), y.root()))
-                .peek(FragmentImpl::symbols) // trigger initialization
+                .peek(FragmentImpl::symbols) // fragment initialization 2
                 .collect(Collectors.toList());
     }
 
     private Set<FragmentImpl> enumerateFragmentSet() {
         Set<FragmentImpl> result = Collections.singleton(new FragmentImpl(null));
 
-        /*
-         * TODO: Enumerate all the possible templates into result
-         */
+        /* TODO-1a: Enumerate all the possible templates into result set */
+
+        /* END TODO-1a */
 
         return result;
     }
 
-    /*
-     * TODO: You may add function(s) here
-     */
+    /* TODO-1b: You may add function(s) here */
 
+    /* END TODO-1b */
 }
