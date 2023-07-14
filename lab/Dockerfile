@@ -6,6 +6,8 @@ RUN apt-get -y update && apt-get -y upgrade
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get install -y mysql-server
 
+RUN apt-get install -y openssh-server
+
 # installing Java 17
 RUN apt-get install -y openjdk-17-jdk openjdk-17-jre
 

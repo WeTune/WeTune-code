@@ -29,48 +29,6 @@ import static wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 @Execution(ExecutionMode.CONCURRENT)
 public class OptimizeTest {
 
-    /**
-     * enum all possible rules for fragment0 and fragment1
-     *
-     * @param fragment0 structure of source fragment
-     * @param fragment1 structure of target fragment
-     * @return list of rules
-     */
-    static List<Substitution> enumRule(String fragment0, String fragment1) {
-        final Fragment f0 = Fragment.parse(fragment0, null);
-        final Fragment f1 = Fragment.parse(fragment1, null);
-        return enumConstraints(f0, f1, 240000);
-    }
-
-    static boolean rewrite(String strSchema, String rawSql, String target, List<Substitution> rules) throws IOException {
-        final SubstitutionBank substitutionBank = SubstitutionSupport.loadBank(rules.stream().map(Object::toString).collect(Collectors.toList()));
-        final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, strSchema);
-        final SqlNode rawAST = SqlSupport.parseSql(DbSupport.MySQL, rawSql);
-        SqlNode targetAST = SqlSupport.parseSql(DbSupport.MySQL, target);
-        final PlanContext rawPlan = PlanSupport.assemblePlan(rawAST, schema);
-        final PlanContext targetPlan = PlanSupport.assemblePlan(targetAST, schema);
-        if (targetPlan != null) {
-            targetAST = translateAsAst(targetPlan, targetPlan.root(), false);
-        }
-
-        final Optimizer optimizer = Optimizer.mk(substitutionBank);
-        optimizer.setTimeout(Integer.MAX_VALUE);
-        final Set<PlanContext> optimized = optimizer.optimize(rawPlan);
-        final List<String> optSqls = new ArrayList<>();
-        boolean success = false;
-        for (PlanContext optPlan : optimized) {
-            final SqlNode optAst = translateAsAst(optPlan, optPlan.root(), false);
-            assert targetPlan != null;
-            assert optAst != null;
-            assert targetAST != null;
-            optSqls.add(optAst.toString(false));
-            if (optAst.toString().equals(targetAST.toString())){
-                success = true;
-            }
-        }
-        return success;
-    }
-
     @Test
     void Test0() throws IOException {
         String schema = """
@@ -80,7 +38,7 @@ public class OptimizeTest {
                     first_name VARCHAR(50),
                     last_name  VARCHAR(50),
                     age        INT,
-                    gender     ENUM ('Male', 'Female'),
+                    gender     VARCHAR(50),
                     email      VARCHAR(100),
                     city       VARCHAR(50)
                 );""";
@@ -178,7 +136,7 @@ public class OptimizeTest {
                     first_name VARCHAR(50),
                     last_name  VARCHAR(50),
                     age        INT,
-                    gender     ENUM ('Male', 'Female'),
+                    gender     VARCHAR(50),
                     email      VARCHAR(100),
                     city       VARCHAR(50)
                 );
@@ -291,43 +249,43 @@ public class OptimizeTest {
     @Test
     void Test5() throws IOException {
         String schema = """
-                CREATE TABLE topics
-                (
-                    id          integer           NOT NULL PRIMARY KEY,
-                    title       text              NOT NULL,
-                    posts_count integer DEFAULT 0 NOT NULL,
-                    image_url   text,
-                    like_count  integer DEFAULT 0 NOT NULL
-                );
-
-                CREATE TABLE posts
-                (
-                    id          integer               NOT NULL PRIMARY KEY,
-                    topic_id    integer               NOT NULL,
-                    post_number integer               NOT NULL,
-                    avg_time    integer,
-                    score       double precision,
-                    hidden      boolean DEFAULT false NOT NULL,
-                    FOREIGN KEY (topic_id) REFERENCES topics (id)
-                );
-
-                CREATE TABLE post_actions
-                (
-                    id                integer               NOT NULL PRIMARY KEY,
-                    post_id           integer               NOT NULL,
-                    staff_took_action boolean DEFAULT false NOT NULL,
-                    FOREIGN KEY (post_id) REFERENCES posts (id)
-                );
-
-
-                CREATE TABLE bookmarks
-                (
-                    id       integer NOT NULL PRIMARY KEY,
-                    topic_id integer NOT NULL,
-                    post_id  integer NOT NULL,
-                    name     text,
-                    FOREIGN KEY (topic_id) REFERENCES topics (id)
-                );""";
+                    CREATE TABLE topics
+                    (
+                        id          integer           NOT NULL PRIMARY KEY,
+                        title       text              NOT NULL,
+                        posts_count integer DEFAULT 0 NOT NULL,
+                        image_url   text,
+                        like_count  integer DEFAULT 0 NOT NULL
+                    );
+    
+                    CREATE TABLE posts
+                    (
+                        id          integer               NOT NULL PRIMARY KEY,
+                        topic_id    integer               NOT NULL,
+                        post_number integer               NOT NULL,
+                        avg_time    integer,
+                        score       double precision,
+                        hidden      boolean DEFAULT false NOT NULL,
+                        FOREIGN KEY (topic_id) REFERENCES topics (id)
+                    );
+    
+                    CREATE TABLE post_actions
+                    (
+                        id                integer               NOT NULL PRIMARY KEY,
+                        post_id           integer               NOT NULL,
+                        staff_took_action boolean DEFAULT false NOT NULL,
+                        FOREIGN KEY (post_id) REFERENCES posts (id)
+                    );
+    
+    
+                    CREATE TABLE bookmarks
+                    (
+                        id       integer NOT NULL PRIMARY KEY,
+                        topic_id integer NOT NULL,
+                        post_id  integer NOT NULL,
+                        name     text,
+                        FOREIGN KEY (topic_id) REFERENCES topics (id)
+                    );""";
         String source = """
                 SELECT post_actions.id, post_actions.post_id, posts.topic_id
                 FROM post_actions
@@ -378,7 +336,7 @@ public class OptimizeTest {
                     person_id int NOT NULL,
                     user_id   int NOT NULL,
                     FOREIGN KEY (person_id) REFERENCES people (id)
-                );   \s""";
+                );""";
         String source = """
                 SELECT DISTINCT contacts.id
                 FROM contacts
@@ -468,4 +426,47 @@ public class OptimizeTest {
         rules = enumRule(fragment2_0, fragment2_1);
         Assertions.assertTrue(rewrite(schema, middle2, target, rules));
     }
+
+    /**
+     * enum all possible rules for fragment0 and fragment1
+     *
+     * @param fragment0 structure of source fragment
+     * @param fragment1 structure of target fragment
+     * @return list of rules
+     */
+    static List<Substitution> enumRule(String fragment0, String fragment1) {
+        final Fragment f0 = Fragment.parse(fragment0, null);
+        final Fragment f1 = Fragment.parse(fragment1, null);
+        return enumConstraints(f0, f1, 240000);
+    }
+
+    static boolean rewrite(String strSchema, String rawSql, String target, List<Substitution> rules) throws IOException {
+        final SubstitutionBank substitutionBank = SubstitutionSupport.loadBank(rules.stream().map(Object::toString).collect(Collectors.toList()));
+        final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, strSchema);
+        final SqlNode rawAST = SqlSupport.parseSql(DbSupport.MySQL, rawSql);
+        SqlNode targetAST = SqlSupport.parseSql(DbSupport.MySQL, target);
+        final PlanContext rawPlan = PlanSupport.assemblePlan(rawAST, schema);
+        final PlanContext targetPlan = PlanSupport.assemblePlan(targetAST, schema);
+        if (targetPlan != null) {
+            targetAST = translateAsAst(targetPlan, targetPlan.root(), false);
+        }
+
+        final Optimizer optimizer = Optimizer.mk(substitutionBank);
+        optimizer.setTimeout(Integer.MAX_VALUE);
+        final Set<PlanContext> optimized = optimizer.optimize(rawPlan);
+        final List<String> optSqls = new ArrayList<>();
+        boolean success = false;
+        for (PlanContext optPlan : optimized) {
+            final SqlNode optAst = translateAsAst(optPlan, optPlan.root(), false);
+            assert targetPlan != null;
+            assert optAst != null;
+            assert targetAST != null;
+            optSqls.add(optAst.toString(false));
+            if (optAst.toString().equals(targetAST.toString())){
+                success = true;
+            }
+        }
+        return success;
+    }
+
 }
