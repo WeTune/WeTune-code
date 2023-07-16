@@ -1,5 +1,7 @@
 package wtune.lab;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.parallel.Execution;
@@ -17,8 +19,13 @@ import wtune.superopt.substitution.Substitution;
 import wtune.superopt.substitution.SubstitutionBank;
 import wtune.superopt.substitution.SubstitutionSupport;
 
+import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +35,18 @@ import static wtune.superopt.constraint.ConstraintSupport.enumConstraints;
 
 @Execution(ExecutionMode.CONCURRENT)
 public class OptimizeTest {
+
+    final static HikariConfig config;
+    final static DataSource dataSource;
+    final static int runTimes = 10;
+
+    static {
+        config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/test");
+        config.setUsername("root");
+        config.setPassword("123456");
+        dataSource = new HikariDataSource(config);
+    }
 
     @Test
     void Test0() throws IOException {
@@ -44,10 +63,18 @@ public class OptimizeTest {
                 );""";
         String source = "SELECT DISTINCT id FROM student";
         String target = "SELECT id FROM student";
-        String fragment0 = "Proj*(Input)";
-        String fragment1 = "Proj(Input)";
+
+        // TODO: template of source query
+        String fragment0 = "";
+        // TODO: template of target query
+        String fragment1 = "";
+
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(rewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+
+        System.err.println("Test0 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -74,10 +101,18 @@ public class OptimizeTest {
                          INNER JOIN post_uploads
                                     ON post_uploads.upload_id = uploads.id""";
         String target = "SELECT upload_id FROM post_uploads";
-        String fragment0 = "Proj(InnerJoin(Input,Input)";
-        String fragment1 = "Proj(Input)";
+
+        // TODO: template of source query
+        String fragment0 = "";
+        // TODO: template of target query
+        String fragment1 = "";
+
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(rewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+
+        System.err.println("Test1 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -121,10 +156,18 @@ public class OptimizeTest {
                          INNER JOIN custom_fields_roles
                                     ON custom_fields.id = custom_fields_roles.custom_field_id
                 WHERE custom_fields.visible = FALSE""";
-        String fragment0 = "Proj(Filter(InnerJoin(Input,Input))";
-        String fragment1 = "Proj(Filter(Input))";
+
+        // TODO: template of source query
+        String fragment0 = "";
+        // TODO: template of target query
+        String fragment1 = "";
+
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(rewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+
+        System.err.println("Test2 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -162,20 +205,28 @@ public class OptimizeTest {
                                     ON student.id = grade.student_id
                 WHERE grade.student_id = 10""";
 
-        String fragment0_0 = "Proj(Filter(InSubFilter(Input,Proj(Input))))";
-        String fragment0_1 = "Proj(Filter(InnerJoin(Input,Input)))";
+        // TODO: template of source query
+        String fragment0_0 = "";
+        // TODO: template of middle1 query
+        String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(rewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
 
         String target = """
                 SELECT grade.*
                 FROM grade AS grade
                 WHERE grade.student_id = 10""";
 
-        String fragment1_0 = "Proj(Filter(InnerJoin(Input,Input)))";
-        String fragment1_1 = "Proj(Filter(Input))";
+        // TODO: template of middle1 query
+        String fragment1_0 = "";
+        // TODO: template of target query
+        String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(rewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+
+        System.err.println("Test3 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -228,10 +279,12 @@ public class OptimizeTest {
                 WHERE spree_order_promotions.promotion_id = 100
                   AND spree_orders.total > 300""";
 
-        String fragment0_0 = "Filter(InnerJoin(Input,Input))";
-        String fragment0_1 = "Filter(InnerJoin(Input,Input))";
+        // TODO: template of source query
+        String fragment0_0 = "";
+        // TODO: template of middle1 query
+        String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(rewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
 
         String target = """
                 SELECT DISTINCT spree_orders.id
@@ -240,10 +293,17 @@ public class OptimizeTest {
                                     ON spree_order_promotions.order_id = spree_orders.id
                 WHERE spree_order_promotions.promotion_id = 100
                   AND spree_orders.total > 300""";
-        String fragment1_0 = "Proj*(Filter(InnerJoin(Input,Input)))";
-        String fragment1_1 = "Proj*(Filter(Input))";
+
+        // TODO: template of middle1 query
+        String fragment1_0 = "";
+        // TODO: template of target query
+        String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(rewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+
+        System.err.println("Test4 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -303,10 +363,12 @@ public class OptimizeTest {
                                     ON topics.id = posts.topic_id
                 WHERE post_actions.staff_took_action = TRUE""";
 
-        String fragment0_0 = "Filter(Filter(Input))";
-        String fragment0_1 = "Filter(Input)";
+        // TODO: template of source query
+        String fragment0_0 = "";
+        // TODO: template of middle1 query
+        String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(rewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
 
         String target = """
                 SELECT post_actions.id, post_actions.post_id, posts.topic_id
@@ -314,10 +376,17 @@ public class OptimizeTest {
                          INNER JOIN posts\s
                                     ON posts.id = post_actions.post_id
                 WHERE post_actions.staff_took_action = TRUE""";
-        String fragment1_0 = "Proj(Filter(InnerJoin(Input,Input)))";
-        String fragment1_1 = "Proj(Filter(Input))";
+
+        // TODO: template of middle1 query
+        String fragment1_0 = "";
+        // TODO: template of target query
+        String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(rewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+
+        System.err.println("Test5 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -350,30 +419,40 @@ public class OptimizeTest {
                                     ON contacts.person_id = people.id
                 WHERE contacts.user_id = 1945""";
 
-        String fragment0_0 = "LeftJoin(Input,Input)";
-        String fragment0_1 = "InnerJoin(Input,Input)";
+        // TODO: template of source query
+        String fragment0_0 = "";
+        // TODO: template of middle1 query
+        String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(rewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
 
         String middle2 = """
                 SELECT DISTINCT contacts.id
                 FROM contacts
                 WHERE contacts.user_id = 1945""";
 
-        String fragment1_0 = "Proj*(Filter(InnerJoin(Input,Input)))";
-        String fragment1_1 = "Proj*(Filter(Input))";
+        // TODO: template of middle1 query
+        String fragment1_0 = "";
+        // TODO: template of middle2 query
+        String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(rewrite(schema, middle1, middle2, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules));
 
         String target = """
                 SELECT contacts.id
                 FROM contacts
                 WHERE contacts.user_id = 1945""";
 
-        String fragment2_0 = "Proj*(Input)";
-        String fragment2_1 = "Proj(Input)";
+        // TODO: template of middle2 query
+        String fragment2_0 = "";
+        // TODO: template of target query
+        String fragment2_1 = "";
         rules = enumRule(fragment2_0, fragment2_1);
-        Assertions.assertTrue(rewrite(schema, middle2, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
+
+        System.err.println("Test6 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -399,10 +478,12 @@ public class OptimizeTest {
                                     ON m.id = n.id
                 WHERE m.commit_id = '10232'""";
 
-        String fragment0_0 = "Proj(InSubFilter(Input,Proj(Filter(Input))))";
-        String fragment0_1 = "Proj(Filter(InnerJoin(Input,Input)))";
+        // TODO: template of source query
+        String fragment0_0 = "";
+        // TODO: template of middle1 query
+        String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(rewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
 
         String middle2 = """
                 SELECT n.*
@@ -411,20 +492,28 @@ public class OptimizeTest {
                                     ON n.id = m.id
                 WHERE n.commit_id = '10232'""";
 
-        String fragment1_0 = "Filter(InnerJoin(Input,Input))";
-        String fragment1_1 = "Filter(InnerJoin(Input,Input))";
+        // TODO: template of middle1 query
+        String fragment1_0 = "";
+        // TODO: template of middle2 query
+        String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(rewrite(schema, middle1, middle2, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules));
 
         String target = """
                 SELECT n.*
                 FROM notes AS n
                 WHERE n.commit_id = '10232'""";
 
-        String fragment2_0 = "Proj(Filter(InnerJoin(Input,Input)))";
-        String fragment2_1 = "Proj(Filter(Input))";
+        // TODO: template of middle2 query
+        String fragment2_0 = "";
+        // TODO: template of target query
+        String fragment2_1 = "";
         rules = enumRule(fragment2_0, fragment2_1);
-        Assertions.assertTrue(rewrite(schema, middle2, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
+
+        System.err.println("Test7 passed:");
+        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
+        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     /**
@@ -440,7 +529,7 @@ public class OptimizeTest {
         return enumConstraints(f0, f1, 240000);
     }
 
-    static boolean rewrite(String strSchema, String rawSql, String target, List<Substitution> rules) throws IOException {
+    static boolean canRewrite(String strSchema, String rawSql, String target, List<Substitution> rules) throws IOException {
         final SubstitutionBank substitutionBank = SubstitutionSupport.loadBank(rules.stream().map(Object::toString).collect(Collectors.toList()));
         final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, strSchema);
         final SqlNode rawAST = SqlSupport.parseSql(DbSupport.MySQL, rawSql);
@@ -469,4 +558,28 @@ public class OptimizeTest {
         return success;
     }
 
+
+    static long measurePerformance(String sql, int runTimes) {
+        try (Connection connection = dataSource.getConnection()) {
+            Statement statement = connection.createStatement();
+            long[] costs = new long[runTimes];
+            for (int i = 0; i < runTimes; i++) {
+                long start = System.currentTimeMillis();
+                statement.executeQuery(sql);
+                long end = System.currentTimeMillis();
+                costs[i] = end - start;
+            }
+            // median
+            Arrays.sort(costs);
+            long cost;
+            if ((runTimes & 1) == 0) {
+                cost = (costs[runTimes / 2] + costs[runTimes / 2 - 1]) / 2;
+            } else {
+                cost = costs[runTimes / 2];
+            }
+            return cost;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
