@@ -21,7 +21,10 @@ ENV PATH ${GRADLE_HOME}/bin:${PATH}
 # cloning WeTune
 RUN apt-get install -y git
 
+RUN apt-get install dos2unix
+
 COPY startup.sh /app/
+RUN dos2unix /app/startup.sh
 RUN chmod +x /app/startup.sh
 CMD bash /app/startup.sh && \
     /usr/bin/tail -f /dev/null
