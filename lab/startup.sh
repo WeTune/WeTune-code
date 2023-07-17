@@ -10,6 +10,7 @@ for file in /var/lib/mysql-files/test_data/*; do
   mysql -u root -h localhost -P 3306 -D test -e "SET FOREIGN_KEY_CHECKS=0; LOAD DATA INFILE '$file' INTO TABLE test.${temp%%.csv} FIELDS TERMINATED BY ';'; SET FOREIGN_KEY_CHECKS=1"
 done
 
+mysql -u root -h localhost -P 3306 -e "SET GLOBAL optimizer_switch='index_merge=off,index_merge_union=off,index_merge_sort_union=off,index_merge_intersection=off,engine_condition_pushdown=off,index_condition_pushdown=off,mrr=off,mrr_cost_based=off,block_nested_loop=off,batched_key_access=off,materialization=off,semijoin=off,loosescan=off,firstmatch=off,duplicateweedout=off,subquery_materialization_cost_based=off,use_index_extensions=off,condition_fanout_filter=off,derived_merge=off,use_invisible_indexes=off,skip_scan=off,hash_join=off,subquery_to_derived=off,prefer_ordering_index=off,hypergraph_optimizer=off,derived_condition_pushdown=off';"
 mysql -u root -h localhost -P 3306 -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '123456';"
 
 # set user and password of the container lab
