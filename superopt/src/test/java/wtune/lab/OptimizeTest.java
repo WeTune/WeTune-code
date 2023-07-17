@@ -72,9 +72,9 @@ public class OptimizeTest {
         List<Substitution> rules = enumRule(fragment0, fragment1);
         Assertions.assertTrue(canRewrite(schema, source, target, rules));
 
-        System.err.println("Test0 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test0 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -110,9 +110,9 @@ public class OptimizeTest {
         List<Substitution> rules = enumRule(fragment0, fragment1);
         Assertions.assertTrue(canRewrite(schema, source, target, rules));
 
-        System.err.println("Test1 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test1 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -165,9 +165,9 @@ public class OptimizeTest {
         List<Substitution> rules = enumRule(fragment0, fragment1);
         Assertions.assertTrue(canRewrite(schema, source, target, rules));
 
-        System.err.println("Test2 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test2 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -224,9 +224,9 @@ public class OptimizeTest {
         rules = enumRule(fragment1_0, fragment1_1);
         Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
 
-        System.err.println("Test3 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test3 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -301,9 +301,9 @@ public class OptimizeTest {
         rules = enumRule(fragment1_0, fragment1_1);
         Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
 
-        System.err.println("Test4 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test4 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -384,9 +384,9 @@ public class OptimizeTest {
         rules = enumRule(fragment1_0, fragment1_1);
         Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
 
-        System.err.println("Test5 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test5 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -450,9 +450,9 @@ public class OptimizeTest {
         rules = enumRule(fragment2_0, fragment2_1);
         Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
 
-        System.err.println("Test6 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test6 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     @Test
@@ -511,9 +511,9 @@ public class OptimizeTest {
         rules = enumRule(fragment2_0, fragment2_1);
         Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
 
-        System.err.println("Test7 passed:");
-        System.err.println("execution time of source query:" + measurePerformance(source, runTimes) + "ms");
-        System.err.println("execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+        System.out.println("--------------Test7 passed:\n"
+                + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
     }
 
     /**
@@ -559,14 +559,14 @@ public class OptimizeTest {
     }
 
 
-    static long measurePerformance(String sql, int runTimes) {
+    static double measurePerformance(String sql, int runTimes) {
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
             long[] costs = new long[runTimes];
             for (int i = 0; i < runTimes; i++) {
-                long start = System.currentTimeMillis();
+                long start = System.nanoTime();
                 statement.executeQuery(sql);
-                long end = System.currentTimeMillis();
+                long end = System.nanoTime();
                 costs[i] = end - start;
             }
             // median
@@ -577,7 +577,7 @@ public class OptimizeTest {
             } else {
                 cost = costs[runTimes / 2];
             }
-            return cost;
+            return cost / 1000000.0;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
