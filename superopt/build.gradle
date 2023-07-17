@@ -33,3 +33,10 @@ task downloadLib {
         download(libz3javaUrl, rootDir.toPath().resolve("lib").resolve("libz3java.so"), "644")
     }
 }
+
+test {
+    testLogging {
+        showStandardStreams = true
+        events "passed", "skipped", "failed"
+    }
+}
