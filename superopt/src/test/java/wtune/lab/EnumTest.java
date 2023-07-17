@@ -11,7 +11,7 @@ import java.util.List;
 public class EnumTest {
 
     @Test
-    void testTemplateNum() throws IOException {
+    void testTemplateNum12() throws IOException {
         final List<Fragment> fragments_1 = FragmentSupport.enumFragments(1, 2);
         System.out.println("TemplateNum: " + fragments_1.size());
         if (fragments_1.size() != 7) {
@@ -22,7 +22,10 @@ public class EnumTest {
         if (fragments_2.size() != 40) {
             throw new UnexpectedException("unexpected num of templates");
         }
+    }
 
+    @Test
+    void testTemplateNum34() throws IOException {
         final List<Fragment> fragments_3 = FragmentSupport.enumFragments(3, 2);
         System.out.println("TemplateNum: " + fragments_3.size());
         if (fragments_3.size() != 165) {
