@@ -181,8 +181,8 @@ U-expression$f(t)$可以表示元组$t$在查询$f$的结果中出现的次数�
 |        $Proj*<a,s>(R)$         |           $f(x)=||\Sigma{\{t\}}(R(t)*[x=a(t)])||$            |
 |        $Filter<p,a>(R)$        |                    $f(x)=R(x)*[p(a(x))]$                     |
 |   $InSubFilter<a>(R_1, R_2)$   |       $f(x)=R_1(x)*||R_2(a(x))*not([isNull(a(x))])||$        |
-| $InnerJoin<a_1, a_2>(R_1,R_2)$ | $f(x_1,x_2)=R_1(x_1)*R_2(x_2)*[a_1(x_1)=a_2(x_2)]*not(isNull(a_1(t_1)))$ |
-| $LeftJoin<a_1, a_2>(R_1,R_2)$  | $f(x_1,x_2)=R_1(x_1)*R_2(x_2)*[a_1(x_1)=a_2(x_2)]*not(isNull(a_1(x_1)))+$$R_1(x_1)*[isNull(a_2(t_2))]*not(\Sigma\{x_2'\}(R_2(x_2')*[a_1(x_1)=a_2(x_2')]*not(isNull(a_1(x_1)))))$ |
+| $InnerJoin<a_1, a_2>(R_1,R_2)$ | $f(x_1,x_2)=R_1(x_1)*R_2(x_2)*[a_1(x_1)=a_2(x_2)]*not(isNull(a_1(x_1)))$ |
+| $LeftJoin<a_1, a_2>(R_1,R_2)$  | $f(x_1,x_2)=R_1(x_1)*R_2(x_2)*[a_1(x_1)=a_2(x_2)]*not(isNull(a_1(x_1)))+$$R_1(x_1)*[isNull(a_2(x_2))]*not(\Sigma\{x_2'\}(R_2(x_2')*[a_1(x_1)=a_2(x_2')]*not(isNull(a_1(x_1)))))$ |
 
 ##### 实现要求
 
