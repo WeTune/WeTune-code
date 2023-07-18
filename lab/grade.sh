@@ -30,19 +30,13 @@ if [[ $failed == *'OptimizeTest.html#Test7()'* ]];then
   score=$(($score-6))
 fi
 if [[ $failed == *'VeriTest.html#testFOL1()'* ]];then
-  score=$(($score-2))
+  score=$(($score-3))
 fi
 if [[ $failed == *'VeriTest.html#testFOL2()'* ]];then
-  score=$(($score-2))
+  score=$(($score-3))
 fi
 if [[ $failed == *'VeriTest.html#testFOL3()'* ]];then
-  score=$(($score-2))
-fi
-if [[ $failed == *'VeriTest.html#testFOL4()'* ]];then
-  score=$(($score-2))
-fi
-if [[ $failed == *'VeriTest.html#testFOL5()'* ]];then
-  score=$(($score-2))
+  score=$(($score-4))
 fi
 if [[ $failed == *'UExprTest.html#uExprTest1()'* ]];then
   score=$(($score-5))
