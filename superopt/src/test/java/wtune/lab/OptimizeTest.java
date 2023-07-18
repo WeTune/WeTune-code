@@ -50,6 +50,7 @@ public class OptimizeTest {
 
     @Test
     void Test0() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE student
                 (
@@ -70,15 +71,18 @@ public class OptimizeTest {
         String fragment1 = "";
 
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules, usedRules));
 
-        System.out.println("--------------Test0 passed:\n"
+        System.out.println("--------------Test0 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test1() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE uploads
                 (
@@ -108,15 +112,18 @@ public class OptimizeTest {
         String fragment1 = "";
 
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules, usedRules));
 
-        System.out.println("--------------Test1 passed:\n"
+        System.out.println("--------------Test1 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test2() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE custom_fields
                 (
@@ -163,15 +170,18 @@ public class OptimizeTest {
         String fragment1 = "";
 
         List<Substitution> rules = enumRule(fragment0, fragment1);
-        Assertions.assertTrue(canRewrite(schema, source, target, rules));
+        Assertions.assertTrue(canRewrite(schema, source, target, rules, usedRules));
 
-        System.out.println("--------------Test2 passed:\n"
+        System.out.println("--------------Test2 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test3() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE student
                 (
@@ -210,7 +220,7 @@ public class OptimizeTest {
         // TODO: template of middle1 query
         String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules, usedRules));
 
         String target = """
                 SELECT grade.*
@@ -222,15 +232,18 @@ public class OptimizeTest {
         // TODO: template of target query
         String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules, usedRules));
 
-        System.out.println("--------------Test3 passed:\n"
+        System.out.println("--------------Test3 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test4() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE spree_orders
                 (
@@ -284,7 +297,7 @@ public class OptimizeTest {
         // TODO: template of middle1 query
         String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules, usedRules));
 
         String target = """
                 SELECT DISTINCT spree_orders.id
@@ -299,15 +312,18 @@ public class OptimizeTest {
         // TODO: template of target query
         String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules, usedRules));
 
-        System.out.println("--------------Test4 passed:\n"
+        System.out.println("--------------Test4 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test5() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                     CREATE TABLE topics
                     (
@@ -368,7 +384,7 @@ public class OptimizeTest {
         // TODO: template of middle1 query
         String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules, usedRules));
 
         String target = """
                 SELECT post_actions.id, post_actions.post_id, posts.topic_id
@@ -382,15 +398,18 @@ public class OptimizeTest {
         // TODO: template of target query
         String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(canRewrite(schema, middle1, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, target, rules, usedRules));
 
-        System.out.println("--------------Test5 passed:\n"
+        System.out.println("--------------Test5 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test6() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE people
                 (
@@ -424,7 +443,7 @@ public class OptimizeTest {
         // TODO: template of middle1 query
         String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules, usedRules));
 
         String middle2 = """
                 SELECT DISTINCT contacts.id
@@ -436,7 +455,7 @@ public class OptimizeTest {
         // TODO: template of middle2 query
         String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules, usedRules));
 
         String target = """
                 SELECT contacts.id
@@ -448,15 +467,18 @@ public class OptimizeTest {
         // TODO: template of target query
         String fragment2_1 = "";
         rules = enumRule(fragment2_0, fragment2_1);
-        Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle2, target, rules, usedRules));
 
-        System.out.println("--------------Test6 passed:\n"
+        System.out.println("--------------Test6 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     @Test
     void Test7() throws IOException {
+        List<String> usedRules = new ArrayList<>();
         String schema = """
                 CREATE TABLE notes
                 (
@@ -483,7 +505,7 @@ public class OptimizeTest {
         // TODO: template of middle1 query
         String fragment0_1 = "";
         List<Substitution> rules = enumRule(fragment0_0, fragment0_1);
-        Assertions.assertTrue(canRewrite(schema, source, middle1, rules));
+        Assertions.assertTrue(canRewrite(schema, source, middle1, rules, usedRules));
 
         String middle2 = """
                 SELECT n.*
@@ -497,7 +519,7 @@ public class OptimizeTest {
         // TODO: template of middle2 query
         String fragment1_1 = "";
         rules = enumRule(fragment1_0, fragment1_1);
-        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules));
+        Assertions.assertTrue(canRewrite(schema, middle1, middle2, rules, usedRules));
 
         String target = """
                 SELECT n.*
@@ -509,11 +531,13 @@ public class OptimizeTest {
         // TODO: template of target query
         String fragment2_1 = "";
         rules = enumRule(fragment2_0, fragment2_1);
-        Assertions.assertTrue(canRewrite(schema, middle2, target, rules));
+        Assertions.assertTrue(canRewrite(schema, middle2, target, rules, usedRules));
 
-        System.out.println("--------------Test7 passed:\n"
+        System.out.println("--------------Test7 passed--------------:\n"
                 + "execution time of source query:" + measurePerformance(source, runTimes) + "ms\n"
-                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms");
+                + "execution time of optimized query:" + measurePerformance(target, runTimes) + "ms\n"
+                + "used rules:\n"
+                + String.join("\n", usedRules));
     }
 
     /**
@@ -529,7 +553,7 @@ public class OptimizeTest {
         return enumConstraints(f0, f1, 240000);
     }
 
-    static boolean canRewrite(String strSchema, String rawSql, String target, List<Substitution> rules) throws IOException {
+    static boolean canRewrite(String strSchema, String rawSql, String target, List<Substitution> rules, List<String> usedRules) throws IOException {
         final SubstitutionBank substitutionBank = SubstitutionSupport.loadBank(rules.stream().map(Object::toString).collect(Collectors.toList()));
         final Schema schema = SchemaSupport.parseSchema(DbSupport.MySQL, strSchema);
         final SqlNode rawAST = SqlSupport.parseSql(DbSupport.MySQL, rawSql);
@@ -542,6 +566,7 @@ public class OptimizeTest {
 
         final Optimizer optimizer = Optimizer.mk(substitutionBank);
         optimizer.setTimeout(Integer.MAX_VALUE);
+        optimizer.setTracing(true);
         final Set<PlanContext> optimized = optimizer.optimize(rawPlan);
         final List<String> optSqls = new ArrayList<>();
         boolean success = false;
@@ -552,7 +577,9 @@ public class OptimizeTest {
             assert targetAST != null;
             optSqls.add(optAst.toString(false));
             if (optAst.toString().equals(targetAST.toString())){
+                usedRules.add(optimizer.traceOf(optPlan).get(0).rule().toString());
                 success = true;
+                break;
             }
         }
         return success;
