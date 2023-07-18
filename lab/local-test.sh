@@ -1,0 +1,1 @@
+gradle :superopt:test --tests=$1 $2

@@ -6,6 +6,8 @@ echo "$username:$new_password" | chpasswd
 
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+echo "export $(cat /proc/1/environ |tr '\0' '\n' | xargs)" >> /etc/profile
+source /etc/profile
 service ssh restart
 
 /etc/init.d/mysql start
