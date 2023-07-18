@@ -70,7 +70,17 @@ docker exec -it lab bash
 gradle compileJava
 ```
 
+#### 最终评分
 
+实验提供自动化测试脚本，测试结果会同步到云端：
+
+1. 在 wetune/lab 目录下，运行 > bash reg.sh 注册学号，注意：只需要运行一次
+
+2. 在 wetune/lab 目录下，运行 > bash grade.sh 计算得分，可以重复运行
+
+3. 访问https://www.miaowmiaow.cn/wetune查看实时排行
+
+实验完成后，将 wetune/superopt 目录压缩为zip文件上传至等待最终评定
 
 ### 3 代码补全 （40'）
 
