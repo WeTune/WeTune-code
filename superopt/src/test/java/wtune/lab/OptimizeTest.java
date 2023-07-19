@@ -550,7 +550,7 @@ public class OptimizeTest {
     static List<Substitution> enumRule(String fragment0, String fragment1) {
         final Fragment f0 = Fragment.parse(fragment0, null);
         final Fragment f1 = Fragment.parse(fragment1, null);
-        return enumConstraints(f0, f1, 240000);
+        return enumConstraints(f0, f1, -1);
     }
 
     static boolean canRewrite(String strSchema, String rawSql, String target, List<Substitution> rules, List<String> usedRules) throws IOException {
