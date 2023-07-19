@@ -154,7 +154,7 @@ Proj<a1 s1>
 
 1. 可以在FragmentEnumerator类中自己定义工具函数，用递归的方式实现枚举
 
-2. WeTune已经完成了大量工具函数，下面提供了一些可能用到的函数介绍
+2. WeTune已经完成了大量工具函数，下面提供了一些可能用到的函数或类型介绍
 
    模板树接口名为`Fragment`对应实现类为`FragmentImpl`，包含下述工具函数：
 
@@ -216,13 +216,33 @@ U-expression$f(t)$可以表示元组$t$在查询$f$的结果中出现的次数�
 
 1. 你需要补全把查询模板转换为U-expression的代码。请在UExprTranslator.java中补全`trSimpleFilter()`、`trJoin()`函数。这两个函数能把运算符转化为对应的U-expression。
 
-   提示：可以参考`trInput()`、`trInSubFilter()`、`trExistsFilter()`、`trProj()`的实现方式。
+   提示：
+
+   可以参考`trInput()`、`trInSubFilter()`、`trExistsFilter()`、`trProj()`的实现方式。
+
+   WeTune已经提供了大量的工具函数，下面是可能用到的函数或类型介绍：
+
+   `UVar`用于表示U-expression中的一个变量
+
+   `UTerm`用于表示U-expression中的一个表达式
+
+   `UPred.mk(UVar var)`对应U-expression基本运算符中的中括号表达式$[var]$
+
+   `UMul.mk(UTerm t1, UTerm t2, ...)`返回一个乘式，即参数相乘$t1*t2*\dots$
+
+   `UVar.mkEq(UVar var1, UVar var2)`返回一个等式，即变量相等$var1=var2$
+
+   `UVar.mkFunc(UName name, UVar var)`返回一个谓词表达式，即$name(var)$
+
+   `mkNotNull(UVar var)`即$not(isNull(var))$
 
 2. 你需要补全U-expression转为FOL的代码。请在`LogicProver.java`中补全`proveEq0()`函数。该函数中先处理简单情况E=E‘（待补全），再处理一些复杂情况。
 
-提示：
+   下面是可能用到的函数或类型介绍：
 
+   `z3.mkNot(Expr expr)`逻辑非运算符，即$\lnot expr$
 
+   `z3.mkEq(Expr expr1, Expr expr2)`即$expr1=expr2$
 
 ##### 评估方式
 
@@ -242,7 +262,7 @@ gradle :superopt:test --tests "wtune.lab.VeriTest"
 3. 利用第二步得到的规则改写当前改写步骤的$q_{src}$，如果能成功改写成$q_{dest}$则认为本步骤改写成功。
 4. 如果对于一条查询语句的改写分为多个步骤，则迭代地进行上述步骤流程，直到所有改写步骤完成。
 
-(好像很复杂，但你需要做的只是第一步中的内容～)
+(好像很复杂，但你需要做的只是第一步中的内容～) 
 
 在2.1中已经通过几个例子介绍过查询模板与查询语句的对应关系。
 在本部分，你需要识别并输入的查询模板是***无参数的***，它移除了3.1节介绍的运算符的参数，只保留运算符类型与父子节点的关系。
