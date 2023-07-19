@@ -144,13 +144,41 @@ Proj<a1 s1>
 
 在3.1节，你需要构造指定条件下所有可能的查询模板，枚举需要注意以下几个事项：
 
-1. 每种运算符都有指定的孩子数量
-2. 所有叶子节点都是Input运算符
-3. 为了限制枚举范围，除Input运算符外的其它运算符的总个数需不大于FragmentEnumerator.maxOps指定的值
+1. 可以使用的运算符都在`FragmentEnumerator.opSet`中，每种运算符都有指定的孩子数量。
+2. 所有叶子节点都是Input运算符，在`FragmentEnumerator::enumerate()`中会自动填充Input运算符，故枚举时不用考虑
+3. 为了限制枚举范围，除Input运算符外的其它运算符的总个数需不大于`FragmentEnumerator.maxOps`指定的值
 
-请实现FragmentEnumerator.java中的enumerateFragmentSet()函数。该函数首先枚举所有的查询模板，并返回包含这些模板的集合。
+请实现FragmentEnumerator.java中的`enumerateFragmentSet()`函数。该函数首先枚举所有的查询模板，并返回包含这些模板的集合。
 
-提示：①可以在FragmentEnumerator类中自己定义工具函数，用递归的方式实现枚举。②可以先枚举树的骨架，最后填充节点运算符。
+提示：
+
+1. 可以在FragmentEnumerator类中自己定义工具函数，用递归的方式实现枚举
+
+2. WeTune已经完成了大量工具函数，下面提供了一些可能用到的函数介绍
+
+   模板树接口名为`Fragment`对应实现类为`FragmentImpl`，包含下述工具函数：
+
+   `FragmentImpl::SetRoot(Op root)`设置模板树根
+
+   `FragmentImpl::copy()`返回模板树的独立副本
+
+   `FragmentImpl::acceptVisitor(Opvisitor visitor)`需要传入一个OpVisitor实现对模板树的遍历，例如：
+
+   ```java
+   fragment.acceptVisitor(
+       OpVisitor.traverse(
+       	op -> {
+               //需要对每个节点做的事
+           }
+       )
+   )
+   ```
+   
+   节点接口名为`Op`，包含下述工具函数：
+   
+   `Op::setPredecessor(int i, Op op)`设置节点的第`i`个孩子为`op`
+   
+   
 
 ##### 评估方式
 
