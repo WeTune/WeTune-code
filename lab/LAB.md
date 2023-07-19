@@ -176,9 +176,9 @@ Proj<a1 s1>
    
    节点接口名为`Op`，包含下述工具函数：
    
+   `Op::predecessors()`返回孩子列表
+   
    `Op::setPredecessor(int i, Op op)`设置节点的第`i`个孩子为`op`
-   
-   
 
 ##### 评估方式
 
@@ -219,6 +219,12 @@ U-expression$f(t)$可以表示元组$t$在查询$f$的结果中出现的次数�
    提示：可以参考`trInput()`、`trInSubFilter()`、`trExistsFilter()`、`trProj()`的实现方式。
 
 2. 你需要补全U-expression转为FOL的代码。请在`LogicProver.java`中补全`proveEq0()`函数。该函数中先处理简单情况E=E‘（待补全），再处理一些复杂情况。
+
+提示：
+
+
+
+##### 评估方式
 
 完成上述代码后，可以依次通过UExprTest和VeriTest两个测试：
 

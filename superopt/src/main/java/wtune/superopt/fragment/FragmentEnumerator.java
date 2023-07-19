@@ -42,47 +42,12 @@ class FragmentEnumerator {
 
         /* TODO-1a: Enumerate all the possible templates into result set */
 
-        result = enumerate0(0, result);
-
         /* END TODO-1a */
 
         return result;
     }
 
     /* TODO-1b: You may add function(s) here */
-
-    private Set<FragmentImpl> enumerate0(int depth, Set<FragmentImpl> fragments) {
-        if (depth >= maxOps) return fragments;
-
-        final Set<FragmentImpl> newFragments = new HashSet<>();
-        for (FragmentImpl g : fragments){
-            if (g.root() == null){
-                for (Op template : opSet){
-                    g.setRoot(template);
-                    newFragments.add(g.copy());
-                    g.setRoot0(null);
-                }
-            }else {
-                g.acceptVisitor(OpVisitor.traverse(
-                                    op -> {
-                                        final Op[] prev = op.predecessors();
-
-                                        for (int i = 0, bound = prev.length; i < bound; i++)
-                                            if (prev[i] == null) {
-                                                for (Op template : opSet){
-                                                    op.setPredecessor(i, template);
-                                                    newFragments.add(g.copy());
-                                                    op.setPredecessor(i, null);
-                                                }
-                                            }
-                                    }
-                            ));
-            }
-        }
-
-
-        return Sets.union(fragments, enumerate0(depth + 1, newFragments));
-    }
 
     /* END TODO-1b */
 }
