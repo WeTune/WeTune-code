@@ -46,9 +46,47 @@ public class UExprTest {
         assertEquals("x2", result.sourceOutVar().toString());
         assertEquals("x2", result.targetOutVar().toString());
     }
+        @Test
+    public void uExprTest3() {
+        final Substitution rule =
+                Substitution.parse(
+                        "Proj*<a2 s0>(LeftJoin<a0 a1>(Input<t0>,Input<t1>))|" +
+                                "Proj*<a3 s1>(Input<t2>)|" +
+                                "AttrsSub(a0,t0);AttrsSub(a1,t1);AttrsSub(a2,t0);TableEq(t2,t0);AttrsEq(a3,a2);SchemaEq(s1,s0)");
+        final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
+        System.out.println("result se:" + result.sourceExpr());
+        System.out.println("result te:" + result.targetExpr());
+        System.out.println("result so:" + result.sourceOutVar());
+        System.out.println("result to:" + result.targetOutVar());
+        assertEquals("||∑{x0,x1}([x3 = a2(x0)] * t0(x0) * (t1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))||",result.sourceExpr().toString());
+        assertEquals("||∑{x0}([x3 = a2(x0)] * t0(x0))||", result.targetExpr().toString());
+        assertEquals("x3", result.sourceOutVar().toString());
+        assertEquals("x3", result.targetOutVar().toString());
+    }
 
     @Test
-    public void uExprTest3() {
+    public void uExprTest4() {
+        final Substitution rule =
+                Substitution.parse(
+                        "LeftJoin<k0 k1>(Input<t0>,Input<t1>)|" +
+                                "InnerJoin<k2 k3>(Input<t2>,Input<t3>)|" +
+                                "AttrsSub(k0,t0);AttrsSub(k1,t1);NotNull(t0,k0);Reference(t0,k0,t1,k1);TableEq(t2,t0);TableEq(t3,t1);AttrsEq(k3,k1);AttrsEq(k2,k0);");
+
+        final UExprTranslationResult result = UExprSupport.translateToUExpr(rule);
+        System.out.println("result se:" + result.sourceExpr());
+        System.out.println("result te:" + result.targetExpr());
+        System.out.println("result so:" + result.sourceOutVar());
+        System.out.println("result to:" + result.targetOutVar());
+        assertEquals(
+                "t0(x0) * (t1(x1) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [k0(x0) = k1(x2)] * not([IsNull(k1(x2))]))))",
+                result.sourceExpr().toString());
+        assertEquals("t0(x0) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) * t1(x1)", result.targetExpr().toString());
+        assertEquals("concat(x0,x1)", result.sourceOutVar().toString());
+        assertEquals("concat(x0,x1)", result.targetOutVar().toString());
+    }
+
+    @Test
+    public void uExprTest5() {
         final Substitution rule =
                 Substitution.parse(
                         "Filter<p0 b0>(InnerJoin<k0 k1>(Input<t0>,Input<t1>))|" +

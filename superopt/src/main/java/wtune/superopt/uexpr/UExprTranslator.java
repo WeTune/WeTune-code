@@ -409,7 +409,7 @@ class UExprTranslator {
       final UVar rhsProjVar = mkProj(rhsKey, rhsAttrsDesc, rhsVisibleVar);
       putKnownEqSchema(result.schemaOf(lhsProjVar), result.schemaOf(rhsProjVar));
 
-      /* TODO-4b: make the equal condition and the not null condition (eqCond and notNullCond) */
+      /* TODO-4b: build the equal condition and the not null condition (eqCond and notNullCond) */
 
       final UTerm eqCond = null;
       final UTerm notNullCond = null;
@@ -422,7 +422,14 @@ class UExprTranslator {
                 null
             /* END TODO-4c */;
 
-      // left join
+      /*
+       * implement the translation of left join:
+       * LeftJoin<kl, kr>(Rl,Rr) --> Rl(x) * (
+       *                               [kl(x) = kr(x)] * Rr(x) * not(isNull(kr(x))) +
+       *                               isNull(kr(x)) * not(∑{x'}(Rr(x') * [kl(x) = kr(x')] * not(isNull(kl(x))))
+       *                             )
+       */
+
       UTerm newExpr = UMul.mk(rhs, eqCond, notNullCond);
       final Set<UVar> freeVars = UVar.getBaseVars(rhsFreeVar);
       final Set<UVar> newVars = new HashSet<>(freeVars.size());
@@ -433,9 +440,16 @@ class UExprTranslator {
         result.setVarSchema(newVar, result.schemaOf(oldVar));
       }
 
-      final UMul symm = UMul.mk(rhs, eqCond, notNullCond);
-      final UMul asymm = UMul.mk(mkIsNull(rhsVisibleVar), UNeg.mk(USum.mk(newVars, newExpr)));
-      return UMul.mk(lhs, UAdd.mk(symm, asymm));
+      /* TODO-4d: implement the translation of left join */
+
+      // build symm: the production of rhs, eqCond, notNullCond using UMul; [kl(x) = kr(x)] * Rr(x) * not(isNull(kr(x)))
+      final UMul symm = null;
+      // build asymm: isNull(kr(x)) * not(∑{x'}(Rr(x') * [kl(x) = kr(x')] * not(isNull(kl(x))))
+      final UMul asymm = null;
+      // return lhs * (symm + asymm)
+      return null;
+
+      /* END TODO-4d */
     }
 
     private UTerm trProj(Proj proj) {
