@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:20.04
 LABEL authors="jz"
 
 RUN apt-get -y update && apt-get -y upgrade
