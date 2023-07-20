@@ -1,6 +1,7 @@
 package wtune.lab;
 
 import com.microsoft.z3.Global;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import wtune.superopt.logic.LogicSupport;
 import wtune.superopt.substitution.Substitution;
@@ -11,9 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class VeriTest {
 
+    @BeforeAll
+    public static void setTimeOut(){
+        System.setProperty("wetune.smt_timeout", "10000");
+    }
     @Test
     public void testFOL1() {
-        Global.setParameter("timeout", "10000");
         final Substitution rule =
                 Substitution.parse(
                         "InSub<k0>(Input<t0>,Proj<k1 s0>(Input<t1>))|" +
@@ -26,7 +30,6 @@ public class VeriTest {
 
     @Test
     public void testFOL2() {
-        Global.setParameter("timeout", "10000");
         final Substitution rule =
                 Substitution.parse(
                         "Filter<p0 b0>(Proj<a0 s0>(Input<t0>))|"
@@ -39,7 +42,6 @@ public class VeriTest {
 
     @Test
     public void testFOL3() {
-        Global.setParameter("timeout", "10000");
         final Substitution rule =
                 Substitution.parse(
                         "Proj<a3 s0>(Filter<p0 a2>(InnerJoin<a0 a1>(Input<t0>,Input<t1>)))|" +

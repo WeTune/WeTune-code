@@ -2,6 +2,7 @@ package wtune.lab;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.parallel.Execution;
@@ -46,6 +47,11 @@ public class OptimizeTest {
         config.setUsername("root");
         config.setPassword("123456");
         dataSource = new HikariDataSource(config);
+    }
+
+    @BeforeAll
+    public static void setTimeOut(){
+        System.setProperty("wetune.smt_timeout", "10000");
     }
 
     @Test
