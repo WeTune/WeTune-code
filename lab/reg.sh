@@ -6,3 +6,4 @@ if [[ $result == *'error'* ]];then
   exit
 fi
 echo $result > ./token
+echo $studentid > ./studentId

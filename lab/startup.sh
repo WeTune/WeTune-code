@@ -13,7 +13,15 @@ service ssh restart
 /etc/init.d/mysql start
 mysql -u root -h localhost -P 3306 -e "CREATE DATABASE IF NOT EXISTS test"
 
-git clone -b lab2 https://ipads.se.sjtu.edu.cn:1312/opensource/wetune.git
+
+unzip /wetune.zip -d /
+architecture=$(uname -m)
+if [[ $architecture = "aarch64" || $architecture = "arm64" ]];
+then
+    cp /arm/* /wetune/lib
+fi
+
+
 mysql -u root -h localhost -P 3306 test < /wetune/lab/schema.sql
 cp -r /wetune/lab/test_data /var/lib/mysql-files
 for file in /var/lib/mysql-files/test_data/*; do
