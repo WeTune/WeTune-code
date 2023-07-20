@@ -39,13 +39,19 @@ if [[ $failed == *'VeriTest.html#testFOL3()'* ]];then
   score=$(($score-4))
 fi
 if [[ $failed == *'UExprTest.html#uExprTest1()'* ]];then
-  score=$(($score-5))
+  score=$(($score-3))
 fi
 if [[ $failed == *'UExprTest.html#uExprTest2()'* ]];then
-  score=$(($score-5))
+  score=$(($score-3))
 fi
 if [[ $failed == *'UExprTest.html#uExprTest3()'* ]];then
-  score=$(($score-5))
+  score=$(($score-3))
+fi
+if [[ $failed == *'UExprTest.html#uExprTest4()'* ]];then
+  score=$(($score-3))
+fi
+if [[ $failed == *'UExprTest.html#uExprTest5()'* ]];then
+  score=$(($score-3))
 fi
 if [[ $failed == *'EnumTest.html#testTemplateNum12()'* ]];then
   score=$(($score-5))

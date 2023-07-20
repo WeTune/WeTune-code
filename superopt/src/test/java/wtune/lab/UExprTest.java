@@ -6,6 +6,7 @@ import wtune.superopt.uexpr.UExprSupport;
 import wtune.superopt.uexpr.UExprTranslationResult;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UExprTest {
 
@@ -58,7 +59,8 @@ public class UExprTest {
         System.out.println("result te:" + result.targetExpr());
         System.out.println("result so:" + result.sourceOutVar());
         System.out.println("result to:" + result.targetOutVar());
-        assertEquals("||∑{x0,x1}([x3 = a2(x0)] * t0(x0) * (t1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))||",result.sourceExpr().toString());
+        assertTrue(result.sourceExpr().toString().equals("||∑{x0,x1}([x3 = a2(x0)] * (t0(x0) * t1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + t0(x0) * [IsNull(x1)] * not(∑{x2}(t1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))||") ||
+                    result.sourceExpr().toString().equals("||∑{x0,x1}([x3 = a2(x0)] * t0(x0) * (t1(x1) * [a0(x0) = a1(x1)] * not([IsNull(a1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [a0(x0) = a1(x2)] * not([IsNull(a1(x2))])))))||"));
         assertEquals("||∑{x0}([x3 = a2(x0)] * t0(x0))||", result.targetExpr().toString());
         assertEquals("x3", result.sourceOutVar().toString());
         assertEquals("x3", result.targetOutVar().toString());
@@ -77,9 +79,8 @@ public class UExprTest {
         System.out.println("result te:" + result.targetExpr());
         System.out.println("result so:" + result.sourceOutVar());
         System.out.println("result to:" + result.targetOutVar());
-        assertEquals(
-                "t0(x0) * (t1(x1) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [k0(x0) = k1(x2)] * not([IsNull(k1(x2))]))))",
-                result.sourceExpr().toString());
+        assertTrue(result.sourceExpr().toString().equals("t0(x0) * t1(x1) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) + t0(x0) * [IsNull(x1)] * not(∑{x2}(t1(x2) * [k0(x0) = k1(x2)] * not([IsNull(k1(x2))])))") ||
+                result.sourceExpr().toString().equals("t0(x0) * (t1(x1) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) + [IsNull(x1)] * not(∑{x2}(t1(x2) * [k0(x0) = k1(x2)] * not([IsNull(k1(x2))]))))"));
         assertEquals("t0(x0) * [k0(x0) = k1(x1)] * not([IsNull(k1(x1))]) * t1(x1)", result.targetExpr().toString());
         assertEquals("concat(x0,x1)", result.sourceOutVar().toString());
         assertEquals("concat(x0,x1)", result.targetOutVar().toString());

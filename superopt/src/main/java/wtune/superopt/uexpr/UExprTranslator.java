@@ -442,11 +442,12 @@ class UExprTranslator {
 
       /* TODO-4d: implement the translation of left join */
 
-      // build symm: the production of rhs, eqCond, notNullCond using UMul; [kl(x) = kr(x)] * Rr(x) * not(isNull(kr(x)))
+      // build symm: the production of lhs, rhs, eqCond, notNullCond using UMul; Rl(x) * Rr(x) * [kl(x) = kr(x)] * not(isNull(kr(x)))
       final UMul symm = null;
-      // build asymm: isNull(kr(x)) * not(∑{x'}(Rr(x') * [kl(x) = kr(x')] * not(isNull(kl(x))))
+      // build asymm: Rl(x) * isNull(kr(x)) * not(∑{x'}(Rr(x') * [kl(x) = kr(x')] * not(isNull(kl(x))))
+      // hint: build summation with newVars and newExpr using USum
       final UMul asymm = null;
-      // return lhs * (symm + asymm)
+      // return lhs * (symm + asymm) using UAdd
       return null;
 
       /* END TODO-4d */
