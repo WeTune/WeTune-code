@@ -230,6 +230,10 @@ U-expression$f(t)$可以表示元组$t$在查询$f$的结果中出现的次数�
 
    `UMul.mk(UTerm t1, UTerm t2, ...)`返回一个乘式，即参数相乘$t1*t2*\dots$
 
+   `UAdd.mk(UTerm t1, UTerm t2, ...)`返回一个和式，即参数相加$t1+t2+\dots$
+
+   `USum.mk(Set<UVar> vars, UTerm body)`构造并返回一个求和公式，即$\Sigma\{vars\}(body)$
+
    `UVar.mkEq(UVar var1, UVar var2)`返回一个等式，即变量相等$var1=var2$
 
    `UVar.mkFunc(UName name, UVar var)`返回一个谓词表达式，即$name(var)$
