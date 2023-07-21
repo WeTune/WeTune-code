@@ -1,7 +1,8 @@
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM ubuntu:20.04
 LABEL authors="jz"
 
-RUN apt-get -y update && apt-get -y upgrade
+RUN apt-get -y update
+RUN apt-get -y upgrade
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get install -y mysql-server
@@ -20,9 +21,8 @@ ENV PATH ${GRADLE_HOME}/bin:${PATH}
 
 # cloning WeTune
 RUN apt-get install -y git
-
-RUN apt-get install -y dos2unix
 RUN apt-get install -y curl
+RUN apt-get install -y dos2unix
 RUN apt-get install -y zip
 
 COPY startup.sh /app/
