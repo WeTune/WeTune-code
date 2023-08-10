@@ -14,6 +14,7 @@ import wtune.testbed.population.PopulationConfig;
 import wtune.testbed.profile.Metric;
 import wtune.testbed.profile.ProfileConfig;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -40,7 +41,7 @@ public class Profile implements Runner {
 
   // Determine the optimized statement pool
   private String optimizedBy;
-
+  private Path inOptFile;
   private Blacklist blacklist;
 
   private void initBlackList() {
@@ -65,6 +66,9 @@ public class Profile implements Runner {
     dryRun = args.getOptional("dry", boolean.class, false);
 
     optimizedBy = args.getOptional("opt", "optimizer", String.class, "WeTune");
+    final Path optDir = Runner.dataDir().resolve(args.getOptional("rewriteDir", String.class, "rewrite/result"));
+    inOptFile = optDir.resolve(args.getOptional("i", "in", String.class, "2_query.tsv"));
+    IOSupport.checkFileExists(inOptFile);
 
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = optimizedBy + "_" + (useSqlServer ? "ss" : "pg");
@@ -108,9 +112,23 @@ public class Profile implements Runner {
     LOG.log(WARNING, "failed to profile {0}", failures);
   }
 
-  private List<Statement> getStmtPool() {
+  private List<Statement> getStmtPool() throws IOException {
     final OptimizerType type = OptimizerType.valueOf(optimizedBy);
-    return Statement.findAllRewritten(type);
+    final List<String> lines = Files.readAllLines(inOptFile);
+    final List<Statement> statementList = new ArrayList<>();
+
+    for (int i = 0, bound = lines.size(); i < bound; i++) {
+      final String line = lines.get(i);
+      final String[] fields = line.split("\t", 4);
+      final String app = fields[0];
+      final int stmtId = Integer.parseInt(fields[1]);
+      final String rawSql = fields[2], trace = fields[3];
+      final Statement stmt = Statement.mk(app, stmtId, rawSql, trace);
+      stmt.setRewritten(true);
+      stmt.setOptimizerType(type);
+      statementList.add(stmt);
+    }
+    return statementList;
   }
 
   private boolean runOne(Statement original, Statement rewritten) {

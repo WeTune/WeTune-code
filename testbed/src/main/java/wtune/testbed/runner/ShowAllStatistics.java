@@ -39,13 +39,7 @@ public class ShowAllStatistics implements Runner {
   private static final double BOUND_INVALID = -0.05;
   private Set<String> rulesRecord;
   private Map<String, String> rulesPool;
-
-  public static void main(String[] args) throws Exception {
-    args = new String[]{"ShowAllStatistics", "-all"};
-    ShowAllStatistics showAllStatistics = new ShowAllStatistics();
-    showAllStatistics.prepare(args);
-    showAllStatistics.run();
-  }
+  private Map<String, Statement> rewrittenStmts;
 
   @Override
   public void prepare(String[] argStrings) throws Exception {
@@ -56,10 +50,12 @@ public class ShowAllStatistics implements Runner {
             dataDir.resolve(args.getOptional("rewriteDir", String.class, "rewrite/result"));
     rewriteTraceFile =
             rewriteDir.resolve(args.getOptional("traceFile", String.class, "2_trace.tsv"));
+    final Path inOptFile = rewriteDir.resolve(args.getOptional("i", "in", String.class, "2_query.tsv"));
     final Path usedRulesFile = rewriteDir.resolve("1_rules.tsv");
     profileDir = dataDir.resolve(args.getOptional("profileDir", String.class, "profile/result"));
 
     IOSupport.checkFileExists(rewriteTraceFile);
+    IOSupport.checkFileExists(inOptFile);
     IOSupport.checkFileExists(profileDir);
     IOSupport.checkFileExists(usedRulesFile);
 
@@ -97,6 +93,19 @@ public class ShowAllStatistics implements Runner {
             .forEach(rule -> {
               String[] split = rule.split("\t", 2);
               rulesPool.put(split[0], split[1]);
+            });
+
+    rewrittenStmts = new HashMap<>();
+    List<String> statements = Files.readAllLines(inOptFile);
+    statements.stream()
+            .forEach(s -> {
+              final String[] fields = s.split("\t", 4);
+              final String app = fields[0], rawSql = fields[2], trace = fields[3];
+              final int stmtId = Integer.parseInt(fields[1]);
+              final Statement stmt = Statement.mk(app, stmtId, rawSql, trace);
+              stmt.setRewritten(true);
+              stmt.setOptimizerType(optimizer);
+              rewrittenStmts.put("%s-%d".formatted(app, stmtId), stmt);
             });
   }
 
@@ -423,7 +432,7 @@ public class ShowAllStatistics implements Runner {
       }
 
       final StringBuilder sb = new StringBuilder();
-      sb.append(String.format("%s\t%d\t%s", stmt.appName(), stmt.stmtId(), stmt.rewritten(optimizer).stackTrace()));
+      sb.append(String.format("%s\t%d\t%s", stmt.appName(), stmt.stmtId(), rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).stackTrace()));
       return getImprovement(base, zipf, large, largeZipf, sb);
     }
 
@@ -489,8 +498,8 @@ public class ShowAllStatistics implements Runner {
               stmt.appName(),
               stmt.stmtId(),
               stmt.original().rawSql(),
-              stmt.rewritten(optimizer).rawSql(),
-              stmt.rewritten(optimizer).stackTrace());
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).rawSql(),
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).stackTrace());
     }
   }
 
@@ -524,8 +533,8 @@ public class ShowAllStatistics implements Runner {
               stmt.stmtId(),
               stmt.original().rawSql(),
               stmt.rewritten(OptimizerType.Calcite).rawSql(),
-              stmt.rewritten(optimizer).rawSql(),
-              stmt.rewritten(optimizer).stackTrace(),
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).rawSql(),
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).stackTrace(),
               calciteImprove,
               weTuneImprove,
               weTuneImproveThanCalcite);
@@ -552,8 +561,8 @@ public class ShowAllStatistics implements Runner {
               stmt.appName(),
               stmt.stmtId(),
               stmt.original().rawSql(),
-              stmt.rewritten(optimizer).rawSql(),
-              stmt.rewritten(optimizer).stackTrace(),
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).rawSql(),
+              rewrittenStmts.get("%s-%d".formatted(stmt.appName(), stmt.stmtId())).stackTrace(),
               improve);
     }
   }

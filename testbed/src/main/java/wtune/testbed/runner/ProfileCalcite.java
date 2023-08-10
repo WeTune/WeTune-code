@@ -34,6 +34,7 @@ public class ProfileCalcite implements Runner {
   private boolean useSqlServer;
   private boolean dryRun;
   private Blacklist blacklist;
+  private Map<String, Statement> rewrittenWeTuneStmts;
 
   public void prepare(String[] argStrings) throws Exception {
     final Args args = Args.parse(argStrings, 1);
@@ -49,6 +50,20 @@ public class ProfileCalcite implements Runner {
     final String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMddHHmmss"));
     final String suffix = (useSqlServer ? "ss" : "pg") + "_cal";
     out = Runner.dataDir().resolve(dir).resolve("%s_%s.%s.csv".formatted(tag, suffix, time));
+
+    final Path optDir = Runner.dataDir().resolve(args.getOptional("rewriteDir", String.class, "calcite/result"));
+    final Path inOptFile = optDir.resolve(args.getOptional("i", "in", String.class, "2_query.tsv"));
+    IOSupport.checkFileExists(inOptFile);
+    rewrittenWeTuneStmts = new HashMap<>();
+    List<String> statements = Files.readAllLines(inOptFile);
+    statements.stream()
+            .forEach(s -> {
+              final String[] fields = s.split("\t", 4);
+              final String app = fields[0], rawSql = fields[2], trace = fields[3];
+              final int stmtId = Integer.parseInt(fields[1]);
+              final Statement stmt = Statement.mk(app, stmtId, rawSql, trace);
+              rewrittenWeTuneStmts.put("%s-%d".formatted(app, stmtId), stmt);
+            });
 
     if (!Files.exists(out)) {
       Files.createDirectories(out.getParent());
@@ -67,7 +82,7 @@ public class ProfileCalcite implements Runner {
       if (blacklist != null && blacklist.isBlocked(tag, original)) continue;
 
       final Statement rewrittenCalcite = original.rewritten(OptimizerType.Calcite);
-      final Statement rewrittenWeTune = original.rewritten();
+      final Statement rewrittenWeTune = rewrittenWeTuneStmts.get("%s-%d".formatted(original.appName(), original.stmtId()));
       if (rewrittenCalcite != null && !runPair(original, rewrittenCalcite, true)) {
         LOG.log(WARNING, "failed to profile {0} with its calcite rewritten version", original);
         failuresCalcite.add(original.toString());

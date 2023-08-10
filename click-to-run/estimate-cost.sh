@@ -37,8 +37,8 @@ cd "${data_dir}/${rewrite_dir}" || exit
 echo "$(cut -f1,2 "${result_dir}/2_query.tsv" | uniq | wc -l) queries rewritten."
 cd "${cwd}" || exit
 
-if [ -n "${calcite}" ]; then
-  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -calcite -dir=${rewrite_dir}/${result_dir}"
-else
-  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -dir=${rewrite_dir}/${result_dir}"
-fi
+#if [ -n "${calcite}" ]; then
+#  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -calcite -dir=${rewrite_dir}/${result_dir}"
+#else
+#  gradle :superopt:run --args="UpdateOptStmts -v=${verbose} -optimizer=${optimizer} -dir=${rewrite_dir}/${result_dir}"
+#fi

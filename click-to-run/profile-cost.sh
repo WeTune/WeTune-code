@@ -43,7 +43,7 @@ if [ -n "${calcite}" ]; then
   file=$(ls -t -1 | grep "${tag}.\+" | head -1)
   ln -sf "../${file}" "${result_dir}/${tag}"
 else
-  gradle :testbed:run --args="Profile -dir=${profile_dir} -tag=${tag} -optimizer=${optimizer} "
+  gradle :testbed:run --args="Profile -dir=${profile_dir} -tag=${tag} -optimizer=${optimizer} -rewriteDir=rewrite/${result_dir}"
 
   cd "${data_dir}/${profile_dir}" || exit
   if ! [ -e "${result_dir}" ]; then

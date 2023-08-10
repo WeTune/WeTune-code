@@ -77,6 +77,8 @@ public class PickMinCost implements Runner {
         args.getOptional("out_trace", String.class, "2_trace.tsv");
     outOptFile = dir.resolve(outFileName);
     outTraceFile = dir.resolve(outTraceFileName);
+    Files.deleteIfExists(outOptFile);
+    Files.deleteIfExists(outTraceFile);
 
     // Default datasource is Sql Server
     useSqlServer = args.getOptional("sqlserver", boolean.class, true);

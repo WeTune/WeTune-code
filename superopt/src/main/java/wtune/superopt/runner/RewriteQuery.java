@@ -241,7 +241,7 @@ public class RewriteQuery implements Runner {
       }
 
       ast.context().setSchema(schema);
-      normalizeAst(ast);
+//      normalizeAst(ast);
 
       final PlanContext plan = assemblePlan(ast, schema);
 
