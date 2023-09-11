@@ -1,21 +1,31 @@
 package wtune.superopt.optimizer;
 
+import wtune.common.utils.IOSupport;
 import wtune.common.utils.Lazy;
 import wtune.common.utils.ListSupport;
+import wtune.sql.ast.SqlNode;
 import wtune.sql.plan.PlanContext;
 import wtune.sql.plan.PlanKind;
 import wtune.sql.plan.PlanNode;
 import wtune.sql.plan.PlanSupport;
 import wtune.superopt.substitution.Substitution;
 import wtune.superopt.substitution.SubstitutionBank;
+import wtune.superopt.substitution.SubstitutionSupport;
 import wtune.superopt.util.Fingerprint;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static java.util.Collections.*;
 import static java.util.Objects.requireNonNull;
 import static wtune.common.tree.TreeContext.NO_SUCH_NODE;
+import static wtune.common.utils.Commons.joining;
 import static wtune.sql.plan.PlanSupport.stringifyTree;
+import static wtune.sql.plan.PlanSupport.translateAsAst;
 import static wtune.superopt.optimizer.OptimizerSupport.*;
 import static wtune.superopt.optimizer.PreprocessRule.*;
 
@@ -23,9 +33,12 @@ class BottomUpOptimizer implements Optimizer {
   private final SubstitutionBank rules;
 
   private Memo memo;
+  private Path out;
 
   private long startAt;
   private long timeout;
+
+  private long rule_apply_times = 0;
 
   private boolean tracing, verbose, extended, keepOriginal;
   private final Lazy<Map<String, OptimizationStep>> traces;
@@ -35,6 +48,20 @@ class BottomUpOptimizer implements Optimizer {
     this.traces = Lazy.mk(HashMap::new);
     this.startAt = Long.MIN_VALUE;
     this.timeout = Long.MAX_VALUE;
+
+    final Path dataDir = Path.of(System.getProperty("wetune.data_dir", "wtune_data"));
+
+    final Path dir = dataDir.resolve("rewrite");
+
+    if (!Files.exists(dir)) {
+      try {
+        Files.createDirectories(dir);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    out = dir.resolve("1_query.tsv");
   }
 
   @Override
@@ -78,7 +105,7 @@ class BottomUpOptimizer implements Optimizer {
     int planRoot = preprocess(plan);
 
     memo = new Memo();
-    startAt = System.currentTimeMillis();
+    startAt = System.nanoTime();
 
     final Set<SubPlan> results = optimize0(new SubPlan(plan, planRoot));
     return collectRewritten(originalPlan, results);
@@ -99,7 +126,7 @@ class BottomUpOptimizer implements Optimizer {
     final int subTreeRoot = plan.nodeIdOf(subTreeRootNode);
 
     memo = new Memo();
-    startAt = System.currentTimeMillis();
+    startAt = System.nanoTime();
 
     final Set<SubPlan> results = optimize0(new SubPlan(plan, subTreeRoot));
     return collectRewritten(originalPlan, results);
@@ -197,6 +224,8 @@ class BottomUpOptimizer implements Optimizer {
     // 1. fast search for candidate substitution by fingerprint
     final Iterable<Substitution> rules = fastMatchRules(subPlan);
     for (Substitution rule : rules) {
+//      System.out.println(rule);
+      rule_apply_times++;
       if (isTimedOut()) break;
 
       // 2. full match
@@ -417,11 +446,34 @@ class BottomUpOptimizer implements Optimizer {
       }
     }
 
+
+//    for (PlanContext rw : rewritings) {
+//      final List<OptimizationStep> steps = traceOf(rw);
+//      final String trace = joining(",", steps, it -> String.valueOf(it.ruleId()));
+//      final SqlNode sqlNode = translateAsAst(origin, origin.root(), false);
+//      final SqlNode sqlNode2 = translateAsAst(rw, rw.root(), false);
+//      IOSupport.appendTo(
+//              out,
+//              writer -> {
+//                writer.printf(
+//                        "%s\t%s\t%s\t%d\t%d\n",
+//                        sqlNode, sqlNode2, trace, rule_apply_times, System.currentTimeMillis() - startAt);
+//              });
+//    }
+    final SqlNode sqlNode = translateAsAst(origin, origin.root(), false);
+    IOSupport.appendTo(
+            out,
+            writer -> {
+              writer.printf(
+                      "%d\t\t%d\t\t%d\t\t%s\n",
+                      rewritings.size(), rule_apply_times,(System.nanoTime() - startAt) / 1000, sqlNode);
+            });
+
     return rewritings;
   }
 
   private boolean isTimedOut() {
-    return System.currentTimeMillis() - startAt >= timeout;
+    return System.nanoTime() - startAt >= timeout;
   }
 
   private void traceStep(PlanContext source, PlanContext target, Substitution rule) {

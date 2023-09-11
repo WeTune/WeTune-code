@@ -141,12 +141,12 @@ public class RewriteQuery implements Runner {
       if (plan == null) return;
 
       if (isSimple(plan)) {
-        if (verbosity >= 3) System.out.println("skip simple query " + stmt);
+        System.out.println("skip simple query " + stmt);
         return;
       }
 
       final Optimizer optimizer = Optimizer.mk(rules);
-      optimizer.setTimeout(5000);
+      optimizer.setTimeout(5000000000L);
       optimizer.setTracing(true);
 
       final Set<PlanContext> optimized = optimizer.optimize(plan);
