@@ -979,8 +979,14 @@ class ConstraintEnumerator {
         }
 
         final Generalization generalization = generalize(enabled);
-        if (!dryRun && isKnownNeq(localKnownNeqs, generalization)) continue;
-        if (!dryRun && isKnownEq(localKnownEqs, generalization)) continue;
+        if (!dryRun && isKnownNeq(localKnownNeqs, generalization)) {
+          resetConstraints();
+          continue;
+        }
+        if (!dryRun && isKnownEq(localKnownEqs, generalization)) {
+          resetConstraints();
+          continue;
+        }
 
         final int answer = nextStage().enumerate();
         resetConstraints();
